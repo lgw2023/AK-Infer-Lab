@@ -199,52 +199,37 @@ STANDARD_PROBES = [
     ProbeCommand(
         name="npu_smi_probe",
         command=["npu-smi", "info"],
-        maps_to_fields=[
-            "npu_hbm_profile.hbm_free_bytes",
-            "power_stability_profile.npu_power_w",
-        ],
+        maps_to_fields=["server_observability_profile.npu_smi_available"],
     ),
     ProbeCommand(
         name="cann_profiler_probe",
         command=list(CANN_PROFILER_COMMAND),
-        maps_to_fields=[
-            "operator_timeline_profile.kernel_duration_us",
-            "npu_hbm_profile.hbm_read_gbps",
-        ],
+        maps_to_fields=["server_observability_profile.cann_profiler_available"],
     ),
     ProbeCommand(
         name="perf_probe",
         command=["perf", "--version"],
-        maps_to_fields=[
-            "cpu_dram_profile.context_switches",
-            "cpu_dram_profile.cpu_user_percent",
-        ],
+        maps_to_fields=["server_observability_profile.perf_available"],
     ),
     ProbeCommand(
         name="ebpf_probe",
         command=list(EBPF_COMMAND),
-        maps_to_fields=["cpu_dram_profile.scheduler_time_us"],
+        maps_to_fields=["server_observability_profile.ebpf_available"],
     ),
     ProbeCommand(
         name="fio_probe",
         command=["fio", "--version"],
-        maps_to_fields=[
-            "ssd_io_profile.random_read_iops",
-            "microbench_profile.ssd_iops",
-        ],
+        maps_to_fields=["server_observability_profile.fio_available"],
     ),
     ProbeCommand(
         name="numa_probe",
         command=["numactl", "--hardware"],
-        maps_to_fields=[
-            "cpu_dram_profile.numa_node",
-            "cpu_dram_profile.dram_read_gbps",
-        ],
+        maps_to_fields=["server_observability_profile.numa_available"],
     ),
     ProbeCommand(
         name="container_permission_probe",
         command=list(CONTAINER_PERMISSION_COMMAND),
-        maps_to_fields=[],
+        maps_to_fields=["server_observability_profile.container_cgroup_readable"],
     ),
 ]
 

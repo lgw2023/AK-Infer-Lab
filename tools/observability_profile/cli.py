@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from tools.observability_profile.availability import apply_probe_evidence
+from tools.observability_profile.availability import apply_manifest_evidence, apply_probe_evidence
 from tools.observability_profile.catalog import build_field_catalog
 from tools.observability_profile.join_keys import build_join_key_readiness
 from tools.observability_profile.manifest import build_manifest
@@ -32,6 +33,11 @@ def _write_probe_result(path: Path, probe: dict[str, Any]) -> None:
     path.write_text("\n".join(content), encoding="utf-8")
 
 
+def _safe_path_component(value: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip(".-")
+    return safe or "run"
+
+
 def run_observability_profile(
     *,
     output_base: Path,
@@ -40,7 +46,8 @@ def run_observability_profile(
     operator: str,
     probes: list[dict[str, Any]] | None = None,
 ) -> Path:
-    run_dir = output_base / f"{datetime.now(timezone.utc).strftime('%Y-%m-%d')}_atlas800t-a2_observability_run"
+    run_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    run_dir = output_base / f"{run_date}_{_safe_path_component(run_id)}_observability_run"
     probe_dir = run_dir / "probe_results"
     probe_dir.mkdir(parents=True, exist_ok=True)
 
@@ -57,7 +64,8 @@ def run_observability_profile(
         _write_probe_result(probe_path, probe)
 
     checked_at = datetime.now(timezone.utc).isoformat()
-    fields = apply_probe_evidence(build_field_catalog(), probe_results, checked_at=checked_at)
+    fields = apply_manifest_evidence(build_field_catalog(), manifest, checked_at=checked_at)
+    fields = apply_probe_evidence(fields, probe_results, checked_at=checked_at)
     join_key_readiness = build_join_key_readiness()
     p0_acceptance_fields = build_p0_acceptance_fields(fields)
 

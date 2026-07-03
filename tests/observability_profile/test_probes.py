@@ -123,6 +123,14 @@ def test_container_permission_probe_does_not_map_to_container_privileged():
     assert "server_observability_profile.container_privileged" not in container_probe.maps_to_fields
 
 
+def test_standard_probes_only_map_tool_readiness_fields():
+    for probe in STANDARD_PROBES:
+        assert all(field.startswith("server_observability_profile.") for field in probe.maps_to_fields)
+        assert "cpu_dram_profile.context_switches" not in probe.maps_to_fields
+        assert "ssd_io_profile.random_read_iops" not in probe.maps_to_fields
+        assert "operator_timeline_profile.kernel_duration_us" not in probe.maps_to_fields
+
+
 def test_shell_sudo_after_attached_separator_is_blocked_without_execution(monkeypatch):
     executed = False
 

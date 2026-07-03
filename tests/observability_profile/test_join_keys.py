@@ -21,3 +21,15 @@ def test_p0_acceptance_only_includes_measurable_or_partial_required_fields():
     result = build_p0_acceptance_fields(fields)
     statuses = {item["status"] for item in result["p0_acceptance_fields"]}
     assert statuses == {"measurable"}
+
+
+def test_p0_acceptance_prefers_actual_evidence_artifact():
+    fields = build_field_catalog()
+    fields[0]["required_for_p0"] = True
+    fields[0]["expected_artifact"] = "expected_template.yaml"
+    fields[0]["availability"]["status"] = "measurable"
+    fields[0]["availability"]["evidence_artifact"] = "manifest.yaml"
+
+    result = build_p0_acceptance_fields(fields)
+
+    assert result["p0_acceptance_fields"][0]["source"] == "manifest.yaml"

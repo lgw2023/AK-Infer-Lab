@@ -95,6 +95,18 @@ def _cann_version() -> str:
     return "unknown"
 
 
+def _module_version(module_name: str) -> str:
+    output = _run_text([
+        "python",
+        "-c",
+        f"import {module_name}; print(getattr({module_name}, '__version__', 'unknown'))",
+    ])
+    lowered = output.lower()
+    if any(marker in lowered for marker in ("modulenotfounderror", "importerror", "traceback")):
+        return "unknown"
+    return output.splitlines()[0].strip() if output.strip() else "unknown"
+
+
 def build_manifest(
     *,
     run_id: str,
@@ -113,14 +125,17 @@ def build_manifest(
     }
     cann_environment = _cann_environment()
     cann_version = _cann_version()
+    torch_npu_version = _module_version("torch_npu")
+    mindie_version = _module_version("mindie")
+    vllm_ascend_version = _module_version("vllm_ascend")
     software_inputs = {
         "python": platform.python_version(),
         "platform": platform.platform(),
         "cann_version": cann_version,
         "cann_environment": cann_environment,
-        "torch_npu": _run_text(["python", "-c", "import torch_npu; print(torch_npu.__version__)"]),
-        "mindie": _run_text(["bash", "-lc", "python -c 'import mindie; print(getattr(mindie, \"__version__\", \"unknown\"))'"]),
-        "vllm_ascend": _run_text(["bash", "-lc", "python -c 'import vllm_ascend; print(getattr(vllm_ascend, \"__version__\", \"unknown\"))'"]),
+        "torch_npu": torch_npu_version,
+        "mindie": mindie_version,
+        "vllm_ascend": vllm_ascend_version,
         "container_image": os.environ.get("CONTAINER_IMAGE", "unknown"),
     }
     return {
@@ -131,6 +146,8 @@ def build_manifest(
         "timestamp_end": None,
         "operator": operator,
         "git_commit": _git_commit(repo_root),
+        "os_name": platform.system(),
+        "kernel_version": platform.release(),
         "host_name": socket.gethostname(),
         "container_id": _container_id(),
         "container_image": os.environ.get("CONTAINER_IMAGE", "unknown"),
@@ -139,6 +156,9 @@ def build_manifest(
         "effective_user_is_root": _effective_user_is_root(),
         "cann_version": cann_version,
         "cann_environment": cann_environment,
+        "torch_npu_version": torch_npu_version,
+        "mindie_version": mindie_version,
+        "vllm_ascend_version": vllm_ascend_version,
         "driver_version": "unknown",
         "npu_count": "unknown",
         "hbm_per_npu_gb": "unknown",

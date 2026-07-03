@@ -122,7 +122,7 @@ unknown
 
 ```text
 工作记录与进度笔记本/observability_profiles/
-  YYYY-MM-DD_atlas800t-a2_observability_run/
+  YYYY-MM-DD_<profile_run_id>_observability_run/
     manifest.yaml
     server_observability_profile.md
     field_availability.yaml
@@ -138,7 +138,7 @@ unknown
       container_permission_probe.md
 ```
 
-目录命名中的日期使用体检开始日期。`profile_run_id` 是唯一标识，允许同一天多次体检。
+目录命名中的日期使用体检开始日期，后接清理后的 `profile_run_id`。这样同一天多次体检也会落到不同目录。
 
 ## 5. `manifest.yaml` Schema
 

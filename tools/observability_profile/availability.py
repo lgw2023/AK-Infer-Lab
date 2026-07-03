@@ -6,8 +6,61 @@ from typing import Any
 from tools.observability_profile.constants import AVAILABILITY_STATUSES
 
 
+MANIFEST_FIELD_KEYS = {
+    "server_observability_profile.os_name": "os_name",
+    "server_observability_profile.kernel_version": "kernel_version",
+    "server_observability_profile.cann_version": "cann_version",
+    "server_observability_profile.driver_version": "driver_version",
+    "server_observability_profile.torch_npu_version": "torch_npu_version",
+    "server_observability_profile.mindie_version": "mindie_version",
+    "server_observability_profile.vllm_ascend_version": "vllm_ascend_version",
+    "server_observability_profile.container_privileged": "container_privileged",
+    "server_observability_profile.visible_npu_count": "npu_count",
+}
+
+
 def _field_key(field: dict[str, Any]) -> str:
     return f"{field['profile']}.{field['name']}"
+
+
+def _has_known_manifest_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return True
+    text = str(value).strip()
+    if not text or text.lower() == "unknown":
+        return False
+    lowered = text.lower()
+    failure_markers = ("filenotfounderror", "modulenotfounderror", "importerror", "traceback", "not found")
+    return not any(marker in lowered for marker in failure_markers)
+
+
+def apply_manifest_evidence(
+    fields: list[dict[str, Any]],
+    manifest: dict[str, Any],
+    *,
+    checked_at: str,
+) -> list[dict[str, Any]]:
+    updated = deepcopy(fields)
+    by_key = {_field_key(field): field for field in updated}
+
+    for field_key, manifest_key in MANIFEST_FIELD_KEYS.items():
+        field = by_key.get(field_key)
+        if field is None:
+            continue
+        value = manifest.get(manifest_key)
+        if not _has_known_manifest_value(value):
+            continue
+        availability = field["availability"]
+        availability["status"] = "measurable"
+        availability["confidence"] = "medium"
+        availability["evidence_probe"] = "manifest"
+        availability["evidence_artifact"] = "manifest.yaml"
+        availability["blocked_reason"] = {"category": None, "detail": None}
+        availability["partial_reason"] = None
+        availability["last_checked_at"] = checked_at
+    return updated
 
 
 def apply_probe_evidence(

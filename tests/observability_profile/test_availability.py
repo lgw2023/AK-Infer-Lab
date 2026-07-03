@@ -1,4 +1,4 @@
-from tools.observability_profile.availability import apply_probe_evidence, summarize_availability
+from tools.observability_profile.availability import apply_manifest_evidence, apply_probe_evidence, summarize_availability
 from tools.observability_profile.catalog import build_field_catalog
 
 
@@ -134,3 +134,28 @@ def test_apply_probe_evidence_ignores_probes_without_mapped_fields():
     updated = apply_probe_evidence(fields, probes, checked_at="2026-07-03T00:00:00Z")
 
     assert updated == fields
+
+
+def test_apply_manifest_evidence_marks_known_manifest_fields_measurable():
+    fields = build_field_catalog()
+    manifest = {
+        "os_name": "Linux",
+        "kernel_version": "5.10.0",
+        "cann_version": "9.0.0",
+        "container_privileged": False,
+        "torch_npu_version": "2.6.0",
+        "mindie_version": "unknown",
+    }
+
+    updated = apply_manifest_evidence(fields, manifest, checked_at="2026-07-03T00:00:00Z")
+    by_key = {f"{field['profile']}.{field['name']}": field for field in updated}
+
+    os_availability = by_key["server_observability_profile.os_name"]["availability"]
+    privileged_availability = by_key["server_observability_profile.container_privileged"]["availability"]
+    mindie_availability = by_key["server_observability_profile.mindie_version"]["availability"]
+
+    assert os_availability["status"] == "measurable"
+    assert os_availability["evidence_probe"] == "manifest"
+    assert os_availability["evidence_artifact"] == "manifest.yaml"
+    assert privileged_availability["status"] == "measurable"
+    assert mindie_availability["status"] == "unknown"

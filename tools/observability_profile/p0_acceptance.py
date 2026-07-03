@@ -13,7 +13,7 @@ def build_p0_acceptance_fields(fields: list[dict[str, Any]]) -> dict[str, list[d
             {
                 "field": f"{field['profile']}.{field['name']}",
                 "status": status,
-                "source": field["expected_artifact"],
+                "source": field["availability"].get("evidence_artifact") or field["expected_artifact"],
                 "acceptance_rule": field["acceptance_rule"],
                 "caveat": field["availability"].get("partial_reason"),
             }
