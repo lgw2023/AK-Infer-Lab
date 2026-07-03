@@ -1,0 +1,17 @@
+[project]
+name = "ak-infer-lab-observability"
+version = "0.1.0"
+description = "Server observability capability profiling tools for AK-Infer-Lab"
+requires-python = ">=3.11"
+dependencies = [
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

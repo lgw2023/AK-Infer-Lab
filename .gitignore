@@ -1,4 +1,5 @@
 .DS_Store
+AGENTS.md
 
 # Local shallow clones used only as code-reading references.
 /reference_repos/*
