@@ -1,0 +1,492 @@
+{
+  "success": [
+    {
+      "name": "Chakra-original",
+      "file": "Chakra-original__arxiv-2305.14516.pdf",
+      "source": "https://arxiv.org/pdf/2305.14516.pdf",
+      "bytes": 1146249
+    },
+    {
+      "name": "Splitwise",
+      "file": "Splitwise__arxiv-2311.18677.pdf",
+      "source": "https://arxiv.org/pdf/2311.18677.pdf",
+      "bytes": 2154278
+    },
+    {
+      "name": "DistServe",
+      "file": "DistServe__arxiv-2401.09670.pdf",
+      "source": "https://arxiv.org/pdf/2401.09670.pdf",
+      "bytes": 647352
+    },
+    {
+      "name": "BurstGPT",
+      "file": "BurstGPT__arxiv-2401.17644.pdf",
+      "source": "https://arxiv.org/pdf/2401.17644.pdf",
+      "bytes": 3667090
+    },
+    {
+      "name": "Fiddler",
+      "file": "Fiddler__arxiv-2402.07033.pdf",
+      "source": "https://arxiv.org/pdf/2402.07033.pdf",
+      "bytes": 2397054
+    },
+    {
+      "name": "PowerInfer-2",
+      "file": "PowerInfer-2__arxiv-2406.06282.pdf",
+      "source": "https://arxiv.org/pdf/2406.06282.pdf",
+      "bytes": 1173361
+    },
+    {
+      "name": "InfiniGen",
+      "file": "InfiniGen__arxiv-2406.19707.pdf",
+      "source": "https://arxiv.org/pdf/2406.19707.pdf",
+      "bytes": 3025464
+    },
+    {
+      "name": "Mooncake",
+      "file": "Mooncake__arxiv-2407.00079.pdf",
+      "source": "https://arxiv.org/pdf/2407.00079.pdf",
+      "bytes": 681606
+    },
+    {
+      "name": "llm.npu",
+      "file": "llm.npu__arxiv-2407.05858.pdf",
+      "source": "https://arxiv.org/pdf/2407.05858.pdf",
+      "bytes": 2473285
+    },
+    {
+      "name": "OpenHands",
+      "file": "OpenHands__arxiv-2407.16741.pdf",
+      "source": "https://arxiv.org/pdf/2407.16741.pdf",
+      "bytes": 3293124
+    },
+    {
+      "name": "NEO",
+      "file": "NEO__arxiv-2411.01142.pdf",
+      "source": "https://arxiv.org/pdf/2411.01142.pdf",
+      "bytes": 1150309
+    },
+    {
+      "name": "Pie",
+      "file": "Pie__arxiv-2411.09317.pdf",
+      "source": "https://arxiv.org/pdf/2411.09317.pdf",
+      "bytes": 1106044
+    },
+    {
+      "name": "MoE-Lightning",
+      "file": "MoE-Lightning__arxiv-2411.11217.pdf",
+      "source": "https://arxiv.org/pdf/2411.11217.pdf",
+      "bytes": 5105280
+    },
+    {
+      "name": "KVPR",
+      "file": "KVPR__arxiv-2411.17089.pdf",
+      "source": "https://arxiv.org/pdf/2411.17089.pdf",
+      "bytes": 1052995
+    },
+    {
+      "name": "EPD-Disaggregation",
+      "file": "EPD-Disaggregation__arxiv-2501.05460.pdf",
+      "source": "https://arxiv.org/pdf/2501.05460.pdf",
+      "bytes": 2025968
+    },
+    {
+      "name": "DAOP",
+      "file": "DAOP__arxiv-2501.10375.pdf",
+      "source": "https://arxiv.org/pdf/2501.10375.pdf",
+      "bytes": 599630
+    },
+    {
+      "name": "HeteroInfer",
+      "file": "HeteroInfer__arxiv-2501.14794.pdf",
+      "source": "https://arxiv.org/pdf/2501.14794.pdf",
+      "bytes": 1278499
+    },
+    {
+      "name": "fMoE-FineMoE",
+      "file": "fMoE-FineMoE__arxiv-2502.05370.pdf",
+      "source": "https://arxiv.org/pdf/2502.05370.pdf",
+      "bytes": 1483169
+    },
+    {
+      "name": "Autellix",
+      "file": "Autellix__arxiv-2502.13965.pdf",
+      "source": "https://arxiv.org/pdf/2502.13965.pdf",
+      "bytes": 1275467
+    },
+    {
+      "name": "MoE-Gen",
+      "file": "MoE-Gen__arxiv-2503.09716.pdf",
+      "source": "https://arxiv.org/pdf/2503.09716.pdf",
+      "bytes": 1620677
+    },
+    {
+      "name": "MoE-Lens",
+      "file": "MoE-Lens__arxiv-2504.09345.pdf",
+      "source": "https://arxiv.org/pdf/2504.09345.pdf",
+      "bytes": 1187216
+    },
+    {
+      "name": "EcoServe",
+      "file": "EcoServe__arxiv-2504.18154.pdf",
+      "source": "https://arxiv.org/pdf/2504.18154.pdf",
+      "bytes": 1139377
+    },
+    {
+      "name": "TokenWeave",
+      "file": "TokenWeave__arxiv-2505.11329.pdf",
+      "source": "https://arxiv.org/pdf/2505.11329.pdf",
+      "bytes": 2256982
+    },
+    {
+      "name": "CLONE",
+      "file": "CLONE__arxiv-2506.02847.pdf",
+      "source": "https://arxiv.org/pdf/2506.02847.pdf",
+      "bytes": 9274794
+    },
+    {
+      "name": "APEX",
+      "file": "APEX__arxiv-2506.03296.pdf",
+      "source": "https://arxiv.org/pdf/2506.03296.pdf",
+      "bytes": 521647
+    },
+    {
+      "name": "EdgeLoRA",
+      "file": "EdgeLoRA__arxiv-2507.01438.pdf",
+      "source": "https://arxiv.org/pdf/2507.01438.pdf",
+      "bytes": 1854519
+    },
+    {
+      "name": "FUSE",
+      "file": "FUSE__arxiv-2507.02135.pdf",
+      "source": "https://arxiv.org/pdf/2507.02135.pdf",
+      "bytes": 2987991
+    },
+    {
+      "name": "lm-Meter",
+      "file": "lm-Meter__arxiv-2510.06126.pdf",
+      "source": "https://arxiv.org/pdf/2510.06126.pdf",
+      "bytes": 2850316
+    },
+    {
+      "name": "LMCache",
+      "file": "LMCache__arxiv-2510.09665.pdf",
+      "source": "https://arxiv.org/pdf/2510.09665.pdf",
+      "bytes": 799013
+    },
+    {
+      "name": "FlexiCache",
+      "file": "FlexiCache__arxiv-2511.00868.pdf",
+      "source": "https://arxiv.org/pdf/2511.00868.pdf",
+      "bytes": 1240009
+    },
+    {
+      "name": "FarSkip-Collective",
+      "file": "FarSkip-Collective__arxiv-2511.11505.pdf",
+      "source": "https://arxiv.org/pdf/2511.11505.pdf",
+      "bytes": 1566979
+    },
+    {
+      "name": "MoE-SpeQ",
+      "file": "MoE-SpeQ__arxiv-2511.14102.pdf",
+      "source": "https://arxiv.org/pdf/2511.14102.pdf",
+      "bytes": 1837313
+    },
+    {
+      "name": "CLO",
+      "file": "CLO__arxiv-2511.14510.pdf",
+      "source": "https://arxiv.org/pdf/2511.14510.pdf",
+      "bytes": 1289754
+    },
+    {
+      "name": "Kitty",
+      "file": "Kitty__arxiv-2511.18643.pdf",
+      "source": "https://arxiv.org/pdf/2511.18643.pdf",
+      "bytes": 1484987
+    },
+    {
+      "name": "SuperInfer",
+      "file": "SuperInfer__arxiv-2601.20309.pdf",
+      "source": "https://arxiv.org/pdf/2601.20309.pdf",
+      "bytes": 2380921
+    },
+    {
+      "name": "ProfInfer",
+      "file": "ProfInfer__arxiv-2601.20755.pdf",
+      "source": "https://arxiv.org/pdf/2601.20755.pdf",
+      "bytes": 910498
+    },
+    {
+      "name": "vLLM-Omni",
+      "file": "vLLM-Omni__arxiv-2602.02204.pdf",
+      "source": "https://arxiv.org/pdf/2602.02204.pdf",
+      "bytes": 700939
+    },
+    {
+      "name": "DALI",
+      "file": "DALI__arxiv-2602.03495.pdf",
+      "source": "https://arxiv.org/pdf/2602.03495.pdf",
+      "bytes": 3392376
+    },
+    {
+      "name": "AMPD",
+      "file": "AMPD__arxiv-2602.14516.pdf",
+      "source": "https://arxiv.org/pdf/2602.14516.pdf",
+      "bytes": 1007182
+    },
+    {
+      "name": "LLMServingSim-2.0",
+      "file": "LLMServingSim-2.0__arxiv-2602.23036.pdf",
+      "source": "https://arxiv.org/pdf/2602.23036.pdf",
+      "bytes": 1167567
+    },
+    {
+      "name": "FlashAttention-4",
+      "file": "FlashAttention-4__arxiv-2603.05451.pdf",
+      "source": "https://arxiv.org/pdf/2603.05451.pdf",
+      "bytes": 7634447
+    },
+    {
+      "name": "PPD",
+      "file": "PPD__arxiv-2603.13358.pdf",
+      "source": "https://arxiv.org/pdf/2603.13358.pdf",
+      "bytes": 1801986
+    },
+    {
+      "name": "Helium-Agentic-Workflows",
+      "file": "Helium-Agentic-Workflows__arxiv-2603.16104.pdf",
+      "source": "https://arxiv.org/pdf/2603.16104.pdf",
+      "bytes": 1659032
+    },
+    {
+      "name": "PASTE",
+      "file": "PASTE__arxiv-2603.18897.pdf",
+      "source": "https://arxiv.org/pdf/2603.18897.pdf",
+      "bytes": 1003482
+    },
+    {
+      "name": "CRAFT",
+      "file": "CRAFT__arxiv-2603.28768.pdf",
+      "source": "https://arxiv.org/pdf/2603.28768.pdf",
+      "bytes": 1989022
+    },
+    {
+      "name": "HybridGen",
+      "file": "HybridGen__arxiv-2604.18529.pdf",
+      "source": "https://arxiv.org/pdf/2604.18529.pdf",
+      "bytes": 1579848
+    },
+    {
+      "name": "NPUMoE",
+      "file": "NPUMoE__arxiv-2604.18788.pdf",
+      "source": "https://arxiv.org/pdf/2604.18788.pdf",
+      "bytes": 1983274
+    },
+    {
+      "name": "DAK",
+      "file": "DAK__arxiv-2604.26074.pdf",
+      "source": "https://arxiv.org/pdf/2604.26074.pdf",
+      "bytes": 810171
+    },
+    {
+      "name": "MARS",
+      "file": "MARS__arxiv-2604.26963.pdf",
+      "source": "https://arxiv.org/pdf/2604.26963.pdf",
+      "bytes": 1088664
+    },
+    {
+      "name": "SAGA",
+      "file": "SAGA__arxiv-2605.00528.pdf",
+      "source": "https://arxiv.org/pdf/2605.00528.pdf",
+      "bytes": 645011
+    },
+    {
+      "name": "CCL-Bench",
+      "file": "CCL-Bench__arxiv-2605.06544.pdf",
+      "source": "https://arxiv.org/pdf/2605.06544.pdf",
+      "bytes": 1265435
+    },
+    {
+      "name": "Chakra-MLSys2026",
+      "file": "Chakra-MLSys2026__arxiv-2605.11333.pdf",
+      "source": "https://arxiv.org/pdf/2605.11333.pdf",
+      "bytes": 3246819
+    },
+    {
+      "name": "CoX-MoE",
+      "file": "CoX-MoE__arxiv-2605.17889.pdf",
+      "source": "https://arxiv.org/pdf/2605.17889.pdf",
+      "bytes": 1408825
+    },
+    {
+      "name": "Frontier",
+      "file": "Frontier__arxiv-2605.21312.pdf",
+      "source": "https://arxiv.org/pdf/2605.21312.pdf",
+      "bytes": 1544979
+    },
+    {
+      "name": "AlignedServe",
+      "file": "AlignedServe__arxiv-2605.23389.pdf",
+      "source": "https://arxiv.org/pdf/2605.23389.pdf",
+      "bytes": 5442192
+    },
+    {
+      "name": "Agentic-AI-Workload",
+      "file": "Agentic-AI-Workload__arxiv-2605.26297.pdf",
+      "source": "https://arxiv.org/pdf/2605.26297.pdf",
+      "bytes": 957835
+    },
+    {
+      "name": "MORI",
+      "file": "MORI__arxiv-2606.00866.pdf",
+      "source": "https://arxiv.org/pdf/2606.00866.pdf",
+      "bytes": 1125519
+    },
+    {
+      "name": "ITME",
+      "file": "ITME__arxiv-2606.12556.pdf",
+      "source": "https://arxiv.org/pdf/2606.12556.pdf",
+      "bytes": 2879868
+    },
+    {
+      "name": "llada.cpp",
+      "file": "llada.cpp__arxiv-2606.13740.pdf",
+      "source": "https://arxiv.org/pdf/2606.13740.pdf",
+      "bytes": 1065467
+    },
+    {
+      "name": "LiveServe",
+      "file": "LiveServe__arxiv-2606.22983.pdf",
+      "source": "https://arxiv.org/pdf/2606.22983.pdf",
+      "bytes": 1051619
+    },
+    {
+      "name": "FlexInfer",
+      "file": "FlexInfer.pdf",
+      "source": "https://proceedings.mlsys.org/paper_files/paper/2025/file/698cfaf72a208aef2e78bcac55b74328-Paper-Conference.pdf",
+      "bytes": 558482
+    },
+    {
+      "name": "KTransformers",
+      "file": "KTransformers.pdf",
+      "source": "https://madsys.cs.tsinghua.edu.cn/publication/ktransformers-unleashing-the-full-potential-of-cpu/gpu-hybrid-inference-for-moe-models/SOSP25-chen.pdf",
+      "bytes": 1271934
+    },
+    {
+      "name": "HeteroInfer-SOSP-PDF",
+      "file": "HeteroInfer-SOSP-PDF.pdf",
+      "source": "https://ipads.se.sjtu.edu.cn/zh/publications/sosp25-chen.pdf",
+      "bytes": 1175226
+    },
+    {
+      "name": "CacheSlide",
+      "file": "CacheSlide.pdf",
+      "source": "https://www.usenix.org/system/files/fast26-liu-yang.pdf",
+      "bytes": 5544984
+    },
+    {
+      "name": "NanoFlow",
+      "file": "NanoFlow.pdf",
+      "source": "https://www.usenix.org/system/files/osdi25-zhu-kan.pdf",
+      "bytes": 2848272
+    },
+    {
+      "name": "DiffServe",
+      "file": "DiffServe.pdf",
+      "source": "https://proceedings.mlsys.org/paper_files/paper/2025/file/414fd191b3246a19a55741b938380136-Paper-Conference.pdf",
+      "bytes": 657288
+    },
+    {
+      "name": "InfiniGen-USENIX",
+      "file": "InfiniGen-USENIX.pdf",
+      "source": "https://www.usenix.org/system/files/osdi24-lee.pdf",
+      "bytes": 3212724
+    },
+    {
+      "name": "LIA-GoogleDeepMind",
+      "file": "references/web/LIA-GoogleDeepMind.html",
+      "source": "https://deepmind.google/research/publications/81986/",
+      "bytes": 132165,
+      "type": "web"
+    },
+    {
+      "name": "OpenVINO-docs",
+      "file": "references/web/OpenVINO-docs.html",
+      "source": "https://docs.openvino.ai/2024/openvino-workflow/running-inference/inference-devices-and-modes.html",
+      "bytes": 818630,
+      "type": "web"
+    },
+    {
+      "name": "MLX-docs",
+      "file": "references/web/MLX-docs.html",
+      "source": "https://ml-explore.github.io/mlx/build/html/usage/unified_memory.html",
+      "bytes": 101190,
+      "type": "web"
+    },
+    {
+      "name": "LMCache-docs",
+      "file": "references/web/LMCache-docs.html",
+      "source": "https://docs.lmcache.ai/",
+      "bytes": 62688,
+      "type": "web"
+    },
+    {
+      "name": "NVIDIA-GH200",
+      "file": "references/web/NVIDIA-GH200.html",
+      "source": "https://www.nvidia.com/en-us/data-center/grace-hopper-superchip/",
+      "bytes": 258207,
+      "type": "web"
+    },
+    {
+      "name": "Ascend-MindIE",
+      "file": "references/web/Ascend-MindIE.html",
+      "source": "https://www.hiascend.com/en/software/mindie",
+      "bytes": 137867,
+      "type": "web"
+    },
+    {
+      "name": "vLLM-Ascend",
+      "file": "references/web/vLLM-Ascend.html",
+      "source": "https://docs.vllm.ai/projects/ascend/en/latest/",
+      "bytes": 40777,
+      "type": "web"
+    }
+  ],
+  "failed": [
+    {
+      "name": "OPKV",
+      "url": "https://openreview.net/pdf/c029c638dc0ebc0ebd6fc266e4b9ab3577bd2702.pdf",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "MoE-Tax",
+      "url": "https://openreview.net/pdf/760b399272fea324af0953a789a27cfe0f64e994.pdf",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "TokenWeave-OpenReview",
+      "url": "https://openreview.net/pdf/5a38a889cd762a5145246b731961898930d23dfc.pdf",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "vLLM-disaggregated-prefill",
+      "url": "https://docs.vllm.ai/en/latest/serving/disagg_prefill.html",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "name": "SGLang-HiCache",
+      "url": "https://docs.sglang.ai/backend/hicache.html",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "name": "AMD-MI300A",
+      "url": "https://www.amd.com/en/products/accelerators/instinct/mi300a.html",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "name": "AMD-Ryzen-AI-Max",
+      "url": "https://www.amd.com/en/products/processors/laptop/ryzen/ai-300-series/ryzen-ai-max.html",
+      "error": "HTTP Error 404: Not Found"
+    }
+  ]
+}

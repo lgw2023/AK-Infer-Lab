@@ -1,0 +1,373 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1400" viewBox="0 0 2200 1400">
+<defs>
+  <filter id="chip-shadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.22"/>
+  </filter>
+  <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.12"/>
+  </filter>
+  <pattern id="trace-grid" width="52" height="52" patternUnits="userSpaceOnUse">
+    <path d="M 52 0 L 0 0 0 52" fill="none" stroke="#77a37d" stroke-width="1" opacity="0.22"/>
+  </pattern>
+  <marker id="arrow-hot" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+    <path d="M2,2 L10,6 L2,10 Z" fill="#e4572e"/>
+  </marker>
+  <marker id="arrow-warm" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+    <path d="M2,2 L10,6 L2,10 Z" fill="#0b7285"/>
+  </marker>
+  <marker id="arrow-cold" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+    <path d="M2,2 L10,6 L2,10 Z" fill="#7b2cbf"/>
+  </marker>
+  <marker id="arrow-control" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+    <path d="M2,2 L10,6 L2,10 Z" fill="#475569"/>
+  </marker>
+  <marker id="arrow-copper" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+    <path d="M2,2 L10,6 L2,10 Z" fill="#b7791f"/>
+  </marker>
+</defs>
+<rect x="0" y="0" width="2200" height="1400" fill="#f8fafc"/>
+
+<text x="110.0" y="76.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="34" font-weight="800" fill="#0f172a" >大模型推理硬件体系主板俯视图</text>
+<text x="110.0" y="118.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="19" font-weight="520" fill="#475569" >从热路径、温层状态、冷层存储、远端数据面与仿真观测五条线看代表性工作到底动了哪些硬件。</text>
+<text x="1950.0" y="76.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="24" font-weight="800" fill="#0f766e" >A+K / Ascend + Kunpeng</text>
+<text x="1950.0" y="112.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="520" fill="#64748b" >基于《大模型推理硬件层面对照地图》</text>
+<rect x="230.0" y="160.0" width="1540.0" height="1090.0" rx="32.0" fill="#dfeedd" stroke="#2f6f4e" stroke-width="4" filter="url(#soft-shadow)"/>
+<rect x="248" y="178" width="1504" height="1054" rx="22" fill="url(#trace-grid)" opacity="0.75"/>
+<circle cx="260" cy="190" r="20" fill="#cbd5c0" stroke="#2f6f4e" stroke-width="3"/>
+<circle cx="260" cy="190" r="8" fill="#f8fafc" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="1735" cy="190" r="20" fill="#cbd5c0" stroke="#2f6f4e" stroke-width="3"/>
+<circle cx="1735" cy="190" r="8" fill="#f8fafc" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="260" cy="1218" r="20" fill="#cbd5c0" stroke="#2f6f4e" stroke-width="3"/>
+<circle cx="260" cy="1218" r="8" fill="#f8fafc" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="1735" cy="1218" r="20" fill="#cbd5c0" stroke="#2f6f4e" stroke-width="3"/>
+<circle cx="1735" cy="1218" r="8" fill="#f8fafc" stroke="#6b7280" stroke-width="1.5"/>
+<rect x="650.0" y="430.0" width="430.0" height="320.0" rx="22.0" fill="#174e63" stroke="#0f2f3c" stroke-width="3" filter="url(#chip-shadow)"/>
+<rect x="662.0" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="662.0" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="698.2" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="698.2" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="734.4" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="734.4" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="770.5" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="770.5" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="806.7" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="806.7" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="842.9" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="842.9" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="879.1" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="879.1" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="915.3" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="915.3" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="951.5" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="951.5" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="987.6" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="987.6" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1023.8" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1023.8" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1060.0" y="417.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1060.0" y="750.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="637.0" y="444.0" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1080.0" y="444.0" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="637.0" y="484.6" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1080.0" y="484.6" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="637.0" y="525.1" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1080.0" y="525.1" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="637.0" y="565.7" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1080.0" y="565.7" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="637.0" y="606.3" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1080.0" y="606.3" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="637.0" y="646.9" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1080.0" y="646.9" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="637.0" y="687.4" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1080.0" y="687.4" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="637.0" y="728.0" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1080.0" y="728.0" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<text x="865.0" y="484.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="31" font-weight="760" fill="#ffffff" >Ascend NPU / GPU</text>
+<text x="865.0" y="524.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="19" font-weight="560" fill="#dbeafe" >AI Core / Cube / Attention / FFN / MoE gate</text>
+<rect x="1185.0" y="460.0" width="330.0" height="270.0" rx="22.0" fill="#58317d" stroke="#34204d" stroke-width="3" filter="url(#chip-shadow)"/>
+<rect x="1197.0" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1197.0" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1224.1" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1224.1" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1251.2" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1251.2" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1278.3" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1278.3" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1305.4" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1305.4" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1332.5" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1332.5" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1359.5" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1359.5" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1386.6" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1386.6" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1413.7" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1413.7" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1440.8" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1440.8" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1467.9" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1467.9" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1495.0" y="447.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1495.0" y="730.0" width="8.0" height="13.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1172.0" y="474.0" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1515.0" y="474.0" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1172.0" y="507.4" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1515.0" y="507.4" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1172.0" y="540.9" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1515.0" y="540.9" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1172.0" y="574.3" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1515.0" y="574.3" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1172.0" y="607.7" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1515.0" y="607.7" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1172.0" y="641.1" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1515.0" y="641.1" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1172.0" y="674.6" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1515.0" y="674.6" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1172.0" y="708.0" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<rect x="1515.0" y="708.0" width="13.0" height="8.0" rx="1.0" fill="#64748b" stroke="#64748b" stroke-width="0" />
+<text x="1350.0" y="514.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="31" font-weight="760" fill="#ffffff" >Kunpeng CPU</text>
+<text x="1350.0" y="554.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="19" font-weight="560" fill="#dbeafe" >scheduler / metadata / SVE / fallback</text>
+<rect x="1005.0" y="790.0" width="205.0" height="90.0" rx="12.0" fill="#fff7ed" stroke="#c2410c" stroke-width="2.3" />
+<text x="1107.0" y="824.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="22" font-weight="800" fill="#9a3412" >PCIe / DMA</text>
+<text x="1107.0" y="856.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="600" fill="#7c2d12" >D2H / H2D / stream</text>
+<rect x="325.0" y="255.0" width="280.0" height="135.0" rx="14.0" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.3" />
+<text x="465.0" y="302.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="24" font-weight="800" fill="#075985" >Runtime 控制面</text>
+<text x="465.0" y="330.9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="560" fill="#0f172a" >scheduler / sampler</text>
+<text x="465.0" y="349.2" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="560" fill="#0f172a" >cache manager / connector</text>
+<rect x="345.0" y="500.0" width="210.0" height="120.0" rx="14.0" fill="#fef9c3" stroke="#a16207" stroke-width="2" />
+<text x="450.0" y="540.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="23" font-weight="800" fill="#854d0e" >请求 / 会话</text>
+<text x="450.0" y="568.9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="560" fill="#334155" >prompt / output</text>
+<text x="450.0" y="587.1" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="560" fill="#334155" >prefix reuse / SLO</text>
+<rect x="540.0" y="455.0" width="98.0" height="72.0" rx="8.0" fill="#bae6fd" stroke="#0284c7" stroke-width="1.8" />
+<text x="589.0" y="481.9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >HBM</text>
+<text x="589.0" y="500.2" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >weights</text>
+<rect x="540.0" y="560.0" width="98.0" height="72.0" rx="8.0" fill="#bae6fd" stroke="#0284c7" stroke-width="1.8" />
+<text x="589.0" y="586.9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >HBM</text>
+<text x="589.0" y="605.1" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >KV hot</text>
+<rect x="820.0" y="360.0" width="98.0" height="72.0" rx="8.0" fill="#bae6fd" stroke="#0284c7" stroke-width="1.8" />
+<text x="869.0" y="386.9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >L2/SRAM</text>
+<text x="869.0" y="405.2" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >workspace</text>
+<rect x="820.0" y="775.0" width="98.0" height="72.0" rx="8.0" fill="#bae6fd" stroke="#0284c7" stroke-width="1.8" />
+<text x="869.0" y="801.9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >HBM</text>
+<text x="869.0" y="820.1" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >activation</text>
+<rect x="1098.0" y="535.0" width="98.0" height="72.0" rx="8.0" fill="#bae6fd" stroke="#0284c7" stroke-width="1.8" />
+<text x="1147.0" y="561.9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >NPU mem</text>
+<text x="1147.0" y="580.1" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0c4a6e" >paged KV</text>
+<rect x="708.0" y="555.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="772.0" y="555.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="836.0" y="555.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="900.0" y="555.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="964.0" y="555.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="708.0" y="598.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="772.0" y="598.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="836.0" y="598.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="900.0" y="598.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="964.0" y="598.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="708.0" y="641.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="772.0" y="641.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="836.0" y="641.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="900.0" y="641.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<rect x="964.0" y="641.0" width="42.0" height="28.0" rx="4.0" fill="#256d85" stroke="#9bd7e6" stroke-width="1" />
+<text x="865.0" y="681.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="650" fill="#e0f2fe" >prefill 算力密集 / decode 读 KV</text>
+<rect x="1235.0" y="555.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1293.0" y="555.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1351.0" y="555.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1409.0" y="555.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1235.0" y="597.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1293.0" y="597.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1351.0" y="597.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1409.0" y="597.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1235.0" y="639.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1293.0" y="639.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1351.0" y="639.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1409.0" y="639.0" width="38.0" height="28.0" rx="4.0" fill="#7249a2" stroke="#d8b4fe" stroke-width="1" />
+<rect x="1235.0" y="648.0" width="112.0" height="34.0" rx="8.0" fill="#f3e8ff" stroke="#7e22ce" stroke-width="1.4" />
+<text x="1291.0" y="667.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="650" fill="#0f172a" >NUMA</text>
+<rect x="1360.0" y="648.0" width="112.0" height="34.0" rx="8.0" fill="#f3e8ff" stroke="#7e22ce" stroke-width="1.4" />
+<text x="1416.0" y="667.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="650" fill="#0f172a" >SVE/SME</text>
+<text x="1420.0" y="255.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="19" font-weight="800" fill="#166534" >CPU DDR / NUMA / pinned memory / host KV pool</text>
+<rect x="1255.0" y="285.0" width="455.0" height="34.0" rx="7.0" fill="#bbf7d0" stroke="#15803d" stroke-width="1.8" />
+<rect x="1270.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1304.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1338.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1372.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1406.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1440.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1474.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1508.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1542.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1576.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1610.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1644.0" y="292.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<text x="1685.0" y="307.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="800" fill="#14532d" >DDR0</text>
+<rect x="1255.0" y="340.0" width="455.0" height="34.0" rx="7.0" fill="#bbf7d0" stroke="#15803d" stroke-width="1.8" />
+<rect x="1270.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1304.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1338.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1372.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1406.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1440.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1474.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1508.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1542.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1576.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1610.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1644.0" y="347.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<text x="1685.0" y="362.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="800" fill="#14532d" >DDR1</text>
+<rect x="1255.0" y="395.0" width="455.0" height="34.0" rx="7.0" fill="#bbf7d0" stroke="#15803d" stroke-width="1.8" />
+<rect x="1270.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1304.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1338.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1372.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1406.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1440.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1474.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1508.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1542.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1576.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1610.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1644.0" y="402.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<text x="1685.0" y="417.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="800" fill="#14532d" >DDR2</text>
+<rect x="1255.0" y="450.0" width="455.0" height="34.0" rx="7.0" fill="#bbf7d0" stroke="#15803d" stroke-width="1.8" />
+<rect x="1270.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1304.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1338.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1372.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1406.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1440.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1474.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1508.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1542.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1576.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1610.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<rect x="1644.0" y="457.0" width="18.0" height="20.0" rx="2.0" fill="#65a30d" stroke="#3f6212" stroke-width="0.5" />
+<text x="1685.0" y="472.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="800" fill="#14532d" >DDR3</text>
+<text x="1438.0" y="920.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="19" font-weight="800" fill="#6d28d9" >NVMe / SSD / local object store</text>
+<rect x="1195.0" y="945.0" width="520.0" height="38.0" rx="8.0" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.8" />
+<rect x="1215.0" y="955.0" width="68.0" height="18.0" rx="4.0" fill="#a78bfa" stroke="#6d28d9" stroke-width="0.8" />
+<text x="1455.0" y="969.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="700" fill="#3b0764" >KV cold tier</text>
+<rect x="1195.0" y="1002.0" width="520.0" height="38.0" rx="8.0" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.8" />
+<rect x="1215.0" y="1012.0" width="68.0" height="18.0" rx="4.0" fill="#a78bfa" stroke="#6d28d9" stroke-width="0.8" />
+<text x="1455.0" y="1026.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="700" fill="#3b0764" >expert cold tier</text>
+<rect x="1195.0" y="1059.0" width="520.0" height="38.0" rx="8.0" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.8" />
+<rect x="1215.0" y="1069.0" width="68.0" height="18.0" rx="4.0" fill="#a78bfa" stroke="#6d28d9" stroke-width="0.8" />
+<text x="1455.0" y="1083.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="700" fill="#3b0764" >SSD/NFS/3FS backend</text>
+<rect x="760.0" y="1010.0" width="350.0" height="110.0" rx="14.0" fill="#f5f3ff" stroke="#6d28d9" stroke-width="2" />
+<text x="935.0" y="1052.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="20" font-weight="800" fill="#5b21b6" >CXL / Fabric Mem / remote memory</text>
+<text x="935.0" y="1089.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="560" fill="#334155" >capacity tier / warm-cold boundary</text>
+<rect x="315.0" y="830.0" width="300.0" height="150.0" rx="14.0" fill="#dcfce7" stroke="#15803d" stroke-width="2.2" />
+<text x="465.0" y="874.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="24" font-weight="800" fill="#166534" >NIC / RDMA</text>
+<text x="465.0" y="904.9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="560" fill="#0f172a" >NIXL / Mooncake</text>
+<text x="465.0" y="923.1" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="560" fill="#0f172a" >P/D transfer / remote H2D</text>
+<rect x="325.0" y="1030.0" width="330.0" height="130.0" rx="14.0" fill="#e2e8f0" stroke="#475569" stroke-width="2.2" />
+<text x="490.0" y="1070.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="23" font-weight="800" fill="#334155" >Profiler + Simulator</text>
+<text x="490.0" y="1100.8" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="560" fill="#0f172a" >timeline / counters / power</text>
+<text x="490.0" y="1119.1" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="560" fill="#0f172a" >TTFT / TPOT / P99 / stall_reason</text>
+<rect x="700.0" y="205.0" width="495.0" height="135.0" rx="14.0" fill="#fff1f2" stroke="#be123c" stroke-width="2.2" />
+<text x="948.0" y="247.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="24" font-weight="800" fill="#9f1239" >统一 State Object Ledger</text>
+<text x="948.0" y="288.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="650" fill="#334155" >KV / expert / prefix / weight / activation / latent</text>
+<text x="948.0" y="316.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#475569" >bytes · tier · hotness · next_use · load/evict/recompute cost</text>
+<line x1="555.0" y1="560.0" x2="650.0" y2="560.0" stroke="#e4572e" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow-hot)"/>
+<line x1="605.0" y1="323.0" x2="650.0" y2="468.0" stroke="#475569" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow-control)"/>
+<path d="M 605 340 C 705 345, 700 268, 700 268" fill="none" stroke="#475569" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-control)" stroke-dasharray="7 8"/>
+<line x1="1080.0" y1="632.0" x2="1185.0" y2="603.0" stroke="#e4572e" stroke-width="6" stroke-linecap="round" marker-end="url(#arrow-hot)"/>
+<path d="M 990 735 C 1030 770, 1060 790, 1107 790" fill="none" stroke="#0b7285" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-warm)"/>
+<line x1="1107.0" y1="790.0" x2="1280.0" y2="730.0" stroke="#0b7285" stroke-width="6" stroke-linecap="round" marker-end="url(#arrow-warm)"/>
+<path d="M 1210 835 C 1285 830, 1320 760, 1360 730" fill="none" stroke="#0b7285" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-warm)"/>
+<path d="M 1395 730 C 1455 820, 1500 890, 1500 945" fill="none" stroke="#7b2cbf" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-cold)"/>
+<path d="M 1220 975 C 1120 975, 1035 1010, 985 1010" fill="none" stroke="#7b2cbf" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-cold)"/>
+<path d="M 935 1010 C 780 955, 670 920, 615 900" fill="none" stroke="#0b7285" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-warm)"/>
+<path d="M 615 900 C 760 845, 980 855, 1005 835" fill="none" stroke="#0b7285" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-warm)"/>
+<path d="M 1515 590 C 1620 650, 1640 795, 1515 945" fill="none" stroke="#7b2cbf" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-cold)" stroke-dasharray="10 8"/>
+<path d="M 655 1095 C 800 1060, 905 925, 1005 850" fill="none" stroke="#475569" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-control)" stroke-dasharray="8 8"/>
+<path d="M 655 1095 C 940 1155, 1320 1110, 1440 1097" fill="none" stroke="#475569" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-control)" stroke-dasharray="8 8"/>
+<rect x="705.0" y="840.0" width="250.0" height="42.0" rx="20.0" fill="#fff7ed" stroke="#e4572e" stroke-width="1.5" />
+<text x="830.0" y="867.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="800" fill="#e4572e" >热路径：NPU/HBM/token</text>
+<rect x="965.0" y="900.0" width="280.0" height="42.0" rx="20.0" fill="#ecfeff" stroke="#0b7285" stroke-width="1.5" />
+<text x="1105.0" y="927.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="800" fill="#0b7285" >温路径：HBM ⇄ DDR</text>
+<rect x="1305.0" y="1130.0" width="320.0" height="42.0" rx="20.0" fill="#f5f3ff" stroke="#7b2cbf" stroke-width="1.5" />
+<text x="1465.0" y="1157.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="800" fill="#7b2cbf" >冷路径：DDR ⇄ SSD/remote</text>
+<rect x="420.0" y="1168.0" width="315.0" height="42.0" rx="20.0" fill="#f8fafc" stroke="#475569" stroke-width="1.5" />
+<text x="578.0" y="1195.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="800" fill="#475569" >观测：trace/counter/power</text>
+<rect x="185.0" y="236.0" width="90.0" height="34.0" rx="17.0" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
+<text x="230.0" y="258.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0f172a" >L0</text>
+<text x="286.0" y="259.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="550" fill="#475569" >workload</text>
+<rect x="185.0" y="406.0" width="90.0" height="34.0" rx="17.0" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
+<text x="230.0" y="428.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0f172a" >L1</text>
+<text x="286.0" y="429.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="550" fill="#475569" >accelerator compute</text>
+<rect x="185.0" y="586.0" width="90.0" height="34.0" rx="17.0" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
+<text x="230.0" y="608.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0f172a" >L2-L3</text>
+<text x="286.0" y="609.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="550" fill="#475569" >HBM + state layout</text>
+<rect x="185.0" y="766.0" width="90.0" height="34.0" rx="17.0" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
+<text x="230.0" y="788.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0f172a" >L4-L7</text>
+<text x="286.0" y="789.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="550" fill="#475569" >DMA / PCIe / fabric</text>
+<rect x="185.0" y="946.0" width="90.0" height="34.0" rx="17.0" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
+<text x="230.0" y="968.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0f172a" >L8-L9</text>
+<text x="286.0" y="969.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="550" fill="#475569" >SSD / RDMA / remote</text>
+<rect x="185.0" y="1126.0" width="90.0" height="34.0" rx="17.0" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
+<text x="230.0" y="1148.0" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="800" fill="#0f172a" >L10-L11</text>
+<text x="286.0" y="1149.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="13" font-weight="550" fill="#475569" >runtime / telemetry</text>
+<rect x="55.0" y="190.0" width="285.0" height="150.0" rx="12.0" fill="#ffffff" stroke="#475569" stroke-width="2.2" filter="url(#soft-shadow)"/>
+<rect x="55.0" y="190.0" width="10.0" height="150.0" rx="8.0" fill="#475569" stroke="#475569" stroke-width="0" />
+<text x="79.0" y="224.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="21" font-weight="760" fill="#475569" >L0 / L10 控制面</text>
+<text x="79.0" y="253.2" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >ServeGen：真实负载</text>
+<text x="79.0" y="272.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >Mooncake / Bidaw：队列</text>
+<text x="79.0" y="290.8" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >vLLM connector：cache 命中</text>
+<rect x="55.0" y="390.0" width="285.0" height="170.0" rx="12.0" fill="#ffffff" stroke="#e4572e" stroke-width="2.2" filter="url(#soft-shadow)"/>
+<rect x="55.0" y="390.0" width="10.0" height="170.0" rx="8.0" fill="#e4572e" stroke="#e4572e" stroke-width="0" />
+<text x="79.0" y="424.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="21" font-weight="760" fill="#e4572e" >L1 / L2 主算与 HBM</text>
+<text x="79.0" y="453.2" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >prefill：算力密集</text>
+<text x="79.0" y="472.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >decode：频繁读 KV</text>
+<text x="79.0" y="490.8" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >KV / weights / workspace 争 HBM</text>
+<rect x="55.0" y="795.0" width="285.0" height="168.0" rx="12.0" fill="#ffffff" stroke="#0b7285" stroke-width="2.2" filter="url(#soft-shadow)"/>
+<rect x="55.0" y="795.0" width="10.0" height="168.0" rx="8.0" fill="#0b7285" stroke="#0b7285" stroke-width="0" />
+<text x="79.0" y="829.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="21" font-weight="760" fill="#0b7285" >L9 远端数据面</text>
+<text x="79.0" y="858.2" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >RDMA / NIXL / Mooncake</text>
+<text x="79.0" y="877.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >P/D transfer / KV exchange</text>
+<text x="79.0" y="895.8" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >remote H2D 必须可重叠</text>
+<rect x="1815.0" y="230.0" width="330.0" height="178.0" rx="12.0" fill="#ffffff" stroke="#dc2626" stroke-width="2.2" filter="url(#soft-shadow)"/>
+<rect x="1815.0" y="230.0" width="10.0" height="178.0" rx="8.0" fill="#dc2626" stroke="#dc2626" stroke-width="0" />
+<text x="1839.0" y="264.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="21" font-weight="760" fill="#dc2626" >NEO 硬件切面</text>
+<text x="1839.0" y="283.9" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >KV 留在 CPU DDR</text>
+<text x="1839.0" y="302.6" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >CPU 跑部分 decode attention</text>
+<text x="1839.0" y="321.4" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >PCIe 只搬必要小张量</text>
+<text x="1839.0" y="340.1" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >CPU/GPU pipeline 隐藏慢路径</text>
+<rect x="1815.0" y="455.0" width="330.0" height="192.0" rx="12.0" fill="#ffffff" stroke="#7b2cbf" stroke-width="2.2" filter="url(#soft-shadow)"/>
+<rect x="1815.0" y="455.0" width="10.0" height="192.0" rx="8.0" fill="#7b2cbf" stroke="#7b2cbf" stroke-width="0" />
+<text x="1839.0" y="489.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="21" font-weight="760" fill="#7b2cbf" >Tutti / SSD 切面</text>
+<text x="1839.0" y="508.9" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >SSD-backed KV 的核心风险：</text>
+<text x="1839.0" y="527.6" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >tiny random I/O</text>
+<text x="1839.0" y="546.4" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >CPU control path</text>
+<text x="1839.0" y="565.1" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >DRAM-HBM bounce 与 NPU stall</text>
+<rect x="1815.0" y="705.0" width="330.0" height="190.0" rx="12.0" fill="#ffffff" stroke="#0f766e" stroke-width="2.2" filter="url(#soft-shadow)"/>
+<rect x="1815.0" y="705.0" width="10.0" height="190.0" rx="8.0" fill="#0f766e" stroke="#0f766e" stroke-width="0" />
+<text x="1839.0" y="739.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="21" font-weight="760" fill="#0f766e" >Ascend + Kunpeng 路线</text>
+<text x="1839.0" y="758.9" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >P0：CPU KV warm tier</text>
+<text x="1839.0" y="777.6" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >P1：UCM / KV Pool / Mooncake</text>
+<text x="1839.0" y="796.4" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >P2：SSD cold tier</text>
+<text x="1839.0" y="815.1" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >P3：NPU-native storage path</text>
+<rect x="1815.0" y="955.0" width="330.0" height="178.0" rx="12.0" fill="#ffffff" stroke="#334155" stroke-width="2.2" filter="url(#soft-shadow)"/>
+<rect x="1815.0" y="955.0" width="10.0" height="178.0" rx="8.0" fill="#334155" stroke="#334155" stroke-width="0" />
+<text x="1839.0" y="989.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="21" font-weight="760" fill="#334155" >仿真器最小字段</text>
+<text x="1839.0" y="1008.9" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >object_id / tier / bytes</text>
+<text x="1839.0" y="1027.6" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >next_use / load_cost</text>
+<text x="1839.0" y="1046.4" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >evict / recompute / overlap</text>
+<text x="1839.0" y="1065.1" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="14" font-weight="500" fill="#334155" >stall_reason / TTFT / TPOT / P99</text>
+<line x1="340.0" y1="305.0" x2="325.0" y2="315.0" stroke="#475569" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow-control)"/>
+<line x1="340.0" y1="470.0" x2="650.0" y2="520.0" stroke="#e4572e" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow-hot)"/>
+<line x1="340.0" y1="880.0" x2="315.0" y2="900.0" stroke="#0b7285" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow-warm)"/>
+<line x1="1815.0" y1="318.0" x2="1515.0" y2="595.0" stroke="#e4572e" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow-hot)"/>
+<line x1="1815.0" y1="540.0" x2="1510.0" y2="965.0" stroke="#7b2cbf" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow-cold)"/>
+<line x1="1815.0" y1="780.0" x2="1510.0" y2="730.0" stroke="#0b7285" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow-warm)"/>
+<line x1="1815.0" y1="1040.0" x2="655.0" y2="1095.0" stroke="#475569" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow-control)" stroke-dasharray="8 8"/>
+<rect x="780.0" y="1272.0" width="770.0" height="74.0" rx="16.0" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+<circle cx="820" cy="1310" r="9" fill="#e4572e"/>
+<text x="838.0" y="1315.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="650" fill="#334155" >热路径：主算/本地 HBM</text>
+<circle cx="1045" cy="1310" r="9" fill="#0b7285"/>
+<text x="1063.0" y="1315.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="650" fill="#334155" >温路径：CPU DDR / DMA</text>
+<circle cx="1290" cy="1310" r="9" fill="#7b2cbf"/>
+<text x="1308.0" y="1315.0" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="15" font-weight="650" fill="#334155" >冷路径：SSD / remote</text>
+<rect x="1585.0" y="1272.0" width="540.0" height="74.0" rx="16.0" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+<text x="1615.0" y="1300.2" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="800" fill="#0f172a" >判定规则：对象是什么、跨哪条链路、</text>
+<text x="1615.0" y="1319.8" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif" font-size="16" font-weight="800" fill="#0f172a" >是否可被主流水线隐藏。</text>
+</svg>

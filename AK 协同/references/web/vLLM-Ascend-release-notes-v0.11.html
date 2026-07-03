@@ -1,0 +1,2013 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Release Notes &#8212; vllm-ascend</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../_static/togglebutton.js?v=1ae7504c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/release_notes';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contributing" href="../developer_guide/contribution/index.html" />
+    <link rel="prev" title="Mooncacke Store Deployment Guide" href="feature_guide/kv_pool_mooncake.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <script async type="text/javascript" src="/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="vllm-ascend" /><meta name="readthedocs-version-slug" content="v0.11.0" /><meta name="readthedocs-resolver-filename" content="/user_guide/release_notes.html" /><meta name="readthedocs-http-status" content="200" /></head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none"><!--
+  **********************************************************************
+  * Copyright (c) 2025 Huawei Technologies Co., Ltd. All Rights Reserved.
+  * Copyright 2023 The vLLM team.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  * This file is a part of the vllm-ascend project.
+  * Adapted from https://github.com/vllm-project/vllm/blob/main/docs/source/_templates/sections/header.html
+  **********************************************************************
+-->
+<style>
+    .notification-bar {
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+    }
+    .notification-bar p {
+      margin: 0;
+    }
+    .notification-bar a {
+      font-weight: bold;
+      text-decoration: none;
+    }
+  
+    /* Light mode styles (default) */
+    .notification-bar {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .notification-bar a {
+      color: #d97706;
+    }
+  
+    /* Dark mode styles */
+    html[data-theme=dark] .notification-bar {
+      background-color: #333;
+      color: #ddd;
+    }
+    html[data-theme=dark] .notification-bar a {
+      color: #ffa500; /* Brighter color for visibility */
+    }
+  </style>
+  
+  <div class="notification-bar">
+    <p>You are viewing the latest stable docs.</p>
+  </div>
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/vllm-ascend-logo-text-light.png" class="logo__image only-light" alt="vllm-ascend - Home"/>
+    <script>document.write(`<img src="../_static/vllm-ascend-logo-text-light.png" class="logo__image only-dark" alt="vllm-ascend - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorials/index.html">Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/single_npu.html">Single NPU (Qwen3 8B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/single_npu_multimodal.html">Single NPU (Qwen2.5-VL 7B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/single_npu_audio.html">Single NPU (Qwen2-Audio 7B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/single_npu_qwen3_embedding.html">Single NPU (Qwen3-Embedding-8B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/single_npu_qwen3_quantization.html">Single-NPU (Qwen3 8B W4A8)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/single_node_pd_disaggregation_llmdatadist.html">Prefill-Decode Disaggregation Llmdatadist Verification (Qwen2.5-VL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_npu_qwen3_next.html">Multi-NPU (Qwen3-Next)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_npu.html">Multi-NPU (QwQ 32B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_npu_moge.html">Multi-NPU (Pangu Pro MoE)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_npu_qwen3_moe.html">Multi-NPU (Qwen3-30B-A3B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_npu_quantization.html">Multi-NPU (QwQ 32B W8A8)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/single_node_300i.html">Single Node (Atlas 300I Series)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi-node_dsv3.2.html">Multi-Node (DeepSeek V3.2)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_node.html">Multi-Node-DP (DeepSeek)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_node_kimi.html">Multi-Node-DP (Kimi-K2)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_node_qwen3vl.html">Multi-Node-DP (Qwen3-VL-235B-A22B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_node_pd_disaggregation_llmdatadist.html">Prefill-Decode Disaggregation Llmdatadist Verification (Qwen)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_node_pd_disaggregation_mooncake.html">Prefill-Decode Disaggregation Mooncake Verification (Qwen)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multi_node_ray.html">Multi-Node-Ray (Qwen/Qwen3-235B-A22B)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../faqs.html">FAQs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="support_matrix/index.html">Features and Models</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="support_matrix/supported_models.html">Supported Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="support_matrix/supported_features.html">Supported Features</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="configuration/index.html">Configuration Guide</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="configuration/env_vars.html">Environment Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration/additional_config.html">Additional Configuration</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="feature_guide/index.html">Feature Guide</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="feature_guide/graph_mode.html">Graph Mode Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="feature_guide/quantization.html">Quantization Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="feature_guide/sleep_mode.html">Sleep Mode Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="feature_guide/structured_output.html">Structured Output Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="feature_guide/lora.html">LoRA Adapters Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="feature_guide/eplb_swift_balancer.html">Expert Load Balance (EPLB)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="feature_guide/kv_pool_mooncake.html">Mooncacke Store Deployment Guide</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Release Notes</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../developer_guide/contribution/index.html">Contributing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/contribution/testing.html">Testing</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../developer_guide/feature_guide/index.html">Feature Guide</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/feature_guide/patch.html">Patch in vLLM Ascend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/feature_guide/ModelRunner_prepare_inputs.html">Prepare inputs for model forwarding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/feature_guide/disaggregated_prefill.html">Disaggregated-prefill</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/feature_guide/eplb_swift_balancer.html">Expert Parallelism Load Balancer (EPLB)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/feature_guide/Multi_Token_Prediction.html">Multi Token Prediction (MTP)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/feature_guide/ACL_Graph.html">ACL Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/feature_guide/KV_Cache_Pool_Guide.html">KV Cache Pool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/feature_guide/add_custom_aclnn_op.html">Adding a custom aclnn operation</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../developer_guide/evaluation/index.html">Accuracy</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/evaluation/using_evalscope.html">Using EvalScope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/evaluation/using_lm_eval.html">Using lm-eval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/evaluation/using_opencompass.html">Using OpenCompass</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../developer_guide/evaluation/accuracy_report/index.html">Accuracy Report</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../developer_guide/evaluation/accuracy_report/DeepSeek-V2-Lite.html">deepseek-ai/DeepSeek-V2-Lite</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer_guide/evaluation/accuracy_report/Qwen2.5-VL-7B-Instruct.html">Qwen/Qwen2.5-VL-7B-Instruct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer_guide/evaluation/accuracy_report/Qwen3-30B-A3B.html">Qwen/Qwen3-30B-A3B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../developer_guide/evaluation/accuracy_report/Qwen3-8B-Base.html">Qwen/Qwen3-8B-Base</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../developer_guide/performance/index.html">Performance</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/performance/performance_benchmark.html">Performance Benchmark</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/performance/profile_execute_duration.html">Profile Execute Duration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/performance/optimization_and_tuning.html">Optimization and Tuning</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../developer_guide/modeling/index.html">Modeling</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/modeling/adding_a_new_model.html">Adding a New Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/modeling/adding_a_new_multimodal_model.html">Adding a New Multimodal Model</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../community/governance.html">Governance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/contributors.html">Maintainers and contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/versioning_policy.html">Versioning Policy</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../community/user_stories/index.html">User stories</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../community/user_stories/llamafactory.html">LLaMA-Factory</a></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/vllm-project/vllm-ascend" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/vllm-project/vllm-ascend/edit/main/docs/source/user_guide/release_notes.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/user_guide/release_notes.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Release Notes</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0-2025-12-16">v0.11.0 - 2025.12.16</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#highlights">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#other">Other</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deprecation-announcement">Deprecation announcement</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#upgrade-notice">Upgrade notice</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#known-issues">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0rc3-2025-12-03">v0.11.0rc3 - 2025.12.03</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Other</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0rc2-2025-11-21">v0.11.0rc2 - 2025.11.21</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#core">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Other</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0rc1-2025-11-10">v0.11.0rc1 - 2025.11.10</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Other</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#known-issue">Known issue</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0rc0-2025-09-30">v0.11.0rc0 - 2025.09.30</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#others">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-10-2rc1-2025-09-16">v0.10.2rc1 - 2025.09.16</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id13">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id14">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-10-1rc1-2025-09-04">v0.10.1rc1 - 2025.09.04</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id15">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id16">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id17">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id18">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-1-2025-09-03">v0.9.1 - 2025.09.03</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id19">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#note">Note</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id20">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changes">Changes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id21">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-1rc3-2025-08-22">v0.9.1rc3 - 2025.08.22</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id22">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#docs">Docs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id23">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-10-0rc1-2025-08-07">v0.10.0rc1 - 2025.08.07</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id24">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id25">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id26">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id27">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-1rc2-2025-08-04">v0.9.1rc2 - 2025.08.04</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id28">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-improvement">Model Improvement</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#graph-mode-improvement">Graph Mode Improvement</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#operator-improvement">Operator Improvement</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id29">Core:</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id30">Docs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id31">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-2rc1-2025-07-11">v0.9.2rc1 - 2025.07.11</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id32">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id33">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id34">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id35">Known Issues</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#new-contributors">New Contributors</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-1rc1-2025-06-22">v0.9.1rc1 - 2025.06.22</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#experimental">Experimental</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id36">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#other-improvements">Other Improvements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id37">Known Issues</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#full-changelog">Full Changelog</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id38">New Contributors</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-0rc2-2025-06-10">v0.9.0rc2 - 2025.06.10</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id39">Highlights</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-0rc1-2025-06-09">v0.9.0rc1 - 2025.06.09</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id40">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id41">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#models">Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id42">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id43">Known Issue</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-3-post1-2025-05-29">v0.7.3.post1 - 2025.05.29</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id44">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bug-fixes">Bug Fixes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id45">Docs</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-3-2025-05-08">v0.7.3 - 2025.05.08</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id46">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id47">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id48">Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id49">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-8-5rc1-2025-05-06">v0.8.5rc1 - 2025.05.06</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id50">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id51">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id52">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-8-4rc2-2025-04-29">v0.8.4rc2 - 2025.04.29</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id53">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id54">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id55">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-8-4rc1-2025-04-18">v0.8.4rc1 - 2025.04.18</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id56">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id57">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id58">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-3rc2-2025-03-29">v0.7.3rc2 - 2025.03.29</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id59">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id60">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id61">Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id62">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-3rc1-2025-03-14">v0.7.3rc1 - 2025.03.14</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id63">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id64">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id65">Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id66">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id67">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-1rc1-2025-02-19">v0.7.1rc1 - 2025.02.19</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id68">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id69">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id70">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id71">Known Issues</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="release-notes">
+<h1>Release Notes<a class="headerlink" href="#release-notes" title="Link to this heading">#</a></h1>
+<section id="v0-11-0-2025-12-16">
+<h2>v0.11.0 - 2025.12.16<a class="headerlink" href="#v0-11-0-2025-12-16" title="Link to this heading">#</a></h2>
+<p>We’re excited to announce the release of v0.11.0 for vLLM Ascend. This is the official release for v0.11.0. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.11.0-dev">official doc</a> to get started. We’ll consider to release post version in the future if needed. This release note will only contain the important change and note from v0.11.0rc3.</p>
+<section id="highlights">
+<h3>Highlights<a class="headerlink" href="#highlights" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Improved the performance for deepseek 3/3.1. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3995">#3995</a></p></li>
+<li><p>Fixed the accuracy bug for qwen3-vl. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4811">#4811</a></p></li>
+<li><p>Improved the performance of sample. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4153">#4153</a></p></li>
+<li><p>Eagle3 is back now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4721">#4721</a></p></li>
+</ul>
+</section>
+<section id="other">
+<h3>Other<a class="headerlink" href="#other" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Improved the performance for kimi-k2.  <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4555">#4555</a></p></li>
+<li><p>Fixed a quantization bug for deepseek3.2-exp. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4797">#4797</a></p></li>
+<li><p>Fixed qwen3-vl-moe bug under high concurrency. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4658">#4658</a></p></li>
+<li><p>Fixed an accuracy bug for Prefill Decode disaggregation case. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4437">#4437</a></p></li>
+<li><p>Fixed some bugs for EPLB <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4576">#4576</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4777">#4777</a></p></li>
+<li><p>Fixed the version incompatibility issue for openEuler docker image. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4745">#4745</a></p></li>
+</ul>
+</section>
+<section id="deprecation-announcement">
+<h3>Deprecation announcement<a class="headerlink" href="#deprecation-announcement" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>LLMdatadist connector has been deprecated, it’ll be removed in v0.12.0rc1</p></li>
+<li><p>Torchair graph has been deprecated, it’ll be removed in v0.12.0rc1</p></li>
+<li><p>Ascend scheduler has been deprecated, it’ll be removed in v0.12.0rc1</p></li>
+</ul>
+</section>
+<section id="upgrade-notice">
+<h3>Upgrade notice<a class="headerlink" href="#upgrade-notice" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>torch-npu is upgraded to 2.7.1.post1. Please note that the package is pushed to <a class="reference external" href="https://mirrors.huaweicloud.com/ascend/repos/pypi/torch-npu/">pypi mirror</a>. So it’s hard to add it to auto dependence. Please install it by yourself.</p></li>
+<li><p>CANN is upgraded to 8.3.rc2.</p></li>
+</ul>
+</section>
+<section id="known-issues">
+<h3>Known Issues<a class="headerlink" href="#known-issues" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Qwen3-Next doesn’t support expert parallel and MTP features in this release. And it’ll be oom if the input is too long. We’ll improve it in the next release</p></li>
+<li><p>Deepseek 3.2 only work with torchair graph mode in this release. We’ll make it work with aclgraph mode in the next release.</p></li>
+<li><p>Qwen2-audio doesn’t work by default. Temporary solution is to set <code class="docutils literal notranslate"><span class="pre">--gpu-memory-utilization</span></code> to a suitable value, such as 0.8.</p></li>
+<li><p>CPU bind feature doesn’t work if more than one vLLM instance is running on the same node.</p></li>
+</ul>
+</section>
+</section>
+<section id="v0-11-0rc3-2025-12-03">
+<h2>v0.11.0rc3 - 2025.12.03<a class="headerlink" href="#v0-11-0rc3-2025-12-03" title="Link to this heading">#</a></h2>
+<p>This is the third release candidate of v0.11.0 for vLLM Ascend. For quality reasons, we released a new rc before the official release. Thanks for all your feedback. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.11.0-dev">official doc</a> to get started.</p>
+<section id="id1">
+<h3>Highlights<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>torch-npu is upgraded to 2.7.1.post1. Please note that the package is pushed to <a class="reference external" href="https://mirrors.huaweicloud.com/ascend/repos/pypi/torch-npu/">pypi mirror</a>. So it’s hard to add it to auto dependence. Please install it by yourself.</p></li>
+<li><p>Disable NZ weight loader to speed up dense model. Please note that this is a temporary solution. If you find the performance becomes bad, please let us know. We’ll keep improving it. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4495">#4495</a></p></li>
+<li><p>mooncake is installed in official docker image now. You can use it directly in container now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4506">#4506</a></p></li>
+</ul>
+</section>
+<section id="id2">
+<h3>Other<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fix an OOM issue for moe models. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4367">#4367</a></p></li>
+<li><p>Fix hang issue of multimodal model when running with DP&gt;1 <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4393">#4393</a></p></li>
+<li><p>Fix some bugs for EPLB <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4416">#4416</a></p></li>
+<li><p>Fix bug for mtp&gt;1 + lm_head_tp&gt;1 case <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4360">#4360</a></p></li>
+<li><p>Fix a accuracy issue when running vLLM serve for long time. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4117">#4117</a></p></li>
+<li><p>Fix a function bug when running qwen2.5 vl under high concurrency. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4553">#4553</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-11-0rc2-2025-11-21">
+<h2>v0.11.0rc2 - 2025.11.21<a class="headerlink" href="#v0-11-0rc2-2025-11-21" title="Link to this heading">#</a></h2>
+<p>This is the second release candidate of v0.11.0 for vLLM Ascend. In this release, we solved many bugs to improve the quality. Thanks for all your feedback. We’ll keep working on bug fix and performance improvement. The v0.11.0 official release will come soon. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.11.0-dev">official doc</a> to get started.</p>
+<section id="id3">
+<h3>Highlights<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>CANN is upgraded to 8.3.RC2. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4332">#4332</a></p></li>
+<li><p>Ngram spec decode method is back now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4092">#4092</a></p></li>
+<li><p>The performance of aclgraph is improved by updating default capture size. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4205">#4205</a></p></li>
+</ul>
+</section>
+<section id="core">
+<h3>Core<a class="headerlink" href="#core" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Speed up vLLM startup time. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4099">#4099</a></p></li>
+<li><p>Kimi k2 with quantization works now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4190">#4190</a></p></li>
+<li><p>Fix a bug for qwen3-next. It’s more stable now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4025">#4025</a></p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>Other<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fix an issue for full decode only mode. Full graph mode is more stable now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4106">#4106</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4282">#4282</a></p></li>
+<li><p>Fix a allgather ops bug for DeepSeek V3 series models. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3711">#3711</a></p></li>
+<li><p>Fix some bugs for EPLB feature. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4150">#4150</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4334">#4334</a></p></li>
+<li><p>Fix a bug that vl model doesn’t work on x86 machine. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4285">#4285</a></p></li>
+<li><p>Support ipv6 for prefill disaggregation proxy. Please note that mooncake connector doesn’t work with ipv6. We’re working on it. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4242">#4242</a></p></li>
+<li><p>Add a check that to ensure EPLB only support w8a8 method for quantization case. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4315">#4315</a></p></li>
+<li><p>Add a check that to ensure FLASHCOMM feature doesn’t work with vl model. It’ll be supported in 2025 Q4 <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4222">#4222</a></p></li>
+<li><p>Audio required library is installed in container. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4324">#4324</a></p></li>
+</ul>
+</section>
+<section id="id5">
+<h3>Known Issues<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Ray + EP doesn’t work, if you run vLLM Ascend with ray, please disable expert parallelism. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4123">#4123</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">response_format</span></code> parameter is not supported yet. We’ll support it soon. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/4175">#4175</a></p></li>
+<li><p>cpu bind feature doesn’t work for multi instance case(Such as multi DP on one node). We’ll fix it in the next release.</p></li>
+</ul>
+</section>
+</section>
+<section id="v0-11-0rc1-2025-11-10">
+<h2>v0.11.0rc1 - 2025.11.10<a class="headerlink" href="#v0-11-0rc1-2025-11-10" title="Link to this heading">#</a></h2>
+<p>This is the first release candidate of v0.11.0 for vLLM Ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.11.0-dev">official doc</a> to get started.
+v0.11.0 will be the next official release version of vLLM Ascend. We’ll release it in the next few days. Any feedback is welcome to help us to improve v0.11.0.</p>
+<section id="id6">
+<h3>Highlights<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>CANN is upgrade to 8.3.RC1. Torch-npu is upgrade to 2.7.1. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3945">#3945</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3896">#3896</a></p></li>
+<li><p>PrefixCache and Chunked Prefill are enabled by default. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3967">#3967</a></p></li>
+<li><p>W4A4 quantization is supported now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3427">#3427</a> Official tutorial is available at [here](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/single_npu_qwen3_w4a4.html.</p></li>
+</ul>
+</section>
+<section id="id7">
+<h3>Core<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Performance of Qwen3 and Deepseek V3 series models are improved.</p></li>
+<li><p>Mooncake layerwise connector is supported now <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2602">#2602</a>. Find tutorial <a class="reference external" href="https://docs.vllm.ai/projects/ascend/en/latest/tutorials/pd_disaggregation_mooncake_multi_node.html">here</a>.</p></li>
+<li><p>MTP &gt; 1 is supported now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2708">#2708</a></p></li>
+<li><p>[Experimental] Graph mode <code class="docutils literal notranslate"><span class="pre">FULL_DECODE_ONLY</span></code> is supported now! And <code class="docutils literal notranslate"><span class="pre">FULL</span></code> will be landing in the next few weeks. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2128">#2128</a></p></li>
+<li><p>Pooling models, such as bge-m3, are supported now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3171">#3171</a></p></li>
+</ul>
+</section>
+<section id="id8">
+<h3>Other<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Refactor the MOE module to make it clearer and easier to understand and the performance has improved in both quantitative and non-quantitative scenarios.</p></li>
+<li><p>Refactor model register module to make it easier to maintain. We’ll remove this module in Q4 2025. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3004">#3004</a></p></li>
+<li><p>Torchair is deprecated. We’ll remove it once the performance of ACL Graph is good enough. The deadline is Q1 2026.</p></li>
+<li><p>LLMDatadist KV Connector is deprecated. We’ll remove it in Q1 2026.</p></li>
+<li><p>Refactor the linear module to support features flashcomm1 and flashcomm2 in paper <a class="reference external" href="https://arxiv.org/pdf/2412.04964">flashcomm</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3004">#3004</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3334">#3334</a></p></li>
+</ul>
+</section>
+<section id="known-issue">
+<h3>Known issue<a class="headerlink" href="#known-issue" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The memory may be leaked and the service may be stuck after long time serving. This is a bug from torch-npu, we’ll upgrade and fix it soon.</p></li>
+<li><p>The accuracy of qwen2.5 VL is not very good. This is a bug lead by CANN, we fix it soon.</p></li>
+<li><p>For long sequence input case, there is no response sometimes and the kv cache usage is become higher. This is a bug for scheduler. We are working on it.</p></li>
+<li><p>Qwen2-audio doesn’t work by default, we’re fixing it. Temporary solution is to set <code class="docutils literal notranslate"><span class="pre">--gpu-memory-utilization</span></code> to a suitable value, such as 0.8.</p></li>
+<li><p>When running Qwen3-Next with expert parallel enabled, please set <code class="docutils literal notranslate"><span class="pre">HCCL_BUFFSIZE</span></code> environment variable to a suitable value, such as 1024.</p></li>
+<li><p>The accuracy of DeepSeek3.2 with aclgraph is not correct. Temporary solution is to set <code class="docutils literal notranslate"><span class="pre">cudagraph_capture_sizes</span></code> to a suitable value depending on the batch size for the input.</p></li>
+</ul>
+</section>
+</section>
+<section id="v0-11-0rc0-2025-09-30">
+<h2>v0.11.0rc0 - 2025.09.30<a class="headerlink" href="#v0-11-0rc0-2025-09-30" title="Link to this heading">#</a></h2>
+<p>This is the special release candidate of v0.11.0 for vLLM Ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to get started.</p>
+<section id="id9">
+<h3>Highlights<a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>DeepSeek V3.2 is supported now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3270">#3270</a></p></li>
+<li><p>Qwen3-vl is supported now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3103">#3103</a></p></li>
+</ul>
+</section>
+<section id="id10">
+<h3>Core<a class="headerlink" href="#id10" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>DeepSeek works with aclgraph now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2707">#2707</a></p></li>
+<li><p>MTP works with aclgraph now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2932">#2932</a></p></li>
+<li><p>EPLB is supported now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2956">#2956</a></p></li>
+<li><p>Mooncacke store kvcache connector is supported now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2913">#2913</a></p></li>
+<li><p>CPU offload connector is supported now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1659">#1659</a></p></li>
+</ul>
+</section>
+<section id="others">
+<h3>Others<a class="headerlink" href="#others" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Qwen3-next is stable now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3007">#3007</a></p></li>
+<li><p>Fixed a lot of bugs introduced in v0.10.2 by Qwen3-next. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2964">#2964</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2781">#2781</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3070">#3070</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3113">#3113</a></p></li>
+<li><p>The LoRA feature is back now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3044">#3044</a></p></li>
+<li><p>Eagle3 spec decode method is back now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2949">#2949</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-10-2rc1-2025-09-16">
+<h2>v0.10.2rc1 - 2025.09.16<a class="headerlink" href="#v0-10-2rc1-2025-09-16" title="Link to this heading">#</a></h2>
+<p>This is the 1st release candidate of v0.10.2 for vLLM Ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to get started.</p>
+<section id="id11">
+<h3>Highlights<a class="headerlink" href="#id11" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added support for Qwen3-Next. Please note that expert parallel and MTP feature doesn’t work with this release. We will make it work enough soon. Follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/latest/tutorials/multi_npu_qwen3_next.html">official guide</a> to get start. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2917">#2917</a></p></li>
+<li><p>Added quantization support for aclgraph <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2841">#2841</a></p></li>
+</ul>
+</section>
+<section id="id12">
+<h3>Core<a class="headerlink" href="#id12" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Aclgraph now works with Ray backend. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2589">#2589</a></p></li>
+<li><p>MTP now works with the token &gt; 1. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2708">#2708</a></p></li>
+<li><p>Qwen2.5 VL now works with quantization. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2778">#2778</a></p></li>
+<li><p>Improved the performance with async scheduler enabled. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2783">#2783</a></p></li>
+<li><p>Fixed the performance regression with non MLA model when use default scheduler. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2894">#2894</a></p></li>
+</ul>
+</section>
+<section id="id13">
+<h3>Others<a class="headerlink" href="#id13" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The performance of W8A8 quantization is improved. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2275">#2275</a></p></li>
+<li><p>The performance is improved for moe models. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2689">#2689</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2842">#2842</a></p></li>
+<li><p>Fixed resources limit error when apply speculative decoding and aclgraph. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2472">#2472</a></p></li>
+<li><p>Fixed the git config error in Docker images. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2746">#2746</a></p></li>
+<li><p>Fixed the sliding windows attention bug with prefill. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2758">#2758</a></p></li>
+<li><p>The official doc for Prefill-Decode Disaggregation with Qwen3 is added. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2751">#2751</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">VLLM_ENABLE_FUSED_EXPERTS_ALLGATHER_EP</span></code> env works again. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2740">#2740</a></p></li>
+<li><p>A new improvement for oproj in deepseek is added. Set <code class="docutils literal notranslate"><span class="pre">oproj_tensor_parallel_size</span></code> to enable this feature. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2167">#2167</a></p></li>
+<li><p>Fix a bug that deepseek with torchair doesn’t work as expect when <code class="docutils literal notranslate"><span class="pre">graph_batch_sizes</span></code> is set. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2760">#2760</a></p></li>
+<li><p>Avoid duplicate generation of sin_cos_cache in rope when kv_seqlen &gt; 4k. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2744">#2744</a></p></li>
+<li><p>The performance of Qwen3 dense model is improved with flashcomm_v1. Set <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_DENSE_OPTIMIZE=1</span></code> and <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_FLASHCOMM=1</span></code> to enable it. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2779">#2779</a></p></li>
+<li><p>The performance of Qwen3 dense model is improved with prefetch feature. Set <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_PREFETCH_MLP=1</span></code> to enable it. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2816">#2816</a></p></li>
+<li><p>The performance of Qwen3 MoE model is improved with rope ops update. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2571">#2571</a></p></li>
+<li><p>Fix the weight load error for RLHF case. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2756">#2756</a></p></li>
+<li><p>Add warm_up_atb step to speed up the inference. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2823">#2823</a></p></li>
+<li><p>Fixed the aclgraph steam error for moe model. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2827">#2827</a></p></li>
+</ul>
+</section>
+<section id="id14">
+<h3>Known Issues<a class="headerlink" href="#id14" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The server will hang when running Prefill Decode Disaggregation with different TP size for P and D. It’s fixed by <a class="reference external" href="https://github.com/vllm-project/vllm/pull/23917">vLLM commit</a> which is not included in v0.10.2. You can pick this commit to fix the issue.</p></li>
+<li><p>The HBM usage of Qwen3-Next is higher than expected. It is a <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2884">known issue</a> and we are working on it. You can set <code class="docutils literal notranslate"><span class="pre">max_model_len</span></code> and <code class="docutils literal notranslate"><span class="pre">gpu_memory_utilization</span></code> to suitable value based on your parallel configuration to avoid oom error.</p></li>
+<li><p>We notice that LoRA does not work with this release due to the refactor of KV cache. We will fix it soon. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2941">2941</a></p></li>
+<li><p>Please do not enable chunked prefill with prefix cache when running with Ascend scheduler. The performance and accuracy is not good/correct. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2943">#2943</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-10-1rc1-2025-09-04">
+<h2>v0.10.1rc1 - 2025.09.04<a class="headerlink" href="#v0-10-1rc1-2025-09-04" title="Link to this heading">#</a></h2>
+<p>This is the 1st release candidate of v0.10.1 for vLLM Ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to get started.</p>
+<section id="id15">
+<h3>Highlights<a class="headerlink" href="#id15" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>LoRA Performance improved much through adding Custom Kernels by China Merchants Bank. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2325">#2325</a></p></li>
+<li><p>Support Mooncake TransferEngine for kv cache register and pull_blocks style disaggregate prefill implementation. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1568">#1568</a></p></li>
+<li><p>Support capture custom ops into aclgraph now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2113">#2113</a></p></li>
+</ul>
+</section>
+<section id="id16">
+<h3>Core<a class="headerlink" href="#id16" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added MLP tensor parallel to improve performance, but note that this will increase memory usage. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2120">#2120</a></p></li>
+<li><p>openEuler is upgraded to 24.03. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2631">#2631</a></p></li>
+<li><p>Added custom lmhead tensor parallel to achieve reduced memory consumption and improved TPOT performance. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2309">#2309</a></p></li>
+<li><p>Qwen3 MoE/Qwen2.5 support torchair graph now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2403">#2403</a></p></li>
+<li><p>Support Sliding Window Attention with AscendSceduler, thus fixing Gemma3 accuracy issue. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2528">#2528</a></p></li>
+</ul>
+</section>
+<section id="id17">
+<h3>Others<a class="headerlink" href="#id17" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Bug fixes:</p>
+<ul>
+<li><p>Updated the graph capture size calculation, somehow alleviated the problem that NPU stream not enough in some scenarios. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2511">#2511</a></p></li>
+<li><p>Fixed bugs and refactor cached mask generation logic. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2442">#2442</a></p></li>
+<li><p>Fixed the nz format does not work in quantization scenarios. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2549">#2549</a></p></li>
+<li><p>Fixed the accuracy issue on Qwen series caused by enabling <code class="docutils literal notranslate"><span class="pre">enable_shared_pert_dp</span></code> by default. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2457">#2457</a></p></li>
+<li><p>Fixed the accuracy issue on models whose rope dim is not equal to head dim, e.g., GLM4.5. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2601">#2601</a></p></li>
+</ul>
+</li>
+<li><p>Performance improved through a lot of prs:</p>
+<ul>
+<li><p>Removed torch.cat and replaced it with List[0]. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2153">#2153</a></p></li>
+<li><p>Converted the format of gmm to nz. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2474">#2474</a></p></li>
+<li><p>Optimized parallel strategies to reduce communication overhead. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2198">#2198</a></p></li>
+<li><p>Optimized reject sampler in greedy situation. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2137">#2137</a></p></li>
+</ul>
+</li>
+<li><p>A batch of refactoring PRs to enhance the code architecture:</p>
+<ul>
+<li><p>Refactor on MLA. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2465">#2465</a></p></li>
+<li><p>Refactor on torchair fused_moe. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2438">#2438</a></p></li>
+<li><p>Refactor on allgather/mc2-related fused_experts. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2369">#2369</a></p></li>
+<li><p>Refactor on torchair model runner. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2208">#2208</a></p></li>
+<li><p>Refactor on CI. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2276">#2276</a></p></li>
+</ul>
+</li>
+<li><p>Parameters changes:</p>
+<ul>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">lmhead_tensor_parallel_size</span></code> in <code class="docutils literal notranslate"><span class="pre">additional_config</span></code>, set it to enable lmhead tensor parallel. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2309">#2309</a></p></li>
+<li><p>Some unused environment variables <code class="docutils literal notranslate"><span class="pre">HCCN_PATH</span></code>, <code class="docutils literal notranslate"><span class="pre">PROMPT_DEVICE_ID</span></code>, <code class="docutils literal notranslate"><span class="pre">DECODE_DEVICE_ID</span></code>, <code class="docutils literal notranslate"><span class="pre">LLMDATADIST_COMM_PORT</span></code> and <code class="docutils literal notranslate"><span class="pre">LLMDATADIST_SYNC_CACHE_WAIT_TIME</span></code>  are removed. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2448">#2448</a></p></li>
+<li><p>Environment variable <code class="docutils literal notranslate"><span class="pre">VLLM_LLMDD_RPC_PORT</span></code> is renamed to <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_LLMDD_RPC_PORT</span></code> now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2450">#2450</a></p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_MLP_OPTIMIZE</span></code> in environ variables, Whether to enable mlp optimize when tensor parallel is enabled, this feature in eager mode will get better performance. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2120">#2120</a></p></li>
+<li><p>Removed <code class="docutils literal notranslate"><span class="pre">MOE_ALL2ALL_BUFFER</span></code> and <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_MOE_ALL2ALL_SEQ</span></code> in environ variables.<a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2612">#2612</a></p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">enable_prefetch</span></code> in <code class="docutils literal notranslate"><span class="pre">additional_config</span></code>, whether to enable weight prefetch. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2465">#2465</a></p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">mode</span></code> in <code class="docutils literal notranslate"><span class="pre">additional_config.torchair_graph_config</span></code>, When using reduce-overhead mode for torchair, mode needs to be set. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2461">#2461</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable_shared_expert_dp</span></code> in <code class="docutils literal notranslate"><span class="pre">additional_config</span></code> is disabled by default now, and it is recommended to be enabled when inferencing with deepseek. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2457">#2457</a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="id18">
+<h3>Known Issues<a class="headerlink" href="#id18" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Sliding window attention not support chunked prefill currently, thus we could only enable AscendScheduler to run with it. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2729">#2729</a></p></li>
+<li><p>There is a bug with creating mc2_mask when MultiStream is enabled, will fix it in next release. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2681">#2681</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-9-1-2025-09-03">
+<h2>v0.9.1 - 2025.09.03<a class="headerlink" href="#v0-9-1-2025-09-03" title="Link to this heading">#</a></h2>
+<p>We are excited to announce the newest official release of vLLM Ascend. This release includes many feature supports, performance improvements and bug fixes. We recommend users to upgrade from 0.7.3 to this version. Please always set <code class="docutils literal notranslate"><span class="pre">VLLM_USE_V1=1</span></code> to use V1 engine.</p>
+<p>In this release, we added many enhancements for large scale expert parallel case. It’s recommended to follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.9.1-dev/tutorials/large_scale_ep.html">official guide</a>.</p>
+<p>Please note that this release note will list all the important changes from last official release(v0.7.3)</p>
+<section id="id19">
+<h3>Highlights<a class="headerlink" href="#id19" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>DeepSeek V3/R1 is supported with high quality and performance. MTP can work with DeepSeek as well. Please refer to <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.9.1-dev/tutorials/multi_node.html">muliti node tutorials</a> and <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.9.1-dev/tutorials/large_scale_ep.html">Large Scale Expert Parallelism</a>.</p></li>
+<li><p>Qwen series models work with graph mode now. It works by default with V1 Engine. Please refer to <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.9.1-dev/tutorials/index.html">Qwen tutorials</a>.</p></li>
+<li><p>Disaggregated Prefilling support for V1 Engine. Please refer to <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.9.1-dev/tutorials/large_scale_ep.html">Large Scale Expert Parallelism</a> tutorials.</p></li>
+<li><p>Automatic prefix caching and chunked prefill feature is supported.</p></li>
+<li><p>Speculative decoding feature works with Ngram and MTP method.</p></li>
+<li><p>MOE and dense w4a8 quantization support now. Please refer to <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.9.1-dev/user_guide/feature_guide/quantization.html">quantization guide</a>.</p></li>
+<li><p>Sleep Mode feature is supported for V1 engine. Please refer to <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.9.1-dev/user_guide/feature_guide/sleep_mode.html">Sleep mode tutorials</a>.</p></li>
+<li><p>Dynamic and Static EPLB support is added. This feature is still experimental.</p></li>
+</ul>
+</section>
+<section id="note">
+<h3>Note<a class="headerlink" href="#note" title="Link to this heading">#</a></h3>
+<p>The following notes are especially for reference when upgrading from last final release (v0.7.3):</p>
+<ul class="simple">
+<li><p>V0 Engine is not supported from this release. Please always set <code class="docutils literal notranslate"><span class="pre">VLLM_USE_V1=1</span></code> to use V1 engine with vLLM Ascend.</p></li>
+<li><p>Mindie Turbo is not needed with this release. And the old version of Mindie Turbo is not compatible. Please do not install it. Currently all the function and enhancement is included in vLLM Ascend already. We’ll consider to add it back in the future in needed.</p></li>
+<li><p>Torch-npu is upgraded to 2.5.1.post1. CANN is upgraded to 8.2.RC1. Don’t forget to upgrade them.</p></li>
+</ul>
+</section>
+<section id="id20">
+<h3>Core<a class="headerlink" href="#id20" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The Ascend scheduler is added for V1 engine. This scheduler is more affine with Ascend hardware.</p></li>
+<li><p>Structured output feature works now on V1 Engine.</p></li>
+<li><p>A batch of custom ops are added to improve the performance.</p></li>
+</ul>
+</section>
+<section id="changes">
+<h3>Changes<a class="headerlink" href="#changes" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>EPLB support for Qwen3-moe model. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2000">#2000</a></p></li>
+<li><p>Fix the bug that MTP doesn’t work well with Prefill Decode Disaggregation. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2610">#2610</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2554">#2554</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2531">#2531</a></p></li>
+<li><p>Fix few bugs to make sure Prefill Decode Disaggregation works well. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2538">#2538</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2509">#2509</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2502">#2502</a></p></li>
+<li><p>Fix file not found error with shutil.rmtree in torchair mode. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2506">#2506</a></p></li>
+</ul>
+</section>
+<section id="id21">
+<h3>Known Issues<a class="headerlink" href="#id21" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>When running MoE model, Aclgraph mode only work with tensor parallel. DP/EP doesn’t work in this release.</p></li>
+<li><p>Pipeline parallelism is not supported in this release for V1 engine.</p></li>
+<li><p>If you use w4a8 quantization with eager mode, please set <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_MLA_PARALLEL=1</span></code> to avoid oom error.</p></li>
+<li><p>Accuracy test with some tools may not be correct. It doesn’t affect the real user case. We’ll fix it in the next post release. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2654">#2654</a></p></li>
+<li><p>We notice that there are still some problems when running vLLM Ascend with Prefill Decode Disaggregation. For example, the memory may be leaked and the service may be stuck. It’s caused by known issue by vLLM and vLLM Ascend. We’ll fix it in the next post release. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2650">#2650</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2604">#2604</a> <a class="reference external" href="https://github.com/vllm-project/vllm/pull/22736">vLLM#22736</a> <a class="reference external" href="https://github.com/vllm-project/vllm/pull/23554">vLLM#23554</a> <a class="reference external" href="https://github.com/vllm-project/vllm/pull/23981">vLLM#23981</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-9-1rc3-2025-08-22">
+<h2>v0.9.1rc3 - 2025.08.22<a class="headerlink" href="#v0-9-1rc3-2025-08-22" title="Link to this heading">#</a></h2>
+<p>This is the 3rd release candidate of v0.9.1 for vLLM Ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.9.1-dev/">official doc</a> to get started.</p>
+<section id="id22">
+<h3>Core<a class="headerlink" href="#id22" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>MTP supports V1 scheduler <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2371">#2371</a></p></li>
+<li><p>Add LMhead TP communication groups <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1956">#1956</a></p></li>
+<li><p>Fix the bug that qwen3 moe doesn’t work with aclgraph <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2478">#2478</a></p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">grammar_bitmask</span></code> IndexError caused by outdated <code class="docutils literal notranslate"><span class="pre">apply_grammar_bitmask</span></code> method <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2314">#2314</a></p></li>
+<li><p>Remove <code class="docutils literal notranslate"><span class="pre">chunked_prefill_for_mla</span></code> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2177">#2177</a></p></li>
+<li><p>Fix bugs and refactor cached mask generation logic <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2326">#2326</a></p></li>
+<li><p>Fix configuration check logic about ascend scheduler <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2327">#2327</a></p></li>
+<li><p>Cancel the verification between deepseek-mtp and non-ascend scheduler in disaggregated-prefill deployment <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2368">#2368</a></p></li>
+<li><p>Fix issue that failed with ray distributed backend <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2306">#2306</a></p></li>
+<li><p>Fix incorrect req block length in ascend scheduler <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2394">#2394</a></p></li>
+<li><p>Fix header include issue in rope <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2398">#2398</a></p></li>
+<li><p>Fix mtp config bug <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2412">#2412</a></p></li>
+<li><p>Fix error info and adapt <code class="docutils literal notranslate"><span class="pre">attn_metedata</span></code> refactor <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2402">#2402</a></p></li>
+<li><p>Fix torchair runtime error caused by configuration mismtaches and <code class="docutils literal notranslate"><span class="pre">.kv_cache_bytes</span></code> file missing <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2312">#2312</a></p></li>
+<li><p>Move <code class="docutils literal notranslate"><span class="pre">with_prefill</span></code> allreduce from cpu to npu <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2230">#2230</a></p></li>
+</ul>
+</section>
+<section id="docs">
+<h3>Docs<a class="headerlink" href="#docs" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Add document for deepseek large EP <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2339">#2339</a></p></li>
+</ul>
+</section>
+<section id="id23">
+<h3>Known Issues<a class="headerlink" href="#id23" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_aclgraph.py</span></code> failed with <code class="docutils literal notranslate"><span class="pre">&quot;full_cuda_graph&quot;:</span> <span class="pre">True</span></code> on A2 (910B1) <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2182">#2182</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-10-0rc1-2025-08-07">
+<h2>v0.10.0rc1 - 2025.08.07<a class="headerlink" href="#v0-10-0rc1-2025-08-07" title="Link to this heading">#</a></h2>
+<p>This is the 1st release candidate of v0.10.0 for vLLM Ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to get started. V0 is completely removed from this version.</p>
+<section id="id24">
+<h3>Highlights<a class="headerlink" href="#id24" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Disaggregate prefill works with V1 engine now. You can take a try with DeepSeek model <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/950">#950</a>, following this <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/blob/main/examples/disaggregated_prefill_v1/README.md">tutorial</a>.</p></li>
+<li><p>W4A8 quantization method is supported for dense and MoE model now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2060">#2060</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2172">#2172</a></p></li>
+</ul>
+</section>
+<section id="id25">
+<h3>Core<a class="headerlink" href="#id25" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Ascend PyTorch adapter (torch_npu) has been upgraded to <code class="docutils literal notranslate"><span class="pre">2.7.1.dev20250724</span></code>. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1562">#1562</a> And CANN hase been upgraded to <code class="docutils literal notranslate"><span class="pre">8.2.RC1</span></code>. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1653">#1653</a> Don’t forget to update them in your environment or using the latest images.</p></li>
+<li><p>vLLM Ascend works on Atlas 800I A3 now, and the image on A3 will be released from this version on. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1582">#1582</a></p></li>
+<li><p>Kimi-K2 with w8a8 quantization, Qwen3-Coder and GLM-4.5 is supported in vLLM Ascend, please following this <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/latest/tutorials/multi_node_kimi.md.html">tutorial</a> to have a try. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2162">#2162</a></p></li>
+<li><p>Pipeline Parallelism is supported in V1 now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1800">#1800</a></p></li>
+<li><p>Prefix cache feature now work with the Ascend Scheduler. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1446">#1446</a></p></li>
+<li><p>Torchair graph mode works with tp &gt; 4 now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/1508">#1508</a></p></li>
+<li><p>MTP support torchair graph mode now <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2145">#2145</a></p></li>
+</ul>
+</section>
+<section id="id26">
+<h3>Others<a class="headerlink" href="#id26" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Bug fixes:</p>
+<ul>
+<li><p>Fix functional problem of multi-modality models like Qwen2-audio with Aclgraph. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1803">#1803</a></p></li>
+<li><p>Fix the process group creating error with external launch scenario. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1681">#1681</a></p></li>
+<li><p>Fix the functional problem with guided decoding. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2022">#2022</a></p></li>
+<li><p>Fix the accuracy issue with common MoE models in DP scenario. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1856">#1856</a></p></li>
+</ul>
+</li>
+<li><p>Performance improved through a lot of prs:</p>
+<ul>
+<li><p>Caching sin/cos instead of calculate it every layer. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1890">#1890</a></p></li>
+<li><p>Improve shared expert multi-stream parallelism <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1891">#1891</a></p></li>
+<li><p>Implement the fusion of allreduce and matmul in prefill phase when tp is enabled. Enable this feature by setting <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_MATMUL_ALLREDUCE</span></code> to <code class="docutils literal notranslate"><span class="pre">1</span></code>. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1926">#1926</a></p></li>
+<li><p>Optimize Quantized MoE Performance by Reducing All2All Communication. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2195">#2195</a></p></li>
+<li><p>Use AddRmsNormQuant ops in the custom model to optimize Qwen3’s performance <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1806">#1806</a></p></li>
+<li><p>Use multicast to avoid padding decode request to prefill size <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1555">#1555</a></p></li>
+<li><p>The performance of LoRA has been improved. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1884">#1884</a></p></li>
+</ul>
+</li>
+<li><p>A batch of refactoring prs to enhance the code architecture:</p>
+<ul>
+<li><p>Torchair model runner refactor <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2205">#2205</a></p></li>
+<li><p>Refactoring forward_context and model_runner_v1. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1979">#1979</a></p></li>
+<li><p>Refactor AscendMetaData Comments. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1967">#1967</a></p></li>
+<li><p>Refactor torchair utils. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1892">#1892</a></p></li>
+<li><p>Refactor torchair worker. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1885">#1885</a></p></li>
+<li><p>Register activation customop instead of overwrite forward_oot. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1841">#1841</a></p></li>
+</ul>
+</li>
+<li><p>Parameters changes:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">expert_tensor_parallel_size</span></code> in <code class="docutils literal notranslate"><span class="pre">additional_config</span></code> is removed now, and the EP and TP is aligned with vLLM now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1681">#1681</a></p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_MLA_PA</span></code> in environ variables, use this to enable mla paged attention operator for deepseek mla decode.</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_MATMUL_ALLREDUCE</span></code> in environ variables, enable <code class="docutils literal notranslate"><span class="pre">MatmulAllReduce</span></code> fusion kernel when tensor parallel is enabled. This feature is supported in A2, and eager mode will get better performance.</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_MOE_ALL2ALL_SEQ</span></code> in environ variables, Whether to enable moe all2all seq, this provides a basic framework on the basis of alltoall for easy expansion.</p></li>
+</ul>
+</li>
+<li><p>UT coverage reached 76.34% after a batch of prs followed by this rfc: <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/1298">#1298</a></p></li>
+<li><p>Sequence Parallelism works for Qwen3 MoE. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2209">#2209</a></p></li>
+<li><p>Chinese online document is added now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/1870">#1870</a></p></li>
+</ul>
+</section>
+<section id="id27">
+<h3>Known Issues<a class="headerlink" href="#id27" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Aclgraph could not work with DP + EP currently, the mainly gap is the number of npu stream that Aclgraph needed to capture graph is not enough. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2229">#2229</a></p></li>
+<li><p>There is an accuracy issue on W8A8 dynamic quantized DeepSeek with multistream enabled. This will be fixed in the next release. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2232">#2232</a></p></li>
+<li><p>In Qwen3 MoE, SP cannot be incorporated into the Aclgraph. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2246">#2246</a></p></li>
+<li><p>MTP not support V1 scheduler currently, will fix it in Q3. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2254">#2254</a></p></li>
+<li><p>When running MTP with DP &gt; 1, we need to disable metrics logger due to some issue on vLLM. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2254">#2254</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-9-1rc2-2025-08-04">
+<h2>v0.9.1rc2 - 2025.08.04<a class="headerlink" href="#v0-9-1rc2-2025-08-04" title="Link to this heading">#</a></h2>
+<p>This is the 2nd release candidate of v0.9.1 for vLLM Ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.9.1-dev/">official doc</a> to get started.</p>
+<section id="id28">
+<h3>Highlights<a class="headerlink" href="#id28" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>MOE and dense w4a8 quantization support now: <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1320">#1320</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1910">#1910</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1275">#1275</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1480">#1480</a></p></li>
+<li><p>Dynamic EPLB support in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1943">#1943</a></p></li>
+<li><p>Disaggregated Prefilling support for V1 Engine and improvement, continued development and stabilization of the disaggregated prefill feature, including performance enhancements and bug fixes for single-machine setups:<a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1953">#1953</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1612">#1612</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1361">#1361</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1746">#1746</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1552">#1552</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1801">#1801</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2083">#2083</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1989">#1989</a></p></li>
+</ul>
+</section>
+<section id="model-improvement">
+<h3>Model Improvement<a class="headerlink" href="#model-improvement" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>DeepSeek DeepSeek DBO support and improvement: <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1285">#1285</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1291">#1291</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1328">#1328</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1420">#1420</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1445">#1445</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1589">#1589</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1759">#1759</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1827">#1827</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2093">#2093</a></p></li>
+<li><p>DeepSeek MTP improvement and bugfix: <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1214">#1214</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/943">#943</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1584">#1584</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1473">#1473</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1294">#1294</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1632">#1632</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1694">#1694</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1840">#1840</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2076">#2076</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1990">#1990</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2019">#2019</a></p></li>
+<li><p>Qwen3 MoE support improvement and bugfix around graph mode and DP:  <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1940">#1940</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2006">#2006</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1832">#1832</a></p></li>
+<li><p>Qwen3 performance improvement around rmsnorm/repo/mlp ops: <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1545">#1545</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1719">#1719</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1726">#1726</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1782">#1782</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1745">#1745</a></p></li>
+<li><p>DeepSeek MLA chunked prefill/graph mode/multistream improvement and bugfix: <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1240">#1240</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/933">#933</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1135">#1135</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1311">#1311</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1750">#1750</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1872">#1872</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2170">#2170</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1551">#1551</a></p></li>
+<li><p>Qwen2.5 VL improvement via mrope/padding mechanism improvement: <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1261">#1261</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1705">#1705</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1929">#1929</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2007">#2007</a></p></li>
+<li><p>Ray: Fix the device error when using ray and add initialize_cache and improve warning info: <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1234">#1234</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1501">#1501</a></p></li>
+</ul>
+</section>
+<section id="graph-mode-improvement">
+<h3>Graph Mode Improvement<a class="headerlink" href="#graph-mode-improvement" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fix DeepSeek with deepseek with mc2 in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1269">#1269</a></p></li>
+<li><p>Fix accuracy problem for deepseek V3/R1 models with torchair graph in long sequence predictions in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1332">#1332</a></p></li>
+<li><p>Fix torchair_graph_batch_sizes bug in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1570">#1570</a></p></li>
+<li><p>Enable the limit of tp &lt;= 4 for torchair graph mode in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1404">#1404</a></p></li>
+<li><p>Fix rope accuracy bug <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1887">#1887</a></p></li>
+<li><p>Support multistream of shared experts in FusedMoE <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/997">#997</a></p></li>
+<li><p>Enable kvcache_nz for the decode process in torchair graph mode<a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1098">#1098</a></p></li>
+<li><p>Fix chunked-prefill with torchair case to resolve UnboundLocalError: local variable ‘decode_hs_or_q_c’ issue in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1378">#1378</a></p></li>
+<li><p>Improve shared experts multi-stream perf for w8a8 dynamic. in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1561">#1561</a></p></li>
+<li><p>Repair moe error when set multistream. in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1882">#1882</a></p></li>
+<li><p>Round up graph batch size to tp size in EP case <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1610">#1610</a></p></li>
+<li><p>Fix torchair bug when DP is enabled in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1727">#1727</a></p></li>
+<li><p>Add extra checking to torchair_graph_config. in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1675">#1675</a></p></li>
+<li><p>Fix rope bug in torchair+chunk-prefill scenario in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1693">#1693</a></p></li>
+<li><p>torchair_graph bugfix when chunked_prefill is true in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1748">#1748</a></p></li>
+<li><p>Improve prefill optimization to support torchair graph mode in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2090">#2090</a></p></li>
+<li><p>Fix rank set in DP scenario <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1247">#1247</a></p></li>
+<li><p>Reset all unused positions to prevent out-of-bounds to resolve GatherV3 bug in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1397">#1397</a></p></li>
+<li><p>Remove duplicate multimodal codes in ModelRunner in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1393">#1393</a></p></li>
+<li><p>Fix block table shape to resolve accuracy issue in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1297">#1297</a></p></li>
+<li><p>Implement primal full graph with limited scenario in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1503">#1503</a></p></li>
+<li><p>Restore paged attention kernel in Full Graph for performance in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1677">#1677</a></p></li>
+<li><p>Fix DeepSeek OOM issue in extreme <code class="docutils literal notranslate"><span class="pre">--gpu-memory-utilization</span></code> scenario in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1829">#1829</a></p></li>
+<li><p>Turn off aclgraph when enabling TorchAir in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2154">#2154</a></p></li>
+</ul>
+</section>
+<section id="operator-improvement">
+<h3>Operator Improvement<a class="headerlink" href="#operator-improvement" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added custom AscendC kernel vocabparallelembedding <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/796">#796</a></p></li>
+<li><p>Fixed rope sin/cos cache bug in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1267">#1267</a></p></li>
+<li><p>Refactored AscendFusedMoE (#1229) in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1264">#1264</a></p></li>
+<li><p>Used fused ops npu_top_k_top_p in sampler <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1920">#1920</a></p></li>
+</ul>
+</section>
+<section id="id29">
+<h3>Core:<a class="headerlink" href="#id29" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Upgraded CANN to 8.2.rc1 in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2036">#2036</a></p></li>
+<li><p>Upgraded torch-npu to 2.5.1.post1 in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2135">#2135</a></p></li>
+<li><p>Upgraded python to 3.11 in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2136">#2136</a></p></li>
+<li><p>Disabled quantization in mindie_turbo  in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1749">#1749</a></p></li>
+<li><p>Fixed v0 spec decode in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1323">#1323</a></p></li>
+<li><p>Enabled <code class="docutils literal notranslate"><span class="pre">ACL_OP_INIT_MODE=1</span></code> directly only when using V0 spec decode in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1271">#1271</a></p></li>
+<li><p>Refactoring forward_context and model_runner_v1 in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1422">#1422</a></p></li>
+<li><p>Fixed sampling params in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1423">#1423</a></p></li>
+<li><p>Added a switch for enabling NZ layout in weights and enable NZ for GMM. in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1409">#1409</a></p></li>
+<li><p>Resolved bug in ascend_forward_context in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1449">#1449</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1554">#1554</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1598">#1598</a></p></li>
+<li><p>Address PrefillCacheHit state to fix prefix cache accuracy bug in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1492">#1492</a></p></li>
+<li><p>Fixed load weight error and add new e2e case in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1651">#1651</a></p></li>
+<li><p>Optimized the number of rope-related index selections in deepseek. in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1614">#1614</a></p></li>
+<li><p>Added mc2 mask in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1642">#1642</a></p></li>
+<li><p>Fixed static EPLB log2phy condition and improve unit test in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1667">#1667</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1896">#1896</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2003">#2003</a></p></li>
+<li><p>Added chunk mc2 for prefill in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1703">#1703</a></p></li>
+<li><p>Fixed mc2 op GroupCoordinator bug in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1711">#1711</a></p></li>
+<li><p>Fixed the failure to recognize the actual type of quantization in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1721">#1721</a></p></li>
+<li><p>Fixed DeepSeek bug when tp_size == 1  in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1755">#1755</a></p></li>
+<li><p>Added support for delay-free blocks in prefill nodes in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1691">#1691</a></p></li>
+<li><p>MoE alltoallv communication optimization for unquantized RL training &amp; alltoallv support dpo in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1547">#1547</a></p></li>
+<li><p>Adapted dispatchV2 interface in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1822">#1822</a></p></li>
+<li><p>Fixed disaggregate prefill hang issue in long output in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1807">#1807</a></p></li>
+<li><p>Fixed flashcomm_v1 when engine v0 in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1859">#1859</a></p></li>
+<li><p>ep_group is not equal to word_size in some cases in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1862">#1862</a>.</p></li>
+<li><p>Fixed wheel glibc version incompatibility in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1808">#1808</a>.</p></li>
+<li><p>Fixed mc2 process group to resolve self.cpu_group is None in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1831">#1831</a>.</p></li>
+<li><p>Pin vllm version to v0.9.1 to make mypy check passed  in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1904">#1904</a>.</p></li>
+<li><p>Applied npu_moe_gating_top_k_softmax for moe to improve perf in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1902">#1902</a>.</p></li>
+<li><p>Fixed bug in path_decorator when engine v0 in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1919">#1919</a>.</p></li>
+<li><p>Avoid performing cpu all_reduce in disaggregated-prefill scenario in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1644">#1644</a>.</p></li>
+<li><p>Added super kernel in decode MoE in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1916">#1916</a></p></li>
+<li><p>[Prefill Perf] Parallel Strategy Optimizations (VRAM-for-Speed Tradeoff) in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1802">#1802</a>.</p></li>
+<li><p>Removed unnecessary reduce_results access in shared_experts.down_proj in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2016">#2016</a>.</p></li>
+<li><p>Optimized greedy reject sampler with vectorization in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2002">#2002</a>.</p></li>
+<li><p>Made multiple Ps and Ds work on a single machine in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1936">#1936</a>.</p></li>
+<li><p>Fixed the shape conflicts between shared &amp; routed experts for deepseek model when tp &gt; 1 and multistream_moe enabled in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2075">#2075</a>.</p></li>
+<li><p>Added CPU binding support <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2031">#2031</a>.</p></li>
+<li><p>Added with_prefill cpu allreduce to handle D-node recomputation in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2129">#2129</a>.</p></li>
+<li><p>Added D2H &amp; initRoutingQuantV2 to improve prefill perf in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/2038">#2038</a>.</p></li>
+</ul>
+</section>
+<section id="id30">
+<h3>Docs<a class="headerlink" href="#id30" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Provide an e2e guide for execute duration profiling <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1113">#1113</a></p></li>
+<li><p>Add Referer header for CANN package download url. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1192">#1192</a></p></li>
+<li><p>Add reinstall instructions doc <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1370">#1370</a></p></li>
+<li><p>Update Disaggregate prefill README <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1379">#1379</a></p></li>
+<li><p>Disaggregate prefill for kv cache register style  <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1296">#1296</a></p></li>
+<li><p>Fix errors and non-standard parts in examples/disaggregate_prefill_v1/README.md in <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1965">#1965</a></p></li>
+</ul>
+</section>
+<section id="id31">
+<h3>Known Issues<a class="headerlink" href="#id31" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Full graph mode support are not yet available for specific hardware types with full_cuda_graphenable. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2182">#2182</a></p></li>
+<li><p>Qwen3 MoE aclgraph mode with tp failed when enable ep due to bincount error <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/2226">#2226</a></p></li>
+<li><p>As mentioend in v0.9.1rc1 release note, Atlas 300I series support will NOT be included.</p></li>
+</ul>
+</section>
+</section>
+<section id="v0-9-2rc1-2025-07-11">
+<h2>v0.9.2rc1 - 2025.07.11<a class="headerlink" href="#v0-9-2rc1-2025-07-11" title="Link to this heading">#</a></h2>
+<p>This is the 1st release candidate of v0.9.2 for vLLM Ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to get started. From this release, V1 engine will be enabled by default, there is no need to set <code class="docutils literal notranslate"><span class="pre">VLLM_USE_V1=1</span></code> any more. And this release is the last version to support V0 engine, V0 code will be clean up in the future.</p>
+<section id="id32">
+<h3>Highlights<a class="headerlink" href="#id32" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Pooling model works with V1 engine now. You can take a try with Qwen3 embedding model <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1359">#1359</a>.</p></li>
+<li><p>The performance on Atlas 300I series has been improved. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1591">#1591</a></p></li>
+<li><p>aclgraph mode works with Moe models now. Currently, only Qwen3 Moe is well tested. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1381">#1381</a></p></li>
+</ul>
+</section>
+<section id="id33">
+<h3>Core<a class="headerlink" href="#id33" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Ascend PyTorch adapter (torch_npu) has been upgraded to <code class="docutils literal notranslate"><span class="pre">2.5.1.post1.dev20250619</span></code>. Don’t forget to update it in your environment. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1347">#1347</a></p></li>
+<li><p>The GatherV3 error has been fixed with aclgraph mode. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1416">#1416</a></p></li>
+<li><p>W8A8 quantization works on Atlas 300I series now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1560">#1560</a></p></li>
+<li><p>Fix the accuracy problem with deploy models with parallel parameters. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1678">#1678</a></p></li>
+<li><p>The pre-built wheel package now requires lower version of glibc. Users can use it by <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">vllm-ascend</span></code> directly. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1582">#1582</a></p></li>
+</ul>
+</section>
+<section id="id34">
+<h3>Others<a class="headerlink" href="#id34" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Official doc has been updated for better read experience. For example, more deployment tutorials are added, user/developer docs are updated. More guide will coming soon.</p></li>
+<li><p>Fix accuracy problem for deepseek V3/R1 models with torchair graph in long sequence predictions. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1331">#1331</a></p></li>
+<li><p>A new env variable <code class="docutils literal notranslate"><span class="pre">VLLM_ENABLE_FUSED_EXPERTS_ALLGATHER_EP</span></code> has been added. It enables the fused allgather-experts kernel for Deepseek V3/R1 models. The default value is <code class="docutils literal notranslate"><span class="pre">0</span></code>. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1335">#1335</a></p></li>
+<li><p>A new env variable <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_TOPK_TOPP_OPTIMIZATION</span></code> has been added to improve the performance of topk-topp sampling. The default value is 0, we’ll consider to enable it by default in the future<a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1732">#1732</a></p></li>
+<li><p>A batch of bugs have been fixed for Data Parallelism case <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1273">#1273</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1322">#1322</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1275">#1275</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1478">#1478</a></p></li>
+<li><p>The DeepSeek performance has been improved. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1194">#1194</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1395">#1395</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1380">#1380</a></p></li>
+<li><p>Ascend scheduler works with prefix cache now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1446">#1446</a></p></li>
+<li><p>DeepSeek now works with prefix cache now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1498">#1498</a></p></li>
+<li><p>Support prompt logprobs to recover ceval accuracy in V1 <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1483">#1483</a></p></li>
+</ul>
+</section>
+<section id="id35">
+<h3>Known Issues<a class="headerlink" href="#id35" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Pipeline parallel does not work with ray and graph mode: https://github.com/vllm-project/vllm-ascend/issues/1751 https://github.com/vllm-project/vllm-ascend/issues/1754</p></li>
+</ul>
+</section>
+<section id="new-contributors">
+<h3>New Contributors<a class="headerlink" href="#new-contributors" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>&#64;xleoken made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1357</p></li>
+<li><p>&#64;lyj-jjj made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1335</p></li>
+<li><p>&#64;sharonyunyun made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1194</p></li>
+<li><p>&#64;Pr0Wh1teGivee made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1308</p></li>
+<li><p>&#64;leo-pony made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1374</p></li>
+<li><p>&#64;zeshengzong made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1452</p></li>
+<li><p>&#64;GDzhu01 made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1477</p></li>
+<li><p>&#64;Agonixiaoxiao made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1531</p></li>
+<li><p>&#64;zhanghw0354 made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1476</p></li>
+<li><p>&#64;farawayboat made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1591</p></li>
+<li><p>&#64;ZhengWG made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1196</p></li>
+<li><p>&#64;wm901115nwpu made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1654</p></li>
+</ul>
+<p><strong>Full Changelog</strong>: https://github.com/vllm-project/vllm-ascend/compare/v0.9.1rc1…v0.9.2rc1</p>
+</section>
+</section>
+<section id="v0-9-1rc1-2025-06-22">
+<h2>v0.9.1rc1 - 2025.06.22<a class="headerlink" href="#v0-9-1rc1-2025-06-22" title="Link to this heading">#</a></h2>
+<p>This is the 1st release candidate of v0.9.1 for vLLM Ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to get started.</p>
+<section id="experimental">
+<h3>Experimental<a class="headerlink" href="#experimental" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Atlas 300I series is experimental supported in this release (Functional test passed with Qwen2.5-7b-instruct/Qwen2.5-0.5b/Qwen3-0.6B/Qwen3-4B/Qwen3-8B). <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1333">#1333</a></p></li>
+<li><p>Support EAGLE-3 for speculative decoding. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1032">#1032</a></p></li>
+</ul>
+<p>After careful consideration, above features <strong>will NOT be included in v0.9.1-dev branch (v0.9.1 final release)</strong> taking into account the v0.9.1 release quality and the feature rapid iteration. We will improve this from 0.9.2rc1 and later.</p>
+</section>
+<section id="id36">
+<h3>Core<a class="headerlink" href="#id36" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Ascend PyTorch adapter (torch_npu) has been upgraded to <code class="docutils literal notranslate"><span class="pre">2.5.1.post1.dev20250528</span></code>. Don’t forget to update it in your environment. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1235">#1235</a></p></li>
+<li><p>Support Atlas 300I series container image. You can get it from <a class="reference external" href="https://quay.io/repository/vllm/vllm-ascend">quay.io</a></p></li>
+<li><p>Fix token-wise padding mechanism to make multi-card graph mode work. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1300">#1300</a></p></li>
+<li><p>Upgrade vLLM to 0.9.1 <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1165">#1165</a></p></li>
+</ul>
+</section>
+<section id="other-improvements">
+<h3>Other Improvements<a class="headerlink" href="#other-improvements" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Initial support Chunked Prefill for MLA. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1172">#1172</a></p></li>
+<li><p>An example of best practices to run DeepSeek with ETP has been added. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1101">#1101</a></p></li>
+<li><p>Performance improvements for DeepSeek using the TorchAir graph. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1098">#1098</a>, <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1131">#1131</a></p></li>
+<li><p>Supports the speculative decoding feature with AscendScheduler. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/943">#943</a></p></li>
+<li><p>Improve <code class="docutils literal notranslate"><span class="pre">VocabParallelEmbedding</span></code> custom op performance. It will be enabled in the next release. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/796">#796</a></p></li>
+<li><p>Fixed a device discovery and setup bug when running vLLM Ascend on Ray <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/884">#884</a></p></li>
+<li><p>DeepSeek with <a class="reference external" href="https://www.hiascend.com/document/detail/zh/canncommercial/81RC1/developmentguide/opdevg/ascendcbestP/atlas_ascendc_best_practices_10_0043.html">MC2</a> (Merged Compute and Communication) now works properly. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1268">#1268</a></p></li>
+<li><p>Fixed log2phy NoneType bug with static EPLB feature. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1186">#1186</a></p></li>
+<li><p>Improved performance for DeepSeek with DBO enabled. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/997">#997</a>, <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1135">#1135</a></p></li>
+<li><p>Refactoring AscendFusedMoE <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1229">#1229</a></p></li>
+<li><p>Add initial user stories page (include LLaMA-Factory/TRL/verl/MindIE Turbo/GPUStack) <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1224">#1224</a></p></li>
+<li><p>Add unit test framework <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1201">#1201</a></p></li>
+</ul>
+</section>
+<section id="id37">
+<h3>Known Issues<a class="headerlink" href="#id37" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>In some cases, the vLLM process may crash with a <strong>GatherV3</strong> error when <strong>aclgraph</strong> is enabled. We are working on this issue and will fix it in the next release. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/1038">#1038</a></p></li>
+<li><p>Prefix cache feature does not work with the Ascend Scheduler but without chunked prefill enabled. This will be fixed in the next release. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/1350">#1350</a></p></li>
+</ul>
+</section>
+<section id="full-changelog">
+<h3>Full Changelog<a class="headerlink" href="#full-changelog" title="Link to this heading">#</a></h3>
+<p>https://github.com/vllm-project/vllm-ascend/compare/v0.9.0rc2…v0.9.1rc1</p>
+</section>
+<section id="id38">
+<h3>New Contributors<a class="headerlink" href="#id38" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>&#64;farawayboat made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1333</p></li>
+<li><p>&#64;yzim made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1159</p></li>
+<li><p>&#64;chenwaner made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1098</p></li>
+<li><p>&#64;wangyanhui-cmss made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1184</p></li>
+<li><p>&#64;songshanhu07 made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1186</p></li>
+<li><p>&#64;yuancaoyaoHW made their first contribution in https://github.com/vllm-project/vllm-ascend/pull/1032</p></li>
+</ul>
+<p><strong>Full Changelog</strong>: https://github.com/vllm-project/vllm-ascend/compare/v0.9.0rc2…v0.9.1rc1</p>
+</section>
+</section>
+<section id="v0-9-0rc2-2025-06-10">
+<h2>v0.9.0rc2 - 2025.06.10<a class="headerlink" href="#v0-9-0rc2-2025-06-10" title="Link to this heading">#</a></h2>
+<p>This release contains some quick fixes for v0.9.0rc1. Please use this release instead of v0.9.0rc1.</p>
+<section id="id39">
+<h3>Highlights<a class="headerlink" href="#id39" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fix the import error when vllm-ascend is installed without editable way. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1152">#1152</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-9-0rc1-2025-06-09">
+<h2>v0.9.0rc1 - 2025.06.09<a class="headerlink" href="#v0-9-0rc1-2025-06-09" title="Link to this heading">#</a></h2>
+<p>This is the 1st release candidate of v0.9.0 for vllm-ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to start the journey. From this release, V1 Engine is recommended to use. The code of V0 Engine is frozen and will not be maintained any more. Please set environment <code class="docutils literal notranslate"><span class="pre">VLLM_USE_V1=1</span></code> to enable V1 Engine.</p>
+<section id="id40">
+<h3>Highlights<a class="headerlink" href="#id40" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>DeepSeek works with graph mode now. Follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/latest/user_guide/feature_guide/graph_mode.html">official doc</a> to take a try. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/789">#789</a></p></li>
+<li><p>Qwen series models works with graph mode now. It works by default with V1 Engine. Please note that in this release, only Qwen series models are well tested with graph mode. We’ll make it stable and generalize in the next release. If you hit any issues, please feel free to open an issue on GitHub and fallback to eager mode temporarily by set <code class="docutils literal notranslate"><span class="pre">enforce_eager=True</span></code> when initializing the model.</p></li>
+</ul>
+</section>
+<section id="id41">
+<h3>Core<a class="headerlink" href="#id41" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The performance of multi-step scheduler has been improved. Thanks for the contribution from China Merchants Bank. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/814">#814</a></p></li>
+<li><p>LoRA、Multi-LoRA And Dynamic Serving is supported for V1 Engine now. Thanks for the contribution from China Merchants Bank. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/893">#893</a></p></li>
+<li><p>Prefix cache and chunked prefill feature works now <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/782">#782</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/844">#844</a></p></li>
+<li><p>Spec decode and MTP features work with V1 Engine now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/874">#874</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/890">#890</a></p></li>
+<li><p>DP feature works with DeepSeek now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1012">#1012</a></p></li>
+<li><p>Input embedding feature works with V0 Engine now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/916">#916</a></p></li>
+<li><p>Sleep mode feature works with V1 Engine now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1084">#1084</a></p></li>
+</ul>
+</section>
+<section id="models">
+<h3>Models<a class="headerlink" href="#models" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Qwen2.5 VL works with V1 Engine now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/736">#736</a></p></li>
+<li><p>LLama4 works now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/740">#740</a></p></li>
+<li><p>A new kind of DeepSeek model called dual-batch overlap(DBO) is added. Please set <code class="docutils literal notranslate"><span class="pre">VLLM_ASCEND_ENABLE_DBO=1</span></code> to use it. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/941">#941</a></p></li>
+</ul>
+</section>
+<section id="id42">
+<h3>Others<a class="headerlink" href="#id42" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>online serve with ascend quantization works now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/877">#877</a></p></li>
+<li><p>A batch of bugs for graph mode and moe model have been fixed. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/773">#773</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/771">#771</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/774">#774</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/816">#816</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/817">#817</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/819">#819</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/912">#912</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/897">#897</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/961">#961</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/958">#958</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/913">#913</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/905">#905</a></p></li>
+<li><p>A batch of performance improvement PRs have been merged. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/784">#784</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/803">#803</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/966">#966</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/839">#839</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/970">#970</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/947">#947</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/987">#987</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/1085">#1085</a></p></li>
+<li><p>From this release, binary wheel package will be released as well. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/775">#775</a></p></li>
+<li><p>The contributor doc site is <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/latest/community/contributors.html">added</a></p></li>
+</ul>
+</section>
+<section id="id43">
+<h3>Known Issue<a class="headerlink" href="#id43" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>In some case, vLLM process may be crashed with aclgraph enabled. We’re working this issue and it’ll be fixed in the next release.</p></li>
+<li><p>Multi node data-parallel doesn’t work with this release. This is a known issue in vllm and has been fixed on main branch. <a class="reference external" href="https://github.com/vllm-project/vllm/pull/18981">#18981</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-7-3-post1-2025-05-29">
+<h2>v0.7.3.post1 - 2025.05.29<a class="headerlink" href="#v0-7-3-post1-2025-05-29" title="Link to this heading">#</a></h2>
+<p>This is the first post release of 0.7.3. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.3-dev">official doc</a> to start the journey. It includes the following changes:</p>
+<section id="id44">
+<h3>Highlights<a class="headerlink" href="#id44" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Qwen3 and Qwen3MOE is supported now. The performance and accuracy of Qwen3 is well tested. You can try it now. Mindie Turbo is recommended to improve the performance of Qwen3. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/903">#903</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/915">#915</a></p></li>
+<li><p>Added a new performance guide. The guide aims to help users to improve vllm-ascend performance on system level. It includes OS configuration, library optimization, deploy guide and so on. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/878">#878</a> <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.3-dev/developer_guide/performance/optimization_and_tuning.html">Doc Link</a></p></li>
+</ul>
+</section>
+<section id="bug-fixes">
+<h3>Bug Fixes<a class="headerlink" href="#bug-fixes" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Qwen2.5-VL  works for RLHF scenarios now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/928">#928</a></p></li>
+<li><p>Users can launch the model from online weights now. e.g. from huggingface or modelscope directly <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/858">#858</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/918">#918</a></p></li>
+<li><p>The meaningless log info <code class="docutils literal notranslate"><span class="pre">UserWorkspaceSize0</span></code> has been cleaned. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/911">#911</a></p></li>
+<li><p>The log level for <code class="docutils literal notranslate"><span class="pre">Failed</span> <span class="pre">to</span> <span class="pre">import</span> <span class="pre">vllm_ascend_C</span></code> has been changed to <code class="docutils literal notranslate"><span class="pre">warning</span></code> instead of <code class="docutils literal notranslate"><span class="pre">error</span></code>. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/956">#956</a></p></li>
+<li><p>DeepSeek MLA now works with chunked prefill in V1 Engine. Please note that V1 engine in 0.7.3 is just expermential and only for test usage. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/849">#849</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/936">#936</a></p></li>
+</ul>
+</section>
+<section id="id45">
+<h3>Docs<a class="headerlink" href="#id45" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The benchmark doc is updated for Qwen2.5 and Qwen2.5-VL <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/792">#792</a></p></li>
+<li><p>Add the note to clear that only “modelscope&lt;1.23.0” works with 0.7.3. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/954">#954</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-7-3-2025-05-08">
+<h2>v0.7.3 - 2025.05.08<a class="headerlink" href="#v0-7-3-2025-05-08" title="Link to this heading">#</a></h2>
+<p>🎉 Hello, World!</p>
+<p>We are excited to announce the release of 0.7.3 for vllm-ascend. This is the first official release. The functionality, performance, and stability of this release are fully tested and verified. We encourage you to try it out and provide feedback. We’ll post bug fix versions in the future if needed. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.3-dev">official doc</a> to start the journey.</p>
+<section id="id46">
+<h3>Highlights<a class="headerlink" href="#id46" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>This release includes all features landed in the previous release candidates (<a class="reference external" href="https://github.com/vllm-project/vllm-ascend/releases/tag/v0.7.1rc1">v0.7.1rc1</a>, <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/releases/tag/v0.7.3rc1">v0.7.3rc1</a>, <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/releases/tag/v0.7.3rc2">v0.7.3rc2</a>). And all the features are fully tested and verified. Visit the official doc the get the detail <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.3-dev/user_guide/suppoted_features.html">feature</a> and <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.3-dev/user_guide/supported_models.html">model</a> support matrix.</p></li>
+<li><p>Upgrade CANN to 8.1.RC1 to enable chunked prefill and automatic prefix caching features. You can now enable them now.</p></li>
+<li><p>Upgrade PyTorch to 2.5.1. vLLM Ascend no longer relies on the dev version of torch-npu now. Now users don’t need to install the torch-npu by hand. The 2.5.1 version of torch-npu will be installed automatically. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/662">#662</a></p></li>
+<li><p>Integrate MindIE Turbo into vLLM Ascend to improve DeepSeek V3/R1, Qwen 2 series performance. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/708">#708</a></p></li>
+</ul>
+</section>
+<section id="id47">
+<h3>Core<a class="headerlink" href="#id47" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>LoRA、Multi-LoRA And Dynamic Serving is supported now. The performance will be improved in the next release. Please follow the official doc for more usage information. Thanks for the contribution from China Merchants Bank. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/700">#700</a></p></li>
+</ul>
+</section>
+<section id="id48">
+<h3>Models<a class="headerlink" href="#id48" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The performance of Qwen2 vl and Qwen2.5 vl is improved. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/702">#702</a></p></li>
+<li><p>The performance of <code class="docutils literal notranslate"><span class="pre">apply_penalties</span></code> and <code class="docutils literal notranslate"><span class="pre">topKtopP</span></code> ops are improved. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/525">#525</a></p></li>
+</ul>
+</section>
+<section id="id49">
+<h3>Others<a class="headerlink" href="#id49" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fixed a issue that may lead CPU memory leak. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/691">#691</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/712">#712</a></p></li>
+<li><p>A new environment <code class="docutils literal notranslate"><span class="pre">SOC_VERSION</span></code> is added. If you hit any soc detection error when building with custom ops enabled, please set <code class="docutils literal notranslate"><span class="pre">SOC_VERSION</span></code> to a suitable value. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/606">#606</a></p></li>
+<li><p>openEuler container image supported with v0.7.3-openeuler tag. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/665">#665</a></p></li>
+<li><p>Prefix cache feature works on V1 engine now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/559">#559</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-8-5rc1-2025-05-06">
+<h2>v0.8.5rc1 - 2025.05.06<a class="headerlink" href="#v0-8-5rc1-2025-05-06" title="Link to this heading">#</a></h2>
+<p>This is the 1st release candidate of v0.8.5 for vllm-ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to start the journey. Now you can enable V1 egnine by setting the environment variable <code class="docutils literal notranslate"><span class="pre">VLLM_USE_V1=1</span></code>, see the feature support status of vLLM Ascend in <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/latest/user_guide/support_matrix/supported_features.html">here</a>.</p>
+<section id="id50">
+<h3>Highlights<a class="headerlink" href="#id50" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Upgrade CANN version to 8.1.RC1 to support chunked prefill and automatic prefix caching (<code class="docutils literal notranslate"><span class="pre">--enable_prefix_caching</span></code>) when V1 is enabled <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/747">#747</a></p></li>
+<li><p>Optimize Qwen2 VL and Qwen 2.5 VL <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/701">#701</a></p></li>
+<li><p>Improve Deepseek V3 eager mode and graph mode performance, now you can use –additional_config={‘enable_graph_mode’: True} to enable graph mode. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/598">#598</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/719">#719</a></p></li>
+</ul>
+</section>
+<section id="id51">
+<h3>Core<a class="headerlink" href="#id51" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Upgrade vLLM to 0.8.5.post1 <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/715">#715</a></p></li>
+<li><p>Fix early return in CustomDeepseekV2MoE.forward during profile_run <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/682">#682</a></p></li>
+<li><p>Adapts for new quant model generated by modelslim <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/719">#719</a></p></li>
+<li><p>Initial support on P2P Disaggregated Prefill based on llm_datadist <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/694">#694</a></p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">/vllm-workspace</span></code> as code path and include <code class="docutils literal notranslate"><span class="pre">.git</span></code> in container image to fix issue when start vllm under <code class="docutils literal notranslate"><span class="pre">/workspace</span></code> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/726">#726</a></p></li>
+<li><p>Optimize NPU memory usage to make DeepSeek R1 W8A8 32K model len work. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/728">#728</a></p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">PYTHON_INCLUDE_PATH</span></code> typo in setup.py <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/762">#762</a></p></li>
+</ul>
+</section>
+<section id="id52">
+<h3>Others<a class="headerlink" href="#id52" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Add Qwen3-0.6B test <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/717">#717</a></p></li>
+<li><p>Add nightly CI <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/668">#668</a></p></li>
+<li><p>Add accuracy test report <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/542">#542</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-8-4rc2-2025-04-29">
+<h2>v0.8.4rc2 - 2025.04.29<a class="headerlink" href="#v0-8-4rc2-2025-04-29" title="Link to this heading">#</a></h2>
+<p>This is the second release candidate of v0.8.4 for vllm-ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to start the journey. Some experimental features are included in this version, such as W8A8 quantization and EP/DP support. We’ll make them stable enough in the next release.</p>
+<section id="id53">
+<h3>Highlights<a class="headerlink" href="#id53" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Qwen3 and Qwen3MOE is supported now. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/latest/tutorials/single_npu.html">official doc</a> to run the quick demo. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/709">#709</a></p></li>
+<li><p>Ascend W8A8 quantization method is supported now. Please take the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/latest/tutorials/multi_npu_quantization.html">official doc</a> for example. Any <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/619">feedback</a> is welcome. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/580">#580</a></p></li>
+<li><p>DeepSeek V3/R1 works with DP, TP and MTP now. Please note that it’s still in experimental status. Let us know if you hit any problem. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/429">#429</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/585">#585</a>  <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/626">#626</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/636">#636</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/671">#671</a></p></li>
+</ul>
+</section>
+<section id="id54">
+<h3>Core<a class="headerlink" href="#id54" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>ACLGraph feature is supported with V1 engine now. It’s disabled by default because this feature rely on CANN 8.1 release. We’ll make it available by default in the next release <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/426">#426</a></p></li>
+<li><p>Upgrade PyTorch to 2.5.1. vLLM Ascend no longer relies on the dev version of torch-npu now. Now users don’t need to install the torch-npu by hand. The 2.5.1 version of torch-npu will be installed automatically. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/661">#661</a></p></li>
+</ul>
+</section>
+<section id="id55">
+<h3>Others<a class="headerlink" href="#id55" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>MiniCPM model works now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/645">#645</a></p></li>
+<li><p>openEuler container image supported with <code class="docutils literal notranslate"><span class="pre">v0.8.4-openeuler</span></code> tag and customs Ops build is enabled by default for openEuler OS. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/689">#689</a></p></li>
+<li><p>Fix ModuleNotFoundError bug to make Lora work <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/600">#600</a></p></li>
+<li><p>Add “Using EvalScope evaluation” doc <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/611">#611</a></p></li>
+<li><p>Add a <code class="docutils literal notranslate"><span class="pre">VLLM_VERSION</span></code> environment to make vLLM version configurable to help developer set correct vLLM version if the code of vLLM is changed by hand locally. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/651">#651</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-8-4rc1-2025-04-18">
+<h2>v0.8.4rc1 - 2025.04.18<a class="headerlink" href="#v0-8-4rc1-2025-04-18" title="Link to this heading">#</a></h2>
+<p>This is the first release candidate of v0.8.4 for vllm-ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/">official doc</a> to start the journey. From this version, vllm-ascend will follow the newest version of vllm and release every two weeks. For example, if vllm releases v0.8.5 in the next two weeks, vllm-ascend will release v0.8.5rc1 instead of v0.8.4rc2. Please find the detail from the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/latest/community/versioning_policy.html#release-window">official documentation</a>.</p>
+<section id="id56">
+<h3>Highlights<a class="headerlink" href="#id56" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>vLLM V1 engine experimental support is included in this version. You can visit <a class="reference external" href="https://docs.vllm.ai/en/latest/getting_started/v1_user_guide.html">official guide</a> to get more detail. By default, vLLM will fallback to V0 if V1 doesn’t work, please set <code class="docutils literal notranslate"><span class="pre">VLLM_USE_V1=1</span></code> environment if you want to use V1 forcibly.</p></li>
+<li><p>LoRA、Multi-LoRA And Dynamic Serving is supported now. The performance will be improved in the next release. Please follow the <a class="reference external" href="https://docs.vllm.ai/en/latest/features/lora.html">official doc</a> for more usage information. Thanks for the contribution from China Merchants Bank. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/521">#521</a>.</p></li>
+<li><p>Sleep Mode feature is supported. Currently it’s only work on V0 engine. V1 engine support will come soon. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/513">#513</a></p></li>
+</ul>
+</section>
+<section id="id57">
+<h3>Core<a class="headerlink" href="#id57" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The Ascend scheduler is added for V1 engine. This scheduler is more affinity with Ascend hardware. More scheduler policy will be added in the future. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/543">#543</a></p></li>
+<li><p>Disaggregated Prefill feature is supported. Currently only 1P1D works. NPND is under design by vllm team. vllm-ascend will support it once it’s ready from vLLM. Follow the <a class="reference external" href="https://docs.vllm.ai/en/latest/features/disagg_prefill.html">official guide</a> to use. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/432">#432</a></p></li>
+<li><p>Spec decode feature works now. Currently it’s only work on V0 engine. V1 engine support will come soon. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/500">#500</a></p></li>
+<li><p>Structured output feature works now on V1 Engine. Currently it only supports xgrammar backend while using guidance backend may get some errors. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/555">#555</a></p></li>
+</ul>
+</section>
+<section id="id58">
+<h3>Others<a class="headerlink" href="#id58" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>A new communicator <code class="docutils literal notranslate"><span class="pre">pyhccl</span></code> is added. It’s used for call CANN HCCL library directly instead of using <code class="docutils literal notranslate"><span class="pre">torch.distribute</span></code>. More usage of it will be added in the next release <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/503">#503</a></p></li>
+<li><p>The custom ops build is enabled by default. You should install the packages like <code class="docutils literal notranslate"><span class="pre">gcc</span></code>, <code class="docutils literal notranslate"><span class="pre">cmake</span></code> first to build <code class="docutils literal notranslate"><span class="pre">vllm-ascend</span></code> from source. Set <code class="docutils literal notranslate"><span class="pre">COMPILE_CUSTOM_KERNELS=0</span></code> environment to disable the compilation if you don’t need it. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/466">#466</a></p></li>
+<li><p>The custom op <code class="docutils literal notranslate"><span class="pre">rotay</span> <span class="pre">embedding</span></code> is enabled by default now to improve the performance. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/555">#555</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-7-3rc2-2025-03-29">
+<h2>v0.7.3rc2 - 2025.03.29<a class="headerlink" href="#v0-7-3rc2-2025-03-29" title="Link to this heading">#</a></h2>
+<p>This is 2nd release candidate of v0.7.3 for vllm-ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.3-dev">official doc</a> to start the journey.</p>
+<ul class="simple">
+<li><p>Quickstart with container: https://vllm-ascend.readthedocs.io/en/v0.7.3-dev/quick_start.html</p></li>
+<li><p>Installation: https://vllm-ascend.readthedocs.io/en/v0.7.3-dev/installation.html</p></li>
+</ul>
+<section id="id59">
+<h3>Highlights<a class="headerlink" href="#id59" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Add Ascend Custom Ops framework. Developers now can write customs ops using AscendC. An example ops <code class="docutils literal notranslate"><span class="pre">rotary_embedding</span></code> is added. More tutorials will come soon. The Custom Ops compilation is disabled by default when installing vllm-ascend. Set <code class="docutils literal notranslate"><span class="pre">COMPILE_CUSTOM_KERNELS=1</span></code> to enable it.  <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/371">#371</a></p></li>
+<li><p>V1 engine is basic supported in this release. The full support will be done in 0.8.X release. If you hit any issue or have any requirement of V1 engine. Please tell us <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/414">here</a>. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/376">#376</a></p></li>
+<li><p>Prefix cache feature works now. You can set <code class="docutils literal notranslate"><span class="pre">enable_prefix_caching=True</span></code> to enable it. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/282">#282</a></p></li>
+</ul>
+</section>
+<section id="id60">
+<h3>Core<a class="headerlink" href="#id60" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Bump torch_npu version to dev20250320.3 to improve accuracy to fix <code class="docutils literal notranslate"><span class="pre">!!!</span></code> output problem. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/406">#406</a></p></li>
+</ul>
+</section>
+<section id="id61">
+<h3>Models<a class="headerlink" href="#id61" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The performance of Qwen2-vl is improved by optimizing patch embedding (Conv3D). <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/398">#398</a></p></li>
+</ul>
+</section>
+<section id="id62">
+<h3>Others<a class="headerlink" href="#id62" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fixed a bug to make sure multi step scheduler feature work. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/349">#349</a></p></li>
+<li><p>Fixed a bug to make prefix cache feature works with correct accuracy. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/424">#424</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-7-3rc1-2025-03-14">
+<h2>v0.7.3rc1 - 2025.03.14<a class="headerlink" href="#v0-7-3rc1-2025-03-14" title="Link to this heading">#</a></h2>
+<p>🎉 Hello, World! This is the first release candidate of v0.7.3 for vllm-ascend. Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.3-dev">official doc</a> to start the journey.</p>
+<ul class="simple">
+<li><p>Quickstart with container: https://vllm-ascend.readthedocs.io/en/v0.7.3-dev/quick_start.html</p></li>
+<li><p>Installation: https://vllm-ascend.readthedocs.io/en/v0.7.3-dev/installation.html</p></li>
+</ul>
+<section id="id63">
+<h3>Highlights<a class="headerlink" href="#id63" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>DeepSeek V3/R1 works well now. Read the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.3-dev/tutorials/multi_node.html">official guide</a> to start! <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/242">#242</a></p></li>
+<li><p>Speculative decoding feature is supported. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/252">#252</a></p></li>
+<li><p>Multi step scheduler feature is supported. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/300">#300</a></p></li>
+</ul>
+</section>
+<section id="id64">
+<h3>Core<a class="headerlink" href="#id64" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Bump torch_npu version to dev20250308.3 to improve <code class="docutils literal notranslate"><span class="pre">_exponential</span></code> accuracy</p></li>
+<li><p>Added initial support for pooling models. Bert based model, such as <code class="docutils literal notranslate"><span class="pre">BAAI/bge-base-en-v1.5</span></code> and <code class="docutils literal notranslate"><span class="pre">BAAI/bge-reranker-v2-m3</span></code> works now. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/229">#229</a></p></li>
+</ul>
+</section>
+<section id="id65">
+<h3>Models<a class="headerlink" href="#id65" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The performance of Qwen2-VL is improved. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/241">#241</a></p></li>
+<li><p>MiniCPM is now supported <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/164">#164</a></p></li>
+</ul>
+</section>
+<section id="id66">
+<h3>Others<a class="headerlink" href="#id66" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Support MTP(Multi-Token Prediction) for DeepSeek V3/R1 <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/236">#236</a></p></li>
+<li><p>[Docs] Added more model tutorials, include DeepSeek, QwQ, Qwen and Qwen 2.5VL. See the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.3-dev/tutorials/index.html">official doc</a> for detail</p></li>
+<li><p>Pin modelscope&lt;1.23.0 on vLLM v0.7.3 to resolve: https://github.com/vllm-project/vllm/pull/13807</p></li>
+</ul>
+</section>
+<section id="id67">
+<h3>Known Issues<a class="headerlink" href="#id67" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>In <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/324">some cases</a>, especially when the input/output is very long, the accuracy of output may be incorrect. We are working on it. It’ll be fixed in the next release.</p></li>
+<li><p>Improved and reduced the garbled code in model output. But if you still hit the issue, try to change the generation config value, such as <code class="docutils literal notranslate"><span class="pre">temperature</span></code>, and try again. There is also a known issue shown below. Any <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/267">feedback</a> is welcome. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/277">#277</a></p></li>
+</ul>
+</section>
+</section>
+<section id="v0-7-1rc1-2025-02-19">
+<h2>v0.7.1rc1 - 2025.02.19<a class="headerlink" href="#v0-7-1rc1-2025-02-19" title="Link to this heading">#</a></h2>
+<p>🎉 Hello, World!</p>
+<p>We are excited to announce the first release candidate of v0.7.1 for vllm-ascend.</p>
+<p>vLLM Ascend Plugin (vllm-ascend) is a community maintained hardware plugin for running vLLM on the Ascend NPU. With this release, users can now enjoy the latest features and improvements of vLLM on the Ascend NPU.</p>
+<p>Please follow the <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.1-dev">official doc</a> to start the journey. Note that this is a release candidate, and there may be some bugs or issues. We appreciate your feedback and suggestions <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/issues/19">here</a></p>
+<section id="id68">
+<h3>Highlights<a class="headerlink" href="#id68" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Initial supports for Ascend NPU on vLLM. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3">#3</a></p></li>
+<li><p>DeepSeek is now supported. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/88">#88</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/68">#68</a></p></li>
+<li><p>Qwen, Llama series and other popular models are also supported, you can see more details in <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/latest/user_guide/supported_models.html">here</a>.</p></li>
+</ul>
+</section>
+<section id="id69">
+<h3>Core<a class="headerlink" href="#id69" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Added the Ascend quantization config option, the implementation will coming soon. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/7">#7</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/73">#73</a></p></li>
+<li><p>Add silu_and_mul and rope ops and add mix ops into attention layer. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/18">#18</a></p></li>
+</ul>
+</section>
+<section id="id70">
+<h3>Others<a class="headerlink" href="#id70" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>[CI] Enable Ascend CI to actively monitor and improve quality for vLLM on Ascend. <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/3">#3</a></p></li>
+<li><p>[Docker] Add vllm-ascend container image <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/64">#64</a></p></li>
+<li><p>[Docs] Add a <a class="reference external" href="https://vllm-ascend.readthedocs.org">live doc</a> <a class="reference external" href="https://github.com/vllm-project/vllm-ascend/pull/55">#55</a></p></li>
+</ul>
+</section>
+<section id="id71">
+<h3>Known Issues<a class="headerlink" href="#id71" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>This release relies on an unreleased torch_npu version. It has been installed within official container image already. Please <a class="reference external" href="https://vllm-ascend.readthedocs.io/en/v0.7.1rc1/installation.html">install</a> it manually if you are using non-container environment.</p></li>
+<li><p>There are logs like <code class="docutils literal notranslate"><span class="pre">No</span> <span class="pre">platform</span> <span class="pre">detected,</span> <span class="pre">vLLM</span> <span class="pre">is</span> <span class="pre">running</span> <span class="pre">on</span> <span class="pre">UnspecifiedPlatform</span></code> or <code class="docutils literal notranslate"><span class="pre">Failed</span> <span class="pre">to</span> <span class="pre">import</span> <span class="pre">from</span> <span class="pre">vllm._C</span> <span class="pre">with</span> <span class="pre">ModuleNotFoundError(&quot;No</span> <span class="pre">module</span> <span class="pre">named</span> <span class="pre">'vllm._C'&quot;)</span></code> shown when running vllm-ascend. It actually doesn’t affect any functionality and performance. You can just ignore it. And it has been fixed in this <a class="reference external" href="https://github.com/vllm-project/vllm/pull/12432">PR</a> which will be included in v0.7.3 soon.</p></li>
+<li><p>There are logs like <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">CPU</span> <span class="pre">blocks:</span> <span class="pre">35064,</span> <span class="pre">#</span> <span class="pre">CPU</span> <span class="pre">blocks:</span> <span class="pre">2730</span></code> shown when running vllm-ascend which should be <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">NPU</span> <span class="pre">blocks:</span></code> . It actually doesn’t affect any functionality and performance. You can just ignore it. And it has been fixed in this <a class="reference external" href="https://github.com/vllm-project/vllm/pull/13378">PR</a> which will be included in v0.7.3 soon.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="feature_guide/kv_pool_mooncake.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Mooncacke Store Deployment Guide</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../developer_guide/contribution/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Contributing</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0-2025-12-16">v0.11.0 - 2025.12.16</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#highlights">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#other">Other</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deprecation-announcement">Deprecation announcement</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#upgrade-notice">Upgrade notice</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#known-issues">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0rc3-2025-12-03">v0.11.0rc3 - 2025.12.03</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Other</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0rc2-2025-11-21">v0.11.0rc2 - 2025.11.21</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#core">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">Other</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0rc1-2025-11-10">v0.11.0rc1 - 2025.11.10</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">Other</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#known-issue">Known issue</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-11-0rc0-2025-09-30">v0.11.0rc0 - 2025.09.30</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#others">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-10-2rc1-2025-09-16">v0.10.2rc1 - 2025.09.16</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id13">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id14">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-10-1rc1-2025-09-04">v0.10.1rc1 - 2025.09.04</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id15">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id16">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id17">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id18">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-1-2025-09-03">v0.9.1 - 2025.09.03</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id19">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#note">Note</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id20">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#changes">Changes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id21">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-1rc3-2025-08-22">v0.9.1rc3 - 2025.08.22</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id22">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#docs">Docs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id23">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-10-0rc1-2025-08-07">v0.10.0rc1 - 2025.08.07</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id24">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id25">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id26">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id27">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-1rc2-2025-08-04">v0.9.1rc2 - 2025.08.04</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id28">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-improvement">Model Improvement</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#graph-mode-improvement">Graph Mode Improvement</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#operator-improvement">Operator Improvement</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id29">Core:</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id30">Docs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id31">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-2rc1-2025-07-11">v0.9.2rc1 - 2025.07.11</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id32">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id33">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id34">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id35">Known Issues</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#new-contributors">New Contributors</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-1rc1-2025-06-22">v0.9.1rc1 - 2025.06.22</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#experimental">Experimental</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id36">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#other-improvements">Other Improvements</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id37">Known Issues</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#full-changelog">Full Changelog</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id38">New Contributors</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-0rc2-2025-06-10">v0.9.0rc2 - 2025.06.10</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id39">Highlights</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-9-0rc1-2025-06-09">v0.9.0rc1 - 2025.06.09</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id40">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id41">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#models">Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id42">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id43">Known Issue</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-3-post1-2025-05-29">v0.7.3.post1 - 2025.05.29</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id44">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bug-fixes">Bug Fixes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id45">Docs</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-3-2025-05-08">v0.7.3 - 2025.05.08</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id46">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id47">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id48">Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id49">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-8-5rc1-2025-05-06">v0.8.5rc1 - 2025.05.06</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id50">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id51">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id52">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-8-4rc2-2025-04-29">v0.8.4rc2 - 2025.04.29</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id53">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id54">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id55">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-8-4rc1-2025-04-18">v0.8.4rc1 - 2025.04.18</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id56">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id57">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id58">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-3rc2-2025-03-29">v0.7.3rc2 - 2025.03.29</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id59">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id60">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id61">Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id62">Others</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-3rc1-2025-03-14">v0.7.3rc1 - 2025.03.14</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id63">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id64">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id65">Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id66">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id67">Known Issues</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#v0-7-1rc1-2025-02-19">v0.7.1rc1 - 2025.02.19</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id68">Highlights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id69">Core</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id70">Others</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id71">Known Issues</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By the vllm-ascend team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, vllm-ascend team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"91c60e3c66214aa3a7bf8f8e8f31e503","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

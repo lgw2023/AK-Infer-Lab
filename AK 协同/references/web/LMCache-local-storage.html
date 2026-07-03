@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+
+<html :class="{'dark': darkMode === 'dark' || (darkMode === 'system' &amp;&amp; window.matchMedia('(prefers-color-scheme: dark)').matches)}" class="scroll-smooth" data-content_root="../" lang="en" x-data="{ darkMode: localStorage.getItem('darkMode') || localStorage.setItem('darkMode', 'system'), activeSection: '' }" x-init="$watch('darkMode', val =&gt; localStorage.setItem('darkMode', val))">
+<head>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta charset="utf-8"/>
+<meta content="white" media="(prefers-color-scheme: light)" name="theme-color"/>
+<meta content="black" media="(prefers-color-scheme: dark)" name="theme-color"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Local storage | LMCache</title>
+<meta content="Local storage | LMCache" property="og:title"/>
+<meta content="Local storage | LMCache" name="twitter:title"/>
+<link href="../_static/pygments.css?v=935426dd" rel="stylesheet" type="text/css"/>
+<link href="../_static/theme.css?v=42baaae4" rel="stylesheet" type="text/css"/>
+<link href="../_static/custom.css?v=0f06b6ab" rel="stylesheet" type="text/css"/>
+<link href="../_static/scroll.css?v=d15ffde1" rel="stylesheet" type="text/css"/>
+<link href="../_static/lmcache-logo.png" rel="icon"/>
+<link href="../search.html" rel="search" title="Search"/>
+<link href="../genindex.html" rel="index" title="Index"/>
+<link href="gds.html" rel="next" title="GDS Backend"/>
+<link href="cpu_ram.html" rel="prev" title="CPU RAM"/>
+<script>
+    <!-- Prevent Flash of wrong theme -->
+      const userPreference = localStorage.getItem('darkMode');
+      let mode;
+      if (userPreference === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        mode = 'dark';
+        document.documentElement.classList.add('dark');
+      } else {
+        mode = 'light';
+      }
+      if (!userPreference) {localStorage.setItem('darkMode', mode)}
+    </script>
+</head>
+<body :class="{ 'overflow-hidden': showSidebar }" class="min-h-screen font-sans antialiased bg-background text-foreground" x-data="{ showSidebar: false, showScrollTop: false }">
+<div @click.self="showSidebar = false" class="fixed inset-0 z-50 overflow-hidden bg-background/80 backdrop-blur-sm md:hidden" x-cloak="" x-show="showSidebar"></div><div class="relative flex flex-col min-h-screen" id="page"><a class="absolute top-0 left-0 z-[100] block bg-background p-4 text-xl transition -translate-x-full opacity-0 focus:translate-x-0 focus:opacity-100" href="#content">
+      Skip to content
+    </a><header class="sticky top-0 z-40 w-full border-b shadow-sm border-border supports-backdrop-blur:bg-background/60 bg-background/95 backdrop-blur"><div class="container flex items-center h-14">
+<div class="hidden mr-4 md:flex">
+<a class="flex items-center mr-6" href="../index.html"><span class="hidden font-bold sm:inline-block text-clip whitespace-nowrap">LMCache</span>
+</a></div><button @click="showSidebar = true" class="inline-flex items-center justify-center h-10 px-0 py-2 mr-2 text-base font-medium transition-colors rounded-md hover:text-accent-foreground hover:bg-transparent md:hidden" type="button">
+<svg aria-hidden="true" fill="currentColor" height="24" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M152.587 825.087q-19.152 0-32.326-13.174t-13.174-32.326q0-19.152 13.174-32.326t32.326-13.174h440q19.152 0 32.326 13.174t13.174 32.326q0 19.152-13.174 32.326t-32.326 13.174h-440Zm0-203.587q-19.152 0-32.326-13.174T107.087 576q0-19.152 13.174-32.326t32.326-13.174h320q19.152 0 32.326 13.174T518.087 576q0 19.152-13.174 32.326T472.587 621.5h-320Zm0-203.587q-19.152 0-32.326-13.174t-13.174-32.326q0-19.152 13.174-32.326t32.326-13.174h440q19.152 0 32.326 13.174t13.174 32.326q0 19.152-13.174 32.326t-32.326 13.174h-440ZM708.913 576l112.174 112.174q12.674 12.674 12.674 31.826t-12.674 31.826Q808.413 764.5 789.261 764.5t-31.826-12.674l-144-144Q600 594.391 600 576t13.435-31.826l144-144q12.674-12.674 31.826-12.674t31.826 12.674q12.674 12.674 12.674 31.826t-12.674 31.826L708.913 576Z"></path>
+</svg>
+<span class="sr-only">Toggle navigation menu</span>
+</button>
+<div class="flex items-center justify-between flex-1 space-x-2 sm:space-x-4 md:justify-end">
+<div class="flex-1 w-full md:w-auto md:flex-none"><form @keydown.k.window.meta="$refs.search.focus()" action="../search.html" class="relative flex items-center group" id="searchbox" method="get">
+<input aria-label="Search the docs" class="inline-flex items-center font-medium transition-colors bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background border border-input hover:bg-accent focus:bg-accent hover:text-accent-foreground focus:text-accent-foreground hover:placeholder-accent-foreground py-2 px-4 relative h-9 w-full justify-start rounded-[0.5rem] text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64" id="search-input" name="q" placeholder="Search ..." type="search" x-ref="search"/>
+<kbd class="pointer-events-none absolute right-1.5 top-2 hidden h-5 select-none text-muted-foreground items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex group-hover:bg-accent group-hover:text-accent-foreground">
+<span class="text-xs">⌘</span>
+    K
+  </kbd>
+</form>
+</div>
+<nav class="flex items-center space-x-1">
+<a href="https://github.com/LMCache/LMCache/" rel="noopener nofollow" title="Visit GitHub">
+<div class="inline-flex items-center justify-center px-0 text-sm font-medium transition-colors rounded-md disabled:opacity-50 disabled:pointer-events-none hover:bg-accent hover:text-accent-foreground h-9 w-9">
+<svg fill="currentColor" height="26px" style="margin-top:-2px;display:inline" viewbox="0 0 45 44" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M22.477.927C10.485.927.76 10.65.76 22.647c0 9.596 6.223                 17.736 14.853 20.608 1.087.2 1.483-.47 1.483-1.047 0-.516-.019-1.881-.03-3.693-6.04 1.312-7.315-2.912-7.315-2.912-.988-2.51-2.412-3.178-2.412                 -3.178-1.972-1.346.149-1.32.149-1.32 2.18.154 3.327 2.24 3.327 2.24 1.937 3.318 5.084 2.36 6.321 1.803.197-1.403.759-2.36 1.379-2.903-4.823-.548-9.894-2.412-9.894-10.734 0-2.37.847-4.31 2.236-5.828-.224-.55-.969-2.759.214-5.748 0 0 1.822-.584 5.972 2.226 1.732-.482 3.59-.722 5.437-.732 1.845.01 3.703.25 5.437.732 4.147-2.81 5.967-2.226 5.967-2.226 1.185 2.99.44 5.198.217 5.748 1.392 1.517 2.232                  3.457 2.232 5.828 0 8.344-5.078 10.18-9.916 10.717.779.67 1.474 1.996 1.474                 4.021 0 2.904-.027 5.247-.027 5.96 0 .58.392 1.256 1.493 1.044C37.981 40.375 44.2 32.24                  44.2 22.647c0-11.996-9.726-21.72-21.722-21.72" fill="currentColor" fill-rule="evenodd"></path></svg>
+</div>
+</a>
+<button @click="darkMode = darkMode === 'light' ? 'dark' : 'light'" aria-label="Color theme switcher" class="relative inline-flex items-center justify-center px-0 text-sm font-medium transition-colors rounded-md hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button">
+<svg class="absolute transition-all scale-100 rotate-0 dark:-rotate-90 dark:scale-0" fill="currentColor" height="24" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M480 685q45.456 0 77.228-31.772Q589 621.456 589 576q0-45.456-31.772-77.228Q525.456 467 480 467q-45.456 0-77.228 31.772Q371 530.544 371 576q0 45.456 31.772 77.228Q434.544 685 480 685Zm0 91q-83 0-141.5-58.5T280 576q0-83 58.5-141.5T480 376q83 0 141.5 58.5T680 576q0 83-58.5 141.5T480 776ZM80 621.5q-19.152 0-32.326-13.174T34.5 576q0-19.152 13.174-32.326T80 530.5h80q19.152 0 32.326 13.174T205.5 576q0 19.152-13.174 32.326T160 621.5H80Zm720 0q-19.152 0-32.326-13.174T754.5 576q0-19.152 13.174-32.326T800 530.5h80q19.152 0 32.326 13.174T925.5 576q0 19.152-13.174 32.326T880 621.5h-80Zm-320-320q-19.152 0-32.326-13.174T434.5 256v-80q0-19.152 13.174-32.326T480 130.5q19.152 0 32.326 13.174T525.5 176v80q0 19.152-13.174 32.326T480 301.5Zm0 720q-19.152 0-32.326-13.17Q434.5 995.152 434.5 976v-80q0-19.152 13.174-32.326T480 850.5q19.152 0 32.326 13.174T525.5 896v80q0 19.152-13.174 32.33-13.174 13.17-32.326 13.17ZM222.174 382.065l-43-42Q165.5 327.391 166 308.239t13.174-33.065q13.435-13.674 32.587-13.674t32.065 13.674l42.239 43q12.674 13.435 12.555 31.706-.12 18.272-12.555 31.946-12.674 13.674-31.445 13.413-18.772-.261-32.446-13.174Zm494 494.761-42.239-43q-12.674-13.435-12.674-32.087t12.674-31.565Q686.609 756.5 705.38 757q18.772.5 32.446 13.174l43 41.761Q794.5 824.609 794 843.761t-13.174 33.065Q767.391 890.5 748.239 890.5t-32.065-13.674Zm-42-494.761Q660.5 369.391 661 350.62q.5-18.772 13.174-32.446l41.761-43Q728.609 261.5 747.761 262t33.065 13.174q13.674 13.435 13.674 32.587t-13.674 32.065l-43 42.239q-13.435 12.674-31.706 12.555-18.272-.12-31.946-12.555Zm-495 494.761Q165.5 863.391 165.5 844.239t13.674-32.065l43-42.239q13.435-12.674 32.087-12.674t31.565 12.674Q299.5 782.609 299 801.38q-.5 18.772-13.174 32.446l-41.761 43Q231.391 890.5 212.239 890t-33.065-13.174ZM480 576Z"></path>
+</svg>
+<svg class="absolute transition-all scale-0 rotate-90 dark:rotate-0 dark:scale-100" fill="currentColor" height="24" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M480 936q-151 0-255.5-104.5T120 576q0-138 90-239.5T440 218q25-3 39 18t-1 44q-17 26-25.5 55t-8.5 61q0 90 63 153t153 63q31 0 61.5-9t54.5-25q21-14 43-1.5t19 39.5q-14 138-117.5 229T480 936Zm0-80q88 0 158-48.5T740 681q-20 5-40 8t-40 3q-123 0-209.5-86.5T364 396q0-20 3-40t8-40q-78 32-126.5 102T200 576q0 116 82 198t198 82Zm-10-270Z"></path>
+</svg>
+</button>
+</nav>
+</div>
+</div>
+</header>
+<div class="flex-1"><div class="container flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10"><aside :aria-hidden="!showSidebar" :class="{ 'translate-x-0': showSidebar }" class="fixed inset-y-0 left-0 md:top-14 z-50 md:z-30 bg-background md:bg-transparent transition-all duration-100 -translate-x-full md:translate-x-0 ml-0 p-6 md:p-0 md:-ml-2 md:h-[calc(100vh-3.5rem)] w-5/6 md:w-full shrink-0 overflow-y-auto border-r border-border md:sticky" id="left-sidebar">
+<a class="!justify-start text-sm md:!hidden bg-background" href="../index.html"><span class="font-bold text-clip whitespace-nowrap">LMCache</span>
+</a>
+<div class="relative overflow-hidden md:overflow-auto my-4 md:my-0 h-[calc(100vh-8rem)] md:h-auto">
+<div class="overflow-y-auto h-full w-full relative pr-6"><nav class="table w-full min-w-full my-6 lg:my-8">
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="../getting_started/quickstart/index.html">Quickstart Examples<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="../getting_started/quickstart/offload_kv_cache.html">Example: Offload KV cache to CPU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started/quickstart/share_kv_cache.html">Example: Share KV cache across multiple LLMs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started/quickstart/disaggregated_prefill.html">Example: Disaggregated prefill</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started/quickstart/multimodality.html">Example: Multimodal KV Cache Support</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/troubleshoot.html">TroubleShoot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/faq.html">FAQ</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">KV Cache offloading and sharing</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="cpu_ram.html">CPU RAM</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Local storage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gds.html">GDS Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="redis.html">Redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="infinistore.html">InfiniStore</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mooncake.html">Mooncake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="valkey.html">ValKey</a></li>
+<li class="toctree-l1"><a class="reference internal" href="weka.html">Weka</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Disaggregated prefill</span></p>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="../disaggregated_prefill/nixl/index.html">Using NIXL<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="../disaggregated_prefill/nixl/1p1d.html">1p1d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../disaggregated_prefill/nixl/xpyd.html">XpYd</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../disaggregated_prefill/shared_storage.html">Using shared storage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">KV Cache management</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../kv_cache_management/controller.html">LMCache Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kv_cache_management/lookup.html">Lookup the KV cache</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kv_cache_management/persist.html">Persist the KV cache</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kv_cache_management/clear.html">Clear the KV cache</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kv_cache_management/move.html">Move the KV cache</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kv_cache_management/compress.html">Compress the KV cache</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../kv_cache_management/check_finish.html">Check finish of a control event</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">KV Cache Optimizations</span></p>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="../kv_cache_optimizations/compression/index.html">Compression<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="../kv_cache_optimizations/compression/cachegen.html">CacheGen</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../kv_cache_optimizations/blending.html">Blending</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Use LMCache in production</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../production/docker_deployment.html">Docker deployment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../production/kubernetes_deployment.html">Kubernetes deployment</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/contributing.html">Contributing Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/docker_file.html">Dockerfile</a></li>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="../developer_guide/usage/index.html">Usage Data Module<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="../developer_guide/usage/usage_stats_collection.html">Usage Stats Collection</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference/configurations.html">Configuring LMCache</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference/storage_backends.html">Adding new storage backends</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference/dynamic_connector.html">vLLM Dynamic Connector</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api_reference/multimodality.html">KV Caching for Multimodal Models with vLLM</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community/meetings.html">Community meetings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/blogs.html">Blogs</a></li>
+</ul>
+</nav>
+</div>
+</div>
+<button @click="showSidebar = false" class="absolute md:hidden right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100" type="button">
+<svg class="h-4 w-4" fill="currentColor" height="24" stroke="none" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M480 632 284 828q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 28-11t28 11q11 11 11 28t-11 28L536 576l196 196q11 11 11 28t-11 28q-11 11-28 11t-28-11L480 632Z"></path>
+</svg>
+</button>
+</aside>
+<main class="relative py-6 lg:gap-10 lg:py-8 xl:grid xl:grid-cols-[1fr_300px]">
+<div class="w-full min-w-0 mx-auto">
+<nav aria-label="breadcrumbs" class="flex items-center mb-4 space-x-1 text-sm text-muted-foreground">
+<a class="overflow-hidden text-ellipsis whitespace-nowrap hover:text-foreground" href="../index.html">
+<span class="hidden md:inline">LMCache</span>
+<svg aria-label="Home" class="md:hidden" fill="currentColor" height="18" stroke="none" viewbox="0 96 960 960" width="18" xmlns="http://www.w3.org/2000/svg">
+<path d="M240 856h120V616h240v240h120V496L480 316 240 496v360Zm-80 80V456l320-240 320 240v480H520V696h-80v240H160Zm320-350Z"></path>
+</svg>
+</a>
+<div class="mr-1">/</div><span aria-current="page" class="font-medium text-foreground overflow-hidden text-ellipsis whitespace-nowrap">Local storage</span>
+</nav>
+<div id="content" role="main">
+<section id="local-storage">
+<h1>Local storage<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#local-storage"><span>#</span></a></h1>
+<section id="overview">
+<span id="local-storage-overview"></span><h2>Overview<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#overview" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#overview'"><span>#</span></a></h2>
+<p>CPU RAM and Local Storage are the two ways of offloading KV cache onto non-GPU
+memory of the same machine that is running inference.</p>
+</section>
+<section id="two-ways-to-configure-lmcache-disk-offloading">
+<h2>Two ways to configure LMCache Disk Offloading:<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#two-ways-to-configure-lmcache-disk-offloading" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#two-ways-to-configure-lmcache-disk-offloading'"><span>#</span></a></h2>
+<p><strong>1. Environment Variables:</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">LMCACHE_USE_EXPERIMENTAL</span></code> MUST be set by environment variable directly.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="c1"># Specify LMCache V1</span>
+</span><span id="line-2"><span class="nb">export</span><span class="w"> </span><span class="nv">LMCACHE_USE_EXPERIMENTAL</span><span class="o">=</span>True
+</span><span id="line-3"><span class="c1"># 256 Tokens per KV Chunk</span>
+</span><span id="line-4"><span class="nb">export</span><span class="w"> </span><span class="nv">LMCACHE_CHUNK_SIZE</span><span class="o">=</span><span class="m">256</span>
+</span><span id="line-5"><span class="c1"># None if disabled</span>
+</span><span id="line-6"><span class="c1"># Otherwise, enable by setting the directory where LMCache will</span>
+</span><span id="line-7"><span class="c1"># create files for each KV cache chunks</span>
+</span><span id="line-8"><span class="c1"># (this directory does NOT need to exist beforehand)</span>
+</span><span id="line-9"><span class="nb">export</span><span class="w"> </span><span class="nv">LMCACHE_LOCAL_DISK</span><span class="o">=</span><span class="s2">"file://local/disk_test/local_disk/"</span>
+</span><span id="line-10"><span class="c1"># 5GB of Disk</span>
+</span><span id="line-11"><span class="nb">export</span><span class="w"> </span><span class="nv">LMCACHE_MAX_LOCAL_DISK_SIZE</span><span class="o">=</span><span class="m">5</span>.0
+</span></code></pre></div>
+</div>
+<p><strong>2. Configuration File</strong>:</p>
+<p>Passed in through <code class="docutils literal notranslate"><span class="pre">LMCACHE_CONFIG_FILE=your-lmcache-config.yaml</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">LMCACHE_USE_EXPERIMENTAL</span></code> MUST be set by environment variable directly.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="c1"># 256 Tokens per KV Chunk</span>
+</span><span id="line-2"><span class="nt">chunk_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">256</span>
+</span><span id="line-3"><span class="c1"># Enable Disk backend</span>
+</span><span id="line-4"><span class="nt">local_disk</span><span class="p">:</span><span class="w"> </span><span class="s">"file://local/disk_test/local_disk/"</span>
+</span><span id="line-5"><span class="c1"># 5GB of Disk memory</span>
+</span><span id="line-6"><span class="nt">max_local_disk_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5.0</span>
+</span></code></pre></div>
+</div>
+</section>
+<section id="local-storage-explanation">
+<h2>Local Storage Explanation:<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#local-storage-explanation" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#local-storage-explanation'"><span>#</span></a></h2>
+<p>Unlike CPU RAM offloading, disk offloading is <em>disabled</em> by default (<code class="docutils literal notranslate"><span class="pre">local_disk</span></code> is set to <code class="docutils literal notranslate"><span class="pre">None</span></code>) and the
+max local disk size is set to 0GB instead of 5GB like the default max local cpu size
+since the disk space is not strictly necessary for LMCache to function.</p>
+<p>Furthermore, instead of greedily allocating the max space up front like the pinned CPU RAM, the disk backend will
+create one file per KV cache chunk as they are stored, evicting if capacity is exceeded (LRU currently).</p>
+<p>The disk and remote (see <a class="reference internal" href="redis.html"><span class="doc">Redis</span></a>, <a class="reference internal" href="mooncake.html"><span class="doc">Mooncake</span></a>, <a class="reference internal" href="valkey.html"><span class="doc">Valkey</span></a>, <a class="reference internal" href="infinistore.html"><span class="doc">InfiniStore</span></a>)
+backends have asynchronous put() operations so that the IO latency will not slow down inference in addition to blocking get() operations.
+The local disk backend also has a prefetch() operation that will preemptively move KV caches from the disk to CPU RAM offloading storage
+(i.e. <code class="docutils literal notranslate"><span class="pre">LMCACHE_LOCAL_CPU=True</span></code> should be set, see <a class="reference internal" href="cpu_ram.html"><span class="doc">CPU RAM</span></a>) for specified tokens (these KV caches are also still kept in the disk).</p>
+</section>
+<section id="online-inference-example">
+<span id="local-storage-online-inference-example"></span><h2>Online Inference Example<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#online-inference-example" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#online-inference-example'"><span>#</span></a></h2>
+<p>This example is almost identical to the <a class="reference internal" href="cpu_ram.html"><span class="doc">CPU RAM</span></a> example.</p>
+<p>Let’s feel the TTFT (time to first token) differential!</p>
+<p id="local-storage-prerequisites"><strong>Prerequisites:</strong></p>
+<ul class="simple">
+<li><p>A Machine with at least one GPU. Adjust the max model length of your vllm instance depending on your GPU memory and the long context you want to use.</p></li>
+<li><p>vllm and lmcache installed (<a class="reference internal" href="../getting_started/installation.html"><span class="doc">Installation Guide</span></a>)</p></li>
+<li><p>Hugging Face access to <code class="docutils literal notranslate"><span class="pre">meta-llama/Meta-Llama-3.1-8B-Instruct</span></code></p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="nb">export</span><span class="w"> </span><span class="nv">HF_TOKEN</span><span class="o">=</span>your_hugging_face_token
+</span></code></pre></div>
+</div>
+<ul class="simple">
+<li><p>A few packages:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">pip<span class="w"> </span>install<span class="w"> </span>openai<span class="w"> </span>transformers
+</span></code></pre></div>
+</div>
+<p><strong>Step 0. Set up a directory for this example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">mkdir<span class="w"> </span>lmcache-local-disk-example
+</span><span id="line-2"><span class="nb">cd</span><span class="w"> </span>lmcache-local-disk-example
+</span></code></pre></div>
+</div>
+<p><strong>Step 1. Prepare a long context!</strong></p>
+<p>We want a context long enough that vllm’s prefix caching will not be able to hold the KV caches in
+GPU memory and LMCache is necessary to keep KV caches in non-GPU memory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="c1"># 382757 bytes</span>
+</span><span id="line-2">man<span class="w"> </span>bash<span class="w"> </span>&gt;<span class="w"> </span>man-bash.txt
+</span></code></pre></div>
+</div>
+<p><strong>Step 2. Start a vLLM server with Disk offloading enabled:</strong></p>
+<p><em>Generally, it is not recommended but we will disable CPU offloading to feel just the disk offloading latency.</em></p>
+<p>Create a an lmcache configuration file called: <code class="docutils literal notranslate"><span class="pre">disk-offload.yaml</span></code></p>
+<p>Example <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="nt">chunk_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">256</span>
+</span><span id="line-2"><span class="nt">local_cpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span><span id="line-3"><span class="nt">max_local_cpu_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5.0</span>
+</span><span id="line-4"><span class="nt">local_disk</span><span class="p">:</span><span class="w"> </span><span class="s">"file://local/disk_test/local_disk/"</span>
+</span><span id="line-5"><span class="nt">max_local_disk_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5.0</span>
+</span></code></pre></div>
+</div>
+<p>If you don’t want to use a config file, uncomment the first five environment variables
+and then comment out the <code class="docutils literal notranslate"><span class="pre">LMCACHE_CONFIG_FILE</span></code> below:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="c1"># LMCACHE_CHUNK_SIZE=256 \</span>
+</span><span id="line-2"><span class="c1"># LMCACHE_LOCAL_CPU=False \</span>
+</span><span id="line-3"><span class="c1"># LMCACHE_MAX_LOCAL_CPU_SIZE=5.0 \</span>
+</span><span id="line-4"><span class="c1"># LMCACHE_LOCAL_DISK="file://local/disk_test/local_disk/" \</span>
+</span><span id="line-5"><span class="c1"># LMCACHE_MAX_LOCAL_DISK_SIZE=5.0 \</span>
+</span><span id="line-6"><span class="nv">LMCACHE_CONFIG_FILE</span><span class="o">=</span><span class="s2">"disk-offload.yaml"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-7"><span class="nv">LMCACHE_USE_EXPERIMENTAL</span><span class="o">=</span>True<span class="w"> </span><span class="se">\</span>
+</span><span id="line-8">vllm<span class="w"> </span>serve<span class="w"> </span><span class="se">\</span>
+</span><span id="line-9"><span class="w">    </span>meta-llama/Llama-3.1-8B-Instruct<span class="w"> </span><span class="se">\</span>
+</span><span id="line-10"><span class="w">    </span>--max-model-len<span class="w"> </span><span class="m">16384</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-11"><span class="w">    </span>--kv-transfer-config<span class="w"> </span><span class="se">\</span>
+</span><span id="line-12"><span class="w">    </span><span class="s1">'{"kv_connector":"LMCacheConnectorV1", "kv_role":"kv_both"}'</span>
+</span></code></pre></div>
+</div>
+<ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">--kv-transfer-config</span></code>: This is the parameter that actually tells vLLM to use LMCache for KV cache offloading.</dt><dd><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">kv_connector</span></code>: Specifies the LMCache connector for vLLM V1</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">kv_role</span></code>: Set to “kv_both” for both storing and loading KV cache (important because we will run two queries and the first will produce/store a KV cache while the second will consume/load that KV cache)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>Step 3. Query TTFT improvements with LMCache:</strong></p>
+<p>Once the Open AI compatible server is running on default vllm port 8000, let’s query it twice with the same long context!</p>
+<p>Create a script called <code class="docutils literal notranslate"><span class="pre">query-twice.py</span></code> and paste the following code:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span id="line-2"><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+</span><span id="line-3"><span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTokenizer</span>
+</span><span id="line-4">
+</span><span id="line-5"><span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span>
+</span><span id="line-6">    <span class="n">api_key</span><span class="o">=</span><span class="s2">"dummy-key"</span><span class="p">,</span>  <span class="c1"># required by OpenAI client even for local servers</span>
+</span><span id="line-7">    <span class="n">base_url</span><span class="o">=</span><span class="s2">"http://localhost:8000/v1"</span>
+</span><span id="line-8"><span class="p">)</span>
+</span><span id="line-9">
+</span><span id="line-10"><span class="n">models</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+</span><span id="line-11"><span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+</span><span id="line-12">
+</span><span id="line-13"><span class="c1"># 119512 characters total</span>
+</span><span id="line-14"><span class="c1"># 26054 tokens total</span>
+</span><span id="line-15"><span class="n">long_context</span> <span class="o">=</span> <span class="s2">""</span>
+</span><span id="line-16"><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"man-bash.txt"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span id="line-17">    <span class="n">long_context</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span id="line-18">
+</span><span id="line-19"><span class="c1"># a truncation of the long context for the --max-model-len 16384</span>
+</span><span id="line-20"><span class="c1"># if you increase the --max-model-len, you can decrease the truncation i.e.</span>
+</span><span id="line-21"><span class="c1"># use more of the long context</span>
+</span><span id="line-22"><span class="n">long_context</span> <span class="o">=</span> <span class="n">long_context</span><span class="p">[:</span><span class="mi">70000</span><span class="p">]</span>
+</span><span id="line-23">
+</span><span id="line-24"><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">"meta-llama/Meta-Llama-3.1-8B-Instruct"</span><span class="p">)</span>
+</span><span id="line-25"><span class="n">question</span> <span class="o">=</span> <span class="s2">"Summarize bash in 2 sentences."</span>
+</span><span id="line-26">
+</span><span id="line-27"><span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">long_context</span><span class="si">}</span><span class="se">\n\n</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="line-28">
+</span><span id="line-29"><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of tokens in prompt: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">prompt</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="line-30">
+</span><span id="line-31"><span class="k">def</span><span class="w"> </span><span class="nf">query_and_measure_ttft</span><span class="p">():</span>
+</span><span id="line-32">    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+</span><span id="line-33">    <span class="n">ttft</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="line-34">
+</span><span id="line-35">    <span class="n">chat_completion</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+</span><span id="line-36">        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}],</span>
+</span><span id="line-37">        <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+</span><span id="line-38">        <span class="n">temperature</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+</span><span id="line-39">        <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="line-40">    <span class="p">)</span>
+</span><span id="line-41">
+</span><span id="line-42">    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chat_completion</span><span class="p">:</span>
+</span><span id="line-43">        <span class="n">chunk_message</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">delta</span><span class="o">.</span><span class="n">content</span>
+</span><span id="line-44">        <span class="k">if</span> <span class="n">chunk_message</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="line-45">            <span class="k">if</span> <span class="n">ttft</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="line-46">                <span class="n">ttft</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+</span><span id="line-47">            <span class="nb">print</span><span class="p">(</span><span class="n">chunk_message</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="line-48">
+</span><span id="line-49">    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>  <span class="c1"># New line after streaming</span>
+</span><span id="line-50">    <span class="k">return</span> <span class="n">ttft</span> <span class="o">-</span> <span class="n">start</span>
+</span><span id="line-51">
+</span><span id="line-52"><span class="nb">print</span><span class="p">(</span><span class="s2">"Querying vLLM server with cold LMCache Disk Offload"</span><span class="p">)</span>
+</span><span id="line-53"><span class="n">cold_ttft</span> <span class="o">=</span> <span class="n">query_and_measure_ttft</span><span class="p">()</span>
+</span><span id="line-54"><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cold TTFT: </span><span class="si">{</span><span class="n">cold_ttft</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+</span><span id="line-55">
+</span><span id="line-56"><span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Querying vLLM server with warm LMCache Disk Offload"</span><span class="p">)</span>
+</span><span id="line-57"><span class="n">warm_ttft</span> <span class="o">=</span> <span class="n">query_and_measure_ttft</span><span class="p">()</span>
+</span><span id="line-58"><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Warm TTFT: </span><span class="si">{</span><span class="n">warm_ttft</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+</span><span id="line-59">
+</span><span id="line-60"><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">TTFT Improvement: </span><span class="si">{</span><span class="p">(</span><span class="n">cold_ttft</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">warm_ttft</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> seconds </span><span class="se">\</span>
+</span><span id="line-61"><span class="s2">    (</span><span class="si">{</span><span class="p">(</span><span class="n">cold_ttft</span><span class="o">/</span><span class="n">warm_ttft</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">x faster)"</span><span class="p">)</span>
+</span></code></pre></div>
+</div>
+<p>Then run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">python<span class="w"> </span>query-twice.py
+</span></code></pre></div>
+</div>
+<p>Since we’re in streaming mode, you’ll be able to feel the TTFT differential in
+real time!</p>
+<p>Note that if we were to enable <code class="docutils literal notranslate"><span class="pre">LMCACHE_LOCAL_CPU=True</span></code>, we would just be using
+the same example from <a class="reference internal" href="cpu_ram.html"><span class="doc">CPU RAM</span></a> since the CPU RAM is checked before
+the disk by LMCache. In practice, the disk will be capable of storing a larger
+quantity of KV caches so the CPU RAM offloading will only be able to store a
+subset of the disk’s KV caches.</p>
+<p><strong>Example Output:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">Number of tokens in prompt: 15376
+</span><span id="line-2">Querying vLLM server with cold LMCache Disk Offload
+</span><span id="line-3">Bash is a Unix shell and command-line interpreter that reads and executes
+</span><span id="line-4">commands from standard input or a file, incorporating features from the
+</span><span id="line-5">Korn and C shells. It is a conformant implementation of the IEEE POSIX
+</span><span id="line-6">specification and can be configure to be POSIX-conformant by default,
+</span><span id="line-7">supporting a wide range of options, built-in commands,
+</span><span id="line-8">and features for scripting, job control, and interactive use.
+</span><span id="line-9">
+</span><span id="line-10">Cold TTFT: 6.314 seconds
+</span><span id="line-11">
+</span><span id="line-12">Querying vLLM server with warm LMCache Disk Offload
+</span><span id="line-13">Bash is a Unix shell and command-line interpreter that reads and
+</span><span id="line-14">executes commands from the standard input or a file, and is designed
+</span><span id="line-15">to be a conformant implementation of the IEEE POSIX specification. It
+</span><span id="line-16">is a powerful tool for automating tasks, managing files and directories,
+</span><span id="line-17">and interacting with other programs and services, with features such as
+</span><span id="line-18">scripting, conditional statements, loops, and functions.
+</span><span id="line-19">
+</span><span id="line-20">Warm TTFT: 0.148 seconds
+</span></code></pre></div>
+</div>
+<p>TTFT Improvement: 6.166 seconds     (42.6x faster)</p>
+<p>If you look at the logs of your vLLM server, you should see (the logs are truncated for cleanliness):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"># Cold LMCache Miss and then Store
+</span><span id="line-2">
+</span><span id="line-3">LMCache INFO: Reqid: chatcmpl-8676f9b9ebf04c79a5d47b9ada7b65fd, Total tokens 15410,
+</span><span id="line-4">LMCache hit tokens: 0, need to load: 0
+</span><span id="line-5">
+</span><span id="line-6"># you should see 8 of these storing logs total
+</span><span id="line-7"># 2048 tokens is a multiple of the chunk size
+</span><span id="line-8">LMCache INFO: Storing KV cache for 2048 out of 12288 tokens for request
+</span><span id="line-9">chatcmpl-8676f9b9ebf04c79a5d47b9ada7b65fd
+</span><span id="line-10">
+</span><span id="line-11">LMCache INFO: Storing KV cache for 2048 out of 14336 tokens for request
+</span><span id="line-12">chatcmpl-8676f9b9ebf04c79a5d47b9ada7b65fd
+</span><span id="line-13">
+</span><span id="line-14">LMCache INFO: Storing KV cache for 1074 out of 15410 tokens for request
+</span><span id="line-15">chatcmpl-8676f9b9ebf04c79a5d47b9ada7b65fd
+</span><span id="line-16">
+</span><span id="line-17"># Warm LMCache Hit!!
+</span><span id="line-18">
+</span><span id="line-19">LMCache INFO: Reqid: chatcmpl-136d9dac1ba94bd4b4ae85007e8ad437, Total tokens 15410,
+</span><span id="line-20">LMCache hit tokens: 15409, need to load: 1
+</span></code></pre></div>
+</div>
+</section>
+<section id="tips">
+<span id="local-storage-tips"></span><h2>Tips:<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#tips" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#tips'"><span>#</span></a></h2>
+<ul class="simple">
+<li><p>If you want to run the <code class="docutils literal notranslate"><span class="pre">query-twice.py</span></code> script multiple times, you’ll need to either restart the vLLM LMCache server or change the prefix of the context you pass in since you’ve already warmed LMCache.</p></li>
+<li><p>The max model length here was decided by running an L4 with only 23GB of GPU memory. If you have more memory, you can increase the max model length and modify <code class="docutils literal notranslate"><span class="pre">query-twice.py</span></code> to use more of the long context. LMCache TTFT improvement becomes more pronounced as the context length increases!</p></li>
+</ul>
+</section>
+</section>
+</div><div class="flex justify-between items-center pt-6 mt-12 border-t border-border gap-4">
+<div class="mr-auto">
+<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="cpu_ram.html">
+<svg class="mr-2 h-4 w-4" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<polyline points="15 18 9 12 15 6"></polyline>
+</svg>
+        CPU RAM
+      </a>
+</div>
+<div class="ml-auto">
+<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="gds.html">
+        GDS Backend
+        <svg class="ml-2 h-4 w-4" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<polyline points="9 18 15 12 9 6"></polyline>
+</svg>
+</a>
+</div>
+</div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
+<div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
+<ul>
+<li><a :data-current="activeSection === '#overview'" class="reference internal" href="#overview">Overview</a></li>
+<li><a :data-current="activeSection === '#two-ways-to-configure-lmcache-disk-offloading'" class="reference internal" href="#two-ways-to-configure-lmcache-disk-offloading">Two ways to configure LMCache Disk Offloading:</a></li>
+<li><a :data-current="activeSection === '#local-storage-explanation'" class="reference internal" href="#local-storage-explanation">Local Storage Explanation:</a></li>
+<li><a :data-current="activeSection === '#online-inference-example'" class="reference internal" href="#online-inference-example">Online Inference Example</a></li>
+<li><a :data-current="activeSection === '#tips'" class="reference internal" href="#tips">Tips:</a></li>
+</ul>
+</div>
+</aside>
+</main>
+</div>
+</div><footer class="py-6 border-t border-border md:py-0">
+<div class="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
+<div class="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
+<p class="text-sm leading-loose text-center text-muted-foreground md:text-left">© 2024, The LMCache Team Built with <a class="font-medium underline underline-offset-4" href="https://www.sphinx-doc.org" rel="noreferrer">Sphinx 8.2.3</a></p>
+</div>
+</div>
+</footer>
+</div>
+<script src="../_static/documentation_options.js?v=5929fcd5"></script>
+<script src="../_static/doctools.js?v=9bcbadda"></script>
+<script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+<script defer="defer" src="../_static/theme.js?v=073f68d9"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"2b9c7e3d76374620a632614cc872c54f","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

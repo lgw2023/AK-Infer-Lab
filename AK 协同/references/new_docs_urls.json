@@ -1,0 +1,396 @@
+{
+  "files": [
+    "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md",
+    "Deep Research 反向回顾报告 面向本地小算力一体机与工作站的异构推理协同及存储分层软硬件协同机制研究报告（2025–2026） .md",
+    "Deep Research 反向回顾报告 面向本地小算力异构推理协同的第一轮 Deep Research 报告.md",
+    "Deep Research 反向回顾报告 面向本地小算力异构推理协同的第三轮 Deep Research 报告.md",
+    "Deep Research 反向回顾报告 面向本地小算力异构推理协同的第二轮 Deep Research 报告.md"
+  ],
+  "urls": {
+    "http://minlanyu.seas.harvard.edu/writeup/mlsys25.pdf": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/abs/2405.04437": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/abs/2412.18934": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/abs/2601.21198": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/abs/2602.03495": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/abs/2602.23036": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/abs/2603.01058": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/abs/2604.18529": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/abs/2605.06472": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/abs/2605.30083": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2405.04437v3": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2412.18934v2": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2512.16473v1": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2602.02958v4": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2602.03495v1": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2602.23036v1": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2602.23036v2": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2603.01058v1": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2603.22774v1": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2604.03143v1": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2604.18529v1": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2605.06472v1": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/html/2605.30083v1": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/pdf/2405.04437": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/pdf/2601.21198": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://arxiv.org/pdf/2604.18529": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://cse.engin.umich.edu/stories/five-papers-by-cse-researchers-at-asplos-2025": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://cvpr.thecvf.com/virtual/2026/poster/39247": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://dblp.org/db/conf/mlsys/mlsys2025": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://deepmind.google/research/publications/81986/": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://docs.lmcache.ai/kv_cache/local_storage.html": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://docs.nvidia.com/dynamo/integrations/kv-cache-integrations/hi-cache": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://docs.vllm.ai/projects/ascend/en/main/user_guide/release_notes.html": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://docs.vllm.ai/projects/ascend/en/v0.11.0/user_guide/release_notes.html": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://docs.vllm.ai/projects/ascend/en/v0.18.0/user_guide/release_notes.html": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://download.semiconductor.samsung.com/resources/white-paper/Optimizing_KV_Cache_Offloading_to_CMM-D_in_a_CXL_Switch-based_Memory_Pool.pdf": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://fast.ece.illinois.edu/projects/4_project/": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://futureagi.com/blog/multi-agent-systems-2025/": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/LMCache/LMCache-Ascend/issues/126": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/casys-kaist/LLMServingSim": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/dongxianzhe/triinfer": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/ece-fast-lab/ISCA-2025-LIA": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/happypmn": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/hyungyokim/LIA_AMXGPU": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/lmcache/lmcache": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/mental2008/awesome-papers/blob/develop/reading-notes/conference/asplos-2025.md": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/npnothard/ZipMoE-ICML26": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/vllm-project/vllm-ascend": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://github.com/vllm-project/vllm-ascend/releases": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://happypmn.github.io/": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://iscaconf.org/isca2025/": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://kvcache-ai.github.io/Mooncake/": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://mlsys.org/media/mlsys-2026/Slides/3756.pdf": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://mlsys.org/virtual/2025/poster/3234": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://mlsys.org/virtual/2026/oral/3756": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://mlsys.org/virtual/2026/session/3676": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://neurips.cc/virtual/2025/poster/115164": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://openaccess.thecvf.com/content/CVPR2026/html/Kang_FlashDecoder_Real-Time_Latent-to-Pixel_Streaming_Decoder_with_Transformers_CVPR_2026_paper.html": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://openaccess.thecvf.com/content/CVPR2026/papers/Kang_FlashDecoder_Real-Time_Latent-to-Pixel_Streaming_Decoder_with_Transformers_CVPR_2026_paper.pdf": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://openreview.net/forum?id=QUL7jp4QDQ": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://openreview.net/forum?id=sFNRNTduKO": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://openreview.net/pdf?id=sFNRNTduKO": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://openreview.net/profile?id=~Shaowei_Wang4": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://proceedings.mlsys.org/paper_files/paper/2025/hash/66a026c0d17040889b50f0dfa650e5e0-Abstract-Conference.html": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://scholar.google.com/citations?user=pAESRzAAAAAJ&hl=en": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://verl.readthedocs.io/en/latest/ascend_tutorial/get_start/install_guidance.html": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://www.lmsys.org/blog/2025-09-10-sglang-hicache/": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://www.semanticscholar.org/paper/DALI%3A-A-Workload-Aware-Offloading-Framework-for-MoE-Zhu-Li/7bd2c33d0cf45d92727205173f7a84f765e331e3": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://www.semanticscholar.org/paper/LIA%3A-A-Single-GPU-LLM-Inference-Acceleration-with-Kim-Wang/3408b2987ce5b985e1f419496fd03988ed02535d": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://www.semanticscholar.org/paper/MoE-Lightning%3A-High-Throughput-MoE-Inference-on-Cao-Liu/07f1fbd2a036d3e75a9fb00b30a413981b7ff17e": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://www.semanticscholar.org/paper/ProMoE%3A-Fast-MoE-based-LLM-Serving-using-Proactive-Song-Zhong/86f014f66e484f477fe729023ee5d30537a299d6": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://www.spheron.network/blog/cpu-free-llm-inference-bluefield4-dpu-smartnic-gpu-cloud-2026/": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://www.themoonlight.io/zh/review/zipmoe-efficient-on-device-moe-serving-via-lossless-compression-and-cache-affinity-scheduling": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    },
+    "https://www.truefoundry.com/blog/multi-agent-orchestration-frameworks": {
+      "files": [
+        "Deep Research 反向回顾报告 面向本地小算力一体机与塔式服务器的异构推理协同软硬件协同机制系统性研究报告（2025–2026） .md"
+      ]
+    }
+  },
+  "arxiv_ids": [
+    "2405.04437",
+    "2412.18934",
+    "2512.16473",
+    "2601.21198",
+    "2602.02958",
+    "2602.03495",
+    "2602.23036",
+    "2603.01058",
+    "2603.22774",
+    "2604.03143",
+    "2604.18529",
+    "2605.06472",
+    "2605.30083"
+  ]
+}

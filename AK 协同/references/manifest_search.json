@@ -1,0 +1,376 @@
+{
+  "resolved": {
+    "PowerInfer-2": {
+      "id": "2406.06282",
+      "title": "PowerInfer-2",
+      "source": "explicit_url"
+    },
+    "llm.npu": {
+      "id": "2407.05858",
+      "title": "llm.npu",
+      "source": "explicit_url"
+    },
+    "NEO": {
+      "id": "2411.01142",
+      "title": "NEO",
+      "source": "explicit_url"
+    },
+    "MoE-Lightning": {
+      "id": "2411.11217",
+      "title": "MoE-Lightning",
+      "source": "explicit_url"
+    },
+    "fMoE": {
+      "id": "2502.05370",
+      "title": "fMoE",
+      "source": "explicit_url"
+    },
+    "MoE-Gen": {
+      "id": "2503.09716",
+      "title": "MoE-Gen",
+      "source": "explicit_url"
+    },
+    "MoE-Lens": {
+      "id": "2504.09345",
+      "title": "MoE-Lens",
+      "source": "explicit_url"
+    },
+    "CLONE": {
+      "id": "2506.02847",
+      "title": "CLONE",
+      "source": "explicit_url"
+    },
+    "APEX": {
+      "id": "2506.03296",
+      "title": "APEX",
+      "source": "explicit_url"
+    },
+    "EdgeLoRA": {
+      "id": "2507.01438",
+      "title": "EdgeLoRA",
+      "source": "explicit_url"
+    },
+    "FUSE": {
+      "id": "2507.02135",
+      "title": "FUSE",
+      "source": "explicit_url"
+    },
+    "lm-Meter": {
+      "id": "2510.06126",
+      "title": "lm-Meter",
+      "source": "explicit_url"
+    },
+    "MoE-SpeQ": {
+      "id": "2511.14102",
+      "title": "MoE-SpeQ",
+      "source": "explicit_url"
+    },
+    "CLO": {
+      "id": "2511.14510",
+      "title": "CLO",
+      "source": "explicit_url"
+    },
+    "SuperInfer": {
+      "id": "2601.20309",
+      "title": "SuperInfer",
+      "source": "explicit_url"
+    },
+    "LLMServingSim-2.0": {
+      "id": "2602.23036",
+      "title": "LLMServingSim-2.0",
+      "source": "explicit_url"
+    },
+    "HybridGen": {
+      "id": "2604.18529",
+      "title": "HybridGen",
+      "source": "explicit_url"
+    },
+    "CoX-MoE": {
+      "id": "2605.17889",
+      "title": "CoX-MoE",
+      "source": "explicit_url"
+    },
+    "llada.cpp": {
+      "id": "2606.13740",
+      "title": "llada.cpp",
+      "source": "explicit_url"
+    },
+    "KVPR": {
+      "id": "2411.17089v2",
+      "title": "KVPR: Efficient LLM Inference with I/O-Aware KV Cache Partial Recomputation",
+      "source": "arxiv_search",
+      "query": "KVPR: Efficient LLM Inference with I/O-Aware KV Cache Partial Recomputation"
+    },
+    "Pie": {
+      "id": "2411.09317v1",
+      "title": "Pie: Pooling CPU Memory for LLM Inference",
+      "source": "arxiv_search",
+      "query": "Pie: Pooling CPU Memory for LLM Inference"
+    },
+    "Mooncake": {
+      "id": "2407.00079v4",
+      "title": "Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving",
+      "source": "arxiv_search",
+      "query": "Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving"
+    },
+    "ITME": {
+      "id": "2606.12556v2",
+      "title": "ITME: Inference Tiered Memory Expansion with Disaggregated CXL-Hybrid Memories",
+      "source": "arxiv_search",
+      "query": "ITME: Inference Tiered Memory Expansion with Disaggregated CXL-Hybrid Memories"
+    },
+    "Fiddler": {
+      "id": "2402.07033v3",
+      "title": "Fiddler: CPU-GPU Orchestration for Fast Inference of Mixture-of-Experts Models",
+      "source": "arxiv_search",
+      "query": "Fiddler: CPU-GPU Orchestration for Fast Inference of Mixture-of-Experts Models"
+    },
+    "DAOP": {
+      "id": "2501.10375v2",
+      "title": "DAOP: Data-Aware Offloading and Predictive Pre-Calculation for Efficient MoE Inference",
+      "source": "arxiv_search",
+      "query": "DAOP: Data-Aware Offloading and Predictive Pre-Calculation for Efficient MoE Inference"
+    },
+    "DALI": {
+      "id": "2602.03495v1",
+      "title": "DALI: A Workload-Aware Offloading Framework for Efficient MoE Inference on Local PCs",
+      "source": "arxiv_search",
+      "query": "DALI: A Workload-Aware Offloading Framework for Efficient MoE Inference on Local PCs"
+    },
+    "DistServe": {
+      "id": "2401.09670v3",
+      "title": "DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving",
+      "source": "arxiv_search",
+      "query": "DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving"
+    },
+    "EcoServe": {
+      "id": "2504.18154v1",
+      "title": "EcoServe: Enabling Cost-effective LLM Serving with Proactive Intra- and Inter-Instance Orchestration",
+      "source": "arxiv_search",
+      "query": "EcoServe: Enabling Cost-effective LLM Serving with Proactive Intra- and Inter-Instance Orchestration"
+    },
+    "EPD-Disaggregation": {
+      "id": "2501.05460v4",
+      "title": "Efficiently Serving Large Multimodal Models Using EPD Disaggregation",
+      "source": "arxiv_search",
+      "query": "Efficiently Serving Large Multimodal Models Using EPD Disaggregation"
+    },
+    "vLLM-Omni": {
+      "id": "2602.02204v1",
+      "title": "vLLM-Omni: Fully Disaggregated Serving for Any-to-Any Multimodal Models",
+      "source": "arxiv_search",
+      "query": "vLLM-Omni: Fully Disaggregated Serving for Any-to-Any Multimodal Models"
+    },
+    "LiveServe": {
+      "id": "2606.22983v1",
+      "title": "LiveServe: Interaction-Aware Serving for Real-Time Omni-Modal LLMs",
+      "source": "arxiv_search",
+      "query": "LiveServe: Interaction-Aware Serving for Real-Time Omni-Modal LLMs"
+    },
+    "Autellix": {
+      "id": "2502.13965v1",
+      "title": "Autellix: An Efficient Serving Engine for LLM Agents as General Programs",
+      "source": "arxiv_search",
+      "query": "Autellix: An Efficient Serving Engine for LLM Agents as General Programs"
+    },
+    "Helium-Agentic-Workflows": {
+      "id": "2603.16104v1",
+      "title": "Efficient LLM Serving for Agentic Workflows: A Data Systems Perspective",
+      "source": "arxiv_search",
+      "query": "Efficient LLM Serving for Agentic Workflows: A Data Systems Perspective"
+    },
+    "MORI": {
+      "id": "2606.00866v1",
+      "title": "Idleness is Relative: Exploiting Tool-Call Idle Windows for Offloading in Agentic Systems with MORI",
+      "source": "arxiv_search",
+      "query": "Idleness is Relative: Exploiting Tool-Call Idle Windows for Offloading in Agentic Systems with MORI"
+    }
+  },
+  "failed": [
+    [
+      "FlexInfer",
+      "FlexInfer: Flexible LLM Inference with CPU Computations",
+      "no_result"
+    ],
+    [
+      "KTransformers",
+      "KTransformers: Unleashing the Full Potential of CPU/GPU Hybrid Inference for MoE Models",
+      "no_result"
+    ],
+    [
+      "AMPD",
+      "AMPD: Efficient Multi-round LLM Inference over Disaggregated Serving",
+      "no_result"
+    ],
+    [
+      "PPD",
+      "PPD: Not All Prefills Are Equal",
+      "no_result"
+    ],
+    [
+      "HeteroInfer",
+      "HeteroInfer: Characterizing Mobile SoC for Accelerating Heterogeneous LLM Inference",
+      "no_result"
+    ],
+    [
+      "MARS",
+      "MARS: Efficient, Adaptive Co-Scheduling for Heterogeneous Agentic Systems",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "Agentic-AI-Workload",
+      "Agentic AI Workload Characteristics",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "CCL-Bench",
+      "CCL-Bench 1.0",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "ProfInfer",
+      "ProfInfer: An eBPF-based Fine-Grained LLM Inference Profiler",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "Frontier",
+      "Frontier: Towards Comprehensive and Accurate LLM Inference Simulation",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "InfiniGen",
+      "InfiniGen: Efficient Generative Inference of Large Language Models with Dynamic KV Cache Management",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "LMCache",
+      "LMCache: Efficient KV Cache Management for LLM Serving",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "CacheSlide",
+      "CacheSlide: Unlocking Cross Position-Aware KV Cache Reuse for Accelerating LLM Serving",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "AlignedServe",
+      "AlignedServe: Orchestrating Prefix-aware Batching to Build a High-throughput and Computing-efficient LLM Serving System",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "FineMoE",
+      "Taming Latency-Memory Trade-Off in MoE-Based LLM Serving via Fine-Grained Expert Offloading",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "MoE-APEX",
+      "MoE-APEX: An Efficient MoE Inference System with Adaptive Precision Expert Offloading",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "OpenHands",
+      "OpenHands: An Open Platform for AI Software Developers as Generalist Agents",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "PASTE",
+      "PASTE: Parallelizing Tool Execution and LLM Generation for Low-Latency Agent Serving",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "SAGA",
+      "SAGA: Workflow-Atomic Scheduling for AI Agent Inference on GPU Clusters",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "DiffServe",
+      "DiffServe: Efficiently Serving Text-to-Image Diffusion Models with Query-Aware Model Scaling",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "BurstGPT",
+      "BurstGPT: A Real-World Workload Dataset to Optimize LLM Serving Systems",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "Chakra",
+      "Chakra: A Standardized Execution Trace for Distributed ML Workloads",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "Splitwise",
+      "Splitwise: Efficient generative LLM inference using phase splitting",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "WindServe",
+      "WindServe: Efficient Phase Splitting for LLM Serving",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "Kitty",
+      "Kitty: Accurate and Efficient KV Cache Quantization for LLM Inference",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "FlexiCache",
+      "FlexiCache: Flexible KV Cache Management for Efficient LLM Serving",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "OPKV",
+      "OPKV: Optimizing KV Cache for Long Context LLM Inference",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "Hybe",
+      "Hybe: Hybrid Backend for Efficient LLM Inference",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "NPUMoE",
+      "NPUMoE: Efficient MoE Inference on NPU",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "DAK",
+      "DAK: Direct Access KV Cache for LLM Inference",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "CRAFT",
+      "CRAFT: Customizing Resource Allocation for Fine-Tuning and Inference",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "MoE-Tax",
+      "MoE Tax: The Cost of MoE Inference",
+      "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1082)>"
+    ],
+    [
+      "FarSkip-Collective",
+      "FarSkip-Collective: Efficient MoE Communication",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "NanoFlow",
+      "NanoFlow: Towards Optimal Large Language Model Serving Throughput",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "TokenWeave",
+      "TokenWeave: Efficient LLM Inference with Token-level Parallelism",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "FlashAttention-4",
+      "FlashAttention-4",
+      "HTTP Error 429: Unknown Error"
+    ],
+    [
+      "LIA",
+      "LIA: Cost-efficient LLM Inference Acceleration with Intel AMX and CXL",
+      "HTTP Error 429: Unknown Error"
+    ]
+  ]
+}

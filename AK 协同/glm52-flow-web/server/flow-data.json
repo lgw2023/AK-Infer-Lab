@@ -1,0 +1,427 @@
+{
+  "meta": {
+    "title": "GLM-5.2 推理计算流与 CPU/GPU/NPU 异构协同",
+    "subtitle": "标准 GPU/NPU 主算 vs NEO decode attention/KV 下沉 vs KTransformers MoE expert 分层",
+    "sources": [
+      "AK 协同/简略版 以 GLM-5.2 为例的大模型推理计算流与异构协同调研说明.md",
+      "AK 协同/详细版 以 GLM-5.2 为例的大模型推理计算流与异构协同调研说明.md",
+      "AK 协同/大模型推理硬件层面对照地图.md"
+    ]
+  },
+  "modelFacts": [
+    {
+      "label": "模型类型",
+      "value": "glm_moe_dsa",
+      "note": "以 MoE、DSA、IndexShare、MLA compressed KV 为核心分析对象"
+    },
+    {
+      "label": "层数",
+      "value": "78 layers",
+      "note": "Layer 0-2 是 dense MLP，Layer 3-77 进入 sparse MoE MLP"
+    },
+    {
+      "label": "规模",
+      "value": "744B total / 39B-40B active",
+      "note": "瓶颈不只是总参数，而是热状态在近端内存中的竞争"
+    },
+    {
+      "label": "上下文",
+      "value": "1M context",
+      "note": "需要将 KV、Prefix、Context 和 IndexShare metadata 作为状态对象管理"
+    },
+    {
+      "label": "MoE",
+      "value": "256 routed / top-8 / 1 shared",
+      "note": "expert 热度、预取和 miss penalty 决定 decode 尾延迟"
+    },
+    {
+      "label": "KV 口径",
+      "value": "kv_lora_rank 512 + RoPE 64",
+      "note": "采用 compressed KV 视角，而不是传统完整 K/V head 估算"
+    }
+  ],
+  "phases": [
+    {
+      "id": "prefill",
+      "label": "Prefill",
+      "headline": "整段 prompt 并行，偏 compute-bound",
+      "summary": "CPU 完成请求解析、tokenizer 和 batch 组织；GPU/NPU 处理 embedding、78 层 attention 与 MLP/MoE，写入 prompt 的 compressed KV，并计算首个 logits。",
+      "bottlenecks": ["Tensor Core / AI Core 吞吐", "HBM 带宽", "attention workspace", "prompt KV 写入", "DSA indexer / IndexShare metadata"],
+      "metrics": ["TTFT", "HBM occupancy", "prefill tokens/s", "workspace 峰值", "prefix hit rate"]
+    },
+    {
+      "id": "decode",
+      "label": "Decode",
+      "headline": "逐 token 迭代，偏 memory/state/scheduler-bound",
+      "summary": "每个新 token 都要读取历史 compressed KV、执行 attention、router、top-8 experts、lm_head 与采样；小 batch 让计算利用率降低，状态访问和调度更容易成为瓶颈。",
+      "bottlenecks": ["KV 读带宽", "expert cache 命中率", "DDR/SSD 回取", "PCIe / DMA 同步", "scheduler queue 与 tail latency"],
+      "metrics": ["TPOT", "P95/P99", "expert hit/miss", "KV restore latency", "D2H/H2D bytes/token"]
+    }
+  ],
+  "pipeline": [
+    {
+      "id": "tokens",
+      "label": "Prompt / Tokens",
+      "hardware": "CPU runtime",
+      "summary": "chat template、tokenization、position ids、attention mask 和 batch 调度入口"
+    },
+    {
+      "id": "embedding",
+      "label": "Embedding",
+      "hardware": "GPU/NPU + HBM",
+      "summary": "token ids 查表进入 hidden_size=6144 的 residual stream"
+    },
+    {
+      "id": "attention",
+      "label": "MLA / DSA Attention",
+      "hardware": "GPU/NPU hot path",
+      "summary": "Q low-rank、compressed KV projection、RoPE、DSA indexer / IndexShare 与 sparse attention"
+    },
+    {
+      "id": "norm",
+      "label": "Residual + Norm",
+      "hardware": "GPU/NPU",
+      "summary": "RMSNorm、residual add、elementwise activation 与 workspace 管理"
+    },
+    {
+      "id": "moe",
+      "label": "MLP / MoE",
+      "hardware": "GPU/NPU hot experts + optional CPU warm experts",
+      "summary": "Layer 0-2 dense MLP；Layer 3-77 router、top-8 routed experts、shared expert 与 combine"
+    },
+    {
+      "id": "head",
+      "label": "LM Head",
+      "hardware": "GPU/NPU",
+      "summary": "final norm 后计算 logits，输出给采样/解码控制"
+    },
+    {
+      "id": "sampling",
+      "label": "Sampling / Decode",
+      "hardware": "CPU or GPU sampler",
+      "summary": "采样、stop check、MTP draft/verify 接受逻辑和输出 token"
+    }
+  ],
+  "components": [
+    {
+      "id": "runtime",
+      "label": "Runtime 控制面",
+      "group": "control",
+      "layer": "请求入口",
+      "summary": "tokenizer、scheduler、sampler、cache metadata 和策略决策。",
+      "prefill": "形成 prompt batch，做 template、position、prefix 命中和 chunked prefill 决策。",
+      "decode": "形成 decode batch，维护 block table、stop check、采样和 offload / prefetch 决策。",
+      "standard": "CPU 负责控制面，热路径尽量不跨 CPU。",
+      "neo": "CPU scheduler 增加 load-aware decision，决定哪些请求的 decode attention/KV 留在 CPU。",
+      "ktransformers": "CPU scheduler 增加 expert routing trace、expert task queue、prefetch 和 deferral 调度。"
+    },
+    {
+      "id": "attention",
+      "label": "MLA / DSA Attention",
+      "group": "compute",
+      "layer": "每层 attention",
+      "summary": "Q low-rank、compressed KV、RoPE、DSA indexer/IndexShare、sparse attention 聚合。",
+      "prefill": "整段 prompt 并行生成 compressed KV 和稀疏索引，attention workspace 峰值较大。",
+      "decode": "当前 token 读取历史 compressed KV，按 sparse index 聚合，频繁访问状态。",
+      "standard": "GPU/NPU 执行 attention，KV 主要在 HBM/NPU memory。",
+      "neo": "GPU/NPU 保留主路径，部分请求的 decode attention 和 KV 下沉到 CPU/DDR。",
+      "ktransformers": "attention 基本保持在 GPU/NPU，主要改动不在 KV attention。"
+    },
+    {
+      "id": "kv",
+      "label": "Compressed KV / Prefix",
+      "group": "state",
+      "layer": "全层状态",
+      "summary": "GLM-5.2 不适合按传统 full K/V head 估算，应作为 compressed KV 与 prefix state 管理。",
+      "prefill": "写入 prompt KV，并记录 prefix、block table、IndexShare metadata。",
+      "decode": "每 token 读历史 KV 并追加当前 token KV，是 memory-bound 的主要来源之一。",
+      "standard": "活动 KV 尽量常驻 HBM/NPU memory。",
+      "neo": "部分 KV 留在 CPU DDR，CPU 在本地完成对应 decode attention。",
+      "ktransformers": "KV 不是核心改动对象，可与 UCM/Mooncake/LMCache 叠加。"
+    },
+    {
+      "id": "moe",
+      "label": "MoE Router + Experts",
+      "group": "expert",
+      "layer": "Layer 3-77",
+      "summary": "router 计算 256 expert score，每 token 选择 top-8 routed experts，并叠加 1 个 shared expert。",
+      "prefill": "大量 prompt token 产生 expert 分组和 expert FFN，dispatch/all-to-all 或 cache 压力明显。",
+      "decode": "token 数少但每步都要命中 top-8 experts，expert miss 会直接影响 TPOT/P99。",
+      "standard": "router、shared expert、routed experts 尽量在 GPU/NPU/HBM 或多卡 EP 内完成。",
+      "neo": "通常不改 MoE 主路径，不能解决 expert weight 容量压力。",
+      "ktransformers": "shared/hot experts 留 GPU/NPU；warm routed experts 放 CPU DDR；cold experts 可放 SSD。"
+    },
+    {
+      "id": "dense",
+      "label": "Dense MLP / Projection",
+      "group": "compute",
+      "layer": "Layer 0-2 与投影层",
+      "summary": "embedding、Q/KV projection、dense MLP 和 lm_head 等高密度矩阵计算。",
+      "prefill": "大矩阵高并行，通常更能吃满 Tensor Core/AI Core。",
+      "decode": "单 token 小 GEMM，利用率降低但仍应在加速器主路径。",
+      "standard": "GPU/NPU 主算。",
+      "neo": "GPU/NPU 继续跑线性层与主路径，CPU 只承接部分 attention 子路径。",
+      "ktransformers": "GPU/NPU 继续跑 non-expert 主干、shared/hot expert 和 lm_head。"
+    },
+    {
+      "id": "dma",
+      "label": "DMA / PCIe / UB",
+      "group": "transfer",
+      "layer": "设备互联",
+      "summary": "D2H/H2D、copy stream、P2P、NPU stream 与同步 barrier 决定 offload 是否反噬。",
+      "prefill": "主要承接加载、prefetch、external KV 或 expert warm/cold tier 预取。",
+      "decode": "任何不可隐藏的 CPU 往返、DDR 回取或 SSD 小 I/O 都会放大 TPOT/P99。",
+      "standard": "单卡热路径尽量不跨 DMA；CPU/SSD 多为加载或外部缓存。",
+      "neo": "只传必要 Q/attention output，避免每步搬整段 KV。",
+      "ktransformers": "跨链路传 expert task/output 或预取专家，必须与 GPU/NPU 主算重叠。"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "standard",
+      "title": "标准 GPU/NPU 推理框架",
+      "short": "GPU/NPU 主算 + HBM 近端状态 + CPU 控制面",
+      "accent": "blue",
+      "proposition": "热路径短、实现成熟，但 HBM 被权重、KV、activation、workspace、experts 共同挤压。",
+      "mainHardware": "GPU/NPU AI Core / Tensor Core + HBM/NPU Memory",
+      "offloadObject": "无强 offload；CPU/SSD 主要是控制面和加载/staging",
+      "benefits": ["链路短，同步少", "prefill 高利用率", "工程生态成熟"],
+      "risks": ["HBM 容量压力大", "decode 受 KV 与 expert 访问拖累", "长上下文和 MoE 并发下尾延迟上升"],
+      "lanes": [
+        {
+          "id": "cpu",
+          "title": "CPU 控制面",
+          "items": ["Tokenizer", "Scheduler / Runtime", "Sampling / Metadata"],
+          "note": "负责请求、batch、采样与 cache metadata，不进入主算热路径"
+        },
+        {
+          "id": "gpu",
+          "title": "GPU/NPU 主路径",
+          "items": ["Embedding", "Attention", "MoE 主计算", "LM Head"],
+          "note": "执行模型主算、DSA/IndexShare 和高密度矩阵"
+        },
+        {
+          "id": "hbm",
+          "title": "HBM / NPU Memory",
+          "items": ["热权重", "Active KV", "Activation / Workspace", "Hot Experts"],
+          "note": "多类状态争抢近端容量"
+        },
+        {
+          "id": "cold",
+          "title": "CPU DDR / SSD",
+          "items": ["模型加载", "Host staging", "外部缓存"],
+          "note": "标准路径中通常不在每 token 热路径"
+        }
+      ]
+    },
+    {
+      "id": "neo",
+      "title": "NEO 类 CPU decode attention + KV",
+      "short": "部分 decode attention 与 KV 留在 CPU/DDR，GPU/NPU 跑主干",
+      "accent": "green",
+      "proposition": "把可重叠、状态型的 decode attention 子路径下沉，降低 HBM KV 压力并扩大 batch/concurrency。",
+      "mainHardware": "GPU/NPU 主算 + CPU Cores + CPU DDR",
+      "offloadObject": "部分 request 的 decode attention 与 KV warm tier",
+      "benefits": ["降低 HBM KV 压力", "扩大有效 batch 或并发", "避免每 token 搬整段 KV"],
+      "risks": ["CPU attention/DDR 带宽成为瓶颈", "overlap 不足会恶化 TPOT/P99", "需要 compressed KV/DSA 的 CPU kernel 适配"],
+      "lanes": [
+        {
+          "id": "gpu",
+          "title": "GPU/NPU",
+          "items": ["Attention 主路径", "Linear / MoE", "LM Head"],
+          "note": "仍执行主干和未 offload 请求"
+        },
+        {
+          "id": "cpu",
+          "title": "CPU + DDR",
+          "items": ["部分 Decode Attention", "部分 KV Cache", "Load-aware Scheduling"],
+          "note": "状态留在 CPU 侧，计算也在 CPU 侧完成"
+        },
+        {
+          "id": "tier",
+          "title": "KV 分层",
+          "items": ["GPU HBM: Hot KV", "CPU DDR: Warm KV", "按请求/负载分配"],
+          "note": "关键是减少 HBM 占用和 PCIe 暴露"
+        },
+        {
+          "id": "pipe",
+          "title": "Asymmetric Pipeline",
+          "items": ["GPU 主算并行", "CPU attention 并行", "双端负载平衡"],
+          "note": "收益依赖 overlap ratio 和 CPU queue"
+        }
+      ]
+    },
+    {
+      "id": "ktransformers",
+      "title": "KTransformers 类 MoE expert 分层",
+      "short": "shared/hot experts 留加速器，warm/cold routed experts 下沉到 CPU DDR/SSD",
+      "accent": "amber",
+      "proposition": "把 MoE experts 当作冷热状态对象，而不是要求所有专家权重常驻 HBM。",
+      "mainHardware": "GPU/NPU HBM + CPU DDR + SSD cold tier",
+      "offloadObject": "Routed expert weights、expert index、prefetch plan、低频 expert compute",
+      "benefits": ["缓解 744B MoE expert 容量压力", "减少 expert weight 反复搬运", "让热专家保持低延迟"],
+      "risks": ["CPU expert kernel 能力不确定", "专家预取错误会挤占 HBM", "迁移 Kunpeng 需 SVE/SME microbenchmark"],
+      "lanes": [
+        {
+          "id": "hbm",
+          "title": "GPU/NPU / HBM",
+          "items": ["Shared Expert", "Hot Routed Experts", "Attention 主路径", "主干计算"],
+          "note": "保持高频和高密度计算在近端"
+        },
+        {
+          "id": "ddr",
+          "title": "CPU DDR",
+          "items": ["Warm Routed Experts", "Expert Cache / Index", "低频 CPU Expert Compute"],
+          "note": "作为 expert warm tier 和可能的计算后备"
+        },
+        {
+          "id": "ssd",
+          "title": "SSD / 外部存储",
+          "items": ["Cold Experts", "预取 / 回收", "持久化专家池"],
+          "note": "只适合冷层，不能进入不可隐藏热路径"
+        },
+        {
+          "id": "control",
+          "title": "控制面",
+          "items": ["Expert Routing", "Prefetch Warm/Cold", "Hotness Scheduling"],
+          "note": "根据 top-k trace 做预测、预取和驱逐"
+        }
+      ]
+    }
+  ],
+  "hardwareTiers": [
+    {
+      "id": "npu",
+      "label": "GPU/NPU Compute",
+      "role": "attention、projection、router、hot expert、lm_head 主算",
+      "tone": "blue"
+    },
+    {
+      "id": "hbm",
+      "label": "HBM / NPU Memory",
+      "role": "热权重、active KV、activation、workspace、hot experts",
+      "tone": "coral"
+    },
+    {
+      "id": "dma",
+      "label": "PCIe / UB / DMA",
+      "role": "D2H/H2D、stream、copy engine、P2P 与同步",
+      "tone": "slate"
+    },
+    {
+      "id": "cpu",
+      "label": "CPU Cores",
+      "role": "控制面、metadata、可重叠 attention/expert fallback、I/O 聚合",
+      "tone": "green"
+    },
+    {
+      "id": "ddr",
+      "label": "CPU DDR",
+      "role": "KV warm tier、expert warm tier、host cache、pinned memory",
+      "tone": "amber"
+    },
+    {
+      "id": "ssd",
+      "label": "SSD / NVMe",
+      "role": "KV/expert cold tier、外部缓存、持久化对象池",
+      "tone": "steel"
+    }
+  ],
+  "stateObjects": [
+    {
+      "name": "KV / Prefix / Context",
+      "growth": "context length、batch、concurrency、多轮复用",
+      "standard": "HBM active KV",
+      "neo": "CPU DDR warm KV + CPU decode attention",
+      "ktransformers": "通常不主改，可叠加 UCM / Mooncake / LMCache",
+      "fields": ["bytes/token", "tier", "next_use", "restore_cost", "prefix_id"]
+    },
+    {
+      "name": "MoE Expert",
+      "growth": "expert count、top-k、hidden size、precision",
+      "standard": "HBM hot/all experts 或多卡 EP",
+      "neo": "通常仍在 GPU/NPU",
+      "ktransformers": "hot in HBM, warm in DDR, cold in SSD",
+      "fields": ["expert_id", "hotness", "hit/miss", "prefetch_lead", "compute_latency"]
+    },
+    {
+      "name": "Weight / Activation / Workspace",
+      "growth": "模型规模、batch、sequence、attention kernel",
+      "standard": "HBM 近端常驻或临时申请",
+      "neo": "主权重不动，释放部分 KV 空间",
+      "ktransformers": "expert weight 从主权重池中拆出来分层",
+      "fields": ["object_type", "bytes", "layer", "evict_cost", "recompute_cost"]
+    },
+    {
+      "name": "IndexShare Metadata",
+      "growth": "sparse attention layer、long context、index reuse",
+      "standard": "GPU/NPU metadata + HBM",
+      "neo": "CPU attention 若接管，需要同格式 index/kernel",
+      "ktransformers": "attention 仍在 GPU/NPU，metadata 留近端",
+      "fields": ["indexer_type", "reuse_group", "layer", "metadata_bytes", "latency"]
+    }
+  ],
+  "comparisonRows": [
+    {
+      "topic": "主优化对象",
+      "standard": "主干推理吞吐与链路成熟度",
+      "neo": "Decode attention + KV",
+      "ktransformers": "MoE routed experts"
+    },
+    {
+      "topic": "CPU 角色",
+      "standard": "tokenizer、scheduler、sampler、metadata",
+      "neo": "KV warm tier + 部分 attention compute + load-aware scheduler",
+      "ktransformers": "expert warm tier / prefetch / 低频 expert compute"
+    },
+    {
+      "topic": "Prefill",
+      "standard": "GPU/NPU 大矩阵主算",
+      "neo": "基本仍在 GPU/NPU",
+      "ktransformers": "主干在 GPU/NPU；专家可按热度分层"
+    },
+    {
+      "topic": "Decode",
+      "standard": "GPU/NPU 读 HBM KV 和 experts",
+      "neo": "部分 request 在 CPU/DDR 做 attention",
+      "ktransformers": "GPU/NPU hot expert + CPU/DDR warm expert"
+    },
+    {
+      "topic": "关键收益",
+      "standard": "简单、稳定、热路径短",
+      "neo": "减轻 HBM KV 压力，扩大 batch/concurrency",
+      "ktransformers": "大 MoE 放得下，expert miss 可控"
+    },
+    {
+      "topic": "主要风险",
+      "standard": "HBM 被权重、KV、experts 挤压",
+      "neo": "CPU/DDR 或 overlap 变瓶颈",
+      "ktransformers": "CPU expert kernel 与预取准确率不确定"
+    }
+  ],
+  "traceFields": [
+    "layer_id",
+    "layer_type",
+    "indexer_type",
+    "q_proj_latency",
+    "kv_proj_latency",
+    "attention_latency",
+    "kv_read_bytes",
+    "kv_write_bytes",
+    "router_latency",
+    "topk_expert_ids",
+    "expert_hit_or_miss",
+    "expert_load_bytes",
+    "expert_compute_latency",
+    "hbm_occupancy",
+    "ddr_traffic",
+    "dma_bytes",
+    "stall_reason"
+  ],
+  "akTakeaways": [
+    "Ascend/NPU 保持 high-density 主算：embedding、MLA/DSA attention、projection、router、hot experts、lm_head。",
+    "Kunpeng/CPU 优先做控制面、KV warm tier、expert warm tier、预取、metadata 和可观测闭环。",
+    "先验证 KV warm tier、UCM/external KV、expert hotness trace；再推进 MoE expert 分层和 SSD cold tier。",
+    "不能把 NEO 或 KTransformers 简化成 CPU 替代 NPU；关键是状态留在哪、计算在哪、跨链路搬运是否能隐藏。"
+  ]
+}

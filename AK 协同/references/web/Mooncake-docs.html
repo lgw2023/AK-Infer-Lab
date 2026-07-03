@@ -1,0 +1,872 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Welcome to Mooncake &#8212; Mooncake</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=ea134bb0" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=a5fa425f"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="_static/togglebutton.js?v=4a39c7ea"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <script src="_static/custom.js?v=79a5fa75"></script>
+    <link rel="icon" href="_static/moonshot.ico"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Build Guide" href="getting_started/build.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="#">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/mooncake-icon.png" class="logo__image only-light" alt="Mooncake - Home"/>
+    <script>document.write(`<img src="_static/mooncake-icon.png" class="logo__image only-dark" alt="Mooncake - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="getting_started/build.html">Build Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/quick-start.html">Quick Start</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Deployment</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html">Mooncake Store Deployment &amp; Tuning Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/sglang-integration/index.html">Mooncake x SGLang Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/index.html">Mooncake x vLLM Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/lmcache-integration.html">Mooncake x LMCache Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/lmdeploy-integration-v0.9.html">Mooncake x LMDeploy Integration</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Performance</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="performance/vllm/index.html">vLLM Integration Performance Benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance/sglang/index.html">SGLang Integration Performance Benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance/mooncake/index.html">Mooncake Performance Benchmarks</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Design Documents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="design/architecture.html">Mooncake Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/mooncake-store.html">Mooncake Store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/p2p-store.html">P2P Store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/mooncake-backend-pg.html">Mooncake Backend (PG) Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/mooncake-ep.html">Mooncake EP Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/transfer-engine/index.html">Transfer Engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/hicache-design.html">Mooncake x SGLang HiCache System Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/engram.html">EngramStore Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/unified-parallel-tensor-io.html">Unified Parallel Tensor IO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/tent/overview.html">TENT: Transfer Engine NEXT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/tent/tebench.html">Mooncake Transfer Engine Benchmark Tool (<code class="docutils literal notranslate"><span class="pre">tebench</span></code>) Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/conductor/conductor-architecture-design.html">Mooncake Conductor Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design/ssd-free-ratio-first-allocation.html">SSD Free-Ratio-First Allocation Design</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="api-reference/python/index.html">Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-reference/cpp/index.html">C/C++ API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-reference/http/index.html">HTTP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-reference/rust/index.html">Rust</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Troubleshooting</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting/error-code.html">Error Code Explanation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting/troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting/pg-ep-troubleshooting.html">Mooncake PG/EP Troubleshooting</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="community/governance.html">Governance</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Archived</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/vllm-mooncakestoreconnector.html">Guide: vLLM MooncakeStoreConnector</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/vllm-integration-v0.2.html">vLLM V0 Disaggregated Serving Demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/vllm-integration-v0.3.html">vLLM V0 Disaggregated Serving with MooncakeStore</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/vllm-integration-v1.0.html">vLLM v1 backend Disaggregated Serving with MooncakeConnector</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/kvcache-ai/Mooncake" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/kvcache-ai/Mooncake/edit/main/docs/source/index.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/index.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Welcome to Mooncake</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation">Documentation</a><ul class="visible nav section-nav flex-column">
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="welcome-to-mooncake">
+<h1>Welcome to Mooncake<a class="headerlink" href="#welcome-to-mooncake" title="Link to this heading">#</a></h1>
+<figure class="align-center">
+<img alt="Mooncake" class="no-scaled-link" src="_images/mooncake-icon.png" style="width: 60%;" />
+</figure>
+<p style="text-align:center">
+<strong>A KVCache-centric Disaggregated Architecture for LLM Serving.
+</strong>
+</p>
+
+<p style="text-align:center">
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+<a class="github-button" href="https://github.com/kvcache-ai/Mooncake" data-show-count="true" data-size="large" aria-label="Star">Star</a>
+<a class="github-button" href="https://github.com/kvcache-ai/Mooncake/subscription" data-icon="octicon-eye" data-size="large" aria-label="Watch">Watch</a>
+<a class="github-button" href="https://github.com/kvcache-ai/Mooncake/fork" data-icon="octicon-repo-forked" data-size="large" aria-label="Fork">Fork</a>
+</p><p>Mooncake is the serving platform for <a href="https://kimi.ai/">Kimi</a>, a leading LLM service provided by <a href="https://www.moonshot.cn/">Moonshot AI</a>.
+Now both the Transfer Engine and Mooncake Store are open-sourced!
+This repository also hosts its technical report and the open-sourced traces.</p>
+<h2 id="overview">🎉 Overview</h2>
+<p>Mooncake features a KVCache-centric disaggregated architecture that separates prefill and decode clusters. It also leverages underutilized CPU, DRAM, and SSD resources in GPU clusters to build a disaggregated KVCache pool.</p>
+<figure class="align-center">
+<a class="reference internal image-reference" href="_images/architecture.png"><img alt="Mooncake architecture" src="_images/architecture.png" style="width: 88%;" />
+</a>
+</figure>
+<p>At the center of Mooncake is a KVCache-centric scheduler that balances effective throughput with latency-related Service Level Objectives (SLOs). In highly overloaded scenarios, Mooncake uses prediction-based early rejection to avoid wasting computation on requests that cannot meet their SLOs. Experiments show that Mooncake is especially effective for long-context workloads, achieving up to a 525% throughput increase in simulated scenarios while meeting SLOs. Under real workloads, Mooncake’s architecture enables <a href="https://kimi.ai/">Kimi</a> to handle 75% more requests.</p>
+<h2 id="updates">🔄 Updates</h2>
+<ul class="simple">
+<li><p><strong>May 7, 2026</strong>: 🚀 <a class="reference external" href="https://vllm.ai/blog/mooncake-store">vLLM officially features Mooncake Store</a> — a deep dive into how Mooncake’s distributed KVCache engine supercharges vLLM inference with high-throughput, memory-efficient, cross-instance KV cache sharing!</p></li>
+<li><p><strong>Apr 29, 2026</strong>: SGLang introduces <a class="reference external" href="https://lmsys.org/blog/2026-04-29-p2p-update/">RDMA-based P2P weight transfer for large-scale distributed RL</a> using Mooncake TransferEngine, achieving 7x faster weight updates for the 1T-parameter Kimi-K2 model (53s → 7.2s) with zero-copy RDMA transfer across thousands of GPUs.</p></li>
+<li><p><strong>Mar 19, 2026</strong>: <a class="reference external" href="https://pytorch.org/blog/torchspec-speculative-decoding-training-at-scale">TorchSpec: Speculative Decoding Training at Scale</a> is <a class="reference external" href="https://github.com/torchspec-project/TorchSpec">open sourced</a>, using Mooncake to decouple inference and training via efficient hidden states management.</p></li>
+<li><p><strong>Mar 5, 2026</strong>: <a class="reference external" href="https://github.com/ModelTC/LightX2V/pull/893">LightX2V</a> now supports disaggregated deployment based on Mooncake, enabling encoder/transformer service decoupling with Mooncake Transfer Engine for high-performance cross-device and cross-machine data transfer.</p></li>
+<li><p><strong>Feb 25, 2026</strong>: <a class="reference external" href="https://github.com/sgl-project/sglang">SGLang</a> merged <a class="reference external" href="https://github.com/sgl-project/sglang/pull/16137">Encoder Global Cache Manager</a>, introducing a Mooncake-powered global multimodal embedding cache that enables cross-instance sharing of ViT embeddings to avoid redundant GPU computation.</p></li>
+</ul>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">More</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<ul class="simple">
+<li><p class="sd-card-text"><strong>Feb 24, 2026</strong>: <a class="reference external" href="https://docs.vllm.ai/projects/vllm-omni/en/latest/design/feature/disaggregated_inference/">vLLM-Omni</a> introduces disaggregated inference connectors with support for both <code class="docutils literal notranslate"><span class="pre">MooncakeStoreConnector</span></code> and <code class="docutils literal notranslate"><span class="pre">MooncakeTransferEngineConnector</span></code> for multi-node omni-modality pipelines.</p></li>
+<li><p class="sd-card-text"><strong>Feb 12, 2026</strong>: <a class="reference external" href="https://pytorch.org/blog/mooncake-joins-pytorch-ecosystem/">Mooncake Joins PyTorch Ecosystem</a> We are thrilled to announce that Mooncake has officially joined the PyTorch Ecosystem!</p></li>
+<li><p class="sd-card-text"><strong>Jan 28, 2026</strong>: <a class="reference external" href="https://github.com/taco-project/FlexKV">FlexKV</a>, a distributed KV store and cache system from Tencent and NVIDIA in collaboration with the community, now supports <a class="reference external" href="https://github.com/taco-project/FlexKV/blob/main/docs/dist_reuse/README_en.md">distributed KVCache reuse</a> with the Mooncake Transfer Engine.</p></li>
+<li><p class="sd-card-text"><strong>Dec 27, 2025</strong>: Collaboration with <a class="reference external" href="https://github.com/alibaba/ROLL">ROLL</a>! Check out the paper <a class="reference external" href="https://arxiv.org/abs/2512.22560">here</a>.</p></li>
+<li><p class="sd-card-text"><strong>Dec 23, 2025</strong>: SGLang introduces <a class="reference external" href="https://lmsys.org/blog/2026-01-12-epd/">Encode-Prefill-Decode (EPD) Disaggregation</a> with Mooncake as a transfer backend. This integration allows decoupling compute-intensive multimodal encoders (e.g., Vision Transformers) from language model nodes, utilizing Mooncake’s RDMA engine for zero-copy transfer of large multimodal embeddings.</p></li>
+<li><p class="sd-card-text"><strong>Dec 19, 2025</strong>: Mooncake Transfer Engine has been <a class="reference external" href="https://github.com/NVIDIA/TensorRT-LLM/tree/main/cpp/tensorrt_llm/executor/cache_transmission/mooncake_utils">integrated into TensorRT LLM</a> for KVCache transfer in PD-disaggregated inference.</p></li>
+<li><p class="sd-card-text"><strong>Dec 19, 2025</strong>: Mooncake Transfer Engine has been directly integrated into vLLM v1 as a <a class="reference external" href="https://docs.vllm.ai/en/latest/features/mooncake_connector_usage/">KV Connector</a> in PD-disaggregated setups.</p></li>
+<li><p class="sd-card-text"><strong>Nov 07, 2025</strong>: <a class="reference external" href="https://github.com/sgl-project/rbg/blob/main/keps/74-mooncake-integration/README.md">RBG + SGLang HiCache + Mooncake</a>, a role-based out-of-the-box solution for cloud native deployment, which is elastic, scalable, and high-performance.</p></li>
+<li><p class="sd-card-text"><strong>Sept 18, 2025</strong>: Mooncake Store empowers vLLM Ascend by serving as <a class="reference external" href="https://docs.vllm.ai/projects/ascend/zh-cn/main/user_guide/feature_guide/kv_pool.html">the distributed KV cache pool backend</a>.</p></li>
+<li><p class="sd-card-text"><strong>Sept 10, 2025</strong>: SGLang officially supports Mooncake Store as a <a class="reference external" href="https://lmsys.org/blog/2025-09-10-sglang-hicache/">hierarchical KV caching storage backend</a>. The integration extends RadixAttention with multi-tier KV cache storage across device, host, and remote storage layers.</p></li>
+<li><p class="sd-card-text"><strong>Sept 10, 2025</strong>: The official &amp; high-performance version of Mooncake P2P Store is open-sourced as <a class="reference external" href="https://github.com/MoonshotAI/checkpoint-engine/">checkpoint-engine</a>. It has been successfully applied in K1.5 and K2 production training, updating Kimi-K2 model (1T parameters) across thousands of GPUs in ~20s.</p></li>
+<li><p class="sd-card-text"><strong>Aug 23, 2025</strong>: <a class="reference external" href="https://github.com/jd-opensource/xllm">xLLM</a> high-performance inference engine builds hybrid KV cache management based on Mooncake, supporting global KV cache management with intelligent offloading and prefetching.</p></li>
+<li><p class="sd-card-text"><strong>Aug 18, 2025</strong>: vLLM-Ascend <a class="reference external" href="https://docs.vllm.ai/projects/ascend/en/latest/developer_guide/feature_guide/disaggregated_prefill.html">integrates Mooncake Transfer Engine</a> for KV cache register and disaggregate prefill, enabling efficient distributed inference on Ascend NPUs.</p></li>
+<li><p class="sd-card-text"><strong>Jul 20, 2025</strong>: Mooncake powers <a class="reference external" href="https://lmsys.org/blog/2025-07-20-k2-large-scale-ep/">the deployment of Kimi K2</a> on 128 H200 GPUs with PD disaggregation and large-scale expert parallelism, achieving 224k tokens/sec prefill throughput and 288k tokens/sec decode throughput.</p></li>
+<li><p class="sd-card-text"><strong>Jun 20, 2025</strong>: Mooncake becomes a PD disaggregation <a class="reference internal" href="getting_started/examples/lmdeploy-integration-v0.9.html"><span class="doc std std-doc">backend</span></a> for LMDeploy.</p></li>
+<li><p class="sd-card-text"><strong>May 9, 2025</strong>: NIXL officially supports Mooncake Transfer Engine as <a class="reference external" href="https://github.com/ai-dynamo/nixl/blob/main/src/plugins/mooncake/README.md">a backend plugin</a>.</p></li>
+<li><p class="sd-card-text"><strong>May 8, 2025</strong>: <a class="reference internal" href="getting_started/examples/lmcache-integration.html"><span class="doc std std-doc">Mooncake x LMCache</span></a> unite to pioneer KVCache-centric LLM serving system.</p></li>
+<li><p class="sd-card-text"><strong>May 5, 2025</strong>: Supported by Mooncake Team, SGLang release <a href="https://lmsys.org/blog/2025-05-05-large-scale-ep/" target="_blank">guidance</a> to deploy DeepSeek with PD Disaggregation on 96 H100 GPUs.</p></li>
+<li><p class="sd-card-text"><strong>Apr 22, 2025</strong>: LMCache officially supports Mooncake Store as a <a href="https://blog.lmcache.ai/2025-04-22-tencent/" target="_blank">remote connector</a>.</p></li>
+<li><p class="sd-card-text"><strong>Apr 10, 2025</strong>: SGLang officially supports Mooncake Transfer Engine for disaggregated prefilling and KV cache transfer.</p></li>
+<li><p class="sd-card-text"><strong>Mar 7, 2025</strong>: We open-sourced the Mooncake Store, a distributed KVCache based on Transfer Engine. vLLM’s xPyD disaggregated prefilling &amp; decoding based on Mooncake Store will be released soon.</p></li>
+<li><p class="sd-card-text"><strong>Feb 25, 2025</strong>: Mooncake receives the <strong>Best Paper Award</strong> at <strong>FAST 2025</strong>!</p></li>
+<li><p class="sd-card-text"><strong>Feb 21, 2025</strong>: The updated <a href="https://github.com/kvcache-ai/Mooncake/tree/main/FAST25-release/traces" target="_blank">traces</a> used in our FAST’25 paper have been released.</p></li>
+<li><p class="sd-card-text"><strong>Dec 16, 2024</strong>: vLLM officially supports Mooncake Transfer Engine for disaggregated prefilling and KV cache transfer.</p></li>
+<li><p class="sd-card-text"><strong>Nov 28, 2024</strong>: We open-sourced the Transfer Engine, the central component of Mooncake. We also provide two demonstrations of Transfer Engine: a P2P Store and vLLM integration.</p></li>
+<li><p class="sd-card-text"><strong>July 9, 2024</strong>: We open-sourced the trace as a <a href="https://github.com/kvcache-ai/Mooncake/blob/main/FAST25-release/arxiv-trace/mooncake_trace.jsonl" target="_blank">JSONL file</a>.</p></li>
+<li><p class="sd-card-text"><strong>June 27, 2024</strong>: We present a series of Chinese blogs with more discussions on <a href="https://zhuanlan.zhihu.com/p/705754254">zhihu 1</a>, <a href="https://zhuanlan.zhihu.com/p/705910725">2</a>, <a href="https://zhuanlan.zhihu.com/p/706204757">3</a>, <a href="https://zhuanlan.zhihu.com/p/707997501">4</a>, <a href="https://zhuanlan.zhihu.com/p/9461861451">5</a>, <a href="https://zhuanlan.zhihu.com/p/1939988652114580803">6</a>, <a href="https://zhuanlan.zhihu.com/p/1959366095443064318">7</a>.</p></li>
+<li><p class="sd-card-text"><strong>June 26, 2024</strong>: Initial technical report release.</p></li>
+</ul>
+</div>
+</details><section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/build.html">Build Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/build.html#pypi-package">PyPI Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/build.html#build-from-source">Build From Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/build.html#use-mooncake-in-docker-containers">Use Mooncake in Docker Containers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/build.html#advanced-compile-options">Advanced Compile Options</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/quick-start.html#before-using-mooncake">Before using Mooncake</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/quick-start.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/quick-start.html#transfer-engine-quick-start">Transfer Engine Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/quick-start.html#mooncake-store-quick-start">Mooncake Store Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/quick-start.html#skills-for-ai-coding-assistants">Skills for AI Coding Assistants</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Deployment</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html">Mooncake Store Deployment &amp; Tuning Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html#architecture-overview">Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html#deployment-scenarios">Deployment Scenarios</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html#metrics-endpoints">Metrics Endpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html#tenant-quota-management">Tenant Quota Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html#quick-tips">Quick Tips</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html#reference-master-startup-flags">Reference: Master Startup Flags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment/mooncake-store-deployment-guide.html#reference-client-configuration-tuning">Reference: Client Configuration &amp; Tuning</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/sglang-integration/index.html">Mooncake x SGLang Integration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/sglang-integration/index.html#pd-disaggregation">PD Disaggregation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/sglang-integration/index.html#hicache-with-mooncake-store">HiCache with Mooncake Store</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/index.html">Mooncake x vLLM Integration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/vllm-integration/index.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/vllm-integration/index.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/vllm-integration/index.html#archived-documentation">Archived Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/lmcache-integration.html">Mooncake x LMCache Integration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmcache-integration.html#about-mooncake">About Mooncake</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmcache-integration.html#about-lmcache">About LMCache</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmcache-integration.html#collaboration-highlights">Collaboration Highlights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmcache-integration.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmcache-integration.html#performance-benchmarking-and-results">Performance Benchmarking and Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmcache-integration.html#future-developments">Future Developments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/lmdeploy-integration-v0.9.html">Mooncake x LMDeploy Integration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmdeploy-integration-v0.9.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmdeploy-integration-v0.9.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmdeploy-integration-v0.9.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/examples/lmdeploy-integration-v0.9.html#notes">Notes</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Performance</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="performance/vllm/index.html">vLLM Integration Performance Benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance/sglang/index.html">SGLang Integration Performance Benchmarks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance/mooncake/index.html">Mooncake Performance Benchmarks</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Design Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="design/architecture.html">Mooncake Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/architecture.html#architectural-overview">Architectural Overview</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/mooncake-store.html">Mooncake Store</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#architecture">Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#client-c-api">Client C++ API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#master-service">Master Service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#buffer-allocator">Buffer Allocator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#allocationstrategy">AllocationStrategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#eviction-policy">Eviction Policy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#lease">Lease</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#soft-pin">Soft Pin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#hard-pin">Hard Pin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#zombie-object-cleanup">Zombie Object Cleanup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#preferred-segment-allocation">Preferred Segment Allocation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#multi-layer-storage-support">Multi-layer Storage Support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#builtin-metadata-server">Builtin Metadata Server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#mooncake-store-python-api">Mooncake Store Python API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-store.html#version-management-policy">Version Management Policy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/p2p-store.html">P2P Store</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/p2p-store.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/p2p-store.html#p2p-store-sample-program">P2P Store Sample Program</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/p2p-store.html#p2p-store-api">P2P Store API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/mooncake-backend-pg.html">Mooncake Backend (PG) Design</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#goals">Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#relationship-with-torch-distributed">Relationship with <code class="docutils literal notranslate"><span class="pre">torch.distributed</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#main-runtime-objects">Main runtime objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#initialization-lifecycle">Initialization lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#active-ranks-and-dynamic-world-size">Active ranks and dynamic world size</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#elastic-recovery-protocol">Elastic recovery protocol</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#subgroup-semantics">Subgroup semantics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#collective-behavior">Collective behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#failure-and-recovery-boundaries">Failure and recovery boundaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#testing-checklist-for-pg-changes">Testing checklist for PG changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-backend-pg.html#related-documentation">Related documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/mooncake-ep.html">Mooncake EP Design</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#goals">Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#high-level-data-flow">High-level data flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#relationship-with-mooncake-backend-pg">Relationship with Mooncake Backend (PG)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#runtime-objects">Runtime objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#fast-paths-and-fallback">Fast paths and fallback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#metadata-exchange">Metadata exchange</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#dispatch-internals">Dispatch internals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#combine-internals">Combine internals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#rank-activeness-and-timeout-behavior">Rank activeness and timeout behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#stream-synchronization-model">Stream synchronization model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#recovery-integration">Recovery integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#performance-considerations">Performance considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#developer-test-checklist">Developer test checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/mooncake-ep.html#related-documentation">Related documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/transfer-engine/index.html">Transfer Engine</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#example-transfer-engine-bench">Example: Transfer Engine Bench</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#transfer-engine-c-c-api">Transfer Engine C/C++ API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#using-transfer-engine-to-your-projects">Using Transfer Engine to Your Projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#advanced-runtime-options">Advanced Runtime Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#c-api-reference">C++ API Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#supported-protocols">Supported Protocols</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#efa-transport-aws">EFA Transport (AWS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#ascend-transport-component">Ascend Transport Component</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#sunrise-link-transport-component">Sunrise Link Transport Component</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/transfer-engine/index.html#benchmark-and-tuning-guide">Benchmark and Tuning Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/hicache-design.html">Mooncake x SGLang HiCache System Design</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/hicache-design.html#overall-architecture">Overall Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/hicache-design.html#hiradixtree-metadata-organization-in-hicache">HiRadixTree: Metadata Organization in HiCache</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/hicache-design.html#overall-workflow">Overall Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/hicache-design.html#local-match">Local Match</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/hicache-design.html#prefetch-from-l3">Prefetch from L3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/hicache-design.html#data-write-back">Data Write-back</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/hicache-design.html#multi-rank-synchronization">Multi-Rank Synchronization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/hicache-design.html#data-transfer-optimization">Data Transfer Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/hicache-design.html#integration-with-pd-disaggregation-deployment-mode">Integration with PD-Disaggregation Deployment Mode</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/engram.html">EngramStore Backend</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/engram.html#current-backend-boundary">Current Backend Boundary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/engram.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/engram.html#public-interface">Public Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/engram.html#data-contract">Data Contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/engram.html#populate-flow">Populate Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/engram.html#lookup-flow">Lookup Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/engram.html#validation">Validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/engram.html#validation-status">Validation Status</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/unified-parallel-tensor-io.html">Unified Parallel Tensor IO</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#goal">Goal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#design-principles">Design principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#core-model">Core model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#public-api-shape">Public API shape</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#caller-inputs-vs-internal-derived-fields">Caller inputs vs internal derived fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#why-readtarget-is-required">Why <code class="docutils literal notranslate"><span class="pre">ReadTarget</span></code> is required</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#mixed-parallel-scenarios-in-training-and-inference">Mixed-parallel scenarios in training and inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#write-side-matrix">Write-side matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#read-side-matrix">Read-side matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#source-layout-to-target-layout-matrix">Source-layout to target-layout matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#compatibility-wrappers">Compatibility wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#runtime-lowering-direction">Runtime lowering direction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#current-implementation-status">Current implementation status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/unified-parallel-tensor-io.html#scope-still-intentionally-limited">Scope still intentionally limited</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/tent/overview.html">TENT: Transfer Engine NEXT</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#background">Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#core-design">Core Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#architecture-overview">Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#typical-use-cases">Typical Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#summary">Summary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#tent-c-api-reference">TENT C++ API Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#tent-metrics-system">TENT Metrics System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#tent-transport-selection">TENT Transport Selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#tent-quality-of-service">TENT Quality of Service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#tent-slice-spraying">TENT Slice Spraying</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/overview.html#tent-failover">TENT Failover</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/tent/tebench.html">Mooncake Transfer Engine Benchmark Tool (<code class="docutils literal notranslate"><span class="pre">tebench</span></code>) Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/tebench.html#build-and-deployment">1. Build and Deployment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/tebench.html#execution-model">2. Execution Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/tebench.html#quick-start">3. Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/tebench.html#output-metrics">4. Output Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/tent/tebench.html#runtime-configuration">5. Runtime Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/conductor/conductor-architecture-design.html">Mooncake Conductor Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#architecture">Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#components">Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#data-model">Data model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#event-flow">Event flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#query-flow">Query flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#dynamic-registration">Dynamic registration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#environment-variables">Environment variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#build-and-run">Build and run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/conductor/conductor-architecture-design.html#project-structure">Project structure</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="design/ssd-free-ratio-first-allocation.html">SSD Free-Ratio-First Allocation Design</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="design/ssd-free-ratio-first-allocation.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/ssd-free-ratio-first-allocation.html#architecture">Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/ssd-free-ratio-first-allocation.html#core-algorithm">Core Algorithm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/ssd-free-ratio-first-allocation.html#ssd-usage-tracking">SSD Usage Tracking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/ssd-free-ratio-first-allocation.html#configuration-parameters">Configuration Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/ssd-free-ratio-first-allocation.html#code-structure">Code Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="design/ssd-free-ratio-first-allocation.html#usage-example">Usage Example</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api-reference/python/index.html">Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-reference/cpp/index.html">C/C++ API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-reference/http/index.html">HTTP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api-reference/rust/index.html">Rust</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Troubleshooting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting/error-code.html">Error Code Explanation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting/troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting/pg-ep-troubleshooting.html">Mooncake PG/EP Troubleshooting</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community/governance.html">Governance</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Archived</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/vllm-mooncakestoreconnector.html">Guide: vLLM MooncakeStoreConnector</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/vllm-integration-v0.2.html">vLLM V0 Disaggregated Serving Demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/vllm-integration-v0.3.html">vLLM V0 Disaggregated Serving with MooncakeStore</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/examples/vllm-integration/vllm-integration-v1.0.html">vLLM v1 backend Disaggregated Serving with MooncakeConnector</a></li>
+</ul>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="right-next"
+       href="getting_started/build.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Build Guide</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation">Documentation</a><ul class="visible nav section-nav flex-column">
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By the Mooncake Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2026, Mooncake Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

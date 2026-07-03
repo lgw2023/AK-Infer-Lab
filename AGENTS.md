@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This repository root is a lightweight documentation hub. The main Markdown plans are `方案 1.md`, `方案 2.md`, and `融合方案.md`. `AK 协同` is a symlink to working project materials: research notes, references, diagrams, slide assets, and web prototypes.
+This repository root is a lightweight documentation hub. The main planning materials now live in `工作记录与进度笔记本/`, with historical inputs under `工作记录与进度笔记本/00_原始材料/`. `AK 协同` is a symlink to working project materials: research notes, references, diagrams, slide assets, and web prototypes.
 
 Key linked subprojects:
 

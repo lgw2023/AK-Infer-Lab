@@ -1,0 +1,451 @@
+{
+  "success": [
+    {
+      "name": "vAttention",
+      "file": "vAttention__arxiv-2405.04437.pdf",
+      "source": "https://arxiv.org/pdf/2405.04437.pdf",
+      "bytes": 1563582
+    },
+    {
+      "name": "Dovetail",
+      "file": "Dovetail__arxiv-2412.18934.pdf",
+      "source": "https://arxiv.org/pdf/2412.18934.pdf",
+      "bytes": 847572
+    },
+    {
+      "name": "Efficient-CPU-GPU-MoE-Inference",
+      "file": "Efficient-CPU-GPU-MoE-Inference__arxiv-2512.16473.pdf",
+      "source": "https://arxiv.org/pdf/2512.16473.pdf",
+      "bytes": 605890
+    },
+    {
+      "name": "ZipMoE",
+      "file": "ZipMoE__arxiv-2601.21198.pdf",
+      "source": "https://arxiv.org/pdf/2601.21198.pdf",
+      "bytes": 1339896
+    },
+    {
+      "name": "Quant-VideoGen",
+      "file": "Quant-VideoGen__arxiv-2602.02958.pdf",
+      "source": "https://arxiv.org/pdf/2602.02958.pdf",
+      "bytes": 16193558
+    },
+    {
+      "name": "TriMoE",
+      "file": "TriMoE__arxiv-2603.01058.pdf",
+      "source": "https://arxiv.org/pdf/2603.01058.pdf",
+      "bytes": 2375498
+    },
+    {
+      "name": "CPU-Induced-Slowdowns-Multi-GPU",
+      "file": "CPU-Induced-Slowdowns-Multi-GPU__arxiv-2603.22774.pdf",
+      "source": "https://arxiv.org/pdf/2603.22774.pdf",
+      "bytes": 621611
+    },
+    {
+      "name": "TokenDance",
+      "file": "TokenDance__arxiv-2604.03143.pdf",
+      "source": "https://arxiv.org/pdf/2604.03143.pdf",
+      "bytes": 6039877
+    },
+    {
+      "name": "PBKV-Prediction-KV-Cache",
+      "file": "PBKV-Prediction-KV-Cache__arxiv-2605.06472.pdf",
+      "source": "https://arxiv.org/pdf/2605.06472.pdf",
+      "bytes": 1635439
+    },
+    {
+      "name": "Future-Forcing-KV-Cache",
+      "file": "Future-Forcing-KV-Cache__arxiv-2605.30083.pdf",
+      "source": "https://arxiv.org/pdf/2605.30083.pdf",
+      "bytes": 9384363
+    },
+    {
+      "name": "NEO-MLSys25-writeup",
+      "file": "NEO-MLSys25-writeup.pdf",
+      "source": "http://minlanyu.seas.harvard.edu/writeup/mlsys25.pdf",
+      "bytes": 722779
+    },
+    {
+      "name": "Samsung-CXL-KV-Cache-Whitepaper",
+      "file": "Samsung-CXL-KV-Cache-Whitepaper.pdf",
+      "source": "https://download.semiconductor.samsung.com/resources/white-paper/Optimizing_KV_Cache_Offloading_to_CMM-D_in_a_CXL_Switch-based_Memory_Pool.pdf",
+      "bytes": 1109983
+    },
+    {
+      "name": "TriInfer-MLSys2026-Slides",
+      "file": "TriInfer-MLSys2026-Slides.pdf",
+      "source": "https://mlsys.org/media/mlsys-2026/Slides/3756.pdf",
+      "bytes": 848717
+    },
+    {
+      "name": "FlashDecoder-CVPR2026",
+      "file": "FlashDecoder-CVPR2026.pdf",
+      "source": "https://openaccess.thecvf.com/content/CVPR2026/papers/Kang_FlashDecoder_Real-Time_Latent-to-Pixel_Streaming_Decoder_with_Transformers_CVPR_2026_paper.pdf",
+      "bytes": 2092962
+    },
+    {
+      "name": "vAttention-arxiv-html",
+      "file": "vAttention-arxiv-html.html",
+      "source": "https://arxiv.org/html/2405.04437v3",
+      "bytes": 427893
+    },
+    {
+      "name": "Dovetail-arxiv-html",
+      "file": "Dovetail-arxiv-html.html",
+      "source": "https://arxiv.org/html/2412.18934v2",
+      "bytes": 179664
+    },
+    {
+      "name": "Efficient-CPU-GPU-MoE-arxiv-html",
+      "file": "Efficient-CPU-GPU-MoE-arxiv-html.html",
+      "source": "https://arxiv.org/html/2512.16473v1",
+      "bytes": 115302
+    },
+    {
+      "name": "Quant-VideoGen-arxiv-html",
+      "file": "Quant-VideoGen-arxiv-html.html",
+      "source": "https://arxiv.org/html/2602.02958v4",
+      "bytes": 168217
+    },
+    {
+      "name": "DALI-arxiv-html",
+      "file": "DALI-arxiv-html.html",
+      "source": "https://arxiv.org/html/2602.03495v1",
+      "bytes": 332625
+    },
+    {
+      "name": "LLMServingSim-2.0-arxiv-html",
+      "file": "LLMServingSim-2.0-arxiv-html.html",
+      "source": "https://arxiv.org/html/2602.23036v1",
+      "bytes": 214162
+    },
+    {
+      "name": "LLMServingSim-2.0-v2-arxiv-html",
+      "file": "LLMServingSim-2.0-v2-arxiv-html.html",
+      "source": "https://arxiv.org/html/2602.23036v2",
+      "bytes": 307451
+    },
+    {
+      "name": "TriMoE-arxiv-html",
+      "file": "TriMoE-arxiv-html.html",
+      "source": "https://arxiv.org/html/2603.01058v1",
+      "bytes": 185434
+    },
+    {
+      "name": "CPU-Slowdowns-arxiv-html",
+      "file": "CPU-Slowdowns-arxiv-html.html",
+      "source": "https://arxiv.org/html/2603.22774v1",
+      "bytes": 158487
+    },
+    {
+      "name": "TokenDance-arxiv-html",
+      "file": "TokenDance-arxiv-html.html",
+      "source": "https://arxiv.org/html/2604.03143v1",
+      "bytes": 217623
+    },
+    {
+      "name": "HybridGen-arxiv-html",
+      "file": "HybridGen-arxiv-html.html",
+      "source": "https://arxiv.org/html/2604.18529v1",
+      "bytes": 266517
+    },
+    {
+      "name": "PBKV-arxiv-html",
+      "file": "PBKV-arxiv-html.html",
+      "source": "https://arxiv.org/html/2605.06472v1",
+      "bytes": 507761
+    },
+    {
+      "name": "Future-Forcing-arxiv-html",
+      "file": "Future-Forcing-arxiv-html.html",
+      "source": "https://arxiv.org/html/2605.30083v1",
+      "bytes": 459412
+    },
+    {
+      "name": "FlashDecoder-CVPR-poster",
+      "file": "FlashDecoder-CVPR-poster.html",
+      "source": "https://cvpr.thecvf.com/virtual/2026/poster/39247",
+      "bytes": 72622
+    },
+    {
+      "name": "DBLP-MLSys2025",
+      "file": "DBLP-MLSys2025.html",
+      "source": "https://dblp.org/db/conf/mlsys/mlsys2025",
+      "bytes": 565619
+    },
+    {
+      "name": "LMCache-local-storage",
+      "file": "LMCache-local-storage.html",
+      "source": "https://docs.lmcache.ai/kv_cache/local_storage.html",
+      "bytes": 52452
+    },
+    {
+      "name": "NVIDIA-Dynamo-HiCache",
+      "file": "NVIDIA-Dynamo-HiCache.html",
+      "source": "https://docs.nvidia.com/dynamo/integrations/kv-cache-integrations/hi-cache",
+      "bytes": 840408
+    },
+    {
+      "name": "vLLM-Ascend-release-notes-main",
+      "file": "vLLM-Ascend-release-notes-main.html",
+      "source": "https://docs.vllm.ai/projects/ascend/en/main/user_guide/release_notes.html",
+      "bytes": 442518
+    },
+    {
+      "name": "vLLM-Ascend-release-notes-v0.11",
+      "file": "vLLM-Ascend-release-notes-v0.11.html",
+      "source": "https://docs.vllm.ai/projects/ascend/en/v0.11.0/user_guide/release_notes.html",
+      "bytes": 190345
+    },
+    {
+      "name": "vLLM-Ascend-release-notes-v0.18",
+      "file": "vLLM-Ascend-release-notes-v0.18.html",
+      "source": "https://docs.vllm.ai/projects/ascend/en/v0.18.0/user_guide/release_notes.html",
+      "bytes": 338439
+    },
+    {
+      "name": "UIUC-FAST-LLM-Project",
+      "file": "UIUC-FAST-LLM-Project.html",
+      "source": "https://fast.ece.illinois.edu/projects/4_project/",
+      "bytes": 19537
+    },
+    {
+      "name": "FutureAGI-multi-agent-2025",
+      "file": "FutureAGI-multi-agent-2025.html",
+      "source": "https://futureagi.com/blog/multi-agent-systems-2025/",
+      "bytes": 692517
+    },
+    {
+      "name": "LMCache-Ascend-roadmap-issue",
+      "file": "LMCache-Ascend-roadmap-issue.html",
+      "source": "https://github.com/LMCache/LMCache-Ascend/issues/126",
+      "bytes": 289125
+    },
+    {
+      "name": "GitHub-LLMServingSim",
+      "file": "GitHub-LLMServingSim.html",
+      "source": "https://github.com/casys-kaist/LLMServingSim",
+      "bytes": 316037
+    },
+    {
+      "name": "GitHub-triinfer",
+      "file": "GitHub-triinfer.html",
+      "source": "https://github.com/dongxianzhe/triinfer",
+      "bytes": 237122
+    },
+    {
+      "name": "GitHub-ISCA-2025-LIA",
+      "file": "GitHub-ISCA-2025-LIA.html",
+      "source": "https://github.com/ece-fast-lab/ISCA-2025-LIA",
+      "bytes": 365674
+    },
+    {
+      "name": "GitHub-happypmn",
+      "file": "GitHub-happypmn.html",
+      "source": "https://github.com/happypmn",
+      "bytes": 193968
+    },
+    {
+      "name": "GitHub-LIA-AMXGPU",
+      "file": "GitHub-LIA-AMXGPU.html",
+      "source": "https://github.com/hyungyokim/LIA_AMXGPU",
+      "bytes": 324810
+    },
+    {
+      "name": "GitHub-lmcache",
+      "file": "GitHub-lmcache.html",
+      "source": "https://github.com/lmcache/lmcache",
+      "bytes": 401874
+    },
+    {
+      "name": "GitHub-asplos-2025-notes",
+      "file": "GitHub-asplos-2025-notes.html",
+      "source": "https://github.com/mental2008/awesome-papers/blob/develop/reading-notes/conference/asplos-2025.md",
+      "bytes": 317831
+    },
+    {
+      "name": "GitHub-ZipMoE",
+      "file": "GitHub-ZipMoE.html",
+      "source": "https://github.com/npnothard/ZipMoE-ICML26",
+      "bytes": 324479
+    },
+    {
+      "name": "GitHub-vllm-ascend",
+      "file": "GitHub-vllm-ascend.html",
+      "source": "https://github.com/vllm-project/vllm-ascend",
+      "bytes": 402058
+    },
+    {
+      "name": "GitHub-vllm-ascend-releases",
+      "file": "GitHub-vllm-ascend-releases.html",
+      "source": "https://github.com/vllm-project/vllm-ascend/releases",
+      "bytes": 750092
+    },
+    {
+      "name": "happypmn-homepage",
+      "file": "happypmn-homepage.html",
+      "source": "https://happypmn.github.io/",
+      "bytes": 7552
+    },
+    {
+      "name": "ISCA2025-conf",
+      "file": "ISCA2025-conf.html",
+      "source": "https://iscaconf.org/isca2025/",
+      "bytes": 42159
+    },
+    {
+      "name": "Mooncake-docs",
+      "file": "Mooncake-docs.html",
+      "source": "https://kvcache-ai.github.io/Mooncake/",
+      "bytes": 61690
+    },
+    {
+      "name": "MLSys2025-poster-3234",
+      "file": "MLSys2025-poster-3234.html",
+      "source": "https://mlsys.org/virtual/2025/poster/3234",
+      "bytes": 74734
+    },
+    {
+      "name": "TriInfer-MLSys2026-oral",
+      "file": "TriInfer-MLSys2026-oral.html",
+      "source": "https://mlsys.org/virtual/2026/oral/3756",
+      "bytes": 74876
+    },
+    {
+      "name": "MLSys2026-session-3676",
+      "file": "MLSys2026-session-3676.html",
+      "source": "https://mlsys.org/virtual/2026/session/3676",
+      "bytes": 126223
+    },
+    {
+      "name": "KVCOMM-NeurIPS2025",
+      "file": "KVCOMM-NeurIPS2025.html",
+      "source": "https://neurips.cc/virtual/2025/poster/115164",
+      "bytes": 92267
+    },
+    {
+      "name": "FlashDecoder-CVPR-openaccess",
+      "file": "FlashDecoder-CVPR-openaccess.html",
+      "source": "https://openaccess.thecvf.com/content/CVPR2026/html/Kang_FlashDecoder_Real-Time_Latent-to-Pixel_Streaming_Decoder_with_Transformers_CVPR_2026_paper.html",
+      "bytes": 5958
+    },
+    {
+      "name": "ZipMoE-OpenReview",
+      "file": "ZipMoE-OpenReview.html",
+      "source": "https://openreview.net/forum?id=QUL7jp4QDQ",
+      "bytes": 4787
+    },
+    {
+      "name": "FlexInfer-OpenReview-page",
+      "file": "FlexInfer-OpenReview-page.html",
+      "source": "https://openreview.net/forum?id=sFNRNTduKO",
+      "bytes": 4787
+    },
+    {
+      "name": "OpenReview-Shaowei-Wang",
+      "file": "OpenReview-Shaowei-Wang.html",
+      "source": "https://openreview.net/profile?id=~Shaowei_Wang4",
+      "bytes": 4799
+    },
+    {
+      "name": "NEO-MLSys2025-proceedings",
+      "file": "NEO-MLSys2025-proceedings.html",
+      "source": "https://proceedings.mlsys.org/paper_files/paper/2025/hash/66a026c0d17040889b50f0dfa650e5e0-Abstract-Conference.html",
+      "bytes": 9362
+    },
+    {
+      "name": "GoogleScholar-Mao-Lin",
+      "file": "GoogleScholar-Mao-Lin.html",
+      "source": "https://scholar.google.com/citations?user=pAESRzAAAAAJ&hl=en",
+      "bytes": 137678
+    },
+    {
+      "name": "verl-ascend-install",
+      "file": "verl-ascend-install.html",
+      "source": "https://verl.readthedocs.io/en/latest/ascend_tutorial/get_start/install_guidance.html",
+      "bytes": 47766
+    },
+    {
+      "name": "SemanticScholar-DALI",
+      "file": "SemanticScholar-DALI.html",
+      "source": "https://www.semanticscholar.org/paper/DALI%3A-A-Workload-Aware-Offloading-Framework-for-MoE-Zhu-Li/7bd2c33d0cf45d92727205173f7a84f765e331e3",
+      "bytes": 0
+    },
+    {
+      "name": "SemanticScholar-LIA",
+      "file": "SemanticScholar-LIA.html",
+      "source": "https://www.semanticscholar.org/paper/LIA%3A-A-Single-GPU-LLM-Inference-Acceleration-with-Kim-Wang/3408b2987ce5b985e1f419496fd03988ed02535d",
+      "bytes": 0
+    },
+    {
+      "name": "SemanticScholar-MoE-Lightning",
+      "file": "SemanticScholar-MoE-Lightning.html",
+      "source": "https://www.semanticscholar.org/paper/MoE-Lightning%3A-High-Throughput-MoE-Inference-on-Cao-Liu/07f1fbd2a036d3e75a9fb00b30a413981b7ff17e",
+      "bytes": 0
+    },
+    {
+      "name": "SemanticScholar-ProMoE",
+      "file": "SemanticScholar-ProMoE.html",
+      "source": "https://www.semanticscholar.org/paper/ProMoE%3A-Fast-MoE-based-LLM-Serving-using-Proactive-Song-Zhong/86f014f66e484f477fe729023ee5d30537a299d6",
+      "bytes": 0
+    },
+    {
+      "name": "Spheron-CPU-free-LLM-inference",
+      "file": "Spheron-CPU-free-LLM-inference.html",
+      "source": "https://www.spheron.network/blog/cpu-free-llm-inference-bluefield4-dpu-smartnic-gpu-cloud-2026/",
+      "bytes": 163492
+    },
+    {
+      "name": "Moonlight-ZipMoE-review",
+      "file": "Moonlight-ZipMoE-review.html",
+      "source": "https://www.themoonlight.io/zh/review/zipmoe-efficient-on-device-moe-serving-via-lossless-compression-and-cache-affinity-scheduling",
+      "bytes": 274068
+    },
+    {
+      "name": "TrueFoundry-multi-agent",
+      "file": "TrueFoundry-multi-agent.html",
+      "source": "https://www.truefoundry.com/blog/multi-agent-orchestration-frameworks",
+      "bytes": 264653
+    }
+  ],
+  "skipped": [
+    {
+      "name": "DALI",
+      "file": "DALI__arxiv-2602.03495.pdf",
+      "reason": "exists"
+    },
+    {
+      "name": "LLMServingSim-2.0",
+      "file": "LLMServingSim-2.0__arxiv-2602.23036.pdf",
+      "reason": "exists"
+    },
+    {
+      "name": "HybridGen",
+      "file": "HybridGen__arxiv-2604.18529.pdf",
+      "reason": "exists"
+    },
+    {
+      "name": "LIA-GoogleDeepMind",
+      "file": "LIA-GoogleDeepMind.html",
+      "reason": "exists"
+    },
+    {
+      "name": "SGLang-HiCache",
+      "file": "SGLang-HiCache.html",
+      "reason": "exists"
+    }
+  ],
+  "failed": [
+    {
+      "name": "FlexInfer-OpenReview",
+      "source": "https://openreview.net/pdf?id=sFNRNTduKO",
+      "error": "HTTP Error 403: Forbidden"
+    },
+    {
+      "name": "UMich-ASPLOS2025",
+      "source": "https://cse.engin.umich.edu/stories/five-papers-by-cse-researchers-at-asplos-2025",
+      "error": "HTTP Error 403: Forbidden"
+    }
+  ]
+}

@@ -1,0 +1,2332 @@
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en"> 
+
+<head>
+    <style>html { scroll-padding-top: 70px; /* height of sticky header plus extra */ }</style>
+    
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/static/virtual/js/virtual.js"></script>
+    <meta name="google-site-verification" content="0jwPnVXIAk4FvFdT37dwMmd-kjHF86e5DKwvqlStUW0">
+
+
+    
+    <link rel="stylesheet" href="/static/core/css/core.css" type="text/css">
+    <link rel="stylesheet" href="/static/virtual/css/virtual.css" type="text/css">
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="/static/core/css/custom.css" type="text/css">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Exo:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <script nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+        window.MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['\\[', '\\]']],
+            processEscapes: true,
+          },
+          options: {
+            ignoreHtmlClass: 'no-mathjax',
+          }
+        };
+    </script>
+
+    <script id="MathJax-script" async
+            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+            nonce="zT66Sow2Ec8M1P90+UrrAQ==" >
+    </script>
+
+    <!--This script keeps local links inside the web app rather than opening them
+in Safari, and has nothing to do with editing or Aloha.-->
+
+<script nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+    (function (document, navigator, standalone) {
+
+        if ((standalone in navigator) && navigator[standalone]) {
+            var curnode, location = document.location, stop = /^(a|html)$/i;
+            document.addEventListener('click', function (e) {
+                curnode = e.target;
+                while (!(stop).test(curnode.nodeName)) {
+                    curnode = curnode.parentNode;
+                }
+
+                if (
+                    'href' in curnode && // is a link
+                    (chref = curnode.href).replace(location.href, '').indexOf('#') && // is not an anchor
+                    (!(/^[a-z\+\.\-]+:/i).test(chref) ||                       // either does not have a proper scheme (relative links)
+                        chref.indexOf(location.protocol + '//' + location.host) === 0) // or is in the same protocol and domain
+                ) {
+                    e.preventDefault();
+                    location.href = curnode.href;
+                }
+            }, false);
+        }
+    })(document, window.navigator, 'standalone');
+</script>
+
+
+<style>
+
+    @media screen and (min-width: 767px) {
+        .blurb {
+            min-height: 260px;
+        }
+    }
+</style>
+    
+
+<script src="https://code.jquery.com/jquery-3.6.1.min.js"
+        integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous">
+</script>
+
+<script nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+    if (typeof jQuery === 'undefined') {
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = "/static/core/js/jquery-3.6.1.min.js";
+        document.head.appendChild(script);
+    }
+</script>
+
+    
+    <script nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+        var $ = jQuery;
+    </script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+
+    <script src="/static/core/js/ajax-csrf-snippet.js"></script>
+    
+    <link rel="stylesheet" href="/static/fontawesomefree/css/all.min.css">
+    <script src="/static/fontawesomefree/js/all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+
+
+    <style nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+        body {
+            font-family: Exo;}
+    </style>
+
+
+
+
+
+
+
+
+        
+
+
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic">
+    <link href="https://fonts.googleapis.com/css2?family=Exo:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/virtual/css/virtual.css">
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/corejs-typeahead/1.3.1/typeahead.bundle.min.js" integrity="sha512-lEb9Vp/rkl9g2E/LdHIMFTqz21+LA79f84gqP75fbimHqVTu6483JG1AwJlWLLQ8ezTehty78fObKupq3HSHPQ==" crossorigin="anonymous"></script>
+    <script src="/static/core/js/moment/min/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    <script src="/static/core/js/ajax-csrf-snippet.js" ></script>
+    <script src="/static/virtual/js/virtual.js"></script>
+    
+
+    
+
+    
+    <title>Track: Poster Session 1 &amp; Opening Reception</title>
+    <script src='https://slideslive.com/embed_presentation.js'></script>
+
+    <title>MLSys 2026</title>
+</head>
+
+<body>
+<!-- <h1><a href="#" onclick="alert('CSP Test');">CSP Test</a></h1> -->
+
+
+
+
+<div class="noprint">
+    
+        
+            <!--Navbar start-->
+<header>
+    <a href="#child-menu" class="off-screen">Skip to yearly menu bar</a>
+    <a href="#main" class="off-screen">Skip to main content</a>
+    <div id="id_navbar" class="navbar navbar-expand-sm navbar-dark" aria-label="Main Navigation"
+         style="background-color:#212529">
+        <h2 class="off-screen">Main Navigation</h2>
+        <div class="container-fluid">
+            <div><a class="navbar-brand" href="/" aria-label="Home">
+
+                <img src="/static/core/img/mlsys-navbar-logo.svg" alt="conference_logo" height="40"></a></div>
+
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarToggler1"
+                    aria-expanded="false" aria-label="Toggle main navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarToggler1">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    
+    <li class="dropdown-item dropdown pe-3">
+        <a class="nav-link dropdown-toggle  p-1" 
+           href="#"
+           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            MLSys
+        </a>
+        <ul class="dropdown-menu dropdown-menu-dark">
+            
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/public/CodeOfConduct">
+                    <span >
+                        Code of Conduct
+                    </span>
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/Profile/create">
+                    <span >
+                        Create Profile
+                    </span>
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/public/PrivacyPolicy">
+                    <span >
+                        Privacy Policy
+                    </span>
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/Help/Contact">
+                    <span >
+                        Contact MLSys
+                    </span>
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/FAQ">
+                    <span >
+                        Help/FAQ
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+        </ul>
+    </li>
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/MyStuff">
+                    <span >
+                        My Stuff
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+                    
+                </ul>
+
+                
+                <form class="d-flex mx-2" aria-label="Search" role="search" action="/search">
+                    <div class="input-group" role="search" style="outline-color:green;">
+                        <input type="text" class="form-control" placeholder="Search" name="q"
+                               value=""
+                               aria-label="Search" aria-describedby="btnGroupAddon"
+                                id="navbar-search">
+                        <div class="input-group-text btn-primary" id="btnGroupAddon">
+                            <button style="border: none; background-color: transparent; padding: 0;" type="submit" aria-label="execute search">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+
+                
+                    <a href="/accounts/login?nextp=/virtual/2026/session/3673 " class="navbar-brand"><span
+                            class="fa-solid fa-right-to-bracket"></span> Login</a>
+                
+
+            </div>
+        </div>
+    </div>
+</header>
+<!--Navbar end-->
+        
+    
+</div><!--noprint div-->
+
+<!--This holds the whole page including the navbar-->
+<main id="main">
+    
+        
+            <div class="container-fluid">
+                
+<!--Navbar start-->
+
+
+
+
+<div class="container-fluid">
+
+    <div class="dropdown" id="child-menu">
+        <nav class="align-middle navbar navbar-expand-md mx-4 border border-3 border-top-0 rounded-bottom"
+             style="min-height: 57px; background-color: #F6f6f6;">
+            <div class="container-fluid">
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarToggler1128"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarToggler1128">
+                    <ul class="navbar-nav me-auto mb-lg-0">
+                        
+
+
+    <li class="dropdown-item dropdown pe-3">
+        <a class="nav-link dropdown-toggle border-3  btn btn-primary text-white p-1" style= "background-color: #070bff; font-size: 1.2 em;"
+           href="#"
+           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Select Year: (2026)
+        </a>
+        <ul class="dropdown-menu">
+            
+    
+        
+            <li class="dropdown-item " >
+                <a class="dropdown-item p-1"
+                   href="/Conferences/2026">2026
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item " >
+                <a class="dropdown-item p-1"
+                   href="/Conferences/2025">2025
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item " >
+                <a class="dropdown-item p-1"
+                   href="/Conferences/2023">2023
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item " >
+                <a class="dropdown-item p-1"
+                   href="/Conferences/2024">2024
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item " >
+                <a class="dropdown-item p-1"
+                   href="/Conferences/2022">2022
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item " >
+                <a class="dropdown-item p-1"
+                   href="/Conferences/2021">2021
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item " >
+                <a class="dropdown-item p-1"
+                   href="/Conferences/2020">2020
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item " >
+                <a class="dropdown-item p-1"
+                   href="/Conferences/2019/">2019
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item " >
+                <a class="dropdown-item p-1"
+                   href="/Conferences/2018">2018
+                </a>
+                
+            </li>
+        
+
+    
+
+
+
+        </ul>
+    </li>
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/virtual/2026/calendar">
+                    <span >
+                        Schedule
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/virtual/2026/eventlistwithbios/Invited%20Talk">
+                    <span >
+                        Invited Talks
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/virtual/2026/papers.html?filter=titles">
+                    <span >
+                        Papers
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/virtual/2026/organizers">
+                    <span >
+                        Organizers
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/sponsors/sponsors-list?year=2026" target="_blank" rel="noopener">
+                    <span >
+                        Sponsors
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+    <li class="dropdown-item dropdown pe-3">
+        <a class="nav-link dropdown-toggle  p-1" 
+           href="#"
+           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Calls
+        </a>
+        <ul class="dropdown-menu">
+            
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/Conferences/2026/CallForTravelGrants">
+                    <span >
+                        Call For Travel Grants
+                    </span>
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/Conferences/2026/CallForAEs">
+                    <span >
+                        Call for Artifact Evaluations
+                    </span>
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/Conferences/2026/CallForResearchPapers">
+                    <span >
+                        Call for Research Papers
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/FAQ/PosterInformation">
+                    <span style="font-size: .8em;">
+                        &nbsp;&nbsp;&nbsp;&nbsp;Poster Information
+                    </span>
+                </a>
+                
+                    <hr class="dropdown-divider" aria-hidden="true">
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/Conferences/2026/CallForIndustrialTrackPapers">
+                    <span >
+                        Call for Industrial Track Papers
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+    
+        
+            <li class="dropdown-item  pe-2" >
+                <a class="nav-link p-1"  href="/Conferences/2026/CallForYPS">
+                    <span >
+                        Call for Young Professional Symposium
+                    </span>
+                </a>
+                
+            </li>
+
+        
+
+    
+
+
+
+        </ul>
+    </li>
+    
+
+
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!--Navbar end-->
+
+            </div>
+            <br><br>
+        
+    
+    
+        
+        <div class="container">
+    
+    
+
+    
+
+    
+
+        <div class="container">
+            
+                
+
+            
+            <!-- Title -->
+            <div class="" style="">
+                <div class="card-header">
+                    <h3 class="text-center ">Session</h3>
+                    <h2 class="card-title main-title text-center" style="">
+                        Poster Session 1 &amp; Opening Reception
+                    </h2>
+                    
+                        <h5 class="text-center text-muted">Evergreen Ballroom</h5>
+                    
+                    
+
+
+                    
+                    
+
+                    
+
+
+                    <div class="text-center">
+                        
+
+                        <div>
+                            
+                        </div>
+                        <div>
+                            
+                        </div>
+                        <div>
+                            
+                        </div>
+
+                        
+                        <div>
+                            
+                        </div>
+
+                        
+                        
+
+                        
+
+                        
+
+                        
+
+                            
+                                <div>Tue 19 May 6 p.m. PDT 
+                                    &mdash; 8 p.m. PDT  
+
+                                    
+
+                                </div>
+                                <div class="schedule-html-detail"></div>
+
+                            
+
+                            
+
+                        
+                        
+
+                        
+                    </div>
+                    <div class=" text-center text-muted text-monospace ">
+                        <div> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="details" class="pp-card m-3 collapse">
+                <div class="card-body p-3">
+
+                    <div id="abstractExample">
+                        <span class="font-weight-bold">Abstract:</span> 
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+        <!-- SlidesLive -->
+
+        
+            <div class="container">
+                <div class="col-xs-12 my-auto p-2 admin centered">
+                    
+                </div>
+            </div>
+
+            
+
+            
+            
+            
+
+
+    <div class="container">
+        <div class="m-3">
+            
+                <div style="color:#eee;text-align:center;"><span>Chat is not available.</span></div>
+            
+        </div>
+    </div>
+
+
+
+
+            <div>
+                
+            </div>
+
+            
+         
+
+        <!--Children in this session -->
+        <p></p>
+
+        <div class="container" style="padding-bottom: 30px; padding-top:30px">
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">1</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3527">StreamDiffusionV2: A Streaming System for Dynamic and Interactive Video Generation</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Tianrui Feng ⋅ Zhi Li ⋅ Shuo Yang ⋅ Haocheng Xi ⋅ Muyang Li ⋅ Xiuyu Li ⋅ Lvmin Zhang ⋅ Keting Yang ⋅ Kelly Peng ⋅ Song Han ⋅ Maneesh Agrawala ⋅ Kurt Keutzer ⋅ Akio Kodaira ⋅ Chenfeng Xu
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Generative models are reshaping the live-streaming industry by redefining how content is created, styled, and delivered. Previous image-based streaming diffusion models have powered efficient and creative live streaming products but has hit limits on temporal consistency due to the foundation of image-based designs. Recent advances in video diffusion have markedly improved temporal consistency and sampling efficiency for offline generation. However, offline generation systems primarily optimize throughput by batching large workloads. In contrast, live online streaming operates under strict service-level objectives (SLOs): time-to-first-frame must be minimal, and every frame must meet a per-frame deadline with low jitter. Besides, scalable multi-GPU serving for real-time streams remains largely unresolved so far. To address this, we present \textbf{StreamDiffusionV2}, a \emph{training-free} pipeline for interactive live streaming with video diffusion models. StreamDiffusionV2 integrates an SLO-aware batching scheduler and a block scheduler, together with a sink-token–guided rolling KV cache, a motion-aware noise controller, and other system-level optimizations. Moreover, we introduce a scalable pipeline orchestration that parallelizes the diffusion process across denoising steps and network layers, achieving near-linear FPS scaling without violating latency guarantees. The system scales seamlessly across heterogeneous GPU environments and supports flexible denoising steps (e.g., 1–4), enabling both ultra-low-latency and higher-quality modes. Without TensorRT or quantization, StreamDiffusionV2 renders the first frame within 0.5s and attains 58.28 FPS with a 14B-parameter model and 64.52 FPS with a 1.3B-parameter model on four H100 GPUs. Even when increasing denoising steps to improve quality, it sustains 31.62 FPS (14B) and 61.58 FPS (1.3B), making state-of-the-art generative live streaming practical and accessible—from individual creators to enterprise-scale platforms.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">2</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3563">LEANN: A Low-Storage Overhead Vector Index</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Yichuan Wang ⋅ Zhifei Li ⋅ Shu Liu ⋅ Yongji Wu ⋅ Ziming Mao ⋅ Yilong Zhao ⋅ Xiao Yan ⋅ Zhiying Xu ⋅ Yang Zhou ⋅ Ion Stoica ⋅ Sewon Min ⋅ Matei Zaharia ⋅ Joseph Gonzalez
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Embedding-based vector search underpins many important applications, such as recommendation and retrieval-augmented generation (RAG). It relies on vector indices to enable efficient search. However, these indices require storing high-dimensional embeddings and large index metadata, whose total size can be several times larger than the original data (e.g., text chunks). Such high storage overhead makes it difficult, or even impractical, to deploy vector search on personal devices or large-scale datasets. To tackle this problem, we propose LEANN, a storage-efficient index for vector search that recomputes embeddings on the fly instead of storing them, and compresses state-of-the-art proximity graph indices while preserving search accuracy. LEANN delivers high-quality vector search while using only a fraction of the storage (e.g., 5% of the original data) and supporting storage-efficient index construction and updates. On real-world benchmarks, LEANN reduces index size by up to 50× compared with conventional indices, while maintaining SOTA accuracy and comparable latency for RAG applications.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">3</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3631">BLASST: Dynamic BLocked Attention Sparsity via Softmax Thresholding</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Jiayi Yuan ⋅ Cameron Shinn ⋅ Kai Xu ⋅ Jingze Cui ⋅ George Klimiashvili ⋅ Guangxuan Xiao ⋅ Perkz Zheng ⋅ Bo Li ⋅ Zhou Yuxin ⋅ Zhouhai Ye ⋅ Weijie You ⋅ Tian Zheng ⋅ Dominic Brown ⋅ Pengbo Wang ⋅ Markus Hoehnerbach ⋅ Richard Cai ⋅ Julien Demouth ⋅ John D. Owens ⋅ Xia Hu ⋅ Song Han ⋅ Timmy Liu ⋅ Huizi Mao
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>The growing demand for long-context inference capabilities in Large Language Models (LLMs) has intensified the computational and memory bottlenecks inherent to the self-attention mechanism. To address this challenge, we introduce BLASST, a drop-in, dynamic sparse attention mechanism that accelerates inference by using only a fixed scalar threshold to skip attention blocks. Our method targets practical inference deployment by removing the barriers to adoption present in existing works. As such, BLASST eliminates training requirements, avoids expensive pre-computation passes, accelerates both prefill and decode across all major attention variants (MHA, GQA, MQA, and MLA), provides optimized support for modern hardware, and easily integrates into existing frameworks. This is achieved by reusing online softmax statistics to identify negligible attention scores, skipping softmax, value block loads, and the subsequent matrix multiplication. We demonstrate the BLASST algorithm by delivering optimized kernels with negligible latency overhead. Our automated threshold calibration procedure reveals a simple inverse relationship between optimal threshold and context length, meaning we require only a single threshold each for prefill and decode per model. Preserving benchmark accuracy, we demonstrate a 1.52x speedup for prefill at 71.9% sparsity and a 1.48x speedup for decode at 73.2% sparsity on modern GPUs.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">4</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3545">ExecuTorch - A Unified PyTorch Solution to Run ML Models On-Device</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Mergen Nachin ⋅ Digant Desai ⋅ Sicheng Jia ⋅ Chen Lai ⋅ Mengwei Liu ⋅ Jacob Szwejbka ⋅ Raziel Alvarez ⋅ Robert Ascani ⋅ Dave Bort ⋅ Manuel Candales ⋅ Andrew Caples ⋅ Yanan Cao ⋅ Zhengxu Chen ⋅ Soumith Chintala ⋅ Gregory Comer ⋅ Tanvir Islam ⋅ Songhao Jia ⋅ Tarun Karuturi ⋅ Jack Khuu ⋅ Abhinay Kukkadapu ⋅ Tugsbayasgalan Manlaibaatar ⋅ Andrew Or ⋅ Kimish Patel ⋅ Siddartha Pothapragada ⋅ Lucy Qiu ⋅ Supriya Rao ⋅ Orion Reblitz-Richardson ⋅ Max Ren ⋅ Scott Roy ⋅ Anthony Shoumikhin ⋅ Scott Wolchok ⋅ Guang Yang ⋅ Angela Yi ⋅ Martin Yuan ⋅ Hansong Zhang ⋅ Jack Zhang ⋅ Zhenrui Zhang ⋅ Shunting Zhang ⋅ Cemal Bilgin
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Local execution of AI on edge devices is critical for privacy, low latency, and offline operation. However, deploying models on diverse hardware remains fragmented, often requiring model conversion or complete implementation outside the PyTorch ecosystem where the model was originally authored. We introduce ExecuTorch, a unified PyTorch-native deployment framework for edge AI. ExecuTorch enables seamless deployment of machine learning models across heterogeneous compute environments. It scales from completely embedded microcontrollers to complex system-on-chips (SoCs) with dedicated accelerators, powering devices ranging from wearables and smartphones to large compute clusters. ExecuTorch preserves PyTorch semantics while allowing customization, support for optimizations like quantization, and pluggable execution ''backends''. These features together enable fast experimentation, allowing researchers to validate deployment behavior entirely within PyTorch, bridging the gap between research and production.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">5</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3642">OSWorld-Human: Benchmarking the Efficiency of Computer-Use Agents</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Reyna Abhyankar ⋅ Qi Qi ⋅ Yiying Zhang
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Generative AI is being leveraged to solve a variety of computer-use tasks involving desktop applications. State-of- the-art systems have focused solely on improving accuracy on leading benchmarks. However, these systems are practically unusable due to extremely high end-to-end latency (e.g. tens of minutes) for tasks that typically take humans just a few minutes to complete. To understand the cause behind this and to guide future developments of computer agents, we conduct the first study on the temporal performance of computer-use agents on OSWorld, the flagship benchmark in computer-use AI. We find that large model calls for planning, reflection, and judging account for most of the overall latency, and as an agent uses more steps to complete a task, each successive step can take 3× longer than steps at the beginning of a task. We then construct <strong>OSWorld-Human</strong>, a manually annotated version of the original OSWorld dataset that contains a human-determined trajectory for each task. We evaluate 16 agents on their efficiency using <strong>OSWorld-Human</strong> and found that even the best agents take <strong>2.7−4.3×</strong> more steps than necessary.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">6</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3587">ContextPilot: Fast Long-Context Inference via Context Reuse</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Yinsicheng Jiang ⋅ Yeqi Huang ⋅ Liang Cheng ⋅ Cheng Deng ⋅ Xuan Sun ⋅ Luo Mai
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>AI applications increasingly depend on long-context inference, where LLMs consume substantial context to support stronger reasoning. Common examples include retrieval-augmented generation, agent memory layers, and multi-agent orchestration. As input contexts get longer, prefill latency becomes the main bottleneck. Yet today’s prefill acceleration techniques face a trade-off: they either preserve reasoning quality but deliver little KV-cache reuse, or improve reuse at the cost of degraded reasoning quality.   We present ContextPilot, a system that accelerates prefill by introducing context reuse as a new mechanism for faster long-context inference. ContextPilot introduces a context index to identify overlapping context blocks across LLM interactions (e.g., across users and turns). It further proposes context alignment and de-duplication techniques to maximize KV-cache reuse. To preserve reasoning quality under reuse, it introduces succinct context annotations that prevent quality degradation. Finally, ContextPilot is built around a modular architecture with a clean interface that integrates with existing inference engines. Extensive evaluation shows that ContextPilot reduces LLM prefill latency by up to 3X compared to state-of-the-art methods while preserving reasoning quality. At longer context lengths, it can even improve reasoning quality. ContextPilot is open-sourced at: https://github.com/EfficientContext/ContextPilot.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">7</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3632">VeriMoA: A Mixture-of-Agents Framework for Spec-to-HDL Generation</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Heng Ping ⋅ Arijit Bhattacharjee ⋅ Peiyu Zhang ⋅ Shixuan Li ⋅ Wei Yang ⋅ Anzhe Cheng ⋅ Xiaole Zhang ⋅ Jesse Thomason ⋅ Ali Jannesari ⋅ Nesreen Ahmed ⋅ Paul Bogdan
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Automation of Register Transfer Level (RTL) design can help developers meet increasing computational demands. Large Language Models (LLMs) show promise for Hardware Description Language (HDL) generation, but face challenges due to limited parametric knowledge and domain-specific constraints. While prompt engineering and fine-tuning have limitations in knowledge coverage and training costs, multi-agent architectures offer a training-free paradigm to enhance reasoning through collaborative generation. However, current multi-agent approaches suffer from two critical deficiencies: susceptibility to noise propagation and constrained reasoning space exploration. We propose \textbf{VeriMoA}, a training-free mixture-of-agents (MoA) framework with two synergistic innovations. First, a \textbf{quality-guided caching mechanism} to maintain all intermediate HDL outputs and enables quality-based ranking and selection across the entire generation process, encouraging knowledge accumulation over layers of reasoning. Second, a \textbf{multi-path generation strategy} that leverages C++ and Python as intermediate representations, decomposing specification-to-HDL translation into two-stage processes that exploit LLM fluency in high-resource languages while promoting solution diversity. Comprehensive experiments on VerilogEval 2.0 and RTLLM 2.0 benchmarks demonstrate that \ourtool achieves 15--30\% improvements in Pass@1 across diverse LLM backbones, especially enabling smaller models to match larger models and fine-tuned alternatives without requiring costly training.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">8</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3575">db-SP: Accelerating Sparse Attention for Visual Generative Models with Dual-Balanced Sequence Parallelism</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Siqi Chen ⋅ Ke Hong ⋅ Tianchen Zhao ⋅ Ruiqi Xie ⋅ Zhenhua Zhu ⋅ Xudong Zhang ⋅ Yu Wang
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Scaling Diffusion Transformer (DiT) inference via sequence parallelism is critical for reducing latency in visual generation, but is severely hampered by workload imbalance when applied to models employing block-wise sparse attention. The imbalance stems from the inherent variation in sparsity across attention heads and the irregular distribution of dense blocks within the sparse mask, when sequence parallelism is applied along the head dimension (as in Ulysses) or the block dimension (as in Ring Attention). In this paper, we formalize a \textit{sparse imbalance ratio} to quantify the imbalance, and propose \textit{db}-SP, a sparsity-aware sequence parallelism technique that tackles the challenge. \textit{db}-SP contains a dual-level partitioning approach that achieves near-perfect workload balance at both the head and block levels with negligible overhead. Furthermore, to handle the evolving sparsity patterns across denoising steps and layers, \textit{db}-SP dynamically determines the parallel degrees for the head and block dimensions at runtime. Experimental results demonstrate that \nickname delivers an end-to-end speedup of 1.25× and an attention-specific speedup of 1.40× over state-of-the-art sequence parallel methods on average.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">9</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3612">When Enough is Enough: Rank-Aware Early Termination for Vector Search</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Jianan Lu ⋅ Asaf Cidon ⋅ Michael None Freedman
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Graph-based vector search underpins modern LLM applications such as retrieval-augmented generation (RAG), but its efficiency is increasingly constrained by disk I/O. Existing systems continue searching long after discovering the higher-ranked (i.e., most valuable) results for downstream applications. We present Terminus, a rank-aware early termination mechanism that dynamically aligns I/O spending with application utility. Terminus models per-I/O search utility using a rank-weighted function and terminates once recent I/Os yield negligible utility gains. By adaptively terminating search based on rank-aware signals, Terminus improves recovery of top-ranked results that matter most for downstream tasks, achieving a better performance–accuracy trade-off. It delivers up to 1.4× higher throughput at the same accuracy target compared to existing early termination schemes, and up to 3.2× higher throughput than a baseline without early termination, with minimal impact on RAG accuracy.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">10</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3550">SwiftGS: Algorithm and System Co-Optimization for Fast 3D Gaussian Splatting on GPUs</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Lingjun Gao ⋅ Zhican Wang ⋅ Zhiwen Mo ⋅ Hongxiang Fan
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p>Recent advances in 3D Gaussian Splatting (3DGS) have enabled high-quality and efficient novel view synthesis, demonstrating great potential in real-world applications such as robotic perception and digital-twin construction.  However, 3DGS requires processing up to millions of Gaussians in parallel, imposing significant computational and memory demands that limit its deployment on resource-constrained platforms. Through systematic profiling and analysis, this paper identifies several redundancy at both the algorithmic and system implementation levels. These insights motivate us to explore several novel optimizations, including adaptive early sorting, GPU-efficient axis-shared rasterization, and dynamic thresholding. Unlike prior work that focuses only on either algorithmic improvements or systems optimization, our approach explores a joint algorithm and system co-optimization to push the performance limits of 3DGS on GPUs. Comprehensive evaluation demonstrates that our co-optimization approach, named \textit{Flash3DGS} achieves a speed-up of up to $1.41 \times$ with negligible algorithmic performance drop in rendering image quality compared with the \textit{gsplat} baseline. Importantly, our co-optimization is orthogonal to most existing 3DGS acceleration methods, allowing for synergistic performance gains when used in combination. We plan to release our code publicly upon paper acceptance to support reproducibility and future research.</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">11</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3600">Optimizing PyTorch Inference with LLM-Based Multi-Agent Systems</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Kirill Nagaitsev ⋅ Luka Grbcic ⋅ Samuel Williams ⋅ Costin Iancu
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Maximizing performance on available GPU hardware is an ongoing challenge for modern AI inference systems. Traditional approaches include writing custom GPU kernels and using specialized model compilers to tune high-level code for specific GPU targets. Recent work shows that LLM-based multi-agent systems can effectively perform such tuning, often outperforming existing compilers and eliminating the need for manual kernel development. However, the dynamics of multi-agent systems for this task remain unexplored. In this work, we present a logical framework for comparing multi-agent PyTorch optimization systems. Our evaluation shows that exploit-heavy strategies perform best when paired with error-fixing agents, and that performance correlates with the granularity of optimization steps. The best implementation achieves an average 2.88× speedup over PyTorch Eager (1.85× over torch.compile) on an H100 GPU across diverse tasks in KernelBench, a benchmark suite covering a range of machine learning architectures in PyTorch. Code is publicly available at: https://github.com/pike-project/pike</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">12</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3533">TriInfer: Hybrid EPD Disaggregation for Efficient Multimodal Large Language Model Inference</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Xianzhe Dong ⋅ Tongxuan Liu ⋅ Yuting Zeng ⋅ Weizhe Huang ⋅ Xiaoyang Zhao ⋅ Siyu Wu ⋅ Liangyu Liu ⋅ Liu Yang ⋅ Yu Wu ⋅ Hailong Yang ⋅ Ke Zhang ⋅ Jing Li
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Existing MLLM inference systems are typically designed based on the architecture of language models, coupling image processing and language processing. This design struggles to accommodate the heterogeneous demands of different stages in terms of computational resources, memory access patterns, and service-level objectives (SLOs), leading to low resource utilization and high request latency, ultimately failing to meet the service requirements of diverse inference scenarios. To address these challenges, we propose TriInfer, an efficient MLLM inference system that adopts a Hybrid Encode-Prefill-Decode (EPD) Disaggregation architecture. By scheduling the three stages — encode, prefill, and decode — onto separate heterogeneous inference instances, the system flexibly reallocates resources across stages, significantly reducing idle computation, alleviating resource bottlenecks, and improving overall system throughput and scalability. In addition, TriInfer supports a stage-level batching strategy that enhances load balancing, enables parallel execution of visual and language models, and further optimizes inference performance. Experiments under real multimodal inference workloads demonstrate that TriInfer can achieve up to 3.7× higher inference throughput compared to state-of-the-art systems (e.g., vLLM, SGLang) while meeting the 90th percentile request SLO.The source code of TriInfer will be released at https://github.com/dongxianzhe/triinfer.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">13</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3530">Matrix: Peer-to-Peer Multi-Agent Synthetic Data Generation Framework</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Dong Wang ⋅ Yang Li ⋅ Ansong Ni ⋅ Ching-Feng Yeh ⋅ Youssef Emad ⋅ Xinjie Lei ⋅ Liam Robbins ⋅ Karthik Padthe ⋅ Hu Xu ⋅ Xian Li ⋅ Asli Celikyilmaz ⋅ Ramya Raghavendra ⋅ LIFEI HUANG ⋅ Carole-Jean Wu ⋅ Shang-Wen Li
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p>Synthetic data has become increasingly important for training large language models, especially when real data is scarce, expensive, or privacy-sensitive. Many such generation tasks require coordinated multi-agent workflows, where specialized agents collaborate to produce data that is higher quality, more diverse, and structurally richer. However, existing frameworks for multi-agent synthesis often depend on a centralized orchestrator, creating scalability bottlenecks, or are hardcoded for specific domains, limiting flexibility. We present \textbf{Matrix}, a decentralized framework that represents both control and data flow as serialized messages passed through distributed queues. This peer-to-peer design eliminates the central orchestrator. Each task progresses independently through lightweight agents, while compute-intensive operations, such as LLM inference or containerized environments, are handled by distributed services. Built on Ray, Matrix scales to tens of thousands of concurrent agentic workflows and provides a modular, configurable design that enables easy adaptation to a wide range of data generation workflows. We evaluate Matrix across diverse synthesis scenarios, such as multi-agent collaborative dialogue, web-based reasoning data extraction, and tool-use trajectory generation in customer service environments. In all cases, Matrix achieves $2$--$15\times$ higher data generation throughput under identical hardware resources, without compromising output quality.</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">14</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3528">TiDAR: Think in Diffusion, Talk in Autoregression</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Jingyu Liu ⋅ Xin Dong ⋅ Zhifan Ye ⋅ Rishabh Mehta ⋅ Yonggan Fu ⋅ vartika singh ⋅ Ce Zhang ⋅ Pavlo Molchanov
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Diffusion language models hold the promise of fast parallel generation, while autoregressive (AR) models typically excel in quality due to their causal structure aligning naturally with language modeling. This raises a fundamental question: can we achieve a synergy with high throughput, higher GPU utilization, and AR level quality? Existing methods fail to effectively balance these two aspects, either prioritizing AR using a weaker model for sequential drafting (speculative decoding), leading to lower drafting efficiency, or using some form of left-to-right (AR-like) decoding logic for diffusion, which still suffers from quality degradation and forfeits its potential parallelizability.  We introduce TIDAR, a sequence-level hybrid architecture that drafts tokens (Thinking) in Diffusion and samples final outputs (Talking) AutoRegressively - all within a single forward pass using specially designed structured attention masks. This design exploits the free compute density on GPUs, achieving a strong balance between drafting and verification capacity. Moreover, we design TIDAR to be serving-friendly as a standalone model.   We extensively evaluate TIDAR against AR models, speculative decoding, and diffusion variants across generative and likelihood tasks at both 1.5B and 8B scales. Thanks to parallel drafting and sampling as well as efficient exact KV cache support, TIDAR outperforms speculative decoding in measured throughput and surpasses diffusion models like Dream and Llada in both efficiency and quality. Most notably, TIDAR is the first architecture to close the quality gap with AR models while delivering 4.71× to 5.91× more tokens per second.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">15</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3640">Hippocampus: An Efficient and Scalable Memory Module for Agentic AI</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Yi Li ⋅ Lianjie Cao ⋅ Faraz Ahmed ⋅ Puneet Sharma ⋅ Bingzhe Li
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Agentic AI systems require persistent memory to store user-specific histories beyond the limited context window of LLMs. Existing memory systems rely on the dense vector databases, knowledge-graph traversal, or hybrids, which incur high retrieval latency and poor storage scalability.  We introduce HIPPOCAMPUS, an agentic memory management system that uses compact binary signatures for semantic search and lossless token-ID streams for exact content reconstruction. Its core is a Dynamic Wavelet Matrix (DWM) that compresses and co-indexes both streams to support ultra-fast search in the compressed domain, thus avoiding costly dense-vector or graph computations. For a fixed tokenizer vocabulary, the storage footprint of this design grows linearly with memory size, making it suitable for long-horizon agentic deployments. Empirically, across LoCoMo and LongMemEval, HIPPOCAMPUS achieves end-to-end retrieval latency that is comparable to or lower than the evaluated agentic memory baselines, with 1.1X–31.5X speedups over the evaluated baselines, and reduces per-query token footprint by 1.1X–14.5X, while maintaining competitive task accuracy.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">16</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3619">Stream2LLM: Overlap Context Streaming and Prefill for Reduced Time-to-First-Token</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Rajveer Bachkaniwala ⋅ Chengqi Luo ⋅ Richard So ⋅ Divya Mahajan ⋅ Kexin Rong
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p>Context retrieval systems for LLM inference face a critical challenge: high retrieval latency creates a fundamental tension between waiting for complete context (poor time-to-first-token) and proceeding without it (reduced quality). Streaming context incrementally--overlapping retrieval with inference--can mitigate this latency, but doing so with concurrent requests introduces new challenges: requests contend for GPU compute and memory, and scheduling must adapt to dynamic context arrivals.  We present **Stream2LLM**, a streaming-aware LLM serving system for concurrent prefill-decode disaggregated deployments. Stream2LLM introduces adaptive scheduling and preemption for two distinct retrieval patterns: **append-mode** (progressive context accumulation) and **update-mode** (iterative refinement with cache invalidation). It decouples scheduling decisions from resource acquisition, enabling flexible preemption strategies guided by hardware-specific cost models, and uses longest common prefix matching to minimize redundant computation when input changes dynamically.  To evaluate Stream2LLM, we collect two large-scale, real-world streaming workloads based on web crawling and approximate nearest neighbor search. Our evaluation demonstrates that streaming architecture delivers up to 11$\times$ TTFT improvements, with cost-aware scheduling providing critical benefits under memory pressure, all while maintaining throughput parity with non-streaming baselines.  Code: https://github.com/rajveerb/stream2llm/tree/mlsys_artifact</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">17</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3586">SuperInfer: SLO-Aware Rotary Scheduling and Memory Management for LLM Inference on Superchips</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Jiahuan Yu ⋅ Mingtao Hu ⋅ Zichao Lin ⋅ Minjia Zhang
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Large Language Model (LLM) serving faces a fundamental tension between stringent latency Service Level Objectives (SLOs) and limited GPU memory capacity. When high request rates exhaust the KV cache budget, existing LLM inference systems often suffer severe head-of-line (HOL) blocking. While prior work explored PCIe-based offloading, these approaches cannot sustain responsiveness under high request rates, often failing to meet tight Time-To-First-Token (TTFT) and Time-Between-Tokens (TBT) SLOs. We present SuperInfer, a high-performance LLM inference system designed for emerging Superchips (e.g., NVIDIA GH200) with tightly coupled GPU-CPU architecture via NVLink-C2C. SuperInfer introduces RotaSched, the first proactive, SLO-aware rotary scheduler that rotates requests to maintain responsiveness on Superchips, and DuplexKV, a high-performance rotation engine that enables full-duplex transfer over NVLink-C2C. Evaluations on GH200 using various models and datasets show that SuperInfer improves TTFT SLO attainment rates by up to 74.7% while maintaining comparable TBT and throughput compared to state-of-the-art systems, demonstrating that SLO-aware scheduling and memory co-design unlocks the full potential of Superchips for responsive LLM serving. Code is available in https://github.com/Supercomputing-System-AI-Lab/SuperInfer.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">18</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3583">AgenticCache: Cache-Driven Asynchronous Planning for Embodied AI Agents</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Hojoon Kim ⋅ Yuheng Wu ⋅ Thierry Tambe
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p>Embodied AI agents increasingly rely on large language models (LLMs) for planning, yet per-step LLM calls impose severe latency and cost. In this paper, we show that embodied tasks exhibit strong plan locality, where the next plan is largely predictable from the current one. Building on this, we introduce AgenticCache, a planning framework that reuses cached plans to avoid per-step LLM calls. In AgenticCache, each agent queries a runtime cache of frequent plan transitions, while a background Cache Updater asynchronously calls the LLM to validate and refine cached entries. Across four multi-agent embodied benchmarks, AgenticCache improves task success rate by 22\% on average across 12 configurations (4 benchmarks $\times$ 3 models), reduces simulation latency by 65\%, and lowers token usage by 50\%. Cache-based plan reuse thus offers a practical path to low-latency, low-cost embodied agents. Code is available at https://github.com/hojoonleokim/MLSys26_AgenticCache.</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">19</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3573">TeleRAG: Efficient Retrieval-Augmented Generation Inference with Lookahead Retrieval</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Chien-Yu Lin ⋅ Keisuke Kamahori ⋅ Yiyu Liu ⋅ Xiaoxiang Shi ⋅ Madhav Kashyap ⋅ Yile Gu ⋅ Rulin Shao ⋅ Zihao Ye ⋅ Kan Zhu ⋅ Rohan Kadekodi ⋅ Stephanie Wang ⋅ Arvind Krishnamurthy ⋅ Luis Ceze ⋅ Baris Kasikci
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p>Retrieval-augmented generation (RAG) extends large language models (LLMs) with external data sources to enhance factual correctness and domain coverage. Modern RAG pipelines rely on large datastores, creating a significant system challenge: achieving high throughput and low latency is difficult, especially when GPU memory is limited. To address these challenges, we propose TeleRAG, an efficient inference system that reduces latency and improves throughput with minimal GPU memory requirements. The core innovation of TeleRAG is *lookahead retrieval*, a prefetching mechanism that predicts required data and transfers them from CPU to GPU in parallel with LLM generation. In addition, TeleRAG adopts a prefetching scheduler and a cache-aware scheduler to support efficient multi-GPU inference with minimal overhead. Evaluations show TeleRAG achieves up to a 1.98$\times$ average end-to-end latency reduction (single-query) and 1.83$\times$ higher average throughput (batched), as well as good scalability in throughput. This confirms the practical utility of TeleRAG for faster and more memory-efficient deployments of RAG applications.</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">20</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3564">PLA-Serve: A Prefill-Length-Aware LLM Serving System</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Jianshu She ⋅ Zonghang Li ⋅ HONGCHAO DU ⋅ Shangyu Wu ⋅ Wenhao Zheng ⋅ Eric Xing ⋅ Zhengzhong Liu ⋅ Huaxiu Yao ⋅ Chun Jason Xue ⋅ Qirong Ho
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Length-Aware Prefill Serving (LAPS) identifies and disaggregates requests with different prompt lengths in LLM serving to reduce TTFT latency. While recent systems have decoupled the prefill and decode stages to improve throughput, they still rely on unified scheduling policies that fail to adapt to heterogeneous workload characteristics. We observe that prompt-length variations lead to distinct performance bottlenecks, motivating an adaptive scheduling strategy. LAPS disaggregates multi-turn long-prefill requests from short-prefill ones and introduces a length-aware smart batching mechanism for short-prefill workloads. It adopts a dual-queue design that supports temporal disaggregation on a single prefill instance or spatial disaggregation across multiple instances. For short-prefill batches, a batch waiting window and CUDA Graph-based clustering mitigate interference from heterogeneous computation, reducing batching delay and lowering average latency. In real multi-turn workloads, LAPS reduces prefill latency by over 30% compared to vanilla SGLang under prefill–decode disaggregation, and further decreases SLO violations by 28% in multi-instance deployments with vanilla data-parallel configuration. Compared to the SGLang router with load balancing, it further lowers SLO violations by 12% in multi-GPU settings. Under high concurrency and mixed-request scenarios, LAPS improves request throughput by 35% serving Qwen2.5-32B model for prefill instance, demonstrating its effectiveness in optimizing heterogeneous LLM serving workloads.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">21</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3537">FlashAgents: Accelerating Multi-Agent LLM Systems via Streaming Prefill Overlap</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Taosong Fang ⋅ Zhen Zheng ⋅ Zhengzhao Ma ⋅ Yaojie Lu ⋅ Hongyu Lin ⋅ Xianpei Han ⋅ Le Sun
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p>Large Language Models (LLMs) are increasingly deployed as collaborating agents in Multi-Agent Systems (MAS), where sequential agent interactions create significant latency bottlenecks. Traditional serving systems require each downstream agent to wait for complete upstream generation before starting prefill, leaving substantial idle time during inter-agent transitions. We present FlashAgents, a system that accelerates multi-agent workflows through token-level streaming and prefix-aware coordination. FlashAgents introduces Inter-agent streaming and incremental prefill, which streams tokens between agents and performs incremental prefill to overlap downstream prefill with upstream decode, reducing inter-agent latency. For concurrent workloads, an intra-turn prefix cache built on radix trees detects and eliminates redundant prefill across requests sharing common instruction templates, avoiding recomputation of shared prefixes within the same processing turn. Implemented on SGLang, FlashAgents achieves up to 40\% end-to-end latency reduction on real workflows and 3.5$\times$ speedup in controlled two-agent benchmarks, demonstrating consistent improvements across diverse models and interaction patterns.</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">22</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3521">TokenWeave: Efficient Compute-Communication Overlap for Distributed LLM Inference</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Raja Gond ⋅ Nipun Kwatra ⋅ Ramachandran Ramjee
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Distributed inference of large language models (LLMs) using tensor parallelism can introduce communication overheads of 20% even over GPUs connected via NVLink, a high-speed GPU interconnect. Several techniques have been proposed to mitigate these overheads by decomposing computations into smaller tasks and overlapping communication with these subtasks. However, none of these techniques are turned on by default during tensor-parallel serving in systems like vLLM, SGLang and TensorRT-LLM. This is because the number of tokens processed per iteration is typically kept small to support low-latency serving, and decomposing such smaller workloads to enable communication overlap results in worse performance. Further, the communication itself uses many streaming multiprocessors (SMs) that would otherwise be available for computation, increasing overhead.  We present TokenWeave, the first system to enable efficient compute-communication overlap for tensor-parallel model inference for token lengths as small as 1024. TokenWeave identifies RMSNorm, a previously overlooked operation, as crucial and optimizes it along with communication by implementing a novel fused <strong>AllReduce–RMSNorm</strong> kernel. Further, this kernel leverages the NVSHARP/Multimem feature available on modern GPUs (e.g., Hopper, Blackwell) to jointly perform communication and RMSNorm efficiently using only 2–8 streaming multiprocessors (SMs) on an 8xH100 NVIDIA DGX system. Our evaluations demonstrate up to <strong>1.28x</strong> speedup in latency (baseline÷ours) and up to <strong>1.19x</strong> higher throughput (ours÷baseline) across multiple models and workloads. In several settings, TokenWeave delivers better performance than an equivalent model with all communication removed. The source code is available at https://github.com/microsoft/tokenweave.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">23</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3515">Ontology-Guided Long-Term Agent Memory for Conversational RAG</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Sharon Cao ⋅ Rui Li
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Retrieval-augmented generation (RAG) enables LLMs to ground responses in external knowledge, but long-term, multi-session conversations still suffer from implicit recall failures: when current user queries lack lexical overlap with earlier facts (e.g., preferences), standard dense retrieval and long-context prompting often miss the most relevant memories. We present a dialogue-aware RAG system that jointly addresses what to store and how to retrieve under constraints. Our design extracts durable user facts into a lightweight memory graph, enriches queries with conversational cues, performs hybrid retrieval, and uses a budget-aware router to balance quality and serving cost. On our Implicit Preference Recall benchmark, the system lifts Recall@10 to 0.70 (vs. 0.58 for dense-only) and improves nDCG@10 from 0.41 to 0.51. The system also reduces cross-modality disagreement by 47% and achieves a 81% cost reduction compared to long-context methods.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">24</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3509">From Tokens to Layers: Redefining Stall-Free Scheduling for MoE Serving with Layered Prefill</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Gunjun Lee ⋅ Jiwon Kim ⋅ Jaiyoung Park ⋅ Younjoo Lee ⋅ Jung Ho Ahn
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Large Language Model (LLM) inference in production must meet stringent service-level objectives for both time-to-first-token (TTFT) and time-between-token (TBT) while maximizing throughput under fixed compute, memory, and interconnect budgets. Modern serving systems adopt stall-free scheduling techniques such as chunked prefill, which splits long prompt processing along the token dimension and interleaves prefill with ongoing decode iterations. While effective at stabilizing TBT, chunked prefill incurs substantial overhead in Mixture-of-Experts (MoE) models: redundant expert weight loads increase memory traffic by up to \textbf{39\%} and inflate energy consumption. We propose \textbf{layered prefill}, a new scheduling paradigm that treats transformer layer groups as the primary scheduling unit. By vertically partitioning the model into contiguous layer groups and interleaving prefill and decode across the groups, layered prefill sustains stall-free decoding while eliminating chunk-induced MoE weight reloads. It reduces off-chip bandwidth demand, lowering TTFT by up to \textbf{70\%}, End-to-End latency by \textbf{41\%} and per-token energy by up to \textbf{22\%}. Evaluations show that layered prefill consistently improves the TTFT--TBT Pareto frontier over chunked prefill, reducing expert-load traffic and energy cost while maintaining stall-free decoding. Overall, shifting the scheduling axis from tokens to layers unlocks a new operating regime for high-efficiency, energy-aware LLM serving in co-located environments.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">25</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3634">SONAR: Benchmarking Topology and Collaboration in Decentralized Learning</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Joyce Yuan ⋅ Yichuan Shi ⋅ Abhishek Singh ⋅ Rishi Sharma ⋅ Ramesh Raskar ⋅ Jonas Blanc ⋅ Martin Jaggi
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Decentralized machine learning relies on peer-to-peer communication, yet the role of network topology in shaping learning dynamics remains poorly understood due to the lack of controlled, reproducible evaluation frameworks. We present \textbf{SONAR}, a modular framework for topology-aware decentralized learning that unifies communication, topology management, and fine-grained telemetry, enabling end-to-end measurement of performance, communication, robustness, and privacy under consistent conditions. Using SONAR, we show that topology is a first-class systems variable whose impact amplifies with scale and data heterogeneity. We find that sparse, structured topologies (e.g., rings and tori) can achieve comparable or superior accuracy to dense graphs at substantially lower communication cost under circumstances, revealing a clear efficiency frontier. We further identify and provide insights on collaborator collapse, a systematic failure mode in adaptive collaboration, where similarity-based neighbor selection reduces diversity and degrades generalization. By exposing topology as a controllable and measurable dimension, SONAR enables systematic, reproducible evaluation of decentralized learning and provides practical guidance for designing efficient and robust collaborative systems.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">26</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3588">G-HEMP: FAST MULTI-GPU PRIVATE INFERENCE FOR LARGE-SCALE GCNS WITH HOMOMORPHIC ENCRYPTION</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Ran Ran ⋅ Zhaoting Gong ⋅ Zhaowei Li ⋅ Xianting Lu ⋅ Jiajia Li ⋅ Wujie Wen
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Homomorphic Encryption (HE) offers a promising solution for privacy-preserving Graph Convolutional Network (GCN) inference in untrusted cloud environments by enabling computation directly on encrypted data. This capability is particularly valuable in domains such as recommendation systems, financial analysis, and bioinfor- matics, where data confidentiality is paramount. However, applying HE to large-scale GCN inference introduces substantial computational and memory overhead, severely limiting scalability and runtime efficiency. While prior works focusing on algorithmic improvements have demonstrated feasibility on CPUs, these approaches struggle to scale effectively on GPUs due to excessive memory consumption and redundant computation. In this work, we present G-HEMP, the first framework that leverages multi-GPU systems to accelerate large-scale private GCN inference. G-HEMP introduces two key innovations: (i) a block-diagonal parallel packing scheme that eliminates redundant data replication in encrypted adjacency matrices, reducing the number of HE operations and achieving up to 4.41× speedup over conventional feature-wise packing under single GPU environment; and (ii) a multi-GPU workload partitioning strategy that halves per-GPU peak memory usage on a 4-GPU system and achieves up to 3.88× latency improvement. Compared to the limb-level-partitioning-based approach in Cinnamon–the state-of-the-art encrypted computation parallelization method, G-HEMP further attains up to 3.13× gain owing to our superior multi-device partition policy. Overall, G-HEMP is model-agnostic and scales seamlessly with graph size and GPU count, enabling efficient and practical privacy-preserving GCN inference on modern heterogeneous environments.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">27</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3627">ProToken: Token-Level Attribution for Federated Large Language Models</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Waris Gill ⋅ Ahmad Humayun ⋅ Ali Anwar ⋅ Muhammad Ali Gulzar
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Federated Learning (FL) enables collaborative training of Large Language Models (LLMs) across distributed data sources while preserving privacy. However, when federated LLMs are deployed in critical applications, it remains unclear which client(s) contributed to specific generated responses, hindering debugging, malicious client identification, fair reward allocation, and trust verification. We present ProToken, a novel Provenance methodology for Token-level attribution in federated LLMs that addresses client attribution during autoregressive text generation while maintaining FL privacy constraints. ProToken leverages two key insights to enable provenance at each token: (1) transformer architectures concentrate task-specific signals in later blocks, enabling strategic layer selection for computational tractability, and (2) gradient-based relevance weighting filters out irrelevant neural activations, focusing attribution on neurons that directly influence token generation. We evaluate ProToken across 16 configurations spanning four LLM architectures (Gemma, Llama, Qwen, SmolLM) and four domains (medical, financial, mathematical, coding). ProToken achieves 98.62% average attribution accuracy in correctly localizing responsible client(s), and maintains high accuracy when the number of clients are scaled, validating its practical viability for real-world deployment settings.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">28</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3589">CSLE: A Reinforcement Learning Platform for Autonomous Security Management</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Kim Hammar
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Reinforcement learning is a promising approach to autonomous and adaptive security management in networked systems. However, current reinforcement learning solutions for security management are mostly limited to simulation environments and it is unclear how they generalize to operational systems. In this paper, we address this limitation by presenting CSLE: a reinforcement learning platform for autonomous security management that enables experimentation under realistic conditions. Conceptually, CSLE encompasses two systems. First, it includes an emulation system that replicates key components of the target system in a virtualized environment. We use this system to gather measurements and logs, based on which we identify a system model, such as a Markov decision process. Second, it includes a simulation system where security strategies are efficiently learned through simulations of the system model. The learned strategies are then evaluated and refined in the emulation system to close the gap between theoretical and operational performance. We demonstrate CSLE through four use cases: flow control, replication control, segmentation control, and recovery control. Through these use cases, we show that CSLE enables near-optimal security management in an environment that approximates an operational system.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">29</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3617">FLoRIST: Singular Value Thresholding for Efficient and Accurate Federated Fine-Tuning of Large Language Models</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Hariharan Ramesh ⋅ Jyotikrishna Dass
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Integrating Low-Rank Adaptation (LoRA) into federated learning offers a promising solution for parameter-efficient fine-tuning of Large Language Models (LLMs) without sharing local data. However, several methods designed for federated LoRA present significant challenges in balancing communication efficiency, model accuracy, and computational cost, particularly among heterogeneous clients. These methods either rely on simplistic averaging of local adapters, which introduces aggregation noise, require transmitting large stacked local adapters, leading to poor communication efficiency, or necessitate reconstructing memory-dense global weight-update matrix and performing computationally expensive decomposition to design client-specific low-rank adapters. In this work, we propose FLoRIST, a federated fine-tuning framework that achieves mathematically accurate aggregation without incurring high communication or computational overhead. Instead of constructing the full global weight-update matrix at the server, FLoRIST employs an efficient decomposition pipeline by performing singular value decomposition on stacked local adapters separately. This approach operates within a compact intermediate space to represent the accumulated information from local LoRAs. We introduce tunable singular value thresholding for server-side optimal rank selection to construct a pair of global low-rank adapters shared by all clients. Extensive empirical evaluations across multiple datasets and LLMs demonstrate that FLoRIST consistently strikes the best balance between superior communication efficiency and competitive performance in both homogeneous and heterogeneous setups.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">30</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3578">Privatar: Scalable Privacy-preserving Multi-user VR via Secure Offloading</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Jianming Tong ⋅ Hanshen Xiao ⋅ Krishna Nair ⋅ Hao Kang ⋅ Ashish Sirasao ⋅ Ziqi Zhang ⋅ G. Edward Suh ⋅ Tushar Krishna
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p>Multi-user virtual reality (VR) applications such as football and concert experiences rely on real-time avatar reconstruction to enable immersive interaction. However, rendering avatars for numerous participants on each headset incurs prohibitive computational overhead, fundamentally limiting scalability. This work introduces a framework, Privatar, to offload avatar reconstruction from headset to untrusted devices within the same local network while safeguarding sensitive facial features against adversaries capable of intercepting offloaded data.  Privatar builds on the insight that "domain-specific knowledge of avatar reconstruction enables provably private offloading at minimal cost". (1) _System level_. We observe avatar reconstruction is frequency-domain decomposable via block-wise DCT with negligible quality drop, and propose Horizontal Partitioning (HP) to keep the most energy frequency components on-device and offloads only low-energy components. HP offloads local computation while reducing information leakage to low-energy subsets only. (2) _Privacy level_. For _individually_ offloaded, _multi-dimensional_ signals without aggregation, worst-case local Differential Privacy requires prohibitive noise, ruining utility. We observe users’ expression statistical distribution are _slowly changing over time and trackable online_, and hence propose Distribution-Aware Minimal Perturbation (DAMP). DAMP minimizes noise based on each user’s expression distribution to significantly reduce its effects on utility and accuracy, retaining formal privacy guarantee. Combined, HP provides empirical privacy protection against expression identification attack. And DAMP further augments it to offer a formal guarantee against arbitrary adversaries.  On a Meta Quest Pro, Privatar supports up to 2.37$\times$ more concurrent users at 5.7$\sim$6.5% higher reconstruction loss and $\sim$9% energy overhead, providing a better throughout-loss Pareto frontier over SotA quantization, sparsity, and local reconstruction baseline. Privatar further provides both provable privacy guarantee and stays robust against both empirical attack and NN-based Expression Identification Attack, proving its resilience in practice. Our code is open-sourced at https://github.com/georgia-tech-synergy-lab/Privatar.</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">31</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3614">DisAgg: Distributed Aggregators for Efficient Secure Aggregation</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Haaris Mehmood ⋅ Giorgos Tatsis ⋅ Dimitrios Alexopoulos ⋅ Karthikeyan Saravanan ⋅ Jie Xi ⋅ Anastasios Drosou ⋅ Mete Ozay
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Federated learning enables collaborative model training across distributed clients, yet vanilla FL exposes client updates to the central server.  Secure‑aggregation schemes protect privacy against an honest‑but‑curious server, but existing approaches often suffer from many communication rounds, heavy public‑key operations, or difficulty handling client dropouts.  Recent methods like One‑Shot Private Aggregation (OPA) cut rounds to a single server interaction per FL iteration, yet they impose substantial cryptographic and computational overhead on both server and clients. We propose a new protocol called DisAgg that leverages a small committee of clients called <em>Aggregators</em> to perform the aggregation itself: each client secret‑shares its update vector to Aggregators, which locally compute partial sums and return only aggregated shares for server‑side reconstruction.  This design eliminates local masking and expensive homomorphic encryption, reducing endpoint computation while preserving privacy against a curious server and a limited fraction of colluding clients.  By leveraging optimal trade-offs between communication and computation costs, DisAgg processes 100k-dimensional update vectors from 100k 5G clients with a 4.6x speedup compared to OPA, the previous best protocol.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">32</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3570">ZK-APEX: ZERO-KNOWLEDGE APPROXIMATE PERSONALIZED UNLEARNING WITH EXECUTABLE PROOFS</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Mohammadmahdi Maheri ⋅ Sunil Cotterill ⋅ Alex Davidson ⋅ Hamed Haddadi
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p>Machine unlearning removes the influence of specified data from trained models to satisfy privacy, copyright, and safety requirements (e.g., the “right to be forgotten”). In practice, providers distribute a global model to edge devices, that each locally personalize the model based on their private data.  However, since clients may ignore or falsify deletion requests, providers must verify correct unlearning for these distributed models, without accessing private parameters. This is particularly challenging for personalized models, which must forget designated samples without degrading local utility, while ensuring that verification remains efficient and scalable on resource-constrained edge devices.  We formalize personalized unlearning and develop a zero-shot approximate unlearning algorithm that works directly on the personalized model without retraining. Our novel method, ZK-APEX, combines provider-side sparse masking for targeted removal with client-side Group-OBS compensation computed from a block-wise empirical Fisher. This technique yields a curvature-aware update designed for low-overhead execution and proof generation. Using modern Halo2 ZK-SNARKs, we prove operator compliance by showing that the unlearned model exactly matches the committed output of the prescribed transformation, without revealing personalized model parameters or data.  On Vision Transformer (ViT) classification models, our approach recovers approximately 99\% Top-1 personalization accuracy while enforcing effective forgetting. We further evaluate the unlearning algorithm on a generative model, OPT125M, trained on the CodeParrot code dataset, achieving $\sim$70\% recovery of original accuracy. ZK-SNARK proof generation for the ViT case completes in $\approx$2 hours, which is more than $10^7\times$ faster than retraining based verification, with peak memory under 0.7 GB and proof sizes about 400 MB. Together, these results establish the first verifiable personalized unlearning framework practical for deployment on resource constrained edge devices.</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">33</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3590">PLayer-FL: A Principled Approach to Personalized Layer-wise Cross-Silo Federated Learning</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Ahmed Elhussein ⋅ Florent Pollet ⋅ Gamze Gursoy
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Federated learning (FL) with non-IID data often degrades client performance below local training baselines. Partial FL addresses this by federating only early layers that learn transferable features, but existing methods rely on ad-hoc, architecture-specific heuristics. We first conduct a systematic analysis of layer-wise generalization dynamics in FL, revealing an early-emerging transition between generalizable (safe-to-federate) and task-specific (should-remain-local) layers. Building on this, we introduce Principled Layer-wise Federated Learning (PLayer-FL), which aims to deliver the benefits of federation more robustly. PLayer-FL computes a novel federation-sensitivity metric efficiently after a single training epoch to choose the optimal split point for a given task. Inspired by model pruning, the metric quantifies each layer’s robustness to aggregation and highlights where federation shifts from beneficial to detrimental. We show that this metric correlates strongly with established generalization measures across diverse architectures. Crucially, experiments demonstrate that PLayer-FL achieves consistently competitive performance across a wide range of tasks while distributing gains more equitably and reducing client-side regressions relative to baselines.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">34</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3518">Blueprint, Bootstrap, and Bridge: A Security Look at NVIDIA GPU Confidential Computing</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Zhongshu Gu ⋅ Enriquillo Valdez ⋅ Salman Ahmed ⋅ Julian James stephen ⋅ Michael Le ⋅ Hani Jamjoom ⋅ Shixuan Zhao ⋅ Zhiqiang Lin
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>NVIDIA GPU Confidential Computing (GPU-CC) aims to provide secure execution for AI workloads. For end users, enabling GPU-CC is seamless and requires no modifications to existing applications. However, this ease of adoption relies on a proprietary and highly complex system that is difficult to inspect, creating challenges for researchers seeking to understand its architecture and security landscape. In this work, we provide a security look at GPU-CC by reconstructing a coherent view of the system. We first examine the system’s blueprint, focusing on the specialized architectural engines that support its security mechanisms. We then analyze the bootstrap process, which coordinates hardware and software components to establish these protections. Finally, we conduct targeted experiments to assess whether, under the GPU-CC threat model, data transfers along different paths remain protected across the bridge between trusted CPU and GPU domains. We responsibly disclosed all security findings presented in this paper to the NVIDIA Product Security Incident Response Team (PSIRT).</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">35</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3580">Zero redundancy distributed learning with differential privacy</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Zhiqi Bu ⋅ Justin Chiu ⋅ Ruixuan Liu ⋅ Sheng Zha ⋅ George Karypis
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>Deep learning using large models has achieved great success in a wide range of domains. However, training these models on billions of parameters is very challenging in terms of training speed, memory cost, and communication efficiency, especially under the privacy-preserving regime with differential privacy (DP). On the one hand, the efficiency of DP optimization is comparable to that of standard non-DP optimization on a single GPU, but existing DP distributed learning is significantly inefficient on multiple GPUs. On the other hand, the Zero Redundancy Optimizer (ZeRO) is a state-of-the-art solution to the standard distributed learning, which can be technically complicated to work compatibly with DP. In this work, we develop a new systematic solution, DP-ZeRO, (I) to scale up the trainable DP model size, e.g. to GPT-100B, (II) to obtain the same computation and communication efficiency as the standard ZeRO, and (III) to enable mixed-precision DP training. Our DP-ZeRO, like the standard ZeRO, has the potential to train models with arbitrary size and exhibits excellent training efficiency on large models. Code at \url{https://github.com/awslabs/fast-differential-privacy}.</p>
+</p>
+                    </div>
+
+                </div>
+            
+                <div class="track-schedule-card">
+                    <div None  >
+                        <div class="btn-spacer float-end track-pad" style="position:relative; top:-3px">
+                            
+                            <div class="track-child-bookmark">
+</div>
+                            <br>
+                            
+                            
+                                <div class="small" title="Poster Position">36</div>
+                            
+                        </div>
+                        
+
+                        <h5><strong><a href="/virtual/2026/poster/3516">Toward Principled LLM Safety Testing: Solving the Jailbreak Oracle Problem</a></strong></h5>
+
+
+                        <p class="text-muted">
+                            Shuyi Lin ⋅ Anshuman Suri ⋅ Alina Oprea ⋅ Cheng Tan
+                        </p>
+
+                    </div>
+                    <div class="abstract">
+                        <p><p>As large language models (LLMs) become increasingly deployed in safety-critical applications, the lack of systematic methods to assess their vulnerability to jailbreak attacks presents a critical security gap. We introduce the \emph{jailbreak oracle problem}: given a model, prompt, and decoding strategy, determine whether a jailbreak response can be generated with likelihood exceeding a specified threshold. This formalization enables a principled study of jailbreak vulnerabilities. Answering the jailbreak oracle problem poses significant computational challenges, as the search space grows exponentially with response length. We present BOA, the first system designed for efficiently solving the jailbreak oracle problem. BOA employs a two-phase search strategy: (1) breadth-first sampling to identify easily accessible jailbreaks, followed by (2) depth-first priority search guided by fine-grained safety scores to systematically explore promising yet low-probability paths. BOA enables rigorous security assessments including systematic defense evaluation, standardized comparison of red team attacks, and model certification under extreme adversarial conditions. Code is available at <a href="https://github.com/shuyilinn/BOA/tree/mlsys2026ae">https://github.com/shuyilinn/BOA/tree/mlsys2026ae</a>.</p>
+</p>
+                    </div>
+
+                </div>
+            
+        </div>
+
+
+
+    
+
+
+
+
+    
+        </div>
+    
+
+</main>
+<!--END BLOCK CONTENT-->
+
+
+<!--Footer for the edit button-->
+
+    <div id="editFooter" class="noprint" style="width:70px;">
+
+        <button class="editFooterButton btn btn-outline-primary startEditBtn" title="Enable editing of content where possible"
+                id="editpage"><i class="far fa-edit"></i></button>
+        <button class="editFooterButton btn btn-outline-primary stopEditBtn" title="Save edited content and reload the page"
+                id="noeditpage" style="display:none"><i class="fas fa-save"></i>
+        </button>
+    </div>
+
+
+<script nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+
+    $(function () {
+        if ($(".editable").length == 0) {
+            $("#editFooter").hide();
+        }
+
+        // Event bindings for edit buttons
+        $('.startEditBtn').on('click', function() {
+            start_edit();
+        });
+        
+        $('.stopEditBtn').on('click', function() {
+            stop_edit();
+        });
+        $('#id_accepted_terms_and_conditions').on('change', function() {
+            this.form.submit();
+        });
+        $('.accepted_terms_and_conditions').on('change', function() {
+            this.form.submit();
+        });
+        $('.workshopstatus').on('change', function() {
+            changeStatus(this);
+        });
+        $('.action-select').on('change', function() {
+            actionChanged(this);
+        });
+        $('.extra').on('change', function() {
+            extraChanged(this);
+        });
+        $('.filter_workshop').on('change', function() {
+            this.form.submit();
+        });
+        $('.volunteer-status, .recommendation-letter-status').on('change', function() {
+            setStatus(this);
+        });
+        $('.status-form-show').on('change', function() {
+            this.form.submit();
+        });
+        $('.download-form-download').on('change', function() {
+            this.form.submit();
+        });
+        $('.presentation-type-form-presentation-type').on('change', function() {
+            this.form.submit();
+        });
+        $('.export-form-resource').on('change', function() {
+            showFieldsForResource(this.value);
+        });
+        $('.import-form-resource').on('change', function() {
+            showFieldsForResource(this.value);
+        });
+        $('.vol-email-form-to, .vol-email-form-template').on('change', function() {
+            this.form.submit();
+        });
+        $('.organizer-alert').on('click', function() {
+            getUserCreateForm(this.href);
+        });
+    })
+</script>
+
+<script src="/static/core/js/fastclick.min.js" ></script>
+
+<!--We don't know if there are editable tags on the page until after the django template engine has rendered the page. So,
+test in javascript for "editable" tags and if present, load the ckeditor engine dynamically. -->
+
+<script nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+    if (document.getElementsByClassName('editable').length > 0) {
+        var script = document.createElement("script");
+        script.type = "text/javascript";
+        script.src = "/static/core/ckeditor/4.18/ckeditor.js";    // use this for linked script
+      script.onload = function () {
+        console.log("ckeditor loaded");
+        // Initial setup when each editor is ready
+        CKEDITOR.on("instanceReady", function (e) {
+          updateToggleDocName(e.editor);
+        });
+
+        // React to any editor entering/leaving read-only
+        CKEDITOR.on("readOnly", function (e) {
+          updateToggleDocName(e.editor);
+        });
+      };
+        document.body.appendChild(script);
+    }
+
+    function updateToggleDocName(editor) {
+      var id = editor && editor.name;
+      if (!id || id.indexOf("id_") !== 0) return;
+
+      var doc_name_element = document.getElementById("document_name_" + id.slice(3));
+      console.log(doc_name_element);
+      if (!doc_name_element) return;
+
+      doc_name_element.style.display = editor.readOnly ? "none" : "block";
+    }
+
+</script>
+
+
+<script nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+    function fetchContent() {
+        $(".editable").each(function (index) {
+            var myself = this;
+            var docvID = this.getAttribute('id').replace("id_", "");
+            var blurbtext = this.getAttribute("blurbtext");
+            $.ajax({
+                url: "/Admin/RetrieveDocumentVersion",
+                type: "POST",
+                data: {
+                    docvID: docvID,
+                    blurbtext: blurbtext,
+                    csrfmiddlewaretoken: csrftoken,
+                },
+                success: function (data, textStatus, jqXHR) {
+                    myself.setAttribute("contenteditable", "true");
+                    myself.innerHTML = data;
+                    CKEDITOR.inline(myself.id);
+                },
+            });
+        })
+    }
+
+    $("#nopageedit").hide();
+
+    function start_edit() {
+
+        $(".editable").addClass("warning-ring");
+
+        //At the beginning of an edit, we need to replace the content of the
+        //editable div with it's databased content in order to preserve the
+        //template tags. We want the tag, not the rendered tag.
+
+        /* You must remove any countdown.js timers on the page before replacing the page with it's
+        document version otherwise, Javascript will throw an exception.  */
+
+
+        $("[class$='-countdown']").parent().remove();
+        fetchContent();
+        $(".editable").attr("onblur", "ckeditorsave(this)");
+        window.status.bold();
+        window.status = "Click outside the editable area to save. Changes are LIVE!! Refresh page to discard changes.";
+        $("#editpage").hide();
+        $("#noeditpage").show();
+    }
+
+
+    function stop_edit() {
+        ckeditorsave();
+        $("#noeditpage").hide();
+        $("#editpage").show();
+        window.location.reload();
+    }
+
+    function ckeditorsave(event) {
+        for (var name in CKEDITOR.instances) {
+            if (CKEDITOR.instances[name].checkDirty()) {
+                editor = CKEDITOR.instances[name];
+                saveEditable(editor);
+            }
+        }
+    }
+
+    function saveEditable(editor) {
+        var content = editor.getData();
+        var contentId = editor.name;
+        var pageId = window.location.pathname;
+        var originalContent = "N/A";
+        var documentversion = editor.container.getAttribute("id").replace("id_", "");
+        var blurbtext = editor.container.getAttribute("blurbtext");
+        if (contentId.match(/-aloha$/gi)) {
+            contentId = contentId.replace(/-aloha/gi, '');
+        }  /*I'm not sure what this does but it seems like it would matter*/
+        var request = jQuery.ajax({
+            url: "/Admin/SaveDocument",
+            type: "POST",
+            async: false,
+            data: {
+                content: content,
+                originalContent: originalContent,
+                contentId: contentId,
+                pageId: pageId,
+                documentversion: documentversion,
+                blurbtext: blurbtext,
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (data) {
+                if (data['message']) {
+                    alert(data['message']);
+                }
+            },
+            error: function (xqXHR, textStatus) {
+                window.status = textStatus;
+                debugger;
+            }
+
+        });
+
+    };
+
+
+</script>
+
+<script nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+    jQuery(document).ajaxSend(function (event, xhr, settings) {
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function sameOrigin(url) {
+            // url could be relative or scheme relative or absolute
+            var host = document.location.host; // host + port
+            var protocol = document.location.protocol;
+            var sr_origin = '//' + host;
+            var origin = protocol + sr_origin;
+            // Allow absolute or scheme relative URLs to same origin
+            return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+                (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+                // or any other URL that isn't scheme relative or absolute i.e relative.
+                !(/^(\/\/|http:|https:).*/.test(url));
+        }
+
+        function safeMethod(method) {
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
+        if (!safeMethod(settings.type) && sameOrigin(settings.url)) {
+            xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+        }
+    });
+</script>
+
+
+
+
+
+<div id="successful-page-load" class='hidden'>Successful Page Load</div>
+
+
+
+
+
+    
+        <link href="/static/conf_gdpr/css/conf_gdpr.css" rel="stylesheet">
+        <div id="cookie-bar" style="z-index: 8">
+            <table class="gdpr-statement">
+                <col>
+                <col style="width:120px">
+                <tr>
+                    <td style="padding:5px">
+                        MLSys uses cookies for essential functions only. We do not sell your personal
+                        information.
+                        <a href="/public/PrivacyPolicy">Our Privacy Policy &raquo;&nbsp;</a>
+                    </td>
+                    <td>
+                        <button float-end class="btn btn-light btn-sm btn btn-outline-dark" id="accept_cookies_button" >Accept</button>
+                           
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <script nonce="zT66Sow2Ec8M1P90+UrrAQ==">
+            function accept_cookies() {
+
+                $.ajax({
+                    method: "POST",
+                    url: "/conf_gdpr/accept",
+                    data: {
+                        csrfmiddlewaretoken: csrftoken,
+                    },
+                }).done(function (data) {
+                    console.log(data);
+                    $("#cookie-bar").fadeOut();
+                }).fail(function (jqXHR, textStatus) {
+                    alert(textStatus);
+                });
+            }
+            $("#accept_cookies_button").on("click", () => {
+                accept_cookies();
+            });
+        </script>
+
+    
+
+
+
+
+
+
+
+<br>
+<div class="noprint">
+    <footer id="bootstrap-footer" class="text-center text-lg-start bg-light text-muted noprint">
+
+        <div class="text-center p-1 border-top border-dark">
+        </div>
+        <!-- Section: Links  -->
+        <section class="pt-1">
+            <div class="container text-center text-md-start mt-3">
+                <!-- Grid row -->
+                <div class="row mt-3">
+                    <!-- Grid column -->
+                    <div class="col-md-3 col-lg-3 col-xl-3 mx-auto mb-3">
+                        <!-- Content -->
+                        <h6 class="text-uppercase fw-bold mb-4">
+                            <img src="/static/core/img/MLSys-logo.svg" alt="MLSys logo" height='30'>
+                        </h6>
+                        <p>
+                            The MLSys Logo above may be used on presentations. Right-click and choose
+                            download. It is a vector graphic and may be used at any scale.
+                        </p>
+
+                    </div>
+
+
+                    <!-- Grid column -->
+                    <div class="col-md-5 col-lg-4 col-xl-3 mx-auto mb-4" style="max-width: 300px;">
+                        <!-- Links -->
+                        <h6 class="text-uppercase fw-bold mb-4 text-center">
+                            Useful links
+                        </h6>
+                        <div>
+             <div>
+<ul>
+	<li><a href="/sponsors/prospectus">Sponsor Information</a></li>
+</ul>
+</div>
+
+            </div>
+                    </div>
+                    <!-- Grid column -->
+
+                    <!-- Grid column -->
+                    <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mb-md-0 mb-4">
+                        <!-- Links -->
+                        <h6 class="text-uppercase fw-bold mb-4">Contact</h6>
+                        
+                            <p>
+                                <i class="fas fa-home me-3"></i> 82799 Kingsboro Lane, Indio CA 92201
+                            </p>
+                        
+                        <p>
+                            <i class="fas fa-envelope me-3"></i> <a href="/Help/Contact">Email</a>
+                        </p>
+                        
+                            <p><i class="fas fa-phone me-3"></i> Phone: +1 ‭(858) 761-6256‬</p>
+                        
+                        
+
+
+                    </div>
+                    <!-- Grid column -->
+                </div>
+                <!-- Grid row -->
+            </div>
+        </section>
+        <!-- Section: Links  -->
+
+        <!-- Copyright -->
+        <div class="text-center p-4" style="background-color: rgba(0, 0, 0, 0.05);">
+            <div>
+             <p><a href="https://proceedings.mlsys.org">MLSys Proceedings</a></p>
+
+            </div>
+        </div>
+        <!-- Copyright -->
+    </footer>
+</div>
+<!-- Footer -->
+
+
+<!-- Footer -->
+
+</body>
+</html>

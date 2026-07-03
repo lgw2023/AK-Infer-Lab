@@ -1,0 +1,659 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="readthedocs-addons-api-version" content="1"><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ascend Install Guidance &mdash; verl  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=27552b18" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/js/runllm-widget.js?v=53011e60"></script>
+      <script src="../../_static/js/resizable-sidebar.js?v=5610fd81"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <script src="../../_static/js/versions.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Ascend Quickstart" href="quick_start.html" />
+    <link rel="prev" title="Ascend Dockerfile Build Guidance" href="dockerfile_build_guidance.html" /> 
+<script async type="text/javascript" src="/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="verl" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/ascend_tutorial/get_start/install_guidance.html" /><meta name="readthedocs-http-status" content="200" /></head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            verl
+          </a>
+              <div class="switch-menus">
+                <div class="version-switch"></div>
+                <div class="language-switch"></div>
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../start/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../start/quickstart.html">Quickstart: PPO training on GSM8K dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../start/multinode.html">Multinode Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../start/ray_debug_tutorial.html">Ray Debug Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../start/more_resources.html">More Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../start/agentic_rl.html">Agentic RL Training</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Programming guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend_guide.html">How to Extend verl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hybrid_flow.html">HybridFlow Programming Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../single_controller.html">The Design of <code class="docutils literal notranslate"><span class="pre">verl.single_controller</span></code></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Data Preparation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../preparation/prepare_data.html">Prepare Data for Post-Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../preparation/reward_function.html">Implement Reward Function for Dataset</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Configurations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/config.html">Config Explanation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">PPO Example</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/ppo_code_architecture.html">PPO Example Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/gsm8k_example.html">GSM8K Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/megatron_fsdp_example.html">Megatron-FSDP Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/multi_modal_example.html">Multi-Modal Example Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/skypilot_examples.html">SkyPilot Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Algorithms</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/ppo.html">Proximal Policy Optimization (PPO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/grpo.html">Group Relative Policy Optimization (GRPO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/dapo.html">Recipe: Decoupled Clip and Dynamic Sampling Policy Optimization (DAPO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/spin.html">Recipe: Self-Play Fine-Tuning (SPIN)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/sppo.html">Recipe: Self-Play Preference Optimization (SPPO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/entropy.html">Recipe: Entropy Mechanism</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/opo.html">On-Policy RL with Optimal Reward Baseline (OPO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/baseline.html">Algorithm Baselines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/gpg.html">GPG: Group Policy Gradient</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/rollout_corr.html">Rollout Correction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/rollout_corr_math.html">Mathematical Formulations of Rollout Correction Methods in <code class="docutils literal notranslate"><span class="pre">verl</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/otb.html">Optimal Token Baseline (OTB)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/dppo.html">Divergence Proximal Policy Optimization (DPPO)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../algo/opd.html">On-Policy Distillation (OPD)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">PPO Trainer and Workers</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../workers/ray_trainer.html">PPO Ray Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workers/model_engine.html">Model Engine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workers/engine_workers.html">Engine Workers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workers/automodel_workers.html">Automodel Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workers/sglang_worker.html">SGLang Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workers/trtllm_worker.html">TensorRT-LLM Backend</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance Tuning Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../perf/dpsk.html">Training DeepSeek 671b</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../perf/best_practices.html">Verl LLM Best Practices (DAPO + Qwen3-235B)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../perf/perf_tuning.html">Performance Tuning Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../perf/rollout_kv_offload.html">Rollout KV Cache Offload via Mooncake-Store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../README_vllm0.8.html">Upgrading to vLLM &gt;= 0.8</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../perf/device_tuning.html">Hardware Resource Needed for RL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../perf/verl_profiler_system.html">verl Profiler System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../perf/nsight_profiling.html">NVIDIA Nsight Systems profiling in verl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../perf/torch_profiling.html">PyTorch Profiling in verl</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Adding new models</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/fsdp_extension.html">Add models with the FSDP backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/megatron_extension.html">Add models with the Megatron-LM backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/megatron_lite_backend.html">Megatron Lite backend</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Async Training</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/one_step_off.html">Recipe: One Step Off Policy Async Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/fully_async.html">Recipe: Fully Async Policy Trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/async-on-policy-distill.html">Recipe: Async On-Policy Knowledge Distillation Trainer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Low Precision</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../low_precision/fp8.html">FP8 RL in verl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../low_precision/nvfp4_qat.html">NVFP4 QAT (Quantization-Aware Training) in verl</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/checkpoint.html">Using Checkpoints to Support Fault Tolerance Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/rope.html">RoPE Scaling override</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/attention_implementation.html">Attention Implementation Override</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/ppo_lora.html">RL(HF) algorithms with LoRA Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sglang_multiturn/multiturn.html">Multi-turn Rollout Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/placement.html">Ray API Design Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/dpo_extension.html">Extend to other RL(HF) algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/sandbox_fusion_example.html">Sandbox Fusion Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/rollout_trace.html">Trace Function Usage Instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/skip_manager.html">SkipManager: Skip everything in the RL pipeline.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/agent_loop.html">Agent Loop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/reward_loop.html">Reward Loop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data/transfer_queue.html">TransferQueue Data System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/grafana_prometheus.html">Use Prometheus and Grafana to Monitor Rollout</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/mtp.html">Guide to Using MTP in SFT/RL Training and Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advance/determinism.html">Full Determinism for Reproducible RL Training</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Support</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../hardware/multi_chip_support.html">Multi-Chip Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../amd_tutorial/index.html">AMD (ROCm) Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Ascend (NPU) Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../README.html">Ascend Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dockerfile_build_guidance.html">Ascend Dockerfile Build Guidance</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Ascend Install Guidance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">关键更新</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">目录</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">硬件支持</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id8">框架后端支持说明</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id9">训练后端拓展</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id11">部署指南</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id12">1. Docker镜像获取、构建和使用</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id13">2. 自定义安装-vLLM + FSDP/Megatron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id17">3. 自定义安装-SGLang + FSDP/Megatron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id23">4. 训练后端拓展</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id25">附录</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id26">昇腾暂不支持生态库说明</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html">Ascend Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#ascend-quickstart-with-vllm-backend">Ascend Quickstart with vLLM Backend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#ascend-quickstart-with-sglang-backend">Ascend Quickstart with SGLang Backend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../feature_support/ascend_backend_features.html">Ascend Backend Features Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../feature_support/npu_advance_features.html">NPU 高级特性指南</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../model_support/model_and_algorithm_support.html">NPU Model &amp; Algorithms Support Status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../model_support/examples/ascend_retool_best_pratice.html">Ascend Retool Best Practice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../model_support/examples/ascend_sglang_best_practices.html">Ascend SGLang Best Practice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../model_support/examples/ascend_vllm_best_practices.html">Ascend vLLM Best Practice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../model_support/examples/dapo_multi_model_optimization_practice.html">DAPO multi model optimization practice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../model_support/examples/gspo_optimization_practice.html">NPU Qwen3-32B GSPO Optimization Practice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../model_support/examples/qwen3_5_megatron_npu.html">Qwen3.5 Megatron NPU 使用指南</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev_guide/model_dev/evaluation.html">模型评测</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev_guide/model_dev/parameter_and_metrics.html">训练配置参数与指标说明</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev_guide/model_dev/transfer_to_npu_guide.html">Transfer to NPU guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev_guide/precision_analysis/precision_alignment_zh.html">Precision Alignment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev_guide/precision_analysis/precision_debugger_zh.html">Precision Debugger (msprobe) in verl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev_guide/performance/ascend_performance_analysis_guide.html">Ascend Performance Analysis Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev_guide/performance/perf_tuning_on_ascend.html">Performance Tuning Guide on Ascend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev_guide/performance/ascend_profiling_zh.html">Profiling采集指导</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev_guide/performance/ascend_profiling_en.html">Profiling Data Collection Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../faq/faq.html">NPU 常见问题解答</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contribution_guide/ascend_ci_guide_zh.html">NPU-CI 添加指导</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/data.html">Data interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/single_controller.html">Single Controller interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/trainer.html">Trainer Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/utils.html">Utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Blog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../blog/v0.7.html">verl 0.7 release blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">FAQ</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../faq/faq.html">Frequently Asked Questions</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing/editing-agent-instructions.html">Editing Agent Instructions</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../sglang_multiturn/sandbox_fusion.html">Sandbox Fusion Tool Integration</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">verl</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Ascend (NPU) Tutorial</a></li>
+      <li class="breadcrumb-item active">Ascend Install Guidance</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/ascend_tutorial/get_start/install_guidance.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ascend-install-guidance">
+<h1>Ascend Install Guidance<a class="headerlink" href="#ascend-install-guidance" title="Link to this heading"></a></h1>
+<p>Last updated: 05/20/2026.</p>
+<section id="id1">
+<h2>关键更新<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>2026/05/13：vLLM 已按 <a class="reference external" href="https://github.com/verl-project/verl/pull/6291">PR
+#6291</a>将 vLLM /
+vLLM-Ascend 从 <code class="docutils literal notranslate"><span class="pre">0.13.0</span></code> 更新为 <code class="docutils literal notranslate"><span class="pre">0.18.0</span></code>，vLLM
+对应基础环境版本同步调整为 torch <code class="docutils literal notranslate"><span class="pre">2.9.0</span></code>、torch_npu
+<code class="docutils literal notranslate"><span class="pre">2.9.0.post2</span></code>。</p></li>
+<li><p>2025/12/11：verl 存量场景目前支持自动识别 NPU 设备类型。原则上，GPU
+脚本在昇腾上运行时不再需要显式设置
+<code class="docutils literal notranslate"><span class="pre">trainer.device=npu</span></code>；新增特性仍可通过设置 <code class="docutils literal notranslate"><span class="pre">trainer.device</span></code>
+优先指定设备类型。</p></li>
+</ul>
+<blockquote>
+<div><p>[说明] 自动识别 NPU 设备类型的前提，是运行程序所在环境包含
+<code class="docutils literal notranslate"><span class="pre">torch_npu</span></code> 软件包。如环境中不包含 <code class="docutils literal notranslate"><span class="pre">torch_npu</span></code>，仍需显式指定
+<code class="docutils literal notranslate"><span class="pre">trainer.device=npu</span></code>。</p>
+</div></blockquote>
+</section>
+<section id="id2">
+<h2>目录<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="#硬件支持">硬件支持</a></p></li>
+<li><p><a class="reference external" href="#框架后端支持说明">框架后端支持说明</a></p></li>
+<li><dl class="simple">
+<dt><a class="reference external" href="#部署指南">部署指南</a></dt><dd><ul>
+<li><p><a class="reference external" href="#1-docker镜像获取构建和使用">Docker镜像获取、构建和使用</a></p></li>
+<li><p><a class="reference external" href="#2-自定义安装-vllm--fsdpmegatron">自定义安装-vLLM + FSDP/Megatron</a></p></li>
+<li><p><a class="reference external" href="#3-自定义安装-sglang--fsdpmegatron">自定义安装-SGLang + FSDP/Megatron</a></p></li>
+<li><p><a class="reference external" href="#4-训练后端拓展">训练后端拓展-MindSpeed-LLM后端部署</a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p><a class="reference external" href="#附录">附录</a></p></li>
+</ul>
+</section>
+<section id="id7">
+<h2>硬件支持<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
+<p>Atlas 200T A2 Box16</p>
+<p>Atlas 900 A2 PODc</p>
+<p>Atlas 800T A3</p>
+</section>
+<section id="id8">
+<h2>框架后端支持说明<a class="headerlink" href="#id8" title="Link to this heading"></a></h2>
+<p>当前NPU上支持以下常见训推后端的部署，您可以根据我们的 <a class="reference external" href="dockerfile_build_guidance.rst">镜像部署指南</a> 直接获取发布的镜像，也可以根据下文进行自定义安装。</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>推理引擎</p></th>
+<th class="head"><p>训练引擎</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>vLLM</p></td>
+<td><p>FSDP/FSDP2/Megatron</p></td>
+</tr>
+<tr class="row-odd"><td><p>SGlang</p></td>
+<td><p>FSDP/FSDP2/Megatron</p></td>
+</tr>
+</tbody>
+</table>
+<section id="id9">
+<h3>训练后端拓展<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
+<p>verl将训推后端抽象解耦，支持灵活接入自定义各类训推后端，当前拓展训练后端如下：</p>
+<p>MindSpeed-LLM：MindSpeed-LLM是基于昇腾生态的大语言模型分布式训练套件，当前已接入verl，安装部署方法参照章节 <a class="reference external" href="#mindspeed-llm-训练后端支持">训练后端拓展-MindSpeed-LLM后端部署</a></p>
+</section>
+</section>
+<section id="id11">
+<h2>部署指南<a class="headerlink" href="#id11" title="Link to this heading"></a></h2>
+<section id="id12">
+<h3>1. Docker镜像获取、构建和使用<a class="headerlink" href="#id12" title="Link to this heading"></a></h3>
+<p>您可以从 <a class="reference external" href="https://quay.io/repository/ascend/verl?tab=tags&amp;tag=latest">quay.io/ascend/verl</a> 获取相关镜像，或者自行从DockerFile构建，相关说明参照
+<a class="reference external" href="dockerfile_build_guidance.rst">镜像部署指南</a>。</p>
+</section>
+<section id="id13">
+<h3>2. 自定义安装-vLLM + FSDP/Megatron<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
+<section id="id14">
+<h4>关键版本支持与依赖<a class="headerlink" href="#id14" title="Link to this heading"></a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>依赖</p></th>
+<th class="head"><p>版本</p></th>
+<th class="head"><p>说明</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>HDK</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">26.0.rc1</span></code></p></td>
+<td><p>NPU硬件驱动与固件</p></td>
+</tr>
+<tr class="row-odd"><td><p>CANN</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">9.0.0</span></code></p></td>
+<td><p>CANN软件，帮助开发者实现在昇腾软硬件平台上开发和运行AI业务</p></td>
+</tr>
+<tr class="row-even"><td><p>Python</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&gt;=3.10,</span> <span class="pre">&lt;3.12</span></code>，推荐 <code class="docutils literal notranslate"><span class="pre">3.11</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>torch</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2.9.0</span></code></p></td>
+<td><p>PyTorch 深度学习框架基础包</p></td>
+</tr>
+<tr class="row-even"><td><p>torch_npu</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2.9.0.post2</span></code></p></td>
+<td><p>NPU PyTorch 适配插件</p></td>
+</tr>
+<tr class="row-odd"><td><p>torchvision</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0.24.0</span></code></p></td>
+<td><p>PyTorch 图像处理库</p></td>
+</tr>
+<tr class="row-even"><td><p>torchaudio</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2.9.0</span></code></p></td>
+<td><p>PyTorch 音频处理库</p></td>
+</tr>
+<tr class="row-odd"><td><p>triton</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">3.5.0</span></code></p></td>
+<td><p>Triton，用于编写自定义算子</p></td>
+</tr>
+<tr class="row-even"><td><p>triton-ascend</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">3.2.1</span></code></p></td>
+<td><p>NPU Triton 适配</p></td>
+</tr>
+<tr class="row-odd"><td><p>transformers</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">5.3.0</span></code></p></td>
+<td><p>Hugging Face 大模型库，提供模型架构与预训练权重</p></td>
+</tr>
+<tr class="row-even"><td><p>vLLM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0.18.0</span></code></p></td>
+<td><p>高性能 LLM 推理与服务引擎</p></td>
+</tr>
+<tr class="row-odd"><td><p>vLLM-Ascend</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0.18.0</span></code></p></td>
+<td><p>NPU vLLM 后端适配</p></td>
+</tr>
+<tr class="row-even"><td><p>Megatron-LM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">core_r0.16.0</span></code></p></td>
+<td><p>大规模分布式训练框架</p></td>
+</tr>
+<tr class="row-odd"><td><p>MindSpeed</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">core_r0.16.0</span></code></p></td>
+<td><p>Megatron-LM 在昇腾 NPU 上的适配和优化组件</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="hdk-cann">
+<h4>安装前准备（HDK &amp; CANN）<a class="headerlink" href="#hdk-cann" title="Link to this heading"></a></h4>
+<p>CANN是NPU上的异构计算架构, 以下为arm平台A3安装指令，请参照如下指令下载HDK 和 CANN 并安装，
+或者根据系统硬件型号从 <a class="reference external" href="https://www.hiascend.com/cann/download?versionId=723&amp;ids=d803%2Ch0501%2Ch0601%2Ch0702">CANN社区</a> 下载安装</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">#配置用户属组</span>
+sudo<span class="w"> </span>groupadd<span class="w"> </span>HwHiAiUser
+sudo<span class="w"> </span>useradd<span class="w"> </span>-g<span class="w"> </span>HwHiAiUser<span class="w"> </span>-d<span class="w"> </span>/home/HwHiAiUser<span class="w"> </span>-m<span class="w"> </span>HwHiAiUser<span class="w"> </span>-s<span class="w"> </span>/bin/bash
+<span class="c1"># 安装依赖&amp;配源</span>
+sudo<span class="w"> </span>yum<span class="w"> </span>makecache
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>gcc<span class="w"> </span>python3<span class="w"> </span>python3-pip<span class="w"> </span>kernel-headers-<span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span><span class="w"> </span>kernel-devel-<span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span>
+sudo<span class="w"> </span>curl<span class="w"> </span>https://repo.oepkgs.net/ascend/cann/ascend.repo<span class="w"> </span>-o<span class="w"> </span>/etc/yum.repos.d/ascend.repo<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>yum<span class="w"> </span>makecache
+<span class="c1"># 安装NPU驱动</span>
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>Atlas-A3-hdk-npu-driver-26.0.rc1
+<span class="c1"># 安装Toolkit，可指定--install-path 自定义路径</span>
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>Ascend-cann-toolkit-9.0.0
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>Ascend-cann-A3-ops-9.0.0
+<span class="c1"># 安装后验证</span>
+<span class="nb">source</span><span class="w"> </span>/usr/local/Ascend/cann/set_env.sh
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import acl;print(acl.get_soc_name())&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id15">
+<h4>源码安装<a class="headerlink" href="#id15" title="Link to this heading"></a></h4>
+<p>我们提供了基于conda一键部署 <a class="reference external" href="../../../scripts/install_vllm_mcore_npu.sh">安装脚本</a> , 脚本分步骤安装环境，如果中途遇到安装报错，请根据当前步骤报错信息提示查看原因，或通过issue给我们留言，我们将尽快解决</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 注意：在 x86 平台安装时，pip 需要配置额外的源，指令如下：</span>
+<span class="c1"># pip config set global.extra-index-url &quot;https://download.pytorch.org/whl/cpu/&quot;</span>
+<span class="c1"># 使能CANN环境， 如果您自定义了CANN的路径，请根据自定义路径修改以下使能命令</span>
+<span class="nb">source</span><span class="w"> </span>/usr/local/Ascend/ascend-toolkit/set_env.sh
+<span class="nb">source</span><span class="w"> </span>/usr/local/Ascend/nnal/atb/set_env.sh
+conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>verl-vllm-npu<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.11<span class="w"> </span>-y
+conda<span class="w"> </span>activate<span class="w"> </span>verl-vllm-npu
+git<span class="w"> </span>clone<span class="w"> </span>--recursive<span class="w"> </span>https://github.com/verl-project/verl.git
+bash<span class="w"> </span>verl/scripts/install_vllm_mcore_npu.sh
+<span class="c1"># 如果您仅需要使用FSDP后端</span>
+<span class="c1"># USE_MEGATRON=0 bash scripts/install_vllm_mcore_npu.sh</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id17">
+<h3>3. 自定义安装-SGLang + FSDP/Megatron<a class="headerlink" href="#id17" title="Link to this heading"></a></h3>
+<section id="id18">
+<h4>关键版本支持与依赖<a class="headerlink" href="#id18" title="Link to this heading"></a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>依赖</p></th>
+<th class="head"><p>版本</p></th>
+<th class="head"><p>说明</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>HDK</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">25.5.0</span></code></p></td>
+<td><p>NPU硬件驱动与固件</p></td>
+</tr>
+<tr class="row-odd"><td><p>CANN</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&gt;=8.5.0</span></code></p></td>
+<td><p>CANN软件，帮助开发者实现在昇腾软硬件平台上开发和运行AI业务</p></td>
+</tr>
+<tr class="row-even"><td><p>Python</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&gt;=3.10,</span> <span class="pre">&lt;3.12</span></code>，推荐 <code class="docutils literal notranslate"><span class="pre">3.11</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>torch</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2.8.0</span></code></p></td>
+<td><p>PyTorch 深度学习框架基础包</p></td>
+</tr>
+<tr class="row-even"><td><p>torch_npu</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2.8.0.post2</span></code></p></td>
+<td><p>NPU PyTorch 适配插件</p></td>
+</tr>
+<tr class="row-odd"><td><p>SGLang</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">v0.5.10</span></code></p></td>
+<td><p>高性能 LLM 推理引擎</p></td>
+</tr>
+<tr class="row-even"><td><p>triton</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">3.5.0</span></code></p></td>
+<td><p>Triton，用于编写自定义算子</p></td>
+</tr>
+<tr class="row-odd"><td><p>triton-ascend</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">3.2.1</span></code></p></td>
+<td><p>NPU Triton 适配</p></td>
+</tr>
+<tr class="row-even"><td><p>transformers</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">5.3.0</span></code></p></td>
+<td><p>Hugging Face 大模型库，提供模型架构与预训练权重</p></td>
+</tr>
+<tr class="row-odd"><td><p>Megatron-LM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">core_r0.16.0</span></code></p></td>
+<td><p>大规模分布式训练框架</p></td>
+</tr>
+<tr class="row-even"><td><p>MindSpeed</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">core_r0.16.0</span></code></p></td>
+<td><p>Megatron-LM 在昇腾 NPU 上的适配和优化组件</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id19">
+<h4>安装前准备（HDK &amp; CANN）<a class="headerlink" href="#id19" title="Link to this heading"></a></h4>
+<p>CANN是NPU上的异构计算架构, 以下为arm平台A3安装指令，请参照如下指令下载HDK 和 CANN 并安装，
+或者根据系统硬件型号从 <a class="reference external" href="https://www.hiascend.com/cann/download?versionId=680&amp;ids=d803%2Ch0501%2Ch0601%2Ch0702">CANN社区</a> 下载安装</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">#配置用户属组</span>
+sudo<span class="w"> </span>groupadd<span class="w"> </span>HwHiAiUser
+sudo<span class="w"> </span>useradd<span class="w"> </span>-g<span class="w"> </span>HwHiAiUser<span class="w"> </span>-d<span class="w"> </span>/home/HwHiAiUser<span class="w"> </span>-m<span class="w"> </span>HwHiAiUser<span class="w"> </span>-s<span class="w"> </span>/bin/bash
+<span class="c1"># 安装依赖&amp;配源</span>
+sudo<span class="w"> </span>yum<span class="w"> </span>makecache
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>gcc<span class="w"> </span>python3<span class="w"> </span>python3-pip<span class="w"> </span>kernel-headers-<span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span><span class="w"> </span>kernel-devel-<span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span>
+sudo<span class="w"> </span>curl<span class="w"> </span>https://repo.oepkgs.net/ascend/cann/ascend.repo<span class="w"> </span>-o<span class="w"> </span>/etc/yum.repos.d/ascend.repo<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>yum<span class="w"> </span>makecache
+<span class="c1"># 安装NPU驱动</span>
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>Atlas-A3-hdk-npu-driver-25.5.0
+<span class="c1"># 安装Toolkit，可指定--install-path 自定义路径</span>
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>Ascend-cann-toolkit-8.5.0
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>Ascend-cann-A3-ops-8.5.0
+<span class="c1"># 安装后验证</span>
+<span class="nb">source</span><span class="w"> </span>/usr/local/Ascend/cann/set_env.sh
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import acl;print(acl.get_soc_name())&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id21">
+<h4>源码安装<a class="headerlink" href="#id21" title="Link to this heading"></a></h4>
+<p>我们提供了基于conda一键部署 <a class="reference external" href="../../../scripts/install_sglang_mcore_npu.sh">安装脚本</a> , 脚本分步骤安装环境，如果中途遇到安装报错，请根据当前步骤报错信息提示查看原因，或通过issue给我们留言，我们将尽快解决</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 注意：在 x86 平台安装时，pip 需要配置额外的源，指令如下：</span>
+<span class="c1"># pip config set global.extra-index-url &quot;https://download.pytorch.org/whl/cpu/&quot;</span>
+<span class="c1"># 使能CANN环境， 如果您自定义了CANN的路径，请根据自定义路径修改以下使能命令</span>
+<span class="nb">source</span><span class="w"> </span>/usr/local/Ascend/ascend-toolkit/set_env.sh
+<span class="nb">source</span><span class="w"> </span>/usr/local/Ascend/nnal/atb/set_env.sh
+conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>verl-sgl-npu<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.11<span class="w"> </span>-y
+conda<span class="w"> </span>activate<span class="w"> </span>verl-sgl-npu
+git<span class="w"> </span>clone<span class="w"> </span>--recursive<span class="w"> </span>https://github.com/verl-project/verl.git
+bash<span class="w"> </span>verl/scripts/install_sglang_mcore_npu.sh
+<span class="c1"># 如果您仅需要使用FSDP后端</span>
+<span class="c1"># USE_MEGATRON=0 bash verl/scripts/install_sglang_mcore_npu.sh</span>
+</pre></div>
+</div>
+</section>
+<section id="sglang">
+<h4>SGLang 使用注意事项<a class="headerlink" href="#sglang" title="Link to this heading"></a></h4>
+<p>当前 NPU 上支持 SGLang 后端必须添加以下环境变量：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 支持 NPU 单卡多进程</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">HCCL_HOST_SOCKET_PORT_RANGE</span><span class="o">=</span><span class="m">60000</span>-60050
+<span class="nb">export</span><span class="w"> </span><span class="nv">HCCL_NPU_SOCKET_PORT_RANGE</span><span class="o">=</span><span class="m">61000</span>-61050
+
+<span class="c1"># 规避 Ray 在 device 侧调用无法根据 is_npu_available 接口识别设备可用性</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">RAY_EXPERIMENTAL_NOSET_ASCEND_RT_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">1</span>
+
+<span class="c1"># 根据当前设备和需要卡数定义</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">ASCEND_RT_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span>,1,2,3,4,5,6,7
+<span class="c1"># in A3</span>
+<span class="c1"># export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15</span>
+
+<span class="c1"># 使能推理 EP 时需要</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">SGLANG_DEEPEP_BF16_DISPATCH</span><span class="o">=</span><span class="m">1</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id23">
+<h3>4. 训练后端拓展<a class="headerlink" href="#id23" title="Link to this heading"></a></h3>
+<section id="id24">
+<h4>MindSpeed-LLM 训练后端支持<a class="headerlink" href="#id24" title="Link to this heading"></a></h4>
+<p>如需使用基于 Megatron/MindSpeed 体系的 MindSpeed-LLM 训练后端，需要额外下载
+MindSpeed-LLM。需要注意的是，MindSpeed-LLM 训练后端依赖 MindSpeed-LLM
+master 分支、MindSpeed master 分支以及 Megatron-LM <code class="docutils literal notranslate"><span class="pre">core_v0.12.1</span></code>
+分支。</p>
+<p>MindSpeed-LLM 及相关依赖的源码安装指令：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 下载 MindSpeed-LLM、MindSpeed 和 Megatron-LM</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://gitcode.com/Ascend/MindSpeed-LLM.git
+git<span class="w"> </span>clone<span class="w"> </span>https://gitcode.com/Ascend/MindSpeed.git
+git<span class="w"> </span>clone<span class="w"> </span>--depth<span class="w"> </span><span class="m">1</span><span class="w"> </span>--branch<span class="w"> </span>core_v0.12.1<span class="w"> </span>https://github.com/NVIDIA/Megatron-LM.git
+
+<span class="c1"># 配置环境变量</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="nv">$PYTHONPATH</span>:your<span class="w"> </span>path/Megatron-LM
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="nv">$PYTHONPATH</span>:your<span class="w"> </span>path/MindSpeed
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="nv">$PYTHONPATH</span>:your<span class="w"> </span>path/MindSpeed-LLM
+
+<span class="c1"># 安装 mbridge</span>
+pip<span class="w"> </span>install<span class="w"> </span>mbridge
+</pre></div>
+</div>
+<p>MindSpeed-LLM 作为基于 Megatron/MindSpeed 体系的昇腾 LLM 训练后端使用时，使用方式如下：</p>
+<ol class="arabic simple">
+<li><p>使能 verl worker 模型 <code class="docutils literal notranslate"><span class="pre">strategy</span></code> 配置为 <code class="docutils literal notranslate"><span class="pre">mindspeed</span></code>，例如
+<code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.strategy=mindspeed</span></code>。</p></li>
+<li><p>MindSpeed-LLM 自定义入参可通过 <code class="docutils literal notranslate"><span class="pre">llm_kwargs</span></code> 参数传入，例如对 MOE
+模型开启 GMM 特性可使用
+<code class="docutils literal notranslate"><span class="pre">+actor_rollout_ref.actor.mindspeed.llm_kwargs.moe_grouped_gemm=True</span></code>。</p></li>
+<li><p>更多特性信息可参考 <a class="reference external" href="https://gitcode.com/Ascend/MindSpeed-LLM/tree/master/docs/zh/pytorch/features/mcore">MindSpeed-LLM
+内的特性文档</a>。</p></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="id25">
+<h2>附录<a class="headerlink" href="#id25" title="Link to this heading"></a></h2>
+<section id="id26">
+<h3>昇腾暂不支持生态库说明<a class="headerlink" href="#id26" title="Link to this heading"></a></h3>
+<p>verl 中昇腾暂不支持生态库如下：</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>软件</p></th>
+<th class="head"><p>说明</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">flash_attn</span></code></p></td>
+<td><p>不支持通过独立 <code class="docutils literal notranslate"><span class="pre">flash_attn</span></code> 包使能 flash
+attention 加速，支持通过 transformers 使用</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dockerfile_build_guidance.html" class="btn btn-neutral float-left" title="Ascend Dockerfile Build Guidance" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quick_start.html" class="btn btn-neutral float-right" title="Ascend Quickstart" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024 ByteDance Seed Foundation MLSys Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+  <!-- Head -->
+  <head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <!-- Metadata, OpenGraph and Schema.org -->
+
+
+
+
+<!-- Standard metadata -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>
+  
+  
+    
+      LLM System | Future Architecture and System Technology for Scalable Computing
+    
+  
+</title>
+<meta name="author" content=" ">
+<meta name="description" content="The deployment of Large Language Models (LLMs) poses significant challenges on cost and design complexity, as training and serving LLMs demand vast computational throughput and enormous memory capacity. Our group conducted research on identifying performance bottlenecks for LLM workloads, integrating heterogeneous hardware components including CPUs, GPUs, FPGAs, and CXL devices into design, targeting on cost-efficient and high-performance LLM systems.">
+
+
+
+
+
+
+
+
+
+
+<!-- Bootstrap & MDB -->
+<link rel="stylesheet" href="/assets/css/bootstrap.min.css?a4b3f509e79c54a512b890d73235ef04">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/css/mdb.min.css" integrity="sha256-jpjYvU3G3N6nrrBwXJoVEYI/0zw8htfFnhT9ljN3JJw=" crossorigin="anonymous">
+
+
+
+<!-- Fonts & Icons -->
+<link defer rel="stylesheet" href="/assets/css/academicons.min.css?f0b7046b84e425c55f3463ac249818f5">
+<link defer rel="stylesheet" href="/assets/css/scholar-icons.css?62b2ac103a88034e6882a5be5f3e2772">
+<link defer rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons&amp;display=swap">
+
+<!-- Code Syntax Highlighting -->
+<link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-github.css?591dab5a4e56573bf4ef7fd332894c99" media="" id="highlight_theme_light">
+
+
+
+<!-- Styles -->
+
+
+
+
+  <link rel="shortcut icon" href="/assets/img/logo.png?2dea2b01ca4d54edb57e2698f1bab27f">
+
+<link rel="stylesheet" href="/assets/css/main.css?d41d8cd98f00b204e9800998ecf8427e">
+<link rel="canonical" href="http://localhost:4000/projects/4_project/">
+
+<!-- Dark Mode -->
+<script src="/assets/js/theme.js?b92c509216edee41e8a1bfa193f420da"></script>
+
+  <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-native.css?5847e5ed4a4568527aa6cfab446049ca" media="none" id="highlight_theme_dark">
+  <script>
+    initTheme();
+  </script>
+
+
+
+
+
+
+
+
+
+
+  </head>
+
+  <!-- Body -->
+  <body class="fixed-top-nav ">
+    <!-- Header -->
+    <header>
+  <!-- Nav Bar -->
+  <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top" role="navigation">
+    <div class="container">
+      <!-- Logo -->
+      <a href="https://www.illinois.edu" rel="external nofollow noopener" target="_blank">
+        <img src="/assets/img/logo.png" alt="Logo" class="img" height="50">
+      </a>
+      <a class="navbar-brand title font-weight-lighter pl-4" href="/">
+          FAST Lab
+      </a>
+
+      <!-- Navbar Toggle -->
+      <button class="navbar-toggler collapsed ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar top-bar"></span>
+        <span class="icon-bar middle-bar"></span>
+        <span class="icon-bar bottom-bar"></span>
+      </button>
+
+      <!-- Collapsible Nav -->
+      <div class="collapse navbar-collapse text-right" id="navbarNav">
+        <ul class="navbar-nav ml-auto flex-nowrap">
+          
+
+          <!-- About -->
+          <li class="nav-item ">
+            <a class="nav-link" href="/">About
+              
+            </a>
+          </li>
+
+          <!-- Other pages -->
+          
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+          
+            
+              
+                
+                <li class="nav-item ">
+                  <a class="nav-link" href="/members/">Members
+                    
+                  </a>
+                </li>
+              
+            
+          
+            
+              
+                
+                <li class="nav-item active">
+                  <a class="nav-link" href="/projects/">Research Projects
+                    
+                      <span class="sr-only">(current)</span>
+                    
+                  </a>
+                </li>
+              
+            
+          
+            
+              
+                
+                <li class="nav-item ">
+                  <a class="nav-link" href="/publications/">Publications
+                    
+                  </a>
+                </li>
+              
+            
+          
+            
+              
+                
+                <li class="nav-item ">
+                  <a class="nav-link" href="/repositories/">Artifacts and Tools
+                    
+                  </a>
+                </li>
+              
+            
+          
+
+          
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  
+    <!-- Scrolling Progress Bar -->
+    <progress id="progress" value="0">
+      <div class="progress-container">
+        <span class="progress-bar"></span>
+      </div>
+    </progress>
+  
+</header>
+
+
+    <!-- Content -->
+    <div class="container mt-5" role="main">
+      
+        
+
+<div class="post">
+  <header class="post-header">
+    <h1 class="post-title">LLM System</h1>
+    <p class="post-description">The deployment of Large Language Models (LLMs) poses significant challenges on cost and design complexity, as training and serving LLMs demand vast computational throughput and enormous memory capacity. Our group conducted research on identifying performance bottlenecks for LLM workloads, integrating heterogeneous hardware components including CPUs, GPUs, FPGAs, and CXL devices into design, targeting on cost-efficient and high-performance LLM systems.</p>
+  </header>
+
+  <article>
+    <div class="row col-md-12 text-justify mb-5">
+    As Large Language Models continue to grow -- now encompassing billions of parameters -- scaling them with GPU-only clusters becomes both costly and power-hungry. Yet in most deployments, CPUs, main memory, and network interfaces remain under-leveraged. By matching different stages of the LLM workload with the hardware best suited to its computational characteristic, we extract far greater efficiency. For instance, Intel’s introduction of Advanced Matrix Extension (AMX) units unlock high-throughput matrix operations directly on the CPU, enabling selective offload of smaller computation kernels from the GPU. Meanwhile, to tackle the huge memory requirements of LLMs, CXL memory expanders are leveraged to increase capacity and bandwidth. In concert, these heterogeneous building blocks yield an LLM framework that not only meets escalating compute and capacity demands but does so with significantly lower cost and power footprints.
+</div>
+
+<h3 class="mt-3 mb-3">CPU-GPU Cooperative LLM Inference</h3>
+<div class="row text-justify align-items-start mb-5">
+    <!-- 1/3 width on md+ screens -->
+    <figure class="col-md-5 mt-1">
+        
+
+
+
+<figure>
+  <picture>
+    <!-- Auto scaling with imagemagick -->
+    <!--
+      See https://www.debugbear.com/blog/responsive-images#w-descriptors-and-the-sizes-attribute and
+      https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
+    -->
+    
+    <img src="/assets/img/llm_sys/AMX.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();">
+  </picture>
+
+  
+</figure>
+
+        <figcaption class="figure-caption text-center mt-0 mb-3">
+            The Architecture of Advanced Matrix Extension (AMX) Unit in CPU.
+        </figcaption>
+    </figure>
+
+
+  <div class="col-md-7 text-justify">
+    <p>
+        With the introduction of Intel AMX units starting from 4th Gen Intel® Xeon® Scalable processors, the matrix operations can be completed efficiently on multi-core CPUs. We first provide a comprehensive characterization of AMX, comparing it with Advanced Vector Extension (AVX) units on CPU, NVIDIA P100, V100, A100, and H100 GPU <a class="citation" href="#ExploitingIntelAdvancedMatrixExtensionsAMX">(Kim et al., 2024 )</a>, providing valuable insights on the integration of AMX units in LLM system design.
+    </p>
+    <p>
+        Building on our characterization results, we propose a cost-effective LLM inference system that leverages a single CPU and a single GPU. By pinpointing data transfer between the CPU and GPU as the primary bottleneck in existing SoTA setups, we aim to offload more computation onto the CPU’s AMX units, thereby minimizing PCIe traffic. A performance model, incorporating GPU and AMX compute throughputs, PCIe bandwidth, and memory bandwidth, determines the optimal offloading strategy. This AMX-aware framework extends Intel® Extension for PyTorch (IPEX) to enable seamless, cooperative CPU–GPU inference <a class="citation" href="#isca25-kim">(Kim et al., 2025 )</a>.
+    </p>  
+  </div>
+</div>
+
+  </article>
+
+  
+    <h2>References</h2>
+    <div class="publications">
+      <h2 class="bibliography">2025</h2>
+<ol class="bibliography"><li>
+<div class="row">
+  
+    <div class="col col-sm-2 abbr">
+          <abbr class="badge rounded w-100" style="background-color:#C04F15">
+            
+              <a href="https://www.iscaconf.org/" rel="external nofollow noopener" target="_blank">ISCA</a>
+            
+          </abbr>
+        
+      
+      
+    </div>
+  
+
+  <!-- Entry bib key -->
+  <div id="isca25-kim" class="col-sm-8">
+    <!-- Title -->
+    <div class="title"> LIA: A single-GPU LLM inference acceleration with cooperative AMX-enabled CPU-GPU computation and CXL offloading </div>
+    <!-- Author -->
+    <div class="author">
+      
+
+      
+      Hyungyo
+            Kim, Nachuan
+            Wang, Qirong
+            Xia, Jinghan
+            Huang, Amir
+            Yazdanbakhsh, and Nam Sung
+            Kim
+      
+    </div>
+
+    <!-- Journal/Book title and date -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="periodical">
+      <em> IEEE/ACM International Symposium on Computer Architecture (ISCA) </em>,  Jun  2025
+    </div>
+    <div class="periodical">
+      
+    </div>
+
+    <div class="award">
+      
+    </div>
+
+    <div class="category">
+      
+        <a class="box z-depth-0">
+           Architecture 
+        </a>
+      
+      
+        <a class="box z-depth-0">
+           Accelerator 
+        </a>
+      
+      
+        <a class="box z-depth-0">
+           System 
+        </a>
+      
+      
+    </div>
+
+    <!-- Links/Buttons -->
+    <div class="links">
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </div>
+    
+      
+      
+
+      
+      
+
+      
+      
+
+      
+      
+      
+      
+      
+      
+
+      
+      
+      
+        <div class="badges">
+          
+          
+          
+          
+          
+            <a href="https://www.acm.org/publications/policies/artifact-review-badging" aria-label="Artifact Available" role="button" rel="external nofollow noopener" target="_blank">
+              <img src="https://www.acm.org/binaries/content/gallery/acm/publications/large-replication-badges/artifacts_available.jpg" width="30" height="30">
+            </a>
+          
+          
+            <a href="https://www.acm.org/publications/policies/artifact-review-badging" aria-label="Artifact Available" role="button" rel="external nofollow noopener" target="_blank">
+              <img src="https://www.acm.org/binaries/content/gallery/acm/publications/large-replication-badges/artifacts_evaluated_functional.jpg" width="30" height="30">
+            </a>
+          
+          
+            <a href="https://www.acm.org/publications/policies/artifact-review-badging" aria-label="Artifact Available" role="button" rel="external nofollow noopener" target="_blank">
+              <img src="https://www.acm.org/binaries/content/gallery/acm/publications/large-replication-badges/results_reproduced.jpg" width="30" height="30">
+            </a>
+          
+        </div>
+      
+    
+
+    
+
+    
+
+    
+  </div>
+</div>
+</li></ol>
+<h2 class="bibliography">2024</h2>
+<ol class="bibliography"><li>
+<div class="row">
+  
+    <div class="col col-sm-2 abbr">
+          <abbr class="badge rounded w-100" style="background-color:#163E64">
+            
+              <a href="https://iccad.com/" rel="external nofollow noopener" target="_blank">CAL</a>
+            
+          </abbr>
+        
+      
+      
+    </div>
+  
+
+  <!-- Entry bib key -->
+  <div id="ExploitingIntelAdvancedMatrixExtensionsAMX" class="col-sm-8">
+    <!-- Title -->
+    <div class="title"> Exploiting Intel® Advanced Matrix Extensions (AMX) for Large Language Model Inference </div>
+    <!-- Author -->
+    <div class="author">
+      
+
+      
+      Hyungyo
+            Kim, Gaohan
+            Ye, Nachuan
+            Wang, Amir
+            Yazdanbakhsh, and Nam Sung
+            Kim
+      
+    </div>
+
+    <!-- Journal/Book title and date -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="periodical">
+      <em> IEEE Computer Architecture Letters </em>,  Jun  2024
+    </div>
+    <div class="periodical">
+      
+    </div>
+
+    <div class="award">
+      
+    </div>
+
+    <div class="category">
+      
+        <a class="box z-depth-0">
+           Architecture 
+        </a>
+      
+      
+        <a class="box z-depth-0">
+           Accelerator 
+        </a>
+      
+      
+        <a class="box z-depth-0">
+           System 
+        </a>
+      
+      
+        <a class="box z-depth-0">
+           ML/AI 
+        </a>
+      
+    </div>
+
+    <!-- Links/Buttons -->
+    <div class="links">
+      
+        <a class="abstract btn btn-sm z-depth-0" role="button">Abs</a>
+      
+      
+        <a href="https://doi.org/10.1109/LCA.2024.3397747" class="btn btn-sm z-depth-0" role="button" rel="external nofollow noopener" target="_blank">DOI</a>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+    </div>
+    
+      
+      
+
+      
+      
+
+      
+      
+
+      
+      
+      
+      
+      
+      
+
+      
+      
+      
+        <div class="badges">
+          
+          
+          
+          
+          
+          
+          
+        </div>
+      
+    
+
+    
+      <!-- Hidden abstract block -->
+      <div class="abstract hidden">
+        <p>The ever-increasing number of parameters in Large Language Models (LLMs) demands many expensive GPUs for both inference and training. This is because even such a high-end GPU such as NVIDIA A100 can store only a subset of parameters due to its limited memory capacity. To reduce the number of required GPUs, especially for inference, we may exploit the large memory capacity of (host) CPU to store not only all the model parameters but also intermediate outputs which also require a substantial memory capacity. However, this necessitates frequent data transfers between CPU and GPU over the slow PCIe interface, creating a bottleneck that hinders the accomplishment of both low latency and high throughput in inference. To address such a challenge, we first propose CPU-GPU cooperative computing that exploits the Advanced Matrix Extensions (AMX) capability of the latest Intel CPU, codenamed Sapphire Rapids (SPR). Second, we propose an adaptive model partitioning policy that determines the layers of a given LLM to be run on CPU and GPU, respectively, based on their memory capacity requirement and arithmetic intensity. As CPU executes the layers with large memory capacity but low arithmetic intensity, the amount of data transferred through the PCIe interface is significantly reduced, thereby improving the LLM inference performance. Our evaluation demonstrates that CPU-GPU cooperative computing, based on this policy, delivers 12.1× lower latency and 5.4× higher throughput than GPU-only computing for OPT-30B inference when both CPU-GPU and GPU-only computing store the model in CPU memory.</p>
+      </div>
+    
+
+    
+
+    
+  </div>
+</div>
+</li></ol>
+    </div>
+  
+
+  
+</div>
+
+      
+    </div>
+
+    <!-- Footer -->
+    
+
+
+  <footer class="fixed-bottom" role="contentinfo">
+    <div class="container mt-0">
+      
+  © Copyright 2025
+  
+  
+  . 
+  
+  
+
+    </div>
+  </footer>
+
+
+
+    <!-- JavaScripts -->
+    <!-- jQuery -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+<!-- Bootsrap & MDB scripts -->
+<script src="/assets/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/js/mdb.min.js" integrity="sha256-NdbiivsvWt7VYCt6hYNT3h/th9vSTL4EDWeGs5SN3DA=" crossorigin="anonymous"></script>
+
+
+  <!-- Masonry & imagesLoaded -->
+  <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@5.0.0/imagesloaded.pkgd.min.js" integrity="sha256-htrLFfZJ6v5udOG+3kNLINIKh2gvoKqwEhHYfTTMICc=" crossorigin="anonymous"></script>
+  <script defer src="/assets/js/masonry.js?a0db7e5d5c70cc3252b3138b0c91dcaf" type="text/javascript"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!-- Medium Zoom JS -->
+  <script defer src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous"></script>
+  <script defer src="/assets/js/zoom.js?85ddb88934d28b74e78031fd54cf8308"></script>
+
+
+
+
+
+
+<!-- Load Common JS -->
+<script src="/assets/js/no_defer.js?2781658a0a2b13ed609542042a859126"></script>
+<script defer src="/assets/js/common.js?e0514a05c5c95ac1a93a8dfd5249b92e"></script>
+<script defer src="/assets/js/copy_code.js?c8a01c11a92744d44b093fc3bda915df" type="text/javascript"></script>
+
+<!-- Jupyter Open External Links New Tab -->
+<script defer src="/assets/js/jupyter_new_tab.js?d9f17b6adc2311cbabd747f4538bb15f"></script>
+
+<!-- Badges -->
+
+  <script async src="https://d1bxh8uas1mnw7.cloudfront.net/assets/embed.js"></script>
+
+
+  <script async src="https://badge.dimensions.ai/badge.js"></script>
+
+
+
+  <!-- MathJax -->
+  <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script>
+  
+    <script src="/assets/js/mathjax-setup.js?a5bb4e6a542c546dd929b24b8b236dfd"></script>
+    <script defer src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6" crossorigin="anonymous"></script>
+  
+
+
+
+
+
+
+
+
+
+  <!-- Scrolling Progress Bar -->
+  <script defer src="/assets/js/progress-bar.js?2f30e0e6801ea8f5036fa66e1ab0a71a" type="text/javascript"></script>
+
+
+
+
+
+
+
+  <!-- Back to Top -->
+  <script src="/assets/js/vanilla-back-to-top.min.js?f40d453793ff4f64e238e420181a1d17"></script>
+  <script>
+    addBackToTop();
+  </script>
+
+
+
+
+
+
+  </body>
+</html>

@@ -1,0 +1,212 @@
+{
+  "ok": [
+    [
+      "Beluga",
+      "Beluga__arxiv-2503.06510.pdf",
+      1759287
+    ],
+    [
+      "Challenging GPU Dominance",
+      "Challenging-GPU-Dominance__arxiv-2501.01034.pdf",
+      621501
+    ],
+    [
+      "Characterizing LLM Inference Energy-Performance Tradeoffs",
+      "LLM-Energy-Performance-Tradeoffs__arxiv-2505.04671.pdf",
+      1576751
+    ],
+    [
+      "Continuum",
+      "Continuum__arxiv-2505.06325.pdf",
+      1074100
+    ],
+    [
+      "Cronus",
+      "Cronus__arxiv-2502.00892.pdf",
+      1046342
+    ],
+    [
+      "DisagFusion",
+      "DisagFusion__arxiv-2602.04567.pdf",
+      299278
+    ],
+    [
+      "DuoServe-MoE",
+      "DuoServe-MoE__arxiv-2505.04625.pdf",
+      3986014
+    ],
+    [
+      "FloE",
+      "FloE__arxiv-2502.21265.pdf",
+      1312915
+    ],
+    [
+      "FluxMoE",
+      "FluxMoE__arxiv-2601.07343.pdf",
+      1149015
+    ],
+    [
+      "GENSERVE",
+      "GENSERVE__arxiv-2602.08257.pdf",
+      587861
+    ],
+    [
+      "HybriMoE",
+      "HybriMoE__arxiv-2501.04595.pdf",
+      6894092
+    ],
+    [
+      "KVCache Cache in the Wild",
+      "KVCache-in-the-Wild__arxiv-2503.01526.pdf",
+      793727
+    ],
+    [
+      "KVFlow",
+      "KVFlow__arxiv-2504.03507.pdf",
+      13733661
+    ],
+    [
+      "Kareto",
+      "Kareto__arxiv-2602.11889.pdf",
+      547934
+    ],
+    [
+      "KernelSight-LM",
+      "KernelSight-LM__arxiv-2602.08156.pdf",
+      3021797
+    ],
+    [
+      "LIFE",
+      "LIFE__arxiv-2505.16381.pdf",
+      805390
+    ],
+    [
+      "TokenCake",
+      "TokenCake__arxiv-2505.07571.pdf",
+      1066422
+    ],
+    [
+      "Tutti",
+      "Tutti__arxiv-2602.04182.pdf",
+      1787989
+    ],
+    [
+      "Watt Counts",
+      "Watt-Counts__arxiv-2602.08290.pdf",
+      498383
+    ]
+  ],
+  "skip": [
+    [
+      "CCL-Bench",
+      "CCL-Bench"
+    ],
+    [
+      "CCL-Bench / Chakra",
+      "CCL-Bench"
+    ],
+    [
+      "CCL-Bench / Chakra / TokenPowerBench",
+      "CCL-Bench"
+    ],
+    [
+      "Challenging GPU Dominance: When CPUs Outperform for On-Device LLM Inference",
+      "Challenging-GPU-Dominance"
+    ],
+    [
+      "Characterizing LLM Inference Energy-Performance Tradeoffs across Workloads and GPU Scaling",
+      "LLM-Energy-Performance-Tradeoffs"
+    ],
+    [
+      "DALI",
+      "DALI"
+    ],
+    [
+      "Fast On-device LLM Inference with NPUs (llm.npu)",
+      "llm.npu"
+    ],
+    [
+      "FineMoE",
+      "FineMoE"
+    ],
+    [
+      "FlexInfer",
+      "FlexInfer"
+    ],
+    [
+      "FlexInfer: Flexible LLM Inference with CPU Computations",
+      "FlexInfer"
+    ],
+    [
+      "FloE / DuoServe-MoE",
+      "FloE"
+    ],
+    [
+      "HeteroInfer、KTransformers",
+      "KTransformers"
+    ],
+    [
+      "HeteroLLM / HeteroInfer",
+      "HeteroInfer"
+    ],
+    [
+      "HybridGen",
+      "HybridGen"
+    ],
+    [
+      "HydraInfer / TriInfer",
+      "TriInfer"
+    ],
+    [
+      "ITME",
+      "ITME"
+    ],
+    [
+      "KTransformers",
+      "KTransformers"
+    ],
+    [
+      "LMCache",
+      "LMCache"
+    ],
+    [
+      "LMCache: An Efficient KV Cache Layer for Enterprise-Scale LLM Serving",
+      "LMCache"
+    ],
+    [
+      "MOONCAKE",
+      "Mooncake"
+    ],
+    [
+      "NEO: Saving GPU Memory Crisis with CPU Offloading for Online LLM Inference",
+      "NEO"
+    ],
+    [
+      "NEO、FlexInfer",
+      "FlexInfer"
+    ],
+    [
+      "PBKV",
+      "PBKV-Prediction-KV-Cache"
+    ],
+    [
+      "TriInfer",
+      "TriInfer"
+    ],
+    [
+      "Watt Counts / CCL-Bench",
+      "Watt-Counts"
+    ]
+  ],
+  "fail": [],
+  "no_id": [
+    [
+      "LIA: A Single-GPU LLM Inference Acceleration with Cooperative AMX-Enabled CPU-GPU Computation and CXL Offloading",
+      "LIA-ISCA2025"
+    ],
+    [
+      "Understanding Diffusion Model Serving in Production",
+      "Diffusion-Serving-Production"
+    ]
+  ]
+}

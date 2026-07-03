@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+
+<html :class="{'dark': darkMode === 'dark' || (darkMode === 'system' &amp;&amp; window.matchMedia('(prefers-color-scheme: dark)').matches)}" class="scroll-smooth" data-content_root="./" lang="en" x-data="{ darkMode: localStorage.getItem('darkMode') || localStorage.setItem('darkMode', 'system'), activeSection: '' }" x-init="$watch('darkMode', val =&gt; localStorage.setItem('darkMode', val))">
+<head>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta charset="utf-8"/>
+<meta content="white" media="(prefers-color-scheme: light)" name="theme-color"/>
+<meta content="black" media="(prefers-color-scheme: dark)" name="theme-color"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Welcome to LMCache! | LMCache</title>
+<meta content="Welcome to LMCache! | LMCache" property="og:title"/>
+<meta content="Welcome to LMCache! | LMCache" name="twitter:title"/>
+<link href="_static/pygments.css?v=935426dd" rel="stylesheet" type="text/css"/>
+<link href="_static/theme.css?v=42baaae4" rel="stylesheet" type="text/css"/>
+<link href="_static/sphinx-design.min.css?v=95c83b7e" rel="stylesheet" type="text/css"/>
+<link href="_static/sphinxcontrib-images/LightBox2/lightbox2/dist/css/lightbox.min.css?v=6e7d0de0" rel="stylesheet" type="text/css"/>
+<link href="_static/sphinxcontrib-images/LightBox2/lightbox2-customize/pointer.css?v=c97663ff" rel="stylesheet" type="text/css"/>
+<link href="_static/custom.css?v=50467718" rel="stylesheet" type="text/css"/>
+<link href="_static/scroll.css?v=90cbe02d" rel="stylesheet" type="text/css"/>
+<link href="_static/awesome-sphinx-design.css?v=15e0fffa" rel="stylesheet" type="text/css"/>
+<link href="_static/lmcache-logo.png" rel="icon"/>
+<link href="search.html" rel="search" title="Search"/>
+<link href="genindex.html" rel="index" title="Index"/>
+<link href="getting_started/index.html" rel="next" title="Getting Started"/>
+<script>
+    <!-- Prevent Flash of wrong theme -->
+      const userPreference = localStorage.getItem('darkMode');
+      let mode;
+      if (userPreference === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        mode = 'dark';
+        document.documentElement.classList.add('dark');
+      } else {
+        mode = 'light';
+      }
+      if (!userPreference) {localStorage.setItem('darkMode', mode)}
+    </script>
+</head>
+<body :class="{ 'overflow-hidden': showSidebar }" class="min-h-screen font-sans antialiased bg-background text-foreground" x-data="{ showSidebar: false, showScrollTop: false }">
+<div @click.self="showSidebar = false" class="fixed inset-0 z-50 overflow-hidden bg-background/80 backdrop-blur-sm md:hidden" x-cloak="" x-show="showSidebar"></div><div class="relative flex flex-col min-h-screen" id="page"><a class="absolute top-0 left-0 z-[100] block bg-background p-4 text-xl transition -translate-x-full opacity-0 focus:translate-x-0 focus:opacity-100" href="#content">
+      Skip to content
+    </a><header class="sticky top-0 z-40 w-full border-b shadow-sm border-border supports-backdrop-blur:bg-background/60 bg-background/95 backdrop-blur"><div class="container flex items-center h-14">
+<div class="hidden mr-4 md:flex">
+<a class="flex items-center mr-6" href="#"><span class="hidden font-bold sm:inline-block text-clip whitespace-nowrap">LMCache</span>
+</a></div><button @click="showSidebar = true" class="inline-flex items-center justify-center h-10 px-0 py-2 mr-2 text-base font-medium transition-colors rounded-md hover:text-accent-foreground hover:bg-transparent md:hidden" type="button">
+<svg aria-hidden="true" fill="currentColor" height="24" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M152.587 825.087q-19.152 0-32.326-13.174t-13.174-32.326q0-19.152 13.174-32.326t32.326-13.174h440q19.152 0 32.326 13.174t13.174 32.326q0 19.152-13.174 32.326t-32.326 13.174h-440Zm0-203.587q-19.152 0-32.326-13.174T107.087 576q0-19.152 13.174-32.326t32.326-13.174h320q19.152 0 32.326 13.174T518.087 576q0 19.152-13.174 32.326T472.587 621.5h-320Zm0-203.587q-19.152 0-32.326-13.174t-13.174-32.326q0-19.152 13.174-32.326t32.326-13.174h440q19.152 0 32.326 13.174t13.174 32.326q0 19.152-13.174 32.326t-32.326 13.174h-440ZM708.913 576l112.174 112.174q12.674 12.674 12.674 31.826t-12.674 31.826Q808.413 764.5 789.261 764.5t-31.826-12.674l-144-144Q600 594.391 600 576t13.435-31.826l144-144q12.674-12.674 31.826-12.674t31.826 12.674q12.674 12.674 12.674 31.826t-12.674 31.826L708.913 576Z"></path>
+</svg>
+<span class="sr-only">Toggle navigation menu</span>
+</button>
+<div class="flex items-center justify-between flex-1 space-x-2 sm:space-x-4 md:justify-end">
+<div class="flex-1 w-full md:w-auto md:flex-none"><form @keydown.k.window.meta="$refs.search.focus()" action="search.html" class="relative flex items-center group" id="searchbox" method="get">
+<input aria-label="Search the docs" class="inline-flex items-center font-medium transition-colors bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background border border-input hover:bg-accent focus:bg-accent hover:text-accent-foreground focus:text-accent-foreground hover:placeholder-accent-foreground py-2 px-4 relative h-9 w-full justify-start rounded-[0.5rem] text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64" id="search-input" name="q" placeholder="Search ..." type="search" x-ref="search"/>
+<kbd class="pointer-events-none absolute right-1.5 top-2 hidden h-5 select-none text-muted-foreground items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex group-hover:bg-accent group-hover:text-accent-foreground">
+<span class="text-xs">⌘</span>
+    K
+  </kbd>
+</form>
+</div>
+<nav class="flex items-center space-x-1">
+<a href="https://github.com/LMCache/LMCache/" rel="noopener nofollow" title="Visit GitHub">
+<div class="inline-flex items-center justify-center px-0 text-sm font-medium transition-colors rounded-md disabled:opacity-50 disabled:pointer-events-none hover:bg-accent hover:text-accent-foreground h-9 w-9">
+<svg fill="currentColor" height="26px" style="margin-top:-2px;display:inline" viewbox="0 0 45 44" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M22.477.927C10.485.927.76 10.65.76 22.647c0 9.596 6.223                 17.736 14.853 20.608 1.087.2 1.483-.47 1.483-1.047 0-.516-.019-1.881-.03-3.693-6.04 1.312-7.315-2.912-7.315-2.912-.988-2.51-2.412-3.178-2.412                 -3.178-1.972-1.346.149-1.32.149-1.32 2.18.154 3.327 2.24 3.327 2.24 1.937 3.318 5.084 2.36 6.321 1.803.197-1.403.759-2.36 1.379-2.903-4.823-.548-9.894-2.412-9.894-10.734 0-2.37.847-4.31 2.236-5.828-.224-.55-.969-2.759.214-5.748 0 0 1.822-.584 5.972 2.226 1.732-.482 3.59-.722 5.437-.732 1.845.01 3.703.25 5.437.732 4.147-2.81 5.967-2.226 5.967-2.226 1.185 2.99.44 5.198.217 5.748 1.392 1.517 2.232                  3.457 2.232 5.828 0 8.344-5.078 10.18-9.916 10.717.779.67 1.474 1.996 1.474                 4.021 0 2.904-.027 5.247-.027 5.96 0 .58.392 1.256 1.493 1.044C37.981 40.375 44.2 32.24                  44.2 22.647c0-11.996-9.726-21.72-21.722-21.72" fill="currentColor" fill-rule="evenodd"></path></svg>
+</div>
+</a>
+<button @click="darkMode = darkMode === 'light' ? 'dark' : 'light'" aria-label="Color theme switcher" class="relative inline-flex items-center justify-center px-0 text-sm font-medium transition-colors rounded-md hover:bg-accent hover:text-accent-foreground h-9 w-9" type="button">
+<svg class="absolute transition-all scale-100 rotate-0 dark:-rotate-90 dark:scale-0" fill="currentColor" height="24" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M480 685q45.456 0 77.228-31.772Q589 621.456 589 576q0-45.456-31.772-77.228Q525.456 467 480 467q-45.456 0-77.228 31.772Q371 530.544 371 576q0 45.456 31.772 77.228Q434.544 685 480 685Zm0 91q-83 0-141.5-58.5T280 576q0-83 58.5-141.5T480 376q83 0 141.5 58.5T680 576q0 83-58.5 141.5T480 776ZM80 621.5q-19.152 0-32.326-13.174T34.5 576q0-19.152 13.174-32.326T80 530.5h80q19.152 0 32.326 13.174T205.5 576q0 19.152-13.174 32.326T160 621.5H80Zm720 0q-19.152 0-32.326-13.174T754.5 576q0-19.152 13.174-32.326T800 530.5h80q19.152 0 32.326 13.174T925.5 576q0 19.152-13.174 32.326T880 621.5h-80Zm-320-320q-19.152 0-32.326-13.174T434.5 256v-80q0-19.152 13.174-32.326T480 130.5q19.152 0 32.326 13.174T525.5 176v80q0 19.152-13.174 32.326T480 301.5Zm0 720q-19.152 0-32.326-13.17Q434.5 995.152 434.5 976v-80q0-19.152 13.174-32.326T480 850.5q19.152 0 32.326 13.174T525.5 896v80q0 19.152-13.174 32.33-13.174 13.17-32.326 13.17ZM222.174 382.065l-43-42Q165.5 327.391 166 308.239t13.174-33.065q13.435-13.674 32.587-13.674t32.065 13.674l42.239 43q12.674 13.435 12.555 31.706-.12 18.272-12.555 31.946-12.674 13.674-31.445 13.413-18.772-.261-32.446-13.174Zm494 494.761-42.239-43q-12.674-13.435-12.674-32.087t12.674-31.565Q686.609 756.5 705.38 757q18.772.5 32.446 13.174l43 41.761Q794.5 824.609 794 843.761t-13.174 33.065Q767.391 890.5 748.239 890.5t-32.065-13.674Zm-42-494.761Q660.5 369.391 661 350.62q.5-18.772 13.174-32.446l41.761-43Q728.609 261.5 747.761 262t33.065 13.174q13.674 13.435 13.674 32.587t-13.674 32.065l-43 42.239q-13.435 12.674-31.706 12.555-18.272-.12-31.946-12.555Zm-495 494.761Q165.5 863.391 165.5 844.239t13.674-32.065l43-42.239q13.435-12.674 32.087-12.674t31.565 12.674Q299.5 782.609 299 801.38q-.5 18.772-13.174 32.446l-41.761 43Q231.391 890.5 212.239 890t-33.065-13.174ZM480 576Z"></path>
+</svg>
+<svg class="absolute transition-all scale-0 rotate-90 dark:rotate-0 dark:scale-100" fill="currentColor" height="24" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M480 936q-151 0-255.5-104.5T120 576q0-138 90-239.5T440 218q25-3 39 18t-1 44q-17 26-25.5 55t-8.5 61q0 90 63 153t153 63q31 0 61.5-9t54.5-25q21-14 43-1.5t19 39.5q-14 138-117.5 229T480 936Zm0-80q88 0 158-48.5T740 681q-20 5-40 8t-40 3q-123 0-209.5-86.5T364 396q0-20 3-40t8-40q-78 32-126.5 102T200 576q0 116 82 198t198 82Zm-10-270Z"></path>
+</svg>
+</button>
+</nav>
+</div>
+</div>
+</header>
+<div class="flex-1"><div class="container flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10"><aside :aria-hidden="!showSidebar" :class="{ 'translate-x-0': showSidebar }" class="fixed inset-y-0 left-0 md:top-14 z-50 md:z-30 bg-background md:bg-transparent transition-all duration-100 -translate-x-full md:translate-x-0 ml-0 p-6 md:p-0 md:-ml-2 md:h-[calc(100vh-3.5rem)] w-5/6 md:w-full shrink-0 overflow-y-auto border-r border-border md:sticky" id="left-sidebar">
+<a class="!justify-start text-sm md:!hidden bg-background" href="#"><span class="font-bold text-clip whitespace-nowrap">LMCache</span>
+</a>
+<div class="relative overflow-hidden md:overflow-auto my-4 md:my-0 h-[calc(100vh-8rem)] md:h-auto">
+<div class="overflow-y-auto h-full w-full relative pr-6"><nav class="table w-full min-w-full my-6 lg:my-8">
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="getting_started/index.html">Getting Started<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="mp/index.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/quickstart.html">Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/kv_cache_calculator.html">KV Cache Size Calculator</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="interacting_with_server.html">KV Cache Operations<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="cli/index.html">CLI Reference<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l3"><a class="reference internal" href="cli/server.html">lmcache server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/coordinator.html">lmcache coordinator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/describe.html">lmcache describe</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/ping.html">lmcache ping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/query.html">lmcache query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/bench.html">lmcache bench</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/kvcache.html">lmcache kvcache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/quota.html">lmcache quota</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/trace.html">lmcache trace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/tool.html">lmcache tool</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mp/http_api.html">HTTP API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/frontend_dashboard.html">Frontend Dashboard</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="recipes/index.html">Recipes<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="recipes/uniform_attention_models.html">Uniform Attention Models<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l3"><a class="reference internal" href="recipes/minimax_m2.html">MiniMax M2 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/devstral.html">Mistral / Devstral</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/qwen3.html">Qwen3 MoE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/llama.html">Llama</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/phi3.html">Phi-3 / Phi-4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/mixtral.html">Mixtral</a></li>
+</ul>
+</li>
+<li class="toctree-l2" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="mp/hybrid_models.html">Hybrid Attention Models<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l3"><a class="reference internal" href="recipes/gemma3.html">Gemma 3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/gemma4.html">Gemma 4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/gpt_oss.html">gpt-oss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/qwen3_5.html">Qwen3.5 / Qwen3.6 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/deepseek_v4_flash.html">DeepSeek-V4-Flash</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/glm5_2.html">GLM 5.1/5.2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/minimax_m3.html">MiniMax M3</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="mp/l2_storage/index.html">Secondary KV Storage<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="mp/l2_storage/supported_storages.html">Supported Backends<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/nixl.html">NIXL</a></li>
+<li class="toctree-l3" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="mp/l2_storage/file_and_block.html">File &amp; Block<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/fs.html">FileSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/fs_native.html">FS (native)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/raw_block.html">Raw Block (Rust)</a></li>
+</ul>
+</li>
+<li class="toctree-l3" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="mp/l2_storage/remote_and_distributed.html">Remote &amp; Distributed<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/s3.html">S3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/hfbucket.html">HF Bucket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/mooncake_store.html">Mooncake Store</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/resp.html">RESP (Redis/Valkey)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/aerospike.html">Aerospike</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/dax.html">DAX</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/mock.html">Mock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/fault_inject.html">Fault Inject</a></li>
+</ul>
+</li>
+<li class="toctree-l2" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="mp/serde.html">KV Cache Compression<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l3"><a class="reference internal" href="mp/cachegen.html">CacheGen</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="distributed_kv_cache.html">Distributed KV Cache<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="mp/disaggregated_prefill.html">Disaggregated Prefill</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/p2p.html">P2P KV Cache Sharing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/coordinator.html">Multi-Server Coordination</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/kv_cache_management.html">KV Cache Management</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="production/index.html">Use LMCache in Production<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="mp/deployment.html">Deployment Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="production/kubernetes_deployment.html">Kubernetes Deployment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/operator.html">Kubernetes Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/extending_lmcache/runtime_plugins.html">Runtime Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="production/dynamo_coordination.html">Dynamo Integration</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="mp/observability/index.html">Observability<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="mp/observability/metrics.html">Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/observability/logs.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/observability/traces.html">Tracing</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="community/index.html">Community<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="community/meetings.html">Community meetings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="community/blogs.html">Blogs</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="kv_cache_optimizations/index.html">KV Cache Optimizations<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="kv_cache_optimizations/cacheblend.html">CacheBlend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache_optimizations/segmented_prefill.html">Segmented Prefill</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="developer_guide/index.html">Developer Guide<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/contributing.html">Contributing Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/extending_lmcache/native_connectors.html">Adding Native Backends</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/cli.html">Extending the CLI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/extending_http_api.html">Extending the HTTP API</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="non_kv_cache/index.html">Non-KV Caching<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="non_kv_cache/encodings.html">Encodings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="non_kv_cache/hidden_states.html">Hidden states</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="legacy/index.html">Legacy (In-Process Mode)<button @click.prevent.stop="expanded = !expanded" type="button"><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-show="expanded">
+<li class="toctree-l2"><a class="reference internal" href="getting_started/quickstart/index.html">More Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache/storage_backends/index.html">Using Different Storage Backends</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache/async_loading.html">Async Loading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache/caching_policies.html">Using Different Caching Policies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache/p2p_sharing.html">P2P KV Cache Sharing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="non_kv_cache/encoder_cache.html">Encoder caching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="disaggregated_prefill/nixl/index.html">Using NIXL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="disaggregated_prefill/shared_storage.html">Using shared storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache_optimizations/compression/index.html">Compression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache_optimizations/layerwise.html">Layerwise KV Transfer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache_management/index.html">LMCache Controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache_optimizations/blending.html">Blending</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_reference/multimodality.html">KV Caching for Multimodal Models with vLLM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_reference/storage_backends.html">Adding new storage backends</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_reference/dynamic_connector.html">vLLM Dynamic Connector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_reference/configurations.html">Configuring LMCache</a></li>
+<li class="toctree-l2"><a class="reference internal" href="internal_api_server/internal_api_server.html">Internal API Server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="controller/index.html">Controller WebUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="production/observability/index.html">Observability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="production/docker_deployment.html">Docker deployment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="production/performance_tuning.html">Performance Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="production/kv_cache_events.html">KV Cache Events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/architecture.html">Architecture Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/integration.html">Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/usage/index.html">Usage Data Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/usage/basic_check.html">Basic Check Tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/extending_lmcache/storage_plugins.html">Storage Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/extending_lmcache/remote_storage_plugins.html">Remote Storage Plugins</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+<button @click="showSidebar = false" class="absolute md:hidden right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100" type="button">
+<svg class="h-4 w-4" fill="currentColor" height="24" stroke="none" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M480 632 284 828q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 28-11t28 11q11 11 11 28t-11 28L536 576l196 196q11 11 11 28t-11 28q-11 11-28 11t-28-11L480 632Z"></path>
+</svg>
+</button>
+</aside>
+<main class="relative py-6 lg:gap-10 lg:py-8 xl:grid xl:grid-cols-[1fr_300px]">
+<div class="w-full min-w-0 mx-auto">
+<div id="content" role="main">
+<section id="welcome-to-lmcache">
+<h1>Welcome to LMCache!<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#welcome-to-lmcache"><span>#</span></a></h1>
+<figure class="align-center">
+<img alt="LMCache" class="no-scaled-link" src="_images/lmcache-logo_crop.png" style="width: 60%;"/>
+</figure>
+<p class="hero-tagline"><strong>A KV Cache Management Layer for Scalable LLM Inference.</strong></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We are currently in the process of upgrading our documentation to provide better guidance and examples. Some sections may be under construction. Thank you for your patience!</p>
+</div>
+<p style="text-align:center">
+<script async="" defer="" src="https://buttons.github.io/buttons.js"></script>
+<a aria-label="Star" class="github-button" data-show-count="true" data-size="large" href="https://github.com/LMCache/LMCache">Star</a>
+<a aria-label="Watch" class="github-button" data-icon="octicon-eye" data-size="large" href="https://github.com/LMCache/LMCache/subscription">Watch</a>
+<a aria-label="Fork" class="github-button" data-icon="octicon-repo-forked" data-show-count="true" data-size="large" href="https://github.com/LMCache/LMCache/fork">Fork</a>
+</p><div class="hero-description docutils container">
+<p>LMCache is a <strong>KV cache management layer</strong> for LLM inference. It turns KV cache from a temporary state into reusable <em>AI-native knowledge</em> that can be <em>stored</em> persistently, <em>reused</em> across multiple serving engines, <em>monitored</em> with an observability stack, and <em>transformed</em> for better generation quality. As a result, LMCache <strong>reduces TTFT</strong> (time-to-first-token) and <strong>improves throughput</strong>, especially for long-context agentic, multi-turn conversation, and knowledge-augmented workloads (e.g., RAG).</p>
+<p>LMCache is <strong>vendor-neutral</strong>. It can be used as a KV cache layer for a range of mainstream open-source serving engines, inference frameworks, hardware vendors, storage systems, and infrastructure providers. The vendor neutrality allows users to freely switch between serving engines and storage vendors, while reusing the stored KV caches.</p>
+</div>
+<img alt="LMCache Deployment Modes" class="only-light no-scaled-link align-center" src="_images/deployment_modes_light.png" style="width: 90%;"/>
+<img alt="LMCache Deployment Modes" class="only-dark no-scaled-link align-center" src="_images/deployment_modes_dark.png" style="width: 90%;"/>
+<p><span class="raw-html"><br/></span></p>
+<section id="key-features">
+<h2>Key features<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#key-features" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#key-features'"><span>#</span></a></h2>
+<ul class="simple">
+<li><p><strong>Engine-independent deployment</strong>: LMCache, as a standalone daemon process, manages KV cache independently from the inference engine process, so that KV cache will not be lost even if the inference engine crashes (i.e., no fate-sharing with engines).</p></li>
+<li><p><strong>Persistent, tiered KV cache offloading and reuse</strong>: Move KV caches out of GPU memory into a tiered storage hierarchy spanning CPU memory, local storage, and remote backends, enabling reuse across requests, sessions, and engine instances to reduce repeated prefill computation and improve TTFT.</p></li>
+<li><p><strong>Production-level KV cache observability</strong>: LMCache provides a rich set of KV cache observability metrics, including typical Kubernetes metrics (health monitoring, performance diagnostics), KV-cache-specific metrics (request-level and token-level prefix cache hits, lifecycle, request-level KV cache performance), management metrics (user-specific usage), and more.</p></li>
+<li><p><strong>Pluggable storage and transport backends</strong>: Easily integrate remote storage and KV transfer backends through a unified interface, enabling KV cache offloading and sharing across storage providers. Through this interface, LMCache supports storage backends including CPU RAM, local disk (SSD), Redis/Valkey, Mooncake, InfiniStore, S3-compatible object storage, NIXL, and GDS.</p></li>
+<li><p><strong>Non-prefix KV reuse</strong>: Extend KV reuse beyond prefix caching by reusing cached KV blocks at any position in the prompt. This leverages CacheBlend to selectively recompute tokens for quality recovery.</p></li>
+<li><p><strong>PD disaggregation and KV transfer</strong>: Support KV cache transfer from prefill workers to decode workers over NVLink, RDMA, or TCP through transport layers such as NIXL.</p></li>
+<li><p><strong>Pluggable KV transformation</strong>: A simple interface for researchers to write compression, token dropping, and custom serialization through a flexible SERDE interface.</p></li>
+</ul>
+<p>LMCache is becoming an integral layer in the LLM inference <em>ecosystem</em>, with <em>community</em>-driven integration with serving engines, inference frameworks, hardware vendors, storage systems, and infrastructure providers:</p>
+<figure class="align-center">
+<img alt="LMCache ecosystem" class="no-scaled-link" src="_images/ecosystem.png" style="width: 90%;"/>
+</figure>
+<p><span class="raw-html"><br/></span></p>
+</section>
+<section id="updates">
+<h2>Updates<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#updates" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#updates'"><span>#</span></a></h2>
+<ul class="simple">
+<li><p>[2026/06] 🔥 LMCache multi-platform development support with no GPU required (<a class="reference external" href="https://blog.lmcache.ai/en/2026/06/23/vllm-lmcache-a-starter-guide-no-gpu-required/">blog</a>, <a class="reference external" href="https://blog.lmcache.ai/en/2026/06/15/understanding-lmcache-mp-mode-transfer-paths-a-beginners-guide/">blog</a>).</p></li>
+<li><p>[2026/05] 🔥 Agentic workload benchmark on AMD MI300X (<a class="reference external" href="https://blog.lmcache.ai/en/2026/05/12/benchmarking-lmcache-for-multi-turn-agentic-workloads-on-amd-mi300x/">blog</a>).</p></li>
+<li><p>[2026/04] 🔥 LMCache’s new multiprocess (MP) architecture release (<a class="reference external" href="https://blog.lmcache.ai/en/2026/04/03/lmcaches-new-architecture-boosts-moe-inference-performance-by-10x/">blog</a>).</p></li>
+<li><p>[2026/03] LMCache at GTC 2026 (<a class="reference external" href="https://www.linkedin.com/posts/lmcache-lab_llm-opensource-nvidiagtc-activity-7442721875664826369-pMAu">post</a>).</p></li>
+<li><p>[2026/01] LMCache multi-node P2P CPU memory sharing, from experimental feature to production (<a class="reference external" href="https://blog.lmcache.ai/en/2026/01/21/p2p-1/">blog</a>).</p></li>
+</ul>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">More</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg aria-hidden="true" class="sd-octicon sd-octicon-chevron-right" height="1.5em" version="1.1" viewbox="0 0 24 24" width="1.5em"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<ul class="simple">
+<li><p class="sd-card-text">[2025/11] LMCache x CoreWeave accelerate efficient LLM inference for Cohere (<a class="reference external" href="https://blog.lmcache.ai/en/2025/10/29/breaking-the-memory-barrier-how-lmcache-and-coreweave-power-efficient-llm-inference-for-cohere/">blog</a>).</p></li>
+<li><p class="sd-card-text">[2025/10] LMCache joins the PyTorch Foundation and Tensormesh unveiled (<a class="reference external" href="https://blog.lmcache.ai/en/2025/10/31/tensormesh-unveiled-and-lmcache-joins-the-pytorch-foundation/">blog</a>, <a class="reference external" href="https://pytorch.org/blog/lmcache-joins-pytorch-ecosystem/">PyTorch</a>).</p></li>
+<li><p class="sd-card-text">[2025/09] NVIDIA Dynamo integrates LMCache, accelerating LLM inference (<a class="reference external" href="https://blog.lmcache.ai/en/2025/09/18/nvidia-dynamo-integrates-lmcache-accelerating-llm-inference/">blog</a>).</p></li>
+<li><p class="sd-card-text">[2025/08] 🎉 LMCache hits 5,000+ GitHub stars (<a class="reference external" href="https://blog.lmcache.ai/en/2025/08/28/%f0%9f%8e%89-lmcache-hits-5000-github-stars-thank-you-community/">blog</a>).</p></li>
+<li><p class="sd-card-text">[2025/08] LMCache supports gpt-oss (20B/120B) on day 1 (<a class="reference external" href="https://blog.lmcache.ai/en/2025/08/05/lmcache-supports-gpt-oss-20b-120b-on-day-1/">blog</a>).</p></li>
+<li><p class="sd-card-text">[2025/07] Get faster LLM inference and cheaper responses with LMCache and Redis (<a class="reference external" href="https://redis.io/blog/get-faster-llm-inference-and-cheaper-responses-with-lmcache-and-redis/">Redis blog</a>).</p></li>
+<li><p class="sd-card-text">[2025/07] LMCache extends its turbo-boost to multimodal models in vLLM V1 (<a class="reference external" href="https://blog.lmcache.ai/en/2025/07/03/lmcache-extends-its-turbo-boost-to-multimodal-models-in-vllm-v1/">blog</a>).</p></li>
+<li><p class="sd-card-text">[2025/06] LLM Production Stack goes cross-hardware: AMD, Arm and Ascend (<a class="reference external" href="https://blog.lmcache.ai/en/2025/06/20/llm-production-stack-goes-cross-hardware-ascend-arm-and-amd-support-incoming/">blog</a>).</p></li>
+</ul>
+</div>
+</details><p><span class="raw-html"><br/></span></p>
+<p>For more information, check out the following:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://lmcache.github.io">LMCache blogs</a></p></li>
+<li><p><a class="reference external" href="https://join.slack.com/t/lmcacheworkspace/shared_invite/zt-3zxjao8h0-lRfBfnLqbALOtLsWn2ITxA">Join LMCache slack workspace</a></p></li>
+<li><p>Our papers:</p>
+<ul>
+<li><p><a class="reference external" href="https://dl.acm.org/doi/10.1145/3651890.3672274">CacheGen: KV Cache Compression and Streaming for Fast Large Language Model Serving</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2405.16444">CacheBlend: Fast Large Language Model Serving with Cached Knowledge Fusion</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2409.13761">Do Large Language Models Need a Content Delivery Network?</a></p></li>
+</ul>
+</li>
+</ul>
+<p><span class="raw-html"><br/></span></p>
+</section>
+<section id="documentation">
+<h2>Documentation<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#documentation" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#documentation'"><span>#</span></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mp/index.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/quickstart.html">Quickstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/configuration.html">Configuration Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started/kv_cache_calculator.html">KV Cache Size Calculator</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="interacting_with_server.html">KV Cache Operations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cli/index.html">CLI Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cli/index.html#installation">Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/index.html#available-commands">Available Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/index.html#output-formats">Output Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli/index.html#adding-new-commands">Adding New Commands</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mp/http_api.html">HTTP API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#where-the-routes-come-from">Where the routes come from</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#server-configuration">Server Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#endpoint-overview">Endpoint Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#liveness-and-health">Liveness and Health</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#inspection-and-status">Inspection and Status</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#cache-control">Cache Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#l2-storage-management">L2 Storage Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#quota-management">Quota Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#runtime-l2-reconfiguration">Runtime L2 Reconfiguration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#observability">Observability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#diagnostics-and-debugging">Diagnostics and Debugging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/http_api.html#adding-new-endpoints">Adding New Endpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mp/frontend_dashboard.html">Frontend Dashboard</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mp/frontend_dashboard.html#architecture-overview">Architecture Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/frontend_dashboard.html#components">Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/frontend_dashboard.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/frontend_dashboard.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/frontend_dashboard.html#dashboard-features">Dashboard Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/frontend_dashboard.html#cli-reference">CLI Reference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/frontend_dashboard.html#plugin-config-keys">Plugin Config Keys</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/frontend_dashboard.html#using-a-custom-discovery-service">Using a Custom Discovery Service</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="recipes/index.html">Recipes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="recipes/uniform_attention_models.html">Uniform Attention Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="recipes/uniform_attention_models.html#recipe-page-contents">Recipe page contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/uniform_attention_models.html#supported-architectures">Supported architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="recipes/uniform_attention_models.html#contributing-a-recipe">Contributing a recipe</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mp/hybrid_models.html">Hybrid Attention Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mp/hybrid_models.html#validated-hybrid-models">Validated hybrid models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/hybrid_models.html#what-works">What Works</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/hybrid_models.html#object-group-separation">Object-group separation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/hybrid_models.html#mamba-linear-attention-hybrids">Mamba / Linear-Attention Hybrids</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/hybrid_models.html#what-is-not-supported-yet">What Is Not Supported Yet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/hybrid_models.html#verifying-correctness">Verifying Correctness</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/hybrid_models.html#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mp/l2_storage/index.html">Secondary KV Storage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mp/l2_storage/index.html#data-flow">Data Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/l2_storage/index.html#adapter-types">Adapter Types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/supported_storages.html">Supported Backends</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/nixl.html">NIXL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/file_and_block.html">File &amp; Block</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/remote_and_distributed.html">Remote &amp; Distributed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/dax.html">DAX</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/mock.html">Mock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/l2_storage/fault_inject.html">Fault Inject</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mp/l2_storage/index.html#multiple-adapters-cascade">Multiple Adapters (Cascade)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/l2_storage/index.html#store-and-prefetch-policies">Store and Prefetch Policies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/index.html#prefetch-concurrency">Prefetch Concurrency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/index.html#buffer-only-mode">Buffer-Only Mode</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mp/l2_storage/index.html#serde-compression-quantization">Serde (compression / quantization)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mp/serde.html">KV Cache Compression</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mp/serde.html#when-to-use-serde">When to use serde</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/serde.html#configuring-serde-on-an-l2-adapter">Configuring serde on an L2 adapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/serde.html#turboquant-serde">TurboQuant serde</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/serde.html#writing-a-custom-serde">Writing a custom serde</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/serde.html#notes">Notes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/serde.html#example">Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mp/serde.html#compression-methods">Compression methods</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mp/l2_storage/index.html#eviction">Eviction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/index.html#l1-eviction">L1 Eviction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/index.html#l2-eviction">L2 Eviction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mp/l2_storage/index.html#combined-l1-l2-eviction-example">Combined L1 + L2 Eviction Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mp/l2_storage/index.html#verifying-l2-storage">Verifying L2 Storage</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="distributed_kv_cache.html">Distributed KV Cache</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mp/disaggregated_prefill.html">Disaggregated Prefill</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/p2p.html">P2P KV Cache Sharing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/coordinator.html">Multi-Server Coordination</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/kv_cache_management.html">KV Cache Management</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="production/index.html">Use LMCache in Production</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mp/deployment.html">Deployment Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="production/kubernetes_deployment.html">Kubernetes Deployment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/operator.html">Kubernetes Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/extending_lmcache/runtime_plugins.html">Runtime Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="production/dynamo_coordination.html">Dynamo Integration</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mp/observability/index.html">Observability</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mp/observability/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mp/observability/index.html#configuration">Configuration</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community/index.html">Community</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="community/meetings.html">Community meetings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="community/blogs.html">Blogs</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="kv_cache_optimizations/index.html">KV Cache Optimizations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache_optimizations/cacheblend.html">CacheBlend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_cache_optimizations/segmented_prefill.html">Segmented Prefill</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide/index.html">Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/contributing.html">Contributing Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/extending_lmcache/native_connectors.html">Adding Native Backends</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/cli.html">Extending the CLI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_guide/extending_http_api.html">Extending the HTTP API</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="non_kv_cache/index.html">Non-KV Caching</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="non_kv_cache/encodings.html">Encodings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="non_kv_cache/hidden_states.html">Hidden states</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="legacy/index.html">Legacy (In-Process Mode)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="legacy/index.html#background">Background</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><span class="raw-html"><br/></span></p>
+</section>
+</section>
+</div><div class="flex justify-between items-center pt-6 mt-12 border-t border-border gap-4">
+<div class="ml-auto">
+<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="getting_started/index.html">
+        Getting Started
+        <svg class="ml-2 h-4 w-4" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+<polyline points="9 18 15 12 9 6"></polyline>
+</svg>
+</a>
+</div>
+</div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
+<div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
+<ul>
+<li><a :data-current="activeSection === '#key-features'" class="reference internal" href="#key-features">Key features</a></li>
+<li><a :data-current="activeSection === '#updates'" class="reference internal" href="#updates">Updates</a></li>
+<li><a :data-current="activeSection === '#documentation'" class="reference internal" href="#documentation">Documentation</a><ul>
+</ul>
+</li>
+</ul>
+</div>
+</aside>
+</main>
+</div>
+</div><footer class="py-6 border-t border-border md:py-0">
+<div class="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
+<div class="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
+<p class="text-sm leading-loose text-center text-muted-foreground md:text-left">© 2024, The LMCache Team Built with <a class="font-medium underline underline-offset-4" href="https://www.sphinx-doc.org" rel="noreferrer">Sphinx 8.2.3</a></p>
+</div>
+</div>
+</footer>
+</div>
+<script src="_static/documentation_options.js?v=5929fcd5"></script>
+<script src="_static/doctools.js?v=9bcbadda"></script>
+<script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+<script defer="defer" src="_static/theme.js?v=073f68d9"></script>
+<script src="_static/design-tabs.js?v=f930bc37"></script>
+<script src="_static/sphinxcontrib-images/LightBox2/lightbox2/dist/js/lightbox-plus-jquery.min.js?v=f0ca4bb6"></script>
+<script src="_static/sphinxcontrib-images/LightBox2/lightbox2-customize/jquery-noconflict.js?v=12818e64"></script>
+<script src="_static/custom.js?v=9f7bad42"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"2b9c7e3d76374620a632614cc872c54f","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

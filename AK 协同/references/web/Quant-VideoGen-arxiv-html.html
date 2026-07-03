@@ -1,0 +1,1196 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization</title>
+<!--Generated on Fri May  1 19:28:02 2026 by LaTeXML (version 0.8.8) http://dlmf.nist.gov/LaTeXML/.-->
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="stylesheet" href="/static/browse/0.3.4/css/arxiv-html-papers-20260131.css" type="text/css">
+<script src="/static/browse/0.3.4/js/arxiv-html-papers-20260131.js"></script>
+<meta name="keywords" lang="en" content="Machine Learning,  ICML">
+<script>
+  // Restore the saved color scheme preference, or
+  // enact the browser preference if "automatic", 
+  // without expecting DOM load to have completed.
+  //
+  // Also restore any saved readingmode and ToC display preferences.
+  function initializeReadingPreferences() {
+    let saved_theme = localStorage.getItem("ar5iv_theme") || "automatic";
+    if (saved_theme === "automatic") {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        saved_theme = "dark";
+      }
+    }
+    if (saved_theme == "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+
+    const tocDisplay = localStorage.getItem('arxiv_html_paper_toc_display');
+    if (tocDisplay) {
+      document.documentElement.setAttribute("data-toc-display", tocDisplay);
+    }
+    const readingMode = localStorage.getItem('arxiv_html_paper_reading_mode');
+    if (readingMode) {
+      document.documentElement.setAttribute("data-reading-mode", readingMode);
+    }
+    // Pre-apply spinout-banner dismissal here, before the banner paints, so it
+    // never flashes in only to be hidden later by the deferred arxiv-header.js.
+    // Key matches arxiv-header.js: "arxiv-banner-dismissed:" + data-banner-name.
+    if (localStorage.getItem('arxiv-banner-dismissed:spinout-nonprofit')) {
+      document.documentElement.setAttribute("data-banner-dismissed", "");
+    }
+  }
+  // Run as soon as JS starts, to minimize repainting
+  initializeReadingPreferences();
+</script>
+<link rel="apple-touch-icon" sizes="180x180"
+  href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32"
+  href="/static/browse/0.3.4/images/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16"
+  href="/static/browse/0.3.4/images/icons/favicon-16x16.png">
+<link rel="manifest" href="/static/browse/0.3.4/images/icons/site.webmanifest">
+<link rel="mask-icon" href="/static/browse/0.3.4/images/icons/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="stylesheet" type="text/css" media="screen" href="https://use.typekit.net/utz6mli.css"><link rel="stylesheet" type="text/css" media="screen"
+  href="/static/base/1.0.1/css/arxiv-header-footer.css?v=20260626"><style>
+  /* Banner pre-dismissal (set above before paint -> no flash-then-hide) and
+     reading-mode chrome hiding. */
+  html[data-banner-dismissed] .ds-announcement { display: none; }
+  html[data-reading-mode="enabled"] .ds-announcement,
+  html[data-reading-mode="enabled"] .ds-site-footer { display: none; }
+  /* Keep the announcement text dark on the Open-Blue band in both colour themes
+     (otherwise it inherits the paper's warm-wash text in dark mode and washes out). */
+  .ds-announcement-text { color: var(--arxiv-ink, #1c1a17); }
+</style>
+<script defer src="/static/base/1.0.1/js/arxiv-header.js?v=20260626"></script>
+</head>
+<body>
+<dialog id="modal-form" aria-labelledby="modal-title" closedby="any">
+  <form id="modal-form-content" method="dialog" enctype="multipart/form-data">
+    <header class="modal-header">
+      <h5 id="modal-title" class="modal-title">Report GitHub Issue</h5>
+      <button type="submit" formnovalidate class="modal-close" aria-label="Close">×</button>
+    </header>
+
+    <div class="modal-body">
+      <label for="form_title">Title:</label>
+      <input class="form-control" id="form_title" name="form_title" required placeholder="Enter title">
+
+      <p id="selectedTextModalDescription" hidden>Content selection saved. Describe the issue below:</p>
+
+      <label for="description">Description:</label>
+      <textarea class="form-control" id="description" name="description" required maxlength="500"
+        placeholder="500 characters maximum"></textarea>
+    </div>
+
+    <footer class="modal-footer">
+      <button type="submit" value="internal-report" class="sr-only modal-submit">Submit without GitHub</button>
+      <button type="submit" value="github-report" class="modal-submit">Submit in GitHub</button>
+    </footer>
+  </form>
+</dialog><div class="ds-announcement" id="announcement-banner" role="region" aria-label="Announcement"
+    data-banner-name="spinout-nonprofit">
+    <img class="ds-announcement-glyph" src="/static/base/1.0.1/images/icons/smileybones-small.svg" alt="" aria-hidden="true">
+    <span class="ds-announcement-text">arXiv is now an independent nonprofit!</span>
+    <a class="ds-announcement-link" href="https://info.arxiv.org/about">Learn more</a>
+    <button type="button" class="ds-announcement-close" aria-label="Dismiss announcement">&times;</button>
+  </div>
+
+<header class="arxiv-html-header">
+  <div class="html-header-logo">
+    <a href="/"><img alt="arXiv logo" class="logo desktop-only" width="100"
+        src="/static/base/1.0.1/images/arxiv-logo-primary-light.svg">
+      <span class="sr-only">Back to arXiv</span>
+    </a>
+  </div>
+  <!--TOC, dark mode, links-->
+  <nav class="html-header-nav">
+    <a class="header-button hover-effect desktop-only" href="https://info.arxiv.org/about/accessible_HTML.html"
+      target="_blank">Why HTML?</a>
+    <a class="header-button" title="Report an Issue" href="#" title="Report an issue"
+      onclick="event.preventDefault(); showModalForm();">
+      <svg role="presentation" class="mobile-only toggle-icon" aria-hidden="true" height="1.25rem"
+        viewBox="0 0 640 640">
+        <path
+          d="M224 160C224 107 267 64 320 64C373 64 416 107 416 160L416 163.6C416 179.3 403.3 192 387.6 192L252.5 192C236.8 192 224.1 179.3 224.1 163.6L224.1 160zM569.6 172.8C580.2 186.9 577.3 207 563.2 217.6L465.4 290.9C470.7 299.8 474.7 309.6 477.2 320L576 320C593.7 320 608 334.3 608 352C608 369.7 593.7 384 576 384L480 384L480 416C480 418.6 479.9 421.3 479.8 423.9L563.2 486.4C577.3 497 580.2 517.1 569.6 531.2C559 545.3 538.9 548.2 524.8 537.6L461.7 490.3C438.5 534.5 395.2 566.5 344 574.2L344 344C344 330.7 333.3 320 320 320C306.7 320 296 330.7 296 344L296 574.2C244.8 566.5 201.5 534.5 178.3 490.3L115.2 537.6C101.1 548.2 81 545.3 70.4 531.2C59.8 517.1 62.7 497 76.8 486.4L160.2 423.9C160.1 421.3 160 418.7 160 416L160 384L64 384C46.3 384 32 369.7 32 352C32 334.3 46.3 320 64 320L162.8 320C165.3 309.6 169.3 299.8 174.6 290.9L76.8 217.6C62.7 207 59.8 186.9 70.4 172.8C81 158.7 101.1 155.8 115.2 166.4L224 248C236.3 242.9 249.8 240 264 240L376 240C390.2 240 403.7 242.8 416 248L524.8 166.4C538.9 155.8 559 158.7 569.6 172.8z" />
+      </svg>
+      <span class="desktop-only">Report Issue</span></a>
+    <!--back to abstract-->
+    <a class="header-button" title="Back to abstract page" aria-label="Back to abstract page"
+      href="/abs/2602.02958v4">
+      <svg class="mobile-only toggle-icon" role="presentation" height="1.25rem" viewBox="0 0 512 512" fill="#ffffff"
+        aria-hidden="true">
+        <path
+          d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 192 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l210.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128zM160 96c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 32C43 32 0 75 0 128L0 384c0 53 43 96 96 96l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l64 0z">
+        </path>
+      </svg>
+      <span class="desktop-only">Back to Abstract</span>
+    </a>
+    <!-- PDF download link -->
+    <a class="header-button" title="Download PDF" href="/pdf/2602.02958v4"
+      target="_blank">
+      <svg class="mobile-only toggle-icon" role="presentation" height="1.25rem" viewBox="0 0 576 542">
+        <path
+          d="M208 48L96 48c-8.8 0-16 7.2-16 16l0 384c0 8.8 7.2 16 16 16l80 0 0 48-80 0c-35.3 0-64-28.7-64-64L32 64C32 28.7 60.7 0 96 0L229.5 0c17 0 33.3 6.7 45.3 18.7L397.3 141.3c12 12 18.7 28.3 18.7 45.3l0 149.5-48 0 0-128-88 0c-39.8 0-72-32.2-72-72l0-88zM348.1 160L256 67.9 256 136c0 13.3 10.7 24 24 24l68.1 0zM240 380l32 0c33.1 0 60 26.9 60 60s-26.9 60-60 60l-12 0 0 28c0 11-9 20-20 20s-20-9-20-20l0-128c0-11 9-20 20-20zm32 80c11 0 20-9 20-20s-9-20-20-20l-12 0 0 40 12 0zm96-80l32 0c28.7 0 52 23.3 52 52l0 64c0 28.7-23.3 52-52 52l-32 0c-11 0-20-9-20-20l0-128c0-11 9-20 20-20zm32 128c6.6 0 12-5.4 12-12l0-64c0-6.6-5.4-12-12-12l-12 0 0 88 12 0zm76-108c0-11 9-20 20-20l48 0c11 0 20 9 20 20s-9 20-20 20l-28 0 0 24 28 0c11 0 20 9 20 20s-9 20-20 20l-28 0 0 44c0 11-9 20-20 20s-20-9-20-20l0-128z" />
+      </svg>
+      <span class="desktop-only">Download PDF</span></a>
+    <!-- navigational table of contents toggle -->
+    <a class="header-button toggle-icon" href="javascript:toggleNavTOC();" title="Toggle navigation"
+      aria-label="Toggle navigation">
+      <svg height="1.25rem" role="presentation" viewBox="0 0 512 512">
+        <path
+          d="M40 48C26.7 48 16 58.7 16 72v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V72c0-13.3-10.7-24-24-24H40zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zM16 232v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V232c0-13.3-10.7-24-24-24H40c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V392c0-13.3-10.7-24-24-24H40z">
+        </path>
+      </svg>
+    </a>
+    <!--- collapsable header / reading mode toggle -->
+    <a class="header-button toggle-icon" href="javascript:toggleReadingMode();"
+      title="Disable reading mode, show header and footer">
+      <svg role="presentation" height="1.25rem"
+        viewBox="0 0 448 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+        <path
+          d="M32 32C14.3 32 0 46.3 0 64l0 96c0 17.7 14.3 32 32 32s32-14.3 32-32l0-64 64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 32zM64 352c0-17.7-14.3-32-32-32S0 334.3 0 352l0 96c0 17.7 14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0 0-64zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0 0 64c0 17.7 14.3 32 32 32s32-14.3 32-32l0-96c0-17.7-14.3-32-32-32l-96 0zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 64-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32l0-96z" />
+      </svg>
+    </a>
+    <!--- colored theme toggle -->
+    <button type="button" class="header-button color-tog" onclick="toggleColorScheme();" title="Toggle dark/light mode" aria-label="Toggle color scheme">
+      <span class="toggle-icon automatic-tog" aria-hidden="true">
+        <svg role="presentation" height="1.25rem" viewBox="0 0 24 24">
+          <path
+            d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9h-1.9M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69m-9.15 3.96h2.3L12 9l-1.15 3.65Z">
+          </path>
+        </svg>
+      </span>
+      <span class="toggle-icon light-tog" aria-hidden="true">
+        <svg role="presentation" height="1.25rem" viewBox="0 0 24 24">
+          <path
+            d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z">
+          </path>
+        </svg>
+      </span>
+      <span class="toggle-icon dark-tog" aria-hidden="true">
+        <svg role="presentation" height="1.25rem" viewBox="0 0 24 24">
+          <path
+            d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z">
+          </path>
+        </svg>
+      </span>
+    </button>
+  </nav>
+</header><nav class="ltx_page_navbar">
+<nav class="ltx_TOC">
+<ol class="ltx_toclist">
+<li class="ltx_tocentry ltx_tocentry_abstract"><a href="#abstract1" title="In Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title">Abstract</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section"><a href="#S1" title="In Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">1 </span>Introduction</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section"><a href="#S2" title="In Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">2 </span>Related Work</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a href="#S3" title="In Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3 </span>Motivation</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S3.SS1" title="In 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3.1 </span>KV-Cache Bottlenecks Auto-Regressive Video Generation</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S3.SS2" title="In 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3.2 </span>Video KV-Cache Quantization is Challenging</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S3.SS3" title="In 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3.3 </span>Video KV-Cache is Highly Redundant</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a href="#S4" title="In Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4 </span>Methodology</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S4.SS1" title="In 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.1 </span>Semantic-Aware Smoothing</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S4.SS2" title="In 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.2 </span>Progressive Residual Quantization</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S4.SS3" title="In 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.3 </span>Efficient Algorithm-System Co-design</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a href="#S5" title="In Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5 </span>Experiments</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S5.SS1" title="In 5 Experiments ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.1 </span>Setup</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S5.SS2" title="In 5 Experiments ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.2 </span>Quality Evaluation</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S5.SS3" title="In 5 Experiments ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.3 </span>Efficiency Evaluation</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S5.SS4" title="In 5 Experiments ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.4 </span>Sensitivity Test</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section"><a href="#S6" title="In Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">6 </span>Conclusion</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_bibliography"><a href="#bib" title="In Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_title">References</span></a></li>
+</ol></nav>
+</nav>
+<div class="ltx_page_main">
+<div id="infobox" class="infobox">
+  <a id="license-tr" href="https://info.arxiv.org/help/license/index.html#licenses-available">
+    License: CC BY 4.0
+  </a>
+  <div id="watermark-tr">
+arXiv:2602.02958v4 [cs.LG] 01 May 2026</div>
+</div><div class="ltx_page_content">
+<article class="ltx_document ltx_pruned_first">
+<h1 class="ltx_title ltx_title_document">Quant VideoGen: Auto-Regressive Long Video Generation 
+<br class="ltx_break">via 2-Bit KV-Cache Quantization</h1>
+<div class="ltx_authors">
+<span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Haocheng Xi
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Shuo Yang
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Yilong Zhao
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Muyang Li
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Han Cai
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Xingyang Li
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Yujun Lin
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Zhuoyang Zhang
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Jintao Zhang
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Xiuyu Li
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname"><math id="1.m1" class="ltx_Math" alttext="\text{Zhiying Xu}^{\dagger}" display="inline" intent=":literal"><semantics><msup><mtext>Zhiying Xu</mtext><mo>†</mo></msup><annotation encoding="application/x-tex">\text{Zhiying Xu}^{\dagger}</annotation></semantics></math>
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname"><math id="id2.1.m1" class="ltx_Math" alttext="\text{Jun Wu}^{\dagger}" display="inline" intent=":literal"><semantics><msup><mtext>Jun Wu</mtext><mo>†</mo></msup><annotation encoding="application/x-tex">\text{Jun Wu}^{\dagger}</annotation></semantics></math>
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Chenfeng Xu
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Ion Stoica
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Song Han
+</span></span>
+<span class="ltx_author_before">  </span><span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Kurt Keutzer
+</span></span>
+</div>
+
+<div id="abstract1" class="ltx_abstract">
+<h6 class="ltx_title ltx_title_abstract">Abstract</h6>
+<p class="ltx_p">Despite rapid progress in auto-regressive video diffusion, we identify an emerging system–algorithm bottleneck that limits both deployability and capability: KV-cache memory. In auto-regressive video generation models, the KV-cache grows with history and rapidly dominates GPU memory (often <math class="ltx_Math" alttext="\geq 30" display="inline" intent=":literal"><semantics><mrow><mi></mi><mo>≥</mo><mn>30</mn></mrow><annotation encoding="application/x-tex">\geq 30</annotation></semantics></math> GB), blocking deployment on widely available hardware. More importantly, memory-bounded KV budgets force small working memory, which directly degrades long-horizon consistency in identity, layout, and motion, etc. To bridge this gap, we present Quant VideoGen (QVG), a training-free KV-cache quantization framework for auto-regressive video diffusion model. QVG exploits video’s spatiotemporal redundancy through Semantic-Aware Smoothing to produce low-magnitude, quantization-friendly residuals. QVG further propose Progressive Residual Quantization, a coarse-to-fine multi-stage scheme that reduces quantization error while enabling a smooth quality–memory trade-off. Across LongCat-Video, HY-WorldPlay, and Self-Forcing, QVG establishes a new Pareto quality-memory frontier, reducing KV memory by up to <math class="ltx_math_unparsed" alttext="7.0\times" display="inline" intent=":literal"><semantics><mrow><mn>7.0</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">7.0\times</annotation></semantics></math> with <math class="ltx_Math" alttext="&lt;4\%" display="inline" intent=":literal"><semantics><mrow><mi></mi><mo>&lt;</mo><mrow><mn>4</mn><mo>%</mo></mrow></mrow><annotation encoding="application/x-tex">&lt;4\%</annotation></semantics></math> end-to-end latency overhead and significantly better quality over baselines.</p>
+</div>
+<div class="ltx_keywords">Machine Learning, ICML
+</div>
+<div id="p2" class="ltx_para">
+<p id="p2.1" class="ltx_p ltx_align_center"><span id="p2.1.1" class="ltx_text ltx_font_bold" style="font-size:90%;">Resources:<span id="p2.1.1.1" class="ltx_text ltx_font_medium"> 
+<a href="https://svg-project.github.io/qvg" title="" class="ltx_ref ltx_href" style="--ltx-fg-color:#367DBD;">Website</a>
+   |   <a href="https://github.com/svg-project/Quant-VideoGen" title="" class="ltx_ref ltx_href" style="--ltx-fg-color:#367DBD;">GitHub</a></span></span></p>
+</div>
+<figure id="S0.F1" class="ltx_figure">
+<div id="S0.F1.1" class="ltx_inline-block ltx_align_center ltx_transformed_outer" style="width:313.4pt;height:91.8pt;vertical-align:-0.0pt;"><span class="ltx_transformed_inner" style="transform:translate(0.0pt,0.0pt) scale(1.0,1.0) ;"><img src="2602.02958v4/x1.png" id="S0.F1.1.g1" class="ltx_graphics ltx_img_landscape" width="594" height="175" alt="Refer to caption">
+</span></div>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S0.F1.5.2.1" class="ltx_text" style="font-size:90%;">Figure 1</span>: </span><span id="S0.F1.3.1" class="ltx_text" style="font-size:90%;">QVG makes long video generation extremely memory-efficient and maintains high video quality. On LongCat-Video and HY-WorldPlay, QVG reduces the memory footprint by up to <math id="S0.F1.3.1.m1" class="ltx_math_unparsed" alttext="7\times" display="inline" intent=":literal"><semantics><mrow><mn>7</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">7\times</annotation></semantics></math> and achieves a PSNR of 28.7, much better than the baseline.</span></figcaption>
+</figure>
+<section id="S1" class="ltx_section ltx_indent_first">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">1 </span>Introduction</h2>
+
+<div id="S1.p1" class="ltx_para">
+<p id="S1.p1.1" class="ltx_p">Video diffusion models have progressed at a remarkable pace. Powered by bidirectional attention backbones (e.g., HunyuanVideo <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">wu2025hunyuanvideo</span>)</cite>, Wan2.1/Wan2.2 <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">wan2025wan</span>)</cite>), today’s systems can synthesize short clips with compelling photorealism and coherent motion. Yet this quality leap has not translated into long-horizon capability: from 2024 to 2026, mainstream bidirectional-attention video diffusion models have largely remained confined to 5-10 second generations in practical settings, leaving a persistent gap in deployment scenarios that demand minute-level, even hour-level continuity and interaction.
+<span id="footnotex1" class="ltx_note ltx_role_footnotetext"><sup class="ltx_note_mark">2</sup><span class="ltx_note_outer"><span class="ltx_note_content"><sup class="ltx_note_mark">2</sup><span class="ltx_note_type">footnotetext: </span>This work does not relate to the position at Amazon.</span></span></span></p>
+</div>
+<div id="S1.p2" class="ltx_para">
+<p id="S1.p2.1" class="ltx_p">A central reason is the unfavorable <em id="S1.p2.1.1" class="ltx_emph ltx_font_italic">generation scaling</em>.
+Bidirectional video diffusion models perform inference in a way that:
+at each denoising step, tokens attend to both past and future frames. From a systems perspective, this induces a late-commit execution model: early frames cannot be safely output until the full window finishes denoising. Auto-regressive video diffusion thus marks a paradigm shift. By enforcing temporal causality, approaches such as CausVid <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">yin2025causvid</span>)</cite> and Self-Forcing <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">huang2025self</span>)</cite> turn the computation graph amortized, output frames depend only on retained history, so they can be incrementally committed and streamed as soon as they are produced. This shift has already opened up application regimes that are difficult to support with bidirectional attention, including live-streaming video generation <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">feng2025streamdiffusionv2</span>)</cite>, interactive content control (<span id="S1.p2.1.2" class="ltx_text ltx_font_italic">e.g</span>, Matrix Game <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">he2025matrixgame20opensourcerealtime</span>)</cite>), and long-horizon spatial exploration or 3D-consistent synthesis (<span id="S1.p2.1.3" class="ltx_text ltx_font_italic">e.g.</span>, world model pipelines <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">xiao2025worldmemlongtermconsistentworld</span>)</cite>).</p>
+</div>
+<div id="S1.p3" class="ltx_para">
+<p id="S1.p3.2" class="ltx_p">However, auto-regressive video models introduce a system-algorithm coupled problem: <em id="S1.p3.2.1" class="ltx_emph ltx_font_italic">KV-cache memory</em>. Specifically, auto-regressive inference accumulates a large KV-cache that must remain resident to avoid KV-cache recomputation. In practice, KV-cache quickly dominates GPU memory and becomes the binding resource well before raw compute saturates <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">team2025longcat</span>)</cite>. For instance, generating a 5-second 480p video by LongCat-Video <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">team2025longcat</span>)</cite> requires approximately <math id="S1.p3.1.m1" class="ltx_Math" alttext="38" display="inline" intent=":literal"><semantics><mn>38</mn><annotation encoding="application/x-tex">38</annotation></semantics></math>K tokens, corresponding to roughly <math id="S1.p3.2.m2" class="ltx_Math" alttext="34" display="inline" intent=":literal"><semantics><mn>34</mn><annotation encoding="application/x-tex">34</annotation></semantics></math> GB of KV-cache, which already exceeds the memory capacity of a single RTX 5090 GPU. As generation horizons lengthen, this constraint rapidly becomes hardware-limiting: even frontier world-model systems still limit generation to around 60 seconds in practice<span id="footnote1" class="ltx_note ltx_role_footnote"><sup class="ltx_note_mark">*</sup><span class="ltx_note_outer"><span class="ltx_note_content"><sup class="ltx_note_mark">*</sup><span class="ltx_tag ltx_tag_note">*</span><a href="https://labs.google/projectgenie" title="" class="ltx_ref ltx_url ltx_font_typewriter">https://labs.google/projectgenie</a></span></span></span>. Consequently, the memory bottleneck often determines whether these models can be broadly deployed.</p>
+</div>
+<div id="S1.p4" class="ltx_para">
+<p id="S1.p4.1" class="ltx_p">More importantly, KV-cache is not merely an efficiency bottleneck, it is also a capability bottleneck. We observe a strong correlation between context length and long-horizon consistency: retaining longer history in KV-cache substantially improves the preservation of identity, scene layout, and motion semantics over extended generation <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">hong2025relic</span>)</cite>.</p>
+</div>
+<div id="S1.p5" class="ltx_para">
+<p id="S1.p5.1" class="ltx_p">In this paper, we tackle the memory bottleneck by quantizing the KV-cache in auto-regressive video models. Although KV-cache quantization is mature in LLM serving with extensive work <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">liu2024kivi</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">hooper2024kvquant</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">kang2024gear</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">ashkboos2024quarot</span>)</cite>, porting these techniques naively to video diffusion leads to severe quality degradation. The gap stems from fundamentally different activation statistics: video models exhibit substantially more heterogeneous numeric distributions across both token and channel dimensions (§ <a href="#S3.SS2" title="3.2 Video KV-Cache Quantization is Challenging ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3.2</span></a>), rendering the LLM-oriented assumptions brittle.</p>
+</div>
+<div id="S1.p6" class="ltx_para">
+<p id="S1.p6.1" class="ltx_p">To bridge this gap, we propose <span id="S1.p6.1.1" class="ltx_text ltx_font_bold">Quant VideoGen (QVG)</span>, a training-free KV-cache quantization framework that achieves a Pareto-frontier trade-off between generation quality and KV-cache memory footprint.
+The key observation behind QVG is that KV-cache of video models exhibits strong spatio-temporal redundancy <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">xi2025sparsevideogenacceleratingvideo</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">yang2025sparsevideogen2</span>)</cite>, where tokens that are spatially or temporally adjacent tend to be numerically similar in latent space.</p>
+</div>
+<div id="S1.p7" class="ltx_para">
+<p id="S1.p7.1" class="ltx_p">Based on this observation, we propose <span id="S1.p7.1.1" class="ltx_text ltx_font_italic">Semantic-Aware Smoothing</span>, which groups tokens based on their similarity in latent space before quantization, to mitigate the heterogeneity in the numeric distribution.
+We apply the <em id="S1.p7.1.2" class="ltx_emph ltx_font_italic">k</em>-means algorithm on KV-cache along the sequence length axis to form <span id="S1.p7.1.3" class="ltx_text ltx_font_bold">token groups</span>.
+By subtracting the average value of each group (i.e., the centroid), the resulting <span id="S1.p7.1.4" class="ltx_text ltx_font_bold">residual tensors</span> have a much smaller magnitude and are more homogeneous, making it a quantization-friendly numeric distribution.</p>
+</div>
+<div id="S1.p8" class="ltx_para">
+<p id="S1.p8.1" class="ltx_p">To further reduce the quantization error, we propose <span id="S1.p8.1.1" class="ltx_text ltx_font_italic">Progressive Residual Quantization</span>, a scheme that compresses the residual tensors in multiple stages to further improve the performance.
+Inspired by streaming video codecs <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">svc</span>)</cite>, which progressively encode multi-scale representations, QVG progressively groups residuals to capture information from coarse to fine granularity.
+This design enables a flexible trade-off between quality and compression rate by varying the number of stages.</p>
+</div>
+<div id="S1.p9" class="ltx_para">
+<p id="S1.p9.3" class="ltx_p">We evaluate QVG on autoregressive video generation models, including LongCat-Video <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">team2025longcat</span>)</cite>, HY-WorldPlay <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">worldplay2025</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">hyworld2025</span>)</cite>, and Self-Forcing <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">huang2025self</span>)</cite>, primarily on H100 GPUs. Across models and benchmarks, QVG consistently outperforms state-of-the-art KV-cache quantization baselines, delivering higher visual quality at lower memory cost. Concretely, QVG reduces KV-cache memory by up to <math id="S1.p9.1.m1" class="ltx_math_unparsed" alttext="7.0\times" display="inline" intent=":literal"><semantics><mrow><mn>7.0</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">7.0\times</annotation></semantics></math> while incurring minimal end-to-end latency overhead (&lt; <math id="S1.p9.2.m2" class="ltx_Math" alttext="4\%" display="inline" intent=":literal"><semantics><mrow><mn>4</mn><mo>%</mo></mrow><annotation encoding="application/x-tex">4\%</annotation></semantics></math>), making it practical for real-world deployment. Notably, QVG makes it possible to run HY-WorldPlay-8B on a single RTX 4090 for the first time, achieving PSNR <math id="S1.p9.3.m3" class="ltx_Math" alttext="&gt;" display="inline" intent=":literal"><semantics><mo>&gt;</mo><annotation encoding="application/x-tex">&gt;</annotation></semantics></math> 29 relative to the BF16 reference, which was previously infeasible due to memory constraints. On the same hardware (e.g., H100), QVG further enables substantially longer effective KV-cache lengths for self-force <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">huang2025self</span>)</cite>, which translates into improved visual quality, even surpassing baseline BF16 under the original cache budget.</p>
+</div>
+<figure id="S1.F2" class="ltx_figure">
+<div id="S1.F2.1" class="ltx_inline-block ltx_align_center ltx_transformed_outer" style="width:313.4pt;height:109.9pt;vertical-align:-0.0pt;"><span class="ltx_transformed_inner" style="transform:translate(0.0pt,0.0pt) scale(1.0,1.0) ;"><img src="2602.02958v4/x2.png" id="S1.F2.1.g1" class="ltx_graphics ltx_img_landscape" width="595" height="210" alt="Refer to caption">
+</span></div>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S1.F2.3.1.1" class="ltx_text" style="font-size:90%;">Figure 2</span>: </span><span id="S1.F2.4.2" class="ltx_text" style="font-size:90%;">(a) Adopting full KV-cache can resolve the drifting problem but is very likely to be bottlenecked by memory. QVG can successfully generation high-quality long-videos. (b) Video diffusion models exhibit substantial spatiotemporal redundancy: tokens that are spatially or temporally adjacent have high cosine similarity, making compression feasible.</span></figcaption>
+</figure>
+</section>
+<section id="S2" class="ltx_section ltx_indent_first">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">2 </span>Related Work</h2>
+
+<div id="S2.p1" class="ltx_para ltx_noindent">
+<p id="S2.p1.1" class="ltx_p"><span id="S2.p1.1.1" class="ltx_text ltx_font_bold">Auto-regressive video generation models and “memory”.</span>
+Recent video generation models are progressively shifting from bidirectional, clip-level denoising <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">wan2025wan</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">wu2025hunyuanvideo</span>)</cite> toward chunk-level auto-regressive generation <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">yin2025causvid</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">huang2025self</span>)</cite>, driven by the demand for long-horizon synthesis <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">bruce2024genie</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">hyworld2025</span>)</cite> and real-time interaction <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">feng2025streamdiffusionv2</span>)</cite>.
+In auto-regressive video diffusion, frame chunks are generated sequentially with causal attention and KV caching, enabling substantially lower latency than offline diffusion. Beyond pushing the “faster” video generation, another major line of work pursues long-length generation. Training-free length extension methods reschedule noise or adjust temporal frequency to extrapolate pretrained models beyond their training horizon <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">qiu2023freenoise</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">lufreelong</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">lu2025freelongpp</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">zhao2025riflex</span>)</cite>. Complementarily, diffusion–causal hybrids <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">chen2025diffusion</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">song2025historyguidedvideodiffusion</span>)</cite> improve variable-horizon conditioning and stabilize long rollouts, and are beginning to appear in streaming systems, powering applications ranging from world models and interactive agents to entertainment creation <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">hyworld2025</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">worldplay2025</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">polyak2024moviegen</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">shin2025motionstream</span>)</cite>.</p>
+</div>
+<div id="S2.p2" class="ltx_para">
+<p id="S2.p2.1" class="ltx_p">Some works extend long-horizon generation through explicit memory mechanisms and chunked rollouts <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">henschel2025streamingt2v</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">kodaira2025streamditrealtimestreamingtexttovideo</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">xiao2025worldmemlongtermconsistentworld</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025framepack</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2026framepack2</span>)</cite>. However, we emphasize that long-horizon generation is not only an algorithmic “memory” challenge, but also a system one: limited on-device hardware memory directly constrains how much algorithmic memory, <span id="S2.p2.1.1" class="ltx_text ltx_font_italic">i.e.</span> KV-cache, can be retained. Consequently, consistent long-horizon generation is fundamentally limited by the amount of history memory we can maintain within limited hardware memory.</p>
+</div>
+<div id="S2.p3" class="ltx_para ltx_noindent">
+<p id="S2.p3.1" class="ltx_p"><span id="S2.p3.1.1" class="ltx_text ltx_font_bold">Quantization-based KV-cache compression.</span>
+Compressing KV-cache via quantization has been widely studied in LLMs, with diverse designs aimed at reducing memory footprint while preserving generation quality.
+KIVI <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">liu2024kivi</span>)</cite> and KVQuant <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">hooper2024kvquant</span>)</cite> demonstrate that keys and values exhibit different statistics and propose a tuning-free low-bit KV-cache quantization scheme that explicitly handles heavy-tailed outliers.
+Beyond explicit outlier handling, rotation-based approaches such as QuaRot <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">ashkboos2024quarot</span>)</cite> and RotateKV <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">su2025rotatekv</span>)</cite> apply structured transformations to smooth activation distributions before quantization.
+Several works also explore token-heterogeneous strategies, e.g., prioritizing a subset of tokens to preserve quality under aggressive compression <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">duanmu2024skvq</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">he2024zipcache</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">su2025kvsink</span>)</cite>.
+Vector-quantization-based methods compress KV-cache by representing tokens with learned codebooks <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">hooper2024kvquant</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025pqcache</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">li2025commvq</span>)</cite>.
+While effective for LLMs, these methods do not explicitly exploit video-specific spatiotemporal redundancy (§ <a href="#S3.SS3" title="3.3 Video KV-Cache is Highly Redundant ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3.3</span></a>) and are not tailored to the distinct numeric characteristics that make video KV-cache quantization particularly challenging (§ <a href="#S3.SS2" title="3.2 Video KV-Cache Quantization is Challenging ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3.2</span></a>).</p>
+</div>
+</section>
+<section id="S3" class="ltx_section ltx_indent_first">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">3 </span>Motivation</h2>
+
+<figure id="S3.1" class="ltx_figure ltx_minipage ltx_align_middle" style="width:345.0pt;">
+<div id="S3.1.2" class="ltx_block">
+<img src="2602.02958v4/x3.png" id="S3.1.1.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="595" height="175" alt="[Uncaptioned image]">
+<figure id="S3.F3" class="ltx_figure ltx_align_center">
+<figcaption class="ltx_caption"><span class="ltx_tag ltx_tag_figure"><span id="S3.F3.2.1.1" class="ltx_text" style="font-size:90%;">Figure 3</span>: </span><span id="S3.F3.3.2" class="ltx_text" style="font-size:90%;">(a-c) Semantic-Aware Smoothing effectively smoothing the KV-cache distribution to make it more regular and quantization-friendly. We (1) group similar tokens together based on their semantic similarity and (2) subtract the centroid for each group to smooth the distribution. (d) The magnitude is significantly reduced and more concentrated around 0, making it much easier to be quantized.</span></figcaption>
+</figure>
+</div>
+</figure>
+<section id="S3.SS1" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">3.1 </span>KV-Cache Bottlenecks Auto-Regressive Video Generation</h3>
+
+<div id="S3.SS1.p1" class="ltx_para ltx_noindent">
+<p id="S3.SS1.p1.4" class="ltx_p"><span id="S3.SS1.p1.4.1" class="ltx_text ltx_font_bold">Video KV-cache is extremely memory-intensive.</span>
+In auto-regressive video diffusion models, the KV-cache grows linearly with the number of
+latent tokens and quickly dominates GPU memory usage for long-horizon, high-resolution generation.
+For a model with <math id="S3.SS1.p1.1.m1" class="ltx_Math" alttext="L" display="inline" intent=":literal"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math> layers and hidden dimension <math id="S3.SS1.p1.2.m2" class="ltx_Math" alttext="d" display="inline" intent=":literal"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math>, storing the KV-cache for a video with spatial size <math id="S3.SS1.p1.3.m3" class="ltx_Math" alttext="H\times W" display="inline" intent=":literal"><semantics><mrow><mi>H</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>W</mi></mrow><annotation encoding="application/x-tex">H\times W</annotation></semantics></math> and temporal length <math id="S3.SS1.p1.4.m4" class="ltx_Math" alttext="T" display="inline" intent=":literal"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math> requires</p>
+<table id="S3.Ex1" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S3.Ex1.m1" class="ltx_Math" alttext="\mathrm{Mem}_{\mathrm{KV}}=2\cdot L\cdot(HWT)\cdot d\cdot\text{Byte}_{\text{BF16}}." display="block" intent=":literal"><semantics><mrow><mrow><msub><mi>Mem</mi><mi>KV</mi></msub><mo>=</mo><mrow><mn>2</mn><mo lspace="0.222em" rspace="0.222em">⋅</mo><mi>L</mi><mo lspace="0.222em" rspace="0.222em">⋅</mo><mrow><mo stretchy="false">(</mo><mrow><mi>H</mi><mo lspace="0em" rspace="0em">​</mo><mi>W</mi><mo lspace="0em" rspace="0em">​</mo><mi>T</mi></mrow><mo rspace="0.055em" stretchy="false">)</mo></mrow><mo rspace="0.222em">⋅</mo><mi>d</mi><mo lspace="0.222em" rspace="0.222em">⋅</mo><msub><mtext>Byte</mtext><mtext>BF16</mtext></msub></mrow></mrow><mo lspace="0em">.</mo></mrow><annotation encoding="application/x-tex">\mathrm{Mem}_{\mathrm{KV}}=2\cdot L\cdot(HWT)\cdot d\cdot\text{Byte}_{\text{BF16}}.</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+</tr></tbody>
+</table>
+<p id="S3.SS1.p1.7" class="ltx_p">For example, in LongCat-Video <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">team2025longcat</span>)</cite>, a 5-second 480p context corresponds to roughly <math id="S3.SS1.p1.5.m1" class="ltx_Math" alttext="38" display="inline" intent=":literal"><semantics><mn>38</mn><annotation encoding="application/x-tex">38</annotation></semantics></math>K latent tokens,
+resulting in a KV-cache memory footprint of about <math id="S3.SS1.p1.6.m2" class="ltx_Math" alttext="34" display="inline" intent=":literal"><semantics><mn>34</mn><annotation encoding="application/x-tex">34</annotation></semantics></math> GB, compared to only <math id="S3.SS1.p1.7.m3" class="ltx_Math" alttext="27" display="inline" intent=":literal"><semantics><mn>27</mn><annotation encoding="application/x-tex">27</annotation></semantics></math> GB for model parameters.
+Thus, KV-cache capacity is the primary bottleneck for long-horizon video generation.</p>
+</div>
+<div id="S3.SS1.p2" class="ltx_para ltx_noindent">
+<p id="S3.SS1.p2.1" class="ltx_p"><span id="S3.SS1.p2.1.1" class="ltx_text ltx_font_bold">Short-context results in inferior generation quality.</span>
+Existing auto-regressive video systems commonly enforce a fixed-length context window in their default inference configurations.
+For example, Wan distilled Self-Forcing <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">huang2025self</span>)</cite> uses a rolling KV-cache with a default window of 21 latent frames, and HY-WorldPlay <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">hyworld2025</span>; <span class="ltx_ref ltx_missing_citation ltx_ref_self">worldplay2025</span>)</cite> retains a compact memory of only 20 frames.
+This truncation is primarily driven by GPU memory concerns, where full-context KV-cache becomes quickly infeasible for long-horizon generation.
+However, bounding the context effectively shrinks the model’s working memory, which can exacerbate long-horizon drift and limit revisitability and temporal consistency, as visualized in Figure <a href="#S1.F2" title="Figure 2 ‣ 1 Introduction ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2</span></a>(a). Therefore, we hope to address this memory bottleneck by quantizing the KV-cache to a lower bit-precision.</p>
+</div>
+<figure id="S3.SS1.1" class="ltx_figure ltx_minipage ltx_align_middle" style="width:345.0pt;">
+<div id="S3.SS1.1.2" class="ltx_block">
+<img src="2602.02958v4/x4.png" id="S3.SS1.1.1.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="594" height="270" alt="[Uncaptioned image]">
+<figure id="S3.F4" class="ltx_figure ltx_align_center">
+<figcaption class="ltx_caption"><span class="ltx_tag ltx_tag_figure"><span id="S3.F4.2.1.1" class="ltx_text" style="font-size:90%;">Figure 4</span>: </span><span id="S3.F4.3.2" class="ltx_text" style="font-size:90%;">Overview of QVG framework. (a) Original tensor’s distribution is irregular and hard to quantize. (b) Semantic-Aware Smoothing groups similar tokens and subtracts centroids for each group to make the residual quantization friendly. (c) Progressive Residual Quantization further lowers quantization error by iteratively applying Semantic-Aware Smoothing algorithm. (d) The final residual tensor becomes much easier to quantize and has a much lower quantization error.</span></figcaption>
+</figure>
+</div>
+</figure>
+</section>
+<section id="S3.SS2" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">3.2 </span>Video KV-Cache Quantization is Challenging</h3>
+
+<div id="S3.SS2.p1" class="ltx_para">
+<p id="S3.SS2.p1.1" class="ltx_p">Quantization maps floating-point values into low-bit values to reduce the memory footprint.
+In this paper, we consider symmetric per-group integer quantization with bit-width <math id="S3.SS2.p1.1.m1" class="ltx_Math" alttext="b" display="inline" intent=":literal"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>.
+The quantize and dequantize process is formulated as</p>
+<table id="S3.E1" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S3.E1.m1" class="ltx_Math" alttext="X_{\text{INT}},S_{X}=Q(X_{\text{BF16}}),\quad\hat{X}=S_{X}\cdot X_{\text{INT}}" display="block" intent=":literal"><semantics><mrow><mrow><mrow><msub><mi>X</mi><mtext>INT</mtext></msub><mo>,</mo><msub><mi>S</mi><mi>X</mi></msub></mrow><mo>=</mo><mrow><mi>Q</mi><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><msub><mi>X</mi><mtext>BF16</mtext></msub><mo stretchy="false">)</mo></mrow></mrow></mrow><mo rspace="1.167em">,</mo><mrow><mover accent="true"><mi>X</mi><mo>^</mo></mover><mo>=</mo><mrow><msub><mi>S</mi><mi>X</mi></msub><mo lspace="0.222em" rspace="0.222em">⋅</mo><msub><mi>X</mi><mtext>INT</mtext></msub></mrow></mrow></mrow><annotation encoding="application/x-tex">X_{\text{INT}},S_{X}=Q(X_{\text{BF16}}),\quad\hat{X}=S_{X}\cdot X_{\text{INT}}</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(1)</span></td>
+</tr></tbody>
+</table>
+<p id="S3.SS2.p1.2" class="ltx_p">where</p>
+<table id="S3.E2" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S3.E2.m1" class="ltx_math_unparsed" alttext="X_{\text{INT}}=\left\lfloor\frac{X_{\text{BF16}}}{S_{X}}\right\rceil,\quad S_{X}=\frac{\max\!\left(|X_{\text{BF16}}|\right)}{2^{b-1}-1}" display="block" intent=":literal"><semantics><mrow><msub><mi>X</mi><mtext>INT</mtext></msub><mo>=</mo><mrow><mo>⌊</mo><mfrac><msub><mi>X</mi><mtext>BF16</mtext></msub><msub><mi>S</mi><mi>X</mi></msub></mfrac><mo>⌉</mo></mrow><mo rspace="1.167em">,</mo><msub><mi>S</mi><mi>X</mi></msub><mo>=</mo><mfrac><mrow><mpadded style="width:1.808em;" width="1.808em"><mi>max</mi></mpadded><mo>⁡</mo><mrow><mo>(</mo><mrow><mo stretchy="false">|</mo><msub><mi>X</mi><mtext>BF16</mtext></msub><mo stretchy="false">|</mo></mrow><mo>)</mo></mrow></mrow><mrow><msup><mn>2</mn><mrow><mi>b</mi><mo>−</mo><mn>1</mn></mrow></msup><mo>−</mo><mn>1</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">X_{\text{INT}}=\left\lfloor\frac{X_{\text{BF16}}}{S_{X}}\right\rceil,\quad S_{X}=\frac{\max\!\left(|X_{\text{BF16}}|\right)}{2^{b-1}-1}</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(2)</span></td>
+</tr></tbody>
+</table>
+</div>
+<div id="S3.SS2.p2" class="ltx_para">
+<p id="S3.SS2.p2.1" class="ltx_p">For any <math id="S3.SS2.p2.1.m1" class="ltx_Math" alttext="x\in X_{\text{BF16}}" display="inline" intent=":literal"><semantics><mrow><mi>x</mi><mo>∈</mo><msub><mi>X</mi><mtext>BF16</mtext></msub></mrow><annotation encoding="application/x-tex">x\in X_{\text{BF16}}</annotation></semantics></math>, the quantization error satisfies</p>
+<table id="S3.E3" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S3.E3.m1" class="ltx_Math" alttext="|x-\hat{x}|=S_{X}\cdot\mathsf{RoundErr}\!\left(\frac{x}{S_{X}}\right)\leq\frac{S_{X}}{2}," display="block" intent=":literal"><semantics><mrow><mrow><mrow><mo stretchy="false">|</mo><mrow><mi>x</mi><mo>−</mo><mover accent="true"><mi>x</mi><mo>^</mo></mover></mrow><mo stretchy="false">|</mo></mrow><mo>=</mo><mrow><mrow><msub><mi>S</mi><mi>X</mi></msub><mo lspace="0.222em" rspace="0.222em">⋅</mo><mpadded style="width:5.830em;" width="5.830em"><mi>𝖱𝗈𝗎𝗇𝖽𝖤𝗋𝗋</mi></mpadded></mrow><mo lspace="0em" rspace="0em">​</mo><mrow><mo>(</mo><mfrac><mi>x</mi><msub><mi>S</mi><mi>X</mi></msub></mfrac><mo>)</mo></mrow></mrow><mo>≤</mo><mfrac><msub><mi>S</mi><mi>X</mi></msub><mn>2</mn></mfrac></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">|x-\hat{x}|=S_{X}\cdot\mathsf{RoundErr}\!\left(\frac{x}{S_{X}}\right)\leq\frac{S_{X}}{2},</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(3)</span></td>
+</tr></tbody>
+</table>
+<p id="S3.SS2.p2.2" class="ltx_p">where <math id="S3.SS2.p2.2.m1" class="ltx_math_unparsed" alttext="\mathsf{RoundErr}(u)=\lvert u-\lfloor u\rceil\rvert" display="inline" intent=":literal"><semantics><mrow><mi>𝖱𝗈𝗎𝗇𝖽𝖤𝗋𝗋</mi><mrow><mo stretchy="false">(</mo><mi>u</mi><mo stretchy="false">)</mo></mrow><mo>=</mo><mrow><mo stretchy="false">|</mo><mi>u</mi><mo>−</mo><mrow><mo stretchy="false">⌊</mo><mi>u</mi><mo stretchy="false">⌉</mo></mrow><mo stretchy="false">|</mo></mrow></mrow><annotation encoding="application/x-tex">\mathsf{RoundErr}(u)=\lvert u-\lfloor u\rceil\rvert</annotation></semantics></math>.
+Assuming each elements are independent, the expected error obeys</p>
+<table id="S3.E4" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S3.E4.m1" class="ltx_Math" alttext="\mathbb{E}\!\left[|x-\hat{x}|\right]\propto S_{X}," display="block" intent=":literal"><semantics><mrow><mrow><mrow><mpadded style="width:0.497em;" width="0.497em"><mi>𝔼</mi></mpadded><mo lspace="0em" rspace="0em">​</mo><mrow><mo>[</mo><mrow><mo stretchy="false">|</mo><mrow><mi>x</mi><mo>−</mo><mover accent="true"><mi>x</mi><mo>^</mo></mover></mrow><mo stretchy="false">|</mo></mrow><mo>]</mo></mrow></mrow><mo>∝</mo><msub><mi>S</mi><mi>X</mi></msub></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\mathbb{E}\!\left[|x-\hat{x}|\right]\propto S_{X},</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(4)</span></td>
+</tr></tbody>
+</table>
+<p id="S3.SS2.p2.3" class="ltx_p">so large scaling factors (e.g., caused by outliers) lead to large quantization error.</p>
+</div>
+<div id="S3.SS2.p3" class="ltx_para">
+<p id="S3.SS2.p3.2" class="ltx_p">Crucially, this effect is exacerbated in auto-regressive video generation, where the KV-cache exhibits highly dynamic numeric ranges across both tokens and channels.
+Empirically, on Wan distilled Self-Forcing and LongCat-Video, we observe that <math id="S3.SS2.p3.1.m1" class="ltx_Math" alttext="\max|K|\sim 1e2" display="inline" intent=":literal"><semantics><mrow><mrow><mi>max</mi><mo>⁡</mo><mrow><mo stretchy="false">|</mo><mi>K</mi><mo stretchy="false">|</mo></mrow></mrow><mo>∼</mo><mrow><mn>1</mn><mo lspace="0em" rspace="0em">​</mo><mi>e</mi><mo lspace="0em" rspace="0em">​</mo><mn>2</mn></mrow></mrow><annotation encoding="application/x-tex">\max|K|\sim 1e2</annotation></semantics></math> and <math id="S3.SS2.p3.2.m2" class="ltx_Math" alttext="\max|V|\sim 1e3" display="inline" intent=":literal"><semantics><mrow><mrow><mi>max</mi><mo>⁡</mo><mrow><mo stretchy="false">|</mo><mi>V</mi><mo stretchy="false">|</mo></mrow></mrow><mo>∼</mo><mrow><mn>1</mn><mo lspace="0em" rspace="0em">​</mo><mi>e</mi><mo lspace="0em" rspace="0em">​</mo><mn>3</mn></mrow></mrow><annotation encoding="application/x-tex">\max|V|\sim 1e3</annotation></semantics></math>.
+Beyond the exceptionally large numerical range, we also observe irregularity across the channel dimension at the token level: channels that are outliers for some tokens may not be outliers for others, as shown in Figure <a href="#S3.F3" title="Figure 3 ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>(a-b).
+This behavior is intrinsic to video models: tokens correspond to diverse spatial regions and motion patterns whose relevance evolves over time, leading attention projections to produce strongly non-uniform activation scales across space and time.</p>
+</div>
+</section>
+<section id="S3.SS3" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">3.3 </span>Video KV-Cache is Highly Redundant</h3>
+
+<div id="S3.SS3.p1" class="ltx_para ltx_noindent">
+<p id="S3.SS3.p1.1" class="ltx_p"><span id="S3.SS3.p1.1.1" class="ltx_text ltx_font_bold">Spatiotemporal redundancy in video tokens.</span>
+Video content exhibits strong redundancy across both time and space, and this redundancy is reflected in the latent tokens.
+As shown in Figure <a href="#S1.F2" title="Figure 2 ‣ 1 Introduction ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2</span></a>(b), for a fixed spatial location (i.e., the same patch index), tokens from adjacent frames often remain highly similar because large portions of a scene are static or evolve smoothly.
+Shown in Figure <a href="#S1.F2" title="Figure 2 ‣ 1 Introduction ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2</span></a>(c), spatially nearby patches also map to highly similar latent tokens: when two nearby patches have high pixel-level similarity, their corresponding latent tokens typically exhibit high cosine similarity as well.</p>
+</div>
+<div id="S3.SS3.p2" class="ltx_para ltx_noindent">
+<p id="S3.SS3.p2.1" class="ltx_p"><span id="S3.SS3.p2.1.1" class="ltx_text ltx_font_bold">Progressive encoding of videos.</span>
+Videos exhibit an inherent progressive structure that naturally supports residual-based representations.
+Temporal coherence allows most frames to be predicted at a coarse level, capturing global layout and dominant motion, while finer details are introduced incrementally through residuals.
+As a result, video content can be encoded progressively from coarse scene structure and color composition to fine-grained textures and high-frequency details.
+We quantitatively showcase this in Table <a href="#S4.T1" title="Table 1 ‣ 4.1 Semantic-Aware Smoothing ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>.</p>
+</div>
+</section>
+</section>
+<section id="S4" class="ltx_section ltx_indent_first">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">4 </span>Methodology</h2>
+
+<div id="S4.p1" class="ltx_para">
+<p id="S4.p1.1" class="ltx_p">Based on these insights, we introduce QVG as a reliable KV-cache quantization technique for video generation. We first introduce Semantic-Aware Smoothing in § <a href="#S4.SS1" title="4.1 Semantic-Aware Smoothing ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4.1</span></a> to smooth the KV-cache distribution and make it more quantization-friendly, as visualized in Figure <a href="#S3.F3" title="Figure 3 ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>. We then introduce Progressive Residual Quantization in § <a href="#S4.SS2" title="4.2 Progressive Residual Quantization ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4.2</span></a> to further improve the generation quality.
+Besides, we also discuss several algorithm-system co-design optimizations in § <a href="#S4.SS3" title="4.3 Efficient Algorithm-System Co-design ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4.3</span></a>. In Figure <a href="#S3.F4" title="Figure 4 ‣ 3.1 KV-Cache Bottlenecks Auto-Regressive Video Generation ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4</span></a> we provide an overview of our proposed method.</p>
+</div>
+<section id="S4.SS1" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.1 </span>Semantic-Aware Smoothing</h3>
+
+<div id="S4.SS1.p1" class="ltx_para">
+<p id="S4.SS1.p1.1" class="ltx_p">As discussed in § <a href="#S3.SS3" title="3.3 Video KV-Cache is Highly Redundant ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3.3</span></a>, video tokens exhibit strong spatiotemporal redundancy.
+Semantic-Aware Smoothing exploits this redundancy to form semantically similar groups, reducing their magnitude and enabling accurate low-bit quantization.</p>
+</div>
+<div id="S4.SS1.p2" class="ltx_para ltx_noindent">
+<p id="S4.SS1.p2.12" class="ltx_p"><span id="S4.SS1.p2.12.1" class="ltx_text ltx_font_bold">Semantic-based grouping.</span>
+QVG processes the KV-cache in a chunk-by-chunk manner, where each chunk consists of tokens from a few frames.
+Consider a chunk containing <math id="S4.SS1.p2.1.m1" class="ltx_Math" alttext="N" display="inline" intent=":literal"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math> tokens (e.g., <math id="S4.SS1.p2.2.m2" class="ltx_Math" alttext="N=HWT_{c}" display="inline" intent=":literal"><semantics><mrow><mi>N</mi><mo>=</mo><mrow><mi>H</mi><mo lspace="0em" rspace="0em">​</mo><mi>W</mi><mo lspace="0em" rspace="0em">​</mo><msub><mi>T</mi><mi>c</mi></msub></mrow></mrow><annotation encoding="application/x-tex">N=HWT_{c}</annotation></semantics></math> for <math id="S4.SS1.p2.3.m3" class="ltx_Math" alttext="H" display="inline" intent=":literal"><semantics><mi>H</mi><annotation encoding="application/x-tex">H</annotation></semantics></math> height, <math id="S4.SS1.p2.4.m4" class="ltx_Math" alttext="W" display="inline" intent=":literal"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math> width, and <math id="S4.SS1.p2.5.m5" class="ltx_Math" alttext="T_{c}" display="inline" intent=":literal"><semantics><msub><mi>T</mi><mi>c</mi></msub><annotation encoding="application/x-tex">T_{c}</annotation></semantics></math> latent frames).
+Let <math id="S4.SS1.p2.6.m6" class="ltx_Math" alttext="\mathbf{X}\in\mathbb{R}^{N\times d}" display="inline" intent=":literal"><semantics><mrow><mi>𝐗</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>N</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>d</mi></mrow></msup></mrow><annotation encoding="application/x-tex">\mathbf{X}\in\mathbb{R}^{N\times d}</annotation></semantics></math> denote the corresponding KV-cache, with <math id="S4.SS1.p2.7.m7" class="ltx_Math" alttext="d" display="inline" intent=":literal"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math> being the head dimension.
+We partition the <math id="S4.SS1.p2.8.m8" class="ltx_Math" alttext="N" display="inline" intent=":literal"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math> tokens into <math id="S4.SS1.p2.9.m9" class="ltx_Math" alttext="C" display="inline" intent=":literal"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> groups using the <em id="S4.SS1.p2.12.2" class="ltx_emph ltx_font_italic">k</em>-means algorithm based on their hidden representations.
+This produces a set of disjoint groups
+<math id="S4.SS1.p2.10.m10" class="ltx_Math" alttext="\mathcal{G}=\{\mathcal{G}_{1},\mathcal{G}_{2},\dots,\mathcal{G}_{C}\}" display="inline" intent=":literal"><semantics><mrow><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>=</mo><mrow><mo stretchy="false">{</mo><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mn>1</mn></msub><mo>,</mo><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mn>2</mn></msub><mo>,</mo><mi mathvariant="normal">…</mi><mo>,</mo><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mi>C</mi></msub><mo stretchy="false">}</mo></mrow></mrow><annotation encoding="application/x-tex">\mathcal{G}=\{\mathcal{G}_{1},\mathcal{G}_{2},\dots,\mathcal{G}_{C}\}</annotation></semantics></math>,
+where each group <math id="S4.SS1.p2.11.m11" class="ltx_Math" alttext="\mathcal{G}_{i}" display="inline" intent=":literal"><semantics><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mathcal{G}_{i}</annotation></semantics></math> contains tokens with similar hidden-representations. As visualized in Figure <a href="#S3.F3" title="Figure 3 ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>(a), tokens within the same group exhibit significantly more homogeneous value distributions. We represent
+the mean value of each group (also known as centroid) as <math id="S4.SS1.p2.12.m12" class="ltx_Math" alttext="C_{i}\in\mathbb{R}^{d}" display="inline" intent=":literal"><semantics><mrow><msub><mi>C</mi><mi>i</mi></msub><mo>∈</mo><msup><mi>ℝ</mi><mi>d</mi></msup></mrow><annotation encoding="application/x-tex">C_{i}\in\mathbb{R}^{d}</annotation></semantics></math>.</p>
+</div>
+<div id="S4.SS1.p3" class="ltx_para ltx_noindent">
+<p id="S4.SS1.p3.1" class="ltx_p"><span id="S4.SS1.p3.1.1" class="ltx_text ltx_font_bold">Residual computation via centroid subtraction.</span>
+Then for each group <math id="S4.SS1.p3.1.m1" class="ltx_Math" alttext="\mathcal{G}_{i}" display="inline" intent=":literal"><semantics><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mathcal{G}_{i}</annotation></semantics></math>, to make the distribution smoother, we subtract the centroid and obtain the residual:</p>
+<table id="S4.E5" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S4.E5.m1" class="ltx_Math" alttext="{\bm{R}}_{i}={\bm{X}}_{{\mathcal{G}}_{i}}-C_{i},\quad{\bm{R}}_{i}\in\mathbb{R}^{|{\mathcal{G}}_{i}|\times d}," display="block" intent=":literal"><semantics><mrow><mrow><mrow><msub><mi>𝑹</mi><mi>i</mi></msub><mo>=</mo><mrow><msub><mi>𝑿</mi><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mi>i</mi></msub></msub><mo>−</mo><msub><mi>C</mi><mi>i</mi></msub></mrow></mrow><mo rspace="1.167em">,</mo><mrow><msub><mi>𝑹</mi><mi>i</mi></msub><mo>∈</mo><msup><mi>ℝ</mi><mrow><mrow><mo stretchy="false">|</mo><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mi>i</mi></msub><mo rspace="0.055em" stretchy="false">|</mo></mrow><mo rspace="0.222em">×</mo><mi>d</mi></mrow></msup></mrow></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">{\bm{R}}_{i}={\bm{X}}_{{\mathcal{G}}_{i}}-C_{i},\quad{\bm{R}}_{i}\in\mathbb{R}^{|{\mathcal{G}}_{i}|\times d},</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(5)</span></td>
+</tr></tbody>
+</table>
+<p id="S4.SS1.p3.6" class="ltx_p">where <math id="S4.SS1.p3.2.m1" class="ltx_Math" alttext="{\bm{X}}_{{\mathcal{G}}_{i}}" display="inline" intent=":literal"><semantics><msub><mi>𝑿</mi><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mi>i</mi></msub></msub><annotation encoding="application/x-tex">{\bm{X}}_{{\mathcal{G}}_{i}}</annotation></semantics></math> refers to the matrix formed by tokens <math id="S4.SS1.p3.3.m2" class="ltx_Math" alttext="\in{\mathcal{G}}_{i}" display="inline" intent=":literal"><semantics><mrow><mi></mi><mo>∈</mo><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\in{\mathcal{G}}_{i}</annotation></semantics></math>.
+As discussed in § <a href="#S3.SS2" title="3.2 Video KV-Cache Quantization is Challenging ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3.2</span></a>, quantization error is proportional to the maximum value in the group.
+Due to the <em id="S4.SS1.p3.6.1" class="ltx_emph ltx_font_italic">k</em>-means clustering, these large values are expected to be shared across the group and are captured by <math id="S4.SS1.p3.4.m3" class="ltx_Math" alttext="C_{i}" display="inline" intent=":literal"><semantics><msub><mi>C</mi><mi>i</mi></msub><annotation encoding="application/x-tex">C_{i}</annotation></semantics></math>.
+Therefore, as shown in Figure <a href="#S3.F3" title="Figure 3 ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>, by subtracting the centroid the maximum value in each group becomes much smaller, which results in lower quantization error. As visualized in Figure <a href="#S4.F6" title="Figure 6 ‣ 4.1 Semantic-Aware Smoothing ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">6</span></a>, we successfully reduce the quantization error of Key Cache by <math id="S4.SS1.p3.5.m4" class="ltx_math_unparsed" alttext="\sim 6.9\times" display="inline" intent=":literal"><semantics><mrow><mo>∼</mo><mn>6.9</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">\sim 6.9\times</annotation></semantics></math>, and reduce the quantization error of Value Cache by <math id="S4.SS1.p3.6.m5" class="ltx_math_unparsed" alttext="\sim 2.6\times" display="inline" intent=":literal"><semantics><mrow><mo>∼</mo><mn>2.6</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">\sim 2.6\times</annotation></semantics></math> on all precision choices. This proves the effectiveness of our method.</p>
+</div>
+<figure id="S4.T1" class="ltx_table">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_table"><span id="S4.T1.26.3.1" class="ltx_text" style="font-size:90%;">Table 1</span>: </span><span id="S4.T1.4.2" class="ltx_text" style="font-size:90%;">Quality and Compression results of QVG and baselines. QVG-Pro achieves <math id="S4.T1.3.1.m1" class="ltx_math_unparsed" alttext="4.97\times\sim 5.20\times" display="inline" intent=":literal"><semantics><mrow><mn>4.97</mn><mo lspace="0.222em" rspace="0em">×</mo><mo lspace="0em">∼</mo><mn>5.20</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">4.97\times\sim 5.20\times</annotation></semantics></math> compression ratio, while achieving much better fidelity scores than all baselines. QVG further pushes the compression ratio to <math id="S4.T1.4.2.m2" class="ltx_math_unparsed" alttext="6.94\times\sim 7.05\times" display="inline" intent=":literal"><semantics><mrow><mn>6.94</mn><mo lspace="0.222em" rspace="0em">×</mo><mo lspace="0em">∼</mo><mn>7.05</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">6.94\times\sim 7.05\times</annotation></semantics></math> and still maintains near-lossless video quality scores.</span></figcaption>
+<div id="S4.T1.24" class="ltx_inline-block ltx_align_center ltx_transformed_outer" style="width:310.5pt;height:209.8pt;vertical-align:-104.1pt;"><span class="ltx_transformed_inner" style="transform:translate(-78.6pt,53.1pt) scale(0.663941744277697,0.663941744277697) ;">
+<table id="S4.T1.24.20" class="ltx_tabular ltx_align_middle">
+<tr id="S4.T1.24.20.21" class="ltx_tr">
+<td id="S4.T1.24.20.21.1" class="ltx_td ltx_align_left ltx_border_r ltx_border_tt">
+<span id="S4.T1.24.20.21.1.1" class="ltx_text"></span><span id="S4.T1.24.20.21.1.2" class="ltx_text" style="font-size:50%;">
+<span id="S4.T1.24.20.21.1.2.1" class="ltx_tabular ltx_align_bottom">
+<span id="S4.T1.24.20.21.1.2.1.1" class="ltx_tr">
+<span id="S4.T1.24.20.21.1.2.1.1.1" class="ltx_td ltx_nopad_r ltx_align_left"><span id="S4.T1.24.20.21.1.2.1.1.1.1" class="ltx_text ltx_font_bold">Method</span></span></span>
+</span></span><span id="S4.T1.24.20.21.1.3" class="ltx_text"></span><span id="S4.T1.24.20.21.1.4" class="ltx_text" style="font-size:50%;"></span>
+</td>
+<td id="S4.T1.24.20.21.2" class="ltx_td ltx_align_center ltx_border_r ltx_border_tt">
+<span id="S4.T1.24.20.21.2.1" class="ltx_text"></span><span id="S4.T1.24.20.21.2.2" class="ltx_text" style="font-size:50%;"> </span><span id="S4.T1.24.20.21.2.3" class="ltx_text" style="font-size:50%;">
+<span id="S4.T1.24.20.21.2.3.1" class="ltx_tabular ltx_align_bottom">
+<span id="S4.T1.24.20.21.2.3.1.1" class="ltx_tr">
+<span id="S4.T1.24.20.21.2.3.1.1.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.2.3.1.1.1.1" class="ltx_text ltx_font_bold">Compression</span></span></span>
+<span id="S4.T1.24.20.21.2.3.1.2" class="ltx_tr">
+<span id="S4.T1.24.20.21.2.3.1.2.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.2.3.1.2.1.1" class="ltx_text ltx_font_bold">Ratio (BF16)</span></span></span>
+</span></span><span id="S4.T1.24.20.21.2.4" class="ltx_text"></span><span id="S4.T1.24.20.21.2.5" class="ltx_text" style="font-size:50%;"></span>
+</td>
+<td id="S4.T1.24.20.21.3" class="ltx_td ltx_align_center ltx_border_tt">
+<span id="S4.T1.24.20.21.3.1" class="ltx_text"></span><span id="S4.T1.24.20.21.3.2" class="ltx_text" style="font-size:50%;"> </span><span id="S4.T1.24.20.21.3.3" class="ltx_text" style="font-size:50%;">
+<span id="S4.T1.24.20.21.3.3.1" class="ltx_tabular ltx_align_bottom">
+<span id="S4.T1.24.20.21.3.3.1.1" class="ltx_tr">
+<span id="S4.T1.24.20.21.3.3.1.1.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.3.3.1.1.1.1" class="ltx_text ltx_font_bold">PSNR</span></span></span>
+</span></span><span id="S4.T1.24.20.21.3.4" class="ltx_text"></span><span id="S4.T1.24.20.21.3.5" class="ltx_text" style="font-size:50%;"></span>
+</td>
+<td id="S4.T1.24.20.21.4" class="ltx_td ltx_align_center ltx_border_tt">
+<span id="S4.T1.24.20.21.4.1" class="ltx_text"></span><span id="S4.T1.24.20.21.4.2" class="ltx_text" style="font-size:50%;"> </span><span id="S4.T1.24.20.21.4.3" class="ltx_text" style="font-size:50%;">
+<span id="S4.T1.24.20.21.4.3.1" class="ltx_tabular ltx_align_bottom">
+<span id="S4.T1.24.20.21.4.3.1.1" class="ltx_tr">
+<span id="S4.T1.24.20.21.4.3.1.1.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.4.3.1.1.1.1" class="ltx_text ltx_font_bold">SSIM</span></span></span>
+</span></span><span id="S4.T1.24.20.21.4.4" class="ltx_text"></span><span id="S4.T1.24.20.21.4.5" class="ltx_text" style="font-size:50%;"></span>
+</td>
+<td id="S4.T1.24.20.21.5" class="ltx_td ltx_align_center ltx_border_r ltx_border_tt">
+<span id="S4.T1.24.20.21.5.1" class="ltx_text"></span><span id="S4.T1.24.20.21.5.2" class="ltx_text" style="font-size:50%;"> </span><span id="S4.T1.24.20.21.5.3" class="ltx_text" style="font-size:50%;">
+<span id="S4.T1.24.20.21.5.3.1" class="ltx_tabular ltx_align_bottom">
+<span id="S4.T1.24.20.21.5.3.1.1" class="ltx_tr">
+<span id="S4.T1.24.20.21.5.3.1.1.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.5.3.1.1.1.1" class="ltx_text ltx_font_bold">LPIPS</span></span></span>
+</span></span><span id="S4.T1.24.20.21.5.4" class="ltx_text"></span><span id="S4.T1.24.20.21.5.5" class="ltx_text" style="font-size:50%;"></span>
+</td>
+<td id="S4.T1.24.20.21.6" class="ltx_td ltx_align_center ltx_border_tt">
+<span id="S4.T1.24.20.21.6.1" class="ltx_text"></span><span id="S4.T1.24.20.21.6.2" class="ltx_text" style="font-size:50%;"> </span><span id="S4.T1.24.20.21.6.3" class="ltx_text" style="font-size:50%;">
+<span id="S4.T1.24.20.21.6.3.1" class="ltx_tabular ltx_align_bottom">
+<span id="S4.T1.24.20.21.6.3.1.1" class="ltx_tr">
+<span id="S4.T1.24.20.21.6.3.1.1.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.6.3.1.1.1.1" class="ltx_text ltx_font_bold">Background</span></span></span>
+<span id="S4.T1.24.20.21.6.3.1.2" class="ltx_tr">
+<span id="S4.T1.24.20.21.6.3.1.2.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.6.3.1.2.1.1" class="ltx_text ltx_font_bold">Consistency</span></span></span>
+</span></span><span id="S4.T1.24.20.21.6.4" class="ltx_text"></span><span id="S4.T1.24.20.21.6.5" class="ltx_text" style="font-size:50%;"></span>
+</td>
+<td id="S4.T1.24.20.21.7" class="ltx_td ltx_align_center ltx_border_tt">
+<span id="S4.T1.24.20.21.7.1" class="ltx_text"></span><span id="S4.T1.24.20.21.7.2" class="ltx_text" style="font-size:50%;"> </span><span id="S4.T1.24.20.21.7.3" class="ltx_text" style="font-size:50%;">
+<span id="S4.T1.24.20.21.7.3.1" class="ltx_tabular ltx_align_bottom">
+<span id="S4.T1.24.20.21.7.3.1.1" class="ltx_tr">
+<span id="S4.T1.24.20.21.7.3.1.1.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.7.3.1.1.1.1" class="ltx_text ltx_font_bold">Image</span></span></span>
+<span id="S4.T1.24.20.21.7.3.1.2" class="ltx_tr">
+<span id="S4.T1.24.20.21.7.3.1.2.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.7.3.1.2.1.1" class="ltx_text ltx_font_bold">Quality</span></span></span>
+</span></span><span id="S4.T1.24.20.21.7.4" class="ltx_text"></span><span id="S4.T1.24.20.21.7.5" class="ltx_text" style="font-size:50%;"></span>
+</td>
+<td id="S4.T1.24.20.21.8" class="ltx_td ltx_align_center ltx_border_tt">
+<span id="S4.T1.24.20.21.8.1" class="ltx_text"></span><span id="S4.T1.24.20.21.8.2" class="ltx_text" style="font-size:50%;"> </span><span id="S4.T1.24.20.21.8.3" class="ltx_text" style="font-size:50%;">
+<span id="S4.T1.24.20.21.8.3.1" class="ltx_tabular ltx_align_bottom">
+<span id="S4.T1.24.20.21.8.3.1.1" class="ltx_tr">
+<span id="S4.T1.24.20.21.8.3.1.1.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.8.3.1.1.1.1" class="ltx_text ltx_font_bold">Subject</span></span></span>
+<span id="S4.T1.24.20.21.8.3.1.2" class="ltx_tr">
+<span id="S4.T1.24.20.21.8.3.1.2.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.8.3.1.2.1.1" class="ltx_text ltx_font_bold">Consistency</span></span></span>
+</span></span><span id="S4.T1.24.20.21.8.4" class="ltx_text"></span><span id="S4.T1.24.20.21.8.5" class="ltx_text" style="font-size:50%;"></span>
+</td>
+<td id="S4.T1.24.20.21.9" class="ltx_td ltx_align_center ltx_border_tt">
+<span id="S4.T1.24.20.21.9.1" class="ltx_text"></span><span id="S4.T1.24.20.21.9.2" class="ltx_text" style="font-size:50%;"> </span><span id="S4.T1.24.20.21.9.3" class="ltx_text" style="font-size:50%;">
+<span id="S4.T1.24.20.21.9.3.1" class="ltx_tabular ltx_align_bottom">
+<span id="S4.T1.24.20.21.9.3.1.1" class="ltx_tr">
+<span id="S4.T1.24.20.21.9.3.1.1.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.9.3.1.1.1.1" class="ltx_text ltx_font_bold">Aesthetic</span></span></span>
+<span id="S4.T1.24.20.21.9.3.1.2" class="ltx_tr">
+<span id="S4.T1.24.20.21.9.3.1.2.1" class="ltx_td ltx_nopad_r ltx_align_center"><span id="S4.T1.24.20.21.9.3.1.2.1.1" class="ltx_text ltx_font_bold">Quality</span></span></span>
+</span></span><span id="S4.T1.24.20.21.9.4" class="ltx_text"></span><span id="S4.T1.24.20.21.9.5" class="ltx_text" style="font-size:50%;"></span>
+</td>
+</tr>
+<tr id="S4.T1.24.20.22" class="ltx_tr">
+<td id="S4.T1.24.20.22.1" class="ltx_td ltx_align_left ltx_border_t" colspan="2"><span id="S4.T1.24.20.22.1.1" class="ltx_text ltx_font_italic" style="font-size:50%;">LongCat-Video-13B</span></td>
+<td id="S4.T1.24.20.22.2" class="ltx_td ltx_align_left ltx_border_t" colspan="3"><span id="S4.T1.24.20.22.2.1" class="ltx_text ltx_font_italic" style="font-size:50%;">INT2 KV Cache, 480p</span></td>
+<td id="S4.T1.24.20.22.3" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.22.3.1" class="ltx_text" style="font-size:50%;">96.22</span></td>
+<td id="S4.T1.24.20.22.4" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.22.4.1" class="ltx_text" style="font-size:50%;">72.72</span></td>
+<td id="S4.T1.24.20.22.5" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.22.5.1" class="ltx_text" style="font-size:50%;">95.51</span></td>
+<td id="S4.T1.24.20.22.6" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.22.6.1" class="ltx_text" style="font-size:50%;">64.83</span></td>
+</tr>
+<tr id="S4.T1.5.1.1" class="ltx_tr">
+<td id="S4.T1.5.1.1.2" class="ltx_td ltx_align_left ltx_border_r ltx_border_t"><span id="S4.T1.5.1.1.2.1" class="ltx_text" style="font-size:50%;">RTN</span></td>
+<td id="S4.T1.5.1.1.1" class="ltx_td ltx_align_center ltx_border_r ltx_border_t">
+<span id="S4.T1.5.1.1.1.1" class="ltx_text" style="font-size:50%;">6.40</span><math id="S4.T1.5.1.1.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.5.1.1.3" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.5.1.1.3.1" class="ltx_text" style="font-size:50%;">20.872</span></td>
+<td id="S4.T1.5.1.1.4" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.5.1.1.4.1" class="ltx_text" style="font-size:50%;">0.719</span></td>
+<td id="S4.T1.5.1.1.5" class="ltx_td ltx_align_center ltx_border_r ltx_border_t"><span id="S4.T1.5.1.1.5.1" class="ltx_text" style="font-size:50%;">0.203</span></td>
+<td id="S4.T1.5.1.1.6" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.5.1.1.6.1" class="ltx_text" style="font-size:50%;">84.84</span></td>
+<td id="S4.T1.5.1.1.7" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.5.1.1.7.1" class="ltx_text" style="font-size:50%;">59.60</span></td>
+<td id="S4.T1.5.1.1.8" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.5.1.1.8.1" class="ltx_text" style="font-size:50%;">70.63</span></td>
+<td id="S4.T1.5.1.1.9" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.5.1.1.9.1" class="ltx_text" style="font-size:50%;">43.38</span></td>
+</tr>
+<tr id="S4.T1.6.2.2" class="ltx_tr">
+<td id="S4.T1.6.2.2.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.6.2.2.2.1" class="ltx_text" style="font-size:50%;">KIVI</span></td>
+<td id="S4.T1.6.2.2.1" class="ltx_td ltx_align_center ltx_border_r">
+<span id="S4.T1.6.2.2.1.1" class="ltx_text" style="font-size:50%;">6.40</span><math id="S4.T1.6.2.2.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.6.2.2.3" class="ltx_td ltx_align_center"><span id="S4.T1.6.2.2.3.1" class="ltx_text" style="font-size:50%;">20.317</span></td>
+<td id="S4.T1.6.2.2.4" class="ltx_td ltx_align_center"><span id="S4.T1.6.2.2.4.1" class="ltx_text" style="font-size:50%;">0.719</span></td>
+<td id="S4.T1.6.2.2.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.6.2.2.5.1" class="ltx_text" style="font-size:50%;">0.208</span></td>
+<td id="S4.T1.6.2.2.6" class="ltx_td ltx_align_center"><span id="S4.T1.6.2.2.6.1" class="ltx_text" style="font-size:50%;">84.84</span></td>
+<td id="S4.T1.6.2.2.7" class="ltx_td ltx_align_center"><span id="S4.T1.6.2.2.7.1" class="ltx_text" style="font-size:50%;">38.10</span></td>
+<td id="S4.T1.6.2.2.8" class="ltx_td ltx_align_center"><span id="S4.T1.6.2.2.8.1" class="ltx_text" style="font-size:50%;">75.25</span></td>
+<td id="S4.T1.6.2.2.9" class="ltx_td ltx_align_center"><span id="S4.T1.6.2.2.9.1" class="ltx_text" style="font-size:50%;">41.58</span></td>
+</tr>
+<tr id="S4.T1.7.3.3" class="ltx_tr">
+<td id="S4.T1.7.3.3.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.7.3.3.2.1" class="ltx_text" style="font-size:50%;">Quarot</span></td>
+<td id="S4.T1.7.3.3.1" class="ltx_td ltx_align_center ltx_border_r">
+<span id="S4.T1.7.3.3.1.1" class="ltx_text" style="font-size:50%;">6.40</span><math id="S4.T1.7.3.3.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.7.3.3.3" class="ltx_td ltx_align_center"><span id="S4.T1.7.3.3.3.1" class="ltx_text" style="font-size:50%;">21.573</span></td>
+<td id="S4.T1.7.3.3.4" class="ltx_td ltx_align_center"><span id="S4.T1.7.3.3.4.1" class="ltx_text" style="font-size:50%;">0.759</span></td>
+<td id="S4.T1.7.3.3.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.7.3.3.5.1" class="ltx_text" style="font-size:50%;">0.171</span></td>
+<td id="S4.T1.7.3.3.6" class="ltx_td ltx_align_center"><span id="S4.T1.7.3.3.6.1" class="ltx_text" style="font-size:50%;">86.12</span></td>
+<td id="S4.T1.7.3.3.7" class="ltx_td ltx_align_center"><span id="S4.T1.7.3.3.7.1" class="ltx_text" style="font-size:50%;">50.70</span></td>
+<td id="S4.T1.7.3.3.8" class="ltx_td ltx_align_center"><span id="S4.T1.7.3.3.8.1" class="ltx_text" style="font-size:50%;">80.61</span></td>
+<td id="S4.T1.7.3.3.9" class="ltx_td ltx_align_center"><span id="S4.T1.7.3.3.9.1" class="ltx_text" style="font-size:50%;">49.49</span></td>
+</tr>
+<tr id="S4.T1.8.4.4" class="ltx_tr" style="--ltx-bg-color:#E6FFFF;">
+<td id="S4.T1.8.4.4.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.8.4.4.2.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6FFFF;">QVG-Pro</span></td>
+<td id="S4.T1.8.4.4.1" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.8.4.4.1.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">4.97<math id="S4.T1.8.4.4.1.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo style="--ltx-bg-color:#E6FFFF;" mathbackground="#E6FFFF">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math></span></td>
+<td id="S4.T1.8.4.4.3" class="ltx_td ltx_align_center"><span id="S4.T1.8.4.4.3.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6FFFF;">30.376</span></td>
+<td id="S4.T1.8.4.4.4" class="ltx_td ltx_align_center"><span id="S4.T1.8.4.4.4.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6FFFF;">0.935</span></td>
+<td id="S4.T1.8.4.4.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.8.4.4.5.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6FFFF;">0.048</span></td>
+<td id="S4.T1.8.4.4.6" class="ltx_td ltx_align_center"><span id="S4.T1.8.4.4.6.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">96.20</span></td>
+<td id="S4.T1.8.4.4.7" class="ltx_td ltx_align_center"><span id="S4.T1.8.4.4.7.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">71.74</span></td>
+<td id="S4.T1.8.4.4.8" class="ltx_td ltx_align_center"><span id="S4.T1.8.4.4.8.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">94.92</span></td>
+<td id="S4.T1.8.4.4.9" class="ltx_td ltx_align_center"><span id="S4.T1.8.4.4.9.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">63.88</span></td>
+</tr>
+<tr id="S4.T1.9.5.5" class="ltx_tr" style="--ltx-bg-color:#CCFFFF;">
+<td id="S4.T1.9.5.5.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.9.5.5.2.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#CCFFFF;">QVG</span></td>
+<td id="S4.T1.9.5.5.1" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.9.5.5.1.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#CCFFFF;">6.94<math id="S4.T1.9.5.5.1.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo style="--ltx-bg-color:#CCFFFF;" mathbackground="#CCFFFF">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math></span></td>
+<td id="S4.T1.9.5.5.3" class="ltx_td ltx_align_center"><span id="S4.T1.9.5.5.3.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">28.716</span></td>
+<td id="S4.T1.9.5.5.4" class="ltx_td ltx_align_center"><span id="S4.T1.9.5.5.4.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">0.909</span></td>
+<td id="S4.T1.9.5.5.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.9.5.5.5.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">0.065</span></td>
+<td id="S4.T1.9.5.5.6" class="ltx_td ltx_align_center"><span id="S4.T1.9.5.5.6.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">95.06</span></td>
+<td id="S4.T1.9.5.5.7" class="ltx_td ltx_align_center"><span id="S4.T1.9.5.5.7.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">71.47</span></td>
+<td id="S4.T1.9.5.5.8" class="ltx_td ltx_align_center"><span id="S4.T1.9.5.5.8.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">94.11</span></td>
+<td id="S4.T1.9.5.5.9" class="ltx_td ltx_align_center"><span id="S4.T1.9.5.5.9.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">62.22</span></td>
+</tr>
+<tr id="S4.T1.24.20.23" class="ltx_tr">
+<td id="S4.T1.24.20.23.1" class="ltx_td ltx_align_left ltx_border_t" colspan="2"><span id="S4.T1.24.20.23.1.1" class="ltx_text ltx_font_italic" style="font-size:50%;">LongCat-Video-13B</span></td>
+<td id="S4.T1.24.20.23.2" class="ltx_td ltx_align_left ltx_border_t" colspan="3"><span id="S4.T1.24.20.23.2.1" class="ltx_text ltx_font_italic" style="font-size:50%;">INT4 KV Cache, 480p</span></td>
+<td id="S4.T1.24.20.23.3" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.23.3.1" class="ltx_text" style="font-size:50%;">96.22</span></td>
+<td id="S4.T1.24.20.23.4" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.23.4.1" class="ltx_text" style="font-size:50%;">72.72</span></td>
+<td id="S4.T1.24.20.23.5" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.23.5.1" class="ltx_text" style="font-size:50%;">95.51</span></td>
+<td id="S4.T1.24.20.23.6" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.23.6.1" class="ltx_text" style="font-size:50%;">64.83</span></td>
+</tr>
+<tr id="S4.T1.10.6.6" class="ltx_tr">
+<td id="S4.T1.10.6.6.2" class="ltx_td ltx_align_left ltx_border_r ltx_border_t"><span id="S4.T1.10.6.6.2.1" class="ltx_text" style="font-size:50%;">RTN</span></td>
+<td id="S4.T1.10.6.6.1" class="ltx_td ltx_align_center ltx_border_r ltx_border_t">
+<span id="S4.T1.10.6.6.1.1" class="ltx_text" style="font-size:50%;">3.55</span><math id="S4.T1.10.6.6.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.10.6.6.3" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.10.6.6.3.1" class="ltx_text" style="font-size:50%;">32.984</span></td>
+<td id="S4.T1.10.6.6.4" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.10.6.6.4.1" class="ltx_text" style="font-size:50%;">0.940</span></td>
+<td id="S4.T1.10.6.6.5" class="ltx_td ltx_align_center ltx_border_r ltx_border_t"><span id="S4.T1.10.6.6.5.1" class="ltx_text" style="font-size:50%;">0.045</span></td>
+<td id="S4.T1.10.6.6.6" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.10.6.6.6.1" class="ltx_text" style="font-size:50%;">96.13</span></td>
+<td id="S4.T1.10.6.6.7" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.10.6.6.7.1" class="ltx_text" style="font-size:50%;">72.14</span></td>
+<td id="S4.T1.10.6.6.8" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.10.6.6.8.1" class="ltx_text" style="font-size:50%;">95.53</span></td>
+<td id="S4.T1.10.6.6.9" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.10.6.6.9.1" class="ltx_text" style="font-size:50%;">64.57</span></td>
+</tr>
+<tr id="S4.T1.11.7.7" class="ltx_tr">
+<td id="S4.T1.11.7.7.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.11.7.7.2.1" class="ltx_text" style="font-size:50%;">KIVI</span></td>
+<td id="S4.T1.11.7.7.1" class="ltx_td ltx_align_center ltx_border_r">
+<span id="S4.T1.11.7.7.1.1" class="ltx_text" style="font-size:50%;">3.55</span><math id="S4.T1.11.7.7.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.11.7.7.3" class="ltx_td ltx_align_center"><span id="S4.T1.11.7.7.3.1" class="ltx_text" style="font-size:50%;">32.158</span></td>
+<td id="S4.T1.11.7.7.4" class="ltx_td ltx_align_center"><span id="S4.T1.11.7.7.4.1" class="ltx_text" style="font-size:50%;">0.946</span></td>
+<td id="S4.T1.11.7.7.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.11.7.7.5.1" class="ltx_text" style="font-size:50%;">0.040</span></td>
+<td id="S4.T1.11.7.7.6" class="ltx_td ltx_align_center"><span id="S4.T1.11.7.7.6.1" class="ltx_text" style="font-size:50%;">96.16</span></td>
+<td id="S4.T1.11.7.7.7" class="ltx_td ltx_align_center"><span id="S4.T1.11.7.7.7.1" class="ltx_text" style="font-size:50%;">72.67</span></td>
+<td id="S4.T1.11.7.7.8" class="ltx_td ltx_align_center"><span id="S4.T1.11.7.7.8.1" class="ltx_text" style="font-size:50%;">95.26</span></td>
+<td id="S4.T1.11.7.7.9" class="ltx_td ltx_align_center"><span id="S4.T1.11.7.7.9.1" class="ltx_text" style="font-size:50%;">64.53</span></td>
+</tr>
+<tr id="S4.T1.12.8.8" class="ltx_tr">
+<td id="S4.T1.12.8.8.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.12.8.8.2.1" class="ltx_text" style="font-size:50%;">Quarot</span></td>
+<td id="S4.T1.12.8.8.1" class="ltx_td ltx_align_center ltx_border_r">
+<span id="S4.T1.12.8.8.1.1" class="ltx_text" style="font-size:50%;">3.55</span><math id="S4.T1.12.8.8.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.12.8.8.3" class="ltx_td ltx_align_center"><span id="S4.T1.12.8.8.3.1" class="ltx_text" style="font-size:50%;">33.744</span></td>
+<td id="S4.T1.12.8.8.4" class="ltx_td ltx_align_center"><span id="S4.T1.12.8.8.4.1" class="ltx_text" style="font-size:50%;">0.960</span></td>
+<td id="S4.T1.12.8.8.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.12.8.8.5.1" class="ltx_text" style="font-size:50%;">0.033</span></td>
+<td id="S4.T1.12.8.8.6" class="ltx_td ltx_align_center"><span id="S4.T1.12.8.8.6.1" class="ltx_text" style="font-size:50%;">95.48</span></td>
+<td id="S4.T1.12.8.8.7" class="ltx_td ltx_align_center"><span id="S4.T1.12.8.8.7.1" class="ltx_text" style="font-size:50%;">72.47</span></td>
+<td id="S4.T1.12.8.8.8" class="ltx_td ltx_align_center"><span id="S4.T1.12.8.8.8.1" class="ltx_text" style="font-size:50%;">95.48</span></td>
+<td id="S4.T1.12.8.8.9" class="ltx_td ltx_align_center"><span id="S4.T1.12.8.8.9.1" class="ltx_text" style="font-size:50%;">64.92</span></td>
+</tr>
+<tr id="S4.T1.13.9.9" class="ltx_tr" style="--ltx-bg-color:#E6E6FF;">
+<td id="S4.T1.13.9.9.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.13.9.9.2.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6E6FF;">QVG-Pro</span></td>
+<td id="S4.T1.13.9.9.1" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.13.9.9.1.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">3.05<math id="S4.T1.13.9.9.1.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo style="--ltx-bg-color:#E6E6FF;" mathbackground="#E6E6FF">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math></span></td>
+<td id="S4.T1.13.9.9.3" class="ltx_td ltx_align_center"><span id="S4.T1.13.9.9.3.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6E6FF;">37.095</span></td>
+<td id="S4.T1.13.9.9.4" class="ltx_td ltx_align_center"><span id="S4.T1.13.9.9.4.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6E6FF;">0.977</span></td>
+<td id="S4.T1.13.9.9.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.13.9.9.5.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6E6FF;">0.024</span></td>
+<td id="S4.T1.13.9.9.6" class="ltx_td ltx_align_center"><span id="S4.T1.13.9.9.6.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">96.67</span></td>
+<td id="S4.T1.13.9.9.7" class="ltx_td ltx_align_center"><span id="S4.T1.13.9.9.7.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">72.66</span></td>
+<td id="S4.T1.13.9.9.8" class="ltx_td ltx_align_center"><span id="S4.T1.13.9.9.8.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">95.44</span></td>
+<td id="S4.T1.13.9.9.9" class="ltx_td ltx_align_center"><span id="S4.T1.13.9.9.9.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">64.93</span></td>
+</tr>
+<tr id="S4.T1.14.10.10" class="ltx_tr" style="--ltx-bg-color:#CCCCFF;">
+<td id="S4.T1.14.10.10.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.14.10.10.2.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#CCCCFF;">QVG</span></td>
+<td id="S4.T1.14.10.10.1" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.14.10.10.1.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#CCCCFF;">3.72<math id="S4.T1.14.10.10.1.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo style="--ltx-bg-color:#CCCCFF;" mathbackground="#CCCCFF">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math></span></td>
+<td id="S4.T1.14.10.10.3" class="ltx_td ltx_align_center"><span id="S4.T1.14.10.10.3.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">37.141</span></td>
+<td id="S4.T1.14.10.10.4" class="ltx_td ltx_align_center"><span id="S4.T1.14.10.10.4.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">0.978</span></td>
+<td id="S4.T1.14.10.10.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.14.10.10.5.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">0.024</span></td>
+<td id="S4.T1.14.10.10.6" class="ltx_td ltx_align_center"><span id="S4.T1.14.10.10.6.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">95.94</span></td>
+<td id="S4.T1.14.10.10.7" class="ltx_td ltx_align_center"><span id="S4.T1.14.10.10.7.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">72.34</span></td>
+<td id="S4.T1.14.10.10.8" class="ltx_td ltx_align_center"><span id="S4.T1.14.10.10.8.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">94.34</span></td>
+<td id="S4.T1.14.10.10.9" class="ltx_td ltx_align_center"><span id="S4.T1.14.10.10.9.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">64.88</span></td>
+</tr>
+<tr id="S4.T1.24.20.24" class="ltx_tr">
+<td id="S4.T1.24.20.24.1" class="ltx_td ltx_align_left ltx_border_t" colspan="2"><span id="S4.T1.24.20.24.1.1" class="ltx_text ltx_font_italic" style="font-size:50%;">HY-WorldPlay-8B</span></td>
+<td id="S4.T1.24.20.24.2" class="ltx_td ltx_align_left ltx_border_t" colspan="3"><span id="S4.T1.24.20.24.2.1" class="ltx_text ltx_font_italic" style="font-size:50%;">INT2 KV Cache, 480p</span></td>
+<td id="S4.T1.24.20.24.3" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.24.3.1" class="ltx_text" style="font-size:50%;">97.92</span></td>
+<td id="S4.T1.24.20.24.4" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.24.4.1" class="ltx_text" style="font-size:50%;">74.33</span></td>
+<td id="S4.T1.24.20.24.5" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.24.5.1" class="ltx_text" style="font-size:50%;">97.90</span></td>
+<td id="S4.T1.24.20.24.6" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.24.6.1" class="ltx_text" style="font-size:50%;">69.85</span></td>
+</tr>
+<tr id="S4.T1.15.11.11" class="ltx_tr">
+<td id="S4.T1.15.11.11.2" class="ltx_td ltx_align_left ltx_border_r ltx_border_t"><span id="S4.T1.15.11.11.2.1" class="ltx_text" style="font-size:50%;">RTN</span></td>
+<td id="S4.T1.15.11.11.1" class="ltx_td ltx_align_center ltx_border_r ltx_border_t">
+<span id="S4.T1.15.11.11.1.1" class="ltx_text" style="font-size:50%;">6.40</span><math id="S4.T1.15.11.11.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.15.11.11.3" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.15.11.11.3.1" class="ltx_text" style="font-size:50%;">24.199</span></td>
+<td id="S4.T1.15.11.11.4" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.15.11.11.4.1" class="ltx_text" style="font-size:50%;">0.696</span></td>
+<td id="S4.T1.15.11.11.5" class="ltx_td ltx_align_center ltx_border_r ltx_border_t"><span id="S4.T1.15.11.11.5.1" class="ltx_text" style="font-size:50%;">0.229</span></td>
+<td id="S4.T1.15.11.11.6" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.15.11.11.6.1" class="ltx_text" style="font-size:50%;">96.16</span></td>
+<td id="S4.T1.15.11.11.7" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.15.11.11.7.1" class="ltx_text" style="font-size:50%;">71.86</span></td>
+<td id="S4.T1.15.11.11.8" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.15.11.11.8.1" class="ltx_text" style="font-size:50%;">96.08</span></td>
+<td id="S4.T1.15.11.11.9" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.15.11.11.9.1" class="ltx_text" style="font-size:50%;">69.15</span></td>
+</tr>
+<tr id="S4.T1.16.12.12" class="ltx_tr">
+<td id="S4.T1.16.12.12.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.16.12.12.2.1" class="ltx_text" style="font-size:50%;">KIVI</span></td>
+<td id="S4.T1.16.12.12.1" class="ltx_td ltx_align_center ltx_border_r">
+<span id="S4.T1.16.12.12.1.1" class="ltx_text" style="font-size:50%;">6.40</span><math id="S4.T1.16.12.12.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.16.12.12.3" class="ltx_td ltx_align_center"><span id="S4.T1.16.12.12.3.1" class="ltx_text" style="font-size:50%;">24.272</span></td>
+<td id="S4.T1.16.12.12.4" class="ltx_td ltx_align_center"><span id="S4.T1.16.12.12.4.1" class="ltx_text" style="font-size:50%;">0.701</span></td>
+<td id="S4.T1.16.12.12.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.16.12.12.5.1" class="ltx_text" style="font-size:50%;">0.230</span></td>
+<td id="S4.T1.16.12.12.6" class="ltx_td ltx_align_center"><span id="S4.T1.16.12.12.6.1" class="ltx_text" style="font-size:50%;">96.95</span></td>
+<td id="S4.T1.16.12.12.7" class="ltx_td ltx_align_center"><span id="S4.T1.16.12.12.7.1" class="ltx_text" style="font-size:50%;">71.40</span></td>
+<td id="S4.T1.16.12.12.8" class="ltx_td ltx_align_center"><span id="S4.T1.16.12.12.8.1" class="ltx_text" style="font-size:50%;">95.89</span></td>
+<td id="S4.T1.16.12.12.9" class="ltx_td ltx_align_center"><span id="S4.T1.16.12.12.9.1" class="ltx_text" style="font-size:50%;">68.19</span></td>
+</tr>
+<tr id="S4.T1.17.13.13" class="ltx_tr">
+<td id="S4.T1.17.13.13.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.17.13.13.2.1" class="ltx_text" style="font-size:50%;">Quarot</span></td>
+<td id="S4.T1.17.13.13.1" class="ltx_td ltx_align_center ltx_border_r">
+<span id="S4.T1.17.13.13.1.1" class="ltx_text" style="font-size:50%;">6.40</span><math id="S4.T1.17.13.13.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.17.13.13.3" class="ltx_td ltx_align_center"><span id="S4.T1.17.13.13.3.1" class="ltx_text" style="font-size:50%;">25.207</span></td>
+<td id="S4.T1.17.13.13.4" class="ltx_td ltx_align_center"><span id="S4.T1.17.13.13.4.1" class="ltx_text" style="font-size:50%;">0.738</span></td>
+<td id="S4.T1.17.13.13.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.17.13.13.5.1" class="ltx_text" style="font-size:50%;">0.205</span></td>
+<td id="S4.T1.17.13.13.6" class="ltx_td ltx_align_center"><span id="S4.T1.17.13.13.6.1" class="ltx_text" style="font-size:50%;">97.34</span></td>
+<td id="S4.T1.17.13.13.7" class="ltx_td ltx_align_center"><span id="S4.T1.17.13.13.7.1" class="ltx_text" style="font-size:50%;">72.26</span></td>
+<td id="S4.T1.17.13.13.8" class="ltx_td ltx_align_center"><span id="S4.T1.17.13.13.8.1" class="ltx_text" style="font-size:50%;">96.64</span></td>
+<td id="S4.T1.17.13.13.9" class="ltx_td ltx_align_center"><span id="S4.T1.17.13.13.9.1" class="ltx_text" style="font-size:50%;">69.38</span></td>
+</tr>
+<tr id="S4.T1.18.14.14" class="ltx_tr" style="--ltx-bg-color:#E6FFFF;">
+<td id="S4.T1.18.14.14.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.18.14.14.2.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6FFFF;">QVG-Pro</span></td>
+<td id="S4.T1.18.14.14.1" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.18.14.14.1.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">5.20<math id="S4.T1.18.14.14.1.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo style="--ltx-bg-color:#E6FFFF;" mathbackground="#E6FFFF">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math></span></td>
+<td id="S4.T1.18.14.14.3" class="ltx_td ltx_align_center"><span id="S4.T1.18.14.14.3.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6FFFF;">31.562</span></td>
+<td id="S4.T1.18.14.14.4" class="ltx_td ltx_align_center"><span id="S4.T1.18.14.14.4.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6FFFF;">0.923</span></td>
+<td id="S4.T1.18.14.14.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.18.14.14.5.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6FFFF;">0.069</span></td>
+<td id="S4.T1.18.14.14.6" class="ltx_td ltx_align_center"><span id="S4.T1.18.14.14.6.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">98.00</span></td>
+<td id="S4.T1.18.14.14.7" class="ltx_td ltx_align_center"><span id="S4.T1.18.14.14.7.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">74.15</span></td>
+<td id="S4.T1.18.14.14.8" class="ltx_td ltx_align_center"><span id="S4.T1.18.14.14.8.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">97.96</span></td>
+<td id="S4.T1.18.14.14.9" class="ltx_td ltx_align_center"><span id="S4.T1.18.14.14.9.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6FFFF;">69.45</span></td>
+</tr>
+<tr id="S4.T1.19.15.15" class="ltx_tr" style="--ltx-bg-color:#CCFFFF;">
+<td id="S4.T1.19.15.15.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.19.15.15.2.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#CCFFFF;">QVG</span></td>
+<td id="S4.T1.19.15.15.1" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.19.15.15.1.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#CCFFFF;">7.05<math id="S4.T1.19.15.15.1.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo style="--ltx-bg-color:#CCFFFF;" mathbackground="#CCFFFF">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math></span></td>
+<td id="S4.T1.19.15.15.3" class="ltx_td ltx_align_center"><span id="S4.T1.19.15.15.3.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">29.174</span></td>
+<td id="S4.T1.19.15.15.4" class="ltx_td ltx_align_center"><span id="S4.T1.19.15.15.4.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">0.882</span></td>
+<td id="S4.T1.19.15.15.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.19.15.15.5.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">0.094</span></td>
+<td id="S4.T1.19.15.15.6" class="ltx_td ltx_align_center"><span id="S4.T1.19.15.15.6.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">97.98</span></td>
+<td id="S4.T1.19.15.15.7" class="ltx_td ltx_align_center"><span id="S4.T1.19.15.15.7.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">73.87</span></td>
+<td id="S4.T1.19.15.15.8" class="ltx_td ltx_align_center"><span id="S4.T1.19.15.15.8.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">97.90</span></td>
+<td id="S4.T1.19.15.15.9" class="ltx_td ltx_align_center"><span id="S4.T1.19.15.15.9.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCFFFF;">69.80</span></td>
+</tr>
+<tr id="S4.T1.24.20.25" class="ltx_tr">
+<td id="S4.T1.24.20.25.1" class="ltx_td ltx_align_left ltx_border_t" colspan="2"><span id="S4.T1.24.20.25.1.1" class="ltx_text ltx_font_italic" style="font-size:50%;">HY-WorldPlay-8B</span></td>
+<td id="S4.T1.24.20.25.2" class="ltx_td ltx_align_left ltx_border_t" colspan="3"><span id="S4.T1.24.20.25.2.1" class="ltx_text ltx_font_italic" style="font-size:50%;">INT4 KV Cache, 480p</span></td>
+<td id="S4.T1.24.20.25.3" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.25.3.1" class="ltx_text" style="font-size:50%;">97.92</span></td>
+<td id="S4.T1.24.20.25.4" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.25.4.1" class="ltx_text" style="font-size:50%;">74.33</span></td>
+<td id="S4.T1.24.20.25.5" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.25.5.1" class="ltx_text" style="font-size:50%;">97.90</span></td>
+<td id="S4.T1.24.20.25.6" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.24.20.25.6.1" class="ltx_text" style="font-size:50%;">69.85</span></td>
+</tr>
+<tr id="S4.T1.20.16.16" class="ltx_tr">
+<td id="S4.T1.20.16.16.2" class="ltx_td ltx_align_left ltx_border_r ltx_border_t"><span id="S4.T1.20.16.16.2.1" class="ltx_text" style="font-size:50%;">RTN</span></td>
+<td id="S4.T1.20.16.16.1" class="ltx_td ltx_align_center ltx_border_r ltx_border_t">
+<span id="S4.T1.20.16.16.1.1" class="ltx_text" style="font-size:50%;">3.55</span><math id="S4.T1.20.16.16.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.20.16.16.3" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.20.16.16.3.1" class="ltx_text" style="font-size:50%;">33.634</span></td>
+<td id="S4.T1.20.16.16.4" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.20.16.16.4.1" class="ltx_text" style="font-size:50%;">0.948</span></td>
+<td id="S4.T1.20.16.16.5" class="ltx_td ltx_align_center ltx_border_r ltx_border_t"><span id="S4.T1.20.16.16.5.1" class="ltx_text" style="font-size:50%;">0.056</span></td>
+<td id="S4.T1.20.16.16.6" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.20.16.16.6.1" class="ltx_text" style="font-size:50%;">97.98</span></td>
+<td id="S4.T1.20.16.16.7" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.20.16.16.7.1" class="ltx_text" style="font-size:50%;">74.26</span></td>
+<td id="S4.T1.20.16.16.8" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.20.16.16.8.1" class="ltx_text" style="font-size:50%;">97.87</span></td>
+<td id="S4.T1.20.16.16.9" class="ltx_td ltx_align_center ltx_border_t"><span id="S4.T1.20.16.16.9.1" class="ltx_text" style="font-size:50%;">70.13</span></td>
+</tr>
+<tr id="S4.T1.21.17.17" class="ltx_tr">
+<td id="S4.T1.21.17.17.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.21.17.17.2.1" class="ltx_text" style="font-size:50%;">KIVI</span></td>
+<td id="S4.T1.21.17.17.1" class="ltx_td ltx_align_center ltx_border_r">
+<span id="S4.T1.21.17.17.1.1" class="ltx_text" style="font-size:50%;">3.55</span><math id="S4.T1.21.17.17.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.21.17.17.3" class="ltx_td ltx_align_center"><span id="S4.T1.21.17.17.3.1" class="ltx_text" style="font-size:50%;">33.768</span></td>
+<td id="S4.T1.21.17.17.4" class="ltx_td ltx_align_center"><span id="S4.T1.21.17.17.4.1" class="ltx_text" style="font-size:50%;">0.950</span></td>
+<td id="S4.T1.21.17.17.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.21.17.17.5.1" class="ltx_text" style="font-size:50%;">0.055</span></td>
+<td id="S4.T1.21.17.17.6" class="ltx_td ltx_align_center"><span id="S4.T1.21.17.17.6.1" class="ltx_text" style="font-size:50%;">97.95</span></td>
+<td id="S4.T1.21.17.17.7" class="ltx_td ltx_align_center"><span id="S4.T1.21.17.17.7.1" class="ltx_text" style="font-size:50%;">74.30</span></td>
+<td id="S4.T1.21.17.17.8" class="ltx_td ltx_align_center"><span id="S4.T1.21.17.17.8.1" class="ltx_text" style="font-size:50%;">97.95</span></td>
+<td id="S4.T1.21.17.17.9" class="ltx_td ltx_align_center"><span id="S4.T1.21.17.17.9.1" class="ltx_text" style="font-size:50%;">69.92</span></td>
+</tr>
+<tr id="S4.T1.22.18.18" class="ltx_tr">
+<td id="S4.T1.22.18.18.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.22.18.18.2.1" class="ltx_text" style="font-size:50%;">Quarot</span></td>
+<td id="S4.T1.22.18.18.1" class="ltx_td ltx_align_center ltx_border_r">
+<span id="S4.T1.22.18.18.1.1" class="ltx_text" style="font-size:50%;">3.55</span><math id="S4.T1.22.18.18.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo mathsize="0.500em">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
+</td>
+<td id="S4.T1.22.18.18.3" class="ltx_td ltx_align_center"><span id="S4.T1.22.18.18.3.1" class="ltx_text" style="font-size:50%;">33.997</span></td>
+<td id="S4.T1.22.18.18.4" class="ltx_td ltx_align_center"><span id="S4.T1.22.18.18.4.1" class="ltx_text" style="font-size:50%;">0.951</span></td>
+<td id="S4.T1.22.18.18.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.22.18.18.5.1" class="ltx_text" style="font-size:50%;">0.053</span></td>
+<td id="S4.T1.22.18.18.6" class="ltx_td ltx_align_center"><span id="S4.T1.22.18.18.6.1" class="ltx_text" style="font-size:50%;">97.97</span></td>
+<td id="S4.T1.22.18.18.7" class="ltx_td ltx_align_center"><span id="S4.T1.22.18.18.7.1" class="ltx_text" style="font-size:50%;">74.33</span></td>
+<td id="S4.T1.22.18.18.8" class="ltx_td ltx_align_center"><span id="S4.T1.22.18.18.8.1" class="ltx_text" style="font-size:50%;">97.90</span></td>
+<td id="S4.T1.22.18.18.9" class="ltx_td ltx_align_center"><span id="S4.T1.22.18.18.9.1" class="ltx_text" style="font-size:50%;">69.76</span></td>
+</tr>
+<tr id="S4.T1.23.19.19" class="ltx_tr" style="--ltx-bg-color:#E6E6FF;">
+<td id="S4.T1.23.19.19.2" class="ltx_td ltx_align_left ltx_border_r"><span id="S4.T1.23.19.19.2.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6E6FF;">QVG-Pro</span></td>
+<td id="S4.T1.23.19.19.1" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.23.19.19.1.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">3.15<math id="S4.T1.23.19.19.1.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo style="--ltx-bg-color:#E6E6FF;" mathbackground="#E6E6FF">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math></span></td>
+<td id="S4.T1.23.19.19.3" class="ltx_td ltx_align_center"><span id="S4.T1.23.19.19.3.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6E6FF;">35.109</span></td>
+<td id="S4.T1.23.19.19.4" class="ltx_td ltx_align_center"><span id="S4.T1.23.19.19.4.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6E6FF;">0.960</span></td>
+<td id="S4.T1.23.19.19.5" class="ltx_td ltx_align_center ltx_border_r"><span id="S4.T1.23.19.19.5.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#E6E6FF;">0.048</span></td>
+<td id="S4.T1.23.19.19.6" class="ltx_td ltx_align_center"><span id="S4.T1.23.19.19.6.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">97.93</span></td>
+<td id="S4.T1.23.19.19.7" class="ltx_td ltx_align_center"><span id="S4.T1.23.19.19.7.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">74.30</span></td>
+<td id="S4.T1.23.19.19.8" class="ltx_td ltx_align_center"><span id="S4.T1.23.19.19.8.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">97.88</span></td>
+<td id="S4.T1.23.19.19.9" class="ltx_td ltx_align_center"><span id="S4.T1.23.19.19.9.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#E6E6FF;">69.45</span></td>
+</tr>
+<tr id="S4.T1.24.20.20" class="ltx_tr" style="--ltx-bg-color:#CCCCFF;">
+<td id="S4.T1.24.20.20.2" class="ltx_td ltx_align_left ltx_border_bb ltx_border_r"><span id="S4.T1.24.20.20.2.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#CCCCFF;">QVG</span></td>
+<td id="S4.T1.24.20.20.1" class="ltx_td ltx_align_center ltx_border_bb ltx_border_r"><span id="S4.T1.24.20.20.1.1" class="ltx_text ltx_font_bold" style="font-size:50%;--ltx-bg-color:#CCCCFF;">3.75<math id="S4.T1.24.20.20.1.1.m1" class="ltx_Math" alttext="\times" display="inline" intent=":literal"><semantics><mo style="--ltx-bg-color:#CCCCFF;" mathbackground="#CCCCFF">×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math></span></td>
+<td id="S4.T1.24.20.20.3" class="ltx_td ltx_align_center ltx_border_bb"><span id="S4.T1.24.20.20.3.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">34.454</span></td>
+<td id="S4.T1.24.20.20.4" class="ltx_td ltx_align_center ltx_border_bb"><span id="S4.T1.24.20.20.4.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">0.954</span></td>
+<td id="S4.T1.24.20.20.5" class="ltx_td ltx_align_center ltx_border_bb ltx_border_r"><span id="S4.T1.24.20.20.5.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">0.051</span></td>
+<td id="S4.T1.24.20.20.6" class="ltx_td ltx_align_center ltx_border_bb"><span id="S4.T1.24.20.20.6.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">97.96</span></td>
+<td id="S4.T1.24.20.20.7" class="ltx_td ltx_align_center ltx_border_bb"><span id="S4.T1.24.20.20.7.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">74.23</span></td>
+<td id="S4.T1.24.20.20.8" class="ltx_td ltx_align_center ltx_border_bb"><span id="S4.T1.24.20.20.8.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">97.90</span></td>
+<td id="S4.T1.24.20.20.9" class="ltx_td ltx_align_center ltx_border_bb"><span id="S4.T1.24.20.20.9.1" class="ltx_text" style="font-size:50%;--ltx-bg-color:#CCCCFF;">69.66</span></td>
+</tr>
+</table>
+</span></div>
+</figure>
+<figure id="S4.F5" class="ltx_figure ltx_figure_panel ltx_align_center"><img src="2602.02958v4/x5.png" id="S4.SS1.1.g1" class="ltx_graphics ltx_centering ltx_figure_panel ltx_img_landscape" width="747" height="242" alt="Refer to caption">
+<br class="ltx_break ltx_break">
+<figcaption class="ltx_caption"><span class="ltx_tag ltx_tag_figure"><span id="S4.F5.2.1.1" class="ltx_text" style="font-size:90%;">Figure 5</span>: </span><span id="S4.F5.3.2" class="ltx_text" style="font-size:90%;">(a–b) Imaging Quality over long-horizon generation on Self-Forcing Model. Both QVG and QVG-Pro preserve near-lossless quality, while prior baselines degrade drastically.
+(c) The first stage of Progressive Residual Quantization yields the most significant reduction in MSE. Subsequent stages further reduce the error, but with diminishing returns.</span></figcaption>
+</figure>
+<figure id="S4.SS1.2" class="ltx_figure">
+<div id="S4.SS1.2.1" class="ltx_block">
+<img src="2602.02958v4/x6.png" id="S4.SS1.2.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="664" height="380" alt="[Uncaptioned image]">
+<figure id="S4.F6" class="ltx_figure ltx_align_center">
+<figcaption class="ltx_caption"><span class="ltx_tag ltx_tag_figure"><span id="S4.F6.6.3.1" class="ltx_text" style="font-size:90%;">Figure 6</span>: </span><span id="S4.F6.4.2" class="ltx_text" style="font-size:90%;">Semantic-Aware Smoothing effectively reduces the quantization error by <math id="S4.F6.3.1.m1" class="ltx_math_unparsed" alttext="\sim 6.9\times" display="inline" intent=":literal"><semantics><mrow><mo>∼</mo><mn>6.9</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">\sim 6.9\times</annotation></semantics></math> and <math id="S4.F6.4.2.m2" class="ltx_math_unparsed" alttext="\sim 2.6\times" display="inline" intent=":literal"><semantics><mrow><mo>∼</mo><mn>2.6</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">\sim 2.6\times</annotation></semantics></math> for keys and values, respectively. Keys has a higher MSE reduction since values cache are more irregular than keys cache.</span></figcaption>
+</figure>
+</div>
+</figure>
+<div id="S4.SS1.p4" class="ltx_para ltx_noindent">
+<p id="S4.SS1.p4.4" class="ltx_p"><span id="S4.SS1.p4.4.1" class="ltx_text ltx_font_bold">Summarization and visualization.</span>
+Semantic-Aware Smoothing process can be represented as follows:</p>
+<table id="Sx1.EGx1" class="ltx_equationgroup ltx_eqn_align ltx_eqn_table">
+
+<tbody id="S4.E6"><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_td ltx_align_right ltx_eqn_cell"><math id="S4.E6.m1" class="ltx_Math" alttext="\displaystyle{\bm{R}},\mathbf{C},\bm{\pi}=\operatorname{SA\text{-}Smoothing}({\bm{X}},C)," display="inline" intent=":literal"><semantics><mrow><mrow><mrow><mi>𝑹</mi><mo>,</mo><mi>𝐂</mi><mo>,</mo><mi>𝝅</mi></mrow><mo>=</mo><mrow><mrow><mi>SA</mi><mo lspace="0em" rspace="0em">​</mo><mtext>-</mtext><mo lspace="0em" rspace="0em">​</mo><mi>Smoothing</mi></mrow><mo>⁡</mo><mrow><mo stretchy="false">(</mo><mi>𝑿</mi><mo>,</mo><mi>C</mi><mo stretchy="false">)</mo></mrow></mrow></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\displaystyle{\bm{R}},\mathbf{C},\bm{\pi}=\operatorname{SA\text{-}Smoothing}({\bm{X}},C),</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(6)</span></td>
+</tr></tbody>
+</table>
+<p id="S4.SS1.p4.3" class="ltx_p">where <math id="S4.SS1.p4.1.m1" class="ltx_Math" alttext="{\bm{R}}\in\mathbb{R}^{N\times d}" display="inline" intent=":literal"><semantics><mrow><mi>𝑹</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>N</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>d</mi></mrow></msup></mrow><annotation encoding="application/x-tex">{\bm{R}}\in\mathbb{R}^{N\times d}</annotation></semantics></math> is the residual tensor,
+<math id="S4.SS1.p4.2.m2" class="ltx_Math" alttext="\mathbf{C}\in\mathbb{R}^{C\times d}" display="inline" intent=":literal"><semantics><mrow><mi>𝐂</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>C</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>d</mi></mrow></msup></mrow><annotation encoding="application/x-tex">\mathbf{C}\in\mathbb{R}^{C\times d}</annotation></semantics></math> is the centroids, and
+<math id="S4.SS1.p4.3.m3" class="ltx_Math" alttext="\bm{\pi}\in\{1,\ldots,C\}^{N}" display="inline" intent=":literal"><semantics><mrow><mi>𝝅</mi><mo>∈</mo><msup><mrow><mo stretchy="false">{</mo><mn>1</mn><mo>,</mo><mi mathvariant="normal">…</mi><mo>,</mo><mi>C</mi><mo stretchy="false">}</mo></mrow><mi>N</mi></msup></mrow><annotation encoding="application/x-tex">\bm{\pi}\in\{1,\ldots,C\}^{N}</annotation></semantics></math> is the assignment vector that denotes the centroid assignment of each token.</p>
+</div>
+<div id="S4.SS1.p5" class="ltx_para">
+<p id="S4.SS1.p5.1" class="ltx_p">In Figure <a href="#S3.F3" title="Figure 3 ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>, we provide visualizations to illustrate the effectiveness of Semantic-Aware Smoothing.
+We first directly visualize the tensor in a 2D plot in Figure <a href="#S3.F3" title="Figure 3 ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a> (a)-(c), and use gray lines to separate different groups for better visualization. As indicated in Figure <a href="#S3.F3" title="Figure 3 ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a> (b), the distribution becomes more regular after the semantic-based grouping. And as indicated in Figure <a href="#S3.F3" title="Figure 3 ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a> (c) and (d), the magnitude becomes much smaller after applying the Semantic-Aware Smoothing algorithm, confirming that Semantic-Aware Smoothing markedly compresses the dynamic range and is well-suited for low-bit quantization.</p>
+</div>
+</section>
+<section id="S4.SS2" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.2 </span>Progressive Residual Quantization</h3>
+
+<div id="S4.SS2.p1" class="ltx_para">
+<p id="S4.SS2.p1.1" class="ltx_p">Motivated by the progressive structure of videos (§ <a href="#S3.SS3" title="3.3 Video KV-Cache is Highly Redundant ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3.3</span></a>), we then design Progressive Residual Quantization to further push the quantization error down in a coarse-to-fine manner.
+Given the output of Semantic-Aware Smoothing, Progressive Residual Quantization iteratively re-quantize the residual tensor to capture finer-grained details.</p>
+</div>
+<div id="S4.SS2.p2" class="ltx_para ltx_noindent">
+<p id="S4.SS2.p2.4" class="ltx_p"><span id="S4.SS2.p2.4.1" class="ltx_text ltx_font_bold">Progressive residual refinement.</span>
+Formally, let <math id="S4.SS2.p2.1.m1" class="ltx_Math" alttext="{\bm{R}}^{(0)}={\bm{X}}" display="inline" intent=":literal"><semantics><mrow><msup><mi>𝑹</mi><mrow><mo stretchy="false">(</mo><mn>0</mn><mo stretchy="false">)</mo></mrow></msup><mo>=</mo><mi>𝑿</mi></mrow><annotation encoding="application/x-tex">{\bm{R}}^{(0)}={\bm{X}}</annotation></semantics></math> denote the initial input, and let <math id="S4.SS2.p2.2.m2" class="ltx_Math" alttext="T" display="inline" intent=":literal"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math> be the total number of stages, each using the same number of groups <math id="S4.SS2.p2.3.m3" class="ltx_Math" alttext="C" display="inline" intent=":literal"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math>.
+At each stage <math id="S4.SS2.p2.4.m4" class="ltx_Math" alttext="t" display="inline" intent=":literal"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>, we apply semantic-aware smoothing on the residual tensor to get a new one:</p>
+<table id="Sx1.EGx2" class="ltx_equationgroup ltx_eqn_align ltx_eqn_table">
+
+<tbody id="S4.Ex2"><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_td ltx_align_right ltx_eqn_cell"><math id="S4.Ex2.m1" class="ltx_Math" alttext="\displaystyle{\bm{R}}^{(t)},\mathbf{C}^{(t)},\bm{\pi}^{(t)}=\operatorname{SA\text{-}Smoothing}({\bm{R}}^{(t-1)},C)." display="inline" intent=":literal"><semantics><mrow><mrow><mrow><msup><mi>𝑹</mi><mrow><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow></msup><mo>,</mo><msup><mi>𝐂</mi><mrow><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow></msup><mo>,</mo><msup><mi>𝝅</mi><mrow><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow></msup></mrow><mo>=</mo><mrow><mrow><mi>SA</mi><mo lspace="0em" rspace="0em">​</mo><mtext>-</mtext><mo lspace="0em" rspace="0em">​</mo><mi>Smoothing</mi></mrow><mo>⁡</mo><mrow><mo stretchy="false">(</mo><msup><mi>𝑹</mi><mrow><mo stretchy="false">(</mo><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow></msup><mo>,</mo><mi>C</mi><mo stretchy="false">)</mo></mrow></mrow></mrow><mo lspace="0em">.</mo></mrow><annotation encoding="application/x-tex">\displaystyle{\bm{R}}^{(t)},\mathbf{C}^{(t)},\bm{\pi}^{(t)}=\operatorname{SA\text{-}Smoothing}({\bm{R}}^{(t-1)},C).</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+</tr></tbody>
+</table>
+<p id="S4.SS2.p2.6" class="ltx_p">After <math id="S4.SS2.p2.5.m1" class="ltx_Math" alttext="T" display="inline" intent=":literal"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math> stages, we obtain the final residual tensor <math id="S4.SS2.p2.6.m2" class="ltx_Math" alttext="{\bm{R}}^{(T)}" display="inline" intent=":literal"><semantics><msup><mi>𝑹</mi><mrow><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo></mrow></msup><annotation encoding="application/x-tex">{\bm{R}}^{(T)}</annotation></semantics></math>. We quantize the final output into low-bit representation:</p>
+<table id="S4.Ex3" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S4.Ex3.m1" class="ltx_Math" alttext="{\bm{X}}_{\text{INT}},S_{\bm{X}}=Q({\bm{R}}^{(T)})" display="block" intent=":literal"><semantics><mrow><mrow><msub><mi>𝑿</mi><mtext>INT</mtext></msub><mo>,</mo><msub><mi>S</mi><mi>𝑿</mi></msub></mrow><mo>=</mo><mrow><mi>Q</mi><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><msup><mi>𝑹</mi><mrow><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo></mrow></msup><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">{\bm{X}}_{\text{INT}},S_{\bm{X}}=Q({\bm{R}}^{(T)})</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+</tr></tbody>
+</table>
+<p id="S4.SS2.p2.10" class="ltx_p">and store it into global memory. We also store all <math id="S4.SS2.p2.7.m1" class="ltx_Math" alttext="\mathbf{C}^{(t)}" display="inline" intent=":literal"><semantics><msup><mi>𝐂</mi><mrow><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow></msup><annotation encoding="application/x-tex">\mathbf{C}^{(t)}</annotation></semantics></math> and <math id="S4.SS2.p2.8.m2" class="ltx_Math" alttext="\bm{\pi}^{(t)}" display="inline" intent=":literal"><semantics><msup><mi>𝝅</mi><mrow><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow></msup><annotation encoding="application/x-tex">\bm{\pi}^{(t)}</annotation></semantics></math> with <math id="S4.SS2.p2.9.m3" class="ltx_Math" alttext="1\leq t\leq T" display="inline" intent=":literal"><semantics><mrow><mn>1</mn><mo>≤</mo><mi>t</mi><mo>≤</mo><mi>T</mi></mrow><annotation encoding="application/x-tex">1\leq t\leq T</annotation></semantics></math>, while all residuals <math id="S4.SS2.p2.10.m4" class="ltx_Math" alttext="{\bm{R}}^{(t)}" display="inline" intent=":literal"><semantics><msup><mi>𝑹</mi><mrow><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow></msup><annotation encoding="application/x-tex">{\bm{R}}^{(t)}</annotation></semantics></math> are treated as intermediate results and discarded.</p>
+</div>
+<div id="S4.SS2.p3" class="ltx_para">
+<p id="S4.SS2.p3.1" class="ltx_p">Each stage focuses on re-quantizing the remaining residuals, enabling Progressive Residual Quantization to progressively model information from coarse semantic structures to fine-grained variations, thereby leading to lower quantization error. The whole pipeline is visualized in Figure <a href="#S3.F4" title="Figure 4 ‣ 3.1 KV-Cache Bottlenecks Auto-Regressive Video Generation ‣ 3 Motivation ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4</span></a>.</p>
+</div>
+<div id="S4.SS2.p4" class="ltx_para ltx_noindent">
+<p id="S4.SS2.p4.1" class="ltx_p"><span id="S4.SS2.p4.1.1" class="ltx_text ltx_font_bold">The dequantization process.</span>
+We first describe reconstruction for Semantic-Aware Smoothing, which naturally extends to the Progressive Residual Quantization setting.</p>
+</div>
+<div id="S4.SS2.p5" class="ltx_para">
+<p id="S4.SS2.p5.4" class="ltx_p">Given the stored centroids <math id="S4.SS2.p5.1.m1" class="ltx_Math" alttext="\mathbf{C}" display="inline" intent=":literal"><semantics><mi>𝐂</mi><annotation encoding="application/x-tex">\mathbf{C}</annotation></semantics></math> and assignment vector <math id="S4.SS2.p5.2.m2" class="ltx_Math" alttext="\bm{\pi}" display="inline" intent=":literal"><semantics><mi>𝝅</mi><annotation encoding="application/x-tex">\bm{\pi}</annotation></semantics></math>, each token is reconstructed by adding back its assigned centroid to the corresponding residual.
+Specifically, let <math id="S4.SS2.p5.3.m3" class="ltx_Math" alttext="{\bm{R}}" display="inline" intent=":literal"><semantics><mi>𝑹</mi><annotation encoding="application/x-tex">{\bm{R}}</annotation></semantics></math> denote the residual tensor, the reconstruction of a input token at index <math id="S4.SS2.p5.4.m4" class="ltx_Math" alttext="1\leq i\leq N" display="inline" intent=":literal"><semantics><mrow><mn>1</mn><mo>≤</mo><mi>i</mi><mo>≤</mo><mi>N</mi></mrow><annotation encoding="application/x-tex">1\leq i\leq N</annotation></semantics></math> is given by adding back the assigned centroid to the corresponding residual:</p>
+<table id="S4.E7" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S4.E7.m1" class="ltx_Math" alttext="\hat{{\bm{X}}}_{{\mathcal{G}}_{i}}=R_{i}+\mathbf{C}_{\bm{\pi}_{i}}." display="block" intent=":literal"><semantics><mrow><mrow><msub><mover accent="true"><mi>𝑿</mi><mo>^</mo></mover><msub><mi class="ltx_font_mathcaligraphic">𝒢</mi><mi>i</mi></msub></msub><mo>=</mo><mrow><msub><mi>R</mi><mi>i</mi></msub><mo>+</mo><msub><mi>𝐂</mi><msub><mi>𝝅</mi><mi>i</mi></msub></msub></mrow></mrow><mo lspace="0em">.</mo></mrow><annotation encoding="application/x-tex">\hat{{\bm{X}}}_{{\mathcal{G}}_{i}}=R_{i}+\mathbf{C}_{\bm{\pi}_{i}}.</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(7)</span></td>
+</tr></tbody>
+</table>
+</div>
+<div id="S4.SS2.p6" class="ltx_para">
+<p id="S4.SS2.p6.6" class="ltx_p">For Progressive Residual Quantization, reconstruction proceeds by iteratively applying this operation from stage <math id="S4.SS2.p6.1.m1" class="ltx_Math" alttext="T" display="inline" intent=":literal"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math> to stage <math id="S4.SS2.p6.2.m2" class="ltx_Math" alttext="1" display="inline" intent=":literal"><semantics><mn>1</mn><annotation encoding="application/x-tex">1</annotation></semantics></math>.
+Starting from the quantized output <math id="S4.SS2.p6.3.m3" class="ltx_Math" alttext="{\bm{X}}_{\text{INT}}" display="inline" intent=":literal"><semantics><msub><mi>𝑿</mi><mtext>INT</mtext></msub><annotation encoding="application/x-tex">{\bm{X}}_{\text{INT}}</annotation></semantics></math> and <math id="S4.SS2.p6.4.m4" class="ltx_Math" alttext="S_{\bm{X}}" display="inline" intent=":literal"><semantics><msub><mi>S</mi><mi>𝑿</mi></msub><annotation encoding="application/x-tex">S_{\bm{X}}</annotation></semantics></math>, we first dequantize then progressively restore
+<math id="S4.SS2.p6.5.m5" class="ltx_Math" alttext="\hat{{\bm{X}}}^{(T-1)},\ldots,\hat{{\bm{X}}}^{(0)}" display="inline" intent=":literal"><semantics><mrow><msup><mover accent="true"><mi>𝑿</mi><mo>^</mo></mover><mrow><mo stretchy="false">(</mo><mrow><mi>T</mi><mo>−</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow></msup><mo>,</mo><mi mathvariant="normal">…</mi><mo>,</mo><msup><mover accent="true"><mi>𝑿</mi><mo>^</mo></mover><mrow><mo stretchy="false">(</mo><mn>0</mn><mo stretchy="false">)</mo></mrow></msup></mrow><annotation encoding="application/x-tex">\hat{{\bm{X}}}^{(T-1)},\ldots,\hat{{\bm{X}}}^{(0)}</annotation></semantics></math>, where <math id="S4.SS2.p6.6.m6" class="ltx_Math" alttext="\hat{{\bm{X}}}^{(0)}" display="inline" intent=":literal"><semantics><msup><mover accent="true"><mi>𝑿</mi><mo>^</mo></mover><mrow><mo stretchy="false">(</mo><mn>0</mn><mo stretchy="false">)</mo></mrow></msup><annotation encoding="application/x-tex">\hat{{\bm{X}}}^{(0)}</annotation></semantics></math> corresponds to the final reconstructed tensor.
+This process is exactly the replay of the progressive quantization method.</p>
+</div>
+</section>
+<section id="S4.SS3" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.3 </span>Efficient Algorithm-System Co-design</h3>
+
+<div id="S4.SS3.p1" class="ltx_para ltx_noindent">
+<p id="S4.SS3.p1.1" class="ltx_p"><span id="S4.SS3.p1.1.1" class="ltx_text ltx_font_bold">Fast <em id="S4.SS3.p1.1.1.1" class="ltx_emph ltx_font_italic">k</em>-means with streaming centroid caching.</span>
+While <em id="S4.SS3.p1.1.2" class="ltx_emph ltx_font_italic">k</em>-means clustering is essential to semantic-aware smoothing, its iterative procedure and the <em id="S4.SS3.p1.1.3" class="ltx_emph ltx_font_italic">k</em>-means++ initialization can introduce non-trivial latency in streaming inference. We propose a centroid caching approach to accelerate by initializing the centroid of a new video chunk using the assignment strategy of the previous chunk. This strategy reduces the <em id="S4.SS3.p1.1.4" class="ltx_emph ltx_font_italic">k</em>-means overhead by <math id="S4.SS3.p1.1.m1" class="ltx_math_unparsed" alttext="3\times" display="inline" intent=":literal"><semantics><mrow><mn>3</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">3\times</annotation></semantics></math>.</p>
+</div>
+<div id="S4.SS3.p2" class="ltx_para ltx_noindent">
+<p id="S4.SS3.p2.1" class="ltx_p"><span id="S4.SS3.p2.1.1" class="ltx_text ltx_font_bold">Dequantization kernel.</span>
+We implement a fused kernel that dequantizes the tensor and adds back the assigned centroids for all stages in Progressive Residual Quantization. The intermediate result is stored in registers to avoid repeatedly reading it from global memory.</p>
+</div>
+<figure id="S4.F7" class="ltx_figure"><img src="2602.02958v4/x7.png" id="S4.F7.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="627" height="140" alt="Refer to caption">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S4.F7.2.1.1" class="ltx_text" style="font-size:90%;">Figure 7</span>: </span><span id="S4.F7.3.2" class="ltx_text" style="font-size:90%;">(a) Memory usage decomposition of QVG. (b-c) Trade-off curve of quantization block size for KV Cache.</span></figcaption>
+</figure>
+</section>
+</section>
+<section id="S5" class="ltx_section ltx_indent_first">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">5 </span>Experiments</h2>
+
+<section id="S5.SS1" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.1 </span>Setup</h3>
+
+<div id="S5.SS1.p1" class="ltx_para ltx_noindent">
+<p id="S5.SS1.p1.1" class="ltx_p"><span id="S5.SS1.p1.1.1" class="ltx_text ltx_font_bold">Models.</span>
+We evaluate QVG on open-sourced auto-regressive video generation models including LongCat-Video-13B <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">team2025longcat</span>)</cite>, HY-WorldPlay-8B <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">hyworld2025</span>)</cite>, and Self-Forcing-Wan-1.3B <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">huang2025self</span>)</cite> to generate videos with <math id="S5.SS1.p1.1.m1" class="ltx_Math" alttext="480" display="inline" intent=":literal"><semantics><mn>480</mn><annotation encoding="application/x-tex">480</annotation></semantics></math>p resolution.
+LongCat-Video-13B conducts a video continuation task based on a fixed length context window of 73 frames and repeatedly generates the next 20 frames.
+HY-WorldPlay-8B and Self-Forcing-Wan-1.3B condition on the entire history of previously generated frames and generate new video segments in a chunk-wise manner, with chunk sizes of 12 and 16 frames, respectively.</p>
+</div>
+<div id="S5.SS1.p2" class="ltx_para ltx_noindent">
+<p id="S5.SS1.p2.1" class="ltx_p"><span id="S5.SS1.p2.1.1" class="ltx_text ltx_font_bold">Metrics.</span>
+We evaluate the fidelity compared with the BF16 KV-cache baseline using PSNR, LPIPS, and SSIM.
+We evaluate the perceptual quality of the generated videos using VBench <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">huang2023vbench</span>)</cite>, and report the Background Consistency, Image Quality, Subject Consistency, and Aesthetic Quality. We report the KV-cache compression ratio to measure the memory footprint reduction. We also report the incurred overhead in the end-to-end generation pipeline. For the similarity experiments on LongCat-Video-13B, we report the number of the first generated chunk as the content starts to diverge while maintaining the same quality. All other metrics are reported under the long-generation setting.</p>
+</div>
+<div id="S5.SS1.p3" class="ltx_para ltx_noindent">
+<p id="S5.SS1.p3.1" class="ltx_p"><span id="S5.SS1.p3.1.1" class="ltx_text ltx_font_bold">Datasets.</span>
+We use the prompt suite provided by the MovieGen benchmark <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">polyak2024moviegen</span>)</cite>. Specifically, we follow Self-Forcing’s official prompt settings<span id="footnote2" class="ltx_note ltx_role_footnote"><sup class="ltx_note_mark">†</sup><span class="ltx_note_outer"><span class="ltx_note_content"><sup class="ltx_note_mark">†</sup><span class="ltx_tag ltx_tag_note">†</span>https://github.com/guandeh17/Self-Forcing/blob/main/prompts/MovieGenVideoBench_extended.txt</span></span></span>.</p>
+</div>
+<div id="S5.SS1.p4" class="ltx_para ltx_noindent">
+<p id="S5.SS1.p4.1" class="ltx_p"><span id="S5.SS1.p4.1.1" class="ltx_text ltx_font_bold">Baselines.</span>
+We compare QVG with Round-to-Nearest Quantization (RTN), KIVI <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">liu2024kivi</span>)</cite>, and QuaRot <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">ashkboos2024quarot</span>)</cite> as our baselines. For QuaRot, we only implement its KV cache quantization part and do not quantize the weights and activations. We use block size 16 settings for fair comparison.</p>
+</div>
+<div id="S5.SS1.p5" class="ltx_para ltx_noindent">
+<p id="S5.SS1.p5.5" class="ltx_p"><span id="S5.SS1.p5.5.1" class="ltx_text ltx_font_bold">Implementation.</span>
+We implement QVG with customized CUDA and Triton kernels and benchmark on NVIDIA H100 GPUs (CUDA 12.8).
+We use streaming chunk-wise compression to quantize KV-cache once per chunk and avoid re-compression drift, and adopt pre-RoPE key caching for more quantization-friendly key distributions <cite class="ltx_cite ltx_citemacro_citep">(<span class="ltx_ref ltx_missing_citation ltx_ref_self">hooper2024kvquant</span>)</cite>; we adopt FP8 E4M3 per-group scaling factors to reduce overhead.
+We evaluate INT2/INT4 under two configurations: QVG using <math id="S5.SS1.p5.1.m1" class="ltx_Math" alttext="S{=}1" display="inline" intent=":literal"><semantics><mrow><mi>S</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">S{=}1</annotation></semantics></math> and <math id="S5.SS1.p5.2.m2" class="ltx_Math" alttext="B{=}64" display="inline" intent=":literal"><semantics><mrow><mi>B</mi><mo>=</mo><mn>64</mn></mrow><annotation encoding="application/x-tex">B{=}64</annotation></semantics></math>, and QVG-Pro using <math id="S5.SS1.p5.3.m3" class="ltx_Math" alttext="S{=}4" display="inline" intent=":literal"><semantics><mrow><mi>S</mi><mo>=</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">S{=}4</annotation></semantics></math> stages and group size <math id="S5.SS1.p5.4.m4" class="ltx_Math" alttext="B{=}16" display="inline" intent=":literal"><semantics><mrow><mi>B</mi><mo>=</mo><mn>16</mn></mrow><annotation encoding="application/x-tex">B{=}16</annotation></semantics></math>. We set number of centroids <math id="S5.SS1.p5.5.m5" class="ltx_Math" alttext="K{=}256" display="inline" intent=":literal"><semantics><mrow><mi>K</mi><mo>=</mo><mn>256</mn></mrow><annotation encoding="application/x-tex">K{=}256</annotation></semantics></math> to store assignment vectors in <span id="S5.SS1.p5.5.2" class="ltx_text ltx_font_typewriter">uint8</span>.</p>
+</div>
+</section>
+<section id="S5.SS2" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.2 </span>Quality Evaluation</h3>
+
+<div id="S5.SS2.p1" class="ltx_para">
+<p id="S5.SS2.p1.1" class="ltx_p">In this section, we report the results of QVG on LongCat-Video-13B, HY-WorldPlay-8B, and Self-Forcing-Wan.</p>
+</div>
+<div id="S5.SS2.p2" class="ltx_para">
+<p id="S5.SS2.p2.2" class="ltx_p">As shown in Table <a href="#S4.T1" title="Table 1 ‣ 4.1 Semantic-Aware Smoothing ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>, we report the results on LongCat-Video-13B and HY-WorldPlay-8B. QVG-Pro consistently achieves the best fidelity scores, while QVG delivers the largest compression ratios with only marginal quality degradation. On all VBench metrics, both QVG and QVG-Pro achieves a near-lossless performance, while all baselines exhibit huge degradation, especially under the INT2 quantization setting.
+Notably, our method achieves 28.716 PSNR under <math id="S5.SS2.p2.1.m1" class="ltx_math_unparsed" alttext="6.94\times" display="inline" intent=":literal"><semantics><mrow><mn>6.94</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">6.94\times</annotation></semantics></math> compression ratio for LongCat-Video-13B, and 29.174 PSNR under <math id="S5.SS2.p2.2.m2" class="ltx_math_unparsed" alttext="7.05\times" display="inline" intent=":literal"><semantics><mrow><mn>7.05</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">7.05\times</annotation></semantics></math> compression ratio for HY-WorldPlay-8B.
+These results demonstrate that our method can generate substantially higher-quality long videos with improved memory efficiency.</p>
+</div>
+<div id="S5.SS2.p3" class="ltx_para">
+<p id="S5.SS2.p3.1" class="ltx_p">We report the performance of the Self-Forcing model in Figure <a href="#S4.F5" title="Figure 5 ‣ 4.1 Semantic-Aware Smoothing ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">5</span></a>(a). Specifically, we measure the Image Quality score every 50 frames along long video sequences to evaluate whether QVG can mitigate long-horizon drift. While the BF16 KV-cache baseline also exhibits moderate quality degradation, both Quant VideoGen and Quant VideoGen-Pro maintain near-lossless quality even when extending to 700 frames. In contrast, all other baselines experience a sharp degradation after approximately 100 frames. These results demonstrate the effectiveness of our method in resisting long-horizon drift.</p>
+</div>
+</section>
+<section id="S5.SS3" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.3 </span>Efficiency Evaluation</h3>
+
+<div id="S5.SS3.p1" class="ltx_para ltx_noindent">
+<p id="S5.SS3.p1.1" class="ltx_p"><span id="S5.SS3.p1.1.1" class="ltx_text ltx_font_bold">Memory usage breakdown.</span>
+We analyze the memory footprint of QVG in detail by decomposing it into four components: quantized values, assignment vector, centroids, and scaling factors. As shown in Figure <a href="#S4.F7" title="Figure 7 ‣ 4.3 Efficient Algorithm-System Co-design ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">7</span></a>(a), under both INT2 and INT4 precision, quantized values account for the majority of memory usage (<math id="S5.SS3.p1.1.m1" class="ltx_Math" alttext="\geq 65\%" display="inline" intent=":literal"><semantics><mrow><mi></mi><mo>≥</mo><mrow><mn>65</mn><mo>%</mo></mrow></mrow><annotation encoding="application/x-tex">\geq 65\%</annotation></semantics></math>). Notably, QVG allocates a larger proportion to quantized values compared to QVG-Pro, which results in a higher compression ratio.</p>
+</div>
+<div id="S5.SS3.p2" class="ltx_para ltx_noindent">
+<p id="S5.SS3.p2.1" class="ltx_p"><span id="S5.SS3.p2.1.1" class="ltx_text ltx_font_bold">End-to-end latency.</span>
+We evaluate the end-to-end latency to quantify the overhead introduced by quantization and dequantization in our method.
+On LongCat, QVG increases the overall generation time by 2.1%.
+On HY-World, the end-to-end overhead is 1.5%, while on Self-Forcing it is 4.3%.
+These results indicate that QVG introduces only modest latency overhead and does not slow down the overall generation pipeline.</p>
+</div>
+</section>
+<section id="S5.SS4" class="ltx_subsection ltx_indent_first">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.4 </span>Sensitivity Test</h3>
+
+<div id="S5.SS4.p1" class="ltx_para ltx_noindent">
+<p id="S5.SS4.p1.2" class="ltx_p"><span id="S5.SS4.p1.2.1" class="ltx_text ltx_font_bold">Number of quantization stages.</span>
+We study the impact of the number of stages in Progressive Residual Quantization on the reduction ratio of MSE. As shown in Figure <a href="#S4.F5" title="Figure 5 ‣ 4.1 Semantic-Aware Smoothing ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">5</span></a>(b-c) the first stage provides the dominant reduction in error, resulting in <math id="S5.SS4.p1.1.m1" class="ltx_math_unparsed" alttext="5.83\times" display="inline" intent=":literal"><semantics><mrow><mn>5.83</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">5.83\times</annotation></semantics></math> MSE reduction compared with naive quantization method. Although subsequent stages decrease MSE by at least <math id="S5.SS4.p1.2.m2" class="ltx_math_unparsed" alttext="1.10\times" display="inline" intent=":literal"><semantics><mrow><mn>1.10</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">1.10\times</annotation></semantics></math>, their contributions gradually decreases as the stage count grows.</p>
+</div>
+<div id="S5.SS4.p2" class="ltx_para ltx_noindent">
+<p id="S5.SS4.p2.1" class="ltx_p"><span id="S5.SS4.p2.1.1" class="ltx_text ltx_font_bold">Quantization group size.</span>
+We test the impact of quantization block size on the performance of QVG, ranging from 16 to 64. We vary the number of kmeans stages from 1 to 4 to get a trade-off curve. A larger block size leads to a higher compression ratio, but also lower quality. As shown in Figure <a href="#S4.F7" title="Figure 7 ‣ 4.3 Efficient Algorithm-System Co-design ‣ 4 Methodology ‣ Quant VideoGen: Auto-Regressive Long Video Generation via 2-Bit KV-Cache Quantization" class="ltx_ref"><span class="ltx_text ltx_ref_tag">7</span></a>(b-c), a block size of 64 achieves the best trade-off, while a block size of 16 guarantees the best quality.</p>
+</div>
+</section>
+</section>
+<section id="S6" class="ltx_section ltx_indent_first">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">6 </span>Conclusion</h2>
+
+<div id="S6.p1" class="ltx_para">
+<p id="S6.p1.2" class="ltx_p">In this paper, we propose Quant VideoGen (QVG), a training-free KV-cache quantization framework that leverages video-specific spatiotemporal redundancy to mitigate the memory bottleneck in auto-regressive video generation.
+We propose Semantic-Aware Smoothing that groups semantically similar tokens and subtracts group centroids to produce quantization-friendly residuals.
+We then propose Progressive Residual Quantization to further reduce quantization error in a coarse-to-fine manner. Across multiple video models and benchmarks, QVG achieves up to <math id="S6.p1.1.m1" class="ltx_math_unparsed" alttext="7.04\times" display="inline" intent=":literal"><semantics><mrow><mn>7.04</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">7.04\times</annotation></semantics></math> KV-cache compression with <math id="S6.p1.2.m2" class="ltx_Math" alttext="4\%" display="inline" intent=":literal"><semantics><mrow><mn>4</mn><mo>%</mo></mrow><annotation encoding="application/x-tex">4\%</annotation></semantics></math> latency overhead while preserving near-lossless visual quality. These results demonstrate that QVG enables practical, memory-efficient long-video and world generation.</p>
+</div>
+</section>
+<section id="Sx1" class="ltx_section ltx_indentfirst">
+<h2 class="ltx_title ltx_title_section">Impact Statement</h2>
+
+<div id="Sx1.p1" class="ltx_para">
+<p id="Sx1.p1.1" class="ltx_p">This paper presents work that aims to advance the field of Machine Learning. There are many potential societal consequences of our work, none of which we feel must be specifically highlighted here.</p>
+</div>
+</section>
+<section id="bib" class="ltx_bibliography">
+<h2 class="ltx_title ltx_title_bibliography">References</h2>
+
+<ul id="bib.L1" class="ltx_biblist">
+</ul>
+</section>
+<div id="p3" class="ltx_para">
+<p id="p3.1" class="ltx_p"></p>
+</div>
+</article>
+</div>
+</div>
+<footer class="arxiv-html-footer">
+  <div class="ltx_page_logo">
+    Experimental support, please
+    <a href="./2602.02958v4/__stdout.txt" class="ltx_ref"
+    target="_blank" rel="nofollow">view the build logs</a>
+    for errors. Generated by
+    <a href="https://math.nist.gov/~BMiller/LaTeXML/" target="_blank" class="ltx_ref ltx_LaTeXML_logo">
+      <span style="letter-spacing: -0.2em; margin-right: 0.1em;">
+        L
+        <span style="font-size: 70%; position: relative; bottom: 2.2pt;">A</span>
+        T
+        <span style="position: relative; bottom: -0.4ex;">E</span>
+      </span>
+      <span class="ltx_font_smallcaps">xml</span>
+      <img alt="[LOGO]"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAOCAYAAAD5YeaVAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9wKExQZLWTEaOUAAAAddEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIFRoZSBHSU1Q72QlbgAAAdpJREFUKM9tkL+L2nAARz9fPZNCKFapUn8kyI0e4iRHSR1Kb8ng0lJw6FYHFwv2LwhOpcWxTjeUunYqOmqd6hEoRDhtDWdA8ApRYsSUCDHNt5ul13vz4w0vWCgUnnEc975arX6ORqN3VqtVZbfbTQC4uEHANM3jSqXymFI6yWazP2KxWAXAL9zCUa1Wy2tXVxheKA9YNoR8Pt+aTqe4FVVVvz05O6MBhqUIBGk8Hn8HAOVy+T+XLJfLS4ZhTiRJgqIoVBRFIoric47jPnmeB1mW/9rr9ZpSSn3Lsmir1fJZlqWlUonKsvwWwD8ymc/nXwVBeLjf7xEKhdBut9Hr9WgmkyGEkJwsy5eHG5vN5g0AKIoCAEgkEkin0wQAfN9/cXPdheu6P33fBwB4ngcAcByHJpPJl+fn54mD3Gg0NrquXxeLRQAAwzAYj8cwTZPwPH9/sVg8PXweDAauqqr2cDjEer1GJBLBZDJBs9mE4zjwfZ85lAGg2+06hmGgXq+j3+/DsixYlgVN03a9Xu8jgCNCyIegIAgx13Vfd7vdu+FweG8YRkjXdWy329+dTgeSJD3ieZ7RNO0VAXAPwDEAO5VKndi2fWrb9jWl9Esul6PZbDY9Go1OZ7PZ9z/lyuD3OozU2wAAAABJRU5ErkJggg==">
+    </a>.
+  </div>
+  <div class="keyboard-glossary">
+    <h2>Instructions for reporting errors</h2>
+    <p>We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:</p>
+    <ul>
+      <li>Click the "Report Issue" <span class="mobile-only">(<svg role="presentation"
+            style="display: inline-block; vertical-align: middle; fill: var(--text-color);" aria-hidden="true"
+            height="1em" viewBox="0 0 640 640">
+            <path
+              d="M224 160C224 107 267 64 320 64C373 64 416 107 416 160L416 163.6C416 179.3 403.3 192 387.6 192L252.5 192C236.8 192 224.1 179.3 224.1 163.6L224.1 160zM569.6 172.8C580.2 186.9 577.3 207 563.2 217.6L465.4 290.9C470.7 299.8 474.7 309.6 477.2 320L576 320C593.7 320 608 334.3 608 352C608 369.7 593.7 384 576 384L480 384L480 416C480 418.6 479.9 421.3 479.8 423.9L563.2 486.4C577.3 497 580.2 517.1 569.6 531.2C559 545.3 538.9 548.2 524.8 537.6L461.7 490.3C438.5 534.5 395.2 566.5 344 574.2L344 344C344 330.7 333.3 320 320 320C306.7 320 296 330.7 296 344L296 574.2C244.8 566.5 201.5 534.5 178.3 490.3L115.2 537.6C101.1 548.2 81 545.3 70.4 531.2C59.8 517.1 62.7 497 76.8 486.4L160.2 423.9C160.1 421.3 160 418.7 160 416L160 384L64 384C46.3 384 32 369.7 32 352C32 334.3 46.3 320 64 320L162.8 320C165.3 309.6 169.3 299.8 174.6 290.9L76.8 217.6C62.7 207 59.8 186.9 70.4 172.8C81 158.7 101.1 155.8 115.2 166.4L224 248C236.3 242.9 249.8 240 264 240L376 240C390.2 240 403.7 242.8 416 248L524.8 166.4C538.9 155.8 559 158.7 569.6 172.8z" />
+          </svg>)</span> button, located in the page header.</li>
+    </ul>
+    <p><strong>Tip:</strong> You can select the relevant text first, to include it in your report.</p>
+    <p>Our team has already identified <a class="ltx_ref" href="https://github.com/arXiv/html_feedback/issues"
+        target="_blank">the following issues</a>. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.</p>
+    <p>Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a <a
+        class="ltx_ref" href="https://github.com/brucemiller/LaTeXML/wiki/Porting-LaTeX-packages-for-LaTeXML"
+        target="_blank">list of packages that need conversion</a>, and welcome <a class="ltx_ref"
+        href="https://github.com/brucemiller/LaTeXML/issues" target="_blank">developer contributions</a>.</p>
+  </div>
+</footer><footer class="ds-site-footer">
+  <div class="ds-site-footer-grid">
+    <div class="ds-site-footer-main">
+      <div class="ds-site-footer-ack">
+        We gratefully acknowledge support from
+        our <strong>major funders</strong>,
+        <a href="https://info.arxiv.org/about/ourmembers.html"><strong>member institutions</strong></a><span class="ack-member-inline" hidden>, <strong></strong></span>,
+        and all contributors.
+      </div>
+      <nav class="ds-site-footer-links" aria-label="Site navigation">
+        <a href="https://info.arxiv.org/about">About</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help">Help</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/contact.html">Contact</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/subscribe">Subscribe</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/license/index.html">Copyright</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/policies/privacy_policy.html">Privacy</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/web_accessibility.html">Accessibility</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://status.arxiv.org" target="_blank" rel="noopener noreferrer">Operational Status<span class="is-sr-only"> (opens in new tab)</span></a>
+      </nav>
+    </div>
+
+    <div class="ds-site-footer-funders" aria-label="Major funders">
+      <div class="ds-site-footer-funders-label">Major funding support from</div>
+      <div class="ds-site-footer-funders-logos">
+        <img class="ds-funder-logo" src="/static/base/1.0.1/images/funders/simons-foundation.png" alt="Simons Foundation">
+        <img class="ds-funder-logo" src="/static/base/1.0.1/images/funders/schmidt-sciences.png" alt="Schmidt Sciences">
+      </div>
+    </div>
+  </div>
+</footer><div id="fixed-buttons-container">
+  <a id="disable-reading-mode-btn" class="header-button" href="javascript:toggleReadingMode();"
+    title="Disable reading mode, show header and footer">
+    <svg role="presentation" height="1.25rem"
+      viewBox="0 0 448 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+      <path
+        d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" />
+    </svg>
+  </a>
+</div></body>
+</html>

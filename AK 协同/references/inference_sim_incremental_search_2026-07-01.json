@@ -1,0 +1,247 @@
+{
+  "generated_at": "2026-07-01T06:56:37.495548+00:00",
+  "cutoff_date": "2026-07-01",
+  "mode": "incremental verification from existing local corpus",
+  "source_corpus": {
+    "existing_pdfs_count_before_incremental": 128,
+    "existing_web_snapshots_count_before_incremental": 92,
+    "primary_bibliographies": [
+      "bibliography_inference_sim.md",
+      "bibliography_reverse_review.md"
+    ]
+  },
+  "queries": [
+    {
+      "tool": "arxiv-search",
+      "query": "2026 LLM serving simulator hardware-aware performance model KV cache offloading MoE expert offloading",
+      "notable_hits": [
+        "LLMServingSim2.0 / arXiv:2511.07229",
+        "LLMServingSim 2.0 / arXiv:2602.23036"
+      ]
+    },
+    {
+      "tool": "arxiv-search",
+      "query": "Tutti Making SSD-Backed KV Cache Practical long-context LLM serving 2605.03375",
+      "notable_hits": [
+        "Tutti / arXiv:2605.03375"
+      ]
+    },
+    {
+      "tool": "arxiv-search",
+      "query": "Ascend Kunpeng vLLM-Ascend KV cache CPU offload UCM Mooncake LLM inference",
+      "notable_hits": [
+        "Tutti / arXiv:2605.03375",
+        "vTensor / arXiv:2407.15309"
+      ]
+    },
+    {
+      "tool": "web",
+      "query": "FAST 2026 Bidaw CacheSlide SolidAttention official USENIX",
+      "notable_hits": [
+        "USENIX FAST 26 Technical Sessions"
+      ]
+    },
+    {
+      "tool": "web",
+      "query": "NSDI 2026 ServeGen official USENIX",
+      "notable_hits": [
+        "USENIX NSDI 26 Technical Sessions / ServeGen"
+      ]
+    },
+    {
+      "tool": "web",
+      "query": "vLLM Ascend KV Cache CPU Offload UCM Store Mooncake official docs 2026",
+      "notable_hits": [
+        "vLLM-Ascend release notes",
+        "UCM Store Deployment Guide",
+        "KV Cache Pool Guide"
+      ]
+    },
+    {
+      "tool": "web",
+      "query": "NVIDIA Dynamo KV cache offloading NIXL official docs 2026",
+      "notable_hits": [
+        "Dynamo KV Cache Offloading",
+        "Dynamo Introduction"
+      ]
+    }
+  ],
+  "download_results": [
+    {
+      "name": "Tutti__arxiv-2605.03375.pdf",
+      "url": "https://arxiv.org/pdf/2605.03375",
+      "kind": "pdf",
+      "path": "papers/Tutti__arxiv-2605.03375.pdf",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "application/pdf",
+      "bytes": 1329635
+    },
+    {
+      "name": "LLMServingSim-2.0__arxiv-2511.07229.pdf",
+      "url": "https://arxiv.org/pdf/2511.07229",
+      "kind": "pdf",
+      "path": "papers/LLMServingSim-2.0__arxiv-2511.07229.pdf",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "application/pdf",
+      "bytes": 266528
+    },
+    {
+      "name": "FAST-26-Technical-Sessions.html",
+      "url": "https://www.usenix.org/conference/fast26/technical-sessions",
+      "kind": "html",
+      "path": "web/FAST-26-Technical-Sessions.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 233116
+    },
+    {
+      "name": "NSDI-26-Technical-Sessions.html",
+      "url": "https://www.usenix.org/conference/nsdi26/technical-sessions",
+      "kind": "html",
+      "path": "web/NSDI-26-Technical-Sessions.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 648959
+    },
+    {
+      "name": "vLLM-Ascend-release-notes-live.html",
+      "url": "https://docs.vllm.ai/projects/ascend/en/main/user_guide/release_notes.html",
+      "kind": "html",
+      "path": "web/vLLM-Ascend-release-notes-live.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 442518
+    },
+    {
+      "name": "vLLM-Ascend-UCM-deployment-live.html",
+      "url": "https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/ucm_deployment.html",
+      "kind": "html",
+      "path": "web/vLLM-Ascend-UCM-deployment-live.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 129179
+    },
+    {
+      "name": "vLLM-Ascend-KV-pool-live.html",
+      "url": "https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/kv_pool.html",
+      "kind": "html",
+      "path": "web/vLLM-Ascend-KV-pool-live.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 180325
+    },
+    {
+      "name": "vLLM-Ascend-KV-CPU-offload-live.html",
+      "url": "https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/kv_cache_cpu_offload.html",
+      "kind": "html",
+      "path": "web/vLLM-Ascend-KV-CPU-offload-live.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 51118
+    },
+    {
+      "name": "NVIDIA-Dynamo-KV-offloading-live.html",
+      "url": "https://docs.nvidia.com/dynamo/backends/v-llm/kv-cache-offloading",
+      "kind": "html",
+      "path": "web/NVIDIA-Dynamo-KV-offloading-live.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 621706
+    },
+    {
+      "name": "NVIDIA-Dynamo-introduction-live.html",
+      "url": "https://docs.nvidia.com/dynamo/getting-started/introduction",
+      "kind": "html",
+      "path": "web/NVIDIA-Dynamo-introduction-live.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 734534
+    },
+    {
+      "name": "Mooncake-home-live.html",
+      "url": "https://kvcache-ai.github.io/Mooncake/",
+      "kind": "html",
+      "path": "web/Mooncake-home-live.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 61690
+    },
+    {
+      "name": "vLLM-Mooncake-Store-blog-2026-05-06.html",
+      "url": "https://blog.vllm.ai/2026/05/06/mooncake-store.html",
+      "kind": "html",
+      "path": "web/vLLM-Mooncake-Store-blog-2026-05-06.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 116251
+    },
+    {
+      "name": "Tutti-arxiv-html-live.html",
+      "url": "https://arxiv.org/html/2605.03375",
+      "kind": "html",
+      "path": "web/Tutti-arxiv-html-live.html",
+      "status": "success",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 157971
+    },
+    {
+      "name": "LLMServingSim-2.0-arxiv-2511.07229-html.html",
+      "url": "https://arxiv.org/html/2511.07229",
+      "kind": "html",
+      "path": "web/LLMServingSim-2.0-arxiv-2511.07229-html.html",
+      "status": "failed",
+      "error": "<HTTPError 404: 'Not Found'>"
+    },
+    {
+      "name": "LLMServingSim-2.0-arxiv-2511.07229-abs.html",
+      "url": "https://arxiv.org/abs/2511.07229",
+      "kind": "html",
+      "path": "web/LLMServingSim-2.0-arxiv-2511.07229-abs.html",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "status": "success",
+      "bytes": 43355
+    }
+  ],
+  "manual_review_required": [
+    "ICLR/ICML/NeurIPS/AAAI 2025-2026 still require full accepted-list screening for strict negative claims.",
+    "MICRO/HPCA/ISCA/SC hardware-side papers remain partially screened; report should state partial coverage.",
+    "SOSP 2026, NeurIPS 2026, SC 2026 and some 2026 venues are not fully public as of cutoff; do not assert absence.",
+    "LLMServingSim2.0 has arXiv identifier/version ambiguity in the local corpus: keep both 2511.07229 and 2602.23036 as versioned entries until authors/proceedings clarify canonical version."
+  ],
+  "corrections": [
+    {
+      "item": "Tutti",
+      "issue": "existing local Tutti__arxiv-2602.04182.pdf is not the Tutti paper",
+      "fix": "downloaded and cite Tutti__arxiv-2605.03375.pdf / https://arxiv.org/abs/2605.03375"
+    },
+    {
+      "item": "vLLM-Ascend",
+      "issue": "old report under-specified latest release status",
+      "fix": "snapshot latest release notes and UCM/KV CPU offload docs"
+    },
+    {
+      "item": "NVIDIA Dynamo",
+      "issue": "old report cited general Dynamo docs only",
+      "fix": "snapshot KV Cache Offloading guide with KVBM/LMCache/FlexKV backend details"
+    },
+    {
+      "item": "LLMServingSim2.0",
+      "issue": "arXiv HTML page for 2511.07229 returned 404 during snapshot",
+      "fix": "saved arXiv abs page and PDF instead"
+    }
+  ]
+}

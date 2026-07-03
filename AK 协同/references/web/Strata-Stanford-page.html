@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@500;700&family=Alegreya+Sans:ital,wght@0,300;0,400;0,500;0,700;0,800;1,300&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/styles2.1.css?v=1781913664" type="text/css" />
+
+<script src="https://kit.fontawesome.com/d0c18b213e.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    
+      const sess = window.sessionStorage;
+      let v = sess.getItem('visited') || false;
+      if (!v) {
+        document.querySelector('#header h1 span').classList.add('visible');
+        sess.setItem('visited', true);
+      }
+    
+  }); 
+</script>
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Contextra: Hierarchical Context Caching for Long Context Language Model Serving | Stanford MAST Lab</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Contextra: Hierarchical Context Caching for Long Context Language Model Serving" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Large Language Models (LLMs) with expanding context windows face significant performance hurdles. While caching key-value (KV) states is critical for avoiding redundant computation, the storage footprint of long-context caches quickly exceeds GPU memory capacity, forcing production systems to adopt hierarchical caching across memory hierarchies. However, transferring large cached contexts back to the GPU introduces severe performance bottlenecks: fragmented I/O from paged layouts prevents full bandwidth utilization, and existing schedulers fail to account for cache-loading delays, leaving systems loading-bound rather than compute-bound. We present Contextra, a hierarchical context caching framework designed for efficient long context LLM serving. Contextra introduces GPU-assisted I/O to combat KV cache fragmentation, decoupling GPU and CPU memory layouts and employs cache-aware request scheduling to balance compute with I/O latency and overlapping unavoidable stalls with complementary tasks. Built on SGLang and deployed in production, Contextra achieves up to 5x lower Time-To-First-Token (TTFT) compared to vLLM + LMCache and 3.75x speedup over NVIDIA TensorRT-LLM on long-context benchmarks, without degrading short-context performance." />
+<meta property="og:description" content="Large Language Models (LLMs) with expanding context windows face significant performance hurdles. While caching key-value (KV) states is critical for avoiding redundant computation, the storage footprint of long-context caches quickly exceeds GPU memory capacity, forcing production systems to adopt hierarchical caching across memory hierarchies. However, transferring large cached contexts back to the GPU introduces severe performance bottlenecks: fragmented I/O from paged layouts prevents full bandwidth utilization, and existing schedulers fail to account for cache-loading delays, leaving systems loading-bound rather than compute-bound. We present Contextra, a hierarchical context caching framework designed for efficient long context LLM serving. Contextra introduces GPU-assisted I/O to combat KV cache fragmentation, decoupling GPU and CPU memory layouts and employs cache-aware request scheduling to balance compute with I/O latency and overlapping unavoidable stalls with complementary tasks. Built on SGLang and deployed in production, Contextra achieves up to 5x lower Time-To-First-Token (TTFT) compared to vLLM + LMCache and 3.75x speedup over NVIDIA TensorRT-LLM on long-context benchmarks, without degrading short-context performance." />
+<link rel="canonical" href="https://mast.stanford.edu/pubs/strata/" />
+<meta property="og:url" content="https://mast.stanford.edu/pubs/strata/" />
+<meta property="og:site_name" content="Stanford MAST Lab" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2026-07-13T00:00:00+00:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Contextra: Hierarchical Context Caching for Long Context Language Model Serving" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2026-07-13T00:00:00+00:00","datePublished":"2026-07-13T00:00:00+00:00","description":"Large Language Models (LLMs) with expanding context windows face significant performance hurdles. While caching key-value (KV) states is critical for avoiding redundant computation, the storage footprint of long-context caches quickly exceeds GPU memory capacity, forcing production systems to adopt hierarchical caching across memory hierarchies. However, transferring large cached contexts back to the GPU introduces severe performance bottlenecks: fragmented I/O from paged layouts prevents full bandwidth utilization, and existing schedulers fail to account for cache-loading delays, leaving systems loading-bound rather than compute-bound. We present Contextra, a hierarchical context caching framework designed for efficient long context LLM serving. Contextra introduces GPU-assisted I/O to combat KV cache fragmentation, decoupling GPU and CPU memory layouts and employs cache-aware request scheduling to balance compute with I/O latency and overlapping unavoidable stalls with complementary tasks. Built on SGLang and deployed in production, Contextra achieves up to 5x lower Time-To-First-Token (TTFT) compared to vLLM + LMCache and 3.75x speedup over NVIDIA TensorRT-LLM on long-context benchmarks, without degrading short-context performance.","headline":"Contextra: Hierarchical Context Caching for Long Context Language Model Serving","mainEntityOfPage":{"@type":"WebPage","@id":"https://mast.stanford.edu/pubs/strata/"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"https://mast.stanford.edu/imgs/logo.png"}},"url":"https://mast.stanford.edu/pubs/strata/"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+    <meta property="og:image" content="https://mast.stanford.edu/imgs/thumbs/strata.png" />
+    <meta property="twitter:image" content="https://mast.stanford.edu/imgs/thumbs/strata.png" />
+  
+
+
+
+  <meta name="citation_title" content="Contextra: Hierarchical Context Caching for Long Context Language Model Serving">
+  <meta name="citation_pdf_url" content="https://arxiv.org/abs/pdf/strata">
+  
+  
+    
+    
+      <meta name="citation_inbook_title" content="USENIX Symposium on Operating Systems Design and Implementation (OSDI)">
+    
+  
+
+  
+    
+    
+    <meta name="citation_author" content="Zhiqiang Xie">
+    <meta name="citation_author_institution" content="Stanford">
+  
+    
+    
+    <meta name="citation_author" content="Ziyi Xu">
+    <meta name="citation_author_institution" content="">
+  
+    
+    
+    <meta name="citation_author" content="Mark Zhao">
+    <meta name="citation_author_institution" content="Stanford">
+  
+    
+    
+    <meta name="citation_author" content="Yuwei An">
+    <meta name="citation_author_institution" content="">
+  
+    
+    
+    <meta name="citation_author" content="Vikram Sharma Mailthody">
+    <meta name="citation_author_institution" content="">
+  
+    
+    
+    <meta name="citation_author" content="Scott Mahlke">
+    <meta name="citation_author_institution" content="">
+  
+    
+    
+    <meta name="citation_author" content="Michael Garland">
+    <meta name="citation_author_institution" content="">
+  
+    
+    
+    <meta name="citation_author" content="Christos Kozyrakis">
+    <meta name="citation_author_institution" content="Stanford">
+  
+
+  
+
+  <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+      const bibtex = document.getElementById('bibtex').innerText;
+
+      // Copy Bibtext
+      document.getElementById('bib-copy').addEventListener('click', function(evt) {
+        const setText = (txt) => () => {
+          evt.target.innerText = txt;
+          window.setTimeout(() => evt.target.innerText = '', 1500);
+        }
+
+        navigator.permissions.query({name: "clipboard-write"}).then(result => {
+          if (result.state == "granted" || result.state == "prompt") {
+            navigator.clipboard.writeText(bibtex)
+              .then(setText(' Copied!'), setText(' Failed.'));
+          }
+        });
+      });
+
+      // Download Bibtex
+      const dl = document.getElementById('bib-download');
+      dl.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(bibtex));
+      dl.setAttribute('download', 'strata.bib');
+    });
+  </script>
+</head>
+<body>
+  <div class="pure-g">
+    <div id="center" class="pure-u-1">
+      <div id="header" class="pure-g">
+  <div class="pure-u-1 pure-u-md-1-2">
+    <a id="wordmark" href="/">
+      <div id="logo">
+        <img src="/imgs/logo.png" style="width: 50px;" alt="SAIL Logo" />
+      </div>
+
+      <h1>
+        <span> &ensp; Hi, we are the </span>  Stanford MAST team
+      </h1>
+    </a>
+  </div>
+  <div class="pure-u-1 pure-u-md-1-2">
+    <div id="links">
+      <span>
+        <a href="/" >Home</a>
+        &middot;
+        <a href="/pubs" class="selected">Publications</a>
+        &middot;
+        <a href="https://github.com/stanford-mast">Code</a>
+      </span>
+    </div>
+  </div>
+</div>
+
+
+      <div id="paper" class="pure-g">
+        <div id="content" class="stub pure-u-1 pure-u-md-3-4">
+          <h1 class="title">Contextra: Hierarchical Context Caching for Long Context Language Model Serving</h1>
+          <div id="authors" class="pure-g">
+            
+              
+              
+              <p class="pure-u-1-2 pure-u-md-1-4">
+                <a href="https://zhiqiangxie.com">
+                
+                  <img src="/imgs/people/zhiqiangxie.jpg" alt="" />
+                
+                <span class="name">Zhiqiang Xie</span>
+                <span class="affiliation">
+                  
+                    Stanford
+                  
+                </span>
+                </a>
+              </p>
+            
+              
+              
+              <p class="pure-u-1-2 pure-u-md-1-4">
+                
+                 
+                  <img src="/imgs/people/default.jpg" alt="" />
+                
+                <span class="name">Ziyi Xu</span>
+                <span class="affiliation">
+                  
+                    
+                  
+                </span>
+                
+              </p>
+            
+              
+              
+              <p class="pure-u-1-2 pure-u-md-1-4">
+                <a href="https://home.cs.colorado.edu/~myzhao/">
+                
+                  <img src="/imgs/people/markzhao.jpg" alt="" />
+                
+                <span class="name">Mark Zhao</span>
+                <span class="affiliation">
+                  
+                    Stanford
+                  
+                </span>
+                </a>
+              </p>
+            
+              
+              
+              <p class="pure-u-1-2 pure-u-md-1-4">
+                
+                 
+                  <img src="/imgs/people/default.jpg" alt="" />
+                
+                <span class="name">Yuwei An</span>
+                <span class="affiliation">
+                  
+                    
+                  
+                </span>
+                
+              </p>
+            
+              
+              
+              <p class="pure-u-1-2 pure-u-md-1-4">
+                
+                 
+                  <img src="/imgs/people/default.jpg" alt="" />
+                
+                <span class="name">Vikram Sharma Mailthody</span>
+                <span class="affiliation">
+                  
+                    
+                  
+                </span>
+                
+              </p>
+            
+              
+              
+              <p class="pure-u-1-2 pure-u-md-1-4">
+                
+                 
+                  <img src="/imgs/people/default.jpg" alt="" />
+                
+                <span class="name">Scott Mahlke</span>
+                <span class="affiliation">
+                  
+                    
+                  
+                </span>
+                
+              </p>
+            
+              
+              
+              <p class="pure-u-1-2 pure-u-md-1-4">
+                
+                 
+                  <img src="/imgs/people/default.jpg" alt="" />
+                
+                <span class="name">Michael Garland</span>
+                <span class="affiliation">
+                  
+                    
+                  
+                </span>
+                
+              </p>
+            
+              
+              
+              <p class="pure-u-1-2 pure-u-md-1-4">
+                <a href="https://web.stanford.edu/~kozyraki/">
+                
+                  <img src="/imgs/people/christoskozyrakis.jpg" alt="" />
+                
+                <span class="name">Christos Kozyrakis</span>
+                <span class="affiliation">
+                  
+                    Stanford
+                  
+                </span>
+                </a>
+              </p>
+            
+          </div>
+
+          <div id="metadata">
+            
+              <p>
+                <span id="venue">
+                  
+                    USENIX Symposium on Operating Systems Design and Implementation (OSDI), 2026
+                  
+                </span>
+              </p>
+            
+            
+
+            
+          </div>
+
+          <hr>
+
+          
+            
+
+            <h3>Abstract</h3>
+
+            <p>Large Language Models (LLMs) with expanding context windows face significant performance hurdles. While caching key-value (KV) states is critical for avoiding redundant computation, the storage footprint of long-context caches quickly exceeds GPU memory capacity, forcing production systems to adopt hierarchical caching across memory hierarchies. However, transferring large cached contexts back to the GPU introduces severe performance bottlenecks: fragmented I/O from paged layouts prevents full bandwidth utilization, and existing schedulers fail to account for cache-loading delays, leaving systems loading-bound rather than compute-bound. We present Contextra, a hierarchical context caching framework designed for efficient long context LLM serving. Contextra introduces GPU-assisted I/O to combat KV cache fragmentation, decoupling GPU and CPU memory layouts and employs cache-aware request scheduling to balance compute with I/O latency and overlapping unavoidable stalls with complementary tasks. Built on SGLang and deployed in production, Contextra achieves up to 5x lower Time-To-First-Token (TTFT) compared to vLLM + LMCache and 3.75x speedup over NVIDIA TensorRT-LLM on long-context benchmarks, without degrading short-context performance.</p>
+
+
+          
+        </div>
+
+        <div id="sidebar" class="pure-u-1 pure-u-md-1-4">
+          <h4>Materials</h4>
+          <ul id="materials" class="links">
+            
+              <li><a href="https://www.usenix.org/conference/osdi26/presentation/xie-zhiqiang"><i class="fas fa-file-pdf"></i>PDF</a></li>
+            
+          </ul>
+
+          
+            <h4>
+              Bibtex
+              <a id="bib-copy" class="bib" href="#" title="Copy Bibtex"><i class="far fa-copy" aria-hidden="true"></i></a>
+              <a id="bib-download" class="bib" href="#" title="Download Bibtex"><i class="far fa-arrow-alt-circle-down" aria-hidden="true"></i></a>
+            </h4>
+            
+            <pre><code id="bibtex">@inproceedings{2026strata,
+  title = {Contextra: Hierarchical Context Caching for Long Context Language Model Serving},
+  author = {Zhiqiang Xie and Ziyi Xu and Mark Zhao and Yuwei An and Vikram Sharma Mailthody and Scott Mahlke and Michael Garland and Christos Kozyrakis},
+  booktitle = {USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  year = {2026},
+}</code></pre>
+          
+
+          
+
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

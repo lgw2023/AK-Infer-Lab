@@ -1,0 +1,823 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>KV Cache CPU Offload Guide &#8212; vllm-ascend</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=9c3e77be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../_static/documentation_options.js?v=834ee352"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=b8b12719"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/feature_guide/kv_cache_cpu_offload';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="External DP" href="external_dp.html" />
+    <link rel="prev" title="KV Cache Pool（Ascend Store）Deployment Guide" href="kv_pool.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  <script async type="text/javascript" src="/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="vllm-ascend" /><meta name="readthedocs-version-slug" content="main" /><meta name="readthedocs-resolver-filename" content="/user_guide/feature_guide/kv_cache_cpu_offload.html" /><meta name="readthedocs-http-status" content="200" /></head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none"><!--
+  **********************************************************************
+  * Copyright (c) 2025 Huawei Technologies Co., Ltd. All Rights Reserved.
+  * Copyright 2023 The vLLM team.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  * This file is a part of the vllm-ascend project.
+  * Adapted from https://github.com/vllm-project/vllm/blob/main/docs/source/_templates/sections/header.html
+  **********************************************************************
+-->
+<style>
+    .notification-bar {
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+    }
+    .notification-bar p {
+      margin: 0;
+    }
+    .notification-bar a {
+      font-weight: bold;
+      text-decoration: none;
+    }
+  
+    /* Light mode styles (default) */
+    .notification-bar {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .notification-bar a {
+      color: #d97706;
+    }
+  
+    /* Dark mode styles */
+    html[data-theme=dark] .notification-bar {
+      background-color: #333;
+      color: #ddd;
+    }
+    html[data-theme=dark] .notification-bar a {
+      color: #ffa500; /* Brighter color for visibility */
+    }
+  </style>
+  
+  <div class="notification-bar">
+    <p>You are viewing the latest developer preview docs. <a href="https://docs.vllm.ai/projects/ascend/en/v0.18.0">Click here</a> to view docs for the latest stable release(v0.18.0).</p>
+  </div>
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/vllm-ascend-logo-text-light.png" class="logo__image only-light" alt="vllm-ascend - Home"/>
+    <img src="../../_static/vllm-ascend-logo-text-light.png" class="logo__image only-dark pst-js-only" alt="vllm-ascend - Home"/>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../quick_start.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../tutorials/models/index.html">Model Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-Dense.html">Qwen3-Dense (Qwen3-0.6B/1.7B/4B/8B/14B/32B, W8A8, W4A8, W4A4)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen-VL-Dense.html">Qwen-VL-Dense(Qwen3-VL-2B/4B/8B/32B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-30B-A3B.html">Qwen3-30B-A3B</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-235B-A22B.html">Qwen3-235B-A22B</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-VL-30B-A3B-Instruct.html">Qwen3-VL-30B-A3B-Instruct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-VL-235B-A22B-Instruct.html">Qwen3-VL-235B-A22B-Instruct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-Coder-30B-A3B.html">Qwen3-Coder-30B-A3B</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3_embedding.html">Qwen3-Embedding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-VL-Embedding.html">Qwen3-VL-Embedding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3_reranker.html">Qwen3-Reranker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-VL-Reranker.html">Qwen3-VL-Reranker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-Next.html">Qwen3-Next</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-Omni-30B-A3B-Thinking.html">Qwen3-Omni-30B-A3B-Thinking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3.5-27B-Qwen3.6-27B.html">Qwen3.5-27B/Qwen3.6-27B</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3.5-397B-A17B.html">Qwen3.5-397B-A17B Deployment Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3.6-35B-A3B.html">Qwen3.6-35B-A3B Deployment Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/DeepSeek-V3.1.html">DeepSeek-V3/3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/DeepSeek-V3.2.html">DeepSeek-V3.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/DeepSeek-V4-Flash.html">DeepSeek-V4-Flash</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/DeepSeek-V4-Pro.html">DeepSeek-V4-Pro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/DeepSeek-R1.html">DeepSeek-R1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/DeepSeekOCR2.html">DeepSeek-OCR-2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/GLM4.x.html">GLM-4.5/4.6/4.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/GLM5.html">GLM-5/GLM-5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/GLM5.2.html">GLM-5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Kimi-K2-Thinking.html">Kimi-K2-Thinking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Kimi-K2.5.html">Kimi-K2.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Kimi-K2.6.html">Kimi-K2.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/PaddleOCR-VL.html">PaddleOCR-VL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/MiniMax-M2.html">MiniMax-M2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Hunyuan-A13B-Instruct.html">Hunyuan-A13B-Instruct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Hy3-preview.html">Hy3-preview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Minitron-8B-Base.html">Minitron-8B-Base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/LLaVA-OneVision-Qwen2-0.5B-OV.html">LLaVA-OneVision-Qwen2-0.5B-OV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/gpt-oss-120b.html">gpt-oss-120b</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Mixtral-8x7B-Instruct-v0.1.html">Mixtral-8x7B-Instruct-v0.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen3-ASR-1.7B.html">Qwen3-ASR-1.7B</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/Qwen2.5-Math-RM-72B.html">Qwen2.5-Math-RM-72B</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/models/InternVL3.5.html">InternVL3.5(InternVL3_5-38B/241B-A28B)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../tutorials/features/index.html">Feature Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/features/pd_colocated_mooncake_multi_instance.html">PD-Colocated with Mooncake Multi-Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/features/pd_disaggregation_mooncake_single_node.html">Prefill-Decode Disaggregation (Qwen2.5-VL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/features/pd_disaggregation_mooncake_multi_node.html">Prefill-Decode Disaggregation (Deepseek)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/features/long_sequence_context_parallel_single_node.html">Long-Sequence Context Parallel (Qwen3-235B-A22B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/features/long_sequence_context_parallel_multi_node.html">Long-Sequence Context Parallel (Deepseek)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/features/dynamic_chunked_pipeline_parallel.html">Dynamic Chunked Pipeline Parallel (DeepSeek-V3.1)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/features/suffix_speculative_decoding.html">Suffix Speculative Decoding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/features/ray.html">Ray Distributed (Qwen3-235B-A22B)</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../tutorials/hardwares/index.html">Hardware Tutorials</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/hardwares/310p.html">Atlas 300I DUO / Atlas 200I Pro</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faqs.html">FAQs</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../support_matrix/index.html">Features and Models</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../support_matrix/supported_models.html">Supported Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../support_matrix/supported_features.html">Supported Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../support_matrix/feature_matrix.html">Feature × Feature</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../configuration/index.html">Configuration Guide</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../configuration/env_vars.html">Environment Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../configuration/additional_config.html">Additional Configuration</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Feature Guide</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="graph_mode.html">Graph Mode Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cpu_binding.html">CPU Binding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ai_QoS_introduction_en.html">AI QoS Feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quantization.html">Quantization Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleep_mode.html">Sleep Mode Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structured_output.html">Structured Output Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lora.html">LoRA Adapters Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expert_parallelism_load_balancer.html">Expert Parallelism Load Balancer (EPLB)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="netloader.html">Netloader Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rfork.html">RFork Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamic_batch.html">Dynamic Batch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="epd_disaggregation.html">Disaggregated-encoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kv_pool.html">KV Cache Pool（Ascend Store）Deployment Guide</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">KV Cache CPU Offload Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="external_dp.html">External DP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="large_scale_ep.html">Distributed DP Server With Large-Scale Expert Parallelism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ucm_deployment.html">UCM Store Deployment Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Fine_grained_TP.html">Fine-Grained Tensor Parallelism (Fine-grained TP)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="layer_sharding.html">Layer Sharding Linear Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speculative_decoding.html">Speculative Decoding Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="context_parallel.html">Context Parallel Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight_prefetch.html">Weight Prefetch Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sequence_parallelism.html">Sequence Parallelism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="batch_invariance.html">Batch Invariance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lmcache_ascend_deployment.html">LMCache-Ascend Deployment Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamic_chunk_pipeline_parallel.html">Dynamic Chunked Pipeline Parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flash_attention.html">Flash Attention 3</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../deployment_guide/index.html">Deployment Guide</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../deployment_guide/using_volcano_kthena.html">Using Volcano Kthena</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../deployment_guide/using_mindie_motor.html">Deploy vLLM-Ascend with MindIE-Motor</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../developer_guide/contribution/index.html">Contributing</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/contribution/testing.html">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/contribution/doc_writing.html">Doc writing guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/contribution/multi_node_test.html">Multi Node Test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/contribution/nightly_ci_test.html">Nightly CI Test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/contribution/e2e_ci_test.html">E2E CI Test</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../developer_guide/Design_Documents/index.html">Design Documents</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/patch.html">Patch in vLLM Ascend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/cpu_binding.html">CPU Binding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/ModelRunner_prepare_inputs.html">Prepare inputs for model forwarding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/disaggregated_prefill.html">Disaggregated-prefill</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/eplb_swift_balancer.html">Expert Parallelism Load Balancer (EPLB)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/ACL_Graph.html">ACL Graph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/KV_Cache_Pool_Guide.html">KV Cache Pool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/add_custom_aclnn_op.html">Adding a custom aclnn operation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/context_parallel.html">Context Parallel (CP)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/dynamic_chunked_pipeline_parallel.html">Dynamic Chunked Pipeline Parallel (CPP)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/quantization.html">Quantization Adaptation Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/Design_Documents/npugraph_ex.html">Npugraph_ex</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../developer_guide/evaluation/index.html">Accuracy</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/evaluation/using_evalscope.html">Using EvalScope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/evaluation/using_lm_eval.html">Using lm-eval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/evaluation/using_ais_bench.html">Using AISBench</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/evaluation/using_opencompass.html">Using OpenCompass</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../developer_guide/performance_and_debug/index.html">Performance and Debug</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/performance_and_debug/performance_benchmark.html">Performance Benchmark</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/performance_and_debug/optimization_and_tuning.html">Optimization and Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/performance_and_debug/service_profiling_guide.html">Service Profiling Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../developer_guide/performance_and_debug/msprobe_guide.html">MSProbe Debugging Guide</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../community/governance.html">Governance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/contributors.html">Committers and Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/issue-workflow-guidelines.html">Issue Workflow Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/slash-commands.html">Slash Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/versioning_policy.html">Versioning Policy</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../community/user_stories/index.html">User Stories</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../community/user_stories/llamafactory.html">LLaMA-Factory</a></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/vllm-project/vllm-ascend" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/vllm-project/vllm-ascend/edit/main/docs/source/user_guide/feature_guide/kv_cache_cpu_offload.md" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/user_guide/feature_guide/kv_cache_cpu_offload.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button pst-navbar-icon"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>KV Cache CPU Offload Guide</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-concepts">Key Concepts</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#usage">Usage</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python-api">Python API</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#online-serving">Online Serving</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-parameters">Configuration Parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-it-works">How It Works</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-kv-cache-events">Optional: KV Cache Events</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#notes">Notes</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="kv-cache-cpu-offload-guide">
+<h1>KV Cache CPU Offload Guide<a class="headerlink" href="#kv-cache-cpu-offload-guide" title="Link to this heading">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>KV Cache CPU Offload enables offloading inactive KV cache blocks from NPU memory to CPU memory, allowing vLLM to handle longer contexts or more concurrent requests when NPU memory is limited. When a prefix cache miss occurs on the NPU but the data exists in CPU memory, the KV cache is asynchronously loaded back to the NPU, reducing recomputation latency.</p>
+<p>This feature is built on vLLM’s <code class="docutils literal notranslate"><span class="pre">OffloadingConnector</span></code> framework and provides an Ascend NPU-specific implementation (<code class="docutils literal notranslate"><span class="pre">NPUOffloadingSpec</span></code>) that uses dedicated NPU streams for efficient asynchronous data transfers between NPU and CPU.</p>
+</section>
+<section id="key-concepts">
+<h2>Key Concepts<a class="headerlink" href="#key-concepts" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>CPU Block Pool</strong>: A pre-allocated pool of CPU memory blocks (optionally pinned) used to store offloaded KV cache data.</p></li>
+<li><p><strong>Asynchronous Transfer</strong>: NPU-to-CPU (D2H) and CPU-to-NPU (H2D) transfers are performed on separate NPU streams, overlapping with computation to minimize latency impact.</p></li>
+<li><p><strong>LRU Eviction</strong>: The CPU-side block pool uses an LRU (Least Recently Used) eviction policy to manage limited CPU memory efficiently.</p></li>
+</ul>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">#</a></h2>
+<section id="python-api">
+<h3>Python API<a class="headerlink" href="#python-api" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">vllm</span><span class="w"> </span><span class="kn">import</span> <span class="n">LLM</span><span class="p">,</span> <span class="n">SamplingParams</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">vllm.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">KVTransferConfig</span>
+
+<span class="n">kv_transfer_config</span> <span class="o">=</span> <span class="n">KVTransferConfig</span><span class="p">(</span>
+    <span class="n">kv_connector</span><span class="o">=</span><span class="s2">&quot;OffloadingConnector&quot;</span><span class="p">,</span>
+    <span class="n">kv_role</span><span class="o">=</span><span class="s2">&quot;kv_both&quot;</span><span class="p">,</span>
+    <span class="n">kv_connector_extra_config</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;num_cpu_blocks&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="s2">&quot;block_size&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+        <span class="s2">&quot;spec_name&quot;</span><span class="p">:</span> <span class="s2">&quot;NPUOffloadingSpec&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;spec_module_path&quot;</span><span class="p">:</span> <span class="s2">&quot;vllm_ascend.kv_offload.npu&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">llm</span> <span class="o">=</span> <span class="n">LLM</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;Qwen/Qwen3-0.6B&quot;</span><span class="p">,</span>
+    <span class="n">gpu_memory_utilization</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">kv_transfer_config</span><span class="o">=</span><span class="n">kv_transfer_config</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">sampling_params</span> <span class="o">=</span> <span class="n">SamplingParams</span><span class="p">(</span><span class="n">max_tokens</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">generate</span><span class="p">([</span><span class="s2">&quot;Hello, my name is&quot;</span><span class="p">],</span> <span class="n">sampling_params</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">outputs</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Prompt: </span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">prompt</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated: </span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="online-serving">
+<h3>Online Serving<a class="headerlink" href="#online-serving" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>vllm<span class="w"> </span>serve<span class="w"> </span>Qwen/Qwen3-0.6B<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--gpu-memory-utilization<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--kv-transfer-config<span class="w"> </span><span class="s1">&#39;{</span>
+<span class="s1">        &quot;kv_connector&quot;: &quot;OffloadingConnector&quot;,</span>
+<span class="s1">        &quot;kv_role&quot;: &quot;kv_both&quot;,</span>
+<span class="s1">        &quot;kv_connector_extra_config&quot;: {</span>
+<span class="s1">            &quot;num_cpu_blocks&quot;: 1000,</span>
+<span class="s1">            &quot;block_size&quot;: 128,</span>
+<span class="s1">            &quot;spec_name&quot;: &quot;NPUOffloadingSpec&quot;,</span>
+<span class="s1">            &quot;spec_module_path&quot;: &quot;vllm_ascend.kv_offload.npu&quot;</span>
+<span class="s1">        }</span>
+<span class="s1">    }&#39;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configuration-parameters">
+<h2>Configuration Parameters<a class="headerlink" href="#configuration-parameters" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">kv_connector</span></code>: Must be set to <code class="docutils literal notranslate"><span class="pre">&quot;OffloadingConnector&quot;</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">kv_role</span></code>: Set to <code class="docutils literal notranslate"><span class="pre">&quot;kv_both&quot;</span></code> to enable both storing and loading of KV cache.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_cpu_blocks</span></code>: Number of blocks to allocate in CPU memory. Increase this value for longer context scenarios. Each block consumes memory proportional to <code class="docutils literal notranslate"><span class="pre">block_size</span> <span class="pre">×</span> <span class="pre">num_layers</span> <span class="pre">×</span> <span class="pre">(key_size</span> <span class="pre">+</span> <span class="pre">value_size)</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">block_size</span></code>: The CPU-side block size. Should be a multiple of the NPU-side block size. Typical value: <code class="docutils literal notranslate"><span class="pre">128</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">spec_name</span></code>: Must be <code class="docutils literal notranslate"><span class="pre">&quot;NPUOffloadingSpec&quot;</span></code> for Ascend NPU.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">spec_module_path</span></code>: Must be <code class="docutils literal notranslate"><span class="pre">&quot;vllm_ascend.kv_offload.npu&quot;</span></code>.</p></li>
+</ul>
+</section>
+<section id="how-it-works">
+<h2>How It Works<a class="headerlink" href="#how-it-works" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Normal inference</strong>: KV cache blocks are computed and stored on the NPU as usual.</p></li>
+<li><p><strong>Eviction to CPU</strong>: When NPU memory is full and new blocks are needed, inactive KV cache blocks are asynchronously copied to CPU memory via a dedicated D2H NPU stream.</p></li>
+<li><p><strong>Prefix cache hit (CPU)</strong>: When a request shares a prefix with previously computed data, and the prefix cache is not found on NPU but exists in CPU memory, the KV cache blocks are asynchronously loaded back from CPU to NPU via a dedicated H2D NPU stream.</p></li>
+<li><p><strong>LRU management</strong>: The CPU block pool uses LRU eviction to discard the least recently used blocks when CPU memory is full.</p></li>
+</ol>
+</section>
+<section id="optional-kv-cache-events">
+<h2>Optional: KV Cache Events<a class="headerlink" href="#optional-kv-cache-events" title="Link to this heading">#</a></h2>
+<p>You can enable KV cache event publishing for monitoring or debugging purposes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">vllm.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">KVEventsConfig</span>
+
+<span class="n">kv_events_config</span> <span class="o">=</span> <span class="n">KVEventsConfig</span><span class="p">(</span>
+    <span class="n">enable_kv_cache_events</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">publisher</span><span class="o">=</span><span class="s2">&quot;zmq&quot;</span><span class="p">,</span>
+    <span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;tcp://*:5555&quot;</span><span class="p">,</span>
+    <span class="n">topic</span><span class="o">=</span><span class="s2">&quot;kv_events&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">llm</span> <span class="o">=</span> <span class="n">LLM</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;Qwen/Qwen3-0.6B&quot;</span><span class="p">,</span>
+    <span class="n">gpu_memory_utilization</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">kv_transfer_config</span><span class="o">=</span><span class="n">kv_transfer_config</span><span class="p">,</span>
+    <span class="n">kv_events_config</span><span class="o">=</span><span class="n">kv_events_config</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>This feature requires vLLM v1 engine.</p></li>
+<li><p>Adjust <code class="docutils literal notranslate"><span class="pre">num_cpu_blocks</span></code> based on available CPU memory. Using too many blocks may cause out-of-memory errors on the host.</p></li>
+<li><p>Pinned (page-locked) memory is used when available for optimal transfer performance.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">gpu_memory_utilization</span></code> parameter controls how much NPU memory is reserved for KV cache. Lower values leave less NPU memory for KV cache, making offloading more active.</p></li>
+<li><p>For production workloads, benchmark with realistic request patterns to find the optimal <code class="docutils literal notranslate"><span class="pre">num_cpu_blocks</span></code> and <code class="docutils literal notranslate"><span class="pre">block_size</span></code> settings.</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="kv_pool.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">KV Cache Pool（Ascend Store）Deployment Guide</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="external_dp.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">External DP</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#key-concepts">Key Concepts</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#usage">Usage</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python-api">Python API</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#online-serving">Online Serving</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-parameters">Configuration Parameters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-it-works">How It Works</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-kv-cache-events">Optional: KV Cache Events</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#notes">Notes</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By the vllm-ascend team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, vllm-ascend team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"91c60e3c66214aa3a7bf8f8e8f31e503","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
