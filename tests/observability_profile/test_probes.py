@@ -103,3 +103,91 @@ def test_container_permission_probe_does_not_map_to_container_privileged():
     container_probe = next(probe for probe in probes if probe["tool"] == "container_permission_probe")
 
     assert "server_observability_profile.container_privileged" not in container_probe["maps_to_fields"]
+
+
+def test_shell_sudo_after_attached_separator_is_blocked_without_execution(monkeypatch):
+    executed = False
+
+    def fake_run(*args, **kwargs):
+        nonlocal executed
+        executed = True
+        return subprocess.CompletedProcess(args=args[0], returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(probes_module.subprocess, "run", fake_run)
+
+    result = run_probe_command(
+        ProbeCommand(name="shell_sudo_probe", command=["bash", "-lc", "echo ok; sudo -n true"])
+    )
+
+    assert executed is False
+    assert result["available"] is False
+    assert result["exit_code"] == 126
+    assert result["permission_status"] == "blocked"
+    assert result["blocked_reason"]["category"] == "permission"
+
+
+def test_destructive_direct_command_is_blocked_without_execution(monkeypatch):
+    executed = False
+
+    def fake_run(*args, **kwargs):
+        nonlocal executed
+        executed = True
+        return subprocess.CompletedProcess(args=args[0], returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(probes_module.subprocess, "run", fake_run)
+
+    result = run_probe_command(ProbeCommand(name="rm_probe", command=["rm", "-rf", "/tmp/example"]))
+
+    assert executed is False
+    assert result["available"] is False
+    assert result["exit_code"] == 126
+    assert result["permission_status"] == "blocked"
+    assert result["blocked_reason"]["category"] == "permission"
+
+
+def test_destructive_shell_command_after_separator_is_blocked_without_execution(monkeypatch):
+    executed = False
+
+    def fake_run(*args, **kwargs):
+        nonlocal executed
+        executed = True
+        return subprocess.CompletedProcess(args=args[0], returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(probes_module.subprocess, "run", fake_run)
+
+    result = run_probe_command(ProbeCommand(name="shell_rm_probe", command=["bash", "-lc", "echo ok && rm -rf /tmp/example"]))
+
+    assert executed is False
+    assert result["available"] is False
+    assert result["exit_code"] == 126
+    assert result["permission_status"] == "blocked"
+    assert result["blocked_reason"]["category"] == "permission"
+
+
+def test_timeout_returns_structured_blocked_reason(monkeypatch):
+    def fake_run(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=args[0], timeout=kwargs["timeout"], output="partial", stderr="late")
+
+    monkeypatch.setattr(probes_module.subprocess, "run", fake_run)
+
+    result = run_probe_command(ProbeCommand(name="timeout_probe", command=["slow-probe"], timeout_s=1))
+
+    assert result["available"] is False
+    assert result["exit_code"] == 124
+    assert result["permission_status"] == "blocked"
+    assert result["blocked_reason"]["category"] == "unknown"
+    assert result["blocked_reason"]["detail"]
+
+
+def test_standard_probe_names_match_expected_set_exactly():
+    probes = run_standard_probes()
+
+    assert [probe["tool"] for probe in probes] == [
+        "npu_smi_probe",
+        "cann_profiler_probe",
+        "perf_probe",
+        "ebpf_probe",
+        "fio_probe",
+        "numa_probe",
+        "container_permission_probe",
+    ]

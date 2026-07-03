@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import getpass
 import os
-import shlex
+import re
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -12,6 +12,24 @@ from typing import Any
 
 
 OUTPUT_EXCERPT_LIMIT = 4000
+UNSAFE_COMMANDS = {
+    "rm",
+    "mv",
+    "dd",
+    "mkfs",
+    "mount",
+    "umount",
+    "chmod",
+    "chown",
+    "kill",
+    "pkill",
+    "reboot",
+    "shutdown",
+}
+SHELLS = {"bash", "sh", "zsh", "dash"}
+SHELL_COMMAND_PATTERN = re.compile(
+    rf"(?:^|[;&|\n])\s*({'|'.join(sorted({'sudo', *UNSAFE_COMMANDS}))})\b"
+)
 
 
 @dataclass(frozen=True)
@@ -59,24 +77,31 @@ def _blocked_reason(category: str | None, detail: str | None) -> dict[str, str |
     return {"category": category, "detail": detail}
 
 
-def _shell_contains_sudo_command(value: str) -> bool:
-    try:
-        tokens = shlex.split(value)
-    except ValueError:
-        tokens = value.split()
-    command_position = True
-    for token in tokens:
-        if command_position and token == "sudo":
-            return True
-        command_position = token in {";", "&&", "||", "|"}
-    return False
+def _shell_command_strings(command: list[str]) -> list[str]:
+    if not command:
+        return []
+    if Path(command[0]).name not in SHELLS:
+        return []
+    for index, token in enumerate(command[1:], start=1):
+        if token.startswith("-") and not token.startswith("--") and "c" in token[1:] and index + 1 < len(command):
+            return [command[index + 1]]
+    return []
+
+
+def _unsafe_shell_command(value: str) -> str | None:
+    match = SHELL_COMMAND_PATTERN.search(value)
+    return match.group(1) if match else None
 
 
 def _safety_block_reason(command: list[str]) -> dict[str, str | None] | None:
     if command and command[0] == "sudo":
         return _blocked_reason("permission", "sudo probes are not allowed")
-    if any(_shell_contains_sudo_command(part) for part in command):
-        return _blocked_reason("permission", "shell sudo probes are not allowed")
+    if command and Path(command[0]).name in UNSAFE_COMMANDS:
+        return _blocked_reason("permission", f"unsafe probe command is not allowed: {Path(command[0]).name}")
+    for shell_command in _shell_command_strings(command):
+        unsafe_command = _unsafe_shell_command(shell_command)
+        if unsafe_command is not None:
+            return _blocked_reason("permission", f"unsafe shell probe command is not allowed: {unsafe_command}")
     return None
 
 
