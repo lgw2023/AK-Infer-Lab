@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import getpass
 import os
-import re
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -27,9 +26,26 @@ UNSAFE_COMMANDS = {
     "shutdown",
 }
 SHELLS = {"bash", "sh", "zsh", "dash"}
-SHELL_COMMAND_PATTERN = re.compile(
-    rf"(?<![A-Za-z0-9_-])(?:[^\s;&|()`$]+/)?({'|'.join(sorted({'sudo', *UNSAFE_COMMANDS}))})(?![A-Za-z0-9_-])"
+CANN_PROFILER_COMMAND = (
+    "bash",
+    "-lc",
+    "command -v msprof >/dev/null 2>&1 || exit 127; msprof --help | head -40",
 )
+EBPF_COMMAND = (
+    "bash",
+    "-lc",
+    "command -v bpftrace >/dev/null 2>&1 || exit 127; bpftrace --version",
+)
+CONTAINER_PERMISSION_COMMAND = (
+    "bash",
+    "-lc",
+    "id && test -r /proc/1/cgroup && head -5 /proc/1/cgroup",
+)
+ALLOWED_SHELL_COMMANDS = {
+    CANN_PROFILER_COMMAND,
+    EBPF_COMMAND,
+    CONTAINER_PERMISSION_COMMAND,
+}
 
 
 @dataclass(frozen=True)
@@ -77,20 +93,8 @@ def _blocked_reason(category: str | None, detail: str | None) -> dict[str, str |
     return {"category": category, "detail": detail}
 
 
-def _shell_command_strings(command: list[str]) -> list[str]:
-    if not command:
-        return []
-    if Path(command[0]).name not in SHELLS:
-        return []
-    for index, token in enumerate(command[1:], start=1):
-        if token.startswith("-") and not token.startswith("--") and "c" in token[1:] and index + 1 < len(command):
-            return [command[index + 1]]
-    return []
-
-
-def _unsafe_shell_command(value: str) -> str | None:
-    match = SHELL_COMMAND_PATTERN.search(value)
-    return match.group(1) if match else None
+def _is_shell_command(command: list[str]) -> bool:
+    return bool(command) and Path(command[0]).name in SHELLS
 
 
 def _safety_block_reason(command: list[str]) -> dict[str, str | None] | None:
@@ -101,10 +105,8 @@ def _safety_block_reason(command: list[str]) -> dict[str, str | None] | None:
         return _blocked_reason("permission", "sudo probes are not allowed")
     if command_name in UNSAFE_COMMANDS:
         return _blocked_reason("permission", f"unsafe probe command is not allowed: {command_name}")
-    for shell_command in _shell_command_strings(command):
-        unsafe_command = _unsafe_shell_command(shell_command)
-        if unsafe_command is not None:
-            return _blocked_reason("permission", f"unsafe shell probe command is not allowed: {unsafe_command}")
+    if _is_shell_command(command) and tuple(command) not in ALLOWED_SHELL_COMMANDS:
+        return _blocked_reason("permission", "non-allowlisted shell probe command is not allowed")
     return None
 
 
@@ -204,7 +206,7 @@ STANDARD_PROBES = [
     ),
     ProbeCommand(
         name="cann_profiler_probe",
-        command=["bash", "-lc", "command -v msprof >/dev/null 2>&1 || exit 127; msprof --help | head -40"],
+        command=list(CANN_PROFILER_COMMAND),
         maps_to_fields=[
             "operator_timeline_profile.kernel_duration_us",
             "npu_hbm_profile.hbm_read_gbps",
@@ -220,7 +222,7 @@ STANDARD_PROBES = [
     ),
     ProbeCommand(
         name="ebpf_probe",
-        command=["bash", "-lc", "command -v bpftrace >/dev/null 2>&1 || exit 127; bpftrace --version"],
+        command=list(EBPF_COMMAND),
         maps_to_fields=["cpu_dram_profile.scheduler_time_us"],
     ),
     ProbeCommand(
@@ -241,7 +243,7 @@ STANDARD_PROBES = [
     ),
     ProbeCommand(
         name="container_permission_probe",
-        command=["bash", "-lc", "id && test -r /proc/1/cgroup && head -5 /proc/1/cgroup"],
+        command=list(CONTAINER_PERMISSION_COMMAND),
         maps_to_fields=[],
     ),
 ]

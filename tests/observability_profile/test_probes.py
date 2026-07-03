@@ -355,3 +355,40 @@ def test_env_absolute_path_destructive_wrapper_is_blocked_without_execution(monk
         monkeypatch,
         ProbeCommand(name="env_rm_probe", command=["env", "/bin/rm", "-rf", "/tmp/example"]),
     )
+
+
+def test_non_allowlisted_shell_command_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_echo_probe", command=["bash", "-lc", "echo ok"]),
+    )
+
+
+def test_shell_quoted_sudo_bypass_is_blocked_by_allowlist(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_sudo_probe", command=["bash", "-lc", 'su""do -n true']),
+    )
+
+
+def test_shell_quoted_destructive_bypass_is_blocked_by_allowlist(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_rm_probe", command=["bash", "-lc", 'r""m -rf /tmp/example']),
+    )
+
+
+def test_exact_standard_shell_commands_reach_subprocess(monkeypatch):
+    executed_commands = []
+
+    def fake_run(command, **kwargs):
+        executed_commands.append(command)
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(probes_module.subprocess, "run", fake_run)
+    shell_probes = [probe for probe in STANDARD_PROBES if probe.command[0] in {"bash", "sh", "zsh", "dash"}]
+
+    results = [run_probe_command(probe) for probe in shell_probes]
+
+    assert executed_commands == [probe.command for probe in shell_probes]
+    assert all(result["available"] is True for result in results)
