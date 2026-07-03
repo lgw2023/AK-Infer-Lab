@@ -51,7 +51,7 @@ def _field(
         "permission_need": permission_need,
         "collection_overhead": collection_overhead,
         "expected_artifact": expected_artifact,
-        "join_key": join_key,
+        "join_key": list(join_key),
         "time_base": time_base,
         "availability": deepcopy(DEFAULT_AVAILABILITY),
         "validation_method": validation_method,

@@ -2,8 +2,10 @@ from tools.observability_profile.catalog import build_field_catalog
 from tools.observability_profile.constants import (
     AVAILABILITY_STATUSES,
     BLOCKED_REASON_CATEGORIES,
+    FIELD_TYPES,
     OUTPUT_FILENAMES,
     PROFILES,
+    SAMPLING_MODES,
 )
 
 
@@ -23,7 +25,7 @@ def test_profile_and_status_constants_cover_spec():
 def test_field_catalog_has_every_profile_and_required_metadata():
     fields = build_field_catalog()
     profiles = {field["profile"] for field in fields}
-    assert set(PROFILES).issubset(profiles)
+    assert profiles == set(PROFILES)
     assert len(fields) >= 90
 
     required_keys = {
@@ -50,8 +52,12 @@ def test_field_catalog_has_every_profile_and_required_metadata():
     }
     for field in fields:
         assert required_keys.issubset(field.keys()), field["name"]
+        assert field["field_type"] in FIELD_TYPES
+        assert field["sampling_mode"] in SAMPLING_MODES
+        assert isinstance(field["join_key"], list)
         assert field["availability"]["status"] == "unknown"
         assert field["availability"]["confidence"] == "low"
+        assert set(field["availability"]["blocked_reason"]) == {"category", "detail"}
 
 
 def test_state_object_children_inherit_common_object_fields():
@@ -61,3 +67,16 @@ def test_state_object_children_inherit_common_object_fields():
     assert "state_object_profile.load_cost_us" in by_name
     assert "kv_prefix_profile.restore_vs_recompute_decision" in by_name
     assert "moe_expert_profile.prefetch_lead_time_us" in by_name
+
+
+def test_fields_do_not_share_mutable_join_key_lists():
+    fields = [
+        field
+        for field in build_field_catalog()
+        if field["profile"] == "server_observability_profile"
+    ]
+    first, second = fields[:2]
+
+    first["join_key"].append("mutated")
+
+    assert second["join_key"] == ["profile_run_id"]
