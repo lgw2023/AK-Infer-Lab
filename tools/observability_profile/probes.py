@@ -28,7 +28,7 @@ UNSAFE_COMMANDS = {
 }
 SHELLS = {"bash", "sh", "zsh", "dash"}
 SHELL_COMMAND_PATTERN = re.compile(
-    rf"(?:^|[;&|\n])\s*(?:\S*/)?({'|'.join(sorted({'sudo', *UNSAFE_COMMANDS}))})\b"
+    rf"(?<![A-Za-z0-9_-])(?:[^\s;&|()`$]+/)?({'|'.join(sorted({'sudo', *UNSAFE_COMMANDS}))})(?![A-Za-z0-9_-])"
 )
 
 
@@ -131,7 +131,10 @@ def run_probe_command(probe: ProbeCommand) -> dict[str, Any]:
     blocked_reason = _blocked_reason(None, None)
     safety_block_reason = _safety_block_reason(probe.command)
 
-    if safety_block_reason is not None:
+    if not probe.command:
+        exit_code = 127
+        blocked_reason = _blocked_reason("tool_missing", "empty command")
+    elif safety_block_reason is not None:
         exit_code = 126
         blocked_reason = safety_block_reason
     else:

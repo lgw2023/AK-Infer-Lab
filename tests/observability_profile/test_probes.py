@@ -262,3 +262,65 @@ def test_standard_nested_shell_missing_tool_returns_tool_missing(monkeypatch):
     assert cann_probe["blocked_reason"]["category"] == "tool_missing"
     assert ebpf_probe["exit_code"] == 127
     assert ebpf_probe["blocked_reason"]["category"] == "tool_missing"
+
+
+def test_shell_sudo_inside_command_substitution_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_sudo_probe", command=["bash", "-lc", "echo $(sudo -n true)"]),
+    )
+
+
+def test_shell_sudo_inside_backticks_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_sudo_probe", command=["bash", "-lc", "echo `sudo -n true`"]),
+    )
+
+
+def test_shell_sudo_inside_if_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_sudo_probe", command=["bash", "-lc", "if sudo -n true; then echo ok; fi"]),
+    )
+
+
+def test_shell_sudo_inside_subshell_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_sudo_probe", command=["bash", "-lc", "(sudo -n true)"]),
+    )
+
+
+def test_shell_absolute_path_sudo_inside_command_substitution_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_sudo_probe", command=["bash", "-lc", "echo $(/usr/bin/sudo -n true)"]),
+    )
+
+
+def test_shell_destructive_command_inside_command_substitution_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_rm_probe", command=["bash", "-lc", "echo $(/bin/rm -rf /tmp/example)"]),
+    )
+
+
+def test_empty_command_returns_structured_tool_missing(monkeypatch):
+    executed = False
+
+    def fake_run(*args, **kwargs):
+        nonlocal executed
+        executed = True
+        return subprocess.CompletedProcess(args=args[0], returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(probes_module.subprocess, "run", fake_run)
+
+    result = run_probe_command(ProbeCommand(name="empty_probe", command=[]))
+
+    assert executed is False
+    assert result["available"] is False
+    assert result["exit_code"] == 127
+    assert result["permission_status"] == "blocked"
+    assert result["blocked_reason"]["category"] == "tool_missing"
+    assert "empty command" in result["blocked_reason"]["detail"]
