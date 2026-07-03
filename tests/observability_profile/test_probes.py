@@ -5,6 +5,26 @@ import tools.observability_profile.probes as probes_module
 from tools.observability_profile.probes import ProbeCommand, run_probe_command, run_standard_probes
 
 
+def assert_blocked_without_execution(monkeypatch, probe: ProbeCommand):
+    executed = False
+
+    def fake_run(*args, **kwargs):
+        nonlocal executed
+        executed = True
+        return subprocess.CompletedProcess(args=args[0], returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(probes_module.subprocess, "run", fake_run)
+
+    result = run_probe_command(probe)
+
+    assert executed is False
+    assert result["available"] is False
+    assert result["exit_code"] == 126
+    assert result["permission_status"] == "blocked"
+    assert result["blocked_reason"]["category"] == "permission"
+    return result
+
+
 def test_run_probe_command_records_exit_code_and_context():
     result = run_probe_command(ProbeCommand(name="python_version", command=["python", "--version"]))
 
@@ -191,3 +211,54 @@ def test_standard_probe_names_match_expected_set_exactly():
         "numa_probe",
         "container_permission_probe",
     ]
+
+
+def test_absolute_path_sudo_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="sudo_probe", command=["/usr/bin/sudo", "-n", "true"]),
+    )
+
+
+def test_absolute_path_destructive_command_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="rm_probe", command=["/bin/rm", "-rf", "/tmp/example"]),
+    )
+
+
+def test_shell_absolute_path_sudo_after_separator_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_sudo_probe", command=["bash", "-lc", "echo ok; /usr/bin/sudo -n true"]),
+    )
+
+
+def test_shell_absolute_path_destructive_command_after_separator_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="shell_rm_probe", command=["bash", "-lc", "echo ok; /bin/rm -rf /tmp/example"]),
+    )
+
+
+def test_standard_nested_shell_missing_tool_returns_tool_missing(monkeypatch):
+    captured_commands = []
+
+    def fake_run(command, **kwargs):
+        captured_commands.append(command)
+        return subprocess.CompletedProcess(args=command, returncode=127, stdout="", stderr="")
+
+    monkeypatch.setattr(probes_module.subprocess, "run", fake_run)
+
+    probes = run_standard_probes()
+    cann_probe = next(probe for probe in probes if probe["tool"] == "cann_profiler_probe")
+    ebpf_probe = next(probe for probe in probes if probe["tool"] == "ebpf_probe")
+
+    assert "command -v msprof" in captured_commands[1][2]
+    assert "exit 127" in captured_commands[1][2]
+    assert "command -v bpftrace" in captured_commands[3][2]
+    assert "exit 127" in captured_commands[3][2]
+    assert cann_probe["exit_code"] == 127
+    assert cann_probe["blocked_reason"]["category"] == "tool_missing"
+    assert ebpf_probe["exit_code"] == 127
+    assert ebpf_probe["blocked_reason"]["category"] == "tool_missing"

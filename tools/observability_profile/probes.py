@@ -28,7 +28,7 @@ UNSAFE_COMMANDS = {
 }
 SHELLS = {"bash", "sh", "zsh", "dash"}
 SHELL_COMMAND_PATTERN = re.compile(
-    rf"(?:^|[;&|\n])\s*({'|'.join(sorted({'sudo', *UNSAFE_COMMANDS}))})\b"
+    rf"(?:^|[;&|\n])\s*(?:\S*/)?({'|'.join(sorted({'sudo', *UNSAFE_COMMANDS}))})\b"
 )
 
 
@@ -94,10 +94,11 @@ def _unsafe_shell_command(value: str) -> str | None:
 
 
 def _safety_block_reason(command: list[str]) -> dict[str, str | None] | None:
-    if command and command[0] == "sudo":
+    command_name = Path(command[0]).name if command else ""
+    if command_name == "sudo":
         return _blocked_reason("permission", "sudo probes are not allowed")
-    if command and Path(command[0]).name in UNSAFE_COMMANDS:
-        return _blocked_reason("permission", f"unsafe probe command is not allowed: {Path(command[0]).name}")
+    if command_name in UNSAFE_COMMANDS:
+        return _blocked_reason("permission", f"unsafe probe command is not allowed: {command_name}")
     for shell_command in _shell_command_strings(command):
         unsafe_command = _unsafe_shell_command(shell_command)
         if unsafe_command is not None:
@@ -198,7 +199,7 @@ STANDARD_PROBES = [
     ),
     ProbeCommand(
         name="cann_profiler_probe",
-        command=["bash", "-lc", "which msprof && msprof --help | head -40"],
+        command=["bash", "-lc", "command -v msprof >/dev/null 2>&1 || exit 127; msprof --help | head -40"],
         maps_to_fields=[
             "operator_timeline_profile.kernel_duration_us",
             "npu_hbm_profile.hbm_read_gbps",
@@ -214,7 +215,7 @@ STANDARD_PROBES = [
     ),
     ProbeCommand(
         name="ebpf_probe",
-        command=["bash", "-lc", "which bpftrace && bpftrace --version"],
+        command=["bash", "-lc", "command -v bpftrace >/dev/null 2>&1 || exit 127; bpftrace --version"],
         maps_to_fields=["cpu_dram_profile.scheduler_time_us"],
     ),
     ProbeCommand(
