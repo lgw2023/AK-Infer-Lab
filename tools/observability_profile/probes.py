@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import getpass
 import os
+import shlex
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -58,13 +59,41 @@ def _blocked_reason(category: str | None, detail: str | None) -> dict[str, str |
     return {"category": category, "detail": detail}
 
 
+def _shell_contains_sudo_command(value: str) -> bool:
+    try:
+        tokens = shlex.split(value)
+    except ValueError:
+        tokens = value.split()
+    command_position = True
+    for token in tokens:
+        if command_position and token == "sudo":
+            return True
+        command_position = token in {";", "&&", "||", "|"}
+    return False
+
+
+def _safety_block_reason(command: list[str]) -> dict[str, str | None] | None:
+    if command and command[0] == "sudo":
+        return _blocked_reason("permission", "sudo probes are not allowed")
+    if any(_shell_contains_sudo_command(part) for part in command):
+        return _blocked_reason("permission", "shell sudo probes are not allowed")
+    return None
+
+
 def _classify_failure(exit_code: int | None, output: str) -> dict[str, str | None]:
     lowered = output.lower()
+    if "/proc/1/cgroup" in lowered and ("no such file" in lowered or "not found" in lowered):
+        return _blocked_reason("container_isolation", "container cgroup context is unavailable")
     if exit_code == 127 or "command not found" in lowered or "not found" in lowered:
         return _blocked_reason("tool_missing", "probe command is not available")
-    if "permission denied" in lowered or "operation not permitted" in lowered:
-        return _blocked_reason("permission_denied", "probe command lacks required permission")
-    return _blocked_reason("tool_missing", "probe command returned a nonzero exit code")
+    if (
+        "permission denied" in lowered
+        or "operation not permitted" in lowered
+        or "sudo" in lowered
+        or "password" in lowered
+    ):
+        return _blocked_reason("permission", "probe command lacks required permission")
+    return _blocked_reason("unknown", "probe command returned a nonzero exit code")
 
 
 def run_probe_command(probe: ProbeCommand) -> dict[str, Any]:
@@ -74,10 +103,11 @@ def run_probe_command(probe: ProbeCommand) -> dict[str, Any]:
     stdout = ""
     stderr = ""
     blocked_reason = _blocked_reason(None, None)
+    safety_block_reason = _safety_block_reason(probe.command)
 
-    if probe.command and probe.command[0] == "sudo":
+    if safety_block_reason is not None:
         exit_code = 126
-        blocked_reason = _blocked_reason("permission_denied", "sudo probes are not allowed")
+        blocked_reason = safety_block_reason
     else:
         try:
             result = subprocess.run(
@@ -181,7 +211,7 @@ STANDARD_PROBES = [
     ProbeCommand(
         name="container_permission_probe",
         command=["bash", "-lc", "id && test -r /proc/1/cgroup && head -5 /proc/1/cgroup"],
-        maps_to_fields=["server_observability_profile.container_privileged"],
+        maps_to_fields=[],
     ),
 ]
 
