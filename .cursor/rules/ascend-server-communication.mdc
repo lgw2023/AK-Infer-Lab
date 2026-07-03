@@ -1,0 +1,27 @@
+---
+description: Ascend server communication and Git constraints
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Ascend Server Communication
+
+This repository may be used from two different environments:
+
+- External development machine: may edit, commit, and push repository changes.
+- Ascend server: may `git pull` only. It must not push repository changes.
+
+Rules for the Ascend server:
+
+- Use email as the only outbound communication path.
+- Use `通信模块/send_notify.py` for repository-local notifications.
+- Keep real SMTP settings in the project-root `.env` only.
+- Never commit `.env`, SMTP authorization codes, passwords, cookies, or private keys.
+- If code changes are needed, send the requirement, reproduction, and expected behavior by email to the external development machine.
+- After the external development machine pushes changes, pull the updated repository on the server.
+
+Rules for the external development machine:
+
+- Write server-facing instructions, experiment plans, and questions in `通信模块/docs/developer-to-server.md`.
+- Commit and push repository changes for the server to consume with `git pull`.

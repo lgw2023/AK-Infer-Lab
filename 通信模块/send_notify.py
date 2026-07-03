@@ -29,6 +29,37 @@ from email.mime.text import MIMEText
 from pathlib import Path
 
 
+def _strip_env_value(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+    return value
+
+
+def load_env_file(env_path: Path) -> None:
+    if not env_path.is_file():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export "):].strip()
+        if "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not key or key in os.environ:
+            continue
+        os.environ[key] = _strip_env_value(value)
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+load_env_file(PROJECT_ROOT / ".env")
+
+
 SMTP_HOST = os.getenv("AK_COMM_SMTP_HOST", "smtp.163.com")
 SMTP_PORT = int(os.getenv("AK_COMM_SMTP_PORT", "465"))
 SMTP_USER = os.getenv("AK_COMM_SMTP_USER", "")
@@ -292,7 +323,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    use_proxy = not args.no_proxy
+    use_proxy = False if args.no_proxy else USE_PROXYCHAINS_FOR_MAIL
 
     if args.send_mail_internal:
         try:
