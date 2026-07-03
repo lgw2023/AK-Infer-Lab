@@ -95,6 +95,8 @@ def _unsafe_shell_command(value: str) -> str | None:
 
 def _safety_block_reason(command: list[str]) -> dict[str, str | None] | None:
     command_name = Path(command[0]).name if command else ""
+    if command_name == "env":
+        return _blocked_reason("permission", "env wrapper probes are not allowed")
     if command_name == "sudo":
         return _blocked_reason("permission", "sudo probes are not allowed")
     if command_name in UNSAFE_COMMANDS:

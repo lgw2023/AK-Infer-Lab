@@ -2,7 +2,7 @@ import os
 import subprocess
 
 import tools.observability_profile.probes as probes_module
-from tools.observability_profile.probes import ProbeCommand, run_probe_command, run_standard_probes
+from tools.observability_profile.probes import STANDARD_PROBES, ProbeCommand, run_probe_command, run_standard_probes
 
 
 def assert_blocked_without_execution(monkeypatch, probe: ProbeCommand):
@@ -37,8 +37,7 @@ def test_run_probe_command_records_exit_code_and_context():
 
 
 def test_standard_probes_are_non_empty():
-    probes = run_standard_probes()
-    names = {probe["tool"] for probe in probes}
+    names = {probe.name for probe in STANDARD_PROBES}
 
     assert "npu_smi_probe" in names
     assert "container_permission_probe" in names
@@ -119,10 +118,9 @@ def test_generic_nonzero_returns_unknown_blocked_reason(monkeypatch):
 
 
 def test_container_permission_probe_does_not_map_to_container_privileged():
-    probes = run_standard_probes()
-    container_probe = next(probe for probe in probes if probe["tool"] == "container_permission_probe")
+    container_probe = next(probe for probe in STANDARD_PROBES if probe.name == "container_permission_probe")
 
-    assert "server_observability_profile.container_privileged" not in container_probe["maps_to_fields"]
+    assert "server_observability_profile.container_privileged" not in container_probe.maps_to_fields
 
 
 def test_shell_sudo_after_attached_separator_is_blocked_without_execution(monkeypatch):
@@ -200,9 +198,7 @@ def test_timeout_returns_structured_blocked_reason(monkeypatch):
 
 
 def test_standard_probe_names_match_expected_set_exactly():
-    probes = run_standard_probes()
-
-    assert [probe["tool"] for probe in probes] == [
+    assert [probe.name for probe in STANDARD_PROBES] == [
         "npu_smi_probe",
         "cann_profiler_probe",
         "perf_probe",
@@ -324,3 +320,38 @@ def test_empty_command_returns_structured_tool_missing(monkeypatch):
     assert result["permission_status"] == "blocked"
     assert result["blocked_reason"]["category"] == "tool_missing"
     assert "empty command" in result["blocked_reason"]["detail"]
+
+
+def test_env_sudo_wrapper_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="env_sudo_probe", command=["env", "sudo", "-n", "true"]),
+    )
+
+
+def test_absolute_path_env_sudo_wrapper_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="env_sudo_probe", command=["/usr/bin/env", "sudo", "-n", "true"]),
+    )
+
+
+def test_env_destructive_wrapper_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="env_rm_probe", command=["env", "rm", "-rf", "/tmp/example"]),
+    )
+
+
+def test_env_shell_unsafe_wrapper_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="env_shell_probe", command=["env", "bash", "-lc", "sudo -n true"]),
+    )
+
+
+def test_env_absolute_path_destructive_wrapper_is_blocked_without_execution(monkeypatch):
+    assert_blocked_without_execution(
+        monkeypatch,
+        ProbeCommand(name="env_rm_probe", command=["env", "/bin/rm", "-rf", "/tmp/example"]),
+    )
