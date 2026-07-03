@@ -36,10 +36,13 @@ def apply_probe_evidence(
             else:
                 availability["status"] = "blocked"
                 availability["confidence"] = "medium"
-                availability["blocked_reason"] = probe.get(
-                    "blocked_reason",
-                    {"category": "unknown", "detail": "probe failed without blocked_reason"},
+                availability["blocked_reason"] = deepcopy(
+                    probe.get(
+                        "blocked_reason",
+                        {"category": "unknown", "detail": "probe failed without blocked_reason"},
+                    )
                 )
+                availability["partial_reason"] = None
     return updated
 
 
