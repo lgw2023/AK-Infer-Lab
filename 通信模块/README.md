@@ -34,7 +34,7 @@ AK_COMM_SMTP_PORT=465
 AK_COMM_SMTP_USER=你的 163 邮箱地址
 AK_COMM_SMTP_PASSWORD=你的 163 SMTP 授权码
 AK_COMM_MAIL_FROM=通常与 AK_COMM_SMTP_USER 相同
-AK_COMM_MAIL_TO=开发人员收件邮箱
+AK_COMM_MAIL_TO=gwlee1995@gmail.com,yilili1023@gmail.com
 ```
 
 可选配置：
