@@ -1,0 +1,5 @@
+.DS_Store
+
+# Local shallow clones used only as code-reading references.
+/reference_repos/*
+!/reference_repos/README.md
