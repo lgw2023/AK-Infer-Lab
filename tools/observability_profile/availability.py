@@ -11,11 +11,28 @@ MANIFEST_FIELD_KEYS = {
     "server_observability_profile.kernel_version": "kernel_version",
     "server_observability_profile.cann_version": "cann_version",
     "server_observability_profile.driver_version": "driver_version",
+    "server_observability_profile.firmware_version": "firmware_version",
     "server_observability_profile.torch_npu_version": "torch_npu_version",
     "server_observability_profile.mindie_version": "mindie_version",
     "server_observability_profile.vllm_ascend_version": "vllm_ascend_version",
     "server_observability_profile.container_privileged": "container_privileged",
     "server_observability_profile.visible_npu_count": "npu_count",
+}
+
+MICROBENCH_FIELD_KEYS = {
+    "npu_copy_h2d": [
+        "microbench_profile.h2d_latency_us",
+        "microbench_profile.h2d_bandwidth_gbps",
+    ],
+    "npu_copy_d2h": [
+        "microbench_profile.d2h_latency_us",
+        "microbench_profile.d2h_bandwidth_gbps",
+    ],
+    "npu_copy_overlap": ["microbench_profile.copy_overlap_ratio"],
+    "npu_matmul_shape": ["microbench_profile.npu_op_by_shape"],
+    "cpu_kernel": ["microbench_profile.cpu_kernel_by_shape"],
+    "dram_bandwidth": ["microbench_profile.ddr_bandwidth_gbps"],
+    "ssd_fio": ["microbench_profile.ssd_iops"],
 }
 
 
@@ -32,7 +49,16 @@ def _has_known_manifest_value(value: Any) -> bool:
     if not text or text.lower() == "unknown":
         return False
     lowered = text.lower()
-    failure_markers = ("filenotfounderror", "modulenotfounderror", "importerror", "traceback", "not found")
+    failure_markers = (
+        "filenotfounderror",
+        "modulenotfounderror",
+        "importerror",
+        "traceback",
+        "not found",
+        "timeoutexpired",
+        "timed out",
+        "timeout",
+    )
     return not any(marker in lowered for marker in failure_markers)
 
 
@@ -96,6 +122,40 @@ def apply_probe_evidence(
                     )
                 )
                 availability["partial_reason"] = None
+    return updated
+
+
+def apply_microbench_evidence(
+    fields: list[dict[str, Any]],
+    microbench_results: list[dict[str, Any]],
+    *,
+    checked_at: str,
+) -> list[dict[str, Any]]:
+    updated = deepcopy(fields)
+    by_key = {_field_key(field): field for field in updated}
+
+    for result in microbench_results:
+        status = result.get("status", "unknown")
+        if status not in {"measurable", "partial", "blocked"}:
+            continue
+        for field_key in MICROBENCH_FIELD_KEYS.get(result.get("bench_name"), []):
+            field = by_key.get(field_key)
+            if field is None:
+                continue
+            availability = field["availability"]
+            availability["status"] = status
+            availability["confidence"] = "medium"
+            availability["evidence_probe"] = result.get("bench_name")
+            availability["evidence_artifact"] = result.get("artifact_path")
+            availability["last_checked_at"] = checked_at
+            if status == "blocked":
+                availability["blocked_reason"] = deepcopy(
+                    result.get("blocked_reason", {"category": "unknown", "detail": "microbench failed"})
+                )
+                availability["partial_reason"] = None
+            else:
+                availability["blocked_reason"] = {"category": None, "detail": None}
+                availability["partial_reason"] = None if status == "measurable" else "microbench produced setup evidence only"
     return updated
 
 

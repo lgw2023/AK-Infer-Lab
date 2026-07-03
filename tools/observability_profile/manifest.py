@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.metadata as importlib_metadata
 import json
 import os
 import platform
@@ -73,7 +74,17 @@ def _cann_environment() -> str:
     return _run_text(["bash", "-lc", "echo ${ASCEND_HOME_PATH:-unknown} && which npu-smi || true"])
 
 
-def _cann_version() -> str:
+def _parse_version_from_text(text: str) -> str:
+    for line in text.splitlines():
+        if "version" not in line.lower():
+            continue
+        match = re.search(r"\b\d+(?:\.\d+)+(?:[A-Za-z0-9_.-]*)\b", line)
+        if match:
+            return match.group(0)
+    return "unknown"
+
+
+def _cann_version(cann_environment: str = "") -> str:
     output = _run_text([
         "bash",
         "-lc",
@@ -86,25 +97,59 @@ def _cann_version() -> str:
             "done"
         ),
     ])
-    for line in output.splitlines():
-        if "version" not in line.lower():
-            continue
-        match = re.search(r"\b\d+(?:\.\d+)+(?:[A-Za-z0-9_.-]*)\b", line)
-        if match:
-            return match.group(0)
+    version = _parse_version_from_text(output)
+    if version != "unknown":
+        return version
+    match = re.search(r"\bcann[-_/]?(\d+(?:\.\d+)+(?:[A-Za-z0-9_.-]*)?)\b", cann_environment, re.IGNORECASE)
+    if match:
+        return match.group(1)
     return "unknown"
 
 
+def _distribution_name(module_name: str) -> str:
+    return module_name.replace("_", "-")
+
+
 def _module_version(module_name: str) -> str:
+    try:
+        return importlib_metadata.version(_distribution_name(module_name))
+    except importlib_metadata.PackageNotFoundError:
+        pass
+
     output = _run_text([
         "python",
         "-c",
         f"import {module_name}; print(getattr({module_name}, '__version__', 'unknown'))",
     ])
     lowered = output.lower()
-    if any(marker in lowered for marker in ("modulenotfounderror", "importerror", "traceback")):
+    if any(marker in lowered for marker in ("modulenotfounderror", "importerror", "traceback", "timeoutexpired", "timed out")):
         return "unknown"
     return output.splitlines()[0].strip() if output.strip() else "unknown"
+
+
+def _parse_npu_smi_info(output: str) -> dict[str, Any]:
+    driver_match = re.search(r"\bDriver\s+Version\s*[:：]\s*([^\s|]+)", output, re.IGNORECASE)
+    firmware_match = re.search(r"\bFirmware\s+Version\s*[:：]\s*([^\s|]+)", output, re.IGNORECASE)
+    npu_ids = {int(match.group(1)) for match in re.finditer(r"\bNPU\s*ID\s*[:：]\s*(\d+)\b", output, re.IGNORECASE)}
+    hbm_totals_mb = [
+        int(match.group(1))
+        for match in re.finditer(r"HBM[-\s]*Usage\s*\(MB\)\s*[:：]?\s*\d+\s*/\s*(\d+)", output, re.IGNORECASE)
+    ]
+
+    npu_count: int | str = len(npu_ids) if npu_ids else "unknown"
+    if npu_count == "unknown" and hbm_totals_mb:
+        npu_count = len(hbm_totals_mb)
+
+    hbm_per_npu_gb: float | str = "unknown"
+    if hbm_totals_mb:
+        hbm_per_npu_gb = round(max(hbm_totals_mb) / 1024, 3)
+
+    return {
+        "driver_version": driver_match.group(1) if driver_match else "unknown",
+        "firmware_version": firmware_match.group(1) if firmware_match else "unknown",
+        "npu_count": npu_count,
+        "hbm_per_npu_gb": hbm_per_npu_gb,
+    }
 
 
 def build_manifest(
@@ -117,14 +162,16 @@ def build_manifest(
 ) -> dict[str, Any]:
     now = datetime.now(timezone.utc).isoformat()
     repo_root = Path(__file__).resolve().parents[2]
+    npu_smi_info = _run_text(["npu-smi", "info"])
+    npu_inventory = _parse_npu_smi_info(npu_smi_info)
     hardware_inputs = {
-        "npu_smi": _run_text(["npu-smi", "info"]),
+        "npu_smi": npu_smi_info,
         "lspci": _run_text(["lspci"]),
         "numactl": _run_text(["numactl", "--hardware"]),
         "lsblk": _run_text(["lsblk", "-J"]),
     }
     cann_environment = _cann_environment()
-    cann_version = _cann_version()
+    cann_version = _cann_version(cann_environment)
     torch_npu_version = _module_version("torch_npu")
     mindie_version = _module_version("mindie")
     vllm_ascend_version = _module_version("vllm_ascend")
@@ -159,9 +206,10 @@ def build_manifest(
         "torch_npu_version": torch_npu_version,
         "mindie_version": mindie_version,
         "vllm_ascend_version": vllm_ascend_version,
-        "driver_version": "unknown",
-        "npu_count": "unknown",
-        "hbm_per_npu_gb": "unknown",
+        "driver_version": npu_inventory["driver_version"],
+        "firmware_version": npu_inventory["firmware_version"],
+        "npu_count": npu_inventory["npu_count"],
+        "hbm_per_npu_gb": npu_inventory["hbm_per_npu_gb"],
         "field_catalog_version": "0.1.0",
         "hardware_topology_hash": stable_hash(hardware_inputs),
         "software_stack_hash": stable_hash(software_inputs),

@@ -10,6 +10,7 @@ def render_server_observability_profile(
     manifest: dict[str, Any],
     fields: list[dict[str, Any]],
     probes: list[dict[str, Any]],
+    microbench_results: list[dict[str, Any]],
     join_key_readiness: dict[str, Any],
     p0_acceptance_fields: dict[str, Any],
 ) -> str:
@@ -34,6 +35,16 @@ def render_server_observability_profile(
             f"- `{probe['tool']}`: available={probe['available']} "
             f"permission={probe['permission_status']} exit_code={probe['exit_code']}"
         )
+
+    if microbench_results:
+        lines.extend(["", "## 2.1 Microbench Results", ""])
+        for result in microbench_results:
+            blocked_reason = result.get("blocked_reason") or {}
+            category = blocked_reason.get("category") or "none"
+            lines.append(
+                f"- `{result['bench_name']}`: status={result['status']} "
+                f"artifact=`{result['artifact_path']}` blocked={category}"
+            )
 
     lines.extend(["", "## 3. Profile-Level Observability", ""])
     for profile, counts in sorted(summary.items()):

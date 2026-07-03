@@ -16,7 +16,91 @@
 
 ## 当前待处理消息
 
+### 2026-07-03 16:47 开发机消息
+
+- 任务/请求：
+  - 请在昇腾服务器上执行第二次 AK-Infer-Lab 可观测能力体检，run id 为 `obs_2026_0703_atlas800t_a2_002`。
+  - 本次目的是验证新的 `collect` CLI、固定 run 目录、CANN/NPU manifest 解析、`torch-npu` 超时口径，以及受控 microbench artifact。
+  - 这仍然不是模型性能评估；microbench 只用于确认底层可测性和 blocked reason。
+- 执行前约束：
+  - 服务器只执行 `git pull` 获取任务文档和代码，不从服务器 push。
+  - 不修改仓库内项目代码。
+  - 不提交 `.env`、SMTP 授权码、服务器账号、私钥、Cookie 或任何敏感信息。
+  - 如命令或代码在服务器上失败，请通过邮件回传失败阶段、命令、错误摘要和日志路径，不要直接在服务器上改代码。
+  - `obs_2026_0703_atlas800t_a2_001` 已经完成并邮件补发，请不要重复执行 15:43 的旧任务。
+- 需要服务器执行的命令或检查：
+  1. 同步仓库并进入项目根目录：
+
+     ```bash
+     cd <AK-Infer-Lab 项目根目录>
+     git pull
+     ```
+
+  2. 确认可观测体检 CLI 可用，并把帮助输出中的 microbench 参数摘要写入邮件：
+
+     ```bash
+     python -m tools.observability_profile.cli collect --help
+     ```
+
+  3. 准备 SSD/fio scratch 目录。请使用服务器上可写、空间充足、允许临时 I/O 的路径；如果 `/data/ak-trace/observability_scratch` 不合适，请替换成服务器实际 scratch 路径，并在邮件里写明实际路径：
+
+     ```bash
+     mkdir -p /data/ak-trace/observability_scratch
+     ```
+
+  4. 执行正式体检：
+
+     ```bash
+     python -m tools.observability_profile.cli collect \
+       --server-id atlas800t-a2-node-001 \
+       --operator ascend-server \
+       --run-id obs_2026_0703_atlas800t_a2_002 \
+       --include-microbench \
+       --scratch-dir /data/ak-trace/observability_scratch \
+       --copy-sizes 4K,16K,64K,1M,16M,256M,1G \
+       --fio-qdepth 1,4,16,32 \
+       --microbench-duration 10
+     ```
+
+  5. 检查输出目录是否存在：
+
+     ```bash
+     ls -lah 工作记录与进度笔记本/observability_profiles/obs_2026_0703_atlas800t_a2_002
+     find 工作记录与进度笔记本/observability_profiles/obs_2026_0703_atlas800t_a2_002/microbench -maxdepth 1 -type f -print
+     ```
+
+- 输入文件/参数：
+  - 代码入口：`tools/observability_profile/cli.py`
+  - 默认输出目录：`工作记录与进度笔记本/observability_profiles/obs_2026_0703_atlas800t_a2_002/`
+  - 建议 scratch 目录：`/data/ak-trace/observability_scratch`
+  - 目标服务器标识：`atlas800t-a2-node-001`
+- 期望服务器通过邮件返回的信息：
+  - 邮件主题建议：`[AK服务器] 任务完成：observability profile obs_2026_0703_atlas800t_a2_002` 或 `[AK服务器] 运行失败：observability profile obs_2026_0703_atlas800t_a2_002`
+  - 邮件正文请包含：
+    - 执行主机名与时间。
+    - 实际执行的完整命令。
+    - 输出目录绝对路径。
+    - `manifest.yaml` 中的 `cann_version`、`driver_version`、`firmware_version`、`npu_count`、`hbm_per_npu_gb`、`torch_npu_version`。
+    - `field_availability.yaml` 中 measurable / partial / blocked / unknown / not_applicable 的数量汇总。
+    - `microbench/*.csv` 每项的 `bench_name`、`status`、`artifact_path`、`blocked_reason`。
+    - 关键 blocked reason top list，尤其是 `torch-npu`、`npu-smi`、`msprof`、`perf`、`fio`、`numactl`、scratch 目录、容器权限相关阻塞。
+    - 如 microbench 未运行，明确说明是 CLI、工具、权限还是 scratch-dir 原因。
+    - 如失败，提供失败阶段、错误摘要和日志路径。
+  - 邮件附件建议：
+    - `server_observability_profile.md`
+    - `manifest.yaml`
+    - `field_availability.yaml`
+    - `join_key_readiness.yaml`
+    - `p0_acceptance_fields.yaml`
+    - `microbench/*.csv`
+    - 如文件过大，只附摘要文件，并在正文写明完整输出目录。
+- 优先级：普通
+
+## 历史消息
+
 ### 2026-07-03 15:43 开发机消息
+
+- 状态：服务器已执行并邮件补发结果，仅保留记录；请勿重复执行。
 
 - 任务/请求：
   - 请在昇腾服务器上执行一次 AK-Infer-Lab 服务器可观测能力体检，生成正式的 `observability_profiles/<run>/` 结果。

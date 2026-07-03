@@ -1,4 +1,9 @@
-from tools.observability_profile.availability import apply_manifest_evidence, apply_probe_evidence, summarize_availability
+from tools.observability_profile.availability import (
+    apply_manifest_evidence,
+    apply_microbench_evidence,
+    apply_probe_evidence,
+    summarize_availability,
+)
 from tools.observability_profile.catalog import build_field_catalog
 
 
@@ -159,3 +164,47 @@ def test_apply_manifest_evidence_marks_known_manifest_fields_measurable():
     assert os_availability["evidence_artifact"] == "manifest.yaml"
     assert privileged_availability["status"] == "measurable"
     assert mindie_availability["status"] == "unknown"
+
+
+def test_apply_manifest_evidence_rejects_timeout_version_text():
+    fields = build_field_catalog()
+    manifest = {
+        "torch_npu_version": "TimeoutExpired: Command '['python', '-c', 'import torch_npu']' timed out after 5 seconds",
+    }
+
+    updated = apply_manifest_evidence(fields, manifest, checked_at="2026-07-03T00:00:00Z")
+    by_key = {f"{field['profile']}.{field['name']}": field for field in updated}
+
+    availability = by_key["server_observability_profile.torch_npu_version"]["availability"]
+    assert availability["status"] == "unknown"
+
+
+def test_apply_microbench_evidence_maps_only_related_fields():
+    fields = build_field_catalog()
+    results = [
+        {
+            "bench_name": "ssd_fio",
+            "status": "blocked",
+            "artifact_path": "microbench/ssd_fio.csv",
+            "blocked_reason": {"category": "scratch_missing", "detail": "--scratch-dir is required"},
+        },
+        {
+            "bench_name": "npu_copy_h2d",
+            "status": "blocked",
+            "artifact_path": "microbench/npu_copy_h2d.csv",
+            "blocked_reason": {"category": "tool_missing", "detail": "torch-npu is not installed"},
+        },
+    ]
+
+    updated = apply_microbench_evidence(fields, results, checked_at="2026-07-03T00:00:00Z")
+    by_key = {f"{field['profile']}.{field['name']}": field for field in updated}
+
+    ssd_iops = by_key["microbench_profile.ssd_iops"]["availability"]
+    h2d_latency = by_key["microbench_profile.h2d_latency_us"]["availability"]
+    d2h_latency = by_key["microbench_profile.d2h_latency_us"]["availability"]
+
+    assert ssd_iops["status"] == "blocked"
+    assert ssd_iops["blocked_reason"]["category"] == "scratch_missing"
+    assert h2d_latency["status"] == "blocked"
+    assert h2d_latency["blocked_reason"]["category"] == "tool_missing"
+    assert d2h_latency["status"] == "unknown"
