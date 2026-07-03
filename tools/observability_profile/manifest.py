@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import socket
 import subprocess
 from datetime import datetime, timezone
@@ -22,7 +23,7 @@ def _run_text(command: list[str], timeout: int = 5) -> str:
             text=True,
             timeout=timeout,
         )
-    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+    except (OSError, subprocess.TimeoutExpired) as exc:
         return f"{type(exc).__name__}: {exc}"
     output = "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)
     return output[:4000]
@@ -61,6 +62,39 @@ def _git_commit(repo_root: Path) -> str:
     return result.splitlines()[0].strip() if result.strip() else "unknown"
 
 
+def _effective_user_is_root() -> bool | None:
+    geteuid = getattr(os, "geteuid", None)
+    if geteuid is None:
+        return None
+    return geteuid() == 0
+
+
+def _cann_environment() -> str:
+    return _run_text(["bash", "-lc", "echo ${ASCEND_HOME_PATH:-unknown} && which npu-smi || true"])
+
+
+def _cann_version() -> str:
+    output = _run_text([
+        "bash",
+        "-lc",
+        (
+            "for file in "
+            "${ASCEND_HOME_PATH:-}/version.info "
+            "${ASCEND_HOME_PATH:-}/ascend_toolkit_install.info "
+            "/usr/local/Ascend/ascend-toolkit/latest/version.info; do "
+            "[ -f \"$file\" ] && sed -n '1,20p' \"$file\" && exit 0; "
+            "done"
+        ),
+    ])
+    for line in output.splitlines():
+        if "version" not in line.lower():
+            continue
+        match = re.search(r"\b\d+(?:\.\d+)+(?:[A-Za-z0-9_.-]*)\b", line)
+        if match:
+            return match.group(0)
+    return "unknown"
+
+
 def build_manifest(
     *,
     run_id: str,
@@ -77,10 +111,13 @@ def build_manifest(
         "numactl": _run_text(["numactl", "--hardware"]),
         "lsblk": _run_text(["lsblk", "-J"]),
     }
+    cann_environment = _cann_environment()
+    cann_version = _cann_version()
     software_inputs = {
         "python": platform.python_version(),
         "platform": platform.platform(),
-        "cann": _run_text(["bash", "-lc", "echo ${ASCEND_HOME_PATH:-unknown} && which npu-smi || true"]),
+        "cann_version": cann_version,
+        "cann_environment": cann_environment,
         "torch_npu": _run_text(["python", "-c", "import torch_npu; print(torch_npu.__version__)"]),
         "mindie": _run_text(["bash", "-lc", "python -c 'import mindie; print(getattr(mindie, \"__version__\", \"unknown\"))'"]),
         "vllm_ascend": _run_text(["bash", "-lc", "python -c 'import vllm_ascend; print(getattr(vllm_ascend, \"__version__\", \"unknown\"))'"]),
@@ -98,8 +135,10 @@ def build_manifest(
         "container_id": _container_id(),
         "container_image": os.environ.get("CONTAINER_IMAGE", "unknown"),
         "inside_container": _inside_container(),
-        "container_privileged": os.geteuid() == 0,
-        "cann_version": software_inputs["cann"],
+        "container_privileged": None,
+        "effective_user_is_root": _effective_user_is_root(),
+        "cann_version": cann_version,
+        "cann_environment": cann_environment,
         "driver_version": "unknown",
         "npu_count": "unknown",
         "hbm_per_npu_gb": "unknown",
