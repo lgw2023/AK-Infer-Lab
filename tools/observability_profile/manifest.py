@@ -8,6 +8,7 @@ import platform
 import re
 import socket
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -117,7 +118,7 @@ def _module_version(module_name: str) -> str:
         pass
 
     output = _run_text([
-        "python",
+        sys.executable,
         "-c",
         f"import {module_name}; print(getattr({module_name}, '__version__', 'unknown'))",
     ])
@@ -175,8 +176,15 @@ def build_manifest(
     torch_npu_version = _module_version("torch_npu")
     mindie_version = _module_version("mindie")
     vllm_ascend_version = _module_version("vllm_ascend")
+    python_executable = sys.executable
+    python_version = platform.python_version()
+    conda_prefix = os.environ.get("CONDA_PREFIX", "unknown")
+    conda_default_env = os.environ.get("CONDA_DEFAULT_ENV", "unknown")
     software_inputs = {
-        "python": platform.python_version(),
+        "python": python_version,
+        "python_executable": python_executable,
+        "conda_prefix": conda_prefix,
+        "conda_default_env": conda_default_env,
         "platform": platform.platform(),
         "cann_version": cann_version,
         "cann_environment": cann_environment,
@@ -195,6 +203,10 @@ def build_manifest(
         "git_commit": _git_commit(repo_root),
         "os_name": platform.system(),
         "kernel_version": platform.release(),
+        "python_executable": python_executable,
+        "python_version": python_version,
+        "conda_prefix": conda_prefix,
+        "conda_default_env": conda_default_env,
         "host_name": socket.gethostname(),
         "container_id": _container_id(),
         "container_image": os.environ.get("CONTAINER_IMAGE", "unknown"),

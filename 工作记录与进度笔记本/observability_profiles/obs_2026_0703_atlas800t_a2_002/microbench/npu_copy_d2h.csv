@@ -1,0 +1,2 @@
+bench_name,status,command,artifact_path,duration_ms,blocked_category,blocked_detail,metric_name,metric_value,unit
+npu_copy_d2h,blocked,"torch-npu D2H copy sizes=4K,16K,64K,1M,16M,256M,1G",microbench/npu_copy_d2h.csv,,timeout,torch-npu import timed out after 5 seconds,,,

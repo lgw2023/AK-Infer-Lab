@@ -53,3 +53,9 @@ PRs should include a short scope summary, touched folders, verification commands
 ## Agent-Specific Instructions
 
 Keep edits surgical. Do not rewrite neighboring research notes, generated decks, lockfiles, or reference assets unless required. The linked `AK 协同` worktree may contain unrelated local changes; preserve them.
+
+This local machine is an external development machine, not the Ascend server. Any work that depends on the real Ascend environment, NPU runtime, server paths, deployment, or server-side validation must be handed off for execution on the Ascend server.
+
+Use `通信模块/docs/developer-to-server.md` as the communication document from this development machine to the server. Every time a server task is handed off, clear the old historical contents of that file first, then write only the current server task, including all context, commands, paths, constraints, expected outputs, and reporting requirements the server operator needs.
+
+At the start and end of every task round, refresh the corresponding content under `工作记录与进度笔记本/`. Keep the notebook current with the task status, evidence, results, problems, and next actions.

@@ -4,6 +4,7 @@ import csv
 import importlib.metadata as importlib_metadata
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -82,22 +83,34 @@ def _record_result(
     }
 
 
-def _torch_npu_ready() -> dict[str, str | None]:
+def _torch_npu_ready(
+    *,
+    python_executable: str | None = None,
+    import_timeout_s: int = 30,
+) -> dict[str, str | None]:
     try:
         importlib_metadata.version("torch-npu")
     except importlib_metadata.PackageNotFoundError:
         return _blocked_reason("tool_missing", "torch-npu package metadata is not installed")
 
-    command = ["python", "-c", "import torch_npu; print('torch_npu_import_ok')"]
+    executable = python_executable or sys.executable
+    command = [
+        executable,
+        "-c",
+        "import sys; import torch_npu; print(sys.executable); print('torch_npu_import_ok')",
+    ]
     try:
-        result = subprocess.run(command, check=False, capture_output=True, text=True, timeout=5)
+        result = subprocess.run(command, check=False, capture_output=True, text=True, timeout=import_timeout_s)
     except subprocess.TimeoutExpired:
-        return _blocked_reason("timeout", "torch-npu import timed out after 5 seconds")
+        return _blocked_reason(
+            "timeout",
+            f"torch-npu import with {executable} timed out after {import_timeout_s} seconds",
+        )
     except OSError as exc:
         return _blocked_reason("tool_missing", str(exc))
     if result.returncode != 0:
         detail = "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)
-        return _blocked_reason("unknown", detail[:500] or "torch-npu import failed")
+        return _blocked_reason("unknown", detail[:500] or f"torch-npu import failed with {executable}")
     return _blocked_reason(None, None)
 
 

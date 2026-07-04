@@ -1,4 +1,5 @@
 import importlib.metadata as importlib_metadata
+import sys
 from pathlib import Path
 
 import tools.observability_profile.manifest as manifest_module
@@ -27,6 +28,10 @@ def test_build_manifest_contains_required_run_identity(tmp_path: Path):
     assert manifest["hardware_topology_hash"]
     assert manifest["software_stack_hash"]
     assert manifest["probe_script_version"] == "0.1.0"
+    assert manifest["python_executable"] == sys.executable
+    assert manifest["python_version"]
+    assert "conda_prefix" in manifest
+    assert "conda_default_env" in manifest
 
 
 def test_container_privileged_is_not_inferred_from_root_euid(tmp_path: Path, monkeypatch):

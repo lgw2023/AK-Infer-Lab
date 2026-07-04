@@ -1,0 +1,2 @@
+bench_name,status,command,artifact_path,duration_ms,blocked_category,blocked_detail,metric_name,metric_value,unit
+cpu_kernel,measurable,python internal cpu loop,microbench/cpu_kernel.csv,1000.067,,,loop_score_per_s,2467130427096.165,score/s

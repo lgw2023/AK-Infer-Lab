@@ -1,0 +1,59 @@
+join_key_readiness:
+- profile_pair: request_runtime_profile + operator_timeline_profile
+  required_keys:
+  - trace_id
+  - request_id
+  - phase
+  - layer_id
+  status: partial
+  missing_keys:
+  - layer_id
+  time_alignment:
+    status: unknown
+    time_bases:
+    - host_monotonic_ns
+    - cann_device_timeline
+    alignment_method: unavailable
+    max_expected_skew_us: null
+    consequence: can attribute request-level delay, cannot attribute per-layer stall
+  consequence: operator timeline cannot yet explain per-request slow tokens
+  fix: add layer_id mapping and wrapper event markers around prefill and decode
+- profile_pair: state_object_profile + transfer_overlap_profile
+  required_keys:
+  - trace_id
+  - object_id
+  - lifecycle_event
+  - stream_id
+  status: blocked
+  missing_keys:
+  - object_id
+  - stream_id
+  time_alignment:
+    status: unknown
+    time_bases:
+    - host_monotonic_ns
+    - cann_device_timeline
+    alignment_method: unavailable
+    max_expected_skew_us: null
+    consequence: cannot prove object restore/load caused exposed copy time
+  consequence: cannot attribute KV restore or expert load to copy overlap loss
+  fix: add object event hook, copy stream tagging, and wrapper event marker
+- profile_pair: moe_expert_profile + operator_timeline_profile
+  required_keys:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  status: blocked
+  missing_keys:
+  - object_id
+  time_alignment:
+    status: unknown
+    time_bases:
+    - host_monotonic_ns
+    - cann_device_timeline
+    alignment_method: unavailable
+    max_expected_skew_us: null
+    consequence: cannot prove expert miss caused TPOT spike
+  consequence: MoE routing can be analyzed only after expert identity is available
+  fix: add router top-k capture and expert object identifiers

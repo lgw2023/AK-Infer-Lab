@@ -1,0 +1,48 @@
+p0_acceptance_fields:
+- field: server_observability_profile.os_name
+  status: measurable
+  source: manifest.yaml
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  caveat: null
+- field: server_observability_profile.kernel_version
+  status: measurable
+  source: manifest.yaml
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  caveat: null
+- field: server_observability_profile.cann_version
+  status: measurable
+  source: manifest.yaml
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  caveat: null
+- field: server_observability_profile.torch_npu_version
+  status: measurable
+  source: manifest.yaml
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  caveat: null
+- field: server_observability_profile.npu_smi_available
+  status: measurable
+  source: probe_results/npu_smi_probe.md
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  caveat: null
+- field: server_observability_profile.cann_profiler_available
+  status: measurable
+  source: probe_results/cann_profiler_probe.md
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  caveat: null
+- field: server_observability_profile.container_cgroup_readable
+  status: measurable
+  source: probe_results/container_permission_probe.md
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  caveat: null
+- field: microbench_profile.cpu_kernel_by_shape
+  status: measurable
+  source: microbench/cpu_kernel.csv
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  caveat: null
+- field: microbench_profile.ddr_bandwidth_gbps
+  status: measurable
+  source: microbench/dram_bandwidth.csv
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  caveat: null
