@@ -130,12 +130,24 @@ def _module_version(module_name: str) -> str:
 
 def _parse_npu_smi_info(output: str) -> dict[str, Any]:
     driver_match = re.search(r"\bDriver\s+Version\s*[:：]\s*([^\s|]+)", output, re.IGNORECASE)
+    if driver_match is None:
+        driver_match = re.search(r"\bnpu-smi\b.*?\bVersion\s*[:：]\s*([^\s|]+)", output, re.IGNORECASE)
     firmware_match = re.search(r"\bFirmware\s+Version\s*[:：]\s*([^\s|]+)", output, re.IGNORECASE)
     npu_ids = {int(match.group(1)) for match in re.finditer(r"\bNPU\s*ID\s*[:：]\s*(\d+)\b", output, re.IGNORECASE)}
+    npu_ids.update(
+        int(match.group(1))
+        for match in re.finditer(r"^\|\s*(\d+)\s+(?:Ascend|910[A-Za-z0-9]*)\b", output, re.IGNORECASE | re.MULTILINE)
+    )
     hbm_totals_mb = [
         int(match.group(1))
         for match in re.finditer(r"HBM[-\s]*Usage\s*\(MB\)\s*[:：]?\s*\d+\s*/\s*(\d+)", output, re.IGNORECASE)
     ]
+    if not hbm_totals_mb:
+        hbm_totals_mb = [
+            int(match.group(2))
+            for match in re.finditer(r"\b(\d+)\s*/\s*(\d+)\b", output)
+            if int(match.group(2)) >= 1024 and int(match.group(1)) <= int(match.group(2))
+        ]
 
     npu_count: int | str = len(npu_ids) if npu_ids else "unknown"
     if npu_count == "unknown" and hbm_totals_mb:

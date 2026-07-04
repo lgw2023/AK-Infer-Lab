@@ -135,3 +135,37 @@ HBM-Usage(MB): 2048 / 65536
     assert manifest["firmware_version"] == "7.1.0"
     assert manifest["npu_count"] == 2
     assert manifest["hbm_per_npu_gb"] == 64.0
+
+
+def test_build_manifest_parses_table_style_npu_smi_inventory(tmp_path: Path, monkeypatch):
+    npu_smi = """
++--------------------------------------------------------------------------------+
+| npu-smi 26.0.rc1                 Version: 26.0.rc1                              |
++---------------------------+---------------+------------------------------------+
+| NPU     Name              | Health        | Power(W)     Temp(C)               |
+| Chip    Device            | Bus-Id        | AICore(%)    Memory-Usage(MB)      |
++===========================+===============+====================================+
+| 0       910B1             | OK            | 100.0        42                    |
+| 0       0                 | 0000:81:00.0  | 0            59542 / 65536         |
+| 1       910B1             | OK            | 95.0         41                    |
+| 1       0                 | 0000:82:00.0  | 0            38851 / 65536         |
++---------------------------+---------------+------------------------------------+
+"""
+
+    def fake_run_text(command: list[str], timeout: int = 5) -> str:
+        if command == ["npu-smi", "info"]:
+            return npu_smi
+        return "unknown"
+
+    monkeypatch.setattr(manifest_module, "_run_text", fake_run_text)
+
+    manifest = build_manifest(
+        run_id="obs_2026_0704_atlas800t_a2_003",
+        output_root=tmp_path,
+        server_id="atlas800t-a2-node-001",
+        operator="codex",
+    )
+
+    assert manifest["driver_version"] == "26.0.rc1"
+    assert manifest["npu_count"] == 2
+    assert manifest["hbm_per_npu_gb"] == 64.0

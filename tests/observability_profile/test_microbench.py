@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import subprocess
 
 import tools.observability_profile.microbench as microbench_module
@@ -41,6 +42,43 @@ def test_torch_npu_timeout_detail_names_python_executable(monkeypatch):
     assert reason["category"] == "timeout"
     assert "/project/env/bin/python" in reason["detail"]
     assert "30 seconds" in reason["detail"]
+
+
+def test_run_microbench_suite_records_measurable_npu_metrics(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(microbench_module, "_torch_npu_ready", lambda: {"category": None, "detail": None})
+
+    def fake_run(command, check, capture_output, text, timeout):
+        payload = {
+            "status": "measurable",
+            "duration_ms": 12.5,
+            "metrics": [
+                {
+                    "metric_name": "h2d_latency_us",
+                    "metric_value": 42.0,
+                    "unit": "us",
+                }
+            ],
+        }
+        return subprocess.CompletedProcess(command, 0, stdout=json.dumps(payload), stderr="")
+
+    monkeypatch.setattr(microbench_module.subprocess, "run", fake_run)
+
+    results = run_microbench_suite(
+        run_dir=tmp_path,
+        scratch_dir=tmp_path / "scratch",
+        copy_sizes="4K,1M",
+        fio_qdepth="1",
+        duration_s=1,
+        command_exists=lambda command: False,
+    )
+
+    result = _by_name(results, "npu_copy_h2d")
+    artifact = tmp_path / result["artifact_path"]
+
+    assert result["status"] == "measurable"
+    assert result["duration_ms"] == 12.5
+    assert artifact.exists()
+    assert "h2d_latency_us" in artifact.read_text()
 
 
 def test_run_microbench_suite_blocks_ssd_fio_without_scratch(tmp_path: Path):
