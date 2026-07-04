@@ -1,0 +1,2 @@
+bench_name,status,command,artifact_path,duration_ms,blocked_category,blocked_detail,metric_name,metric_value,unit
+cpu_perf,blocked,perf --version,microbench/cpu_perf.csv,,tool_missing,perf is not available,,,

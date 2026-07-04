@@ -1,0 +1,6194 @@
+fields:
+- name: os_name
+  profile: server_observability_profile
+  meaning: operating system name
+  layer: server
+  field_type: inventory
+  unit: text
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: manifest
+    evidence_artifact: manifest.yaml
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: kernel_version
+  profile: server_observability_profile
+  meaning: kernel version
+  layer: server
+  field_type: inventory
+  unit: text
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: manifest
+    evidence_artifact: manifest.yaml
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: cann_version
+  profile: server_observability_profile
+  meaning: CANN version
+  layer: server
+  field_type: inventory
+  unit: text
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: manifest
+    evidence_artifact: manifest.yaml
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: driver_version
+  profile: server_observability_profile
+  meaning: Ascend driver version
+  layer: server
+  field_type: inventory
+  unit: text
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: manifest
+    evidence_artifact: manifest.yaml
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: firmware_version
+  profile: server_observability_profile
+  meaning: device firmware version
+  layer: server
+  field_type: inventory
+  unit: text
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: torch_npu_version
+  profile: server_observability_profile
+  meaning: torch-npu version
+  layer: server
+  field_type: inventory
+  unit: text
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: manifest
+    evidence_artifact: manifest.yaml
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: mindie_version
+  profile: server_observability_profile
+  meaning: MindIE version
+  layer: server
+  field_type: inventory
+  unit: text
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: vllm_ascend_version
+  profile: server_observability_profile
+  meaning: vLLM-Ascend version
+  layer: server
+  field_type: inventory
+  unit: text
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: manifest
+    evidence_artifact: manifest.yaml
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: container_privileged
+  profile: server_observability_profile
+  meaning: whether current container is privileged
+  layer: server
+  field_type: inventory
+  unit: bool
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: visible_npu_count
+  profile: server_observability_profile
+  meaning: number of visible NPUs
+  layer: server
+  field_type: counter
+  unit: count
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: manifest
+    evidence_artifact: manifest.yaml
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: npu_smi_available
+  profile: server_observability_profile
+  meaning: whether npu-smi is callable
+  layer: server
+  field_type: inventory
+  unit: bool
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: npu_smi_probe
+    evidence_artifact: probe_results/npu_smi_probe.md
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: cann_profiler_available
+  profile: server_observability_profile
+  meaning: whether CANN profiler is callable
+  layer: server
+  field_type: inventory
+  unit: bool
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: cann_profiler_probe
+    evidence_artifact: probe_results/cann_profiler_probe.md
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: perf_available
+  profile: server_observability_profile
+  meaning: whether perf is callable
+  layer: server
+  field_type: inventory
+  unit: bool
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: blocked
+    confidence: medium
+    evidence_probe: perf_probe
+    evidence_artifact: probe_results/perf_probe.md
+    blocked_reason:
+      category: tool_missing
+      detail: '[Errno 2] No such file or directory: ''perf'''
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: ebpf_available
+  profile: server_observability_profile
+  meaning: whether bpftrace is callable
+  layer: server
+  field_type: inventory
+  unit: bool
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: blocked
+    confidence: medium
+    evidence_probe: ebpf_probe
+    evidence_artifact: probe_results/ebpf_probe.md
+    blocked_reason:
+      category: tool_missing
+      detail: probe command is not available
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: fio_available
+  profile: server_observability_profile
+  meaning: whether fio is callable
+  layer: server
+  field_type: inventory
+  unit: bool
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: blocked
+    confidence: medium
+    evidence_probe: fio_probe
+    evidence_artifact: probe_results/fio_probe.md
+    blocked_reason:
+      category: tool_missing
+      detail: '[Errno 2] No such file or directory: ''fio'''
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: numa_available
+  profile: server_observability_profile
+  meaning: whether numactl topology inventory is callable
+  layer: server
+  field_type: inventory
+  unit: bool
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: blocked
+    confidence: medium
+    evidence_probe: numa_probe
+    evidence_artifact: probe_results/numa_probe.md
+    blocked_reason:
+      category: tool_missing
+      detail: '[Errno 2] No such file or directory: ''numactl'''
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: container_cgroup_readable
+  profile: server_observability_profile
+  meaning: whether container cgroup context is readable
+  layer: server
+  field_type: inventory
+  unit: bool
+  required_for_p0: true
+  sampling_mode: one_shot
+  measurement_source: host and container inventory commands
+  expected_tool: uname, python, npu-smi, container runtime metadata
+  permission_need: shell_access
+  collection_overhead: low
+  expected_artifact: manifest.yaml
+  join_key:
+  - profile_run_id
+  time_base: host_wall_clock
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: container_permission_probe
+    evidence_artifact: probe_results/container_permission_probe.md
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: compare command outputs with manifest fields
+  acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
+  fallback: record unknown with command failure evidence
+  notes: ''
+- name: arrival_time_ns
+  profile: request_runtime_profile
+  meaning: request arrival timestamp
+  layer: runtime
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: enqueue_time_ns
+  profile: request_runtime_profile
+  meaning: request enqueue timestamp
+  layer: runtime
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: dequeue_time_ns
+  profile: request_runtime_profile
+  meaning: request dequeue timestamp
+  layer: runtime
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: queue_wait_us
+  profile: request_runtime_profile
+  meaning: request queue wait duration
+  layer: runtime
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: admission_decision
+  profile: request_runtime_profile
+  meaning: request admission decision
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: batch_id
+  profile: request_runtime_profile
+  meaning: runtime batch identifier
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: batch_size
+  profile: request_runtime_profile
+  meaning: runtime batch size
+  layer: runtime
+  field_type: counter
+  unit: count
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: prefill_start_ns
+  profile: request_runtime_profile
+  meaning: prefill start timestamp
+  layer: runtime
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: prefill_end_ns
+  profile: request_runtime_profile
+  meaning: prefill end timestamp
+  layer: runtime
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: decode_step_start_ns
+  profile: request_runtime_profile
+  meaning: decode step start timestamp
+  layer: runtime
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: decode_step_end_ns
+  profile: request_runtime_profile
+  meaning: decode step end timestamp
+  layer: runtime
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: sampling_end_ns
+  profile: request_runtime_profile
+  meaning: sampling end timestamp
+  layer: runtime
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: jct_us
+  profile: request_runtime_profile
+  meaning: job completion time
+  layer: runtime
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime request log or wrapper log
+  expected_tool: vLLM/MindIE log hook or wrapper logger
+  permission_need: app_log_access
+  collection_overhead: low
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run synthetic single request and verify monotonic timestamps
+  acceptance_rule: measurable if non-null for at least 95 percent of requests
+  fallback: wrapper-level request timestamps
+  notes: ''
+- name: policy_name
+  profile: scheduler_policy_profile
+  meaning: scheduler or cache policy name
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: why_this_device
+  profile: scheduler_policy_profile
+  meaning: reason device was selected
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: why_prefetch
+  profile: scheduler_policy_profile
+  meaning: reason prefetch was issued
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: why_evict
+  profile: scheduler_policy_profile
+  meaning: reason object was evicted
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: why_recompute
+  profile: scheduler_policy_profile
+  meaning: reason recompute was selected
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: cache_allocation_event
+  profile: scheduler_policy_profile
+  meaning: cache allocation event
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: cache_free_event
+  profile: scheduler_policy_profile
+  meaning: cache free event
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: pin_unpin_event
+  profile: scheduler_policy_profile
+  meaning: pin or unpin event
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: ttl_expiry_event
+  profile: scheduler_policy_profile
+  meaning: TTL expiry event
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: backpressure_event
+  profile: scheduler_policy_profile
+  meaning: backpressure event
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: reject_reason
+  profile: scheduler_policy_profile
+  meaning: request rejection reason
+  layer: runtime
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_request
+  measurement_source: runtime decision log
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: runtime_queue_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - phase
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify decisions align with synthetic queue and cache actions
+  acceptance_rule: partial if decision exists at request granularity without object
+    granularity
+  fallback: record unavailable framework hook gap
+  notes: ''
+- name: layer_id
+  profile: operator_timeline_profile
+  meaning: model layer identifier
+  layer: operator
+  field_type: event
+  unit: count
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: op_name
+  profile: operator_timeline_profile
+  meaning: framework operator name
+  layer: operator
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: kernel_name
+  profile: operator_timeline_profile
+  meaning: device kernel name
+  layer: operator
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: cann_op_name
+  profile: operator_timeline_profile
+  meaning: CANN operator name
+  layer: operator
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: input_shape
+  profile: operator_timeline_profile
+  meaning: operator input shape
+  layer: operator
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: dtype
+  profile: operator_timeline_profile
+  meaning: operator dtype
+  layer: operator
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: tiling_id
+  profile: operator_timeline_profile
+  meaning: tiling identifier
+  layer: operator
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: launch_overhead_us
+  profile: operator_timeline_profile
+  meaning: kernel launch overhead
+  layer: operator
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: kernel_duration_us
+  profile: operator_timeline_profile
+  meaning: kernel duration
+  layer: operator
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: stream_id
+  profile: operator_timeline_profile
+  meaning: device stream identifier
+  layer: operator
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: graph_compile_us
+  profile: operator_timeline_profile
+  meaning: graph compile duration
+  layer: operator
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: graph_cache_hit
+  profile: operator_timeline_profile
+  meaning: graph cache hit flag
+  layer: operator
+  field_type: event
+  unit: bool
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: dynamic_shape_fallback
+  profile: operator_timeline_profile
+  meaning: dynamic shape fallback flag
+  layer: operator
+  field_type: event
+  unit: bool
+  required_for_p0: true
+  sampling_mode: per_layer
+  measurement_source: CANN profiler timeline
+  expected_tool: CANN profiler
+  permission_need: profiler_permission
+  collection_overhead: high
+  expected_artifact: operator_timeline.jsonl
+  join_key:
+  - trace_id
+  - phase
+  - layer_id
+  - stream_id
+  time_base: cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run small model profile and verify timeline has ordered kernel
+    events
+  acceptance_rule: partial if kernel events exist without request_id alignment
+  fallback: framework log operator timing if profiler unavailable
+  notes: ''
+- name: ai_core_util
+  profile: npu_hbm_profile
+  meaning: AI Core utilization
+  layer: hbm
+  field_type: counter
+  unit: percent
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: aiv_util
+  profile: npu_hbm_profile
+  meaning: AIV utilization
+  layer: hbm
+  field_type: counter
+  unit: percent
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: cube_util
+  profile: npu_hbm_profile
+  meaning: Cube utilization
+  layer: hbm
+  field_type: counter
+  unit: percent
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: npu_busy_time_us
+  profile: npu_hbm_profile
+  meaning: NPU busy time
+  layer: hbm
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: npu_idle_time_us
+  profile: npu_hbm_profile
+  meaning: NPU idle time
+  layer: hbm
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: hbm_allocated_bytes
+  profile: npu_hbm_profile
+  meaning: allocated HBM bytes
+  layer: hbm
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: hbm_reserved_bytes
+  profile: npu_hbm_profile
+  meaning: reserved HBM bytes
+  layer: hbm
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: hbm_free_bytes
+  profile: npu_hbm_profile
+  meaning: free HBM bytes
+  layer: hbm
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: hbm_peak_bytes
+  profile: npu_hbm_profile
+  meaning: peak HBM bytes
+  layer: hbm
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: hbm_fragmentation_ratio
+  profile: npu_hbm_profile
+  meaning: HBM fragmentation ratio
+  layer: hbm
+  field_type: derived_metric
+  unit: ratio
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: workspace_peak_bytes
+  profile: npu_hbm_profile
+  meaning: workspace peak bytes
+  layer: hbm
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: kv_pool_bytes
+  profile: npu_hbm_profile
+  meaning: KV pool bytes
+  layer: hbm
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: expert_cache_bytes
+  profile: npu_hbm_profile
+  meaning: expert cache bytes
+  layer: hbm
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: hbm_read_gbps
+  profile: npu_hbm_profile
+  meaning: HBM read bandwidth
+  layer: hbm
+  field_type: counter
+  unit: GB/s
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: hbm_write_gbps
+  profile: npu_hbm_profile
+  meaning: HBM write bandwidth
+  layer: hbm
+  field_type: counter
+  unit: GB/s
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: hbm_stall_us
+  profile: npu_hbm_profile
+  meaning: HBM stall duration
+  layer: hbm
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: npu-smi and CANN profiler counters
+  expected_tool: npu-smi, CANN profiler
+  permission_need: npu_visibility
+  collection_overhead: medium
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - npu_id
+  - timestamp_ns
+  time_base: host_wall_clock_or_tool_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare repeated samples and verify non-negative counters
+  acceptance_rule: measurable if values are present for all visible NPUs
+  fallback: CANN profiler memory counters when npu-smi lacks field
+  notes: ''
+- name: thread_name
+  profile: cpu_dram_profile
+  meaning: CPU thread name
+  layer: cpu_dram
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: core_id
+  profile: cpu_dram_profile
+  meaning: CPU core identifier
+  layer: cpu_dram
+  field_type: event
+  unit: count
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: numa_node
+  profile: cpu_dram_profile
+  meaning: NUMA node identifier
+  layer: cpu_dram
+  field_type: event
+  unit: count
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: cpu_user_percent
+  profile: cpu_dram_profile
+  meaning: CPU user utilization
+  layer: cpu_dram
+  field_type: counter
+  unit: percent
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: cpu_sys_percent
+  profile: cpu_dram_profile
+  meaning: CPU system utilization
+  layer: cpu_dram
+  field_type: counter
+  unit: percent
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: cpu_iowait_percent
+  profile: cpu_dram_profile
+  meaning: CPU iowait utilization
+  layer: cpu_dram
+  field_type: counter
+  unit: percent
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: context_switches
+  profile: cpu_dram_profile
+  meaning: context switch count
+  layer: cpu_dram
+  field_type: counter
+  unit: count
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: runqueue_length
+  profile: cpu_dram_profile
+  meaning: runqueue length
+  layer: cpu_dram
+  field_type: counter
+  unit: count
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: scheduler_time_us
+  profile: cpu_dram_profile
+  meaning: scheduler time
+  layer: cpu_dram
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: tokenizer_time_us
+  profile: cpu_dram_profile
+  meaning: tokenizer time
+  layer: cpu_dram
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: sampler_time_us
+  profile: cpu_dram_profile
+  meaning: sampler time
+  layer: cpu_dram
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: cache_lookup_time_us
+  profile: cpu_dram_profile
+  meaning: cache lookup time
+  layer: cpu_dram
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: dram_read_gbps
+  profile: cpu_dram_profile
+  meaning: DRAM read bandwidth
+  layer: cpu_dram
+  field_type: counter
+  unit: GB/s
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: dram_write_gbps
+  profile: cpu_dram_profile
+  meaning: DRAM write bandwidth
+  layer: cpu_dram
+  field_type: counter
+  unit: GB/s
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: pinned_memory_bytes
+  profile: cpu_dram_profile
+  meaning: pinned memory bytes
+  layer: cpu_dram
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: page_faults
+  profile: cpu_dram_profile
+  meaning: page fault count
+  layer: cpu_dram
+  field_type: counter
+  unit: count
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: host_oom_event
+  profile: cpu_dram_profile
+  meaning: host OOM event
+  layer: cpu_dram
+  field_type: event
+  unit: bool
+  required_for_p0: true
+  sampling_mode: periodic
+  measurement_source: perf, pidstat, numastat, runtime logs
+  expected_tool: perf, pidstat, numastat
+  permission_need: host_perf_or_proc_access
+  collection_overhead: medium
+  expected_artifact: probe_results/perf_probe.md
+  join_key:
+  - profile_run_id
+  - pid
+  - thread_id
+  - timestamp_ns
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify counters change during synthetic CPU workload
+  acceptance_rule: partial if process-level counters exist without request_id alignment
+  fallback: process-level ps and procfs samples
+  notes: ''
+- name: direction
+  profile: transfer_overlap_profile
+  meaning: copy direction
+  layer: transfer
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: transfer_bytes
+  profile: transfer_overlap_profile
+  meaning: copy size
+  layer: transfer
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: transfer_latency_us
+  profile: transfer_overlap_profile
+  meaning: copy latency
+  layer: transfer
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: effective_gbps
+  profile: transfer_overlap_profile
+  meaning: effective transfer bandwidth
+  layer: transfer
+  field_type: metric
+  unit: GB/s
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: setup_cost_us
+  profile: transfer_overlap_profile
+  meaning: copy setup cost
+  layer: transfer
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: copy_submit_ns
+  profile: transfer_overlap_profile
+  meaning: copy submit timestamp
+  layer: transfer
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: copy_complete_ns
+  profile: transfer_overlap_profile
+  meaning: copy completion timestamp
+  layer: transfer
+  field_type: event
+  unit: ns
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: copy_stream_id
+  profile: transfer_overlap_profile
+  meaning: copy stream identifier
+  layer: transfer
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: compute_stream_id
+  profile: transfer_overlap_profile
+  meaning: compute stream identifier
+  layer: transfer
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: compute_overlap_us
+  profile: transfer_overlap_profile
+  meaning: compute time overlapping copy
+  layer: transfer
+  field_type: derived_metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: copy_exposed_us
+  profile: transfer_overlap_profile
+  meaning: copy time exposed on critical path
+  layer: transfer
+  field_type: derived_metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: overlap_ratio
+  profile: transfer_overlap_profile
+  meaning: copy and compute overlap ratio
+  layer: transfer
+  field_type: derived_metric
+  unit: ratio
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: sync_barrier_event
+  profile: transfer_overlap_profile
+  meaning: sync barrier event
+  layer: transfer
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: event_wait_us
+  profile: transfer_overlap_profile
+  meaning: event wait duration
+  layer: transfer
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: copy microbench and CANN timeline
+  expected_tool: custom copy microbench, CANN profiler
+  permission_need: npu_runtime_access
+  collection_overhead: medium
+  expected_artifact: copy_overlap_trace.csv
+  join_key:
+  - trace_id
+  - stream_id
+  - object_id
+  - timestamp_ns
+  time_base: host_monotonic_ns_and_cann_device_timeline
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: compare no-overlap and intentional-overlap microbench runs
+  acceptance_rule: partial if host-side overlap estimate exists without device stream
+    alignment
+  fallback: host-side submit and complete timestamps
+  notes: ''
+- name: seq_read_gbps
+  profile: ssd_io_profile
+  meaning: sequential read bandwidth
+  layer: ssd
+  field_type: metric
+  unit: GB/s
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: seq_write_gbps
+  profile: ssd_io_profile
+  meaning: sequential write bandwidth
+  layer: ssd
+  field_type: metric
+  unit: GB/s
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: random_read_iops
+  profile: ssd_io_profile
+  meaning: random read IOPS
+  layer: ssd
+  field_type: metric
+  unit: IOPS
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: random_write_iops
+  profile: ssd_io_profile
+  meaning: random write IOPS
+  layer: ssd
+  field_type: metric
+  unit: IOPS
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: qd1_iops
+  profile: ssd_io_profile
+  meaning: QD1 IOPS
+  layer: ssd
+  field_type: metric
+  unit: IOPS
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: qd4_iops
+  profile: ssd_io_profile
+  meaning: QD4 IOPS
+  layer: ssd
+  field_type: metric
+  unit: IOPS
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: qd32_iops
+  profile: ssd_io_profile
+  meaning: QD32 IOPS
+  layer: ssd
+  field_type: metric
+  unit: IOPS
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: qd64_iops
+  profile: ssd_io_profile
+  meaning: QD64 IOPS
+  layer: ssd
+  field_type: metric
+  unit: IOPS
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: io_p50_us
+  profile: ssd_io_profile
+  meaning: I/O p50 latency
+  layer: ssd
+  field_type: metric
+  unit: us
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: io_p95_us
+  profile: ssd_io_profile
+  meaning: I/O p95 latency
+  layer: ssd
+  field_type: metric
+  unit: us
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: io_p99_us
+  profile: ssd_io_profile
+  meaning: I/O p99 latency
+  layer: ssd
+  field_type: metric
+  unit: us
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: io_p999_us
+  profile: ssd_io_profile
+  meaning: I/O p999 latency
+  layer: ssd
+  field_type: metric
+  unit: us
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: io_size_histogram
+  profile: ssd_io_profile
+  meaning: I/O size histogram
+  layer: ssd
+  field_type: trace
+  unit: text
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: direct_io_enabled
+  profile: ssd_io_profile
+  meaning: direct I/O flag
+  layer: ssd
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: page_cache_used
+  profile: ssd_io_profile
+  meaning: page cache flag
+  layer: ssd
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: mmap_used
+  profile: ssd_io_profile
+  meaning: mmap flag
+  layer: ssd
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: readahead_kb
+  profile: ssd_io_profile
+  meaning: readahead size
+  layer: ssd
+  field_type: counter
+  unit: KB
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: submit_path
+  profile: ssd_io_profile
+  meaning: I/O submit path
+  layer: ssd
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: ssd_temperature_c
+  profile: ssd_io_profile
+  meaning: SSD temperature
+  layer: ssd
+  field_type: counter
+  unit: C
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: ssd_throttling_event
+  profile: ssd_io_profile
+  meaning: SSD throttling event
+  layer: ssd
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: microbench
+  measurement_source: fio, iostat, lsblk, smartctl when available
+  expected_tool: fio, iostat, lsblk
+  permission_need: block_device_read_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - device_id
+  time_base: fio_timestamp
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify fio reports non-empty latency and IOPS sections
+  acceptance_rule: measurable for capability profile if fio runs successfully on configured
+    scratch path
+  fallback: lsblk and iostat inventory without workload
+  notes: ''
+- name: object_type
+  profile: state_object_profile
+  meaning: state object type
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: object_id
+  profile: state_object_profile
+  meaning: state object identifier
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: owner_request
+  profile: state_object_profile
+  meaning: owning request identifier
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: layer_id
+  profile: state_object_profile
+  meaning: owning layer identifier
+  layer: state_object
+  field_type: event
+  unit: count
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: object_bytes
+  profile: state_object_profile
+  meaning: state object size
+  layer: state_object
+  field_type: counter
+  unit: bytes
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: tier
+  profile: state_object_profile
+  meaning: storage or memory tier
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: lifecycle_event
+  profile: state_object_profile
+  meaning: state object lifecycle event
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: load_cost_us
+  profile: state_object_profile
+  meaning: object load cost
+  layer: state_object
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: evict_cost_us
+  profile: state_object_profile
+  meaning: object evict cost
+  layer: state_object
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: recompute_cost_us
+  profile: state_object_profile
+  meaning: object recompute cost
+  layer: state_object
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: hotness
+  profile: state_object_profile
+  meaning: object hotness score
+  layer: state_object
+  field_type: derived_metric
+  unit: score
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: next_use
+  profile: state_object_profile
+  meaning: predicted next use
+  layer: state_object
+  field_type: derived_metric
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: consistency_scope
+  profile: state_object_profile
+  meaning: object consistency scope
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: runtime object event hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify create and delete lifecycle events for synthetic request
+    objects
+  acceptance_rule: blocked until object_id and lifecycle_event are emitted
+  fallback: derive coarse object events from runtime logs
+  notes: ''
+- name: kv_object_id
+  profile: kv_prefix_profile
+  meaning: KV object identifier
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: tokens_range
+  profile: kv_prefix_profile
+  meaning: token range covered by KV object
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: block_size
+  profile: kv_prefix_profile
+  meaning: KV block size
+  layer: state_object
+  field_type: counter
+  unit: tokens
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: block_table_entries
+  profile: kv_prefix_profile
+  meaning: KV block table entries
+  layer: state_object
+  field_type: counter
+  unit: count
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: kv_fragmentation_ratio
+  profile: kv_prefix_profile
+  meaning: KV fragmentation ratio
+  layer: state_object
+  field_type: derived_metric
+  unit: ratio
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: hit_tier
+  profile: kv_prefix_profile
+  meaning: tier where KV or prefix hit occurred
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: miss_reason
+  profile: kv_prefix_profile
+  meaning: KV or prefix miss reason
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: prefix_hash
+  profile: kv_prefix_profile
+  meaning: prefix hash
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: matched_tokens
+  profile: kv_prefix_profile
+  meaning: matched prefix token count
+  layer: state_object
+  field_type: counter
+  unit: tokens
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: position_shift
+  profile: kv_prefix_profile
+  meaning: prefix position shift
+  layer: state_object
+  field_type: metric
+  unit: tokens
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: reuse_distance
+  profile: kv_prefix_profile
+  meaning: reuse distance
+  layer: state_object
+  field_type: metric
+  unit: requests
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: restore_vs_recompute_decision
+  profile: kv_prefix_profile
+  meaning: restore versus recompute decision
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: true
+  sampling_mode: per_request
+  measurement_source: KV and prefix cache runtime hook
+  expected_tool: runtime hook or wrapper logger
+  permission_need: framework_hook
+  collection_overhead: medium
+  expected_artifact: state_object_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - object_id
+  - layer_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run repeated-prefix workload and verify hit or miss events
+  acceptance_rule: partial if prefix hit is request-level only without per-layer KV
+    block mapping
+  fallback: request-level prefix cache logs
+  notes: ''
+- name: router_scores
+  profile: moe_expert_profile
+  meaning: router scores or logits
+  layer: state_object
+  field_type: trace
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: top_k_expert_ids
+  profile: moe_expert_profile
+  meaning: selected top-k expert identifiers
+  layer: state_object
+  field_type: trace
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: top_k_probs
+  profile: moe_expert_profile
+  meaning: top-k expert probabilities
+  layer: state_object
+  field_type: trace
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: router_entropy
+  profile: moe_expert_profile
+  meaning: router entropy
+  layer: state_object
+  field_type: derived_metric
+  unit: score
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: expert_frequency
+  profile: moe_expert_profile
+  meaning: expert frequency
+  layer: state_object
+  field_type: counter
+  unit: count
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: expert_hotness
+  profile: moe_expert_profile
+  meaning: expert hotness
+  layer: state_object
+  field_type: derived_metric
+  unit: score
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: expert_reuse_distance
+  profile: moe_expert_profile
+  meaning: expert reuse distance
+  layer: state_object
+  field_type: metric
+  unit: tokens
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: expert_resident
+  profile: moe_expert_profile
+  meaning: expert resident flag
+  layer: state_object
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: expert_prefetched
+  profile: moe_expert_profile
+  meaning: expert prefetched flag
+  layer: state_object
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: expert_evicted
+  profile: moe_expert_profile
+  meaning: expert evicted flag
+  layer: state_object
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: expert_hit
+  profile: moe_expert_profile
+  meaning: expert hit flag
+  layer: state_object
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: expert_miss_tier
+  profile: moe_expert_profile
+  meaning: tier where expert miss was served
+  layer: state_object
+  field_type: event
+  unit: text
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: expert_load_latency_us
+  profile: moe_expert_profile
+  meaning: expert load latency
+  layer: state_object
+  field_type: metric
+  unit: us
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: prefetch_lead_time_us
+  profile: moe_expert_profile
+  meaning: prefetch lead time
+  layer: state_object
+  field_type: metric
+  unit: us
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: prefetch_accuracy
+  profile: moe_expert_profile
+  meaning: prefetch accuracy
+  layer: state_object
+  field_type: derived_metric
+  unit: ratio
+  required_for_p0: false
+  sampling_mode: per_layer
+  measurement_source: MoE router and expert cache hook
+  expected_tool: model hook or profiler operator mapping
+  permission_need: framework_hook
+  collection_overhead: high
+  expected_artifact: expert_trace.jsonl
+  join_key:
+  - trace_id
+  - request_id
+  - layer_id
+  - object_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: run MoE workload and verify top-k expert ids exist for MoE layers
+  acceptance_rule: blocked until router top-k or expert cache events are emitted
+  fallback: operator-level MoE dispatch timing without expert identity
+  notes: ''
+- name: npu_power_w
+  profile: power_stability_profile
+  meaning: NPU power
+  layer: power
+  field_type: counter
+  unit: W
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: cpu_power_w
+  profile: power_stability_profile
+  meaning: CPU package power
+  layer: power
+  field_type: counter
+  unit: W
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: dram_power_w
+  profile: power_stability_profile
+  meaning: DRAM power
+  layer: power
+  field_type: counter
+  unit: W
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: ssd_power_w
+  profile: power_stability_profile
+  meaning: SSD power
+  layer: power
+  field_type: counter
+  unit: W
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: system_power_w
+  profile: power_stability_profile
+  meaning: system power
+  layer: power
+  field_type: counter
+  unit: W
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: energy_per_token_j
+  profile: power_stability_profile
+  meaning: energy per token
+  layer: power
+  field_type: derived_metric
+  unit: J/token
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: npu_temperature_c
+  profile: power_stability_profile
+  meaning: NPU temperature
+  layer: power
+  field_type: counter
+  unit: C
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: cpu_temperature_c
+  profile: power_stability_profile
+  meaning: CPU temperature
+  layer: power
+  field_type: counter
+  unit: C
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: ssd_temperature_c
+  profile: power_stability_profile
+  meaning: SSD temperature
+  layer: power
+  field_type: counter
+  unit: C
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: npu_frequency_mhz
+  profile: power_stability_profile
+  meaning: NPU frequency
+  layer: power
+  field_type: counter
+  unit: MHz
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: cpu_frequency_mhz
+  profile: power_stability_profile
+  meaning: CPU frequency
+  layer: power
+  field_type: counter
+  unit: MHz
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: thermal_throttling_event
+  profile: power_stability_profile
+  meaning: thermal throttling event
+  layer: power
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: oom_event
+  profile: power_stability_profile
+  meaning: OOM event
+  layer: power
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: cann_error_event
+  profile: power_stability_profile
+  meaning: CANN error event
+  layer: power
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: ssd_timeout_event
+  profile: power_stability_profile
+  meaning: SSD timeout event
+  layer: power
+  field_type: event
+  unit: bool
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: long_run_p99_drift
+  profile: power_stability_profile
+  meaning: long run p99 drift
+  layer: power
+  field_type: derived_metric
+  unit: ratio
+  required_for_p0: false
+  sampling_mode: periodic
+  measurement_source: npu-smi, system sensors, logs
+  expected_tool: npu-smi, sensors, journal logs
+  permission_need: host_sensor_access
+  collection_overhead: low
+  expected_artifact: probe_results/npu_smi_probe.md
+  join_key:
+  - profile_run_id
+  - timestamp_ns
+  time_base: host_wall_clock
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify repeated samples remain within physical ranges
+  acceptance_rule: partial if NPU power and temperature are available without CPU
+    or SSD power
+  fallback: temperature-only stability tracking
+  notes: ''
+- name: npu_op_by_shape
+  profile: microbench_profile
+  meaning: NPU operator latency by shape
+  layer: microbench
+  field_type: trace
+  unit: text
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: npu_matmul_shape
+    evidence_artifact: microbench/npu_matmul_shape.csv
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: cpu_kernel_by_shape
+  profile: microbench_profile
+  meaning: CPU kernel latency by shape
+  layer: microbench
+  field_type: trace
+  unit: text
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: cpu_kernel
+    evidence_artifact: microbench/cpu_kernel.csv
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: ddr_bandwidth_gbps
+  profile: microbench_profile
+  meaning: DDR bandwidth
+  layer: microbench
+  field_type: metric
+  unit: GB/s
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: dram_bandwidth
+    evidence_artifact: microbench/dram_bandwidth.csv
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: ssd_iops
+  profile: microbench_profile
+  meaning: SSD IOPS
+  layer: microbench
+  field_type: metric
+  unit: IOPS
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: blocked
+    confidence: medium
+    evidence_probe: ssd_fio
+    evidence_artifact: microbench/ssd_fio.csv
+    blocked_reason:
+      category: tool_missing
+      detail: fio is not available
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: h2d_latency_us
+  profile: microbench_profile
+  meaning: H2D latency
+  layer: microbench
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: npu_copy_h2d
+    evidence_artifact: microbench/npu_copy_h2d.csv
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: d2h_latency_us
+  profile: microbench_profile
+  meaning: D2H latency
+  layer: microbench
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: npu_copy_d2h
+    evidence_artifact: microbench/npu_copy_d2h.csv
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: h2d_bandwidth_gbps
+  profile: microbench_profile
+  meaning: H2D bandwidth
+  layer: microbench
+  field_type: metric
+  unit: GB/s
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: npu_copy_h2d
+    evidence_artifact: microbench/npu_copy_h2d.csv
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: d2h_bandwidth_gbps
+  profile: microbench_profile
+  meaning: D2H bandwidth
+  layer: microbench
+  field_type: metric
+  unit: GB/s
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: npu_copy_d2h
+    evidence_artifact: microbench/npu_copy_d2h.csv
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: pageable_copy_latency_us
+  profile: microbench_profile
+  meaning: pageable copy latency
+  layer: microbench
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: pinned_copy_latency_us
+  profile: microbench_profile
+  meaning: pinned copy latency
+  layer: microbench
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: sync_copy_latency_us
+  profile: microbench_profile
+  meaning: sync copy latency
+  layer: microbench
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: async_copy_latency_us
+  profile: microbench_profile
+  meaning: async copy latency
+  layer: microbench
+  field_type: metric
+  unit: us
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: unknown
+    confidence: low
+    evidence_probe: null
+    evidence_artifact: null
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: null
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''
+- name: copy_overlap_ratio
+  profile: microbench_profile
+  meaning: copy overlap ratio
+  layer: microbench
+  field_type: derived_metric
+  unit: ratio
+  required_for_p0: true
+  sampling_mode: microbench
+  measurement_source: safe microbench commands and existing tools
+  expected_tool: fio, perf, CANN sample or custom copy microbench
+  permission_need: tool_specific_access
+  collection_overhead: high
+  expected_artifact: probe_results/fio_probe.md
+  join_key:
+  - profile_run_id
+  - benchmark_id
+  time_base: host_monotonic_ns
+  availability:
+    status: measurable
+    confidence: medium
+    evidence_probe: npu_copy_overlap
+    evidence_artifact: microbench/npu_copy_overlap.csv
+    blocked_reason:
+      category: null
+      detail: null
+    partial_reason: null
+    last_checked_at: '2026-07-04T18:27:23.561410+00:00'
+  validation_method: verify command exits zero and reports numeric metric
+  acceptance_rule: partial if inventory and tool availability are verified before
+    workload execution
+  fallback: record tool availability only
+  notes: ''

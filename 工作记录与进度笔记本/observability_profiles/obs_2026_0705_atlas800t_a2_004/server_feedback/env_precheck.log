@@ -1,0 +1,20 @@
+Sun Jul  5 02:25:40 AM CST 2026
+DevServer-BMS-3d97cc99-0
+/data/node0_disk1/liguowei/AK-Infer-Lab
+4e4bdf9
+/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+Python 3.11.15
+sys.executable: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+CONDA_PREFIX: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab
+CONDA_DEFAULT_ENV: ak-infer-lab
+torch: 2.9.0
+torch-npu: 2.9.0.post2
+torch_npu: 2.9.0.post2
+vllm: 0.18.0+empty
+vllm-ascend: 0.18.0
+vllm_ascend: 0.18.0
+torch.__version__: 2.9.0+cpu
+torch_npu_import_ok: true
+torch.npu.is_available: True
+torch.npu.device_count: 8
+env_precheck_exit_code=0

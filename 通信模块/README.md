@@ -34,8 +34,10 @@ AK_COMM_SMTP_PORT=465
 AK_COMM_SMTP_USER=你的 163 邮箱地址
 AK_COMM_SMTP_PASSWORD=你的 163 SMTP 授权码
 AK_COMM_MAIL_FROM=通常与 AK_COMM_SMTP_USER 相同
-AK_COMM_MAIL_TO=gwlee1995@gmail.com
+AK_COMM_MAIL_TO=gwlee1995@gmail.com,yilili1023@gmail.com
 ```
+
+`AK_COMM_MAIL_TO` 支持逗号分隔多个收件人。当前默认同时发送到 `gwlee1995@gmail.com` 和 `yilili1023@gmail.com`，避免服务器反馈只进入单一邮箱后开发机漏看。
 
 可选配置：
 

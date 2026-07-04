@@ -1,0 +1,160 @@
+===== npu-smi info -t board -i 0 =====
+	NPU ID                         : 0
+	Product Name                   : IT21HMDA_Bin4
+	Model                          : NA
+	Manufacturer                   : Huawei
+	Serial Number                  : 102476138527
+	Software Version               : 26.0.rc1
+	Firmware Version               : 9.0.0.0.205
+	Compatibility                  : OK
+	Board ID                       : 0x63
+	PCB ID                         : A
+	BOM ID                         : 1
+	PCIe Bus Info                  : 0000:C1:00.0
+	Slot ID                        : 0
+	Class ID                       : NA
+	PCI Vendor ID                  : 0x19E5
+	PCI Device ID                  : 0xD802
+	Subsystem Vendor ID            : 0x19E5
+	Subsystem Device ID            : 0x3001
+	Chip Count                     : 1
+===== npu-smi info -t board -i 1 =====
+	NPU ID                         : 1
+	Product Name                   : IT21HMDA_Bin4
+	Model                          : NA
+	Manufacturer                   : Huawei
+	Serial Number                  : 102476138625
+	Software Version               : 26.0.rc1
+	Firmware Version               : 9.0.0.0.205
+	Compatibility                  : OK
+	Board ID                       : 0x63
+	PCB ID                         : A
+	BOM ID                         : 1
+	PCIe Bus Info                  : 0000:01:00.0
+	Slot ID                        : 1
+	Class ID                       : NA
+	PCI Vendor ID                  : 0x19E5
+	PCI Device ID                  : 0xD802
+	Subsystem Vendor ID            : 0x19E5
+	Subsystem Device ID            : 0x3001
+	Chip Count                     : 1
+===== npu-smi info -t board -i 2 =====
+	NPU ID                         : 2
+	Product Name                   : IT21HMDA_Bin4
+	Model                          : NA
+	Manufacturer                   : Huawei
+	Serial Number                  : 102476138613
+	Software Version               : 26.0.rc1
+	Firmware Version               : 9.0.0.0.205
+	Compatibility                  : OK
+	Board ID                       : 0x63
+	PCB ID                         : A
+	BOM ID                         : 1
+	PCIe Bus Info                  : 0000:C2:00.0
+	Slot ID                        : 2
+	Class ID                       : NA
+	PCI Vendor ID                  : 0x19E5
+	PCI Device ID                  : 0xD802
+	Subsystem Vendor ID            : 0x19E5
+	Subsystem Device ID            : 0x3001
+	Chip Count                     : 1
+===== npu-smi info -t board -i 3 =====
+	NPU ID                         : 3
+	Product Name                   : IT21HMDA_Bin4
+	Model                          : NA
+	Manufacturer                   : Huawei
+	Serial Number                  : 102476138535
+	Software Version               : 26.0.rc1
+	Firmware Version               : 9.0.0.0.205
+	Compatibility                  : OK
+	Board ID                       : 0x63
+	PCB ID                         : A
+	BOM ID                         : 1
+	PCIe Bus Info                  : 0000:02:00.0
+	Slot ID                        : 3
+	Class ID                       : NA
+	PCI Vendor ID                  : 0x19E5
+	PCI Device ID                  : 0xD802
+	Subsystem Vendor ID            : 0x19E5
+	Subsystem Device ID            : 0x3001
+	Chip Count                     : 1
+===== npu-smi info -t board -i 4 =====
+	NPU ID                         : 4
+	Product Name                   : IT21HMDA_Bin4
+	Model                          : NA
+	Manufacturer                   : Huawei
+	Serial Number                  : 102476138628
+	Software Version               : 26.0.rc1
+	Firmware Version               : 9.0.0.0.205
+	Compatibility                  : OK
+	Board ID                       : 0x63
+	PCB ID                         : A
+	BOM ID                         : 1
+	PCIe Bus Info                  : 0000:81:00.0
+	Slot ID                        : 4
+	Class ID                       : NA
+	PCI Vendor ID                  : 0x19E5
+	PCI Device ID                  : 0xD802
+	Subsystem Vendor ID            : 0x19E5
+	Subsystem Device ID            : 0x3001
+	Chip Count                     : 1
+===== npu-smi info -t board -i 5 =====
+	NPU ID                         : 5
+	Product Name                   : IT21HMDA_Bin4
+	Model                          : NA
+	Manufacturer                   : Huawei
+	Serial Number                  : 102476138621
+	Software Version               : 26.0.rc1
+	Firmware Version               : 9.0.0.0.205
+	Compatibility                  : OK
+	Board ID                       : 0x63
+	PCB ID                         : A
+	BOM ID                         : 1
+	PCIe Bus Info                  : 0000:41:00.0
+	Slot ID                        : 5
+	Class ID                       : NA
+	PCI Vendor ID                  : 0x19E5
+	PCI Device ID                  : 0xD802
+	Subsystem Vendor ID            : 0x19E5
+	Subsystem Device ID            : 0x3001
+	Chip Count                     : 1
+===== npu-smi info -t board -i 6 =====
+	NPU ID                         : 6
+	Product Name                   : IT21HMDA_Bin4
+	Model                          : NA
+	Manufacturer                   : Huawei
+	Serial Number                  : 102476138629
+	Software Version               : 26.0.rc1
+	Firmware Version               : 9.0.0.0.205
+	Compatibility                  : OK
+	Board ID                       : 0x63
+	PCB ID                         : A
+	BOM ID                         : 1
+	PCIe Bus Info                  : 0000:82:00.0
+	Slot ID                        : 6
+	Class ID                       : NA
+	PCI Vendor ID                  : 0x19E5
+	PCI Device ID                  : 0xD802
+	Subsystem Vendor ID            : 0x19E5
+	Subsystem Device ID            : 0x3001
+	Chip Count                     : 1
+===== npu-smi info -t board -i 7 =====
+	NPU ID                         : 7
+	Product Name                   : IT21HMDA_Bin4
+	Model                          : NA
+	Manufacturer                   : Huawei
+	Serial Number                  : 102476138514
+	Software Version               : 26.0.rc1
+	Firmware Version               : 9.0.0.0.205
+	Compatibility                  : OK
+	Board ID                       : 0x63
+	PCB ID                         : A
+	BOM ID                         : 1
+	PCIe Bus Info                  : 0000:42:00.0
+	Slot ID                        : 7
+	Class ID                       : NA
+	PCI Vendor ID                  : 0x19E5
+	PCI Device ID                  : 0xD802
+	Subsystem Vendor ID            : 0x19E5
+	Subsystem Device ID            : 0x3001
+	Chip Count                     : 1
