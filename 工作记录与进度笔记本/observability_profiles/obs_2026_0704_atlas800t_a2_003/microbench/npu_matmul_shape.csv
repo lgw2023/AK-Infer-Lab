@@ -1,0 +1,2 @@
+bench_name,status,command,artifact_path,duration_ms,blocked_category,blocked_detail,metric_name,metric_value,unit
+npu_matmul_shape,partial,torch-npu matmul shape sweep,microbench/npu_matmul_shape.csv,,,,torch_npu_initialization,ok,status

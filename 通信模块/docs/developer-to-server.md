@@ -10,6 +10,7 @@
 - 任务目的：
   - 验证开发机针对第三次反馈做的修复：NPU copy/matmul microbench 不再只写 `torch_npu_initialization=ok` 的 partial，而是在 `torch-npu` 可用时实际产出短测指标。
   - 验证 manifest 是否能从服务器表格型 `npu-smi info` 中解析出 `npu_count`、`hbm_per_npu_gb` 和 `driver_version`。
+  - 使用用户已空出的 NPU 6/7 进行复测，其中 NPU 6 为主测卡，NPU 7 为备用卡。
   - 本次只解决体检脚本测试问题，不推进模型推理实验计划，不抢占线上重要任务。
 
 ## 背景判断
@@ -18,6 +19,7 @@
 
 - collect CLI 已成功退出，项目 conda 环境正确。
 - `torch_npu 2.9.0.post2` 可导入，tiny NPU matmul 已完成。
+- 用户确认 `torch 2.9.0+cpu` + `torch_npu 2.9.0.post2` 是这台 Ascend 服务器的标准组合；只要 `torch.npu.is_available=True`，不要因 `torch.__version__` 带 `+cpu` 后缀而判为异常。
 - 第二次 run 的 `torch-npu import timed out after 5 seconds` 已归因于执行环境/子进程解释器问题，不是 NPU 硬件不可用。
 - 遗留问题是 NPU microbench 仍为 partial，manifest 仍未解析出 `npu_count` 和 HBM。
 
@@ -32,7 +34,8 @@
 - 服务器只通过 `git pull` 获取代码和任务文档。
 - 不要在服务器上修改、提交或 push 项目代码。
 - 不要提交或邮件发送 `.env`、SMTP 授权码、服务器账号、私钥、Cookie 或任何敏感信息。
-- 不要 kill 现有 VLLMWorker/python 任务；如果所有 NPU 都被重要任务占用，请只做预检并邮件说明，不要强行跑正式 microbench。
+- 用户已确认服务器允许为本项目安装工具和执行必要测试。
+- 用户已空出 NPU 6/7；本次默认使用 NPU 6，若 NPU 6 预检异常则改用 NPU 7，并在邮件正文说明。
 - 本次不是性能基线采集，只验证脚本能产出指标；选择较小 copy size，避免对正在运行的任务造成明显干扰。
 
 ## 服务器需要执行的步骤
@@ -52,7 +55,36 @@ git rev-parse --short HEAD
 python -m tools.observability_profile.cli collect --help
 ```
 
-### 2. 记录环境和 NPU 占用
+### 2. 安装/确认基础工具
+
+如果有 root 或免密 sudo 权限，先补齐本轮已知缺失工具：
+
+```bash
+APT_PREFIX=
+if [ "$(id -u)" -ne 0 ]; then
+  if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+    APT_PREFIX=sudo
+  else
+    echo "apt install skipped: current user is not root and passwordless sudo is unavailable"
+  fi
+fi
+
+if [ "$(id -u)" -eq 0 ] || [ -n "${APT_PREFIX}" ]; then
+  ${APT_PREFIX} apt-get update
+  ${APT_PREFIX} apt-get install -y fio numactl linux-tools-common linux-tools-generic "linux-tools-$(uname -r)" || true
+fi
+
+which fio || true
+which numactl || true
+which perf || true
+fio --version || true
+numactl --version || true
+perf --version || true
+```
+
+如果 `linux-tools-$(uname -r)` 不存在，不要中断本次 NPU 复测；在邮件里说明 `perf` 仍缺失即可。`fio` 和 `numactl` 能装上时，SSD/NUMA blocked 应同步解除。
+
+### 3. 记录环境和 NPU 占用
 
 ```bash
 RUN_ID=obs_2026_0705_atlas800t_a2_004
@@ -89,21 +121,35 @@ print("torch_npu_import_ok: true")
 print("torch.npu.is_available:", torch.npu.is_available())
 print("torch.npu.device_count:", torch.npu.device_count())
 PY
-} 2>&1 | tee "${PRECHECK_DIR}/env_precheck.log"
+} > "${PRECHECK_DIR}/env_precheck.log" 2>&1
+ENV_PRECHECK_EXIT=$?
+cat "${PRECHECK_DIR}/env_precheck.log"
+echo "env_precheck_exit_code=${ENV_PRECHECK_EXIT}" | tee -a "${PRECHECK_DIR}/env_precheck.log"
 
 npu-smi info > "${PRECHECK_DIR}/npu_smi_info.txt" 2>&1 || true
-npu-smi info -t board > "${PRECHECK_DIR}/npu_smi_board.txt" 2>&1 || true
+{
+  for NPU_ID in 0 1 2 3 4 5 6 7; do
+    echo "===== npu-smi info -t board -i ${NPU_ID} ====="
+    npu-smi info -t board -i "${NPU_ID}" || true
+  done
+} > "${PRECHECK_DIR}/npu_smi_board.txt" 2>&1
 ```
 
-请根据 `npu_smi_info.txt` 选择一张相对空闲、不会影响重要任务的卡。设置环境变量，例如：
+本次默认使用用户已空出的 NPU 6：
 
 ```bash
-export AK_OBS_NPU_DEVICE=npu:4
+export AK_OBS_NPU_DEVICE=npu:6
 ```
 
-如果没有安全可用的卡，请不要执行第 4 步，直接发邮件说明“所有 NPU 均忙，未跑正式 microbench”，并附 `env_precheck.log`、`npu_smi_info.txt`、`npu_smi_board.txt`。
+如果 `npu_smi_info.txt` 显示 NPU 6 仍有异常占用或健康状态异常，请改用 NPU 7：
 
-### 3. 准备 scratch 目录
+```bash
+export AK_OBS_NPU_DEVICE=npu:7
+```
+
+不要设置 `ASCEND_RT_VISIBLE_DEVICES`，避免设备编号被重映射；本项目 microbench 会直接使用 `AK_OBS_NPU_DEVICE` 指定的全局 NPU 编号。
+
+### 4. 准备 scratch 目录
 
 ```bash
 SCRATCH_DIR=/data/ak-trace/observability_scratch
@@ -111,14 +157,13 @@ mkdir -p "${SCRATCH_DIR}"
 df -h "${SCRATCH_DIR}"
 ```
 
-### 4. 执行正式复测
+### 5. 执行正式复测
 
 ```bash
 RUN_ID=obs_2026_0705_atlas800t_a2_004
 SCRATCH_DIR=/data/ak-trace/observability_scratch
 PRECHECK_DIR=/tmp/ak_observability_${RUN_ID}
 
-set -o pipefail
 python -m tools.observability_profile.cli collect \
   --server-id atlas800t-a2-node-001 \
   --operator ascend-server \
@@ -127,12 +172,13 @@ python -m tools.observability_profile.cli collect \
   --scratch-dir "${SCRATCH_DIR}" \
   --copy-sizes 4K,16K,64K,1M,16M,256M \
   --fio-qdepth 1,4,16 \
-  --microbench-duration 3 2>&1 | tee "${PRECHECK_DIR}/collect.log"
-COLLECT_EXIT=${PIPESTATUS[0]}
+  --microbench-duration 3 > "${PRECHECK_DIR}/collect.log" 2>&1
+COLLECT_EXIT=$?
+cat "${PRECHECK_DIR}/collect.log"
 echo "collect_exit_code=${COLLECT_EXIT}" | tee -a "${PRECHECK_DIR}/collect.log"
 ```
 
-### 5. 检查输出并打包
+### 6. 检查输出并打包
 
 ```bash
 RUN_ID=obs_2026_0705_atlas800t_a2_004
@@ -203,8 +249,9 @@ zip -r "${PRECHECK_DIR}/${RUN_ID}.zip" "${RUN_ID}"
   - 主机名、执行时间、`git rev-parse --short HEAD`。
   - 实际 `which python`、`python -V`、`sys.executable`、`CONDA_PREFIX`。
   - `torch`、`torch-npu`、`vllm`、`vllm-ascend` 版本。
-  - 选择的 `AK_OBS_NPU_DEVICE`，以及选择原因。
+  - `AK_OBS_NPU_DEVICE` 的实际取值；默认应为 `npu:6`，如果改用 `npu:7` 请说明原因。
   - `npu-smi info` 摘要：卡数、HBM、当前占用进程。
+  - `fio`、`numactl`、`perf` 是否安装成功。
   - 正式 collect 的完整命令、退出码、输出目录绝对路径。
   - `manifest.yaml` 中 listed summary 的全部字段。
   - `field_availability.yaml` 的 measurable / partial / blocked / unknown / not_applicable 数量。
@@ -222,5 +269,7 @@ zip -r "${PRECHECK_DIR}/${RUN_ID}.zip" "${RUN_ID}"
 ## 判读口径
 
 - `torch-npu` 可导入但 NPU CSV 仍没有指标，优先看对应 `blocked_detail`，不要再按第三次邮件的“脚本只做初始化检查”解释。
-- `perf`、`fio`、`numactl` 缺失仍属于服务器工具安装/权限问题；本次不要求安装。
+- `torch.__version__` 显示 `2.9.0+cpu` 是本服务器标准组合的一部分；只要 `torch_npu` 和 `torch.npu` 可用，不作为异常。
+- `npu-smi info -t board -i <id>` 作为固定附件采集，便于后续补 board/firmware 细节。
+- `perf`、`fio`、`numactl` 已允许安装；如果仍缺失，按实际安装错误记录，不要阻塞 NPU microbench 复测。
 - 本次结果只用于验证体检脚本修复，不作为最终硬件性能基线。
