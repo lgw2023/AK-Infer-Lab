@@ -61,11 +61,14 @@ python -m tools.observability_profile.cli collect --help
 
 ```bash
 APT_PREFIX=
+APT_INSTALL_NEEDS_HUMAN=0
 if [ "$(id -u)" -ne 0 ]; then
   if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
     APT_PREFIX=sudo
   else
-    echo "apt install skipped: current user is not root and passwordless sudo is unavailable"
+    APT_INSTALL_NEEDS_HUMAN=1
+    echo "apt install paused: current user is not root and passwordless sudo is unavailable"
+    echo "manual action required: ask the server operator to run the apt-get install commands interactively"
   fi
 fi
 
@@ -81,6 +84,8 @@ fio --version || true
 numactl --version || true
 perf --version || true
 ```
+
+如果需要交互式 sudo 或人工授权，不要停在密码提示里，也不要在邮件里发送密码；请把 `manual action required` 写入邮件正文，让人工登录服务器执行安装。工具安装失败不阻塞本次 NPU 复测。
 
 如果 `linux-tools-$(uname -r)` 不存在，不要中断本次 NPU 复测；在邮件里说明 `perf` 仍缺失即可。`fio` 和 `numactl` 能装上时，SSD/NUMA blocked 应同步解除。
 
@@ -251,7 +256,7 @@ zip -r "${PRECHECK_DIR}/${RUN_ID}.zip" "${RUN_ID}"
   - `torch`、`torch-npu`、`vllm`、`vllm-ascend` 版本。
   - `AK_OBS_NPU_DEVICE` 的实际取值；默认应为 `npu:6`，如果改用 `npu:7` 请说明原因。
   - `npu-smi info` 摘要：卡数、HBM、当前占用进程。
-  - `fio`、`numactl`、`perf` 是否安装成功。
+  - `fio`、`numactl`、`perf` 是否安装成功；如果需要交互式 sudo，请明确写 `manual action required` 和需要人工执行的命令。
   - 正式 collect 的完整命令、退出码、输出目录绝对路径。
   - `manifest.yaml` 中 listed summary 的全部字段。
   - `field_availability.yaml` 的 measurable / partial / blocked / unknown / not_applicable 数量。
