@@ -1,0 +1,13 @@
+bench_name,status,command,artifact_path,duration_ms,blocked_category,blocked_detail,metric_name,metric_value,unit
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_latency_us_4K,132.10671,us
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_bandwidth_gbps_4K,0.028876,GB/s
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_latency_us_16K,120.189701,us
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_bandwidth_gbps_16K,0.126956,GB/s
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_latency_us_64K,111.789675,us
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_bandwidth_gbps_64K,0.545982,GB/s
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_latency_us_1M,352.042727,us
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_bandwidth_gbps_1M,2.773989,GB/s
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_latency_us_16M,4601.708031,us
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_bandwidth_gbps_16M,3.395478,GB/s
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_latency_us_256M,117417.161004,us
+npu_copy_d2h,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_d2h torch-npu microbench>,microbench/npu_copy_d2h.csv,264.097,,,d2h_bandwidth_gbps_256M,2.129161,GB/s

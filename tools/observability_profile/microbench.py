@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import importlib.metadata as importlib_metadata
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -464,35 +465,492 @@ def _run_dram_bandwidth(run_dir: Path, duration_s: int) -> dict[str, Any]:
     )
 
 
-def _record_tool_probe(
+def _metric(metric_name: str, metric_value: str | float | int, unit: str) -> dict[str, Any]:
+    return {"metric_name": metric_name, "metric_value": metric_value, "unit": unit}
+
+
+def _to_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, int | float):
+        return float(value)
+    text = str(value).strip().replace(",", "")
+    if not text or text.startswith("<"):
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def _round_metric(value: float) -> float:
+    return round(value, 6)
+
+
+def _fio_percentile_us(section: dict[str, Any], percentile: float) -> float | None:
+    latency = section.get("clat_ns") or section.get("lat_ns") or {}
+    percentiles = latency.get("percentile") if isinstance(latency, dict) else None
+    if not isinstance(percentiles, dict):
+        return None
+    for key, value in percentiles.items():
+        key_value = _to_float(key)
+        if key_value is None or abs(key_value - percentile) > 0.0001:
+            continue
+        raw_value = _to_float(value)
+        return None if raw_value is None else raw_value / 1000
+    return None
+
+
+def _fio_mean_latency_us(section: dict[str, Any]) -> float | None:
+    latency = section.get("clat_ns") or section.get("lat_ns") or {}
+    if not isinstance(latency, dict):
+        return None
+    raw_value = _to_float(latency.get("mean"))
+    return None if raw_value is None else raw_value / 1000
+
+
+def _parse_fio_json_metrics(stdout: str) -> list[dict[str, Any]]:
+    payload = json.loads(stdout)
+    jobs = payload.get("jobs")
+    if not isinstance(jobs, list):
+        raise ValueError("fio JSON does not contain a jobs list")
+
+    direction_totals: dict[str, dict[str, float | None]] = {
+        "read": {"iops": None, "bw_bytes": None},
+        "write": {"iops": None, "bw_bytes": None},
+    }
+    latency_values: dict[str, dict[str, list[float]]] = {
+        "read": {"mean": [], "p95": [], "p99": []},
+        "write": {"mean": [], "p95": [], "p99": []},
+    }
+
+    for job in jobs:
+        if not isinstance(job, dict):
+            continue
+        for direction in ("read", "write"):
+            section = job.get(direction)
+            if not isinstance(section, dict):
+                continue
+            iops = _to_float(section.get("iops"))
+            if iops is not None:
+                current = direction_totals[direction]["iops"] or 0.0
+                direction_totals[direction]["iops"] = current + iops
+            bw_bytes = _to_float(section.get("bw_bytes"))
+            if bw_bytes is not None:
+                current = direction_totals[direction]["bw_bytes"] or 0.0
+                direction_totals[direction]["bw_bytes"] = current + bw_bytes
+            mean_us = _fio_mean_latency_us(section)
+            if mean_us is not None:
+                latency_values[direction]["mean"].append(mean_us)
+            p95_us = _fio_percentile_us(section, 95.0)
+            if p95_us is not None:
+                latency_values[direction]["p95"].append(p95_us)
+            p99_us = _fio_percentile_us(section, 99.0)
+            if p99_us is not None:
+                latency_values[direction]["p99"].append(p99_us)
+
+    metrics: list[dict[str, Any]] = []
+    total_iops = 0.0
+    total_bw_bytes = 0.0
+    saw_iops = False
+    saw_bw = False
+    for direction in ("read", "write"):
+        iops = direction_totals[direction]["iops"]
+        if iops is not None:
+            saw_iops = True
+            total_iops += iops
+            metrics.append(_metric(f"fio_{direction}_iops", _round_metric(iops), "IOPS"))
+        bw_bytes = direction_totals[direction]["bw_bytes"]
+        if bw_bytes is not None:
+            saw_bw = True
+            total_bw_bytes += bw_bytes
+            metrics.append(_metric(f"fio_{direction}_bw_mib_s", _round_metric(bw_bytes / (1024**2)), "MiB/s"))
+        for label, unit_name in (("mean", "mean"), ("p95", "p95"), ("p99", "p99")):
+            values = latency_values[direction][label]
+            if values:
+                metrics.append(
+                    _metric(
+                        f"fio_{direction}_clat_{unit_name}_us",
+                        _round_metric(sum(values) / len(values)),
+                        "us",
+                    )
+                )
+    if saw_iops:
+        metrics.append(_metric("fio_total_iops", _round_metric(total_iops), "IOPS"))
+    if saw_bw:
+        metrics.append(_metric("fio_total_bw_mib_s", _round_metric(total_bw_bytes / (1024**2)), "MiB/s"))
+    if not metrics:
+        raise ValueError("fio JSON did not contain parseable read/write metrics")
+    return metrics
+
+
+def _cpu_perf_code(duration_s: int) -> str:
+    seconds = max(0.05, min(duration_s, 3))
+    return (
+        "import time\n"
+        f"end = time.perf_counter() + {seconds!r}\n"
+        "value = 0\n"
+        "while time.perf_counter() < end:\n"
+        "    for i in range(1000):\n"
+        "        value += i * i\n"
+        "print(value)\n"
+    )
+
+
+def _perf_metric_from_event(event: str, value: float, unit: str) -> dict[str, Any] | None:
+    event = event.strip().split(":")[0]
+    unit = unit.strip().lower()
+    if event in {"task-clock", "cpu-clock"}:
+        if unit in {"sec", "secs", "second", "seconds"}:
+            value *= 1000
+        elif unit in {"usec", "us"}:
+            value /= 1000
+        elif unit in {"nsec", "ns"}:
+            value /= 1_000_000
+        return _metric("perf_task_clock_ms", _round_metric(value), "ms")
+    if event == "cycles":
+        return _metric("perf_cycles", int(value), "count")
+    if event == "instructions":
+        return _metric("perf_instructions", int(value), "count")
+    if event == "context-switches":
+        return _metric("perf_context_switches", int(value), "count")
+    return None
+
+
+def _parse_perf_stat_metrics(output: str) -> list[dict[str, Any]]:
+    by_name: dict[str, dict[str, Any]] = {}
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        metric: dict[str, Any] | None = None
+        parts = [part.strip() for part in line.split(",")]
+        if len(parts) >= 3:
+            value = _to_float(parts[0])
+            if value is not None:
+                metric = _perf_metric_from_event(parts[2], value, parts[1])
+        if metric is None:
+            tokens = line.split()
+            if len(tokens) >= 2:
+                value = _to_float(tokens[0])
+                if value is not None:
+                    if len(tokens) >= 3 and tokens[1].lower() in {"msec", "ms", "sec", "secs", "seconds", "usec", "us"}:
+                        metric = _perf_metric_from_event(tokens[2], value, tokens[1])
+                    else:
+                        metric = _perf_metric_from_event(tokens[1], value, "")
+        if metric is not None:
+            by_name[metric["metric_name"]] = metric
+
+    cycles = by_name.get("perf_cycles")
+    instructions = by_name.get("perf_instructions")
+    if cycles and instructions:
+        cycle_count = _to_float(cycles["metric_value"])
+        instruction_count = _to_float(instructions["metric_value"])
+        if cycle_count and instruction_count is not None:
+            by_name["perf_ipc"] = _metric("perf_ipc", _round_metric(instruction_count / cycle_count), "instructions/cycle")
+    return list(by_name.values())
+
+
+def _perf_failure_category(output: str) -> str:
+    lowered = output.lower()
+    if "permission" in lowered or "not permitted" in lowered or "access" in lowered:
+        return "permission"
+    if "not supported" in lowered:
+        return "unsupported"
+    return "unknown"
+
+
+def _run_cpu_perf(
     *,
     run_dir: Path,
-    bench_name: str,
-    artifact_name: str,
-    command_name: str,
+    duration_s: int,
     command_exists: CommandExists,
 ) -> dict[str, Any]:
-    if not command_exists(command_name):
+    if not command_exists("perf"):
         return _record_result(
             run_dir=run_dir,
-            bench_name=bench_name,
-            artifact_name=artifact_name,
+            bench_name="cpu_perf",
+            artifact_name="cpu_perf.csv",
             status="blocked",
-            command=[command_name, "--version"],
+            command=["perf", "--version"],
             duration_ms=None,
-            blocked_reason=_blocked_reason("tool_missing", f"{command_name} is not available"),
+            blocked_reason=_blocked_reason("tool_missing", "perf is not available"),
+        )
+
+    command = [
+        "perf",
+        "stat",
+        "-x",
+        ",",
+        "-e",
+        "task-clock,cycles,instructions",
+        "--",
+        sys.executable,
+        "-c",
+        _cpu_perf_code(duration_s),
+    ]
+    started = time.monotonic()
+    try:
+        result = subprocess.run(command, check=False, capture_output=True, text=True, timeout=max(10, duration_s + 10))
+    except subprocess.TimeoutExpired:
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="cpu_perf",
+            artifact_name="cpu_perf.csv",
+            status="blocked",
+            command=command,
+            duration_ms=round((time.monotonic() - started) * 1000, 3),
+            blocked_reason=_blocked_reason("timeout", "perf stat timed out"),
+        )
+    except OSError as exc:
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="cpu_perf",
+            artifact_name="cpu_perf.csv",
+            status="blocked",
+            command=command,
+            duration_ms=round((time.monotonic() - started) * 1000, 3),
+            blocked_reason=_blocked_reason("tool_missing", str(exc)),
+        )
+
+    duration_ms = round((time.monotonic() - started) * 1000, 3)
+    output = "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)
+    metrics = _parse_perf_stat_metrics(output)
+    if result.returncode != 0 and not metrics:
+        primary_detail = output[:500] or "perf stat returned nonzero"
+        fallback_command = list(command)
+        fallback_command[fallback_command.index("-e") + 1] = "task-clock"
+        fallback_started = time.monotonic()
+        try:
+            fallback_result = subprocess.run(
+                fallback_command,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=max(10, duration_s + 10),
+            )
+        except subprocess.TimeoutExpired:
+            return _record_result(
+                run_dir=run_dir,
+                bench_name="cpu_perf",
+                artifact_name="cpu_perf.csv",
+                status="blocked",
+                command=fallback_command,
+                duration_ms=round((time.monotonic() - fallback_started) * 1000, 3),
+                blocked_reason=_blocked_reason("timeout", f"{primary_detail}\nfallback task-clock timed out"),
+            )
+        except OSError as exc:
+            return _record_result(
+                run_dir=run_dir,
+                bench_name="cpu_perf",
+                artifact_name="cpu_perf.csv",
+                status="blocked",
+                command=fallback_command,
+                duration_ms=round((time.monotonic() - fallback_started) * 1000, 3),
+                blocked_reason=_blocked_reason("tool_missing", f"{primary_detail}\n{exc}"),
+            )
+        fallback_duration_ms = round((time.monotonic() - fallback_started) * 1000, 3)
+        fallback_output = "\n".join(
+            part for part in [fallback_result.stdout.strip(), fallback_result.stderr.strip()] if part
+        )
+        fallback_metrics = _parse_perf_stat_metrics(fallback_output)
+        if fallback_result.returncode == 0 and fallback_metrics:
+            return _record_result(
+                run_dir=run_dir,
+                bench_name="cpu_perf",
+                artifact_name="cpu_perf.csv",
+                status="partial",
+                command=fallback_command,
+                duration_ms=fallback_duration_ms,
+                blocked_reason=_blocked_reason(_perf_failure_category(primary_detail), primary_detail),
+                metrics=fallback_metrics,
+            )
+        output = "\n".join(part for part in [primary_detail, fallback_output[:500]] if part)
+        metrics = fallback_metrics
+    if result.returncode != 0:
+        if metrics:
+            return _record_result(
+                run_dir=run_dir,
+                bench_name="cpu_perf",
+                artifact_name="cpu_perf.csv",
+                status="partial",
+                command=command,
+                duration_ms=duration_ms,
+                blocked_reason=_blocked_reason(_perf_failure_category(output), output[:500]),
+                metrics=metrics,
+            )
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="cpu_perf",
+            artifact_name="cpu_perf.csv",
+            status="blocked",
+            command=command,
+            duration_ms=duration_ms,
+            blocked_reason=_blocked_reason(_perf_failure_category(output), output[:500] or "perf stat returned nonzero"),
+        )
+    if not metrics:
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="cpu_perf",
+            artifact_name="cpu_perf.csv",
+            status="blocked",
+            command=command,
+            duration_ms=duration_ms,
+            blocked_reason=_blocked_reason("unknown", output[:500] or "perf stat produced no parseable metrics"),
         )
     return _record_result(
         run_dir=run_dir,
-        bench_name=bench_name,
-        artifact_name=artifact_name,
-        status="partial",
-        command=[command_name, "--version"],
-        duration_ms=None,
+        bench_name="cpu_perf",
+        artifact_name="cpu_perf.csv",
+        status="measurable",
+        command=command,
+        duration_ms=duration_ms,
         blocked_reason=_blocked_reason(None, None),
-        metric_name="tool_available",
-        metric_value=1,
-        unit="bool",
+        metrics=metrics,
+    )
+
+
+def _parse_numactl_hardware_metrics(output: str) -> list[dict[str, Any]]:
+    nodes: dict[int, dict[str, Any]] = {}
+    node_count: int | None = None
+    distance_header: list[int] = []
+    distances: list[tuple[int, int, int]] = []
+    in_distances = False
+
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        available = re.search(r"available:\s+(\d+)\s+nodes", line)
+        if available:
+            node_count = int(available.group(1))
+            continue
+        cpus = re.match(r"node\s+(\d+)\s+cpus:\s*(.*)$", line)
+        if cpus:
+            node_id = int(cpus.group(1))
+            nodes.setdefault(node_id, {})["cpus"] = " ".join(cpus.group(2).split())
+            continue
+        size = re.match(r"node\s+(\d+)\s+size:\s+(\d+)\s+MB", line)
+        if size:
+            nodes.setdefault(int(size.group(1)), {})["memory_mb"] = int(size.group(2))
+            continue
+        free = re.match(r"node\s+(\d+)\s+free:\s+(\d+)\s+MB", line)
+        if free:
+            nodes.setdefault(int(free.group(1)), {})["free_mb"] = int(free.group(2))
+            continue
+        if line.startswith("node distances"):
+            in_distances = True
+            continue
+        if not in_distances:
+            continue
+        if line.startswith("node"):
+            distance_header = [int(value) for value in re.findall(r"\d+", line)]
+            continue
+        row = re.match(r"(\d+):\s*(.*)$", line)
+        if row and distance_header:
+            source_node = int(row.group(1))
+            values = [int(value) for value in re.findall(r"\d+", row.group(2))]
+            for target_node, distance in zip(distance_header, values):
+                distances.append((source_node, target_node, distance))
+
+    if node_count is None and nodes:
+        node_count = len(nodes)
+
+    metrics: list[dict[str, Any]] = []
+    if node_count is not None:
+        metrics.append(_metric("numa_node_count", node_count, "count"))
+    if nodes:
+        metrics.append(_metric("numa_node_ids", ",".join(str(node_id) for node_id in sorted(nodes)), "text"))
+    for node_id, node in sorted(nodes.items()):
+        cpus_value = node.get("cpus", "")
+        if cpus_value:
+            metrics.append(_metric(f"numa_node_{node_id}_cpus", cpus_value, "text"))
+            metrics.append(_metric(f"numa_node_{node_id}_cpu_count", len(cpus_value.split()), "count"))
+        if "memory_mb" in node:
+            metrics.append(_metric(f"numa_node_{node_id}_memory_mb", node["memory_mb"], "MB"))
+        if "free_mb" in node:
+            metrics.append(_metric(f"numa_node_{node_id}_free_mb", node["free_mb"], "MB"))
+    for source_node, target_node, distance in distances:
+        metrics.append(_metric(f"numa_distance_{source_node}_{target_node}", distance, "distance"))
+    if not metrics:
+        raise ValueError("numactl --hardware output did not contain parseable topology metrics")
+    return metrics
+
+
+def _run_numa_topology(
+    *,
+    run_dir: Path,
+    command_exists: CommandExists,
+) -> dict[str, Any]:
+    command = ["numactl", "--hardware"]
+    if not command_exists("numactl"):
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="numa_topology",
+            artifact_name="numa_topology.csv",
+            status="blocked",
+            command=command,
+            duration_ms=None,
+            blocked_reason=_blocked_reason("tool_missing", "numactl is not available"),
+        )
+    started = time.monotonic()
+    try:
+        result = subprocess.run(command, check=False, capture_output=True, text=True, timeout=10)
+    except subprocess.TimeoutExpired:
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="numa_topology",
+            artifact_name="numa_topology.csv",
+            status="blocked",
+            command=command,
+            duration_ms=round((time.monotonic() - started) * 1000, 3),
+            blocked_reason=_blocked_reason("timeout", "numactl --hardware timed out"),
+        )
+    except OSError as exc:
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="numa_topology",
+            artifact_name="numa_topology.csv",
+            status="blocked",
+            command=command,
+            duration_ms=round((time.monotonic() - started) * 1000, 3),
+            blocked_reason=_blocked_reason("tool_missing", str(exc)),
+        )
+    duration_ms = round((time.monotonic() - started) * 1000, 3)
+    output = "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)
+    if result.returncode != 0:
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="numa_topology",
+            artifact_name="numa_topology.csv",
+            status="blocked",
+            command=command,
+            duration_ms=duration_ms,
+            blocked_reason=_blocked_reason("unknown", output[:500] or "numactl --hardware returned nonzero"),
+        )
+    try:
+        metrics = _parse_numactl_hardware_metrics(output)
+    except ValueError as exc:
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="numa_topology",
+            artifact_name="numa_topology.csv",
+            status="blocked",
+            command=command,
+            duration_ms=duration_ms,
+            blocked_reason=_blocked_reason("unknown", str(exc)),
+        )
+    return _record_result(
+        run_dir=run_dir,
+        bench_name="numa_topology",
+        artifact_name="numa_topology.csv",
+        status="measurable",
+        command=command,
+        duration_ms=duration_ms,
+        blocked_reason=_blocked_reason(None, None),
+        metrics=metrics,
     )
 
 
@@ -576,6 +1034,19 @@ def _run_ssd_fio(
             duration_ms=round((time.monotonic() - started) * 1000, 3),
             blocked_reason=_blocked_reason("unknown", detail[:500] or "fio returned nonzero exit code"),
         )
+    try:
+        metrics = _parse_fio_json_metrics(result.stdout)
+    except (json.JSONDecodeError, ValueError) as exc:
+        detail = "\n".join(part for part in [str(exc), result.stdout.strip(), result.stderr.strip()] if part)
+        return _record_result(
+            run_dir=run_dir,
+            bench_name="ssd_fio",
+            artifact_name="ssd_fio.csv",
+            status="blocked",
+            command=command,
+            duration_ms=round((time.monotonic() - started) * 1000, 3),
+            blocked_reason=_blocked_reason("unknown", detail[:500]),
+        )
     return _record_result(
         run_dir=run_dir,
         bench_name="ssd_fio",
@@ -584,9 +1055,7 @@ def _run_ssd_fio(
         command=command,
         duration_ms=round((time.monotonic() - started) * 1000, 3),
         blocked_reason=_blocked_reason(None, None),
-        metric_name="fio_completed",
-        metric_value=1,
-        unit="bool",
+        metrics=metrics,
     )
 
 
@@ -638,19 +1107,14 @@ def run_microbench_suite(
             torch_block=torch_block,
         ),
         _run_cpu_kernel(run_dir, duration_s),
-        _record_tool_probe(
+        _run_cpu_perf(
             run_dir=run_dir,
-            bench_name="cpu_perf",
-            artifact_name="cpu_perf.csv",
-            command_name="perf",
+            duration_s=duration_s,
             command_exists=command_exists,
         ),
         _run_dram_bandwidth(run_dir, duration_s),
-        _record_tool_probe(
+        _run_numa_topology(
             run_dir=run_dir,
-            bench_name="numa_topology",
-            artifact_name="numa_topology.csv",
-            command_name="numactl",
             command_exists=command_exists,
         ),
         _run_ssd_fio(
