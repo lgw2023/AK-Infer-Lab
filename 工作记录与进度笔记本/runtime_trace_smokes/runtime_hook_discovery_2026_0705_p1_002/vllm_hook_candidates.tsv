@@ -1,0 +1,608 @@
+module	category	path	line	text
+vllm	request_runtime	__init__.py	19	"AsyncLLMEngine": ".engine.async_llm_engine:AsyncLLMEngine",
+vllm	request_runtime	__init__.py	20	"LLMEngine": ".engine.llm_engine:LLMEngine",
+vllm	request_runtime	__init__.py	43	from vllm.engine.async_llm_engine import AsyncLLMEngine
+vllm	request_runtime	__init__.py	44	from vllm.engine.llm_engine import LLMEngine
+vllm	request_runtime	__init__.py	95	"LLMEngine",
+vllm	request_runtime	__init__.py	97	"AsyncLLMEngine",
+vllm	kv_prefix_state	_aiter_ops.py	1023	_SHUFFLE_KV_CACHE_ENABLED = envs.VLLM_ROCM_SHUFFLE_KV_CACHE_LAYOUT
+vllm	kv_prefix_state	_aiter_ops.py	1051	cls._SHUFFLE_KV_CACHE_ENABLED = envs.VLLM_ROCM_SHUFFLE_KV_CACHE_LAYOUT
+vllm	kv_prefix_state	_aiter_ops.py	1166	def is_shuffle_kv_cache_enabled(cls) -> bool:
+vllm	kv_prefix_state	_aiter_ops.py	1167	return cls._SHUFFLE_KV_CACHE_ENABLED
+vllm	kv_prefix_state	_aiter_ops.py	1742	from aiter.ops.triton.fused_kv_cache import fused_qk_rope_reshape_and_cache
+vllm	kv_prefix_state	_custom_ops.py	120	kv_cache_dtype: str,
+vllm	kv_prefix_state	_custom_ops.py	141	kv_cache_dtype,
+vllm	kv_prefix_state	_custom_ops.py	167	kv_cache_dtype: str,
+vllm	kv_prefix_state	_custom_ops.py	191	kv_cache_dtype,
+vllm	kv_prefix_state	_custom_ops.py	218	kv_cache_dtype: str,
+vllm	kv_prefix_state	_custom_ops.py	240	kv_cache_dtype,
+vllm	kv_prefix_state	_custom_ops.py	251	kv_cache: torch.Tensor,
+vllm	kv_prefix_state	_custom_ops.py	256	torch.ops._C.mla_decode_kvcache(out, query, kv_cache, scale, block_tables, seq_lens)
+vllm	kv_prefix_state	_custom_ops.py	2567	kv_cache_dtype: str,
+vllm	kv_prefix_state	_custom_ops.py	2577	kv_cache_dtype,
+vllm	kv_prefix_state	_custom_ops.py	2589	kv_cache_dtype: str,
+vllm	kv_prefix_state	_custom_ops.py	2599	kv_cache_dtype,
+vllm	kv_prefix_state	_custom_ops.py	2608	kv_cache: torch.Tensor,
+vllm	kv_prefix_state	_custom_ops.py	2610	kv_cache_dtype: str,
+vllm	kv_prefix_state	_custom_ops.py	2614	kv_c, k_pe, kv_cache, slot_mapping, kv_cache_dtype, scale
+vllm	kv_prefix_state	_custom_ops.py	2626	kv_cache: torch.Tensor,
+vllm	kv_prefix_state	_custom_ops.py	2627	kv_cache_dtype: str,
+vllm	kv_prefix_state	_custom_ops.py	2628	kv_cache_scale: torch.Tensor,
+vllm	kv_prefix_state	_custom_ops.py	2638	kv_cache,
+vllm	kv_prefix_state	_custom_ops.py	2639	kv_cache_dtype,
+vllm	kv_prefix_state	_custom_ops.py	2640	kv_cache_scale,
+vllm	kv_prefix_state	_custom_ops.py	2686	kv_cache_dtype: str,
+vllm	kv_prefix_state	_custom_ops.py	2697	kv_cache_dtype,
+vllm	kv_prefix_state	_custom_ops.py	2716	def cp_gather_and_upconvert_fp8_kv_cache(
+vllm	kv_prefix_state	_custom_ops.py	2734	torch.ops._C_cache_ops.cp_gather_and_upconvert_fp8_kv_cache(
+vllm	kv_prefix_state	_custom_ops.py	2756	kv_cache: torch.Tensor,
+vllm	kv_prefix_state	_custom_ops.py	2759	kv_cache_dtype: str,
+vllm	kv_prefix_state	_custom_ops.py	2762	k, kv_cache, slot_mapping, quant_block_size, kv_cache_dtype
+vllm	kv_prefix_state	_custom_ops.py	2767	kv_cache: torch.Tensor,
+vllm	kv_prefix_state	_custom_ops.py	2774	kv_cache, dst_k, dst_scale, block_table, cu_seq_lens
+vllm	kv_prefix_state	_custom_ops.py	3222	def cpu_attention_with_kv_cache(
+vllm	kv_prefix_state	_custom_ops.py	3238	torch.ops._C.cpu_attention_with_kv_cache(
+vllm	kv_prefix_state	_xpu_ops.py	197	kv_cache: torch.Tensor,
+vllm	kv_prefix_state	_xpu_ops.py	303	# kv_cache: [num_block, block_size, head_dim + 4]
+vllm	kv_prefix_state	_xpu_ops.py	304	kv_cache.view(-1, kv_cache.shape[-1]).index_copy_(0, slot_mapping, k)
+vllm	kv_prefix_state	_xpu_ops.py	308	kv_cache: torch.Tensor,
+vllm	kv_prefix_state	_xpu_ops.py	316	kv_cache: [num_blocks, block_size, cache_stride] - quantized KV cache
+vllm	kv_prefix_state	_xpu_ops.py	329	cache_block_size = kv_cache.size(1)
+vllm	kv_prefix_state	_xpu_ops.py	350	block_stride = kv_cache.stride(0) # stride for each block
+vllm	kv_prefix_state	_xpu_ops.py	352	# Flatten kv_cache for easier indexing
+vllm	kv_prefix_state	_xpu_ops.py	353	kv_cache_flat = kv_cache.view(-1)
+vllm	kv_prefix_state	_xpu_ops.py	364	dst_k[:] = kv_cache_flat[k_indices]
+vllm	kv_prefix_state	_xpu_ops.py	375	dst_scale[:] = kv_cache_flat[scale_indices]
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	145	kv_cache_dummy_dep: torch.Tensor,
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	156	kv_cache_dummy_dep=kv_cache_dummy_dep,
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	170	kv_cache_dummy_dep: torch.Tensor,
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	187	kv_cache_dummy_dep=kv_cache_dummy_dep,
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	197	self.empty(0), # kv_cache_dummy_dep
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	235	kv_cache_dummy_dep: torch.Tensor,
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	246	kv_cache_dummy_dep=kv_cache_dummy_dep,
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	270	kv_cache_dummy_dep: torch.Tensor,
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	289	kv_cache_dummy_dep=kv_cache_dummy_dep,
+vllm	kv_prefix_state	compilation/passes/fusion/attn_quant_fusion.py	304	self.empty(0), # kv_cache_dummy_dep
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	33	def fused_rope_and_unified_kv_cache_update_impl(
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	44	then calls the layer impl's `AttentionImpl.do_rope_and_kv_cache_update` method.
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	45	It also returns a dummy tensor, similar to `Attention.unified_kv_cache_update`,
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	49	_, attn_layer, kv_cache, layer_slot_mapping = get_attention_context(layer_name)
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	51	attn_layer.impl.do_rope_and_kv_cache_update(
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	59	kv_cache,
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	63	return torch.empty(0, device=kv_cache.device, dtype=kv_cache.dtype)
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	66	def fused_rope_and_unified_kv_cache_update_fake(
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	79	op_name="fused_rope_and_unified_kv_cache_update",
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	80	op_func=fused_rope_and_unified_kv_cache_update_impl,
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	82	fake_impl=fused_rope_and_unified_kv_cache_update_fake,
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	90	kv_cache_dummy = unified_kv_cache_update(k, v, layer_name)
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	93	kv_cache_dummy = fused_rope_and_unified_kv_cache_update(
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	98	FUSED_OP = torch.ops.vllm.fused_rope_and_unified_kv_cache_update.default
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	147	dummy = torch.ops.vllm.unified_kv_cache_update(k, v, self.layer_name)
+vllm	kv_prefix_state	compilation/passes/fusion/rope_kvcache_fusion.py	201	pass_name="rope_kv_cache_fusion_pass"
+vllm	kv_prefix_state	compilation/passes/utility/fix_functionalization.py	174	hasattr(torch.ops.vllm, "fused_rope_and_unified_kv_cache_update")
+vllm	kv_prefix_state	compilation/passes/utility/fix_functionalization.py	176	== torch.ops.vllm.fused_rope_and_unified_kv_cache_update.default
+vllm	profiler_marker	config/__init__.py	35	from vllm.config.profiler import ProfilerConfig
+vllm	profiler_marker	config/__init__.py	112	# From vllm.config.profiler
+vllm	profiler_marker	config/__init__.py	113	"ProfilerConfig",
+vllm	kv_prefix_state	config/cache.py	87	kv_cache_dtype is fp8. If `False`, the scales will be loaded from the model
+vllm	kv_prefix_state	config/cache.py	132	kv_cache_memory_bytes: int | None = None
+vllm	kv_prefix_state	config/cache.py	136	the kv cache memory size. kv_cache_memory_bytes allows more fine-grain
+vllm	kv_prefix_state	config/cache.py	138	gpu_memory_utilization. Note that kv_cache_memory_bytes
+vllm	kv_prefix_state	config/compilation.py	1008	# unified_kv_cache_update has a string param that prevents Inductor
+vllm	kv_prefix_state	config/compilation.py	1014	self.splitting_ops.append("vllm::unified_kv_cache_update")
+vllm	kv_prefix_state	config/compilation.py	1015	self.splitting_ops.append("vllm::unified_mla_kv_cache_update")
+vllm	kv_prefix_state	config/kv_events.py	16	enable_kv_cache_events: bool = False
+vllm	kv_prefix_state	config/kv_events.py	54	self.publisher = "zmq" if self.enable_kv_cache_events else "null"
+vllm	kv_prefix_state	config/observability.py	48	kv_cache_metrics: bool = False
+vllm	kv_prefix_state	config/observability.py	53	kv_cache_metrics_sample: float = Field(default=0.01, gt=0, le=1)
+vllm	request_runtime	config/observability.py	75	If set, vllm EngineCore will log iteration details
+vllm	request_runtime	config/parallel.py	132	and when data_parallel_size > 0. Enables running an AsyncLLM
+vllm	profiler_marker	config/parallel.py	208	"""Whether to profile Ray workers with nsight, see https://docs.ray.io/en/latest/ray-observability/user-guides/profiling.html#profiling-nsight-profiler."""
+vllm	kv_prefix_state	config/parallel.py	302	dcp_kv_cache_interleave_size: int = 1
+vllm	kv_prefix_state	config/parallel.py	304	Interleave size of kv_cache storage while using DCP.
+vllm	kv_prefix_state	config/parallel.py	305	dcp_kv_cache_interleave_size has been replaced by cp_kv_cache_interleave_size,
+vllm	kv_prefix_state	config/parallel.py	317	cp_kv_cache_interleave_size: int = 1
+vllm	kv_prefix_state	config/parallel.py	318	"""Interleave size of kv_cache storage while using DCP or PCP.
+vllm	kv_prefix_state	config/parallel.py	328	Block_size should be greater than or equal to cp_kv_cache_interleave_size.
+vllm	kv_prefix_state	config/parallel.py	329	Block_size should be divisible by cp_kv_cache_interleave_size.
+vllm	request_runtime	config/parallel.py	446	Client manages local+remote EngineCores in pure internal LB case.
+vllm	request_runtime	config/parallel.py	447	Client manages local EngineCores in hybrid and external LB case.
+vllm	kv_prefix_state	config/parallel.py	631	def sync_kv_cache_memory_size(dp_group: ProcessGroup, kv_cache_memory: int) -> int:
+vllm	kv_prefix_state	config/parallel.py	632	if kv_cache_memory == -1:
+vllm	kv_prefix_state	config/parallel.py	633	kv_cache_memory = torch.iinfo(torch.int64).max
+vllm	kv_prefix_state	config/parallel.py	634	tensor = torch.tensor([kv_cache_memory], dtype=torch.int64, device="cpu")
+vllm	profiler_marker	config/profiler.py	16	ProfilerKind = Literal["torch", "cuda"]
+vllm	profiler_marker	config/profiler.py	34	class ProfilerConfig:
+vllm	profiler_marker	config/profiler.py	35	"""Dataclass which contains profiler config for the engine."""
+vllm	profiler_marker	config/profiler.py	37	profiler: ProfilerKind | None = None
+vllm	profiler_marker	config/profiler.py	38	"""Which profiler to use. Defaults to None. Options are:
+vllm	profiler_marker	config/profiler.py	40	- 'torch': Use PyTorch profiler.\n
+vllm	profiler_marker	config/profiler.py	41	- 'cuda': Use CUDA profiler."""
+vllm	profiler_marker	config/profiler.py	43	torch_profiler_dir: str = ""
+vllm	request_runtime	config/profiler.py	44	"""Directory to save torch profiler traces. Both AsyncLLM's CPU traces and
+vllm	profiler_marker	config/profiler.py	44	"""Directory to save torch profiler traces. Both AsyncLLM's CPU traces and
+vllm	profiler_marker	config/profiler.py	48	torch_profiler_with_stack: bool = False
+vllm	profiler_marker	config/profiler.py	49	"""If `True`, enables stack tracing in the torch profiler. Disabled by default
+vllm	profiler_marker	config/profiler.py	50	to reduce overhead. Can be enabled via VLLM_TORCH_PROFILER_WITH_STACK=1 env var
+vllm	profiler_marker	config/profiler.py	51	or --profiler-config.torch_profiler_with_stack=true CLI flag."""
+vllm	profiler_marker	config/profiler.py	53	torch_profiler_with_flops: bool = False
+vllm	profiler_marker	config/profiler.py	54	"""If `True`, enables FLOPS counting in the torch profiler. Disabled by default."""
+vllm	profiler_marker	config/profiler.py	56	torch_profiler_use_gzip: bool = True
+vllm	profiler_marker	config/profiler.py	57	"""If `True`, saves torch profiler traces in gzip format. Enabled by default"""
+vllm	profiler_marker	config/profiler.py	59	torch_profiler_dump_cuda_time_total: bool = True
+vllm	profiler_marker	config/profiler.py	60	"""If `True`, dumps total CUDA time in torch profiler traces. Enabled by default."""
+vllm	profiler_marker	config/profiler.py	62	torch_profiler_record_shapes: bool = False
+vllm	profiler_marker	config/profiler.py	63	"""If `True`, records tensor shapes in the torch profiler. Disabled by default."""
+vllm	profiler_marker	config/profiler.py	65	torch_profiler_with_memory: bool = False
+vllm	profiler_marker	config/profiler.py	66	"""If `True`, enables memory profiling in the torch profiler.
+vllm	request_runtime	config/profiler.py	70	"""If `True`, disables the front-end profiling of AsyncLLM when using the
+vllm	profiler_marker	config/profiler.py	71	'torch' profiler. This is needed to reduce overhead when using delay/limit options,
+vllm	profiler_marker	config/profiler.py	87	"""Number of warmup iterations for PyTorch profiler schedule.
+vllm	profiler_marker	config/profiler.py	88	During warmup, the profiler runs but data is discarded. This helps reduce
+vllm	profiler_marker	config/profiler.py	95	"""Number of active iterations for PyTorch profiler schedule.
+vllm	profiler_marker	config/profiler.py	101	"""Number of wait iterations for PyTorch profiler schedule.
+vllm	profiler_marker	config/profiler.py	102	During wait, the profiler is completely off with zero overhead.
+vllm	profiler_marker	config/profiler.py	126	def _validate_profiler_config(self) -> Self:
+vllm	profiler_marker	config/profiler.py	128	if self.profiler == "torch" and has_delay_or_limit and not self.ignore_frontend:
+vllm	profiler_marker	config/profiler.py	130	"Using 'torch' profiler with delay_iterations or max_iterations "
+vllm	profiler_marker	config/profiler.py	134	profiler_dir = self.torch_profiler_dir
+vllm	profiler_marker	config/profiler.py	135	if profiler_dir and self.profiler != "torch":
+vllm	profiler_marker	config/profiler.py	137	"torch_profiler_dir is only applicable when profiler is set to 'torch'"
+vllm	profiler_marker	config/profiler.py	139	if self.profiler == "torch" and not profiler_dir:
+vllm	profiler_marker	config/profiler.py	140	raise ValueError("torch_profiler_dir must be set when profiler is 'torch'")
+vllm	profiler_marker	config/profiler.py	144	if profiler_dir and not _is_uri_path(profiler_dir):
+vllm	profiler_marker	config/profiler.py	145	self.torch_profiler_dir = os.path.abspath(os.path.expanduser(profiler_dir))
+vllm	scheduler	config/scheduler.py	26	class SchedulerConfig:
+vllm	kv_prefix_state	config/scheduler.py	130	disable_hybrid_kv_cache_manager: bool | None = None
+vllm	profiler_marker	config/vllm.py	42	from .profiler import ProfilerConfig
+vllm	kv_prefix_state	config/vllm.py	53	from vllm.v1.kv_cache_interface import KVCacheConfig
+vllm	profiler_marker	config/vllm.py	297	profiler_config: ProfilerConfig = Field(default_factory=ProfilerConfig)
+vllm	profiler_marker	config/vllm.py	403	if self.profiler_config:
+vllm	profiler_marker	config/vllm.py	404	vllm_factors.append(self.profiler_config.compute_hash())
+vllm	copy_overlap	distributed/device_communicators/all_reduce_utils.py	143	lib.cudaDeviceSynchronize()
+vllm	copy_overlap	distributed/device_communicators/all_reduce_utils.py	188	lib.cudaDeviceSynchronize()
+vllm	copy_overlap	distributed/device_communicators/cuda_wrapper.py	45	# cudaError_t cudaDeviceSynchronize ( void )
+vllm	copy_overlap	distributed/device_communicators/cuda_wrapper.py	46	Function("cudaDeviceSynchronize", cudaError_t, []),
+vllm	copy_overlap	distributed/device_communicators/cuda_wrapper.py	86	"cudaDeviceSynchronize": "hipDeviceSynchronize",
+vllm	copy_overlap	distributed/device_communicators/cuda_wrapper.py	151	def cudaDeviceSynchronize(self) -> None:
+vllm	copy_overlap	distributed/device_communicators/cuda_wrapper.py	152	self.CUDART_CHECK(self.funcs["cudaDeviceSynchronize"]())
+vllm	copy_overlap	distributed/device_communicators/pynccl.py	145	stream.synchronize()
+vllm	copy_overlap	distributed/device_communicators/ray_communicator.py	167	synchronize with the current stream.
+vllm	copy_overlap	distributed/device_communicators/ray_communicator.py	188	Receive a torch.Tensor from a peer and synchronize the current stream.
+vllm	copy_overlap	distributed/device_communicators/ray_communicator.py	209	# need to synchronize here and check that the channel is still
+vllm	copy_overlap	distributed/device_communicators/ray_communicator.py	212	current_stream().synchronize()
+vllm	copy_overlap	distributed/device_communicators/shm_broadcast.py	217	In this case, we don't need to synchronize the access to
+vllm	copy_overlap	distributed/device_communicators/shm_object_storage.py	11	from multiprocessing.synchronize import Lock as LockType
+vllm	scheduler	distributed/ec_transfer/ec_connector/base.py	32	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/ec_transfer/ec_connector/base.py	218	self, scheduler_output: SchedulerOutput
+vllm	scheduler	distributed/ec_transfer/ec_connector/base.py	227	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	scheduler	distributed/ec_transfer/ec_connector/example_connector.py	16	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/ec_transfer/ec_connector/example_connector.py	152	scheduler_output: SchedulerOutput,
+vllm	scheduler	distributed/ec_transfer/ec_connector/example_connector.py	160	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	copy_overlap	distributed/elastic_ep/elastic_execute.py	220	torch.accelerator.synchronize()
+vllm	model_execute	distributed/elastic_ep/elastic_execute.py	379	# torch.compile is triggered during GPUModelRunner's load_model()
+vllm	copy_overlap	distributed/elastic_ep/elastic_execute.py	410	torch.accelerator.synchronize()
+vllm	copy_overlap	distributed/elastic_ep/elastic_execute.py	448	# NOTE(yongji): check whether we need to synchronize here
+vllm	copy_overlap	distributed/elastic_ep/elastic_execute.py	449	torch.accelerator.synchronize()
+vllm	copy_overlap	distributed/elastic_ep/elastic_execute.py	450	# reset expert_rearrangement_step to ensure all ranks are synchronized
+vllm	copy_overlap	distributed/elastic_ep/elastic_execute.py	494	torch.accelerator.synchronize()
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	22	from vllm.v1.engine.core import DPEngineCoreProc
+vllm	copy_overlap	distributed/elastic_ep/elastic_state.py	76	TCPStore based barrier to synchronize the
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	85	engine_core: "DPEngineCoreProc",
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	126	def engine_core(self) -> "DPEngineCoreProc":
+vllm	copy_overlap	distributed/elastic_ep/elastic_state.py	177	Execute a two-staged barrier to synchronize all engines in the DP group.
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	179	Some DP EngineCores may receive the reconfiguration notifications
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	182	In this case, EngineCores that already proceed to reconfiguration
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	184	step, so in the next step, all EngineCores will be synchronized.
+vllm	copy_overlap	distributed/elastic_ep/elastic_state.py	184	step, so in the next step, all EngineCores will be synchronized.
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	186	EngineCore executes the barrier, if a timeout is reached before the
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	187	barrier completes, that means some EngineCores have already entered
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	188	engine step. The EngineCores that timed out will then proceed to
+vllm	request_runtime	distributed/elastic_ep/elastic_state.py	189	engine step, and will synchronize with the other EngineCores in the
+vllm	copy_overlap	distributed/elastic_ep/elastic_state.py	189	engine step, and will synchronize with the other EngineCores in the
+vllm	copy_overlap	distributed/eplb/eplb_state.py	802	end_event.synchronize()
+vllm	copy_overlap	distributed/eplb/rebalance_execute.py	623	# NOTE(bowen): We need this synchronize to run, but I don't know why.
+vllm	copy_overlap	distributed/eplb/rebalance_execute.py	625	torch.accelerator.synchronize()
+vllm	model_execute	distributed/kv_transfer/kv_connector/utils.py	20	from vllm.v1.outputs import KVConnectorOutput, ModelRunnerOutput
+vllm	model_execute	distributed/kv_transfer/kv_connector/utils.py	66	self, outputs: list[ModelRunnerOutput | None], output_rank: int = 0
+vllm	model_execute	distributed/kv_transfer/kv_connector/utils.py	67	) -> ModelRunnerOutput | None:
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/base.py	52	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/base.py	507	self, scheduler_output: SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/base.py	516	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/decode_bench_connector.py	52	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/decode_bench_connector.py	153	self, scheduler_output: "SchedulerOutput"
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/decode_bench_connector.py	266	self, scheduler_output: "SchedulerOutput"
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/example_connector.py	21	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/example_connector.py	72	def add_request(
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/example_connector.py	315	scheduler_output: SchedulerOutput,
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/example_connector.py	323	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/example_connector.py	332	meta.add_request(
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/example_connector.py	346	meta.add_request(
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/example_connector.py	376	meta.add_request(
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/example_hidden_states_connector.py	18	from vllm.v1.core.sched.output import NewRequestData, SchedulerOutput
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/example_hidden_states_connector.py	86	def add_request(
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/example_hidden_states_connector.py	254	scheduler_output: SchedulerOutput,
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/example_hidden_states_connector.py	262	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/example_hidden_states_connector.py	268	meta.add_request(
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/example_hidden_states_connector.py	297	meta.add_request(
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/flexkv_connector.py	16	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/flexkv_connector.py	209	self, scheduler_output: SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/flexkv_connector.py	217	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_connector.py	22	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_connector.py	290	self, scheduler_output: SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_connector.py	299	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_integration/vllm_v1_adapter.py	57	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/lmcache_integration/vllm_v1_adapter.py	561	def add_request(self, req_meta: ReqMeta) -> None:
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_integration/vllm_v1_adapter.py	1299	self, scheduler_output: SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_integration/vllm_v1_adapter.py	1308	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/lmcache_integration/vllm_v1_adapter.py	1358	meta.add_request(req_meta)
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/lmcache_integration/vllm_v1_adapter.py	1378	meta.add_request(req_meta)
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/lmcache_integration/vllm_v1_adapter.py	1407	meta.add_request(req_meta)
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_mp_connector.py	21	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/lmcache_mp_connector.py	399	def add_request_metadata(self, request_metadata: LMCacheMPRequestMetadata):
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_mp_connector.py	820	self, scheduler_output: SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_mp_connector.py	829	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/lmcache_mp_connector.py	961	metadata.add_request_metadata(r_metadata)
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_mp_connector.py	966	scheduler_output: SchedulerOutput,
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/lmcache_mp_connector.py	981	metadata.add_request_metadata(r_meta)
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/lmcache_mp_connector.py	985	scheduler_output: SchedulerOutput,
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/lmcache_mp_connector.py	1008	metadata.add_request_metadata(r_meta)
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/mooncake/mooncake_connector.py	46	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/mooncake/mooncake_connector.py	198	scheduler_output: SchedulerOutput,
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/mooncake/mooncake_connector.py	360	scheduler_output: SchedulerOutput,
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/moriio/moriio_connector.py	60	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/moriio/moriio_connector.py	159	scheduler_output: SchedulerOutput,
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/moriio/moriio_connector.py	435	scheduler_output: SchedulerOutput,
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/moriio/moriio_connector.py	776	def schedule_write_blocks(
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/moriio/moriio_engine.py	106	def schedule_write(self, task: WriteTask) -> None:
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/moriio/moriio_engine.py	210	# This event is used to synchronize the kv transfer and computation tasks.
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/moriio/moriio_engine.py	211	task.event.synchronize()
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/multi_connector.py	30	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/multi_connector.py	384	self, scheduler_output: SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	61	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	413	scheduler_output: SchedulerOutput,
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	522	if self.connector_worker.use_host_buffer and self.connector_worker.copy_blocks:
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	820	scheduler_output: SchedulerOutput,
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	1100	self.copy_blocks: CopyBlocksOp | None = None
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	1378	self.copy_blocks = copy_operation
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	2113	assert self.copy_blocks is not None
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	2118	self.copy_blocks(
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	2136	assert self.copy_blocks is not None
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/nixl_connector.py	2151	self.copy_blocks(
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/offloading_connector.py	31	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/offloading_connector.py	196	self, scheduler_output: SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/offloading_connector.py	406	def _get_reqs_to_store(self, scheduler_output: SchedulerOutput):
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/offloading_connector.py	480	self, scheduler_output: SchedulerOutput
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py	23	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py	62	def add_request(
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py	380	scheduler_output: SchedulerOutput,
+vllm	scheduler	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py	388	scheduler_output (SchedulerOutput): the scheduler output object.
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py	408	meta.add_request(
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py	416	meta.add_request(
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py	445	meta.add_request(
+vllm	request_runtime	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_connector.py	468	meta.add_request(
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_engine.py	606	stream.synchronize()
+vllm	copy_overlap	distributed/kv_transfer/kv_connector/v1/p2p/p2p_nccl_engine.py	625	stream.synchronize()
+vllm	copy_overlap	distributed/utils.py	281	"""A robust barrier to synchronize all ranks.
+vllm	copy_overlap	distributed/weight_transfer/packed_tensor.py	51	# Synchronize the current stream
+vllm	copy_overlap	distributed/weight_transfer/packed_tensor.py	52	streams[buffer_idx].synchronize()
+vllm	copy_overlap	distributed/weight_transfer/packed_tensor.py	156	# Synchronize the current stream
+vllm	copy_overlap	distributed/weight_transfer/packed_tensor.py	157	streams[buffer_idx].synchronize()
+vllm	profiler_marker	engine/arg_utils.py	55	ProfilerConfig,
+vllm	profiler_marker	engine/arg_utils.py	566	profiler_config: ProfilerConfig = get_field(VllmConfig, "profiler_config")
+vllm	profiler_marker	engine/arg_utils.py	1289	vllm_group.add_argument("--profiler-config", **vllm_kwargs["profiler_config"])
+vllm	profiler_marker	engine/arg_utils.py	1941	profiler_config=self.profiler_config,
+vllm	request_runtime	engine/async_llm_engine.py	4	from vllm.v1.engine.async_llm import AsyncLLM
+vllm	request_runtime	engine/async_llm_engine.py	6	AsyncLLMEngine = AsyncLLM # type: ignore
+vllm	request_runtime	engine/async_llm_engine.py	7	"""The `AsyncLLMEngine` class is an alias of [vllm.v1.engine.async_llm.AsyncLLM][]."""
+vllm	request_runtime	engine/llm_engine.py	4	from vllm.v1.engine.llm_engine import LLMEngine as V1LLMEngine
+vllm	request_runtime	engine/llm_engine.py	6	LLMEngine = V1LLMEngine # type: ignore
+vllm	request_runtime	engine/llm_engine.py	7	"""The `LLMEngine` class is an alias of [vllm.v1.engine.llm_engine.LLMEngine][]."""
+vllm	request_runtime	engine/protocol.py	22	from vllm.v1.engine import EngineCoreRequest
+vllm	request_runtime	engine/protocol.py	69	prompt: EngineCoreRequest
+vllm	request_runtime	entrypoints/api_server.py	23	from vllm.engine.async_llm_engine import AsyncLLMEngine
+vllm	request_runtime	entrypoints/api_server.py	107	llm_engine: AsyncLLMEngine | None = None,
+vllm	request_runtime	entrypoints/api_server.py	117	else AsyncLLMEngine.from_engine_args(
+vllm	request_runtime	entrypoints/api_server.py	127	args: Namespace, llm_engine: AsyncLLMEngine | None = None, **uvicorn_kwargs: Any
+vllm	request_runtime	entrypoints/cli/run_batch.py	36	# LLMEngine uses the Prometheus client
+vllm	request_runtime	entrypoints/grpc_server.py	8	Starts a gRPC server backed by AsyncLLM, using the VllmEngineServicer
+vllm	request_runtime	entrypoints/grpc_server.py	31	from smg_grpc_servicer.vllm.servicer import VllmEngineServicer
+vllm	request_runtime	entrypoints/grpc_server.py	45	from vllm.v1.engine.async_llm import AsyncLLM
+vllm	request_runtime	entrypoints/grpc_server.py	71	# Create AsyncLLM
+vllm	request_runtime	entrypoints/grpc_server.py	72	async_llm = AsyncLLM.from_vllm_config(
+vllm	request_runtime	entrypoints/grpc_server.py	80	servicer = VllmEngineServicer(async_llm, start_time)
+vllm	request_runtime	entrypoints/grpc_server.py	96	vllm_engine_pb2_grpc.add_VllmEngineServicer_to_server(servicer, server)
+vllm	request_runtime	entrypoints/grpc_server.py	100	vllm_engine_pb2.DESCRIPTOR.services_by_name["VllmEngine"].full_name,
+vllm	request_runtime	entrypoints/grpc_server.py	136	logger.info("AsyncLLM engine stopped")
+vllm	profiler_marker	entrypoints/llm.py	25	ProfilerConfig,
+vllm	request_runtime	entrypoints/llm.py	94	from vllm.v1.engine.llm_engine import LLMEngine
+vllm	request_runtime	entrypoints/llm.py	214	serving, use the [AsyncLLMEngine][vllm.AsyncLLMEngine] class instead.
+vllm	profiler_marker	entrypoints/llm.py	252	profiler_config: dict[str, Any] | ProfilerConfig | None = None,
+vllm	profiler_marker	entrypoints/llm.py	324	profiler_config_instance = _make_config(profiler_config, ProfilerConfig)
+vllm	profiler_marker	entrypoints/llm.py	373	profiler_config=profiler_config_instance,
+vllm	request_runtime	entrypoints/llm.py	382	self.llm_engine = LLMEngine.from_engine_args(
+vllm	request_runtime	entrypoints/llm.py	843	a format that can be passed to `_add_request`.
+vllm	request_runtime	entrypoints/llm.py	848	A list of `ProcessorInputs` objects ready to be passed into LLMEngine.
+vllm	request_runtime	entrypoints/llm.py	889	A list of `ProcessorInputs` objects ready to be passed into LLMEngine.
+vllm	request_runtime	entrypoints/llm.py	1187	self._render_and_add_requests(
+vllm	request_runtime	entrypoints/llm.py	1791	return self._render_and_add_requests(
+vllm	request_runtime	entrypoints/llm.py	1897	self._render_and_add_requests(
+vllm	request_runtime	entrypoints/llm.py	1906	def _render_and_add_requests(
+vllm	request_runtime	entrypoints/llm.py	1918	request_id = self._add_request(
+vllm	request_runtime	entrypoints/llm.py	1935	def _add_request(
+vllm	request_runtime	entrypoints/llm.py	1948	return self.llm_engine.add_request(
+vllm	request_runtime	entrypoints/openai/api_server.py	122	- in-process using the AsyncLLMEngine Directly
+vllm	request_runtime	entrypoints/openai/api_server.py	123	- multiprocess using AsyncLLMEngine RPC
+vllm	request_runtime	entrypoints/openai/api_server.py	134	from vllm.v1.engine.async_llm import AsyncLLM
+vllm	request_runtime	entrypoints/openai/api_server.py	136	async_llm: AsyncLLM | None = None
+vllm	request_runtime	entrypoints/openai/api_server.py	144	async_llm = AsyncLLM.from_vllm_config(
+vllm	request_runtime	entrypoints/openai/run_batch.py	834	# Start the Prometheus metrics server. LLMEngine uses the Prometheus client
+vllm	request_runtime	entrypoints/openai/server_utils.py	322	VLLM V1 AsyncLLM catches exceptions and returns
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	8	from vllm.config import ProfilerConfig
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	23	logger.info("Starting profiler...")
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	25	logger.info("Profiler started.")
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	31	logger.info("Stopping profiler...")
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	33	logger.info("Profiler stopped.")
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	38	profiler_config = getattr(app.state.args, "profiler_config", None)
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	39	assert profiler_config is None or isinstance(profiler_config, ProfilerConfig)
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	40	if profiler_config is not None and profiler_config.profiler is not None:
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	42	"Profiler with mode '%s' is enabled in the "
+vllm	profiler_marker	entrypoints/serve/profile/api_router.py	44	profiler_config.profiler,
+vllm	model_execute	envs.py	183	VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS: int = 300
+vllm	profiler_marker	envs.py	247	VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS: bool = False
+vllm	request_runtime	envs.py	831	# AsyncLLMEngine errors and stops serving requests
+vllm	request_runtime	envs.py	1043	# V1 AsyncLLM interface. It is applicable when handling a high
+vllm	model_execute	envs.py	1347	# Timeout in seconds for execute_model RPC calls in multiprocessing
+vllm	model_execute	envs.py	1349	"VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS": lambda: int(
+vllm	model_execute	envs.py	1350	os.getenv("VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS", "300")
+vllm	request_runtime	envs.py	1623	# Should only be set by EngineCoreClient.
+vllm	profiler_marker	envs.py	1635	"VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS": lambda: bool(
+vllm	profiler_marker	envs.py	1636	int(os.getenv("VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS", "0"))
+vllm	model_execute	envs.py	1759	"VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS",
+vllm	copy_overlap	forward_context.py	397	synchronize = current_platform.synchronize
+vllm	copy_overlap	forward_context.py	398	if synchronize is not None:
+vllm	copy_overlap	forward_context.py	399	synchronize()
+vllm	scheduler	logging_utils/dump_input.py	12	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	logging_utils/dump_input.py	58	scheduler_output: SchedulerOutput,
+vllm	scheduler	logging_utils/dump_input.py	69	scheduler_output: SchedulerOutput,
+vllm	copy_overlap	model_executor/kernels/linear/mixed_precision/cutlass.py	80	torch.accelerator.synchronize()
+vllm	model_execute	model_executor/layers/attention/attention.py	392	the model runner's `execute_model` method. It is accessed via forward
+vllm	request_runtime	model_executor/model_loader/tensorizer.py	414	"initializing an LLMEngine, either via the CLI "
+vllm	request_runtime	model_executor/model_loader/tensorizer.py	420	"for LLMEngine."
+vllm	request_runtime	model_executor/model_loader/tensorizer.py	729	from vllm.v1.engine.llm_engine import LLMEngine
+vllm	request_runtime	model_executor/model_loader/tensorizer.py	731	engine = LLMEngine.from_vllm_config(engine_config)
+vllm	copy_overlap	model_executor/offloader/prefetch_ops.py	25	Synchronizes the compute stream with the copy stream to ensure
+vllm	model_execute	model_executor/warmup/kernel_warmup.py	21	from vllm.v1.worker.gpu_model_runner import GPUModelRunner
+vllm	model_execute	model_executor/warmup/kernel_warmup.py	81	def flashinfer_autotune(runner: "GPUModelRunner") -> None:
+vllm	copy_overlap	multimodal/cache.py	7	from multiprocessing.synchronize import Lock as LockType
+vllm	request_runtime	multimodal/inputs.py	397	in `EngineCore`.
+vllm	copy_overlap	multimodal/media/base.py	19	This ensures the raw bytes and media object remain synchronized,
+vllm	copy_overlap	multimodal/registry.py	7	from multiprocessing.synchronize import Lock as LockType
+vllm	profiler_marker	platforms/cpu.py	256	vllm_config.profiler_config.torch_profiler_dump_cuda_time_total = False
+vllm	profiler_marker	profiler/layerwise_profile.py	10	from torch._C._autograd import DeviceType, _KinetoEvent, _ProfilerResult
+vllm	profiler_marker	profiler/layerwise_profile.py	11	from torch._C._profiler import _EventType, _ExperimentalConfig, _ProfilerEvent
+vllm	profiler_marker	profiler/layerwise_profile.py	12	from torch.autograd.profiler import FunctionEvent
+vllm	profiler_marker	profiler/layerwise_profile.py	13	from torch.profiler import ProfilerActivity, profile
+vllm	profiler_marker	profiler/layerwise_profile.py	15	from vllm.profiler.utils import (
+vllm	profiler_marker	profiler/layerwise_profile.py	33	event: _ProfilerEvent
+vllm	profiler_marker	profiler/layerwise_profile.py	83	class LayerwiseProfileResults(profile):
+vllm	profiler_marker	profiler/layerwise_profile.py	84	_kineto_results: _ProfilerResult
+vllm	profiler_marker	profiler/layerwise_profile.py	181	event: _ProfilerEvent, curr_node: _ModuleTreeNode | None = None
+vllm	profiler_marker	profiler/layerwise_profile.py	380	num_running_seqs will be passed to LayerProfileResults
+vllm	profiler_marker	profiler/layerwise_profile.py	384	activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+vllm	profiler_marker	profiler/layerwise_profile.py	398	self.results = LayerwiseProfileResults(
+vllm	profiler_marker	profiler/layerwise_profile.py	399	self.profiler.kineto_results, num_running_seqs=self.num_running_seqs
+vllm	profiler_marker	profiler/utils.py	8	from torch._C._profiler import _EventType, _ProfilerEvent, _TensorMetadata
+vllm	profiler_marker	profiler/utils.py	92	# _ProfilerEvent utils
+vllm	profiler_marker	profiler/utils.py	96	def event_has_module(event: _ProfilerEvent) -> bool:
+vllm	profiler_marker	profiler/utils.py	103	def event_is_torch_op(event: _ProfilerEvent) -> bool:
+vllm	profiler_marker	profiler/utils.py	120	def event_torch_op_repr(event: _ProfilerEvent) -> str:
+vllm	profiler_marker	profiler/utils.py	126	def event_module_repr(event: _ProfilerEvent) -> str:
+vllm	profiler_marker	profiler/utils.py	139	curr_event: _ProfilerEvent, until: Callable[[_ProfilerEvent], bool]
+vllm	profiler_marker	profiler/wrapper.py	12	from vllm.config import ProfilerConfig
+vllm	profiler_marker	profiler/wrapper.py	13	from vllm.config.profiler import _is_uri_path
+vllm	profiler_marker	profiler/wrapper.py	19	class WorkerProfiler(ABC):
+vllm	profiler_marker	profiler/wrapper.py	20	def __init__(self, profiler_config: ProfilerConfig) -> None:
+vllm	profiler_marker	profiler/wrapper.py	21	self._delay_iters = profiler_config.delay_iterations
+vllm	profiler_marker	profiler/wrapper.py	28	self._max_iters = profiler_config.max_iterations
+vllm	profiler_marker	profiler/wrapper.py	36	# Track when the profiler gets triggered by start_profile
+vllm	profiler_marker	profiler/wrapper.py	40	# Track when the profiler is actually running
+vllm	profiler_marker	profiler/wrapper.py	46	"""Start the profiler."""
+vllm	profiler_marker	profiler/wrapper.py	51	"""Stop the profiler."""
+vllm	profiler_marker	profiler/wrapper.py	60	logger.warning("Failed to start profiler: %s", e)
+vllm	request_runtime	sampling_params.py	173	`AsyncLLM` streams outputs by default. When `n > 1`, all `n` outputs
+vllm	request_runtime	transformers_utils/config.py	1061	# EngineCore process already has the file mapped.
+vllm	copy_overlap	utils/deep_gemm.py	408	# NOTE: Also synchronized with test_w8a8_block_fp8_deep_gemm_matmul
+vllm	copy_overlap	utils/flashinfer.py	745	# NOTE: Also synchronized with test_w8a8_block_fp8_deep_gemm_matmul
+vllm	copy_overlap	utils/torch_utils.py	527	self.synchronize = lambda: None
+vllm	scheduler	v1/attention/backends/flash_attn.py	408	def schedule(
+vllm	model_execute	v1/attention/backends/flashinfer.py	622	# Since we do not have explicit synchronization in ModelRunnerV2, we do not pin
+vllm	scheduler	v1/attention/backends/utils.py	23	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	v1/attention/backends/utils.py	577	scheduler_output: "SchedulerOutput",
+vllm	scheduler	v1/core/sched/async_scheduler.py	5	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	scheduler	v1/core/sched/async_scheduler.py	18	def _update_after_schedule(self, scheduler_output: SchedulerOutput) -> None:
+vllm	scheduler	v1/core/sched/interface.py	13	from vllm.v1.core.sched.output import GrammarOutput, SchedulerOutput
+vllm	request_runtime	v1/core/sched/interface.py	14	from vllm.v1.engine import EngineCoreOutputs
+vllm	model_execute	v1/core/sched/interface.py	17	from vllm.v1.outputs import DraftTokenIds, ModelRunnerOutput
+vllm	scheduler	v1/core/sched/interface.py	36	class SchedulerInterface(ABC):
+vllm	scheduler	v1/core/sched/interface.py	51	def schedule(self) -> "SchedulerOutput":
+vllm	scheduler	v1/core/sched/interface.py	71	A SchedulerOutput object containing information about the scheduled
+vllm	scheduler	v1/core/sched/interface.py	78	self, scheduler_output: "SchedulerOutput"
+vllm	scheduler	v1/core/sched/interface.py	83	def update_from_output(
+vllm	scheduler	v1/core/sched/interface.py	85	scheduler_output: "SchedulerOutput",
+vllm	model_execute	v1/core/sched/interface.py	86	model_runner_output: "ModelRunnerOutput",
+vllm	request_runtime	v1/core/sched/interface.py	87	) -> dict[int, "EngineCoreOutputs"]:
+vllm	request_runtime	v1/core/sched/interface.py	97	A dict of client index to EngineCoreOutputs object containing the
+vllm	scheduler	v1/core/sched/interface.py	114	self, draft_token_ids: "DraftTokenIds", scheduler_output: "SchedulerOutput"
+vllm	request_runtime	v1/core/sched/interface.py	127	def add_request(self, request: "Request") -> None:
+vllm	request_runtime	v1/core/sched/interface.py	136	def finish_requests(
+vllm	scheduler	v1/core/sched/interface.py	186	not yet returned in SchedulerOutputs."""
+vllm	scheduler	v1/core/sched/output.py	179	class SchedulerOutput:
+vllm	scheduler	v1/core/sched/output.py	242	def make_empty(cls) -> "SchedulerOutput":
+vllm	scheduler	v1/core/sched/request_queue.py	20	class RequestQueue(ABC):
+vllm	request_runtime	v1/core/sched/request_queue.py	24	def add_request(self, request: Request) -> None:
+vllm	scheduler	v1/core/sched/request_queue.py	44	def prepend_requests(self, requests: "RequestQueue") -> None:
+vllm	scheduler	v1/core/sched/request_queue.py	75	class FCFSRequestQueue(deque[Request], RequestQueue):
+vllm	scheduler	v1/core/sched/request_queue.py	96	def prepend_requests(self, requests: RequestQueue) -> None:
+vllm	scheduler	v1/core/sched/request_queue.py	131	class PriorityRequestQueue(RequestQueue):
+vllm	scheduler	v1/core/sched/request_queue.py	167	def prepend_requests(self, requests: RequestQueue) -> None:
+vllm	scheduler	v1/core/sched/request_queue.py	201	def create_request_queue(policy: SchedulingPolicy) -> RequestQueue:
+vllm	scheduler	v1/core/sched/request_queue.py	204	return PriorityRequestQueue()
+vllm	scheduler	v1/core/sched/request_queue.py	206	return FCFSRequestQueue()
+vllm	scheduler	v1/core/sched/scheduler.py	46	SchedulerOutput,
+vllm	scheduler	v1/core/sched/scheduler.py	49	RequestQueue,
+vllm	model_execute	v1/core/sched/scheduler.py	58	from vllm.v1.outputs import DraftTokenIds, KVConnectorOutput, ModelRunnerOutput
+vllm	scheduler	v1/core/sched/scheduler.py	67	class Scheduler(SchedulerInterface):
+vllm	scheduler	v1/core/sched/scheduler.py	97	# by update_from_outputs(). This is currently used in the multi-engine
+vllm	scheduler	v1/core/sched/scheduler.py	338	def schedule(self) -> SchedulerOutput:
+vllm	scheduler	v1/core/sched/scheduler.py	890	scheduler_output = SchedulerOutput(
+vllm	scheduler	v1/core/sched/scheduler.py	951	def _update_after_schedule(self, scheduler_output: SchedulerOutput) -> None:
+vllm	scheduler	v1/core/sched/scheduler.py	960	# computed tokens will be adjusted in update_from_output.
+vllm	scheduler	v1/core/sched/scheduler.py	973	# may be updated again in _update_from_output for speculative
+vllm	scheduler	v1/core/sched/scheduler.py	1252	self, scheduler_output: SchedulerOutput
+vllm	scheduler	v1/core/sched/scheduler.py	1275	def update_from_output(
+vllm	scheduler	v1/core/sched/scheduler.py	1277	scheduler_output: SchedulerOutput,
+vllm	model_execute	v1/core/sched/scheduler.py	1278	model_runner_output: ModelRunnerOutput,
+vllm	scheduler	v1/core/sched/scheduler.py	1544	def _select_waiting_queue_for_scheduling(self) -> RequestQueue | None:
+vllm	scheduler	v1/core/sched/scheduler.py	1664	self, draft_token_ids: DraftTokenIds, scheduler_output: SchedulerOutput
+vllm	scheduler	v1/core/sched/scheduler.py	2056	# update_from_output(), based on worker-side connector signals
+vllm	scheduler	v1/core/sched/scheduler.py	2221	Set of affected request IDs to skip in update_from_output main loop.
+vllm	scheduler	v1/core/sched/scheduler.py	2279	# Return sync affected IDs to skip in update_from_output
+vllm	copy_overlap	v1/engine/coordinator.py	39	is synchronized via the all-reduce operation performed in the
+vllm	scheduler	v1/engine/core.py	47	from vllm.v1.core.sched.output import SchedulerOutput
+vllm	model_execute	v1/engine/core.py	71	from vllm.v1.outputs import ModelRunnerOutput
+vllm	scheduler	v1/engine/core.py	185	deque[tuple[Future[ModelRunnerOutput], SchedulerOutput, Future[Any]]] | None
+vllm	model_execute	v1/engine/core.py	185	deque[tuple[Future[ModelRunnerOutput], SchedulerOutput, Future[Any]]] | None
+vllm	model_execute	v1/engine/core.py	340	# error from execute_model itself.
+vllm	model_execute	v1/engine/core.py	390	future = self.model_executor.execute_model(scheduler_output, non_block=True)
+vllm	model_execute	v1/engine/core.py	398	model_output = self.model_executor.sample_tokens(grammar_output)
+vllm	model_execute	v1/engine/core.py	449	exec_future = self.model_executor.execute_model(
+vllm	model_execute	v1/engine/core.py	457	future = cast(Future[ModelRunnerOutput], exec_future)
+vllm	model_execute	v1/engine/core.py	465	future = self.model_executor.sample_tokens(
+vllm	model_execute	v1/engine/core.py	499	# None from sample_tokens() implies that the original execute_model()
+vllm	model_execute	v1/engine/core.py	532	future = self.model_executor.sample_tokens(grammar_output, non_block=True)
+vllm	copy_overlap	v1/engine/core.py	1588	# Counts forward-passes of the model so that we can synchronize
+vllm	model_execute	v1/executor/abstract.py	23	from vllm.v1.outputs import DraftTokenIds, ModelRunnerOutput
+vllm	model_execute	v1/executor/abstract.py	199	def execute_model(
+vllm	model_execute	v1/executor/abstract.py	201	) -> ModelRunnerOutput | None:
+vllm	model_execute	v1/executor/abstract.py	205	def execute_model(
+vllm	model_execute	v1/executor/abstract.py	207	) -> Future[ModelRunnerOutput | None]:
+vllm	model_execute	v1/executor/abstract.py	210	def execute_model(
+vllm	model_execute	v1/executor/abstract.py	212	) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
+vllm	model_execute	v1/executor/abstract.py	214	"execute_model", args=(scheduler_output,), non_block=non_block
+vllm	model_execute	v1/executor/abstract.py	219	def sample_tokens(
+vllm	model_execute	v1/executor/abstract.py	221	) -> ModelRunnerOutput:
+vllm	model_execute	v1/executor/abstract.py	225	def sample_tokens(
+vllm	model_execute	v1/executor/abstract.py	227	) -> Future[ModelRunnerOutput]:
+vllm	model_execute	v1/executor/abstract.py	230	def sample_tokens(
+vllm	model_execute	v1/executor/abstract.py	232	) -> ModelRunnerOutput | Future[ModelRunnerOutput]:
+vllm	model_execute	v1/executor/abstract.py	234	"sample_tokens", args=(grammar_output,), non_block=non_block
+vllm	copy_overlap	v1/executor/multiproc_executor.py	21	from multiprocessing.synchronize import Lock as LockType
+vllm	model_execute	v1/executor/multiproc_executor.py	61	from vllm.v1.outputs import AsyncModelRunnerOutput, DraftTokenIds, ModelRunnerOutput
+vllm	model_execute	v1/executor/multiproc_executor.py	128	# and ModelRunnerOutputs
+vllm	model_execute	v1/executor/multiproc_executor.py	296	def execute_model( # type: ignore[override]
+vllm	model_execute	v1/executor/multiproc_executor.py	298	) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
+vllm	model_execute	v1/executor/multiproc_executor.py	300	"execute_model",
+vllm	model_execute	v1/executor/multiproc_executor.py	304	timeout=envs.VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS,
+vllm	model_execute	v1/executor/multiproc_executor.py	308	def sample_tokens( # type: ignore[override]
+vllm	model_execute	v1/executor/multiproc_executor.py	310	) -> ModelRunnerOutput | Future[ModelRunnerOutput]:
+vllm	model_execute	v1/executor/multiproc_executor.py	312	"sample_tokens",
+vllm	model_execute	v1/executor/multiproc_executor.py	316	timeout=envs.VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS,
+vllm	model_execute	v1/executor/multiproc_executor.py	475	# Only returns ModelRunnerOutput from TP rank=0 and PP rank=-1
+vllm	model_execute	v1/executor/multiproc_executor.py	888	if isinstance(output, AsyncModelRunnerOutput):
+vllm	model_execute	v1/executor/ray_executor.py	31	from vllm.v1.outputs import ModelRunnerOutput
+vllm	model_execute	v1/executor/ray_executor.py	44	COMPLETED_NONE_FUTURE: Future[ModelRunnerOutput | None] = Future()
+vllm	model_execute	v1/executor/ray_executor.py	415	def execute_model( # type: ignore[override]
+vllm	model_execute	v1/executor/ray_executor.py	419	) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
+vllm	model_execute	v1/executor/ray_executor.py	422	"State error: sample_tokens() must be called "
+vllm	model_execute	v1/executor/ray_executor.py	423	"after execute_model() returns None."
+vllm	model_execute	v1/executor/ray_executor.py	430	# Model will execute, defer to sample_tokens() call.
+vllm	model_execute	v1/executor/ray_executor.py	434	def sample_tokens( # type: ignore[override]
+vllm	model_execute	v1/executor/ray_executor.py	438	) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
+vllm	model_execute	v1/executor/ray_executor.py	442	a prior call to execute_model().
+vllm	model_execute	v1/executor/ray_executor.py	464	) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
+vllm	model_execute	v1/executor/ray_executor.py	583	# SchedulerOutput -> 0 -> (SchedulerOutput, IntermediateTensors) -> 4 -> ModelRunnerOutput # noqa: E501
+vllm	model_execute	v1/executor/ray_executor.py	584	# SchedulerOutput -> 1 -> (SchedulerOutput, IntermediateTensors) -> 5 -> ModelRunnerOutput # noqa: E501
+vllm	model_execute	v1/executor/ray_executor.py	585	# SchedulerOutput -> 2 -> (SchedulerOutput, IntermediateTensors) -> 6 -> ModelRunnerOutput # noqa: E501
+vllm	model_execute	v1/executor/ray_executor.py	586	# SchedulerOutput -> 3 -> (SchedulerOutput, IntermediateTensors) -> 7 -> ModelRunnerOutput # noqa: E501
+vllm	model_execute	v1/executor/ray_executor.py	595	worker.execute_model_ray.bind(outputs[i]) # type: ignore[attr-defined]
+vllm	model_execute	v1/executor/ray_utils.py	18	from vllm.v1.outputs import AsyncModelRunnerOutput
+vllm	model_execute	v1/executor/ray_utils.py	24	from vllm.v1.outputs import ModelRunnerOutput
+vllm	model_execute	v1/executor/ray_utils.py	107	def execute_model_ray(
+vllm	model_execute	v1/executor/ray_utils.py	109	execute_model_input: tuple["SchedulerOutput", "GrammarOutput"]
+vllm	model_execute	v1/executor/ray_utils.py	112	"ModelRunnerOutput",
+vllm	model_execute	v1/executor/ray_utils.py	119	if len(execute_model_input) == 3:
+vllm	model_execute	v1/executor/ray_utils.py	121	execute_model_input
+vllm	model_execute	v1/executor/ray_utils.py	124	scheduler_output, grammar_output = execute_model_input
+vllm	model_execute	v1/executor/ray_utils.py	127	output = self.worker.model_runner.execute_model(
+vllm	model_execute	v1/executor/ray_utils.py	145	if isinstance(output, AsyncModelRunnerOutput):
+vllm	model_execute	v1/executor/ray_utils.py	153	output = self.worker.model_runner.sample_tokens(grammar_output)
+vllm	model_execute	v1/executor/ray_utils.py	155	# AsyncModelRunnerOutput holds CUDA events and cannot be
+vllm	model_execute	v1/executor/ray_utils.py	157	if isinstance(output, AsyncModelRunnerOutput):
+vllm	model_execute	v1/executor/ray_utils.py	182	of .execute_model(): The top level (core busy loop) expects .result() api
+vllm	model_execute	v1/executor/uniproc_executor.py	19	from vllm.v1.outputs import AsyncModelRunnerOutput, DraftTokenIds, ModelRunnerOutput
+vllm	model_execute	v1/executor/uniproc_executor.py	83	if isinstance(result, AsyncModelRunnerOutput):
+vllm	model_execute	v1/executor/uniproc_executor.py	100	def execute_model( # type: ignore[override]
+vllm	model_execute	v1/executor/uniproc_executor.py	102	) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
+vllm	model_execute	v1/executor/uniproc_executor.py	104	"execute_model",
+vllm	model_execute	v1/executor/uniproc_executor.py	115	def sample_tokens( # type: ignore[override]
+vllm	model_execute	v1/executor/uniproc_executor.py	117	) -> ModelRunnerOutput | None | Future[ModelRunnerOutput | None]:
+vllm	model_execute	v1/executor/uniproc_executor.py	119	"sample_tokens",
+vllm	copy_overlap	v1/executor/uniproc_executor.py	152	and they don't need to synchronize the states with each other.
+vllm	copy_overlap	v1/kv_offload/worker/cpu_gpu.py	220	event.synchronize()
+vllm	model_execute	v1/outputs.py	215	# ModelRunnerOutput is serialized and sent to the scheduler process.
+vllm	model_execute	v1/outputs.py	218	class ModelRunnerOutput:
+vllm	model_execute	v1/outputs.py	257	# ModelRunnerOutput wrapper for async scheduling.
+vllm	model_execute	v1/outputs.py	258	class AsyncModelRunnerOutput(ABC):
+vllm	model_execute	v1/outputs.py	260	def get_output(self) -> ModelRunnerOutput:
+vllm	model_execute	v1/outputs.py	261	"""Get the ModelRunnerOutput for this async output.
+vllm	model_execute	v1/outputs.py	265	This method should only be called once per AsyncModelRunnerOutput.
+vllm	model_execute	v1/outputs.py	280	) -> ModelRunnerOutput:
+vllm	copy_overlap	v1/spec_decode/ngram_proposer_gpu.py	479	num_valid_draft_tokens_event.synchronize()
+vllm	copy_overlap	v1/worker/cpu_model_runner.py	101	self.synchronize = lambda: None
+vllm	copy_overlap	v1/worker/dp_utils.py	31	"Using CPU all reduce to synchronize DP padding between ranks."
+vllm	copy_overlap	v1/worker/dp_utils.py	94	Synchronize cudagraph_mode across DP ranks by taking the minimum.
+vllm	copy_overlap	v1/worker/dp_utils.py	101	def _synchronize_dp_ranks(
+vllm	copy_overlap	v1/worker/dp_utils.py	116	3. Synchronizes cudagraph_mode across ranks by taking the minimum.
+vllm	copy_overlap	v1/worker/dp_utils.py	122	synced_cudagraph_mode: The synchronized cudagraph mode (min across ranks)
+vllm	copy_overlap	v1/worker/dp_utils.py	139	# Synchronize cudagraph_mode across ranks first (take min).
+vllm	copy_overlap	v1/worker/dp_utils.py	196	synced_cudagraph_mode: The synchronized cudagraph mode (min across ranks)
+vllm	copy_overlap	v1/worker/dp_utils.py	219	_synchronize_dp_ranks(
+vllm	copy_overlap	v1/worker/gpu/async_utils.py	50	self.copy_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu/async_utils.py	99	self.copy_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu/model_runner.py	494	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu/spec_decode/utils.py	42	self.copy_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu/warmup.py	139	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_input_batch.py	966	self.async_copy_ready_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	232	# Event on the copy stream so we can synchronize the non-blocking copy.
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	241	# Initiate the copy on a separate stream, but do not synchronize it.
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	261	self.async_copy_ready_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	342	# Event on the copy stream so we can synchronize the non-blocking copy.
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	349	# Initiate the copy on a separate stream, but do not synchronize it.
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	363	self.async_copy_ready_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	630	# cuda event to synchronize use of reused CPU tensors between steps
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	1017	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	1926	self.num_accepted_tokens_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	3244	def synchronize_input_prep(self):
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	3252	self.prepare_inputs_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	3580	self.synchronize_input_prep(),
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	4190	self.draft_token_ids_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	4221	sampled_count_event.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	4839	# Must synchronize the non-blocking GPU->CPU transfers.
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	5108	with self.synchronize_input_prep():
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	5569	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	5627	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	5648	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	5711	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	5723	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	5725	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	5735	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	5835	torch.accelerator.synchronize()
+vllm	copy_overlap	v1/worker/gpu_model_runner.py	6643	self.transfer_event.synchronize()
+# hit_counts
+# copy_overlap	100
+# kv_prefix_state	100
+# model_execute	100
+# profiler_marker	100
+# request_runtime	100
+# scheduler	100

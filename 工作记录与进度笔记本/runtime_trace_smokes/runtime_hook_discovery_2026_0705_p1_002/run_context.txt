@@ -1,0 +1,9 @@
+run_id=runtime_hook_discovery_2026_0705_p1_002
+commit=7527cd8
+timestamp=2026-07-05T21:51:53+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/miniconda3/bin/python
+AK_OBS_NPU_DEVICE=npu:6
+pytest_exit_code=0
+host_marker_npu_smoke_exit_code=255
+host_marker_npu_smoke_exit_code=0

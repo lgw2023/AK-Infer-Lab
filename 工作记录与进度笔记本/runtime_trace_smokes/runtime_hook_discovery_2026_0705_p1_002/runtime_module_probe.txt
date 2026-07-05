@@ -1,0 +1,16 @@
+python_executable=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+python_version=3.11.15
+module:torch=available
+module_origin:torch=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch/__init__.py
+module_root:torch=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch
+module:torch_npu=available
+module_origin:torch_npu=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch_npu/__init__.py
+module_root:torch_npu=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch_npu
+module:vllm=available
+module_origin:vllm=/data/node0_disk1/vllm/vllm/__init__.py
+module_root:vllm=/data/node0_disk1/vllm/vllm
+module:vllm_ascend=available
+module_origin:vllm_ascend=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/vllm_ascend/__init__.py
+module_root:vllm_ascend=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/vllm_ascend
+module:mindie=missing
+module:mindspore=missing
