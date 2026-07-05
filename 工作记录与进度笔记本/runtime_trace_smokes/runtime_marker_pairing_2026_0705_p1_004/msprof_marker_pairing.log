@@ -1,0 +1,37 @@
+[INFO] Start profiling....
+device=npu:6
+marker_name=ak_p1_msprof_marker_prefill
+marker_name=ak_p1_msprof_marker_matmul
+marker_name=ak_p1_msprof_marker_decode
+result_shape=(64, 64)
+host_monotonic_ns=964458026513408
+[INFO] Start export data in PROF_000001_20260706001309919_01009634NHQHRQER.
+Mon 06 Jul 2026 00:13:19 [WARNING] [MSVP] [1009949] msprof_entrance.py: Msprof analysis is parsing data as root, which may cause potential system security risks.
+Mon 06 Jul 2026 00:13:19 [INFO] [MSVP] [1009979] msprof_common.py: Start analyzing data in "/tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/host" ...
+Mon 06 Jul 2026 00:13:19 [INFO] [MSVP] [1009979] msprof_common.py: It may take few minutes, please be patient ...
+Mon 06 Jul 2026 00:13:19 [INFO] [MSVP] [1009979] msprof_common.py: Analysis data in "/tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/host" finished.
+Mon 06 Jul 2026 00:13:19 [INFO] [MSVP] [1009979] msprof_common.py: Start analyzing data in "/tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/device_6" ...
+Mon 06 Jul 2026 00:13:19 [INFO] [MSVP] [1009979] msprof_common.py: It may take few minutes, please be patient ...
+Mon 06 Jul 2026 00:13:19 [INFO] [MSVP] [1009979] msprof_common.py: Analysis data in "/tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/device_6" finished.
+Mon 06 Jul 2026 00:13:19 [INFO] [MSVP] [1009979] msprof_export.py: All collected data will be exported, path is: /tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/device_6.
+Mon 06 Jul 2026 00:13:20 [WARNING] [MSVP] [1010186] msprof_entrance.py: Msprof analysis is parsing data as root, which may cause potential system security risks.
+Mon 06 Jul 2026 00:13:20 [INFO] [MSVP] [1010210] msprof_export.py: The data in "/tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/host" has been analyzed. Parsing phase will be skipped.
+Mon 06 Jul 2026 00:13:20 [INFO] [MSVP] [1010210] msprof_export.py: The data in "/tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/device_6" has been analyzed. Parsing phase will be skipped.
+Mon 06 Jul 2026 00:13:20 [INFO] [MSVP] [1010210] msprof_export.py: All collected data will be exported, path is: /tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/device_6.
+Mon 06 Jul 2026 00:13:20 [INFO] [MSVP] [1010210] msprof_export.py: There is no summary data to export for "/tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/host"
+Mon 06 Jul 2026 00:13:20 [INFO] [MSVP] [1010210] msprof_export.py: All collected data will be exported, path is: /tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/device_6.
+Mon 06 Jul 2026 00:13:20 [INFO] [MSVP] [1010210] msprof_export.py: There is no summary data to export for "/tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/device_6"
+Mon 06 Jul 2026 00:13:20 [INFO] [MSVP] [1010210] msprof_common.py: Start exporting summary output_file.
+Mon 06 Jul 2026 00:13:20 [INFO] [MSVP] [1010210] msprof_common.py: End exporting summary output_file.The file is stored in the /tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260706001309919_01009634NHQHRQER done.
+[INFO] Start query data in PROF_000001_20260706001309919_01009634NHQHRQER.
+Mon 06 Jul 2026 00:13:21 [WARNING] [MSVP] [1010273] msprof_entrance.py: Msprof analysis is parsing data as root, which may cause potential system security risks.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID
+
+NA      	         	host    	2026-07-06 00:13:10.631656	N/A     	N/A             	N/A               	-1
+
+NA      	6        	device_6	2026-07-06 00:13:10.636357	N/A     	N/A             	N/A               	-1
+
+[INFO] Query all data in PROF_000001_20260706001309919_01009634NHQHRQER done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /tmp/runtime_marker_pairing_2026_0705_p1_004_msprof/PROF_000001_20260706001309919_01009634NHQHRQER

@@ -1,0 +1,502 @@
+hostAllPidMemProfiling
+hostProfilingSamplingInterval
+hostSysUsage
+qosEvents
+qosProfiling
+runtimeApi
+aicore_sampling_interval
+dvpp_sampling_interval
+aicpuTrace
+aiv_sampling_interval
+ccuInstr
+host_mem_profiling
+host_osrt_profiling
+hostProfiling
+hostAllPidCpuProfiling
+acl
+io_sampling_interval
+host_network_profiling
+nicProfiling
+ts_cpu_hot_function
+instrProfilingFreq
+ai_core_profiling_metrics
+dvpp_profiling
+ubProfiling
+interconnection_sampling_interval
+l2CacheTaskProfilingEvents
+sys_sampling_interval
+cpu_sampling_interval
+ai_core_profiling_mode
+devices
+runtimeTrace
+app_parameters
+host_cpu_profiling
+interconnection_profiling
+pcieProfiling
+npuEvents
+ts_memcpy
+memServiceflow
+sys_profiling
+ai_core_status
+profiling_options
+pcSampling
+hcclTrace
+mstxDomainInclude
+roceProfiling
+aiCtrlCpuProfiling
+tsCpuProfiling
+pureCpu
+hardware_mem_sampling_interval
+io_profiling
+cpu_profiling
+instrProfiling
+host_sys
+app_dir
+memProfiling
+ts_cpu_profiling_events
+storageLimit
+hscb
+taskBlockShink
+result_dir
+profiling_mode
+llc_interval
+jobInfo
+hwts_log1
+pid_sampling_interval
+aiv_profiling_metrics
+aiv_profiling_events
+aiv_profiling_mode
+hardware_mem
+msprof
+mstxDomainExclude
+ai_core_profiling_events
+hccsProfiling
+taskTrace
+msprof_llc_profiling
+prof_level
+ai_core_profiling
+app_env
+geApi
+taskMemory
+memInterval
+ts_keypoint
+job_id
+app_location
+app
+ai_core_lpm
+ubInterval
+aiv_profiling
+hbmProfiling
+ts_task_track
+ai_core_metrics
+ts_fw_training
+ts_cpu_usage
+taskTime
+ts_timeline
+stars_acsq_task
+ai_vector_status
+sysLp
+taskTsfw
+ts_task_time
+hwts_log
+l2CacheTaskProfiling
+profiling_period
+hccsInterval
+ai_ctrl_cpu_profiling_events
+nicInterval
+taskBlock
+aiv_metrics
+pcieInterval
+isCancel
+roceInterval
+appMemProfiling
+pid_profiling
+llc_profiling
+llc_profiling_events
+durationTime
+ddr_profiling
+ddr_interval
+msprofBinPid
+ddr_master_id
+hbm_profiling_events
+hbmInterval
+ddr_profiling_events
+host_sys_pid
+host_disk_profiling
+msproftx
+host_disk_freq
+sysLpFreq
+aicScale
+profMode
+delayTime
+cpuCores
+cpuNums
+memoryTotal
+DeviceInfo
+netCard
+drvVersion
+CPU
+CPU[0].Type
+CPU[0].Frequency
+CPU[0].Name
+CPU[0].Logical_CPU_Count
+CPU[0].Id
+netCardNums
+jobInfo
+rank_id
+OS
+version
+pid_name
+platform_version
+hostname
+upTime
+hwtype
+devices
+sysClockFreq
+platform
+pid
+[0].name
+[0].pid
+[0].tid
+[0].ts
+[0].dur
+[0].ph
+[0].args
+[0].args.Model Id
+[0].args.Task Type
+[0].args.Physic Stream Id
+[0].args.Task Id
+[0].args.Batch Id
+[0].args.Subtask Id
+[0].args.connection_id
+[1].name
+[1].pid
+[1].tid
+[1].ts
+[1].dur
+[1].ph
+[1].args
+[1].args.Model Id
+[1].args.Task Type
+[1].args.Physic Stream Id
+[1].args.Task Id
+[1].args.Batch Id
+[1].args.Subtask Id
+[1].args.connection_id
+[2].name
+[2].pid
+[2].tid
+[2].ts
+[2].dur
+[2].ph
+[2].args
+[2].args.Model Id
+[2].args.Task Type
+[2].args.Physic Stream Id
+[2].args.Task Id
+[2].args.Batch Id
+[2].args.Subtask Id
+[2].args.connection_id
+[3].name
+[3].pid
+[3].tid
+[3].ph
+[3].cat
+[3].id
+[3].ts
+[3].bp
+[4].name
+[4].pid
+[4].tid
+[4].ts
+[4].dur
+[4].ph
+[4].args
+[4].args.Model Id
+[4].args.Task Type
+[4].args.Physic Stream Id
+[4].args.Task Id
+[4].args.Batch Id
+[4].args.Subtask Id
+[4].args.connection_id
+[5].name
+[5].pid
+[5].tid
+[5].ph
+[5].cat
+[5].id
+[5].ts
+[5].bp
+[6].name
+[6].pid
+[6].tid
+[6].ts
+[6].dur
+[6].ph
+[6].args
+[6].args.Model Id
+[6].args.Task Type
+[6].args.Physic Stream Id
+[6].args.Task Id
+[6].args.Batch Id
+[6].args.Subtask Id
+[6].args.connection_id
+[7].name
+[7].pid
+[7].tid
+[7].ph
+[7].cat
+[7].id
+[7].ts
+[7].bp
+[8].name
+[8].pid
+[8].tid
+[8].ts
+[8].dur
+[8].ph
+[8].args
+[8].args.Model Id
+[8].args.Task Type
+[8].args.Physic Stream Id
+[8].args.Task Id
+[8].args.Batch Id
+[8].args.Subtask Id
+[8].args.connection_id
+[9].name
+[9].pid
+[9].tid
+[9].ph
+[9].cat
+[9].id
+[9].ts
+[9].bp
+[10].name
+[10].pid
+[10].tid
+[10].ts
+[10].dur
+[10].ph
+[10].args
+[10].args.Model Id
+[10].args.Task Type
+[10].args.Physic Stream Id
+[10].args.Task Id
+[10].args.Batch Id
+[10].args.Subtask Id
+[10].args.connection_id
+[11].name
+[11].pid
+[11].tid
+[11].ph
+[11].cat
+[11].id
+[11].ts
+[11].bp
+[12].name
+[12].pid
+[12].tid
+[12].ts
+[12].dur
+[12].ph
+[12].args
+[12].args.Model Id
+[12].args.Task Type
+[12].args.Physic Stream Id
+[12].args.Task Id
+[12].args.Batch Id
+[12].args.Subtask Id
+[12].args.connection_id
+[13].name
+[13].pid
+[13].tid
+[13].ts
+[13].dur
+[13].ph
+[13].args
+[13].args.Model Id
+[13].args.Task Type
+[13].args.Physic Stream Id
+[13].args.Task Id
+[13].args.Batch Id
+[13].args.Subtask Id
+[13].args.connection_id
+[14].name
+[14].pid
+[14].tid
+[14].ph
+[14].cat
+[14].id
+[14].ts
+[14].bp
+[15].name
+[15].pid
+[15].tid
+[15].ts
+[15].dur
+[15].ph
+[15].args
+[15].args.Model Id
+[15].args.Task Type
+[15].args.Physic Stream Id
+[15].args.Task Id
+[15].args.Batch Id
+[15].args.Subtask Id
+[15].args.connection_id
+[16].name
+[16].pid
+[16].tid
+[16].ph
+[16].cat
+[16].id
+[16].ts
+[16].bp
+[17].name
+[17].pid
+[17].tid
+[17].ph
+[17].args
+[17].args.name
+[18].name
+[18].pid
+[18].tid
+[18].ph
+[18].args
+[18].args.labels
+[19].name
+[19].pid
+[19].tid
+[19].ph
+[19].args
+[19].args.sort_index
+hostAllPidMemProfiling
+hostProfilingSamplingInterval
+hostSysUsage
+qosEvents
+qosProfiling
+runtimeApi
+aicore_sampling_interval
+dvpp_sampling_interval
+aicpuTrace
+aiv_sampling_interval
+ccuInstr
+host_mem_profiling
+host_osrt_profiling
+hostProfiling
+hostAllPidCpuProfiling
+acl
+io_sampling_interval
+host_network_profiling
+nicProfiling
+ts_cpu_hot_function
+instrProfilingFreq
+ai_core_profiling_metrics
+dvpp_profiling
+ubProfiling
+interconnection_sampling_interval
+l2CacheTaskProfilingEvents
+sys_sampling_interval
+cpu_sampling_interval
+ai_core_profiling_mode
+devices
+runtimeTrace
+app_parameters
+host_cpu_profiling
+interconnection_profiling
+pcieProfiling
+npuEvents
+ts_memcpy
+memServiceflow
+sys_profiling
+ai_core_status
+profiling_options
+pcSampling
+hcclTrace
+mstxDomainInclude
+roceProfiling
+aiCtrlCpuProfiling
+tsCpuProfiling
+pureCpu
+hardware_mem_sampling_interval
+io_profiling
+cpu_profiling
+instrProfiling
+host_sys
+app_dir
+memProfiling
+ts_cpu_profiling_events
+storageLimit
+hscb
+taskBlockShink
+result_dir
+profiling_mode
+llc_interval
+jobInfo
+hwts_log1
+pid_sampling_interval
+aiv_profiling_metrics
+aiv_profiling_events
+aiv_profiling_mode
+hardware_mem
+msprof
+mstxDomainExclude
+ai_core_profiling_events
+hccsProfiling
+taskTrace
+msprof_llc_profiling
+prof_level
+ai_core_profiling
+app_env
+geApi
+taskMemory
+memInterval
+ts_keypoint
+job_id
+app_location
+app
+ai_core_lpm
+ubInterval
+aiv_profiling
+hbmProfiling
+ts_task_track
+ai_core_metrics
+ts_fw_training
+ts_cpu_usage
+taskTime
+ts_timeline
+stars_acsq_task
+ai_vector_status
+sysLp
+taskTsfw
+ts_task_time
+hwts_log
+l2CacheTaskProfiling
+profiling_period
+hccsInterval
+ai_ctrl_cpu_profiling_events
+nicInterval
+taskBlock
+aiv_metrics
+pcieInterval
+isCancel
+roceInterval
+appMemProfiling
+pid_profiling
+llc_profiling
+llc_profiling_events
+durationTime
+ddr_profiling
+ddr_interval
+msprofBinPid
+ddr_master_id
+hbm_profiling_events
+hbmInterval
+ddr_profiling_events
+host_sys_pid
+host_disk_profiling
+msproftx
+host_disk_freq
+sysLpFreq
+aicScale
+profMode
+delayTime

@@ -1,0 +1,9 @@
+run_id=runtime_marker_pairing_2026_0705_p1_004
+commit=569f7a4
+timestamp=2026-07-06T00:12:53+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+AK_OBS_NPU_DEVICE=npu:6
+MSPROF_OUT=/tmp/runtime_marker_pairing_2026_0705_p1_004_msprof
+pytest_exit_code=0
+msprof_marker_pairing_exit_code=0

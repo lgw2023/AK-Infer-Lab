@@ -1,0 +1,6 @@
+grep_has_marker=0
+sqlite_has_marker=0
+time_has_candidate=1
+pairing_status=marker_name_not_found_in_msprof_outputs
+small_model_trace_claim=CANN timeline pairing must remain unclaimed
+script_note=official grep_has_marker logic false-positive when placeholder mentions marker pattern; manual review confirms no actual hits
