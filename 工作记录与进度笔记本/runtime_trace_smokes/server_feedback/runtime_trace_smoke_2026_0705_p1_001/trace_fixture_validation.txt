@@ -1,0 +1,4 @@
+fixture=工作记录与进度笔记本/p1_inference_contracts/fixtures/minimal_runtime_trace.jsonl
+errors=0
+events=8
+resource_scopes=operator_timeline_profile,request_runtime_profile,state_object_profile,transfer_overlap_profile

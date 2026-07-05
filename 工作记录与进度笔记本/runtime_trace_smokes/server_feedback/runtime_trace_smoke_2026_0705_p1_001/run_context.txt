@@ -1,0 +1,7 @@
+run_id=runtime_trace_smoke_2026_0705_p1_001
+commit=42cb0f9
+timestamp=2026-07-05T20:40:05+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+pytest_exit_code=0
+trace_fixture_validation_exit_code=0

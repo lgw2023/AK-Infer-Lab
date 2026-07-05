@@ -1,54 +1,51 @@
-# 开发机 -> 服务器消息
+# P1.3 Server Runtime Hook Discovery Handoff
 
-> 本文件每次只保留当前待执行任务；旧历史信息已清空。
+Task ID: `runtime_hook_discovery_2026_0705_p1_002`.
 
-## 当前任务：P1.3 runtime hook 入口侦查与最小 marker smoke
+Evidence anchors:
+- `obs_2026_0705_atlas800t_a2_006`
+- `runtime_trace_smoke_2026_0705_p1_001`
 
-- 任务 ID：`runtime_hook_discovery_2026_0705_p1_002`
-- 证据基线：`obs_2026_0705_atlas800t_a2_006`
-- 上一轮预检：`runtime_trace_smoke_2026_0705_p1_001`
-- 当前契约入口：`工作记录与进度笔记本/p1_inference_contracts/`
-- 详细 handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_hook_discovery_handoff.md`
+This task is the first step after the P1.2 contract preflight. The latest P1.2 feedback email was sent at 2026-07-05 20:40:48 CST for commit `42cb0f9`; `tests/inference_contracts` passed with `11 passed in 0.19s`, and the minimal trace fixture validation reported `errors=0`, `events=8`. This P1.3 task is a read-only hook discovery and marker feasibility task. It does not run a model workload, does not load any model from the server `models/` directory, and does not claim runtime attribution.
 
-上一轮 P1.2 最新反馈邮件时间为 2026-07-05 20:40:48 CST，服务器执行 commit 为 `42cb0f9`，`tests/inference_contracts` 为 `11 passed in 0.19s`，最小 trace fixture 校验 `errors=0`、`events=8`。P1.2 已确认服务器能校验 P1 契约和最小 trace fixture，且 `torch`、`torch_npu`、`vllm`、`vllm_ascend`、`npu-smi`、`msprof`、`msnpureport` 可见。`mindie` 和 `mindspore` 未安装。本轮只做只读 hook 入口侦查和最小 NPU marker smoke，不运行真实模型推理，不加载服务器 `models/` 目录下任何模型，不做性能结论。
+This task does not install, upgrade, or repair inference-framework packages. If `vllm`, `vllm_ascend`, `mindie`, or other framework packages are missing or unusable, report that as `framework_missing_or_unusable` and leave environment/package work to a separate task.
 
-本轮不做安装任务：如果 `vllm`、`vllm_ascend`、`mindie` 或其他推理框架包缺失、版本异常、导入失败，只记录为 `framework_missing_or_unusable`，并在邮件中说明需要另起独立环境/装包任务；不要在本轮安装、升级或修复这些包。
+## Scope
 
-## 服务器执行边界
+The server should:
 
-请执行：
+- pull the latest committed project state with `git pull --ff-only`;
+- confirm the P1 inference contracts still pass on the server checkout;
+- inspect the actual server-side `vllm` and `vllm_ascend` source paths for hook candidate symbols only if those modules are already importable in the current environment;
+- inspect `torch_npu`, `torch.npu`, `torch.profiler`, `msprof`, and `msnpureport` marker/profile APIs;
+- run one minimal NPU tensor smoke with host-side `time.monotonic_ns()` markers on `npu:6` by default;
+- validate the generated marker JSONL with the existing P1 trace validator;
+- return a zipped artifact by email.
 
-- 通过 `git pull --ff-only` 获取开发机已提交的最新项目状态。
-- 在服务器项目根目录运行本文件给出的命令。
-- 如果服务器现有环境中已经能 import `vllm` / `vllm_ascend`，使用其实际 module root 做候选 hook 入口扫描；如果不能 import，只记录缺失或导入错误。
-- 默认使用 `AK_OBS_NPU_DEVICE=npu:6` 做极小 tensor marker smoke；如果 NPU 6 不可用，可改用 NPU 7，并在邮件中说明。
-- 产出并邮件回传 `runtime_hook_discovery_2026_0705_p1_002.zip`。
+The server should not:
 
-请不要执行：
+- run real model inference;
+- access, load, or copy any model under the server `models/` directory;
+- run P000-P012 workload prompts;
+- modify driver, CANN, apt, dpkg, NPU runtime, or vLLM source;
+- install packages;
+- install, upgrade, or repair `vllm`, `vllm_ascend`, `mindie`, `mindspore`, or any other inference framework package;
+- modify, commit, or push project code from the server.
 
-- 不要重复运行 `obs_2026_0705_atlas800t_a2_005`、`obs_2026_0705_atlas800t_a2_006` 或 `runtime_trace_smoke_2026_0705_p1_001`。
-- 不要运行真实模型推理、小模型 smoke 或 P000-P012 workload。
-- 不要访问、加载或复制服务器 `models/` 目录下的模型。
-- 不要修改 driver、CANN、apt、dpkg、NPU runtime 或 vLLM 源码。
-- 不要安装软件包。
-- 不要为了本轮任务安装、升级或修复 `vllm`、`vllm_ascend`、`mindie`、`mindspore` 或其他推理框架。
-- 不要自动修复或重装 `ascend910b-driver`。
-- 不要在服务器上修改、提交或 push 项目代码。
-- 不要发送 `.env`、SMTP 授权码、代理凭据、服务器账号、私钥、Cookie 或任何敏感信息。
+## Target Questions
 
-## 本轮必须回答的问题
+The returned artifact should answer these questions with evidence:
 
-- 服务器当前 `vllm` / `vllm_ascend` 是否已在现有环境中可 import？如果可用，实际 module root 是什么？
-- 如果现有 `vllm` / `vllm_ascend` 可用，request enqueue / scheduling / finish 的候选 hook 文件和函数在哪里？
-- 如果现有 `vllm_ascend` 可用，NPU model execution 的候选 hook 文件和函数在哪里？
-- 如果现有 `vllm` / `vllm_ascend` 可用，KV / prefix / cache manager / copy overlap 的候选 hook 文件和函数在哪里？
-- `torch.npu` 是否暴露 `Event`、`Stream`、`synchronize` 和 profiler/range/record 相关 API？
-- 极小 NPU marker smoke 生成的 `host_marker_npu_smoke.jsonl` 能否通过当前 P1 trace validator？
-- CANN timeline pairing 仍是未确认，还是已经发现下一轮可以验证的 marker/range API？
+- Are `vllm` and `vllm_ascend` already importable in the current server environment? If yes, where are request enqueue / scheduling / finish hooks in the current vLLM checkout?
+- If `vllm_ascend` is already importable, where are NPU model execution hooks?
+- If the current framework packages are usable, where are KV/prefix/cache manager and NPU copy hooks?
+- Does `torch.npu` expose usable `Event`, `Stream`, `synchronize`, and profiler marker APIs?
+- Can a minimal host-marker JSONL preserve `trace_id`, `request_id`, `layer_id`, `object_id`, and `stream_id` and pass the current validator?
+- Is CANN timeline pairing still unconfirmed, or is there a concrete marker/range API candidate for the next task?
 
-## 执行命令
+## Server Commands
 
-在昇腾服务器项目根目录执行：
+Run from the project root on the Ascend server.
 
 ```bash
 set -u
@@ -412,34 +409,38 @@ else
 fi
 ```
 
-## 回传要求
+## Return Requirements / 回传要求
 
-邮件主题：
+Email subject:
 
 ```text
 [AK服务器] 任务完成：runtime hook discovery runtime_hook_discovery_2026_0705_p1_002
 ```
 
-邮件正文请包含：
+Email body must include:
 
-- `git pull --ff-only` 后的 commit hash。
-- `python -m pytest tests/inference_contracts -q` 的退出状态。
-- `host_marker_npu_smoke_exit_code`。
-- `host_marker_npu_smoke_validation.txt` 是否为 `errors=0`。
-- `vllm` 和 `vllm_ascend` 的实际 module root；如果不可 import，回传导入/root discovery 失败原因。
-- 如果现有推理框架包可用，回传 request runtime、scheduler、model execution、KV/prefix state、copy overlap、profiler marker 六类最强候选 hook 文件和函数。
-- CANN timeline pairing 仍是“未确认”，还是已经发现下一轮可以验证的 marker/range API。
-- `runtime_hook_discovery_2026_0705_p1_002.zip` 的服务器路径。
-- 如果某条命令失败，给出失败命令、退出码和关键错误文本。
+- commit hash after `git pull --ff-only`;
+- pytest exit status;
+- host-marker NPU smoke exit status;
+- whether `host_marker_npu_smoke_validation.txt` reports `errors=0`;
+- actual module roots for `vllm` and `vllm_ascend` if already importable; otherwise report the import/root discovery failure;
+- the strongest hook candidates found for request runtime, scheduler, model execution, KV/prefix state, copy overlap, and profiler marker if the framework packages are already usable;
+- whether CANN timeline pairing is still unconfirmed or has a concrete next candidate;
+- zip artifact path;
+- any blocker that prevents the listed commands from completing.
 
-附件：
+Attach:
 
 - `工作记录与进度笔记本/runtime_trace_smokes/runtime_hook_discovery_2026_0705_p1_002.zip`
 
-## 成功口径
+Do not send `.env`, SMTP authorization codes, proxy credentials, account names, private keys, cookies, or other secrets.
 
-- P1 inference contract 测试通过。
-- 如果服务器现有 `vllm` / `vllm_ascend` 可 import，`vllm_hook_candidates.tsv` 包含 scheduler/model/KV/copy/profiler 类别的服务器实际候选文件；如果不可 import，本轮不安装，改为明确记录后续独立环境任务。
-- `torch_npu_marker_api_probe.txt` 明确 `torch.npu.Event`、`torch.npu.Stream`、`torch.npu.synchronize` 是否存在。
-- `host_marker_npu_smoke_validation.txt` 显示 `errors=0`；如果不通过，阻塞原因明确可复现。
-- 邮件明确区分：本轮只证明 hook 入口发现和最小 marker 可行性，不证明真实 vLLM hook、CANN timeline 对齐或瓶颈归因。
+## Success Criteria / 成功口径
+
+- P1 inference contract tests pass.
+- If server-side `vllm` / `vllm_ascend` are already importable, `vllm_hook_candidates.tsv` contains candidate files for scheduler/model/KV/copy/profiler categories. If they are not importable, the task succeeds only if the blocker is explicit and no package installation is attempted.
+- `torch_npu_marker_api_probe.txt` reports whether `torch.npu.Event`, `torch.npu.Stream`, and `torch.npu.synchronize` exist.
+- `host_marker_npu_smoke_validation.txt` reports `errors=0`, or the blocker is explicit and reproducible.
+- The report still distinguishes host marker feasibility from real vLLM hook correctness and CANN timeline alignment.
+
+This task can only prove hook-entry discovery and minimal marker feasibility. It does not prove model runtime hook correctness, CANN timeline alignment, or bottleneck attribution.
