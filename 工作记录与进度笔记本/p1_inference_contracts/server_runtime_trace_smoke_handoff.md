@@ -1,50 +1,58 @@
-# 开发机 -> 服务器消息
+# P1.2 Server Runtime Trace Smoke Handoff
 
-> 本文件每次只保留当前待执行任务；旧历史信息已清空。
+Task ID: `runtime_trace_smoke_2026_0705_p1_001`.
 
-## 当前任务：P1.2 最小 runtime trace smoke 预检
+Evidence anchor: `obs_2026_0705_atlas800t_a2_006`.
 
-- 任务 ID：`runtime_trace_smoke_2026_0705_p1_001`
-- 当前证据基线：`obs_2026_0705_atlas800t_a2_006`
-- 当前契约入口：`工作记录与进度笔记本/p1_inference_contracts/`
-- 最小 trace fixture：`工作记录与进度笔记本/p1_inference_contracts/fixtures/minimal_runtime_trace.jsonl`
+Contract anchor: `工作记录与进度笔记本/p1_inference_contracts/fixtures/minimal_runtime_trace.jsonl`.
 
-这次任务只验证服务器 checkout 能看到并校验 P1.1 事件契约，同时回传 runtime 栈可用性。它不是模型推理性能测试，也不是正式 runtime hook 验收。
+This is the first server-facing task after the local P1.1 trace fixture. It is a contract and runtime-stack preflight, not a model performance run.
 
-## 服务器执行边界
+## Scope
 
-请执行：
+The server should:
 
-- 通过 `git pull --ff-only` 获取开发机已提交的最新项目状态。
-- 在服务器项目根目录运行本文件给出的命令。
-- 产出并邮件回传 `runtime_trace_smoke_2026_0705_p1_001.zip`。
+- pull the latest committed project state with `git pull --ff-only`;
+- validate the P1 inference contracts on the Ascend server checkout;
+- validate `fixtures/minimal_runtime_trace.jsonl` with the local validator;
+- report whether the server runtime stack exposes candidate hook entry points for vLLM-Ascend, MindIE, torch, torch-npu, and CANN tooling;
+- return a zipped artifact by email.
 
-请不要执行：
+The server should not:
 
-- 不要重复运行 `obs_2026_0705_atlas800t_a2_005` 或 `obs_2026_0705_atlas800t_a2_006`。
-- 不要运行真实模型推理、小模型 smoke 或 workload manifest。
-- 不要修改 driver、CANN、apt、dpkg 或 NPU runtime 配置。
-- 不要自动修复或重装 `ascend910b-driver`。
+- rerun `obs_2026_0705_atlas800t_a2_006`;
+- run a real model inference workload in this task;
+- change driver, CANN, apt, dpkg, or NPU runtime configuration;
+- install packages unless a missing Python dependency blocks the explicitly listed validation commands;
+- modify, commit, or push project code from the server.
+
+服务器侧安全边界：
+
 - 不要在服务器上修改、提交或 push 项目代码。
-- 不要发送 `.env`、SMTP 授权码、代理凭据、服务器账号、私钥、Cookie 或任何敏感信息。
+- 不要发送 `.env`、SMTP authorization codes, proxy credentials, account names, private keys, cookies, or other secrets.
 
-## 必须覆盖的 join key 和时间基
+## Required Join Keys
 
-本轮只做结构预检，但服务器回传必须明确这些目标关系是否能作为后续 hook 入口：
+The trace smoke shape must preserve these target relationships:
 
-- `trace_id`：请求级 trace 主线。
-- `request_id`：runtime request 与 operator/object 事件的连接。
-- `layer_id`：operator timeline 与 state object lifecycle 的连接。
-- `object_id`：KV/prefix/expert/weight 等对象与 copy overlap 的连接。
-- `stream_id`：compute stream 与 copy stream 的区分。
-- `host_monotonic_ns`：host wrapper marker 时间基。
-- `cann_device_timeline`：后续 CANN profiler range 时间基。
+- `trace_id` joins request runtime events to all child events.
+- `request_id` joins scheduler/runtime events to operator and object events.
+- `layer_id` joins operator timeline events to state object lifecycle events.
+- `object_id` joins state object lifecycle events to copy overlap events.
+- `stream_id` distinguishes compute and copy streams for overlap checks.
 
-如果当前服务器 runtime 栈还无法确认某个入口，请在邮件中写明“未确认”，不要推断或编造。
+The fixture is valid only if the same request can be followed through request runtime, operator timeline, state object, and transfer overlap scopes.
 
-## 执行命令
+## Time Bases
 
-在昇腾服务器项目根目录执行：
+- Host-side wrapper markers use `host_monotonic_ns`.
+- Future CANN profiler ranges use `cann_device_timeline`.
+- This task does not require CANN timeline alignment yet.
+- If the runtime stack probe cannot identify a path toward paired host/CANN markers, report that explicitly and do not invent timing attribution.
+
+## Server Commands
+
+Run from the project root on the Ascend server.
 
 ```bash
 set -u
@@ -150,32 +158,34 @@ else
 fi
 ```
 
-## 回传要求
+## Return Requirements / 回传要求
 
-邮件主题：
+Email subject:
 
 ```text
 [AK服务器] 任务完成：runtime trace smoke runtime_trace_smoke_2026_0705_p1_001
 ```
 
-邮件正文请包含：
+Email body must include:
 
-- `git pull --ff-only` 后的 commit hash。
-- `python -m pytest tests/inference_contracts -q` 的退出状态。
-- `trace_fixture_validation.txt` 中的 `errors=` 和 `events=`。
-- `torch`、`torch_npu`、`vllm`、`vllm_ascend`、`mindie`、`npu-smi`、`msprof` 是否可用。
-- `runtime_trace_smoke_2026_0705_p1_001.zip` 的服务器路径。
-- 如果某条命令失败，给出失败命令、退出码和关键错误文本。
+- commit hash after `git pull --ff-only`;
+- pytest exit status;
+- trace fixture validation exit status;
+- whether `torch`, `torch_npu`, `vllm`, `vllm_ascend`, `mindie`, and CANN tools are available;
+- zip artifact path;
+- any blocker that prevents the listed commands from completing.
 
-附件：
+Attach:
 
 - `工作记录与进度笔记本/runtime_trace_smokes/runtime_trace_smoke_2026_0705_p1_001.zip`
 
-## 成功口径
+Do not send `.env`, SMTP authorization codes, proxy credentials, account names, private keys, cookies, or other secrets.
 
-- 契约测试通过。
-- `trace_fixture_validation.txt` 显示 `errors=0`。
-- 附件包含 `run_context.txt`、`pytest_inference_contracts.log`、`trace_fixture_validation.txt`、`minimal_runtime_trace.jsonl`、`runtime_stack_probe.txt`。
-- 邮件正文明确说明后续 runtime hook 的目标 join key 和时间基：`trace_id/request_id/layer_id/object_id/stream_id`、`host_monotonic_ns`、`cann_device_timeline`。
+## Success Criteria / 成功口径
 
-本轮成功只代表服务器已能同步并校验 P1.1 trace 契约，不代表 runtime hook、CANN timeline 对齐或模型瓶颈归因已经完成。
+- `python -m pytest tests/inference_contracts -q` exits with status 0.
+- `trace_fixture_validation.txt` reports `errors=0`.
+- The artifact includes `run_context.txt`, `pytest_inference_contracts.log`, `trace_fixture_validation.txt`, `minimal_runtime_trace.jsonl`, and `runtime_stack_probe.txt`.
+- The report explicitly covers `trace_id`, `request_id`, `layer_id`, `object_id`, `stream_id`, `host_monotonic_ns`, and `cann_device_timeline` as the next runtime hook target keys and time bases.
+
+This task can only prove that the server checkout can see and validate the P1.1 trace contract. It does not prove runtime hook correctness, CANN timeline alignment, or model bottleneck attribution.

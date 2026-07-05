@@ -4,6 +4,8 @@ This document is a local P1 design artifact. 本轮不下发服务器任务 and 
 
 Current evidence anchor: `obs_2026_0705_atlas800t_a2_006`.
 
+Local fixture anchor: `fixtures/minimal_runtime_trace.jsonl`.
+
 ## Required Join Keys
 
 - `trace_id`: one end-to-end inference request trace.
@@ -38,3 +40,16 @@ Minimum design: router top-k capture emits expert ids and probabilities. Expert 
 - CANN profiler events use `cann_device_timeline`.
 - The first runtime hook must emit paired host markers around profiler ranges before attribution claims.
 - If time alignment remains unknown, emit `stall_reason=profiler_unaligned` instead of inventing a causal bottleneck.
+
+## Local Fixture Acceptance
+
+`fixtures/minimal_runtime_trace.jsonl` is the minimum local example for the first runtime hook task. It must remain static and must not require a model, tokenizer, server artifact, or live repository scan.
+
+The fixture proves only structural alignment:
+
+- request runtime events share `trace_id` and `request_id`.
+- operator marker events add `layer_id` and `stream_id`.
+- state object events add `object_type` and `object_id`.
+- transfer overlap events reuse the same `object_id` and a copy `stream_id`.
+
+It does not prove runtime correctness, timing accuracy, or bottleneck attribution. Those claims require a later Atlas server trace run.

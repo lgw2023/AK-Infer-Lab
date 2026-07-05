@@ -5,12 +5,14 @@ from tools.inference_contracts.validation import (
     REQUIRED_JOIN_KEYS,
     REQUIRED_WORKLOAD_FIELDS,
     load_yaml,
+    validate_trace_fixture,
     validate_contract_dir,
 )
 from tools.observability_profile.catalog import build_field_catalog
 
 
 CONTRACT_DIR = Path("工作记录与进度笔记本/p1_inference_contracts")
+SERVER_TRACE_SMOKE_HANDOFF = CONTRACT_DIR / "server_runtime_trace_smoke_handoff.md"
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -118,3 +120,88 @@ def test_event_schema_evidence_sources_map_to_observability_catalog():
 
     for source in schema["evidence_sources"]:
         assert source["profile"] in catalog_profiles
+
+
+def test_minimal_runtime_trace_fixture_validates_without_errors():
+    report = validate_trace_fixture(CONTRACT_DIR / "fixtures/minimal_runtime_trace.jsonl")
+
+    assert report.errors == []
+
+
+def test_trace_fixture_links_required_profile_pairs():
+    trace_path = CONTRACT_DIR / "fixtures/minimal_runtime_trace.jsonl"
+    report = validate_trace_fixture(trace_path)
+    events = report.metadata["events"]
+
+    request_phases = {
+        event["phase"]
+        for event in events
+        if event["resource_scope"] == "request_runtime_profile"
+    }
+    operator_layers = {
+        event["layer_id"]
+        for event in events
+        if event["resource_scope"] == "operator_timeline_profile"
+        and event["phase"] in {"prefill", "decode"}
+    }
+    object_ids = {
+        event["object_id"]
+        for event in events
+        if event["resource_scope"] == "state_object_profile"
+        and event["object_type"] in {"kv", "prefix"}
+    }
+    copy_object_ids = {
+        event["object_id"]
+        for event in events
+        if event["resource_scope"] == "transfer_overlap_profile" and event["event_type"] == "span_end"
+    }
+
+    assert {"enqueue", "prefill", "decode"}.issubset(request_phases)
+    assert 0 in operator_layers
+    assert {"kv:req_0001:L00", "prefix:group_a"}.issubset(object_ids)
+    assert "kv:req_0001:L00" in copy_object_ids
+
+
+def test_trace_fixture_reports_missing_join_keys(tmp_path):
+    trace_path = tmp_path / "broken_trace.jsonl"
+    trace_path.write_text(
+        '{"schema_version":"p1.1","event_id":"evt_missing","timestamp_ns":1,'
+        '"time_base":"host_monotonic_ns","trace_id":"trace_missing","request_id":"req_missing",'
+        '"session_id":"session_missing","phase":"prefill","event_type":"span_start",'
+        '"resource_scope":"operator_timeline_profile","layer_id":"","op_name":"attention",'
+        '"kernel_name":"","stream_id":"","device_id":"npu:0","object_type":"kv",'
+        '"object_id":"","source_tier":"hbm","target_tier":"hbm","bytes_read":0,'
+        '"bytes_write":0,"latency_us":0,"queue_wait_us":0,"overlap_ratio":0.0,'
+        '"policy_decision":"none","hit_or_miss":"unknown","stall_reason":"unknown",'
+        '"evidence_source":"fixture","artifact_path":"fixtures/broken_trace.jsonl"}\n',
+        encoding="utf-8",
+    )
+
+    report = validate_trace_fixture(trace_path)
+
+    assert any("event evt_missing missing join key: layer_id" in error for error in report.errors)
+    assert any("event evt_missing missing join key: object_id" in error for error in report.errors)
+    assert any("event evt_missing missing join key: stream_id" in error for error in report.errors)
+
+
+def test_server_runtime_trace_smoke_handoff_defines_required_boundaries():
+    handoff = SERVER_TRACE_SMOKE_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_trace_smoke_2026_0705_p1_001",
+        "git pull --ff-only",
+        "fixtures/minimal_runtime_trace.jsonl",
+        "trace_id",
+        "request_id",
+        "layer_id",
+        "object_id",
+        "stream_id",
+        "host_monotonic_ns",
+        "cann_device_timeline",
+        "不要在服务器上修改、提交或 push 项目代码",
+        "不要发送 `.env`",
+        "回传要求",
+        "成功口径",
+    ]
+    for text in required_text:
+        assert text in handoff
