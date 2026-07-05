@@ -1,0 +1,5 @@
+INFO 07-05 22:52:12 [__init__.py:44] Available plugins for group vllm.platform_plugins:
+INFO 07-05 22:52:12 [__init__.py:46] - ascend -> vllm_ascend:register
+INFO 07-05 22:52:12 [__init__.py:49] All plugins in this group will be loaded. Set `VLLM_PLUGINS` to control which plugins to load.
+INFO 07-05 22:52:12 [__init__.py:239] Platform plugin ascend is activated
+[transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.

@@ -1,0 +1,11 @@
+run_id=runtime_hook_proto_2026_0705_p1_003
+commit=bbc98a7
+timestamp=2026-07-05T22:51:58+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+AK_OBS_NPU_DEVICE=npu:6
+pytest_exit_code=0
+hook_target_probe_exit_code=0
+msprof_marker_smoke_exit_code=255
+msprof_marker_smoke_exit_code_retry=0
+msprof_output_note=official_script_failed_due_to_chinese_output_path; retry_used_/tmp/msprof_marker_p1_003_with_exit_0
