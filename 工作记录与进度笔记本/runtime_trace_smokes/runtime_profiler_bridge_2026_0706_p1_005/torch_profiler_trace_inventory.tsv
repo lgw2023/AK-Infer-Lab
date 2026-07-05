@@ -1,0 +1,72 @@
+index	name	cat	ph	ts	dur	pid	tid	args_preview
+0	ak_p1_torch_profiler_prefill	user_annotation	X	301477643107.773	155666.897	1030989	1030989	{"Ev Idx": 0, "External id": 1, "Record function id": 0}
+1	aten::add	cpu_op	X	301477643378.533	148518.289	1030989	1030989	{"Concrete Inputs": ["", "", "1"], "Ev Idx": 1, "External id": 2, "Fwd thread id": 0, "Input Dims": [[128, 128], [128, 128], []], "Input Strides": [[128, 1], [128, 1], []], "Input type": ["float", "float", "Scalar"], "Re...
+2	empty_tensor	cpu_op	X	301477643479.283	17.85	1030989	1030989	{"Ev Idx": 2, "External id": 3, "Record function id": 0}
+3	aclnnAdd	cpu_op	X	301477791860.632	24.16	1030989	1030989	{"Ev Idx": 3, "External id": 4, "Record function id": 0}
+4	ak_p1_torch_profiler_matmul	user_annotation	X	301477798821.75	96212.973	1030989	1030989	{"Ev Idx": 4, "External id": 5, "Record function id": 0}
+5	aten::matmul	cpu_op	X	301477798974.19	18173.945	1030989	1030989	{"Concrete Inputs": ["", ""], "Ev Idx": 5, "External id": 6, "Fwd thread id": 0, "Input Dims": [[128, 128], [128, 128]], "Input Strides": [[128, 1], [128, 1]], "Input type": ["float", "float"], "Record function id": 0, "...
+6	empty_tensor	cpu_op	X	301477799035.96	27.51	1030989	1030989	{"Ev Idx": 6, "External id": 7, "Record function id": 0}
+7	aclnnMatmul	cpu_op	X	301477817115.245	18.55	1030989	1030989	{"Ev Idx": 7, "External id": 8, "Record function id": 0}
+8	ak_p1_torch_profiler_decode	user_annotation	X	301477895103.173	397.98	1030989	1030989	{"Ev Idx": 8, "External id": 9, "Record function id": 0}
+9	aten::add	cpu_op	X	301477895168.993	109.09	1030989	1030989	{"Concrete Inputs": ["", "", "1"], "Ev Idx": 9, "External id": 10, "Fwd thread id": 0, "Input Dims": [[128, 128], [128, 128], []], "Input Strides": [[128, 1], [128, 1], []], "Input type": ["float", "float", "Scalar"], "R...
+10	empty_tensor	cpu_op	X	301477895195.903	39.98	1030989	1030989	{"Ev Idx": 10, "External id": 11, "Record function id": 0}
+11	aclnnAdd	cpu_op	X	301477895261.573	12.8	1030989	1030989	{"Ev Idx": 11, "External id": 12, "Record function id": 0}
+12	process_name		M	301477642268.174		1030989	0	{"name": "python"}
+13	process_labels		M	301477642268.174		1030989	0	{"labels": "CPU"}
+14	process_sort_index		M	301477642268.174		1030989	0	{"sort_index": 1030989}
+15	process_name		M	301477642268.174		0	0	{"name": "python"}
+16	process_labels		M	301477642268.174		0	0	{"labels": "GPU 0"}
+17	process_sort_index		M	301477642268.174		0	0	{"sort_index": 5000000}
+18	process_name		M	301477642268.174		1	0	{"name": "python"}
+19	process_labels		M	301477642268.174		1	0	{"labels": "GPU 1"}
+20	process_sort_index		M	301477642268.174		1	0	{"sort_index": 5000001}
+21	process_name		M	301477642268.174		2	0	{"name": "python"}
+22	process_labels		M	301477642268.174		2	0	{"labels": "GPU 2"}
+23	process_sort_index		M	301477642268.174		2	0	{"sort_index": 5000002}
+24	process_name		M	301477642268.174		3	0	{"name": "python"}
+25	process_labels		M	301477642268.174		3	0	{"labels": "GPU 3"}
+26	process_sort_index		M	301477642268.174		3	0	{"sort_index": 5000003}
+27	process_name		M	301477642268.174		4	0	{"name": "python"}
+28	process_labels		M	301477642268.174		4	0	{"labels": "GPU 4"}
+29	process_sort_index		M	301477642268.174		4	0	{"sort_index": 5000004}
+30	process_name		M	301477642268.174		5	0	{"name": "python"}
+31	process_labels		M	301477642268.174		5	0	{"labels": "GPU 5"}
+32	process_sort_index		M	301477642268.174		5	0	{"sort_index": 5000005}
+33	process_name		M	301477642268.174		6	0	{"name": "python"}
+34	process_labels		M	301477642268.174		6	0	{"labels": "GPU 6"}
+35	process_sort_index		M	301477642268.174		6	0	{"sort_index": 5000006}
+36	process_name		M	301477642268.174		7	0	{"name": "python"}
+37	process_labels		M	301477642268.174		7	0	{"labels": "GPU 7"}
+38	process_sort_index		M	301477642268.174		7	0	{"sort_index": 5000007}
+39	process_name		M	301477642268.174		8	0	{"name": "python"}
+40	process_labels		M	301477642268.174		8	0	{"labels": "GPU 8"}
+41	process_sort_index		M	301477642268.174		8	0	{"sort_index": 5000008}
+42	process_name		M	301477642268.174		9	0	{"name": "python"}
+43	process_labels		M	301477642268.174		9	0	{"labels": "GPU 9"}
+44	process_sort_index		M	301477642268.174		9	0	{"sort_index": 5000009}
+45	process_name		M	301477642268.174		10	0	{"name": "python"}
+46	process_labels		M	301477642268.174		10	0	{"labels": "GPU 10"}
+47	process_sort_index		M	301477642268.174		10	0	{"sort_index": 5000010}
+48	process_name		M	301477642268.174		11	0	{"name": "python"}
+49	process_labels		M	301477642268.174		11	0	{"labels": "GPU 11"}
+50	process_sort_index		M	301477642268.174		11	0	{"sort_index": 5000011}
+51	process_name		M	301477642268.174		12	0	{"name": "python"}
+52	process_labels		M	301477642268.174		12	0	{"labels": "GPU 12"}
+53	process_sort_index		M	301477642268.174		12	0	{"sort_index": 5000012}
+54	process_name		M	301477642268.174		13	0	{"name": "python"}
+55	process_labels		M	301477642268.174		13	0	{"labels": "GPU 13"}
+56	process_sort_index		M	301477642268.174		13	0	{"sort_index": 5000013}
+57	process_name		M	301477642268.174		14	0	{"name": "python"}
+58	process_labels		M	301477642268.174		14	0	{"labels": "GPU 14"}
+59	process_sort_index		M	301477642268.174		14	0	{"sort_index": 5000014}
+60	process_name		M	301477642268.174		15	0	{"name": "python"}
+61	process_labels		M	301477642268.174		15	0	{"labels": "GPU 15"}
+62	process_sort_index		M	301477642268.174		15	0	{"sort_index": 5000015}
+63	thread_name		M	301477642268.174		1030989	1030989	{"name": "thread 1030989 (python)"}
+64	thread_sort_index		M	301477642268.174		1030989	1030989	{"sort_index": 1030989}
+65	thread_name		M	301477642268.174		1030989	1030989	{"name": "thread 1030989 (python)"}
+66	thread_sort_index		M	301477642268.174		1030989	1030989	{"sort_index": 1030989}
+67	PyTorch Profiler (0)	Trace	X	301477642140.304	253412.37	Spans	PyTorch Profiler	{"Op count": 0}
+68	process_sort_index		M	301477642140.304		Spans	0	{"sort_index": 536870912}
+69	Iteration Start: PyTorch Profiler		i	301477642140.304		Traces	Trace PyTorch Profiler	{}
+70	Record Window End		i	301477895965.564				{}

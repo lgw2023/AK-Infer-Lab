@@ -1,0 +1,8 @@
+trace_exists=1
+trace_event_count=71
+marker_hit_count=3
+device_event_candidate_count=7
+marker_has_ts=1
+device_event_has_ts=1
+bridge_status=marker_and_device_events_in_single_trace
+small_model_trace_claim=torch_profiler_trace_candidate_only

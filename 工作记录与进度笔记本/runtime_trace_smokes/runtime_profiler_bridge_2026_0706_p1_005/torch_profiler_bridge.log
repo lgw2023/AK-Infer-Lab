@@ -1,0 +1,12 @@
+device=npu:6
+torch_version=2.9.0+cpu
+torch_npu_available=True
+marker_name=ak_p1_torch_profiler_prefill
+marker_name=ak_p1_torch_profiler_matmul
+marker_name=ak_p1_torch_profiler_decode
+profiler_activities=CPU
+result_shape=(128, 128)
+host_monotonic_start_ns=965732377745225
+host_monotonic_end_ns=965732633799154
+trace_path=工作记录与进度笔记本/runtime_trace_smokes/runtime_profiler_bridge_2026_0706_p1_005/torch_profiler_trace.json
+trace_exists=True

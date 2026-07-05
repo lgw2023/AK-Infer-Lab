@@ -1,0 +1,95 @@
+## run_context
+run_id=runtime_profiler_bridge_2026_0706_p1_005
+commit=e7dc6ae
+timestamp=2026-07-06T00:34:03+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+AK_OBS_NPU_DEVICE=npu:6
+pytest_exit_code=0
+torch_profiler_bridge_exit_code=0
+
+## pytest
+...........                                                              [100%]
+11 passed in 0.19s
+
+## profiler API inventory
+torch_version=2.9.0+cpu
+[ProfilerActivity]
+CPU
+CUDA
+HPU
+MTIA
+PrivateUse1
+XPU
+name
+value
+[torch.profiler.profile_signature]
+(*, activities: Optional[collections.abc.Iterable[torch._C._profiler.ProfilerActivity]] = None, schedule: Optional[Callable[[int], torch.profiler.profiler.ProfilerAction]] = None, on_trace_ready: Optional[Callable[..., Any]] = None, record_shapes: bool = False, profile_memory: bool = False, with_stack: bool = False, with_flops: bool = False, with_modules: bool = False, experimental_config: Optional[torch._C._profiler._ExperimentalConfig] = None, execution_trace_observer: Optional[torch.profiler.profiler._ITraceObserver] = None, acc_events: bool = False, use_cuda: Optional[bool] = None, custom_trace_id_callback: Optional[Callable[[], str]] = None) -> None
+[torch.profiler.record_function]
+<class 'torch.autograd.profiler.record_function'>
+torch_npu_version=2.9.0.post2
+[torch_npu.profiler]
+module=<module 'torch_npu.profiler' from '/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch_npu/profiler/__init__.py'>
+AiCMetrics	type
+ExportType	type
+HostSystem	type
+ProfilerAction	EnumType
+ProfilerActivity	pybind11_type
+ProfilerLevel	type
+analysis	module
+dynamic_profile	module
+experimental_config	module
+profile	type
+profiler	module
+profiler_interface	module
+schedule	type
+scheduler	module
+supported_activities	function
+supported_ai_core_metrics	function
+supported_export_type	function
+supported_profiler_level	function
+tensorboard_trace_handler	function
+
+## torch profiler bridge log
+device=npu:6
+torch_version=2.9.0+cpu
+torch_npu_available=True
+marker_name=ak_p1_torch_profiler_prefill
+marker_name=ak_p1_torch_profiler_matmul
+marker_name=ak_p1_torch_profiler_decode
+profiler_activities=CPU
+result_shape=(128, 128)
+host_monotonic_start_ns=965732377745225
+host_monotonic_end_ns=965732633799154
+trace_path=工作记录与进度笔记本/runtime_trace_smokes/runtime_profiler_bridge_2026_0706_p1_005/torch_profiler_trace.json
+trace_exists=True
+
+## marker hits
+index	marker	name	cat	ph	ts	dur	pid	tid
+0	ak_p1_torch_profiler_prefill	ak_p1_torch_profiler_prefill	user_annotation	X	301477643107.773	155666.897	1030989	1030989
+4	ak_p1_torch_profiler_matmul	ak_p1_torch_profiler_matmul	user_annotation	X	301477798821.75	96212.973	1030989	1030989
+8	ak_p1_torch_profiler_decode	ak_p1_torch_profiler_decode	user_annotation	X	301477895103.173	397.98	1030989	1030989
+
+## device event candidates
+index	name	cat	ph	ts	dur	pid	tid	reason
+1	aten::add	cpu_op	X	301477643378.533	148518.289	1030989	1030989	npu_keyword,op_or_copy_candidate
+3	aclnnAdd	cpu_op	X	301477791860.632	24.16	1030989	1030989	npu_keyword
+4	ak_p1_torch_profiler_matmul	user_annotation	X	301477798821.75	96212.973	1030989	1030989	op_or_copy_candidate
+5	aten::matmul	cpu_op	X	301477798974.19	18173.945	1030989	1030989	npu_keyword,op_or_copy_candidate
+7	aclnnMatmul	cpu_op	X	301477817115.245	18.55	1030989	1030989	npu_keyword
+9	aten::add	cpu_op	X	301477895168.993	109.09	1030989	1030989	npu_keyword,op_or_copy_candidate
+11	aclnnAdd	cpu_op	X	301477895261.573	12.8	1030989	1030989	npu_keyword
+
+## bridge conclusion
+trace_exists=1
+trace_event_count=71
+marker_hit_count=3
+device_event_candidate_count=7
+marker_has_ts=1
+device_event_has_ts=1
+bridge_status=marker_and_device_events_in_single_trace
+small_model_trace_claim=torch_profiler_trace_candidate_only
+
+## trace validation
+errors=0
+events=4

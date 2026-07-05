@@ -1,0 +1,4 @@
+index	marker	name	cat	ph	ts	dur	pid	tid
+0	ak_p1_torch_profiler_prefill	ak_p1_torch_profiler_prefill	user_annotation	X	301477643107.773	155666.897	1030989	1030989
+4	ak_p1_torch_profiler_matmul	ak_p1_torch_profiler_matmul	user_annotation	X	301477798821.75	96212.973	1030989	1030989
+8	ak_p1_torch_profiler_decode	ak_p1_torch_profiler_decode	user_annotation	X	301477895103.173	397.98	1030989	1030989

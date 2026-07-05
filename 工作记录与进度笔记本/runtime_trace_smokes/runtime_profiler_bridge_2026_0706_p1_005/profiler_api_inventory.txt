@@ -1,0 +1,36 @@
+torch_version=2.9.0+cpu
+[ProfilerActivity]
+CPU
+CUDA
+HPU
+MTIA
+PrivateUse1
+XPU
+name
+value
+[torch.profiler.profile_signature]
+(*, activities: Optional[collections.abc.Iterable[torch._C._profiler.ProfilerActivity]] = None, schedule: Optional[Callable[[int], torch.profiler.profiler.ProfilerAction]] = None, on_trace_ready: Optional[Callable[..., Any]] = None, record_shapes: bool = False, profile_memory: bool = False, with_stack: bool = False, with_flops: bool = False, with_modules: bool = False, experimental_config: Optional[torch._C._profiler._ExperimentalConfig] = None, execution_trace_observer: Optional[torch.profiler.profiler._ITraceObserver] = None, acc_events: bool = False, use_cuda: Optional[bool] = None, custom_trace_id_callback: Optional[Callable[[], str]] = None) -> None
+[torch.profiler.record_function]
+<class 'torch.autograd.profiler.record_function'>
+torch_npu_version=2.9.0.post2
+[torch_npu.profiler]
+module=<module 'torch_npu.profiler' from '/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch_npu/profiler/__init__.py'>
+AiCMetrics	type
+ExportType	type
+HostSystem	type
+ProfilerAction	EnumType
+ProfilerActivity	pybind11_type
+ProfilerLevel	type
+analysis	module
+dynamic_profile	module
+experimental_config	module
+profile	type
+profiler	module
+profiler_interface	module
+schedule	type
+scheduler	module
+supported_activities	function
+supported_ai_core_metrics	function
+supported_export_type	function
+supported_profiler_level	function
+tensorboard_trace_handler	function

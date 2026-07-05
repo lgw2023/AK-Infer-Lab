@@ -1,0 +1,8 @@
+run_id=runtime_profiler_bridge_2026_0706_p1_005
+commit=e7dc6ae
+timestamp=2026-07-06T00:34:03+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+AK_OBS_NPU_DEVICE=npu:6
+pytest_exit_code=0
+torch_profiler_bridge_exit_code=0

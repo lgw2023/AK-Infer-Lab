@@ -1,0 +1,8 @@
+index	name	cat	ph	ts	dur	pid	tid	reason
+1	aten::add	cpu_op	X	301477643378.533	148518.289	1030989	1030989	npu_keyword,op_or_copy_candidate
+3	aclnnAdd	cpu_op	X	301477791860.632	24.16	1030989	1030989	npu_keyword
+4	ak_p1_torch_profiler_matmul	user_annotation	X	301477798821.75	96212.973	1030989	1030989	op_or_copy_candidate
+5	aten::matmul	cpu_op	X	301477798974.19	18173.945	1030989	1030989	npu_keyword,op_or_copy_candidate
+7	aclnnMatmul	cpu_op	X	301477817115.245	18.55	1030989	1030989	npu_keyword
+9	aten::add	cpu_op	X	301477895168.993	109.09	1030989	1030989	npu_keyword,op_or_copy_candidate
+11	aclnnAdd	cpu_op	X	301477895261.573	12.8	1030989	1030989	npu_keyword
