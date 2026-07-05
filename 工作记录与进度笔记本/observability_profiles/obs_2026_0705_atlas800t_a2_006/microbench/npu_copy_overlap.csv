@@ -1,0 +1,4 @@
+bench_name,status,command,artifact_path,duration_ms,blocked_category,blocked_detail,metric_name,metric_value,unit
+npu_copy_overlap,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_overlap torch-npu microbench>,microbench/npu_copy_overlap.csv,45.396,,,copy_overlap_ratio,0.964327,ratio
+npu_copy_overlap,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_overlap torch-npu microbench>,microbench/npu_copy_overlap.csv,45.396,,,copy_overlap_sequential_ms,6.033079,ms
+npu_copy_overlap,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_copy_overlap torch-npu microbench>,microbench/npu_copy_overlap.csv,45.396,,,copy_overlap_concurrent_ms,6.256258,ms

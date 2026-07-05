@@ -24,7 +24,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -54,7 +54,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -84,7 +84,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -114,7 +114,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -174,7 +174,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -234,7 +234,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -294,7 +294,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -324,7 +324,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -354,7 +354,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -384,7 +384,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -414,7 +414,7 @@ fields:
       category: tool_missing
       detail: probe command is not available
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -444,7 +444,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -474,7 +474,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -504,7 +504,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: compare command outputs with manifest fields
   acceptance_rule: measurable if command returns a non-empty value or explicit not_applicable
   fallback: record unknown with command failure evidence
@@ -5802,7 +5802,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: verify command exits zero and reports numeric metric
   acceptance_rule: partial if inventory and tool availability are verified before
     workload execution
@@ -5834,7 +5834,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: verify command exits zero and reports numeric metric
   acceptance_rule: partial if inventory and tool availability are verified before
     workload execution
@@ -5866,7 +5866,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: verify command exits zero and reports numeric metric
   acceptance_rule: partial if inventory and tool availability are verified before
     workload execution
@@ -5898,7 +5898,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: verify command exits zero and reports numeric metric
   acceptance_rule: partial if inventory and tool availability are verified before
     workload execution
@@ -5930,7 +5930,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: verify command exits zero and reports numeric metric
   acceptance_rule: partial if inventory and tool availability are verified before
     workload execution
@@ -5962,7 +5962,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: verify command exits zero and reports numeric metric
   acceptance_rule: partial if inventory and tool availability are verified before
     workload execution
@@ -5994,7 +5994,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: verify command exits zero and reports numeric metric
   acceptance_rule: partial if inventory and tool availability are verified before
     workload execution
@@ -6026,7 +6026,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: verify command exits zero and reports numeric metric
   acceptance_rule: partial if inventory and tool availability are verified before
     workload execution
@@ -6186,7 +6186,7 @@ fields:
       category: null
       detail: null
     partial_reason: null
-    last_checked_at: '2026-07-05T10:05:21.480309+00:00'
+    last_checked_at: '2026-07-05T10:16:43.336088+00:00'
   validation_method: verify command exits zero and reports numeric metric
   acceptance_rule: partial if inventory and tool availability are verified before
     workload execution

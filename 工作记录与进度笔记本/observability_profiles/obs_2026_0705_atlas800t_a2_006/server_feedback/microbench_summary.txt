@@ -1,0 +1,51 @@
+===== ssd_fio =====
+path=工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/ssd_fio.csv
+rows=12
+status=measurable
+blocked_category=
+blocked_detail=
+metric_names=fio_read_iops,fio_read_bw_mib_s,fio_read_clat_mean_us,fio_read_clat_p95_us,fio_read_clat_p99_us,fio_write_iops,fio_write_bw_mib_s,fio_write_clat_mean_us,fio_write_clat_p95_us,fio_write_clat_p99_us,fio_total_iops,fio_total_bw_mib_s
+fio_read_iops=1489.836721 IOPS
+fio_read_bw_mib_s=5.819674 MiB/s
+fio_read_clat_mean_us=364.860674 us
+fio_read_clat_p95_us=569.344 us
+fio_read_clat_p99_us=1531.904 us
+fio_write_iops=1520.493169 IOPS
+fio_write_bw_mib_s=5.939426 MiB/s
+fio_write_clat_mean_us=298.064717 us
+fio_write_clat_p95_us=552.96 us
+fio_write_clat_p99_us=1384.448 us
+fio_total_iops=3010.32989 IOPS
+fio_total_bw_mib_s=11.759101 MiB/s
+
+===== cpu_perf =====
+path=工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/cpu_perf.csv
+rows=4
+status=measurable
+blocked_category=
+blocked_detail=
+metric_names=perf_task_clock_ms,perf_cycles,perf_instructions,perf_ipc
+perf_task_clock_ms=3048.57 ms
+perf_cycles=7925768091 count
+perf_instructions=25093633451 count
+perf_ipc=3.166082 instructions/cycle
+
+===== numa_topology =====
+path=工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/numa_topology.csv
+rows=98
+status=measurable
+blocked_category=
+blocked_detail=
+metric_names=numa_node_count,numa_node_ids,numa_node_0_cpus,numa_node_0_cpu_count,numa_node_0_memory_mb,numa_node_0_free_mb,numa_node_1_cpus,numa_node_1_cpu_count,numa_node_1_memory_mb,numa_node_1_free_mb,numa_node_2_cpus,numa_node_2_cpu_count,numa_node_2_memory_mb,numa_node_2_free_mb,numa_node_3_cpus,numa_node_3_cpu_count,numa_node_3_memory_mb,numa_node_3_free_mb,numa_node_4_cpus,numa_node_4_cpu_count,numa_node_4_memory_mb,numa_node_4_free_mb,numa_node_5_cpus,numa_node_5_cpu_count,numa_node_5_memory_mb,numa_node_5_free_mb,numa_node_6_cpus,numa_node_6_cpu_count,numa_node_6_memory_mb,numa_node_6_free_mb,numa_node_7_cpus,numa_node_7_cpu_count,numa_node_7_memory_mb,numa_node_7_free_mb,numa_distance_0_0,numa_distance_0_1,numa_distance_0_2,numa_distance_0_3,numa_distance_0_4,numa_distance_0_5,numa_distance_0_6,numa_distance_0_7,numa_distance_1_0,numa_distance_1_1,numa_distance_1_2,numa_distance_1_3,numa_distance_1_4,numa_distance_1_5,numa_distance_1_6,numa_distance_1_7,numa_distance_2_0,numa_distance_2_1,numa_distance_2_2,numa_distance_2_3,numa_distance_2_4,numa_distance_2_5,numa_distance_2_6,numa_distance_2_7,numa_distance_3_0,numa_distance_3_1,numa_distance_3_2,numa_distance_3_3,numa_distance_3_4,numa_distance_3_5,numa_distance_3_6,numa_distance_3_7,numa_distance_4_0,numa_distance_4_1,numa_distance_4_2,numa_distance_4_3,numa_distance_4_4,numa_distance_4_5,numa_distance_4_6,numa_distance_4_7,numa_distance_5_0,numa_distance_5_1,numa_distance_5_2,numa_distance_5_3,numa_distance_5_4,numa_distance_5_5,numa_distance_5_6,numa_distance_5_7,numa_distance_6_0,numa_distance_6_1,numa_distance_6_2,numa_distance_6_3,numa_distance_6_4,numa_distance_6_5,numa_distance_6_6,numa_distance_6_7,numa_distance_7_0,numa_distance_7_1,numa_distance_7_2,numa_distance_7_3,numa_distance_7_4,numa_distance_7_5,numa_distance_7_6,numa_distance_7_7
+numa_node_count=8 count
+numa_node_ids=0,1,2,3,4,5,6,7 text
+numa_node_0_cpus=0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 text
+numa_node_0_cpu_count=24 count
+numa_node_0_memory_mb=193050 MB
+numa_node_0_free_mb=38771 MB
+numa_node_1_cpus=24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 text
+numa_node_1_cpu_count=24 count
+numa_node_1_memory_mb=193533 MB
+numa_node_1_free_mb=167184 MB
+numa_node_2_cpus=48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 text
+numa_node_2_cpu_count=24 count

@@ -6,7 +6,7 @@ while time.perf_counter() < end:
     for i in range(1000):
         value += i * i
 print(value)
-",microbench/cpu_perf.csv,3231.175,,,perf_task_clock_ms,3054.49,ms
+",microbench/cpu_perf.csv,3215.223,,,perf_task_clock_ms,3048.57,ms
 cpu_perf,measurable,"perf stat -x , -e task-clock,cycles,instructions -- /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c import time
 end = time.perf_counter() + 3
 value = 0
@@ -14,7 +14,7 @@ while time.perf_counter() < end:
     for i in range(1000):
         value += i * i
 print(value)
-",microbench/cpu_perf.csv,3231.175,,,perf_cycles,7941175226,count
+",microbench/cpu_perf.csv,3215.223,,,perf_cycles,7925768091,count
 cpu_perf,measurable,"perf stat -x , -e task-clock,cycles,instructions -- /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c import time
 end = time.perf_counter() + 3
 value = 0
@@ -22,7 +22,7 @@ while time.perf_counter() < end:
     for i in range(1000):
         value += i * i
 print(value)
-",microbench/cpu_perf.csv,3231.175,,,perf_instructions,24999945451,count
+",microbench/cpu_perf.csv,3215.223,,,perf_instructions,25093633451,count
 cpu_perf,measurable,"perf stat -x , -e task-clock,cycles,instructions -- /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c import time
 end = time.perf_counter() + 3
 value = 0
@@ -30,4 +30,4 @@ while time.perf_counter() < end:
     for i in range(1000):
         value += i * i
 print(value)
-",microbench/cpu_perf.csv,3231.175,,,perf_ipc,3.148142,instructions/cycle
+",microbench/cpu_perf.csv,3215.223,,,perf_ipc,3.166082,instructions/cycle

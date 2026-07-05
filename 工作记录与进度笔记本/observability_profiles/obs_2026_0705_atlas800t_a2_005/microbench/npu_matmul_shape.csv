@@ -1,4 +1,4 @@
 bench_name,status,command,artifact_path,duration_ms,blocked_category,blocked_detail,metric_name,metric_value,unit
-npu_matmul_shape,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_matmul_shape torch-npu microbench>,microbench/npu_matmul_shape.csv,263.652,,,matmul_ms_256x256,0.151817,ms
-npu_matmul_shape,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_matmul_shape torch-npu microbench>,microbench/npu_matmul_shape.csv,263.652,,,matmul_ms_512x512,0.105704,ms
-npu_matmul_shape,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_matmul_shape torch-npu microbench>,microbench/npu_matmul_shape.csv,263.652,,,matmul_ms_1024x1024,0.082024,ms
+npu_matmul_shape,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_matmul_shape torch-npu microbench>,microbench/npu_matmul_shape.csv,266.63,,,matmul_ms_256x256,0.139013,ms
+npu_matmul_shape,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_matmul_shape torch-npu microbench>,microbench/npu_matmul_shape.csv,266.63,,,matmul_ms_512x512,0.091943,ms
+npu_matmul_shape,measurable,/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python -c <npu_matmul_shape torch-npu microbench>,microbench/npu_matmul_shape.csv,266.63,,,matmul_ms_1024x1024,0.0764,ms

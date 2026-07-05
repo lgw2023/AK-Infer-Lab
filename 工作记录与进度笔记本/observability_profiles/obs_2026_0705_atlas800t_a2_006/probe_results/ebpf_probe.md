@@ -9,9 +9,9 @@ command:
 - -lc
 - command -v bpftrace >/dev/null 2>&1 || exit 127; bpftrace --version
 exit_code: 127
-start_time: '2026-07-05T10:03:58.761213+00:00'
-end_time: '2026-07-05T10:03:58.938215+00:00'
-runtime_ms: 177.023
+start_time: '2026-07-05T10:15:21.185728+00:00'
+end_time: '2026-07-05T10:15:21.355685+00:00'
+runtime_ms: 169.978
 run_as_user: root
 inside_container: false
 container_privileged: null

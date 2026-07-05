@@ -8,9 +8,9 @@ command:
 - fio
 - --version
 exit_code: 0
-start_time: '2026-07-05T10:03:58.938512+00:00'
-end_time: '2026-07-05T10:03:58.967132+00:00'
-runtime_ms: 28.631
+start_time: '2026-07-05T10:15:21.355978+00:00'
+end_time: '2026-07-05T10:15:21.383561+00:00'
+runtime_ms: 27.589
 run_as_user: root
 inside_container: false
 container_privileged: null

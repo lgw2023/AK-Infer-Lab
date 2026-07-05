@@ -9,9 +9,9 @@ command:
 - -lc
 - command -v msprof >/dev/null 2>&1 || exit 127; msprof --help | head -40
 exit_code: 0
-start_time: '2026-07-05T10:03:58.546832+00:00'
-end_time: '2026-07-05T10:03:58.750119+00:00'
-runtime_ms: 203.31
+start_time: '2026-07-05T10:15:20.975173+00:00'
+end_time: '2026-07-05T10:15:21.175017+00:00'
+runtime_ms: 199.868
 run_as_user: root
 inside_container: false
 container_privileged: null

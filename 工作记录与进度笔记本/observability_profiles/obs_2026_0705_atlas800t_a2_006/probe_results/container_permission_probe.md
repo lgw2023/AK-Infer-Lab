@@ -9,9 +9,9 @@ command:
 - -lc
 - id && test -r /proc/1/cgroup && head -5 /proc/1/cgroup
 exit_code: 0
-start_time: '2026-07-05T10:03:58.970370+00:00'
-end_time: '2026-07-05T10:03:59.145367+00:00'
-runtime_ms: 175.023
+start_time: '2026-07-05T10:15:21.386688+00:00'
+end_time: '2026-07-05T10:15:21.563268+00:00'
+runtime_ms: 176.602
 run_as_user: root
 inside_container: false
 container_privileged: null

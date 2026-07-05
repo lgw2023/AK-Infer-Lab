@@ -8,9 +8,9 @@ command:
 - perf
 - --version
 exit_code: 0
-start_time: '2026-07-05T10:03:58.750441+00:00'
-end_time: '2026-07-05T10:03:58.761022+00:00'
-runtime_ms: 10.587
+start_time: '2026-07-05T10:15:21.175338+00:00'
+end_time: '2026-07-05T10:15:21.185552+00:00'
+runtime_ms: 10.218
 run_as_user: root
 inside_container: false
 container_privileged: null
