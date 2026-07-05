@@ -1,0 +1,39 @@
+schema_name: runtime_queue_trace_schema
+schema_version: 0.1.0
+artifact: runtime_queue_trace.jsonl
+required_join_keys: [trace_id, request_id, phase]
+fields:
+- name: timestamp_ns
+  type: integer
+- name: trace_id
+  type: string
+- name: request_id
+  type: string
+- name: session_id
+  type: string
+- name: phase
+  type: enum
+- name: queue_wait_us
+  type: number
+- name: batch_id
+  type: string
+- name: batch_size
+  type: integer
+- name: policy_decision
+  type: string
+- name: stall_reason
+  type: enum
+events:
+- arrival
+- enqueue
+- dequeue
+- admission_decision
+- batch_formed
+- prefill_start
+- prefill_end
+- decode_step_start
+- decode_step_end
+- sampling_end
+notes:
+- This trace is the first target for wrapper-level logging before framework internals are hooked.
+- It must not claim per-layer attribution until layer_id alignment is available.

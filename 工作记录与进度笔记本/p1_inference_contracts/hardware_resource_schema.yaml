@@ -1,0 +1,36 @@
+schema_name: hardware_resource_schema
+schema_version: 0.1.0
+source_profile_run_id: obs_2026_0705_atlas800t_a2_006
+resources:
+- resource_scope: npu_hbm_profile
+  resource_ids: [npu_id, stream_id]
+  primary_metrics: [ai_core_util, hbm_allocated_bytes, hbm_free_bytes, hbm_read_gbps, hbm_write_gbps]
+  current_status: requires_runtime_trace
+- resource_scope: cpu_dram_profile
+  resource_ids: [pid, thread_id, core_id, numa_node]
+  primary_metrics: [cpu_user_percent, context_switches, runqueue_length, dram_read_gbps, dram_write_gbps]
+  current_status: microbench_measurable_request_trace_unknown
+- resource_scope: transfer_overlap_profile
+  resource_ids: [copy_stream_id, compute_stream_id, device_id]
+  primary_metrics: [transfer_latency_us, effective_gbps, compute_overlap_us, copy_exposed_us, overlap_ratio]
+  current_status: microbench_measurable_runtime_trace_unknown
+- resource_scope: ssd_io_profile
+  resource_ids: [device_id]
+  primary_metrics: [random_read_iops, random_write_iops, io_p95_us, io_p99_us]
+  current_status: microbench_measurable_runtime_trace_unknown
+- resource_scope: microbench_profile
+  resource_ids: [profile_run_id, benchmark_id]
+  primary_metrics: [ssd_iops, h2d_bandwidth_gbps, d2h_bandwidth_gbps, copy_overlap_ratio, ddr_bandwidth_gbps]
+  current_status: measurable_in_006
+006_reference:
+  profile_run_id: obs_2026_0705_atlas800t_a2_006
+  measurable_microbench:
+  - npu_copy_h2d
+  - npu_copy_d2h
+  - npu_copy_overlap
+  - npu_matmul_shape
+  - cpu_kernel
+  - cpu_perf
+  - dram_bandwidth
+  - numa_topology
+  - ssd_fio

@@ -1,0 +1,224 @@
+schema_name: unified_event_schema
+schema_version: 0.1.0
+source_profile_run_id: obs_2026_0705_atlas800t_a2_006
+purpose: Minimal event contract for aligning request, runtime, operator, transfer, state object, and microbench evidence.
+fields:
+- name: schema_version
+  type: string
+  required: true
+  nullable: false
+  meaning: Event schema version used by this record.
+- name: event_id
+  type: string
+  required: true
+  nullable: false
+  meaning: Unique event identifier inside one trace.
+- name: timestamp_ns
+  type: integer
+  required: true
+  nullable: false
+  meaning: Event timestamp in the declared time_base.
+- name: time_base
+  type: enum
+  required: true
+  nullable: false
+  meaning: Clock domain for timestamp_ns.
+  enum: [host_monotonic_ns, host_wall_clock_ns, cann_device_timeline, tool_timestamp, derived]
+- name: trace_id
+  type: string
+  required: true
+  nullable: false
+  meaning: Cross-artifact trace id for one workload request path.
+- name: request_id
+  type: string
+  required: true
+  nullable: true
+  meaning: Runtime request id; nullable only for pure microbench records.
+- name: session_id
+  type: string
+  required: true
+  nullable: true
+  meaning: Session or conversation id for prefix and multi-turn reuse.
+- name: phase
+  type: enum
+  required: true
+  nullable: false
+  meaning: Standard inference phase.
+- name: event_type
+  type: enum
+  required: true
+  nullable: false
+  meaning: Shape of event record.
+  enum: [span_start, span_end, point, metric_sample, decision, lifecycle]
+- name: resource_scope
+  type: enum
+  required: true
+  nullable: false
+  meaning: Observability profile or resource family this event belongs to.
+- name: layer_id
+  type: integer
+  required: true
+  nullable: true
+  meaning: Model layer id when event can be mapped to a layer.
+- name: op_name
+  type: string
+  required: true
+  nullable: true
+  meaning: Framework operator name.
+- name: kernel_name
+  type: string
+  required: true
+  nullable: true
+  meaning: Device kernel name from profiler timeline.
+- name: stream_id
+  type: string
+  required: true
+  nullable: true
+  meaning: Device or copy stream id used for overlap alignment.
+- name: device_id
+  type: string
+  required: true
+  nullable: true
+  meaning: NPU, CPU core, NUMA node, SSD, or synthetic benchmark device id.
+- name: object_type
+  type: enum
+  required: true
+  nullable: true
+  meaning: State object type for object lifecycle events.
+- name: object_id
+  type: string
+  required: true
+  nullable: true
+  meaning: Stable state object identifier.
+- name: source_tier
+  type: enum
+  required: true
+  nullable: true
+  meaning: Source memory or storage tier for movement events.
+  enum: [hbm, dram, pinned_dram, ssd, host_cache, remote_cache, none, unknown]
+- name: target_tier
+  type: enum
+  required: true
+  nullable: true
+  meaning: Target memory or storage tier for movement events.
+  enum: [hbm, dram, pinned_dram, ssd, host_cache, remote_cache, none, unknown]
+- name: bytes_read
+  type: integer
+  required: true
+  nullable: true
+  meaning: Bytes read by this event when known.
+- name: bytes_write
+  type: integer
+  required: true
+  nullable: true
+  meaning: Bytes written by this event when known.
+- name: latency_us
+  type: number
+  required: true
+  nullable: true
+  meaning: Event duration or measured latency.
+- name: queue_wait_us
+  type: number
+  required: true
+  nullable: true
+  meaning: Queue wait duration when event is queue-related.
+- name: overlap_ratio
+  type: number
+  required: true
+  nullable: true
+  meaning: Copy/compute overlap ratio for transfer events.
+- name: policy_decision
+  type: string
+  required: true
+  nullable: true
+  meaning: Scheduler, cache, prefetch, restore, recompute, or eviction decision.
+- name: hit_or_miss
+  type: enum
+  required: true
+  nullable: true
+  meaning: Cache hit state.
+  enum: [hit, miss, partial, not_applicable, unknown]
+- name: stall_reason
+  type: enum
+  required: true
+  nullable: true
+  meaning: Bottleneck reason when this event is used for attribution.
+- name: evidence_source
+  type: string
+  required: true
+  nullable: false
+  meaning: Named source from evidence_sources.
+- name: artifact_path
+  type: string
+  required: true
+  nullable: true
+  meaning: Relative path to supporting artifact inside an experiment or profile run.
+phase_enum:
+- enqueue
+- tokenize
+- prefill
+- decode
+- attention
+- kv_restore
+- expert_prefetch
+- mlp_or_moe
+- sampling
+- detokenize
+- cleanup
+object_type_enum:
+- weight
+- kv
+- prefix
+- expert
+- activation
+- workspace
+- logits
+resource_scope_enum:
+- request_runtime_profile
+- scheduler_policy_profile
+- operator_timeline_profile
+- npu_hbm_profile
+- cpu_dram_profile
+- transfer_overlap_profile
+- ssd_io_profile
+- state_object_profile
+- kv_prefix_profile
+- moe_expert_profile
+- microbench_profile
+evidence_sources:
+- name: runtime_queue_trace
+  profile: request_runtime_profile
+  artifact: runtime_queue_trace.jsonl
+- name: scheduler_policy_trace
+  profile: scheduler_policy_profile
+  artifact: runtime_queue_trace.jsonl
+- name: operator_timeline
+  profile: operator_timeline_profile
+  artifact: operator_timeline.jsonl
+- name: npu_hbm_sample
+  profile: npu_hbm_profile
+  artifact: npu_hbm_trace.jsonl
+- name: cpu_dram_sample
+  profile: cpu_dram_profile
+  artifact: cpu_dram_trace.jsonl
+- name: copy_overlap_trace
+  profile: transfer_overlap_profile
+  artifact: copy_overlap_trace.csv
+- name: ssd_io_trace
+  profile: ssd_io_profile
+  artifact: ssd_io_trace.csv
+- name: state_object_trace
+  profile: state_object_profile
+  artifact: state_object_trace.jsonl
+- name: kv_prefix_trace
+  profile: kv_prefix_profile
+  artifact: state_object_trace.jsonl
+- name: expert_trace
+  profile: moe_expert_profile
+  artifact: expert_trace.jsonl
+- name: microbench_artifact
+  profile: microbench_profile
+  artifact: microbench/*.csv
+notes:
+- This schema is a local contract only; it does not imply that runtime hooks already exist.
+- Current server evidence source is obs_2026_0705_atlas800t_a2_006.

@@ -1,0 +1,49 @@
+schema_name: experiment_card_template
+schema_version: 0.1.0
+experiment:
+  experiment_id: null
+  created_at: null
+  source_profile_run_id: obs_2026_0705_atlas800t_a2_006
+  git_commit: null
+environment:
+  server_id: atlas800t-a2-node-001
+  os_name: Linux
+  kernel_version: null
+  cann_version: null
+  driver_version: null
+  torch_npu_version: null
+  vllm_ascend_version: null
+  npu_count: 8
+  hbm_per_npu_gb: 64.0
+model:
+  model_name: null
+  dtype: null
+  quant: null
+  context_limit: null
+  moe: null
+workload:
+  manifest_path: 工作记录与进度笔记本/p1_inference_contracts/workload_manifest.yaml
+  prompt_ids: []
+  concurrency: null
+  output_len: null
+metrics:
+  ttft_us: null
+  tpot_us: null
+  p95_us: null
+  p99_us: null
+  hbm_peak_bytes: null
+  npu_util_percent: null
+  cpu_util_percent: null
+  dram_bandwidth_gbps: null
+  h2d_d2h_gbps: null
+  copy_overlap_ratio: null
+  ssd_iops: null
+trace_artifacts:
+  unified_event_trace: null
+  runtime_queue_trace: null
+  operator_timeline: null
+  state_object_trace: null
+  copy_overlap_trace: null
+result:
+  top_stall_reasons: []
+  evidence_notes: []

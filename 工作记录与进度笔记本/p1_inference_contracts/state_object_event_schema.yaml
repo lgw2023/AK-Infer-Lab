@@ -1,0 +1,45 @@
+schema_name: state_object_event_schema
+schema_version: 0.1.0
+object_type_enum: [weight, kv, prefix, expert, activation, workspace, logits]
+lifecycle_event_enum:
+- create
+- append
+- lookup
+- hit
+- miss
+- restore_start
+- restore_done
+- prefetch_issued
+- prefetch_done
+- evict_start
+- evict_done
+- recompute_start
+- recompute_done
+- release
+tier_enum: [hbm, dram, pinned_dram, ssd, host_cache, remote_cache, none, unknown]
+required_fields:
+- timestamp_ns
+- trace_id
+- request_id
+- object_type
+- object_id
+- lifecycle_event
+- tier
+- object_bytes
+- layer_id
+- evidence_source
+object_contracts:
+- object_type: kv
+  required_extra_fields: [tokens_range, block_size, matched_tokens, restore_vs_recompute_decision]
+- object_type: prefix
+  required_extra_fields: [prefix_hash, matched_tokens, reuse_distance]
+- object_type: expert
+  required_extra_fields: [top_k_expert_ids, expert_hit, expert_miss_tier, prefetch_lead_time_us]
+- object_type: weight
+  required_extra_fields: [source_tier, target_tier, load_cost_us]
+- object_type: activation
+  required_extra_fields: [layer_id, object_bytes]
+- object_type: workspace
+  required_extra_fields: [layer_id, object_bytes]
+- object_type: logits
+  required_extra_fields: [layer_id, object_bytes]

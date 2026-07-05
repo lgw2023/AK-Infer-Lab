@@ -1,0 +1,61 @@
+schema_name: inference_stage_schema
+schema_version: 0.1.0
+stages:
+- phase: enqueue
+  primary_profile: request_runtime_profile
+  required_join_keys: [trace_id, request_id]
+  minimum_events: [arrival, enqueue, admission_decision]
+  expected_metrics: [queue_wait_us, batch_size]
+- phase: tokenize
+  primary_profile: cpu_dram_profile
+  required_join_keys: [trace_id, request_id]
+  minimum_events: [tokenize_start, tokenize_end]
+  expected_metrics: [tokenizer_time_us, tokens_in]
+- phase: prefill
+  primary_profile: request_runtime_profile
+  required_join_keys: [trace_id, request_id, phase]
+  minimum_events: [prefill_start, prefill_end]
+  expected_metrics: [ttft_us, hbm_peak_bytes, npu_busy_time_us]
+- phase: decode
+  primary_profile: request_runtime_profile
+  required_join_keys: [trace_id, request_id, phase]
+  minimum_events: [decode_step_start, decode_step_end]
+  expected_metrics: [tpot_us, batch_size]
+- phase: attention
+  primary_profile: operator_timeline_profile
+  required_join_keys: [trace_id, request_id, phase, layer_id, stream_id]
+  minimum_events: [attention_kernel_start, attention_kernel_end]
+  expected_metrics: [kernel_duration_us, hbm_read_gbps, hbm_write_gbps]
+- phase: kv_restore
+  primary_profile: kv_prefix_profile
+  required_join_keys: [trace_id, request_id, object_id, layer_id]
+  minimum_events: [kv_lookup, kv_hit_or_miss, kv_restore_decision]
+  expected_metrics: [matched_tokens, load_cost_us, restore_vs_recompute_decision]
+- phase: expert_prefetch
+  primary_profile: moe_expert_profile
+  required_join_keys: [trace_id, request_id, layer_id, object_id]
+  minimum_events: [expert_route, prefetch_issued, prefetch_done]
+  expected_metrics: [prefetch_lead_time_us, expert_load_latency_us]
+- phase: mlp_or_moe
+  primary_profile: operator_timeline_profile
+  required_join_keys: [trace_id, request_id, phase, layer_id, stream_id]
+  minimum_events: [mlp_or_moe_kernel_start, mlp_or_moe_kernel_end]
+  expected_metrics: [kernel_duration_us, top_k_expert_ids]
+- phase: sampling
+  primary_profile: cpu_dram_profile
+  required_join_keys: [trace_id, request_id]
+  minimum_events: [sampling_start, sampling_end]
+  expected_metrics: [sampler_time_us]
+- phase: detokenize
+  primary_profile: cpu_dram_profile
+  required_join_keys: [trace_id, request_id]
+  minimum_events: [detokenize_start, detokenize_end]
+  expected_metrics: [scheduler_time_us]
+- phase: cleanup
+  primary_profile: state_object_profile
+  required_join_keys: [trace_id, request_id, object_id]
+  minimum_events: [object_release, cache_free_event]
+  expected_metrics: [evict_cost_us]
+acceptance:
+- Every phase must map to at least one profile in the existing observability catalog.
+- Phases with operator or transfer evidence must carry enough keys for later time alignment.

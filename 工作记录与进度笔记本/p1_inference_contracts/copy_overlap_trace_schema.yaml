@@ -1,0 +1,39 @@
+schema_name: copy_overlap_trace_schema
+schema_version: 0.1.0
+artifact: copy_overlap_trace.csv
+required_join_keys: [trace_id, object_id, stream_id]
+fields:
+- name: timestamp_ns
+  type: integer
+- name: trace_id
+  type: string
+- name: request_id
+  type: string
+- name: object_id
+  type: string
+- name: direction
+  type: enum
+  enum: [h2d, d2h, host_to_host, ssd_to_host, unknown]
+- name: transfer_bytes
+  type: integer
+- name: copy_submit_ns
+  type: integer
+- name: copy_complete_ns
+  type: integer
+- name: copy_stream_id
+  type: string
+- name: compute_stream_id
+  type: string
+- name: transfer_latency_us
+  type: number
+- name: compute_overlap_us
+  type: number
+- name: copy_exposed_us
+  type: number
+- name: overlap_ratio
+  type: number
+- name: sync_barrier_event
+  type: string
+acceptance:
+- Host-side copy submit and completion timestamps are sufficient for partial status.
+- Device stream alignment is required before claiming copy caused TPOT or TTFT spikes.

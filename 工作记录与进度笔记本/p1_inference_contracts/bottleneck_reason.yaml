@@ -1,0 +1,48 @@
+schema_name: bottleneck_reason
+schema_version: 0.1.0
+bottleneck_reasons:
+- name: queue_wait
+  evidence_required: [runtime_queue_trace]
+  meaning: Request waited before entering prefill or decode.
+- name: long_prefill
+  evidence_required: [runtime_queue_trace, operator_timeline]
+  meaning: Prompt processing dominated TTFT.
+- name: decode_compute_bound
+  evidence_required: [runtime_queue_trace, operator_timeline, npu_hbm_sample]
+  meaning: Decode step was mainly compute limited.
+- name: hbm_capacity_pressure
+  evidence_required: [npu_hbm_sample, state_object_trace]
+  meaning: HBM capacity forced eviction, restore, or recompute.
+- name: hbm_bandwidth_pressure
+  evidence_required: [npu_hbm_sample, operator_timeline]
+  meaning: HBM bandwidth limited operator progress.
+- name: h2d_d2h_exposed_copy
+  evidence_required: [copy_overlap_trace, state_object_trace]
+  meaning: Host-device copy time was exposed on the critical path.
+- name: ssd_restore_slow
+  evidence_required: [ssd_io_trace, state_object_trace]
+  meaning: SSD-backed object restore was slow enough to affect the request.
+- name: kv_prefix_miss
+  evidence_required: [kv_prefix_trace, runtime_queue_trace]
+  meaning: Prefix or KV miss forced fresh prefill or restore.
+- name: expert_miss
+  evidence_required: [expert_trace, operator_timeline]
+  meaning: MoE expert was missing from the target tier.
+- name: expert_prefetch_late
+  evidence_required: [expert_trace, copy_overlap_trace]
+  meaning: Expert prefetch completed after it was needed.
+- name: cpu_scheduler_wait
+  evidence_required: [cpu_dram_sample, runtime_queue_trace]
+  meaning: Host scheduler or runqueue delayed runtime progress.
+- name: cpu_tokenizer_or_sampling
+  evidence_required: [cpu_dram_sample, runtime_queue_trace]
+  meaning: Tokenizer, sampler, or detokenizer CPU work dominated a phase.
+- name: sync_barrier_wait
+  evidence_required: [copy_overlap_trace, operator_timeline]
+  meaning: Synchronization barrier exposed otherwise overlappable work.
+- name: profiler_unaligned
+  evidence_required: [runtime_queue_trace, operator_timeline]
+  meaning: Evidence exists but clocks or join keys are not aligned enough for attribution.
+- name: unknown
+  evidence_required: []
+  meaning: No supported evidence can explain the stall yet.
