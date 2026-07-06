@@ -1,0 +1,14 @@
+run_id=runtime_long_prompt_calibration_2026_0706_p1_012
+commit=0074466
+timestamp=2026-07-06T15:00:16+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+CONTRACT_DIR=工作记录与进度笔记本/p1_inference_contracts
+LONG_MANIFEST=工作记录与进度笔记本/p1_inference_contracts/workload_long_manifest.yaml
+task_policy=tokenizer_only_no_model_weights_no_npu_no_vllm_no_package_install
+pytest_exit_code=0
+package_inventory_exit_code=0
+model_path_precheck_exit_code=0
+long_prompt_token_calibration_exit_code=0

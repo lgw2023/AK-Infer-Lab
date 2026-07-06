@@ -1,0 +1,15 @@
+calibration_status=success
+failure_phase=
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+tokenizer_class=Qwen2Tokenizer
+prompt_count=13
+success_prompt_count=13
+failed_prompt_count=0
+bucket_miss_count=13
+max_full_token_count=43216
+over_4096_count=11
+over_8192_count=7
+over_16384_count=3
+over_32768_count=1
+execution_policy=tokenizer_only_no_model_weights_no_npu_no_vllm_no_package_install
+performance_policy=token_calibration_only_no_perf_or_bottleneck_conclusion

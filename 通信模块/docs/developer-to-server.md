@@ -1,373 +1,704 @@
-# 开发机 -> 服务器消息
+# 开发机给服务器的任务说明
 
-> 本文件每次只保留当前待执行任务；旧历史信息已清空。
+## 当前任务：P1.13 long prompt trace smoke
 
-## 当前任务：P1.12 long prompt tokenizer calibration
+- 任务 ID：`runtime_long_prompt_trace_smoke_2026_0706_p1_013`
+- 当前开发机分支：`main`
+- 服务器同步方式：只执行 `git pull --ff-only`
+- 详细 handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_long_prompt_trace_smoke_handoff.md`
 
-- 任务 ID：`runtime_long_prompt_calibration_2026_0706_p1_012`
-- 证据基线：`obs_2026_0705_atlas800t_a2_006`
-- 已完成短形态 trace：P1.10 `runtime_small_model_trace_matrix_2026_0706_p1_009`，P1.11 `runtime_small_model_remaining_prompt_trace_2026_0706_p1_010`
-- 当前契约入口：`工作记录与进度笔记本/p1_inference_contracts/`
-- 长 prompt manifest：`工作记录与进度笔记本/p1_inference_contracts/workload_long_manifest.yaml`
-- 详细 handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_long_prompt_calibration_handoff.md`
+P1.12 `runtime_long_prompt_calibration_2026_0706_p1_012` 已完成，13 条 `prompts_long/P000-P012.md` 均可被 `/data/node0_disk1/Public/Qwen3.5-4B` 的 `Qwen2Tokenizer` 成功编码。实测 token 数均高于原估计，因此本轮不直接跑 full 16K/32K，也不跑完整 P000-P012 workload。
 
-P1.10 + P1.11 已证明当前短形态 `P000-P012` 可以完成小模型顺序单请求 trace，但服务器 tokenizer 校准显示这些文件只有 51-185 tokens，不能代表 4K/8K/16K/32K 长上下文压力。本轮新增 `prompts_long/P000-P012.md` 和 `workload_long_manifest.yaml`，服务器只需要用现有 `Qwen3.5-4B` tokenizer 做真实 token 校准。
+本轮只使用已经验证过的小模型推理路径：`Qwen3.5-4B + transformers + torch_npu`。这会加载模型权重并使用 NPU，但不引入新推理框架，不运行 vLLM，不安装或修复任何包。
 
-本轮不加载模型权重、不使用 NPU、不运行推理、不运行 vLLM、不安装包。bucket 是否偏离只记录，不在服务器上自动改 prompt。
+## 本轮问题
 
-## 服务器执行边界
+请服务器回答：
 
-请执行：
+1. `Qwen3.5-4B + transformers + torch_npu` 是否能在 `npu:6` 上完成少量 4K/8K 截断长 prompt 的顺序单请求 prefill/decode？
+2. `P002@4096`、`P003@8192`、`P007@4096`、`P008@4096` 是否均有非空 generated token 或文本？
+3. 是否能生成合法的 `long_prompt_trace_matrix.jsonl` 并通过 P1 validator？
+4. profiler 产物是否能导出，marker 与 NPU/op 候选事件是否可检索？
+5. 如果失败，失败点是模型加载、tokenizer、NPU/OOM、长 prompt 推理、profiler 导出，还是 trace 校验？
 
-- 在服务器项目根目录 `/data/node0_disk1/liguowei/AK-Infer-Lab` 执行本文件命令。
-- 通过 `git pull --ff-only` 获取开发机已提交的最新项目状态。
-- 使用服务器当前 conda 环境；不创建新环境。
-- 默认 tokenizer/model 目录为 `/data/node0_disk1/Public/Qwen3.5-4B`，可用 `AK_SMALL_MODEL_PATH=/path/to/model` 覆盖。
-- 只读取 `workload_long_manifest.yaml` 和 `prompts_long/P000-P012.md`。
-- 产出并邮件回传 `runtime_long_prompt_calibration_2026_0706_p1_012.zip`。
+## 严格边界
 
-请不要执行：
+允许：
 
-- 不要加载 `AutoModelForCausalLM` 或任何模型权重。
-- 不要使用 NPU，不要占用 `npu:6` 或其他 NPU。
-- 不要运行 prefill、decode、generate、serve、benchmark、burst、continuous batching 或 prefix cache 测试。
-- 不要安装、升级、卸载或修复 `transformers`、`vllm`、`vllm_ascend`、`mindie`、`mindspore` 或其他包。
-- 不要创建新 conda 环境。
-- 不要复制、移动、删除或改名 `models/` 或 `/data/node0_disk1/Public/` 下任何文件。
-- 不要修改 driver、CANN、apt、dpkg、NPU runtime 或 vLLM/vLLM-Ascend 源码。
-- 不要自动修复或重装 `ascend910b-driver`。
-- 不要在服务器上修改、提交或 push 项目代码。
-- 不要发送 `.env`、SMTP 授权码、代理凭据、服务器账号、私钥、Cookie 或任何敏感信息。
+- `git pull --ff-only`
+- `python -m pytest tests/inference_contracts -q`
+- 使用服务器当前 conda 环境
+- 使用 `/data/node0_disk1/Public/Qwen3.5-4B`
+- 使用现有 `transformers + torch_npu`
+- 默认使用 `npu:6`，可由 `AK_SMALL_MODEL_DEVICE` 覆盖
+- 顺序执行 `P002@4096`、`P003@8192`、`P007@4096`、`P008@4096`
+- 导出 trace、profiler、summary、失败日志和邮件附件
 
-## 本轮必须回答的问题
+禁止：
 
-- `prompts_long/P000-P012.md` 是否都能被服务器现有 tokenizer 成功编码？
-- 每条 prompt 的真实 `Qwen3.5-4B` token 数是多少？
-- 每条 prompt 相对目标 bucket 是 `within_range`、`below_range` 还是 `above_range`？
-- 哪些 prompt 超过 4096 / 8192 / 16384 / 32768 token 截断阈值？
-- 如果失败，失败点是 `git pull`、pytest、manifest、prompt 文件、tokenizer 加载，还是 tokenizer 编码？
+- 不安装、升级、卸载或修复任何包
+- 不创建新 conda 环境
+- 不运行 vLLM engine、serve、benchmark 或 vLLM-Ascend 任务
+- 不运行 full 16K/32K prompt，不运行完整 P000-P012 workload
+- 不运行并发、burst、continuous batching 或 prefix cache 结论型测试
+- 不复制、移动、删除或改名 `models/` 或 `/data/node0_disk1/Public/` 下任何文件
+- 不修改 driver、CANN、apt、dpkg、NPU runtime 或 vLLM/vLLM-Ascend 源码
+- 不在服务器上修改、提交或 push 项目代码
+- 不发送 `.env`、SMTP 授权码、代理凭据、服务器账号、私钥、Cookie 或任何敏感信息
+- 不输出性能 benchmark、瓶颈归因、优化建议或 CANN device timeline pairing 结论
 
-## 执行命令
+## 建议执行命令
 
-在昇腾服务器项目根目录执行：
+请在服务器项目根目录执行：
 
 ```bash
-set -u
+set -euo pipefail
 
+cd /data/node0_disk1/liguowei/AK-Infer-Lab
 git pull --ff-only
-PULL_STATUS=$?
-if [ "${PULL_STATUS}" -ne 0 ]; then
-  exit "${PULL_STATUS}"
-fi
 
-RUN_ID=runtime_long_prompt_calibration_2026_0706_p1_012
+RUN_ID=runtime_long_prompt_trace_smoke_2026_0706_p1_013
 ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
 MODEL_PATH="${AK_SMALL_MODEL_PATH:-/data/node0_disk1/Public/Qwen3.5-4B}"
+DEVICE="${AK_SMALL_MODEL_DEVICE:-npu:6}"
+MAX_NEW_TOKENS="${AK_LONG_PROMPT_TRACE_MAX_NEW_TOKENS:-4}"
 CONTRACT_DIR="工作记录与进度笔记本/p1_inference_contracts"
 LONG_MANIFEST="${CONTRACT_DIR}/workload_long_manifest.yaml"
-export RUN_ID ARTIFACT_DIR MODEL_PATH CONTRACT_DIR LONG_MANIFEST
 
-rm -rf "${ARTIFACT_DIR}"
-mkdir -p "${ARTIFACT_DIR}"
+export RUN_ID ARTIFACT_DIR MODEL_PATH DEVICE MAX_NEW_TOKENS CONTRACT_DIR LONG_MANIFEST
+export PYTHONUNBUFFERED=1
+
+mkdir -p "${ARTIFACT_DIR}/generated_texts"
 
 {
   echo "run_id=${RUN_ID}"
-  echo "commit=$(git rev-parse --short HEAD)"
+  echo "commit=$(git rev-parse HEAD)"
   echo "timestamp=$(date -Is)"
   echo "hostname=$(hostname)"
-  echo "python=$(command -v python || true)"
+  echo "python=$(command -v python)"
   echo "cwd=$(pwd)"
   echo "MODEL_PATH=${MODEL_PATH}"
+  echo "DEVICE=${DEVICE}"
+  echo "MAX_NEW_TOKENS=${MAX_NEW_TOKENS}"
   echo "CONTRACT_DIR=${CONTRACT_DIR}"
   echo "LONG_MANIFEST=${LONG_MANIFEST}"
-  echo "task_policy=tokenizer_only_no_model_weights_no_npu_no_vllm_no_package_install"
+  echo "task_policy=existing_transformers_torch_npu_no_vllm_no_package_install"
+  echo "selected_cases=P002@4096,P003@8192,P007@4096,P008@4096"
 } | tee "${ARTIFACT_DIR}/run_context.txt"
 
+set +e
 python -m pytest tests/inference_contracts -q > "${ARTIFACT_DIR}/pytest_inference_contracts.log" 2>&1
-PYTEST_STATUS=$?
-cat "${ARTIFACT_DIR}/pytest_inference_contracts.log"
-echo "pytest_exit_code=${PYTEST_STATUS}" >> "${ARTIFACT_DIR}/run_context.txt"
+pytest_exit_code=$?
+set -e
+echo "pytest_exit_code=${pytest_exit_code}" | tee -a "${ARTIFACT_DIR}/run_context.txt"
 
-python - <<'PY' > "${ARTIFACT_DIR}/package_inventory.tsv" 2>&1
-import importlib.metadata as metadata
+python - <<'PY' > "${ARTIFACT_DIR}/package_inventory.tsv"
 import importlib.util
+import importlib.metadata as metadata
 
-probes = [
-    ("transformers", "transformers", ("transformers",)),
-    ("tokenizers", "tokenizers", ("tokenizers",)),
-    ("sentencepiece", "sentencepiece", ("sentencepiece",)),
-    ("safetensors", "safetensors", ("safetensors",)),
-    ("torch", "torch", ("torch",)),
-    ("torch_npu", "torch_npu", ("torch-npu", "torch_npu")),
-    ("vllm", "vllm", ("vllm",)),
-    ("vllm_ascend", "vllm_ascend", ("vllm-ascend", "vllm_ascend")),
+packages = [
+    ("torch", "torch"),
+    ("torch_npu", "torch_npu"),
+    ("transformers", "transformers"),
+    ("tokenizers", "tokenizers"),
+    ("sentencepiece", "sentencepiece"),
+    ("accelerate", "accelerate"),
+    ("safetensors", "safetensors"),
+    ("vllm", "vllm"),
+    ("vllm_ascend", "vllm_ascend"),
 ]
 
-def version_for(distribution_names):
-    for name in distribution_names:
-        try:
-            return metadata.version(name)
-        except metadata.PackageNotFoundError:
-            continue
-    return ""
-
 print("package\tmodule\tdistribution_version\tspec_found\torigin")
-for package, module_name, distributions in probes:
+for dist_name, module_name in packages:
+    try:
+        version = metadata.version(dist_name)
+    except metadata.PackageNotFoundError:
+        version = ""
     spec = importlib.util.find_spec(module_name)
-    origin = getattr(spec, "origin", "") if spec is not None else ""
-    print("\t".join([
-        package,
-        module_name,
-        version_for(distributions),
-        "1" if spec is not None else "0",
-        origin or "",
-    ]))
+    print(
+        "\t".join(
+            [
+                dist_name,
+                module_name,
+                version,
+                "1" if spec else "0",
+                getattr(spec, "origin", "") or "",
+            ]
+        )
+    )
 PY
-PACKAGE_STATUS=$?
-cat "${ARTIFACT_DIR}/package_inventory.tsv"
-echo "package_inventory_exit_code=${PACKAGE_STATUS}" >> "${ARTIFACT_DIR}/run_context.txt"
 
-python - <<'PY' > "${ARTIFACT_DIR}/model_path_precheck.txt" 2>&1
+python - <<'PY' > "${ARTIFACT_DIR}/model_path_precheck.txt"
 import json
 import os
 from pathlib import Path
 
-model_path = Path(os.environ["MODEL_PATH"]).expanduser()
+model_path = Path(os.environ["MODEL_PATH"])
 print(f"model_path={model_path}")
-print(f"exists={1 if model_path.exists() else 0}")
-print(f"is_dir={1 if model_path.is_dir() else 0}")
+print(f"exists={int(model_path.exists())}")
+print(f"is_dir={int(model_path.is_dir())}")
 for name in ["config.json", "tokenizer_config.json", "tokenizer.json", "generation_config.json"]:
     path = model_path / name
-    try:
-        stat = path.stat()
-        print(f"{name}\texists=1\tbytes={stat.st_size}")
-        if name.endswith(".json") and stat.st_size <= 200000:
-            data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
-            if name == "config.json":
-                print(f"config_model_type={data.get('model_type', '')}")
-                print(f"config_architectures={data.get('architectures', '')}")
-            if name == "tokenizer_config.json":
-                print(f"tokenizer_class={data.get('tokenizer_class', '')}")
-                print(f"model_max_length={data.get('model_max_length', '')}")
-    except FileNotFoundError:
-        print(f"{name}\texists=0\tbytes=")
-    except Exception as exc:
-        print(f"{name}\terror={type(exc).__name__}: {exc}")
+    print(f"{name}\texists={int(path.is_file())}\tbytes={path.stat().st_size if path.is_file() else ''}")
+    if path.is_file() and name in {"config.json", "tokenizer_config.json"}:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if name == "config.json":
+            print(f"config_model_type={data.get('model_type', '')}")
+            print(f"config_architectures={data.get('architectures', '')}")
+        if name == "tokenizer_config.json":
+            print(f"tokenizer_class={data.get('tokenizer_class', '')}")
+            print(f"model_max_length={data.get('model_max_length', '')}")
 PY
-PRECHECK_STATUS=$?
-cat "${ARTIFACT_DIR}/model_path_precheck.txt"
-echo "model_path_precheck_exit_code=${PRECHECK_STATUS}" >> "${ARTIFACT_DIR}/run_context.txt"
 
-cp "${LONG_MANIFEST}" "${ARTIFACT_DIR}/workload_long_manifest.snapshot.yaml"
+set +e
+python - <<'PY' 2>&1 | tee "${ARTIFACT_DIR}/long_prompt_trace_matrix.log"
+from __future__ import annotations
 
-python - <<'PY' > "${ARTIFACT_DIR}/long_prompt_token_calibration.log" 2>&1
 import json
 import os
-import sys
+import time
 import traceback
+from contextlib import nullcontext
 from pathlib import Path
 
+import torch
 import yaml
-from transformers import AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-artifact_dir = Path(os.environ["ARTIFACT_DIR"])
-model_path = Path(os.environ["MODEL_PATH"]).expanduser()
-contract_dir = Path(os.environ["CONTRACT_DIR"])
-manifest_path = Path(os.environ["LONG_MANIFEST"])
+import torch_npu  # noqa: F401
+from tools.inference_contracts.validation import validate_trace_fixture
 
-tsv_path = artifact_dir / "long_prompt_token_calibration.tsv"
-result_path = artifact_dir / "long_prompt_token_calibration_result.json"
-conclusion_path = artifact_dir / "long_prompt_calibration_conclusion.txt"
-error_path = artifact_dir / "long_prompt_token_calibration_error.txt"
 
-bucket_ranges = {
-    "512": (256, 900),
-    "1K": (700, 1500),
-    "4K": (2800, 5200),
-    "8K": (6000, 10000),
-    "16K": (12000, 20000),
-    "32K": (24000, 40000),
-}
-truncate_limits = [4096, 8192, 16384, 32768]
+RUN_ID = os.environ["RUN_ID"]
+ARTIFACT_DIR = Path(os.environ["ARTIFACT_DIR"])
+MODEL_PATH = os.environ["MODEL_PATH"]
+DEVICE = os.environ["DEVICE"]
+MAX_NEW_TOKENS = int(os.environ["MAX_NEW_TOKENS"])
+CONTRACT_DIR = Path(os.environ["CONTRACT_DIR"])
+LONG_MANIFEST = Path(os.environ["LONG_MANIFEST"])
+TRACE_PATH = ARTIFACT_DIR / "long_prompt_trace_matrix.jsonl"
+SUMMARY_TSV = ARTIFACT_DIR / "long_prompt_trace_matrix_summary.tsv"
+RESULT_JSON = ARTIFACT_DIR / "long_prompt_trace_matrix_result.json"
+PROFILER_SUMMARY = ARTIFACT_DIR / "torch_profiler_summary.json"
+PROFILER_TRACE = ARTIFACT_DIR / "torch_profiler_trace.json"
+PROFILER_OMITTED = ARTIFACT_DIR / "torch_profiler_trace.omitted.txt"
+GENERATED_DIR = ARTIFACT_DIR / "generated_texts"
 
-def write_json(path, data):
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+SELECTED_CASES = [
+    {"case_id": "P002_4k", "prompt_id": "P002", "cap_tokens": 4096},
+    {"case_id": "P003_8k", "prompt_id": "P003", "cap_tokens": 8192},
+    {"case_id": "P007_4k", "prompt_id": "P007", "cap_tokens": 4096},
+    {"case_id": "P008_4k", "prompt_id": "P008", "cap_tokens": 4096},
+]
 
-def bucket_status(bucket, token_count):
-    low, high = bucket_ranges.get(str(bucket), (0, 10**18))
-    if token_count < low:
-        return "below_range"
-    if token_count > high:
-        return "above_range"
-    return "within_range"
 
-result = {
-    "run_id": os.environ["RUN_ID"],
-    "model_path": str(model_path),
-    "manifest_path": str(manifest_path),
-    "phase": "start",
-    "status": "started",
-    "policy": "tokenizer_only_no_model_weights_no_npu_no_vllm_no_package_install",
-}
+def now_ns() -> int:
+    return time.monotonic_ns()
 
-try:
-    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-    prompts = manifest.get("prompts", []) if isinstance(manifest, dict) else []
-    if not isinstance(prompts, list) or not prompts:
-        raise ValueError("workload_long_manifest.yaml prompts must be a non-empty list")
 
-    result["phase"] = "tokenizer_load"
-    write_json(result_path, result)
-    tokenizer = AutoTokenizer.from_pretrained(
-        str(model_path),
-        trust_remote_code=True,
-        local_files_only=True,
-    )
-    tokenizer_class = type(tokenizer).__name__
-    tokenizer_model_max_length = getattr(tokenizer, "model_max_length", None)
+def make_event(
+    *,
+    case_id: str,
+    prompt_id: str,
+    request_index: int,
+    phase: str,
+    event_type: str,
+    resource_scope: str,
+    timestamp_ns: int,
+    layer_id=None,
+    op_name=None,
+    kernel_name=None,
+    stream_id=None,
+    device_id=None,
+    object_type=None,
+    object_id=None,
+    bytes_read=0,
+    bytes_write=0,
+    latency_us=0,
+    queue_wait_us=0,
+    overlap_ratio=None,
+    policy_decision="none",
+    hit_or_miss="not_applicable",
+    stall_reason="unknown",
+    evidence_source="runtime_queue_trace",
+    artifact_path="long_prompt_trace_matrix.jsonl",
+) -> dict:
+    request_id = f"req_p1_long_prompt_{request_index:04d}_{case_id}"
+    return {
+        "schema_version": "0.1.0",
+        "event_id": f"evt_{case_id}_{phase}_{event_type}_{request_index:04d}",
+        "timestamp_ns": timestamp_ns,
+        "time_base": "host_monotonic_ns",
+        "trace_id": "trace_p1_long_prompt_matrix_0001",
+        "request_id": request_id,
+        "session_id": "session_p1_long_prompt_trace_smoke",
+        "phase": phase,
+        "event_type": event_type,
+        "resource_scope": resource_scope,
+        "layer_id": layer_id,
+        "op_name": op_name,
+        "kernel_name": kernel_name,
+        "stream_id": stream_id,
+        "device_id": device_id,
+        "object_type": object_type,
+        "object_id": object_id,
+        "source_tier": "none",
+        "target_tier": "none",
+        "bytes_read": bytes_read,
+        "bytes_write": bytes_write,
+        "latency_us": latency_us,
+        "queue_wait_us": queue_wait_us,
+        "overlap_ratio": overlap_ratio,
+        "policy_decision": policy_decision,
+        "hit_or_miss": hit_or_miss,
+        "stall_reason": stall_reason,
+        "evidence_source": evidence_source,
+        "artifact_path": artifact_path,
+        "prompt_id": prompt_id,
+        "case_id": case_id,
+    }
 
-    rows = []
-    failures = []
-    tsv_header = [
+
+def truncate_head(token_ids: list[int], cap_tokens: int) -> tuple[list[int], str]:
+    if len(token_ids) <= cap_tokens:
+        return token_ids, "no_truncation"
+    return token_ids[:cap_tokens], f"head_truncate_to_{cap_tokens}_tokens"
+
+
+def count_profiler_candidates(path: Path) -> dict:
+    if not path.is_file():
+        return {
+            "torch_profiler_trace_exists": 0,
+            "torch_profiler_trace_bytes": 0,
+            "torch_profiler_marker_event_count": 0,
+            "torch_profiler_npu_event_candidate_count": 0,
+        }
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    return {
+        "torch_profiler_trace_exists": 1,
+        "torch_profiler_trace_bytes": path.stat().st_size,
+        "torch_profiler_marker_event_count": text.count("ak_p1_long_prompt"),
+        "torch_profiler_npu_event_candidate_count": (
+            text.count("npu") + text.count("NPU") + text.count("aclnn") + text.count("acl")
+        ),
+    }
+
+
+def write_summary(rows: list[dict]) -> None:
+    columns = [
+        "case_id",
         "prompt_id",
-        "context_len_bucket",
-        "estimated_prompt_tokens",
-        "materialized_char_count_manifest",
-        "char_count",
-        "byte_count",
+        "cap_tokens",
         "full_token_count",
-        "bucket_status",
-        "truncated_4096",
-        "truncated_8192",
-        "truncated_16384",
-        "truncated_32768",
+        "input_token_count",
+        "generated_token_count",
         "status",
         "error_type",
         "error",
     ]
-    tsv_path.write_text("\t".join(tsv_header) + "\n", encoding="utf-8")
+    with SUMMARY_TSV.open("w", encoding="utf-8") as handle:
+        handle.write("\t".join(columns) + "\n")
+        for row in rows:
+            handle.write("\t".join(str(row.get(column, "")) for column in columns) + "\n")
 
-    for prompt in prompts:
-        prompt_id = str(prompt.get("prompt_id", ""))
-        prompt_path = contract_dir / str(prompt.get("prompt_path", ""))
-        row = {
-            "prompt_id": prompt_id,
-            "context_len_bucket": str(prompt.get("context_len_bucket", "")),
-            "estimated_prompt_tokens": int(prompt.get("estimated_prompt_tokens", 0)),
-            "materialized_char_count_manifest": int(prompt.get("materialized_char_count", 0)),
-            "char_count": 0,
-            "byte_count": 0,
-            "full_token_count": 0,
-            "bucket_status": "not_measured",
-            "status": "started",
-            "error_type": "",
-            "error": "",
-        }
+
+def main() -> int:
+    ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+    GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+    manifest = yaml.safe_load(LONG_MANIFEST.read_text(encoding="utf-8"))
+    prompts = {entry["prompt_id"]: entry for entry in manifest["prompts"]}
+
+    result = {
+        "run_id": RUN_ID,
+        "phase": "start",
+        "status": "failed",
+        "policy": "existing_transformers_torch_npu_no_vllm_no_package_install",
+        "model_path": MODEL_PATH,
+        "device": DEVICE,
+        "max_new_tokens": MAX_NEW_TOKENS,
+        "selected_cases": SELECTED_CASES,
+        "rows": [],
+        "trace_validation_errors": None,
+        "trace_event_count": 0,
+    }
+    events = []
+
+    try:
+        result["phase"] = "tokenizer_load"
+        tokenizer = AutoTokenizer.from_pretrained(
+            MODEL_PATH,
+            trust_remote_code=True,
+            local_files_only=True,
+        )
+        if tokenizer.pad_token_id is None and tokenizer.eos_token_id is not None:
+            tokenizer.pad_token = tokenizer.eos_token
+        result["tokenizer_class"] = type(tokenizer).__name__
+        result["tokenizer_model_max_length"] = getattr(tokenizer, "model_max_length", None)
+
+        result["phase"] = "model_load"
+        if hasattr(torch, "npu"):
+            torch.npu.set_device(DEVICE)
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_PATH,
+            trust_remote_code=True,
+            local_files_only=True,
+            torch_dtype="auto",
+        )
+        model.eval()
+        model.to(DEVICE)
+        result["model_class"] = type(model).__name__
+
         try:
-            text = prompt_path.read_text(encoding="utf-8")
-            row["char_count"] = len(text)
-            row["byte_count"] = len(text.encode("utf-8"))
-            token_ids = tokenizer.encode(text, add_special_tokens=False)
-            token_count = len(token_ids)
-            row["full_token_count"] = token_count
-            row["bucket_status"] = bucket_status(row["context_len_bucket"], token_count)
-            for limit in truncate_limits:
-                row[f"truncated_{limit}"] = min(token_count, limit)
-            row["status"] = "success"
+            from torch.profiler import ProfilerActivity, profile, record_function
+            profiler_context = profile(
+                activities=[ProfilerActivity.CPU],
+                record_shapes=False,
+                with_stack=False,
+            )
         except Exception as exc:
-            row["status"] = "failed"
-            row["error_type"] = type(exc).__name__
-            row["error"] = str(exc)
-            failures.append(row)
-        rows.append(row)
-        with tsv_path.open("a", encoding="utf-8") as handle:
-            handle.write("\t".join(str(row.get(name, "")) for name in tsv_header) + "\n")
+            result["profiler_setup_error"] = f"{type(exc).__name__}: {exc}"
+            record_function = None
+            profiler_context = nullcontext(None)
 
-    bucket_miss_count = sum(1 for row in rows if row["status"] == "success" and row["bucket_status"] != "within_range")
-    status = "success" if not failures else "failed"
-    full_token_counts = [row["full_token_count"] for row in rows if row["status"] == "success"]
-    result.update(
-        phase="complete",
-        status=status,
-        tokenizer_class=tokenizer_class,
-        tokenizer_model_max_length=tokenizer_model_max_length,
-        prompt_count=len(rows),
-        success_prompt_count=sum(1 for row in rows if row["status"] == "success"),
-        failed_prompt_count=len(failures),
-        bucket_miss_count=bucket_miss_count,
-        max_full_token_count=max(full_token_counts) if full_token_counts else 0,
-        over_4096_count=sum(1 for row in rows if row["full_token_count"] > 4096),
-        over_8192_count=sum(1 for row in rows if row["full_token_count"] > 8192),
-        over_16384_count=sum(1 for row in rows if row["full_token_count"] > 16384),
-        over_32768_count=sum(1 for row in rows if row["full_token_count"] > 32768),
-        rows=rows,
+        with profiler_context as profiler:
+            for request_index, case in enumerate(SELECTED_CASES, start=1):
+                case_id = case["case_id"]
+                prompt_id = case["prompt_id"]
+                cap_tokens = int(case["cap_tokens"])
+                prompt = prompts[prompt_id]
+                prompt_path = CONTRACT_DIR / prompt["prompt_path"]
+                row = {
+                    "case_id": case_id,
+                    "prompt_id": prompt_id,
+                    "cap_tokens": cap_tokens,
+                    "full_token_count": prompt["measured_prompt_tokens_qwen3_5_4b"],
+                    "input_token_count": "",
+                    "generated_token_count": "",
+                    "status": "failed",
+                    "error_type": "",
+                    "error": "",
+                }
+                result["phase"] = f"case_{case_id}"
+
+                try:
+                    enqueue_ts = now_ns()
+                    events.append(
+                        make_event(
+                            case_id=case_id,
+                            prompt_id=prompt_id,
+                            request_index=request_index,
+                            phase="enqueue",
+                            event_type="point",
+                            resource_scope="request_runtime_profile",
+                            timestamp_ns=enqueue_ts,
+                            stream_id="host:python",
+                            device_id="host:cpu",
+                        )
+                    )
+
+                    text = prompt_path.read_text(encoding="utf-8")
+                    tokenize_start = now_ns()
+                    full_ids = tokenizer.encode(text, add_special_tokens=False)
+                    input_ids, truncation_policy = truncate_head(full_ids, cap_tokens)
+                    tokenize_end = now_ns()
+                    row["full_token_count"] = len(full_ids)
+                    row["input_token_count"] = len(input_ids)
+                    events.append(
+                        make_event(
+                            case_id=case_id,
+                            prompt_id=prompt_id,
+                            request_index=request_index,
+                            phase="tokenize",
+                            event_type="point",
+                            resource_scope="request_runtime_profile",
+                            timestamp_ns=tokenize_end,
+                            op_name="tokenizer_encode",
+                            stream_id="host:tokenizer",
+                            device_id="host:cpu",
+                            latency_us=(tokenize_end - tokenize_start) // 1000,
+                            policy_decision=truncation_policy,
+                        )
+                    )
+
+                    input_tensor = torch.tensor([input_ids], dtype=torch.long).to(DEVICE)
+                    attention_mask = torch.ones_like(input_tensor)
+                    kv_object_id = f"kv:{case_id}:L00"
+                    events.append(
+                        make_event(
+                            case_id=case_id,
+                            prompt_id=prompt_id,
+                            request_index=request_index,
+                            phase="prefill",
+                            event_type="lifecycle",
+                            resource_scope="state_object_profile",
+                            timestamp_ns=now_ns(),
+                            layer_id=0,
+                            op_name="kv_cache_materialize",
+                            stream_id=f"{DEVICE}:default",
+                            device_id=DEVICE,
+                            object_type="kv",
+                            object_id=kv_object_id,
+                            policy_decision=truncation_policy,
+                        )
+                    )
+                    events.append(
+                        make_event(
+                            case_id=case_id,
+                            prompt_id=prompt_id,
+                            request_index=request_index,
+                            phase="prefill",
+                            event_type="span_end",
+                            resource_scope="transfer_overlap_profile",
+                            timestamp_ns=now_ns(),
+                            layer_id=0,
+                            op_name="host_to_device_input_ids",
+                            stream_id=f"{DEVICE}:default",
+                            device_id=DEVICE,
+                            object_type="kv",
+                            object_id=kv_object_id,
+                            bytes_read=len(input_ids) * 8,
+                            bytes_write=len(input_ids) * 8,
+                            overlap_ratio=0.0,
+                            evidence_source="runtime_trace_smoke",
+                        )
+                    )
+
+                    marker = f"ak_p1_long_prompt_{case_id}"
+                    marker_context = record_function(marker) if record_function else nullcontext()
+                    prefill_start = now_ns()
+                    events.append(
+                        make_event(
+                            case_id=case_id,
+                            prompt_id=prompt_id,
+                            request_index=request_index,
+                            phase="prefill",
+                            event_type="span_start",
+                            resource_scope="operator_timeline_profile",
+                            timestamp_ns=prefill_start,
+                            layer_id=0,
+                            op_name="model_generate_prefill_decode",
+                            kernel_name="unknown",
+                            stream_id=f"{DEVICE}:default",
+                            device_id=DEVICE,
+                            object_type="kv",
+                            object_id=kv_object_id,
+                            policy_decision=truncation_policy,
+                            evidence_source="torch_profiler_record_function",
+                        )
+                    )
+                    with torch.inference_mode(), marker_context:
+                        output = model.generate(
+                            input_ids=input_tensor,
+                            attention_mask=attention_mask,
+                            max_new_tokens=MAX_NEW_TOKENS,
+                            do_sample=False,
+                            use_cache=True,
+                            pad_token_id=tokenizer.pad_token_id,
+                            eos_token_id=tokenizer.eos_token_id,
+                        )
+                    if hasattr(torch, "npu"):
+                        torch.npu.synchronize()
+                    prefill_end = now_ns()
+                    events.append(
+                        make_event(
+                            case_id=case_id,
+                            prompt_id=prompt_id,
+                            request_index=request_index,
+                            phase="prefill",
+                            event_type="span_end",
+                            resource_scope="operator_timeline_profile",
+                            timestamp_ns=prefill_end,
+                            layer_id=0,
+                            op_name="model_generate_prefill_decode",
+                            kernel_name="unknown",
+                            stream_id=f"{DEVICE}:default",
+                            device_id=DEVICE,
+                            object_type="kv",
+                            object_id=kv_object_id,
+                            latency_us=(prefill_end - prefill_start) // 1000,
+                            policy_decision=truncation_policy,
+                            evidence_source="torch_profiler_record_function",
+                        )
+                    )
+
+                    generated_ids = output[0, input_tensor.shape[1] :].detach().cpu().tolist()
+                    generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True)
+                    row["generated_token_count"] = len(generated_ids)
+                    row["status"] = "success" if generated_ids else "failed"
+                    if not generated_ids:
+                        row["error_type"] = "empty_generation"
+                        row["error"] = "model.generate returned zero new tokens"
+                    (GENERATED_DIR / f"{case_id}.txt").write_text(generated_text, encoding="utf-8")
+                    (GENERATED_DIR / f"{case_id}_token_ids.json").write_text(
+                        json.dumps(generated_ids, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+                    events.append(
+                        make_event(
+                            case_id=case_id,
+                            prompt_id=prompt_id,
+                            request_index=request_index,
+                            phase="decode",
+                            event_type="point",
+                            resource_scope="request_runtime_profile",
+                            timestamp_ns=now_ns(),
+                            op_name="model_generate_decode",
+                            stream_id=f"{DEVICE}:default",
+                            device_id=DEVICE,
+                            latency_us=(prefill_end - prefill_start) // 1000,
+                            policy_decision=truncation_policy,
+                        )
+                    )
+                except Exception as exc:
+                    row["status"] = "failed"
+                    row["error_type"] = type(exc).__name__
+                    row["error"] = str(exc).replace("\n", " ")[:1000]
+                    result["error_traceback"] = traceback.format_exc()
+                    result["rows"].append(row)
+                    break
+
+                result["rows"].append(row)
+                if row["status"] != "success":
+                    break
+
+            if profiler is not None:
+                try:
+                    profiler.export_chrome_trace(str(PROFILER_TRACE))
+                except Exception as exc:
+                    result["profiler_export_error"] = f"{type(exc).__name__}: {exc}"
+
+        if hasattr(torch, "npu"):
+            torch.npu.empty_cache()
+
+    except Exception as exc:
+        result["status"] = "failed"
+        result["error_type"] = type(exc).__name__
+        result["error"] = str(exc)
+        result["error_traceback"] = traceback.format_exc()
+
+    with TRACE_PATH.open("w", encoding="utf-8") as handle:
+        for event in events:
+            handle.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
+    result["trace_event_count"] = len(events)
+
+    if events:
+        validation = validate_trace_fixture(TRACE_PATH)
+        result["trace_validation_errors"] = len(validation.errors)
+        result["trace_validation_error_messages"] = validation.errors
+        (ARTIFACT_DIR / "long_prompt_trace_matrix_validation.txt").write_text(
+            "\n".join(validation.errors) if validation.errors else "errors=0\n",
+            encoding="utf-8",
+        )
+    else:
+        result["trace_validation_errors"] = None
+        (ARTIFACT_DIR / "long_prompt_trace_matrix_validation.txt").write_text(
+            "errors=trace_not_generated\n",
+            encoding="utf-8",
+        )
+
+    profiler_counts = count_profiler_candidates(PROFILER_TRACE)
+    result.update(profiler_counts)
+    if PROFILER_TRACE.is_file() and PROFILER_TRACE.stat().st_size > 25_000_000:
+        PROFILER_OMITTED.write_text(
+            f"torch_profiler_trace.json omitted from zip because bytes={PROFILER_TRACE.stat().st_size}\n",
+            encoding="utf-8",
+        )
+        PROFILER_TRACE.unlink()
+        result["torch_profiler_trace_omitted_from_zip"] = 1
+    else:
+        result["torch_profiler_trace_omitted_from_zip"] = 0
+
+    write_summary(result["rows"])
+    attempted = len(result["rows"])
+    success_count = sum(1 for row in result["rows"] if row.get("status") == "success")
+    result["attempted_case_count"] = attempted
+    result["success_case_count"] = success_count
+    result["failed_case_count"] = attempted - success_count
+    result["matrix_status"] = (
+        "success"
+        if success_count == len(SELECTED_CASES)
+        and result.get("trace_validation_errors") == 0
+        else "failed"
     )
-    write_json(result_path, result)
-    conclusion_lines = [
-        f"calibration_status={status}",
-        f"failure_phase=",
-        f"model_path={model_path}",
-        f"tokenizer_class={tokenizer_class}",
-        f"prompt_count={len(rows)}",
-        f"success_prompt_count={result['success_prompt_count']}",
-        f"failed_prompt_count={result['failed_prompt_count']}",
-        f"bucket_miss_count={bucket_miss_count}",
-        f"max_full_token_count={result['max_full_token_count']}",
-        f"over_4096_count={result['over_4096_count']}",
-        f"over_8192_count={result['over_8192_count']}",
-        f"over_16384_count={result['over_16384_count']}",
-        f"over_32768_count={result['over_32768_count']}",
-        "execution_policy=tokenizer_only_no_model_weights_no_npu_no_vllm_no_package_install",
-        "performance_policy=token_calibration_only_no_perf_or_bottleneck_conclusion",
-    ]
-    conclusion_path.write_text("\n".join(conclusion_lines) + "\n", encoding="utf-8")
-    print("\n".join(conclusion_lines))
-    if failures:
-        sys.exit(1)
-except Exception as exc:
-    result.update(
-        phase=result.get("phase", "unknown"),
-        status="failed",
-        error_type=type(exc).__name__,
-        error=str(exc),
-    )
-    write_json(result_path, result)
-    error_path.write_text(traceback.format_exc(), encoding="utf-8")
-    conclusion_path.write_text(
-        "\n".join([
-            "calibration_status=failed",
-            f"failure_phase={result.get('phase', 'unknown')}",
-            f"model_path={model_path}",
-            f"error_type={type(exc).__name__}",
-            f"error={exc}",
-            "execution_policy=tokenizer_only_no_model_weights_no_npu_no_vllm_no_package_install",
-            "performance_policy=token_calibration_only_no_perf_or_bottleneck_conclusion",
-        ]) + "\n",
+    result["phase"] = "complete" if result["matrix_status"] == "success" else result.get("phase", "failed")
+    result["status"] = result["matrix_status"]
+
+    RESULT_JSON.write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+    PROFILER_SUMMARY.write_text(
+        json.dumps(
+            {k: result.get(k) for k in sorted(result) if k.startswith("torch_profiler_")},
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ),
         encoding="utf-8",
     )
-    print(traceback.format_exc())
-    sys.exit(1)
+    print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+    return 0 if result["matrix_status"] == "success" else 2
+
+
+raise SystemExit(main())
 PY
-CALIBRATION_STATUS=$?
-cat "${ARTIFACT_DIR}/long_prompt_token_calibration.log"
-echo "long_prompt_token_calibration_exit_code=${CALIBRATION_STATUS}" >> "${ARTIFACT_DIR}/run_context.txt"
+long_prompt_trace_matrix_exit_code=${PIPESTATUS[0]}
+set -e
+echo "long_prompt_trace_matrix_exit_code=${long_prompt_trace_matrix_exit_code}" | tee -a "${ARTIFACT_DIR}/run_context.txt"
+
+python - <<'PY' > "${ARTIFACT_DIR}/long_prompt_trace_matrix_conclusion.txt"
+import json
+import os
+from pathlib import Path
+
+artifact_dir = Path(os.environ["ARTIFACT_DIR"])
+result_path = artifact_dir / "long_prompt_trace_matrix_result.json"
+if not result_path.is_file():
+    print("matrix_status=missing_result_json")
+    raise SystemExit(0)
+
+data = json.loads(result_path.read_text(encoding="utf-8"))
+keys = [
+    "status",
+    "matrix_status",
+    "phase",
+    "model_path",
+    "device",
+    "tokenizer_class",
+    "model_class",
+    "attempted_case_count",
+    "success_case_count",
+    "failed_case_count",
+    "trace_event_count",
+    "trace_validation_errors",
+    "torch_profiler_trace_exists",
+    "torch_profiler_marker_event_count",
+    "torch_profiler_npu_event_candidate_count",
+    "torch_profiler_trace_omitted_from_zip",
+]
+for key in keys:
+    print(f"{key}={data.get(key, '')}")
+print("selected_cases=P002@4096,P003@8192,P007@4096,P008@4096")
+print("execution_policy=existing_transformers_torch_npu_no_vllm_no_package_install")
+print("performance_policy=trace_smoke_only_no_perf_or_bottleneck_conclusion")
+PY
 
 {
   echo "## run_context"
   cat "${ARTIFACT_DIR}/run_context.txt"
   echo
-  echo "## long_prompt_calibration_conclusion"
-  if [ -f "${ARTIFACT_DIR}/long_prompt_calibration_conclusion.txt" ]; then
-    cat "${ARTIFACT_DIR}/long_prompt_calibration_conclusion.txt"
+  echo "## long_prompt_trace_matrix_conclusion"
+  cat "${ARTIFACT_DIR}/long_prompt_trace_matrix_conclusion.txt"
+  echo
+  echo "## long_prompt_trace_matrix_summary"
+  if [ -f "${ARTIFACT_DIR}/long_prompt_trace_matrix_summary.tsv" ]; then
+    cat "${ARTIFACT_DIR}/long_prompt_trace_matrix_summary.tsv"
   else
-    echo "missing=long_prompt_calibration_conclusion.txt"
+    echo "missing=long_prompt_trace_matrix_summary.tsv"
   fi
   echo
-  echo "## long_prompt_token_calibration"
-  if [ -f "${ARTIFACT_DIR}/long_prompt_token_calibration.tsv" ]; then
-    cat "${ARTIFACT_DIR}/long_prompt_token_calibration.tsv"
+  echo "## validation"
+  if [ -f "${ARTIFACT_DIR}/long_prompt_trace_matrix_validation.txt" ]; then
+    cat "${ARTIFACT_DIR}/long_prompt_trace_matrix_validation.txt"
   else
-    echo "missing=long_prompt_token_calibration.tsv"
+    echo "missing=long_prompt_trace_matrix_validation.txt"
   fi
   echo
   echo "## package_inventory"
@@ -385,17 +716,17 @@ run_id = os.environ["RUN_ID"]
 artifact_dir = Path(os.environ["ARTIFACT_DIR"])
 summary = (artifact_dir / "summary.txt").read_text(encoding="utf-8", errors="replace")
 
-print("P1.12 long prompt tokenizer calibration 已完成。")
+print("P1.13 long prompt trace smoke 已完成。")
 print()
 print(f"任务 ID: {run_id}")
 print(f"附件: 工作记录与进度笔记本/runtime_trace_smokes/{run_id}.zip")
 print()
 print(summary)
 print("执行边界：")
-print("- 本轮只加载 Qwen3.5-4B tokenizer")
-print("- 未加载 AutoModelForCausalLM 或任何模型权重")
-print("- 未使用 NPU，未运行 prefill/decode/generate")
-print("- 未运行 vLLM serve/benchmark、并发、burst、continuous batching 或 prefix cache 测试")
+print("- 本轮使用 Qwen3.5-4B + transformers + torch_npu")
+print("- 本轮会加载模型权重并使用 NPU")
+print("- 只执行 P002@4096、P003@8192、P007@4096、P008@4096 的顺序单请求 smoke")
+print("- 未运行 vLLM serve/benchmark、并发、burst、continuous batching 或 prefix cache 结论型测试")
 print("- 未安装、升级、卸载或修复任何包")
 print("- 未修改 models/、Public/、CANN/driver/runtime/vLLM 源码")
 print("- 本轮不输出性能或瓶颈归因结论")
@@ -409,7 +740,7 @@ PY
 )
 
 python 通信模块/send_notify.py \
-  -s "[AK服务器] 任务完成：long prompt calibration ${RUN_ID}" \
+  -s "[AK服务器] 任务完成：long prompt trace smoke ${RUN_ID}" \
   --body-file "${ARTIFACT_DIR}/mail_body.txt" \
   --attach "工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}.zip"
 ```
@@ -418,7 +749,7 @@ python 通信模块/send_notify.py \
 
 请邮件附加：
 
-- `工作记录与进度笔记本/runtime_trace_smokes/runtime_long_prompt_calibration_2026_0706_p1_012.zip`
+- `工作记录与进度笔记本/runtime_trace_smokes/runtime_long_prompt_trace_smoke_2026_0706_p1_013.zip`
 
 zip 内至少包含：
 
@@ -426,41 +757,31 @@ zip 内至少包含：
 - `pytest_inference_contracts.log`
 - `package_inventory.tsv`
 - `model_path_precheck.txt`
-- `workload_long_manifest.snapshot.yaml`
-- `long_prompt_token_calibration.log`
-- `long_prompt_token_calibration.tsv`
-- `long_prompt_token_calibration_result.json`
-- `long_prompt_calibration_conclusion.txt`
-- `long_prompt_token_calibration_error.txt`，如果发生异常
+- `long_prompt_trace_matrix.log`
+- `long_prompt_trace_matrix_result.json`
+- `long_prompt_trace_matrix_summary.tsv`
+- `long_prompt_trace_matrix.jsonl`
+- `long_prompt_trace_matrix_validation.txt`
+- `long_prompt_trace_matrix_conclusion.txt`
+- `torch_profiler_summary.json`
+- `torch_profiler_trace.json` 或 `torch_profiler_trace.omitted.txt`
+- `generated_texts/`
 - `summary.txt`
 - `mail_body.txt`
 
-邮件主题请使用：
+## 成功口径
 
-```text
-[AK服务器] 任务完成：long prompt calibration runtime_long_prompt_calibration_2026_0706_p1_012
-```
+最低完成：
 
-默认收件人继续使用：
+- pytest 执行并回传日志。
+- `long_prompt_trace_matrix_result.json` 明确给出 `matrix_status` 或失败阶段。
+- `long_prompt_trace_matrix_summary.tsv` 至少记录每个已尝试 case 的状态、token 数和失败信息。
 
-```text
-gwlee1995@gmail.com,yilili1023@gmail.com
-```
+强成功：
 
-## 验收标准
+- 4 个 case 均完成单请求 prefill/decode。
+- 每个 case 有非空 generated token 或文本。
+- `long_prompt_trace_matrix.jsonl` 校验 `errors=0`。
+- profiler 产物存在，且 marker 与 NPU/op 候选事件可检索。
 
-本轮算完成：
-
-- `git pull --ff-only` 成功。
-- `tests/inference_contracts` 执行并回传日志。
-- `long_prompt_token_calibration.tsv` 明确给出 `P000-P012` 的 tokenizer token 数或失败状态。
-- `long_prompt_calibration_conclusion.txt` 明确给出 `calibration_status`、成功 prompt 数、bucket miss 数和截断阈值统计。
-- 邮件正文明确说明本轮没有加载模型权重、没有使用 NPU、没有安装包、没有运行 vLLM、没有做性能或瓶颈归因。
-
-本轮不要求：
-
-- 不要求模型推理成功。
-- 不要求 4K/8K/16K/32K 长 prompt smoke。
-- 不要求并发、burst、continuous batching 或 prefix cache 实测。
-- 不要求采集 profiler trace。
-- 不要求输出 TTFT/TPOT benchmark 或优化建议。
+失败也请邮件回传附件。不要在服务器上安装包、修环境、改代码或 push。

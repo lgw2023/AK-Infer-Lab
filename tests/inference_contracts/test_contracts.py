@@ -14,6 +14,7 @@ from tools.observability_profile.catalog import build_field_catalog
 CONTRACT_DIR = Path("工作记录与进度笔记本/p1_inference_contracts")
 SERVER_TRACE_SMOKE_HANDOFF = CONTRACT_DIR / "server_runtime_trace_smoke_handoff.md"
 LONG_WORKLOAD_MANIFEST = CONTRACT_DIR / "workload_long_manifest.yaml"
+LONG_PROMPT_TRACE_SMOKE_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_trace_smoke_handoff.md"
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -108,15 +109,40 @@ def test_long_workload_manifest_materializes_prompt_paths():
     manifest = load_yaml(LONG_WORKLOAD_MANIFEST)
     prompts = manifest["prompts"]
     prompt_ids = {prompt["prompt_id"] for prompt in prompts}
+    measured_tokens = {
+        "P000": 1184,
+        "P001": 1764,
+        "P002": 5556,
+        "P003": 11144,
+        "P004": 11656,
+        "P005": 21569,
+        "P006": 22490,
+        "P007": 5972,
+        "P008": 5975,
+        "P009": 11094,
+        "P010": 43216,
+        "P011": 5972,
+        "P012": 11128,
+    }
 
     assert manifest["base_manifest"] == "workload_manifest.yaml"
-    assert manifest["token_policy"] == "server_tokenizer_calibration_required"
+    assert manifest["token_policy"] == "server_tokenizer_calibrated"
+    assert manifest["token_calibration"]["status"] == "success"
+    assert manifest["token_calibration"]["run_id"] == "runtime_long_prompt_calibration_2026_0706_p1_012"
+    assert manifest["token_calibration"]["tokenizer_class"] == "Qwen2Tokenizer"
+    assert manifest["token_calibration"]["success_prompt_count"] == 13
+    assert manifest["token_calibration"]["bucket_miss_count"] == 13
     assert prompt_ids == {f"P{index:03d}" for index in range(13)}
 
     for prompt in prompts:
         assert set(REQUIRED_WORKLOAD_FIELDS).issubset(prompt)
         assert prompt["materialization_policy"] == "deterministic_static_blocks"
-        assert prompt["measured_prompt_tokens_qwen3_5_4b"] is None
+        assert prompt["measured_prompt_tokens_qwen3_5_4b"] == measured_tokens[prompt["prompt_id"]]
+        assert prompt["calibration_bucket_status_qwen3_5_4b"] == "above_range"
+        assert prompt["truncated_prompt_tokens_4096"] <= 4096
+        assert prompt["truncated_prompt_tokens_8192"] <= 8192
+        assert prompt["truncated_prompt_tokens_16384"] <= 16384
+        assert prompt["truncated_prompt_tokens_32768"] <= 32768
         assert prompt["shape_fixture_measured_prompt_tokens_qwen3_5_4b"] > 0
         assert prompt["prompt_path"].startswith("prompts_long/")
         assert prompt["base_prompt_path"].startswith("prompts/")
@@ -231,6 +257,25 @@ def test_server_runtime_trace_smoke_handoff_defines_required_boundaries():
         "不要发送 `.env`",
         "回传要求",
         "成功口径",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
+def test_long_prompt_trace_smoke_handoff_defines_required_boundaries():
+    handoff = LONG_PROMPT_TRACE_SMOKE_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_long_prompt_trace_smoke_2026_0706_p1_013",
+        "Qwen3.5-4B + transformers + torch_npu",
+        "P002@4096",
+        "P003@8192",
+        "P007@4096",
+        "P008@4096",
+        "不运行 vLLM",
+        "不安装、升级、卸载或修复任何包",
+        "不运行 16K/32K full prompt",
+        "不能声称 CANN device timeline pairing 已完成",
     ]
     for text in required_text:
         assert text in handoff

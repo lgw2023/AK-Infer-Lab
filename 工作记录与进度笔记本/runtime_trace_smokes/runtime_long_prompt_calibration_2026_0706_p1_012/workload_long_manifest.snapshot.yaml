@@ -3,31 +3,18 @@ schema_version: 0.1.0
 source: materialized_static_prompt_fixtures
 base_manifest: workload_manifest.yaml
 generator: tools/inference_contracts/materialize_long_prompts.py
-token_policy: server_tokenizer_calibrated
+token_policy: server_tokenizer_calibration_required
 token_calibration:
-  status: success
-  run_id: runtime_long_prompt_calibration_2026_0706_p1_012
-  server_commit: '0074466'
-  timestamp: '2026-07-06T15:00:16+08:00'
+  status: pending_server_calibration
+  planned_run_id: runtime_long_prompt_calibration_2026_0706_p1_012
   model_path: /data/node0_disk1/Public/Qwen3.5-4B
-  tokenizer_class: Qwen2Tokenizer
-  tokenizer_model_max_length: 262144
-  prompt_count: 13
-  success_prompt_count: 13
-  failed_prompt_count: 0
-  bucket_miss_count: 13
-  max_full_token_count: 43216
-  over_4096_count: 11
-  over_8192_count: 7
-  over_16384_count: 3
-  over_32768_count: 1
-  artifact_dir: 工作记录与进度笔记本/runtime_trace_smokes/runtime_long_prompt_calibration_2026_0706_p1_012
+  tokenizer_class: pending_server_report
 prompts:
 - prompt_id: P000
   scenario: W0_short_qa
   context_len_bucket: '512'
   estimated_prompt_tokens: 420
-  measured_prompt_tokens_qwen3_5_4b: 1184
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 32
   max_new_tokens: 64
   arrival_pattern: single
@@ -48,18 +35,11 @@ prompts:
   materialized_target_tokens: 420
   materialized_char_count: 4357
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 51
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 4357
-  calibrated_byte_count: 4357
-  truncated_prompt_tokens_4096: 1184
-  truncated_prompt_tokens_8192: 1184
-  truncated_prompt_tokens_16384: 1184
-  truncated_prompt_tokens_32768: 1184
 - prompt_id: P001
   scenario: W1_code_explanation
   context_len_bucket: 1K
   estimated_prompt_tokens: 980
-  measured_prompt_tokens_qwen3_5_4b: 1764
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: single
@@ -80,18 +60,11 @@ prompts:
   materialized_target_tokens: 980
   materialized_char_count: 6299
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 161
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 6299
-  calibrated_byte_count: 6299
-  truncated_prompt_tokens_4096: 1764
-  truncated_prompt_tokens_8192: 1764
-  truncated_prompt_tokens_16384: 1764
-  truncated_prompt_tokens_32768: 1764
 - prompt_id: P002
   scenario: W1_code_analysis
   context_len_bucket: 4K
   estimated_prompt_tokens: 3600
-  measured_prompt_tokens_qwen3_5_4b: 5556
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: single
@@ -112,18 +85,11 @@ prompts:
   materialized_target_tokens: 3600
   materialized_char_count: 19739
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 185
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 19739
-  calibrated_byte_count: 19739
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 5556
-  truncated_prompt_tokens_16384: 5556
-  truncated_prompt_tokens_32768: 5556
 - prompt_id: P003
   scenario: W2_long_system_prompt
   context_len_bucket: 8K
   estimated_prompt_tokens: 7600
-  measured_prompt_tokens_qwen3_5_4b: 11144
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: single
@@ -144,18 +110,11 @@ prompts:
   materialized_target_tokens: 7600
   materialized_char_count: 39264
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 120
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 39264
-  calibrated_byte_count: 39264
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 8192
-  truncated_prompt_tokens_16384: 11144
-  truncated_prompt_tokens_32768: 11144
 - prompt_id: P004
   scenario: W3_tool_output_text
   context_len_bucket: 8K
   estimated_prompt_tokens: 7900
-  measured_prompt_tokens_qwen3_5_4b: 11656
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: single
@@ -176,18 +135,11 @@ prompts:
   materialized_target_tokens: 7900
   materialized_char_count: 40870
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 161
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 40870
-  calibrated_byte_count: 40870
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 8192
-  truncated_prompt_tokens_16384: 11656
-  truncated_prompt_tokens_32768: 11656
 - prompt_id: P005
   scenario: W3_long_file_context
   context_len_bucket: 16K
   estimated_prompt_tokens: 15200
-  measured_prompt_tokens_qwen3_5_4b: 21569
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: single
@@ -208,18 +160,11 @@ prompts:
   materialized_target_tokens: 15200
   materialized_char_count: 75549
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 181
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 75549
-  calibrated_byte_count: 75549
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 8192
-  truncated_prompt_tokens_16384: 16384
-  truncated_prompt_tokens_32768: 21569
 - prompt_id: P006
   scenario: W4_multi_turn_recovery
   context_len_bucket: 16K
   estimated_prompt_tokens: 15800
-  measured_prompt_tokens_qwen3_5_4b: 22490
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 512
   max_new_tokens: 640
   arrival_pattern: single
@@ -240,18 +185,11 @@ prompts:
   materialized_target_tokens: 15800
   materialized_char_count: 78825
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 160
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 78825
-  calibrated_byte_count: 78825
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 8192
-  truncated_prompt_tokens_16384: 16384
-  truncated_prompt_tokens_32768: 22490
 - prompt_id: P007
   scenario: W5_repeated_prefix
   context_len_bucket: 4K
   estimated_prompt_tokens: 3900
-  measured_prompt_tokens_qwen3_5_4b: 5972
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: paired_prefix_a_first
@@ -272,18 +210,11 @@ prompts:
   materialized_target_tokens: 3900
   materialized_char_count: 21650
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 94
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 21650
-  calibrated_byte_count: 21650
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 5972
-  truncated_prompt_tokens_16384: 5972
-  truncated_prompt_tokens_32768: 5972
 - prompt_id: P008
   scenario: W5_repeated_prefix
   context_len_bucket: 4K
   estimated_prompt_tokens: 3950
-  measured_prompt_tokens_qwen3_5_4b: 5975
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: paired_prefix_a_second
@@ -304,18 +235,11 @@ prompts:
   materialized_target_tokens: 3950
   materialized_char_count: 21648
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 97
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 21648
-  calibrated_byte_count: 21648
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 5975
-  truncated_prompt_tokens_16384: 5975
-  truncated_prompt_tokens_32768: 5975
 - prompt_id: P009
   scenario: W6_moe_diversity
   context_len_bucket: 8K
   estimated_prompt_tokens: 7800
-  measured_prompt_tokens_qwen3_5_4b: 11094
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: single
@@ -336,18 +260,11 @@ prompts:
   materialized_target_tokens: 7800
   materialized_char_count: 38984
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 68
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 38984
-  calibrated_byte_count: 38984
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 8192
-  truncated_prompt_tokens_16384: 11094
-  truncated_prompt_tokens_32768: 11094
 - prompt_id: P010
   scenario: W6_moe_long_context
   context_len_bucket: 32K
   estimated_prompt_tokens: 31000
-  measured_prompt_tokens_qwen3_5_4b: 43216
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 512
   max_new_tokens: 640
   arrival_pattern: single
@@ -368,18 +285,11 @@ prompts:
   materialized_target_tokens: 31000
   materialized_char_count: 151195
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 161
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 151195
-  calibrated_byte_count: 151195
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 8192
-  truncated_prompt_tokens_16384: 16384
-  truncated_prompt_tokens_32768: 32768
 - prompt_id: P011
   scenario: W7_burst_queue
   context_len_bucket: 4K
   estimated_prompt_tokens: 3800
-  measured_prompt_tokens_qwen3_5_4b: 5972
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: burst_8_requests_100ms_gap
@@ -400,18 +310,11 @@ prompts:
   materialized_target_tokens: 3800
   materialized_char_count: 21050
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 129
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 21050
-  calibrated_byte_count: 21050
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 5972
-  truncated_prompt_tokens_16384: 5972
-  truncated_prompt_tokens_32768: 5972
 - prompt_id: P012
   scenario: W7_continuous_batching
   context_len_bucket: 8K
   estimated_prompt_tokens: 7600
-  measured_prompt_tokens_qwen3_5_4b: 11128
+  measured_prompt_tokens_qwen3_5_4b: null
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: continuous_16_requests_poisson
@@ -432,10 +335,3 @@ prompts:
   materialized_target_tokens: 7600
   materialized_char_count: 39191
   shape_fixture_measured_prompt_tokens_qwen3_5_4b: 104
-  calibration_bucket_status_qwen3_5_4b: above_range
-  calibrated_char_count: 39191
-  calibrated_byte_count: 39191
-  truncated_prompt_tokens_4096: 4096
-  truncated_prompt_tokens_8192: 8192
-  truncated_prompt_tokens_16384: 11128
-  truncated_prompt_tokens_32768: 11128

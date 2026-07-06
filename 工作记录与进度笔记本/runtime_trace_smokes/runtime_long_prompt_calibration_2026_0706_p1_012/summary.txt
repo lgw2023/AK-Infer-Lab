@@ -1,0 +1,72 @@
+## run_context
+run_id=runtime_long_prompt_calibration_2026_0706_p1_012
+commit=0074466
+timestamp=2026-07-06T15:00:16+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+CONTRACT_DIR=工作记录与进度笔记本/p1_inference_contracts
+LONG_MANIFEST=工作记录与进度笔记本/p1_inference_contracts/workload_long_manifest.yaml
+task_policy=tokenizer_only_no_model_weights_no_npu_no_vllm_no_package_install
+pytest_exit_code=0
+package_inventory_exit_code=0
+model_path_precheck_exit_code=0
+long_prompt_token_calibration_exit_code=0
+
+## long_prompt_calibration_conclusion
+calibration_status=success
+failure_phase=
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+tokenizer_class=Qwen2Tokenizer
+prompt_count=13
+success_prompt_count=13
+failed_prompt_count=0
+bucket_miss_count=13
+max_full_token_count=43216
+over_4096_count=11
+over_8192_count=7
+over_16384_count=3
+over_32768_count=1
+execution_policy=tokenizer_only_no_model_weights_no_npu_no_vllm_no_package_install
+performance_policy=token_calibration_only_no_perf_or_bottleneck_conclusion
+
+## long_prompt_token_calibration
+prompt_id	context_len_bucket	estimated_prompt_tokens	materialized_char_count_manifest	char_count	byte_count	full_token_count	bucket_status	truncated_4096	truncated_8192	truncated_16384	truncated_32768	status	error_type	error
+P000	512	420	4357	4357	4357	1184	above_range	1184	1184	1184	1184	success		
+P001	1K	980	6299	6299	6299	1764	above_range	1764	1764	1764	1764	success		
+P002	4K	3600	19739	19739	19739	5556	above_range	4096	5556	5556	5556	success		
+P003	8K	7600	39264	39264	39264	11144	above_range	4096	8192	11144	11144	success		
+P004	8K	7900	40870	40870	40870	11656	above_range	4096	8192	11656	11656	success		
+P005	16K	15200	75549	75549	75549	21569	above_range	4096	8192	16384	21569	success		
+P006	16K	15800	78825	78825	78825	22490	above_range	4096	8192	16384	22490	success		
+P007	4K	3900	21650	21650	21650	5972	above_range	4096	5972	5972	5972	success		
+P008	4K	3950	21648	21648	21648	5975	above_range	4096	5975	5975	5975	success		
+P009	8K	7800	38984	38984	38984	11094	above_range	4096	8192	11094	11094	success		
+P010	32K	31000	151195	151195	151195	43216	above_range	4096	8192	16384	32768	success		
+P011	4K	3800	21050	21050	21050	5972	above_range	4096	5972	5972	5972	success		
+P012	8K	7600	39191	39191	39191	11128	above_range	4096	8192	11128	11128	success		
+
+## package_inventory
+package	module	distribution_version	spec_found	origin
+transformers	transformers	5.12.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/transformers/__init__.py
+tokenizers	tokenizers	0.22.2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/tokenizers/__init__.py
+sentencepiece	sentencepiece	0.2.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/sentencepiece/__init__.py
+safetensors	safetensors	0.8.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/safetensors/__init__.py
+torch	torch	2.9.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch/__init__.py
+torch_npu	torch_npu	2.9.0.post2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch_npu/__init__.py
+vllm	vllm	0.18.0+empty	1	/data/node0_disk1/vllm/vllm/__init__.py
+vllm_ascend	vllm_ascend	0.18.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/vllm_ascend/__init__.py
+
+## model_path_precheck
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+exists=1
+is_dir=1
+config.json	exists=1	bytes=3161
+config_model_type=qwen3_5
+config_architectures=['Qwen3_5ForConditionalGeneration']
+tokenizer_config.json	exists=1	bytes=16710
+tokenizer_class=Qwen2Tokenizer
+model_max_length=262144
+tokenizer.json	exists=1	bytes=12807982
+generation_config.json	exists=0	bytes=
