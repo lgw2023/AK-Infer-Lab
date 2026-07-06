@@ -21,6 +21,7 @@ VLLM_ENGINE_SINGLE_REQUEST_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_engine_
 VLLM_BATCHED_PREFIX_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_batched_prefix_smoke_handoff.md"
 VLLM_API_CONCURRENCY_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_concurrency_smoke_handoff.md"
 VLLM_API_BURST_QUEUE_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_burst_queue_smoke_handoff.md"
+VLLM_API_CONTINUOUS16_MIXED_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_continuous16_mixed_handoff.md"
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -475,11 +476,13 @@ def test_vllm_api_burst_queue_runner_case_plan_is_bounded():
     from tools.inference_contracts.run_vllm_api_concurrency_smoke import (
         VLLM_API_BURST_QUEUE_CASES,
         VLLM_API_CONCURRENCY_CASES,
+        VLLM_API_CONTINUOUS16_MIXED_CASES,
         select_cases,
     )
 
     assert select_cases("three_request_smoke") == VLLM_API_CONCURRENCY_CASES
     assert select_cases("burst8") == VLLM_API_BURST_QUEUE_CASES
+    assert select_cases("continuous16_mixed") == VLLM_API_CONTINUOUS16_MIXED_CASES
     assert len(VLLM_API_BURST_QUEUE_CASES) == 8
     assert max(case["cap_tokens"] for case in VLLM_API_BURST_QUEUE_CASES) == 4096
     assert max(case["max_new_tokens"] for case in VLLM_API_BURST_QUEUE_CASES) == 32
@@ -493,3 +496,74 @@ def test_vllm_api_burst_queue_runner_case_plan_is_bounded():
     assert {case["concurrency_group"] for case in VLLM_API_BURST_QUEUE_CASES} == {
         "api_burst_queue_smoke_0001"
     }
+
+
+def test_vllm_api_continuous16_mixed_handoff_defines_required_boundaries():
+    handoff = VLLM_API_CONTINUOUS16_MIXED_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_continuous16_mixed_2026_0706_p1_020",
+        "vLLM API Continuous16 Mixed Smoke",
+        "/v1/completions",
+        "--case-plan continuous16_mixed",
+        "P007_api_continuous16_prefix_first_cap8192_gen64",
+        "P008_api_continuous16_prefix_second_cap8192_gen64",
+        "P011_api_continuous16_burst_001_cap4096_gen64",
+        "P012_api_continuous16_006_cap8192_gen64",
+        "P003_api_continuous16_system_002_cap8192_gen64",
+        "P009_api_continuous16_moe_002_cap8192_gen64",
+        "vllm_api_server_stats_summary.tsv",
+        "VLLM_PLUGINS=ascend",
+        "source `/usr/local/Ascend/cann-9.0.0/set_env.sh`",
+        "source `/usr/local/Ascend/nnal/atb/set_env.sh`",
+        "不安装、升级、卸载或修复任何包",
+        "不运行 benchmark、吞吐测试、压测或长时间服务",
+        "不运行 full 16K/32K 或 full `P010=43216` tokens",
+        "不输出性能 benchmark、吞吐结论、调度效率结论、瓶颈归因、优化建议或 CANN device timeline pairing 结论",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
+def test_vllm_api_continuous16_mixed_runner_case_plan_is_bounded():
+    from tools.inference_contracts.run_vllm_api_concurrency_smoke import VLLM_API_CONTINUOUS16_MIXED_CASES
+
+    assert len(VLLM_API_CONTINUOUS16_MIXED_CASES) == 16
+    assert max(case["cap_tokens"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES) == 8192
+    assert max(case["max_new_tokens"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES) == 64
+    assert max(case["arrival_delay_ms"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES) == 2400
+    assert {case["prompt_id"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES} == {
+        "P003",
+        "P007",
+        "P008",
+        "P009",
+        "P011",
+        "P012",
+    }
+    assert {case["concurrency_group"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES} == {
+        "api_continuous16_mixed_0001"
+    }
+
+
+def test_vllm_api_server_stats_parser_extracts_vllm_log_samples(tmp_path):
+    from tools.inference_contracts.run_vllm_api_concurrency_smoke import write_server_stats_summary
+
+    log_path = tmp_path / "vllm_api_server.log"
+    output_path = tmp_path / "vllm_api_server_stats_summary.tsv"
+    log_path.write_text(
+        "(APIServer pid=1) INFO Engine 000: Avg prompt throughput: 745.0 tokens/s, "
+        "Avg generation throughput: 3.3 tokens/s, Running: 8 reqs, Waiting: 1 reqs, "
+        "GPU KV cache usage: 4.0%, Prefix cache hit rate: 39.1%\n",
+        encoding="utf-8",
+    )
+
+    summary = write_server_stats_summary(log_path, output_path)
+
+    assert summary == {
+        "sample_count": 1,
+        "max_running_reqs": 8,
+        "max_waiting_reqs": 1,
+        "max_kv_cache_usage_pct": 4.0,
+        "max_prefix_cache_hit_rate_pct": 39.1,
+    }
+    assert "prefix_cache_hit_rate_pct" in output_path.read_text(encoding="utf-8")

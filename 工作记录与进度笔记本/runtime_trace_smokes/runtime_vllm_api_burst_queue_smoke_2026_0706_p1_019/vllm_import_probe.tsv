@@ -1,0 +1,6 @@
+module	status	error
+torch	ok
+torch_npu	ok
+transformers	ok
+vllm	ok
+vllm_ascend	ok

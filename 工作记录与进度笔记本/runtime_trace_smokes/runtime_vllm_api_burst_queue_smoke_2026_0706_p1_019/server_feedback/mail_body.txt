@@ -1,0 +1,7 @@
+邮件主题：[AK服务器] 任务完成：vLLM API burst queue smoke runtime_vllm_api_burst_queue_smoke_2026_0706_p1_019
+
+本轮用户未单独粘贴邮件正文；复核依据为邮件附件目录：
+
+/Users/liguowei/Downloads/runtime_vllm_api_burst_queue_smoke_2026_0706_p1_019
+
+关键结论来自附件 `summary.txt`、`run_context.txt`、`vllm_api_concurrency_result.json`、`vllm_api_concurrency_validation.txt`、`vllm_api_burst_queue_validation_extra.txt` 和 `vllm_api_server.log`。

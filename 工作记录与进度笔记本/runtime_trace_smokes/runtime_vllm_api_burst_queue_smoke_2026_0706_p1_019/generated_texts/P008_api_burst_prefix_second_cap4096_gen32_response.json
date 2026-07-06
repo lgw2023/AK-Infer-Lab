@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-9ab4bff4fb02ee3a",
+  "object": "text_completion",
+  "created": 1783341138,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": " claim device timeline pairing without aligned join keys\n\nRepresentative tool output:\n```text\n[request 0001] enqueue_ns=100",
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 4096,
+    "total_tokens": 4128,
+    "completion_tokens": 32,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}

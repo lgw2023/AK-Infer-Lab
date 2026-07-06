@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-ae1eab9335efab8a",
+  "object": "text_completion",
+  "created": 1783341138,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": "\n\nRepresentative tool output:\n```text\n[report] batch_0000 completed\n[report] batch_0000 token_count",
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 4096,
+    "total_tokens": 4128,
+    "completion_tokens": 32,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}

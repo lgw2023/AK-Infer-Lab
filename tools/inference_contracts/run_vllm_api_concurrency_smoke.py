@@ -6,6 +6,7 @@ import importlib.metadata as metadata
 import importlib.util
 import json
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -137,6 +138,162 @@ VLLM_API_BURST_QUEUE_CASES = [
     },
 ]
 
+VLLM_API_CONTINUOUS16_MIXED_CASES = [
+    {
+        "case_id": "P007_api_continuous16_prefix_first_cap8192_gen64",
+        "prompt_id": "P007",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 0,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "prefix_group_a",
+    },
+    {
+        "case_id": "P008_api_continuous16_prefix_second_cap8192_gen64",
+        "prompt_id": "P008",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 100,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "prefix_group_a",
+    },
+    {
+        "case_id": "P011_api_continuous16_burst_001_cap4096_gen64",
+        "prompt_id": "P011",
+        "cap_tokens": 4096,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 200,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "burst_prefix_a",
+    },
+    {
+        "case_id": "P011_api_continuous16_burst_002_cap4096_gen64",
+        "prompt_id": "P011",
+        "cap_tokens": 4096,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 300,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "burst_prefix_a",
+    },
+    {
+        "case_id": "P011_api_continuous16_burst_003_cap4096_gen64",
+        "prompt_id": "P011",
+        "cap_tokens": 4096,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 400,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "burst_prefix_a",
+    },
+    {
+        "case_id": "P011_api_continuous16_burst_004_cap4096_gen64",
+        "prompt_id": "P011",
+        "cap_tokens": 4096,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 500,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "burst_prefix_a",
+    },
+    {
+        "case_id": "P012_api_continuous16_001_cap8192_gen64",
+        "prompt_id": "P012",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 600,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "continuous_prefix_a",
+    },
+    {
+        "case_id": "P012_api_continuous16_002_cap8192_gen64",
+        "prompt_id": "P012",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 800,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "continuous_prefix_a",
+    },
+    {
+        "case_id": "P012_api_continuous16_003_cap8192_gen64",
+        "prompt_id": "P012",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 1000,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "continuous_prefix_a",
+    },
+    {
+        "case_id": "P012_api_continuous16_004_cap8192_gen64",
+        "prompt_id": "P012",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 1200,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "continuous_prefix_a",
+    },
+    {
+        "case_id": "P012_api_continuous16_005_cap8192_gen64",
+        "prompt_id": "P012",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 1400,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "continuous_prefix_a",
+    },
+    {
+        "case_id": "P012_api_continuous16_006_cap8192_gen64",
+        "prompt_id": "P012",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 1600,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "continuous_prefix_a",
+    },
+    {
+        "case_id": "P003_api_continuous16_system_001_cap8192_gen64",
+        "prompt_id": "P003",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 1800,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "system_long_a",
+    },
+    {
+        "case_id": "P003_api_continuous16_system_002_cap8192_gen64",
+        "prompt_id": "P003",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 2000,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "system_long_a",
+    },
+    {
+        "case_id": "P009_api_continuous16_moe_001_cap8192_gen64",
+        "prompt_id": "P009",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 2200,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "none",
+    },
+    {
+        "case_id": "P009_api_continuous16_moe_002_cap8192_gen64",
+        "prompt_id": "P009",
+        "cap_tokens": 8192,
+        "max_new_tokens": 64,
+        "arrival_delay_ms": 2400,
+        "concurrency_group": "api_continuous16_mixed_0001",
+        "prefix_reuse_group": "none",
+    },
+]
+
+SERVER_STATS_PATTERN = re.compile(
+    r"Avg prompt throughput:\s*(?P<prompt_throughput>[0-9.]+)\s*tokens/s,\s*"
+    r"Avg generation throughput:\s*(?P<generation_throughput>[0-9.]+)\s*tokens/s,\s*"
+    r"Running:\s*(?P<running>[0-9]+)\s*reqs,\s*"
+    r"Waiting:\s*(?P<waiting>[0-9]+)\s*reqs,\s*"
+    r"GPU KV cache usage:\s*(?P<kv_cache_usage>[0-9.]+)%,\s*"
+    r"Prefix cache hit rate:\s*(?P<prefix_cache_hit_rate>[0-9.]+)%"
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -161,7 +318,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--long-manifest", type=Path, default=DEFAULT_LONG_MANIFEST)
     parser.add_argument(
         "--case-plan",
-        choices=["three_request_smoke", "burst8"],
+        choices=["three_request_smoke", "burst8", "continuous16_mixed"],
         default=os.environ.get("AK_VLLM_API_CASE_PLAN", "three_request_smoke"),
     )
     parser.add_argument("--max-model-len", type=int, default=int(os.environ.get("AK_VLLM_MAX_MODEL_LEN", "6144")))
@@ -227,16 +384,22 @@ def select_cases(case_plan: str) -> list[dict[str, Any]]:
         return VLLM_API_CONCURRENCY_CASES
     if case_plan == "burst8":
         return VLLM_API_BURST_QUEUE_CASES
+    if case_plan == "continuous16_mixed":
+        return VLLM_API_CONTINUOUS16_MIXED_CASES
     raise ValueError(f"unknown case plan: {case_plan}")
 
 
 def matrix_policy_for(case_plan: str) -> str:
+    if case_plan == "continuous16_mixed":
+        return "vllm_openai_api_server_sixteen_request_mixed_4k_8k_continuous_workload_candidate"
     if case_plan == "burst8":
         return "vllm_openai_api_server_eight_staggered_burst_queue_requests_candidate"
     return "vllm_openai_api_server_three_overlapping_completion_requests_candidate"
 
 
 def continuous_policy_for(case_plan: str) -> str:
+    if case_plan == "continuous16_mixed":
+        return "candidate_only_sixteen_staggered_clients_mixed_4k_8k_no_throughput_or_scheduler_claim"
     if case_plan == "burst8":
         return "candidate_only_eight_staggered_clients_no_throughput_or_scheduler_claim"
     return "candidate_only_three_overlapping_clients_no_scheduler_claim"
@@ -262,6 +425,7 @@ def run_vllm_api_concurrency_smoke(args: argparse.Namespace) -> int:
     validation_path = artifact_dir / "vllm_api_concurrency_validation.txt"
     server_cmd_path = artifact_dir / "vllm_api_server_command.json"
     server_log_path = artifact_dir / "vllm_api_server.log"
+    server_stats_path = artifact_dir / "vllm_api_server_stats_summary.tsv"
 
     rows: list[dict[str, Any]] = []
     events: list[dict[str, Any]] = []
@@ -325,6 +489,7 @@ def run_vllm_api_concurrency_smoke(args: argparse.Namespace) -> int:
         if server_process is not None:
             server_return_code = stop_process_group(server_process)
 
+    server_stats_summary = write_server_stats_summary(server_log_path, server_stats_path)
     _write_jsonl(trace_path, events)
     validation_report = validate_trace_fixture(trace_path) if events else None
     validation_errors = validation_report.errors if validation_report else ["no trace events emitted"]
@@ -377,6 +542,11 @@ def run_vllm_api_concurrency_smoke(args: argparse.Namespace) -> int:
         "trace_event_count": len(events),
         "trace_validation_errors": len(validation_errors),
         "trace_validation_error_messages": validation_errors,
+        "server_stats_sample_count": server_stats_summary["sample_count"],
+        "server_stats_max_running_reqs": server_stats_summary["max_running_reqs"],
+        "server_stats_max_waiting_reqs": server_stats_summary["max_waiting_reqs"],
+        "server_stats_max_kv_cache_usage_pct": server_stats_summary["max_kv_cache_usage_pct"],
+        "server_stats_max_prefix_cache_hit_rate_pct": server_stats_summary["max_prefix_cache_hit_rate_pct"],
         "fatal_error": fatal_error,
         "import_probe": import_probe,
         "policy": "vllm_api_concurrency_smoke_no_package_install",
@@ -808,6 +978,47 @@ def count_client_overlap_candidates(rows: list[dict[str, Any]]) -> int:
     return overlaps
 
 
+def write_server_stats_summary(log_path: Path, output_path: Path) -> dict[str, Any]:
+    fields = [
+        "line_number",
+        "avg_prompt_throughput_tokens_s",
+        "avg_generation_throughput_tokens_s",
+        "running_reqs",
+        "waiting_reqs",
+        "gpu_kv_cache_usage_pct",
+        "prefix_cache_hit_rate_pct",
+    ]
+    rows: list[dict[str, Any]] = []
+    if log_path.is_file():
+        for line_number, line in enumerate(log_path.read_text(encoding="utf-8", errors="replace").splitlines(), start=1):
+            match = SERVER_STATS_PATTERN.search(line)
+            if match:
+                rows.append(
+                    {
+                        "line_number": line_number,
+                        "avg_prompt_throughput_tokens_s": float(match.group("prompt_throughput")),
+                        "avg_generation_throughput_tokens_s": float(match.group("generation_throughput")),
+                        "running_reqs": int(match.group("running")),
+                        "waiting_reqs": int(match.group("waiting")),
+                        "gpu_kv_cache_usage_pct": float(match.group("kv_cache_usage")),
+                        "prefix_cache_hit_rate_pct": float(match.group("prefix_cache_hit_rate")),
+                    }
+                )
+
+    output_lines = ["\t".join(fields)]
+    for row in rows:
+        output_lines.append("\t".join(str(row[field]) for field in fields))
+    output_path.write_text("\n".join(output_lines) + "\n", encoding="utf-8")
+
+    return {
+        "sample_count": len(rows),
+        "max_running_reqs": max((row["running_reqs"] for row in rows), default=0),
+        "max_waiting_reqs": max((row["waiting_reqs"] for row in rows), default=0),
+        "max_kv_cache_usage_pct": max((row["gpu_kv_cache_usage_pct"] for row in rows), default=0.0),
+        "max_prefix_cache_hit_rate_pct": max((row["prefix_cache_hit_rate_pct"] for row in rows), default=0.0),
+    }
+
+
 def pick_free_port(host: str) -> int:
     for port in range(18080, 18121):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -1056,6 +1267,11 @@ def _write_conclusion(path: Path, result: dict[str, Any]) -> None:
         "submitted_count_mismatch_count",
         "trace_event_count",
         "trace_validation_errors",
+        "server_stats_sample_count",
+        "server_stats_max_running_reqs",
+        "server_stats_max_waiting_reqs",
+        "server_stats_max_kv_cache_usage_pct",
+        "server_stats_max_prefix_cache_hit_rate_pct",
         "policy",
         "matrix_policy",
         "profiler_policy",

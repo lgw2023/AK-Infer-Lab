@@ -1,0 +1,6 @@
+
+
+Representative tool output:
+```text
+[report] batch_0000 completed
+[report] batch_0000 token_count

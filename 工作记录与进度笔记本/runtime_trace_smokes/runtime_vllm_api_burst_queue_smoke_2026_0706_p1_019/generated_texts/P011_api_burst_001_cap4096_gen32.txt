@@ -1,0 +1,2 @@
+ policy: torch TTFT is the time from request enqueue to the first token generation.
+- CANN timeline policy: do not claim device timeline pairing without aligned
