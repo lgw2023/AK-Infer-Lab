@@ -1,0 +1,11 @@
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+exists=1
+is_dir=1
+config.json	exists=1	bytes=3161
+config_model_type=qwen3_5
+config_architectures=['Qwen3_5ForConditionalGeneration']
+tokenizer_config.json	exists=1	bytes=16710
+tokenizer_class=Qwen2Tokenizer
+model_max_length=262144
+generation_config.json	exists=0	bytes=
+model.safetensors.index.json	exists=1	bytes=76196

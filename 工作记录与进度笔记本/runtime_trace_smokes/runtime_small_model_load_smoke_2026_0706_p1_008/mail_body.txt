@@ -1,0 +1,95 @@
+P1.9 small model load smoke 独立验证已完成。
+
+任务 ID: runtime_small_model_load_smoke_2026_0706_p1_008
+附件: 工作记录与进度笔记本/runtime_trace_smokes/runtime_small_model_load_smoke_2026_0706_p1_008.zip
+
+## run_context
+run_id=runtime_small_model_load_smoke_2026_0706_p1_008
+commit=09a6118
+timestamp=2026-07-06T10:23:15+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+PROMPT_PATH=工作记录与进度笔记本/p1_inference_contracts/prompts/P000.md
+AK_OBS_NPU_DEVICE=npu:6
+AK_SMALL_MODEL_MAX_INPUT_TOKENS=256
+AK_SMALL_MODEL_MAX_NEW_TOKENS=4
+AK_SMALL_MODEL_TIMEOUT=45m
+pytest_exit_code=0
+package_inventory_exit_code=0
+model_path_precheck_exit_code=0
+small_model_load_smoke_exit_code=0
+
+## small_model_load_conclusion
+small_model_smoke_status=success
+failure_phase=
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+device=npu:6
+config_class=Qwen3_5Config
+tokenizer_class=Qwen2Tokenizer
+model_class=Qwen3_5ForCausalLM
+input_token_count=51
+generated_token_count=4
+generated_text_nonempty=1
+prefill_latency_us=1104962
+decode_step_count=3
+first_decode_latency_us=141376
+torch_profiler_trace_exists=1
+torch_profiler_marker_event_count=4
+torch_profiler_npu_event_candidate_count=89871
+small_model_trace_validation_errors=0
+error_type=
+error=
+trace_pairing_policy=torch_profiler_trace_candidate_only; do not claim CANN device timeline pairing
+performance_policy=smoke_only_no_perf_or_bottleneck_conclusion
+environment_policy=no_package_install_no_environment_repair
+
+## model_path_precheck
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+exists=1
+is_dir=1
+config.json	exists=1	bytes=3161
+config_model_type=qwen3_5
+config_architectures=['Qwen3_5ForConditionalGeneration']
+tokenizer_config.json	exists=1	bytes=16710
+tokenizer_class=Qwen2Tokenizer
+model_max_length=262144
+generation_config.json	exists=0	bytes=
+model.safetensors.index.json	exists=1	bytes=76196
+
+## package_inventory
+package	module	distribution_version	spec_found	origin
+torch	torch	2.9.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch/__init__.py
+torch_npu	torch_npu	2.9.0.post2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch_npu/__init__.py
+transformers	transformers	5.12.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/transformers/__init__.py
+tokenizers	tokenizers	0.22.2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/tokenizers/__init__.py
+sentencepiece	sentencepiece	0.2.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/sentencepiece/__init__.py
+accelerate	accelerate	1.14.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/accelerate/__init__.py
+safetensors	safetensors	0.8.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/safetensors/__init__.py
+vllm	vllm	0.18.0+empty	1	/data/node0_disk1/vllm/vllm/__init__.py
+vllm_ascend	vllm_ascend	0.18.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/vllm_ascend/__init__.py
+mindie	mindie		0
+mindspore	mindspore		0
+
+## small_model_trace_validation
+errors=0
+events=6
+error_list=[]
+
+## generated_text
+Answer:
+
+<think>
+
+## small_model_smoke_error
+missing=small_model_smoke_error.txt
+
+
+执行边界：
+- 本轮允许加载 Qwen3.5-4B、实例化 tokenizer、执行极短 prefill/decode smoke
+- 未安装、升级、卸载或修复任何推理框架包
+- 未运行 vLLM serve/benchmark 或完整 P000-P012 workload
+- 未修改 models/、Public/、CANN/driver/runtime/vLLM 源码
+- torch_profiler_trace 仍只作为 candidate bridge，不声称 CANN device timeline pairing
+- 本轮 smoke 不输出性能或瓶颈归因结论

@@ -1,0 +1,16 @@
+run_id=runtime_small_model_load_smoke_2026_0706_p1_008
+commit=09a6118
+timestamp=2026-07-06T10:23:15+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+PROMPT_PATH=工作记录与进度笔记本/p1_inference_contracts/prompts/P000.md
+AK_OBS_NPU_DEVICE=npu:6
+AK_SMALL_MODEL_MAX_INPUT_TOKENS=256
+AK_SMALL_MODEL_MAX_NEW_TOKENS=4
+AK_SMALL_MODEL_TIMEOUT=45m
+pytest_exit_code=0
+package_inventory_exit_code=0
+model_path_precheck_exit_code=0
+small_model_load_smoke_exit_code=0

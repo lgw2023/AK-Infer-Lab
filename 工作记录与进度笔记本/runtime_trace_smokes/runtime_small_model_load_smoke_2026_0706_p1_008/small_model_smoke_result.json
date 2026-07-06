@@ -1,0 +1,39 @@
+{
+  "config_architectures": [
+    "Qwen3_5ForConditionalGeneration"
+  ],
+  "config_class": "Qwen3_5Config",
+  "config_model_type": "qwen3_5",
+  "decode_step_count": 3,
+  "decode_total_latency_us": 404752,
+  "device": "npu:6",
+  "first_decode_latency_us": 141376,
+  "generated_text_nonempty": true,
+  "generated_token_count": 4,
+  "input_h2d_latency_us": 336,
+  "input_tensor_bytes": 816,
+  "input_token_count": 51,
+  "max_input_tokens": 256,
+  "max_new_tokens": 4,
+  "model_class": "Qwen3_5ForCausalLM",
+  "model_load_kwargs": {
+    "low_cpu_mem_usage": true,
+    "torch_dtype": "auto"
+  },
+  "model_path": "/data/node0_disk1/Public/Qwen3.5-4B",
+  "npu_device_count": 8,
+  "phase": "complete",
+  "prefill_latency_us": 1104962,
+  "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P000.md",
+  "run_id": "runtime_small_model_load_smoke_2026_0706_p1_008",
+  "small_model_trace_validation_errors": 0,
+  "status": "success",
+  "tokenizer_class": "Qwen2Tokenizer",
+  "tokenizer_latency_us": 13584,
+  "tokenizer_model_max_length": 262144,
+  "torch_profiler_export_error": "",
+  "torch_profiler_marker_event_count": 4,
+  "torch_profiler_npu_event_candidate_count": 89871,
+  "torch_profiler_trace_exists": true,
+  "torch_version": "2.9.0+cpu"
+}
