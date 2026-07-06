@@ -1,0 +1,4 @@
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+Loading weights:   0%|          | 0/426 [00:00<?, ?it/s]Loading weights: 100%|██████████| 426/426 [00:00<00:00, 5412.68it/s]
+/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/transformers/cache_utils.py:930: UserWarning: Cannot create tensor with interal format while allow_internel_format=False, tensor will be created with base format. (Triggered internally at ../torch_npu/csrc/aten/common/TensorFactories.cpp:340.)
+  self.conv_states = torch.zeros_like(conv_states, dtype=self.dtype, device=self.device)

@@ -1,0 +1,17 @@
+status=success
+matrix_status=success
+phase=complete
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+device=npu:6
+tokenizer_class=Qwen2Tokenizer
+model_class=Qwen3_5ForCausalLM
+attempted_case_count=8
+success_case_count=8
+failed_case_count=0
+input_count_mismatch_count=0
+trace_event_count=56
+trace_validation_errors=0
+policy=existing_transformers_torch_npu_no_vllm_no_package_install
+matrix_policy=long_prompt_input_output_envelope_decode_depth
+profiler_policy=disabled_not_part_of_this_task
+performance_policy=trace_matrix_only_no_perf_or_bottleneck_conclusion

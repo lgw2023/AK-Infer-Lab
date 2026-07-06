@@ -1,0 +1,5 @@
+_only
+- C
+assistant
+<think>
+The user is asking me to continue processing this long context materialized prompt. This appears to be a test

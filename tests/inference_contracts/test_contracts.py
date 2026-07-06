@@ -17,6 +17,7 @@ LONG_WORKLOAD_MANIFEST = CONTRACT_DIR / "workload_long_manifest.yaml"
 LONG_PROMPT_TRACE_SMOKE_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_trace_smoke_handoff.md"
 LONG_PROMPT_TRACE_MATRIX_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_matrix_handoff.md"
 LONG_PROMPT_ENVELOPE_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_envelope_handoff.md"
+VLLM_ENGINE_SINGLE_REQUEST_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_engine_single_request_smoke_handoff.md"
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -340,3 +341,31 @@ def test_long_prompt_envelope_runner_case_plan_is_bounded():
         "P010",
         "P012",
     }
+
+
+def test_vllm_engine_single_request_handoff_defines_required_boundaries():
+    handoff = VLLM_ENGINE_SINGLE_REQUEST_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_engine_single_request_smoke_2026_0706_p1_016",
+        "vLLM/vLLM-Ascend engine smoke",
+        "P002_cap4096_gen32",
+        "P003_cap8192_gen32",
+        "LLM.generate",
+        "不安装、升级、卸载或修复任何包",
+        "不运行 `vllm serve`",
+        "不运行并发、burst、continuous batching 或 prefix cache",
+        "不启用 profiler 导出",
+        "不能声称 vLLM 并发、prefix cache、continuous batching、性能瓶颈或 CANN device timeline pairing 已经验证",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
+def test_vllm_engine_single_request_runner_case_plan_is_bounded():
+    from tools.inference_contracts.run_vllm_engine_single_request_smoke import VLLM_SMOKE_CASES
+
+    assert len(VLLM_SMOKE_CASES) == 2
+    assert max(case["cap_tokens"] for case in VLLM_SMOKE_CASES) == 8192
+    assert max(case["max_new_tokens"] for case in VLLM_SMOKE_CASES) == 32
+    assert {case["prompt_id"] for case in VLLM_SMOKE_CASES} == {"P002", "P003"}

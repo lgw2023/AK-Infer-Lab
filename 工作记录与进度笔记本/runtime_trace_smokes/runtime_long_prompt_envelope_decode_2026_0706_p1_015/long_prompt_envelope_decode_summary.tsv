@@ -1,0 +1,9 @@
+case_id	prompt_id	cap_tokens	max_new_tokens	full_token_count	expected_input_token_count	input_token_count	generated_token_count	status	error_type	error
+P002_cap4096_gen32	P002	4096	32	5556	4096	4096	32	success		
+P003_cap8192_gen32	P003	8192	32	11144	8192	8192	32	success		
+P005_cap8192_gen128	P005	8192	128	21569	8192	8192	128	success		
+P006_cap12288_gen32	P006	12288	32	22490	12288	12288	32	success		
+P007_cap4096_gen32	P007	4096	32	5972	4096	4096	32	success		
+P008_cap4096_gen32	P008	4096	32	5975	4096	4096	32	success		
+P010_cap16384_gen32	P010	16384	32	43216	16384	16384	32	success		
+P012_cap8192_gen128	P012	8192	128	11128	8192	8192	128	success		

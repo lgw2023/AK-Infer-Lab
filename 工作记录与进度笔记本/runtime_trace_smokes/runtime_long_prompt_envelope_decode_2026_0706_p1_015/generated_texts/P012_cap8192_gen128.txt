@@ -1,0 +1,13 @@
+ id, static_fixture_only,
+or NPU compute when the request id, phase, object id, stream id, and timestamp
+base are all present in the same evidence chain. The current block repeats this
+constraint intentionally so the prompt has stable long-context pressure while
+remaining deterministic and reviewable.
+
+
+### Static Context Block 0018 - P012
+
+Server evidence summary:
+- run_id: policy_decision: "static_fixture_only",
+- evidence boundary: static text fixture, not live command output
+- model path under test: /data/node0_disk1/Public/Qwen3.5-4

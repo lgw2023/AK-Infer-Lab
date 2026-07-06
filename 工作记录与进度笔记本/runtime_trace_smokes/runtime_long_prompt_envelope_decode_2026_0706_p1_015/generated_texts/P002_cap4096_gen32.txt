@@ -1,0 +1,5 @@
+- run_id:
+```text
+synthetic_materialized_context_P002_0009
+```
+- evidence boundary: static text fixture

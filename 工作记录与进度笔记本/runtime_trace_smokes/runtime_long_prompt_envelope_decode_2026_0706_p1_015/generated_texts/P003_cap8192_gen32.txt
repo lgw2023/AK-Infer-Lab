@@ -1,0 +1,4 @@
+ target
+assistant
+<think>
+The user wants me to continue the pattern of the static context blocks. I need to generate more blocks following the same format

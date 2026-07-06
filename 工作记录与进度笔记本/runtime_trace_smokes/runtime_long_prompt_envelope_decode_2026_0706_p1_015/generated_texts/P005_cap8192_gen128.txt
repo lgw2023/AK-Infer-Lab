@@ -1,0 +1,19 @@
+
+```
+
+Representative code excerpt:
+```python
+def record_stage_0017(event_writer, "request_id": request_id, phase, timestamp_ns):
+    event_writer.write({
+        "trace_id": "trace_materialized_P005",
+       
+```
+
+Representative code excerpt:
+```python
+def record_stage_0017(event_writer, request_id, phase, timestamp_ns):
+    event_writer.write({
+        "trace_id": "trace_materialized_P005",
+        "request_id": request_id,
+        "phase": phase,
+       
