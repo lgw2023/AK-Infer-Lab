@@ -1,53 +1,55 @@
 # 开发机给服务器的任务说明
 
-## 当前任务：P1.17 vLLM batched repeated-prefix smoke
+## 当前任务：P1.18 vLLM OpenAI API server concurrency smoke
 
-- 任务 ID：`runtime_vllm_batched_prefix_smoke_2026_0706_p1_017`
+- 任务 ID：`runtime_vllm_api_concurrency_smoke_2026_0706_p1_018`
 - 当前开发机分支：`main`
 - 服务器同步方式：只执行 `git pull --ff-only`
-- 详细 handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_vllm_batched_prefix_smoke_handoff.md`
-- 核心脚本：`tools/inference_contracts/run_vllm_batched_prefix_smoke.py`
+- 详细 handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_vllm_api_concurrency_smoke_handoff.md`
+- 核心脚本：`tools/inference_contracts/run_vllm_api_concurrency_smoke.py`
 
-P1.16 `runtime_vllm_engine_single_request_smoke_2026_0706_p1_016` 已完成。该任务有两次回传：
-
-- 首次失败：`VLLM_PLUGINS=vllm_ascend` 时 import 均成功，但 vLLM engine 初始化失败，错误为 `RuntimeError: Device string must not be empty`，未进入任何 case。
-- 修复后成功：改为 `VLLM_PLUGINS=ascend`，并 source CANN 9.0.0 与 ATB 环境后，vLLM engine 初始化成功，`P002@4096+32` 和 `P003@8192+32` 两个顺序单请求均成功。
-
-P1.16 最终成功口径：
+P1.17 `runtime_vllm_batched_prefix_smoke_2026_0706_p1_017` 已完成：
 
 - `pytest_exit_code=0`
-- `vllm_engine_single_request_exit_code=0`
-- `attempted_case_count=2`
+- `vllm_batched_prefix_exit_code=0`
+- `status=success`
+- `batch_count=1`
+- `batch_size=2`
+- `prefix_cache_requested=1`
 - `success_case_count=2`
+- `failed_case_count=0`
 - `input_count_mismatch_count=0`
 - `submitted_count_mismatch_count=0`
-- `trace_event_count=14`
+- `trace_event_count=17`
 - `trace_validation_errors=0`
 
-现在可以进入最小 batched repeated-prefix smoke。本轮只验证 vLLM public `LLM.generate()` 一次提交两条 4K repeated-prefix prompt 时能否完成生成，并输出合法 P1 JSONL trace。仍不运行 serve、benchmark、压测、多 worker 并发、真实 continuous batching、profiler 或性能归因，也不声称 prefix cache 命中率。
+P1.17 只证明 public `LLM.generate()` batch size 2 repeated-prefix 形态可跑，不是 OpenAI API server，不是多客户端并发，也不证明 continuous batching。P1.18 现在只验证一个最小 API server + 3 个错开请求的入口闭环。
 
 ## 本轮问题
 
 请服务器回答：
 
 1. 当前环境中 `torch`、`torch_npu`、`transformers`、`vllm`、`vllm_ascend` 是否可 import？
-2. 使用 `VLLM_PLUGINS=ascend` 并 source CANN/ATB 环境后，vLLM engine 是否能初始化？
-3. `enable_prefix_caching=True` 是否被当前 vLLM engine 接受？
-4. batch size 为 2 的 `LLM.generate()` 是否能完成？
-5. `P007_prefix_a_first_cap4096_gen32` 是否能生成非空输出？
-6. `P008_prefix_a_second_cap4096_gen32` 是否能生成非空输出？
-7. 每个 case 的 `submitted_input_token_count` 是否等于 `input_token_count`？
-8. 是否能生成合法的 `vllm_batched_prefix_trace.jsonl` 并通过 P1 validator？
-9. 如果失败，失败点是 import、engine_init、prefix_cache_arg、tokenizer、input_count_mismatch、NPU/OOM、batched generate、输出为空，还是 trace 校验？
+2. 使用 `VLLM_PLUGINS=ascend` 并 source CANN/ATB 环境后，vLLM OpenAI API server 是否能启动？
+3. `/health` 是否 ready？
+4. `/v1/completions` 是否能接受 3 个错开 100ms 的请求？
+5. `P007_api_prefix_first_cap4096_gen32` 是否生成非空输出？
+6. `P008_api_prefix_second_cap4096_gen32` 是否生成非空输出？
+7. `P012_api_continuous_candidate_cap4096_gen32` 是否生成非空输出？
+8. 每个 case 的 `submitted_input_token_count` 是否等于 `input_token_count`？
+9. 客户端侧请求时间窗是否至少出现 1 个 overlap candidate？
+10. 是否能生成合法的 `vllm_api_concurrency_trace.jsonl` 并通过 P1 validator？
+11. 如果失败，失败点是 import、api_server_start、health_probe、CLI 参数、tokenizer、input_count_mismatch、HTTP request、输出为空、NPU/OOM，还是 trace 校验？
 
 ## 本轮 case
 
-| case_id | prompt_id | cap_tokens | max_new_tokens | prefix_reuse_group |
-| --- | --- | ---: | ---: | --- |
-| `P007_prefix_a_first_cap4096_gen32` | `P007` | 4096 | 32 | `prefix_group_a` |
-| `P008_prefix_a_second_cap4096_gen32` | `P008` | 4096 | 32 | `prefix_group_a` |
+| case_id | prompt_id | cap_tokens | max_new_tokens | delay | 目的 |
+| --- | --- | ---: | ---: | ---: | --- |
+| `P007_api_prefix_first_cap4096_gen32` | `P007` | 4096 | 32 | 0ms | repeated-prefix pair 第一条 |
+| `P008_api_prefix_second_cap4096_gen32` | `P008` | 4096 | 32 | 100ms | repeated-prefix pair 第二条 |
+| `P012_api_continuous_candidate_cap4096_gen32` | `P012` | 4096 | 32 | 200ms | continuous-batching 形态候选 |
 
-本轮只提交一个 batch，batch size 为 2。`enable_prefix_caching=True` 只是候选路径请求；如果当前 vLLM public API 没有回传 prefix 命中明细，本轮只能记录 candidate trace，不能声称 prefix cache hit/miss 或命中率。
+`P012` 在 manifest 中是 `W7_continuous_batching`，但本轮只取 1 条 4K 截断请求，不按 manifest 的 16 请求规模执行。
 
 ## 严格边界
 
@@ -61,16 +63,16 @@ P1.16 最终成功口径：
 - 使用当前环境里已有的 `vllm` 和 `vllm_ascend`
 - 设置本进程环境变量 `ASCEND_RT_VISIBLE_DEVICES`、`VLLM_USE_V1`、`VLLM_PLUGINS=ascend`、`VLLM_WORKER_MULTIPROC_METHOD`
 - 使用 `/data/node0_disk1/Public/Qwen3.5-4B`
-- 使用 vLLM public `LLM` / `SamplingParams` API
-- 一次提交上面 2 个 repeated-prefix prompt
-- 导出 trace、summary、generated texts、失败日志和邮件附件
+- 在 `127.0.0.1` 启动一个临时 vLLM OpenAI API server
+- 只向本机回环 `/v1/completions` 发送本 handoff 列出的 3 个请求
+- 导出 server log、trace、summary、generated texts、失败日志和邮件附件
 
 禁止：
 
 - 不安装、升级、卸载或修复任何包
 - 不创建新 conda 环境
-- 不运行 `vllm serve`、OpenAI API server、benchmark、压测或吞吐测试
-- 不运行多 worker 并发客户端、burst 压测或连续到达流量
+- 不运行 benchmark、吞吐测试、压测或长时间服务
+- 不运行多 worker 压测客户端，不运行 8 请求 burst，不运行 16 请求 continuous batching workload
 - 不运行 full 16K/32K 或 full `P010=43216` tokens
 - 不切换到 Docker 推理栈；Docker 内 vLLM/torch_npu 另起任务
 - 不复制、移动、删除或改名 `models/` 或 `/data/node0_disk1/Public/` 下任何文件
@@ -78,7 +80,7 @@ P1.16 最终成功口径：
 - 不启用 profiler 导出；profiler/CANN pairing 另起任务处理
 - 不在服务器上修改、提交或 push 项目代码
 - 不发送 `.env`、SMTP 授权码、代理凭据、服务器账号、私钥、Cookie 或任何敏感信息
-- 不输出性能 benchmark、吞吐结论、瓶颈归因、优化建议、prefix cache 命中结论或 CANN device timeline pairing 结论
+- 不输出性能 benchmark、吞吐结论、调度效率结论、瓶颈归因、优化建议、prefix cache 命中结论或 CANN device timeline pairing 结论
 
 ## 建议执行命令
 
@@ -90,7 +92,7 @@ set -euo pipefail
 cd /data/node0_disk1/liguowei/AK-Infer-Lab
 git pull --ff-only
 
-RUN_ID=runtime_vllm_batched_prefix_smoke_2026_0706_p1_017
+RUN_ID=runtime_vllm_api_concurrency_smoke_2026_0706_p1_018
 ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
 MODEL_PATH="${AK_SMALL_MODEL_PATH:-/data/node0_disk1/Public/Qwen3.5-4B}"
 
@@ -107,6 +109,11 @@ export AK_VLLM_TP_SIZE="${AK_VLLM_TP_SIZE:-1}"
 export AK_VLLM_DTYPE="${AK_VLLM_DTYPE:-auto}"
 export AK_VLLM_ENFORCE_EAGER="${AK_VLLM_ENFORCE_EAGER:-1}"
 export AK_VLLM_ENABLE_PREFIX_CACHING="${AK_VLLM_ENABLE_PREFIX_CACHING:-1}"
+export AK_VLLM_API_HOST="${AK_VLLM_API_HOST:-127.0.0.1}"
+export AK_VLLM_API_PORT="${AK_VLLM_API_PORT:-0}"
+export AK_VLLM_SERVED_MODEL_NAME="${AK_VLLM_SERVED_MODEL_NAME:-Qwen3.5-4B}"
+export AK_VLLM_API_READY_TIMEOUT_SEC="${AK_VLLM_API_READY_TIMEOUT_SEC:-600}"
+export AK_VLLM_API_REQUEST_TIMEOUT_SEC="${AK_VLLM_API_REQUEST_TIMEOUT_SEC:-600}"
 
 set +u
 if [ -f /usr/local/Ascend/cann-9.0.0/set_env.sh ]; then
@@ -122,17 +129,17 @@ mkdir -p "${ARTIFACT_DIR}"
 set +e
 python -m pytest tests/inference_contracts -q > "${ARTIFACT_DIR}/pytest_inference_contracts.log" 2>&1
 pytest_exit_code=$?
-python tools/inference_contracts/run_vllm_batched_prefix_smoke.py \
+python tools/inference_contracts/run_vllm_api_concurrency_smoke.py \
   --run-id "${RUN_ID}" \
   --artifact-dir "${ARTIFACT_DIR}" \
   --model-path "${MODEL_PATH}" \
-  > "${ARTIFACT_DIR}/vllm_batched_prefix.log" 2>&1
+  > "${ARTIFACT_DIR}/vllm_api_concurrency.log" 2>&1
 vllm_exit_code=$?
 set -e
 
 {
   echo "pytest_exit_code=${pytest_exit_code}"
-  echo "vllm_batched_prefix_exit_code=${vllm_exit_code}"
+  echo "vllm_api_concurrency_exit_code=${vllm_exit_code}"
 } >> "${ARTIFACT_DIR}/run_context.txt"
 
 {
@@ -143,13 +150,13 @@ set -e
   cat "${ARTIFACT_DIR}/vllm_import_probe.tsv" 2>/dev/null || true
   echo
   echo "## conclusion"
-  cat "${ARTIFACT_DIR}/vllm_batched_prefix_conclusion.txt" 2>/dev/null || true
+  cat "${ARTIFACT_DIR}/vllm_api_concurrency_conclusion.txt" 2>/dev/null || true
   echo
   echo "## summary"
-  cat "${ARTIFACT_DIR}/vllm_batched_prefix_summary.tsv" 2>/dev/null || true
+  cat "${ARTIFACT_DIR}/vllm_api_concurrency_summary.tsv" 2>/dev/null || true
   echo
   echo "## validation"
-  cat "${ARTIFACT_DIR}/vllm_batched_prefix_validation.txt" 2>/dev/null || true
+  cat "${ARTIFACT_DIR}/vllm_api_concurrency_validation.txt" 2>/dev/null || true
   echo
   echo "## model_path_precheck"
   cat "${ARTIFACT_DIR}/model_path_precheck.txt" 2>/dev/null || true
@@ -161,8 +168,8 @@ import sys
 from pathlib import Path
 
 artifact_dir = Path(sys.argv[1])
-result_path = artifact_dir / "vllm_batched_prefix_result.json"
-validation_path = artifact_dir / "vllm_batched_prefix_validation_extra.txt"
+result_path = artifact_dir / "vllm_api_concurrency_result.json"
+validation_path = artifact_dir / "vllm_api_concurrency_validation_extra.txt"
 if not result_path.is_file():
     validation_path.write_text("missing result json\n", encoding="utf-8")
     print("missing result json")
@@ -171,10 +178,12 @@ result = json.loads(result_path.read_text(encoding="utf-8"))
 errors = []
 if result.get("status") != "success":
     errors.append(f"status={result.get('status')}")
-if result.get("batch_size") != 2:
-    errors.append(f"batch_size={result.get('batch_size')}")
-if result.get("prefix_cache_requested") != 1:
-    errors.append(f"prefix_cache_requested={result.get('prefix_cache_requested')}")
+if result.get("server_ready") != 1:
+    errors.append(f"server_ready={result.get('server_ready')}")
+if result.get("request_count") != 3:
+    errors.append(f"request_count={result.get('request_count')}")
+if int(result.get("client_overlap_candidate_count") or 0) <= 0:
+    errors.append(f"client_overlap_candidate_count={result.get('client_overlap_candidate_count')}")
 if result.get("trace_validation_errors") != 0:
     errors.append(f"trace_validation_errors={result.get('trace_validation_errors')}")
 for name, status in result.get("import_probe", {}).items():
@@ -198,30 +207,30 @@ PY
 )
 
 cat > "${ARTIFACT_DIR}/mail_body.txt" <<EOF
-P1.17 vLLM batched repeated-prefix smoke 已完成。
+P1.18 vLLM API concurrency smoke 已完成。
 
 run_id: ${RUN_ID}
 commit: $(git rev-parse HEAD)
 artifact_dir: ${ARTIFACT_DIR}
 pytest_exit_code: ${pytest_exit_code}
-vllm_batched_prefix_exit_code: ${vllm_exit_code}
+vllm_api_concurrency_exit_code: ${vllm_exit_code}
 
 请见附件 zip 和 summary.txt。
 
 边界说明：
 - 使用当前环境已有 vLLM / vLLM-Ascend。
 - 使用 VLLM_PLUGINS=ascend，并加载 CANN/ATB 环境。
-- 使用 Qwen3.5-4B，一次提交 P007/P008 两个 4K repeated-prefix prompt。
+- 启动本机回环 vLLM OpenAI API server，只发送 3 个错开请求。
+- 这是 API server / 多客户端入口 smoke，不是 benchmark、压测或真实 continuous batching 验收。
 - enable_prefix_caching=True 只是候选路径请求，不声称命中率。
-- 未运行 vLLM serve/API server/benchmark/压测/多 worker 并发。
 - 未安装、升级、卸载或修复任何包。
-- 未运行 full 16K/32K 或 full P010=43216 tokens。
+- 未运行 8 请求 burst、16 请求 continuous workload、full 16K/32K 或 full P010=43216 tokens。
 - 未启用 profiler；未声称 CANN device timeline pairing。
-- 未输出性能 benchmark、吞吐结论、瓶颈归因或优化建议。
+- 未输出性能 benchmark、吞吐结论、调度效率结论、瓶颈归因或优化建议。
 EOF
 
 python 通信模块/scripts/send_notify.py \
-  -s "[AK服务器] 任务完成：vLLM batched prefix smoke ${RUN_ID}" \
+  -s "[AK服务器] 任务完成：vLLM API concurrency smoke ${RUN_ID}" \
   -b "$(cat "${ARTIFACT_DIR}/mail_body.txt")" \
   -a "工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}.zip"
 
@@ -234,37 +243,36 @@ fi
 
 请邮件附件至少包含：
 
-- `runtime_vllm_batched_prefix_smoke_2026_0706_p1_017.zip`
+- `runtime_vllm_api_concurrency_smoke_2026_0706_p1_018.zip`
 - `run_context.txt`
 - `pytest_inference_contracts.log`
 - `package_inventory.tsv`
 - `model_path_precheck.txt`
 - `vllm_import_probe.tsv`
-- `vllm_batched_prefix.log`
-- `vllm_batched_prefix_engine_init.json`
-- `vllm_batched_prefix_trace.jsonl`
-- `vllm_batched_prefix_result.json`
-- `vllm_batched_prefix_summary.tsv`
-- `vllm_batched_prefix_conclusion.txt`
-- `vllm_batched_prefix_validation.txt`
-- `vllm_batched_prefix_validation_extra.txt`
+- `vllm_api_concurrency.log`
+- `vllm_api_server_command.json`
+- `vllm_api_server.log`
+- `vllm_api_concurrency_trace.jsonl`
+- `vllm_api_concurrency_result.json`
+- `vllm_api_concurrency_summary.tsv`
+- `vllm_api_concurrency_conclusion.txt`
+- `vllm_api_concurrency_validation.txt`
+- `vllm_api_concurrency_validation_extra.txt`
 - `generated_texts/*.txt`
-- `generated_texts/*_token_ids.json`
+- `generated_texts/*_response.json`
 - `summary.txt`
 - `mail_body.txt`
 
 ## 成功口径
 
 - `pytest_exit_code=0`
-- `vllm_batched_prefix_exit_code=0`
+- `vllm_api_concurrency_exit_code=0`
 - `torch`、`torch_npu`、`transformers`、`vllm`、`vllm_ascend` 均 import 成功
-- vLLM engine 初始化成功
-- `batch_count=1`
-- `batch_size=2`
-- `prefix_cache_requested=1`
-- 2 个 case 均完成生成
-- 每个 case 有非空 generated token 或文本
+- vLLM OpenAI API server `/health` ready
+- `/v1/completions` 3 个请求均返回 2xx
+- 3 个 case 均有非空 generated token 或文本
 - 每个 case 的 `submitted_input_token_count == input_token_count`
-- `vllm_batched_prefix_trace.jsonl` 校验 `errors=0`
+- `client_overlap_candidate_count > 0`
+- `vllm_api_concurrency_trace.jsonl` 校验 `errors=0`
 
-如果失败，请不要在服务器上现场修包、改源码或扩大任务；直接回传失败 artifact 和错误日志。
+无论成功或失败，本轮都不能声称 vLLM continuous batching、prefix cache hit rate、吞吐性能、调度瓶颈或 CANN device timeline pairing 已经验证。

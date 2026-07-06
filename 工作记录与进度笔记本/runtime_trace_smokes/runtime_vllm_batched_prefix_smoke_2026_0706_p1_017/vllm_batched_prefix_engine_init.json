@@ -1,0 +1,13 @@
+{
+  "llm_class": "LLM",
+  "llm_kwargs": {
+    "model": "/data/node0_disk1/Public/Qwen3.5-4B",
+    "trust_remote_code": true,
+    "max_model_len": 6144,
+    "tensor_parallel_size": 1,
+    "gpu_memory_utilization": 0.85,
+    "enforce_eager": true,
+    "enable_prefix_caching": true
+  },
+  "latency_us": 80759747
+}
