@@ -1,0 +1,4 @@
+prompt_id	status	input_token_count	generated_token_count	generated_text_nonempty	input_h2d_latency_us	prefill_latency_us	decode_step_count	decode_total_latency_us	first_decode_latency_us
+P000	success	51	8	1	231	1125264	7	913121	142626
+P001	success	161	8	1	203	605976	7	913895	133976
+P002	success	185	8	1	191	579502	7	896915	129996

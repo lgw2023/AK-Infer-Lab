@@ -1,0 +1,160 @@
+P1.10 small model trace matrix 受限验证已完成。
+
+任务 ID: runtime_small_model_trace_matrix_2026_0706_p1_009
+附件: 工作记录与进度笔记本/runtime_trace_smokes/runtime_small_model_trace_matrix_2026_0706_p1_009.zip
+
+## run_context
+run_id=runtime_small_model_trace_matrix_2026_0706_p1_009
+commit=42fa210
+timestamp=2026-07-06T10:49:03+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+PROMPT_ROOT=工作记录与进度笔记本/p1_inference_contracts/prompts
+AK_OBS_NPU_DEVICE=npu:6
+AK_TOKEN_CALIBRATION_PROMPTS=P000,P001,P002,P003,P004,P005,P006,P007,P008,P009,P010,P011,P012
+AK_TRACE_MATRIX_PROMPTS=P000,P001,P002
+AK_TRACE_MATRIX_MAX_INPUT_TOKENS=4096
+AK_TRACE_MATRIX_MAX_NEW_TOKENS=8
+AK_TRACE_MATRIX_TIMEOUT=60m
+pytest_exit_code=0
+package_inventory_exit_code=0
+model_path_precheck_exit_code=0
+small_model_trace_matrix_exit_code=0
+
+## small_model_trace_matrix_conclusion
+matrix_status=success
+failure_phase=
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+device=npu:6
+config_class=Qwen3_5TextConfig
+tokenizer_class=Qwen2Tokenizer
+model_class=Qwen3_5ForCausalLM
+token_calibration_prompt_count=13
+matrix_prompt_ids=P000,P001,P002
+matrix_success_prompt_count=3
+trace_event_count=18
+trace_validation_errors=0
+torch_profiler_trace_exists=1
+torch_profiler_marker_event_count=24
+torch_profiler_npu_event_candidate_count=407700
+error_type=
+error=
+trace_pairing_policy=torch_profiler_trace_candidate_only; do not claim CANN device timeline pairing
+performance_policy=trace_matrix_smoke_only_no_perf_or_bottleneck_conclusion
+environment_policy=no_package_install_no_environment_repair
+
+## token_calibration
+prompt_id	prompt_path	full_token_count	truncated_token_count	max_input_tokens	status
+P000	工作记录与进度笔记本/p1_inference_contracts/prompts/P000.md	51	51	4096	success
+P001	工作记录与进度笔记本/p1_inference_contracts/prompts/P001.md	161	161	4096	success
+P002	工作记录与进度笔记本/p1_inference_contracts/prompts/P002.md	185	185	4096	success
+P003	工作记录与进度笔记本/p1_inference_contracts/prompts/P003.md	120	120	4096	success
+P004	工作记录与进度笔记本/p1_inference_contracts/prompts/P004.md	161	161	4096	success
+P005	工作记录与进度笔记本/p1_inference_contracts/prompts/P005.md	181	181	4096	success
+P006	工作记录与进度笔记本/p1_inference_contracts/prompts/P006.md	160	160	4096	success
+P007	工作记录与进度笔记本/p1_inference_contracts/prompts/P007.md	94	94	4096	success
+P008	工作记录与进度笔记本/p1_inference_contracts/prompts/P008.md	97	97	4096	success
+P009	工作记录与进度笔记本/p1_inference_contracts/prompts/P009.md	68	68	4096	success
+P010	工作记录与进度笔记本/p1_inference_contracts/prompts/P010.md	161	161	4096	success
+P011	工作记录与进度笔记本/p1_inference_contracts/prompts/P011.md	129	129	4096	success
+P012	工作记录与进度笔记本/p1_inference_contracts/prompts/P012.md	104	104	4096	success
+
+## small_model_trace_matrix_summary
+prompt_id	status	input_token_count	generated_token_count	generated_text_nonempty	input_h2d_latency_us	prefill_latency_us	decode_step_count	decode_total_latency_us	first_decode_latency_us
+P000	success	51	8	1	231	1125264	7	913121	142626
+P001	success	161	8	1	203	605976	7	913895	133976
+P002	success	185	8	1	191	579502	7	896915	129996
+
+## trace_validation
+errors=0
+events=18
+error_list=[]
+
+## torch_profiler_summary
+{
+    "export_error": "",
+    "marker_event_count": 24,
+    "marker_names_sample": [
+        "ak_p1_trace_matrix_P000_prefill",
+        "ak_p1_trace_matrix_P000_decode_1",
+        "ak_p1_trace_matrix_P000_decode_2",
+        "ak_p1_trace_matrix_P000_decode_3",
+        "ak_p1_trace_matrix_P000_decode_4",
+        "ak_p1_trace_matrix_P000_decode_5",
+        "ak_p1_trace_matrix_P000_decode_6",
+        "ak_p1_trace_matrix_P000_decode_7",
+        "ak_p1_trace_matrix_P001_prefill",
+        "ak_p1_trace_matrix_P001_decode_1",
+        "ak_p1_trace_matrix_P001_decode_2",
+        "ak_p1_trace_matrix_P001_decode_3",
+        "ak_p1_trace_matrix_P001_decode_4",
+        "ak_p1_trace_matrix_P001_decode_5",
+        "ak_p1_trace_matrix_P001_decode_6",
+        "ak_p1_trace_matrix_P001_decode_7",
+        "ak_p1_trace_matrix_P002_prefill",
+        "ak_p1_trace_matrix_P002_decode_1",
+        "ak_p1_trace_matrix_P002_decode_2",
+        "ak_p1_trace_matrix_P002_decode_3",
+        "ak_p1_trace_matrix_P002_decode_4",
+        "ak_p1_trace_matrix_P002_decode_5",
+        "ak_p1_trace_matrix_P002_decode_6",
+        "ak_p1_trace_matrix_P002_decode_7"
+    ],
+    "npu_event_candidate_count": 407700,
+    "npu_event_names_sample": [
+        "aten::empty",
+        "aten::to",
+        "aten::lift_fresh",
+        "aten::detach_",
+        "aten::empty",
+        "aten::to",
+        "aten::lift_fresh",
+        "aten::detach_",
+        "aten::to",
+        "aten::_to_copy",
+        "aten::empty_strided",
+        "aten::copy_",
+        "aten::embedding",
+        "aclnnEmbedding",
+        "aten::arange",
+        "aclnnArange",
+        "aten::add",
+        "aten::item",
+        "aten::_local_scalar_dense",
+        "aclnnAdds",
+        "aten::view",
+        "aten::expand",
+        "aten::as_strided",
+        "aten::select",
+        "aten::as_strided",
+        "aten::slice",
+        "aten::as_strided",
+        "aten::unsqueeze",
+        "aten::as_strided",
+        "aten::unsqueeze",
+        "aten::as_strided",
+        "aten::unsqueeze",
+        "aten::as_strided",
+        "aten::to",
+        "aten::expand",
+        "aten::as_strided",
+        "aten::to",
+        "aten::unsqueeze",
+        "aten::as_strided",
+        "aten::to"
+    ],
+    "trace_event_count": 498944,
+    "trace_exists": true
+}
+
+执行边界：
+- 本轮使用现有 Qwen3.5-4B、transformers、torch_npu 路径
+- 默认只对 P000,P001,P002 执行顺序单请求 trace
+- 对 P000-P012 做 tokenizer token 数校准
+- 未安装、升级、卸载或修复任何推理框架包
+- 未运行 vLLM serve/benchmark 或完整 P000-P012 推理 workload
+- 未修改 models/、Public/、CANN/driver/runtime/vLLM 源码
+- torch_profiler_trace 仍只作为 candidate bridge，不声称 CANN device timeline pairing
+- 本轮不输出性能或瓶颈归因结论

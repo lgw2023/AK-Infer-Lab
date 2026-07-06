@@ -1,0 +1,190 @@
+{
+  "calibration_prompt_ids": [
+    "P000",
+    "P001",
+    "P002",
+    "P003",
+    "P004",
+    "P005",
+    "P006",
+    "P007",
+    "P008",
+    "P009",
+    "P010",
+    "P011",
+    "P012"
+  ],
+  "config_architectures": null,
+  "config_class": "Qwen3_5TextConfig",
+  "config_model_type": "qwen3_5_text",
+  "device": "npu:6",
+  "matrix_prompt_ids": [
+    "P000",
+    "P001",
+    "P002"
+  ],
+  "matrix_success_prompt_count": 3,
+  "matrix_summary": [
+    {
+      "decode_step_count": 7,
+      "decode_total_latency_us": 913121,
+      "first_decode_latency_us": 142626,
+      "generated_text_nonempty": true,
+      "generated_token_count": 8,
+      "input_h2d_latency_us": 231,
+      "input_token_count": 51,
+      "prefill_latency_us": 1125264,
+      "prompt_id": "P000",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 7,
+      "decode_total_latency_us": 913895,
+      "first_decode_latency_us": 133976,
+      "generated_text_nonempty": true,
+      "generated_token_count": 8,
+      "input_h2d_latency_us": 203,
+      "input_token_count": 161,
+      "prefill_latency_us": 605976,
+      "prompt_id": "P001",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 7,
+      "decode_total_latency_us": 896915,
+      "first_decode_latency_us": 129996,
+      "generated_text_nonempty": true,
+      "generated_token_count": 8,
+      "input_h2d_latency_us": 191,
+      "input_token_count": 185,
+      "prefill_latency_us": 579502,
+      "prompt_id": "P002",
+      "status": "success"
+    }
+  ],
+  "max_input_tokens": 4096,
+  "max_new_tokens": 8,
+  "model_class": "Qwen3_5ForCausalLM",
+  "model_path": "/data/node0_disk1/Public/Qwen3.5-4B",
+  "npu_device_count": 8,
+  "phase": "complete",
+  "prompt_root": "工作记录与进度笔记本/p1_inference_contracts/prompts",
+  "run_id": "runtime_small_model_trace_matrix_2026_0706_p1_009",
+  "status": "success",
+  "token_calibration": [
+    {
+      "full_token_count": 51,
+      "max_input_tokens": 4096,
+      "prompt_id": "P000",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P000.md",
+      "status": "success",
+      "truncated_token_count": 51
+    },
+    {
+      "full_token_count": 161,
+      "max_input_tokens": 4096,
+      "prompt_id": "P001",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P001.md",
+      "status": "success",
+      "truncated_token_count": 161
+    },
+    {
+      "full_token_count": 185,
+      "max_input_tokens": 4096,
+      "prompt_id": "P002",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P002.md",
+      "status": "success",
+      "truncated_token_count": 185
+    },
+    {
+      "full_token_count": 120,
+      "max_input_tokens": 4096,
+      "prompt_id": "P003",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P003.md",
+      "status": "success",
+      "truncated_token_count": 120
+    },
+    {
+      "full_token_count": 161,
+      "max_input_tokens": 4096,
+      "prompt_id": "P004",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P004.md",
+      "status": "success",
+      "truncated_token_count": 161
+    },
+    {
+      "full_token_count": 181,
+      "max_input_tokens": 4096,
+      "prompt_id": "P005",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P005.md",
+      "status": "success",
+      "truncated_token_count": 181
+    },
+    {
+      "full_token_count": 160,
+      "max_input_tokens": 4096,
+      "prompt_id": "P006",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P006.md",
+      "status": "success",
+      "truncated_token_count": 160
+    },
+    {
+      "full_token_count": 94,
+      "max_input_tokens": 4096,
+      "prompt_id": "P007",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P007.md",
+      "status": "success",
+      "truncated_token_count": 94
+    },
+    {
+      "full_token_count": 97,
+      "max_input_tokens": 4096,
+      "prompt_id": "P008",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P008.md",
+      "status": "success",
+      "truncated_token_count": 97
+    },
+    {
+      "full_token_count": 68,
+      "max_input_tokens": 4096,
+      "prompt_id": "P009",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P009.md",
+      "status": "success",
+      "truncated_token_count": 68
+    },
+    {
+      "full_token_count": 161,
+      "max_input_tokens": 4096,
+      "prompt_id": "P010",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P010.md",
+      "status": "success",
+      "truncated_token_count": 161
+    },
+    {
+      "full_token_count": 129,
+      "max_input_tokens": 4096,
+      "prompt_id": "P011",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P011.md",
+      "status": "success",
+      "truncated_token_count": 129
+    },
+    {
+      "full_token_count": 104,
+      "max_input_tokens": 4096,
+      "prompt_id": "P012",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P012.md",
+      "status": "success",
+      "truncated_token_count": 104
+    }
+  ],
+  "token_calibration_prompt_count": 13,
+  "tokenizer_class": "Qwen2Tokenizer",
+  "tokenizer_model_max_length": 262144,
+  "torch_profiler_export_error": "",
+  "torch_profiler_marker_event_count": 24,
+  "torch_profiler_npu_event_candidate_count": 407700,
+  "torch_profiler_trace_exists": true,
+  "torch_version": "2.9.0+cpu",
+  "trace_event_count": 18,
+  "trace_validation_errors": 0
+}

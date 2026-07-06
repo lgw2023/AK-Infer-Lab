@@ -1,0 +1,5 @@
+torch_profiler_trace.json is omitted from the extracted tree because the raw file
+is larger than GitHub single-file push limits.
+
+The complete original server attachment, including torch_profiler_trace.json, is
+preserved in runtime_small_model_trace_matrix_2026_0706_p1_009.zip.

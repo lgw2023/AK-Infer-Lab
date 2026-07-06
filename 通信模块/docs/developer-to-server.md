@@ -2,18 +2,19 @@
 
 > 本文件每次只保留当前待执行任务；旧历史信息已清空。
 
-## 当前任务：P1.10 small model trace matrix 受限验证
+## 当前任务：P1.11 remaining prompt trace matrix 受限验证
 
-- 任务 ID：`runtime_small_model_trace_matrix_2026_0706_p1_009`
+- 任务 ID：`runtime_small_model_remaining_prompt_trace_2026_0706_p1_010`
 - 证据基线：`obs_2026_0705_atlas800t_a2_006`
 - P1.6 profiler bridge：`runtime_profiler_bridge_2026_0706_p1_005`
 - P1.9 small model load smoke：`runtime_small_model_load_smoke_2026_0706_p1_008`
+- P1.10 small model trace matrix：`runtime_small_model_trace_matrix_2026_0706_p1_009`
 - 当前契约入口：`工作记录与进度笔记本/p1_inference_contracts/`
-- 详细 handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_small_model_trace_matrix_handoff.md`
+- 详细 handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_small_model_remaining_prompt_trace_handoff.md`
 
-P1.9 最新反馈邮件时间为 2026-07-06 10:23:55 CST，服务器执行 commit 为 `09a6118`。`Qwen3.5-4B` 已通过 `AutoModelForCausalLM` 加载为 `Qwen3_5ForCausalLM`，tokenizer 为 `Qwen2Tokenizer`，设备为 `npu:6`；P000 极短推理成功，`generated_token_count=4`，`small_model_trace_validation_errors=0`，并导出 `torch_profiler_trace.json`。
+P1.10 最新反馈邮件时间为 2026-07-06 10:50:21 CST，服务器执行 commit 为 `42fa210`。`Qwen3.5-4B` 已在同一模型加载会话中完成 `P000,P001,P002` 顺序单请求 trace；`small_model_trace_matrix.jsonl` 校验 `errors=0`、`events=18`，`torch_profiler_trace.json` 含 24 个 `ak_p1_trace_matrix_*` marker 和 407700 个 NPU/op 候选事件。P1.10 还完成 `P000-P012` tokenizer 校准，当前 prompt 文件实测只有 51-185 tokens，说明它们目前是 shape fixture，不是真正的 4K/8K/16K/32K 长上下文负载。
 
-本轮不是重复 P1.9。P1.10 只把已跑通的手动 `transformers + torch_npu` 路径扩大到一个受限矩阵：对 `P000-P012` 做真实 tokenizer token 数校准，默认只对 `P000,P001,P002` 做顺序单请求 prefill/decode trace。本轮仍不安装包、不修环境、不运行 vLLM 服务、不跑完整 P000-P012 推理 workload、不输出性能 benchmark 或瓶颈归因结论。
+本轮不是重复 P1.10 的前三条 prompt。P1.11 只补齐当前短形态样例中的 `P003-P012` 顺序单请求 trace；和 P1.10 合并后，可形成当前 `P000-P012` shape fixture 的完整小模型 trace 覆盖。本轮仍使用现有 `Qwen3.5-4B + transformers + torch_npu` 手动路径，不安装包、不修环境、不运行 vLLM 服务、不跑长上下文/并发/burst/continuous batching workload、不输出性能 benchmark 或瓶颈归因结论。
 
 ## 服务器执行边界
 
@@ -24,16 +25,16 @@ P1.9 最新反馈邮件时间为 2026-07-06 10:23:55 CST，服务器执行 commi
 - 使用服务器当前 conda 环境；不创建新环境。
 - 默认模型路径为 `/data/node0_disk1/Public/Qwen3.5-4B`，可用 `AK_SMALL_MODEL_PATH=/path/to/model` 覆盖。
 - 默认 NPU 设备为 `npu:6`，可用 `AK_OBS_NPU_DEVICE=npu:<id>` 覆盖。
-- 默认校准 `P000-P012` 的 tokenizer token 数。
-- 默认只对 `P000,P001,P002` 执行顺序单请求 trace。
-- 默认每条请求最多截断到 4096 tokens，最多生成 8 个 token。
-- 产出并邮件回传 `runtime_small_model_trace_matrix_2026_0706_p1_009.zip`。
+- 默认复核 `P000-P012` 的 tokenizer token 数。
+- 默认只对 `P003-P012` 执行顺序单请求 trace。
+- 默认每条请求最多截断到 4096 tokens，最多生成 4 个 token。
+- 产出并邮件回传 `runtime_small_model_remaining_prompt_trace_2026_0706_p1_010.zip`。
 
 请不要执行：
 
 - 不要安装、升级、卸载或修复 `transformers`、`vllm`、`vllm_ascend`、`mindie`、`mindspore` 或其他包。
 - 不要创建新 conda 环境。
-- 不要运行 vLLM engine、serve、benchmark 或完整 P000-P012 推理 workload。
+- 不要运行 vLLM engine、serve、benchmark、长上下文 workload 或并发 P000-P012 workload。
 - 不要运行并发、burst、continuous batching 或 prefix cache 结论型测试。
 - 不要复制、移动、删除或改名 `models/` 或 `/data/node0_disk1/Public/` 下任何文件。
 - 不要修改 driver、CANN、apt、dpkg、NPU runtime 或 vLLM/vLLM-Ascend 源码。
@@ -43,11 +44,11 @@ P1.9 最新反馈邮件时间为 2026-07-06 10:23:55 CST，服务器执行 commi
 
 ## 本轮必须回答的问题
 
-- `Qwen3.5-4B` 的 tokenizer 对 `P000-P012` 的真实 token 数是多少？
-- 默认 `P000,P001,P002` 三个 prompt 是否都能在同一个模型加载会话中完成顺序单请求 prefill/decode？
-- 每个请求是否都能产生非空 token 或文本输出？
+- 复核 `Qwen3.5-4B` tokenizer 对 `P000-P012` 的真实 token 数是否与 P1.10 一致。
+- 默认 `P003-P012` 十个 prompt 是否都能在同一个模型加载会话中完成顺序单请求 prefill/decode？
+- 每个 `P003-P012` 请求是否都能产生非空 token 或文本输出？
 - 能否生成并通过校验 `small_model_trace_matrix.jsonl`？
-- 能否导出同一份 `torch_profiler_trace.json`，其中包含 `ak_p1_trace_matrix_*` marker 与 NPU/op 事件候选？
+- 能否导出同一份 `torch_profiler_trace.json`，其中包含 `ak_p1_trace_matrix_P003` 到 `P012` 的 marker 与 NPU/op 事件候选？
 - 如果失败，失败点是 prompt/tokenizer、模型推理、NPU/OOM、profiler 导出，还是 trace 校验？
 
 ## 执行命令
@@ -63,16 +64,16 @@ if [ "${PULL_STATUS}" -ne 0 ]; then
   exit "${PULL_STATUS}"
 fi
 
-RUN_ID=runtime_small_model_trace_matrix_2026_0706_p1_009
+RUN_ID=runtime_small_model_remaining_prompt_trace_2026_0706_p1_010
 ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
 MODEL_PATH="${AK_SMALL_MODEL_PATH:-/data/node0_disk1/Public/Qwen3.5-4B}"
 PROMPT_ROOT="${AK_SMALL_MODEL_PROMPT_ROOT:-工作记录与进度笔记本/p1_inference_contracts/prompts}"
 AK_OBS_NPU_DEVICE="${AK_OBS_NPU_DEVICE:-npu:6}"
 AK_TOKEN_CALIBRATION_PROMPTS="${AK_TOKEN_CALIBRATION_PROMPTS:-P000,P001,P002,P003,P004,P005,P006,P007,P008,P009,P010,P011,P012}"
-AK_TRACE_MATRIX_PROMPTS="${AK_TRACE_MATRIX_PROMPTS:-P000,P001,P002}"
+AK_TRACE_MATRIX_PROMPTS="${AK_TRACE_MATRIX_PROMPTS:-P003,P004,P005,P006,P007,P008,P009,P010,P011,P012}"
 AK_TRACE_MATRIX_MAX_INPUT_TOKENS="${AK_TRACE_MATRIX_MAX_INPUT_TOKENS:-4096}"
-AK_TRACE_MATRIX_MAX_NEW_TOKENS="${AK_TRACE_MATRIX_MAX_NEW_TOKENS:-8}"
-AK_TRACE_MATRIX_TIMEOUT="${AK_TRACE_MATRIX_TIMEOUT:-60m}"
+AK_TRACE_MATRIX_MAX_NEW_TOKENS="${AK_TRACE_MATRIX_MAX_NEW_TOKENS:-4}"
+AK_TRACE_MATRIX_TIMEOUT="${AK_TRACE_MATRIX_TIMEOUT:-90m}"
 export RUN_ID ARTIFACT_DIR MODEL_PATH PROMPT_ROOT AK_OBS_NPU_DEVICE
 export AK_TOKEN_CALIBRATION_PROMPTS AK_TRACE_MATRIX_PROMPTS
 export AK_TRACE_MATRIX_MAX_INPUT_TOKENS AK_TRACE_MATRIX_MAX_NEW_TOKENS
@@ -724,7 +725,7 @@ artifact_dir = Path(os.environ["ARTIFACT_DIR"])
 summary_path = artifact_dir / "summary.txt"
 summary = summary_path.read_text(encoding="utf-8", errors="replace") if summary_path.exists() else ""
 
-print("P1.10 small model trace matrix 受限验证已完成。")
+print("P1.11 remaining prompt trace matrix 受限验证已完成。")
 print()
 print(f"任务 ID: {run_id}")
 print(f"附件: 工作记录与进度笔记本/runtime_trace_smokes/{run_id}.zip")
@@ -732,10 +733,10 @@ print()
 print(summary)
 print("执行边界：")
 print("- 本轮使用现有 Qwen3.5-4B、transformers、torch_npu 路径")
-print("- 默认只对 P000,P001,P002 执行顺序单请求 trace")
-print("- 对 P000-P012 做 tokenizer token 数校准")
+print("- 默认只对 P003-P012 执行顺序单请求 trace")
+print("- 对 P000-P012 复核 tokenizer token 数")
 print("- 未安装、升级、卸载或修复任何推理框架包")
-print("- 未运行 vLLM serve/benchmark 或完整 P000-P012 推理 workload")
+print("- 未运行 vLLM serve/benchmark、长上下文 workload、并发、burst 或 continuous batching")
 print("- 未修改 models/、Public/、CANN/driver/runtime/vLLM 源码")
 print("- torch_profiler_trace 仍只作为 candidate bridge，不声称 CANN device timeline pairing")
 print("- 本轮不输出性能或瓶颈归因结论")
@@ -749,7 +750,7 @@ PY
 )
 
 python 通信模块/send_notify.py \
-  -s "[AK服务器] 任务完成：small model trace matrix ${RUN_ID}" \
+  -s "[AK服务器] 任务完成：small model remaining prompt trace ${RUN_ID}" \
   --body-file "${ARTIFACT_DIR}/mail_body.txt" \
   --attach "工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}.zip"
 ```
@@ -758,7 +759,7 @@ python 通信模块/send_notify.py \
 
 请邮件附加：
 
-- `工作记录与进度笔记本/runtime_trace_smokes/runtime_small_model_trace_matrix_2026_0706_p1_009.zip`
+- `工作记录与进度笔记本/runtime_trace_smokes/runtime_small_model_remaining_prompt_trace_2026_0706_p1_010.zip`
 
 zip 内至少包含：
 
@@ -782,7 +783,7 @@ zip 内至少包含：
 邮件主题请使用：
 
 ```text
-[AK服务器] 任务完成：small model trace matrix runtime_small_model_trace_matrix_2026_0706_p1_009
+[AK服务器] 任务完成：small model remaining prompt trace runtime_small_model_remaining_prompt_trace_2026_0706_p1_010
 ```
 
 默认收件人继续使用：
@@ -799,14 +800,14 @@ gwlee1995@gmail.com,yilili1023@gmail.com
 - `tests/inference_contracts` 执行并回传日志。
 - `token_calibration.tsv` 明确给出 `P000-P012` 的 tokenizer token 数或失败状态。
 - `small_model_trace_matrix_conclusion.txt` 明确给出 `matrix_status`。
-- 成功时必须回传 `P000,P001,P002` 的 matrix summary、P1 trace 校验结果和 profiler 摘要。
+- 成功时必须回传 `P003-P012` 的 matrix summary、P1 trace 校验结果和 profiler 摘要。
 - 失败时必须回传失败阶段、错误类型和 traceback。
 - 邮件正文明确说明本轮没有安装包、没有修环境、没有运行 vLLM 服务、没有做性能或瓶颈归因。
 
 本轮不要求：
 
 - 不要求 vLLM engine 成功启动。
-- 不要求跑 P000-P012 全量推理 workload。
+- 不要求跑真实长上下文、并发、burst 或 continuous batching workload。
 - 不要求并发、burst、continuous batching 或 prefix cache 实测。
 - 不要求采集完整 CANN device timeline。
 - 不要求输出 TTFT/TPOT benchmark 或优化建议。

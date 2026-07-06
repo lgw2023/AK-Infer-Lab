@@ -1,12 +1,21 @@
 schema_name: workload_manifest
 schema_version: 0.1.0
 source: static_prompt_fixtures
-token_policy: manual_estimate_only_no_tokenizer_dependency
+token_policy: manual_bucket_targets_with_qwen3_5_4b_calibration
+token_calibration:
+  run_id: runtime_small_model_trace_matrix_2026_0706_p1_009
+  timestamp: "2026-07-06T10:49:03+08:00"
+  model_path: /data/node0_disk1/Public/Qwen3.5-4B
+  tokenizer_class: Qwen2Tokenizer
+  max_input_tokens: 4096
+  artifact_path: 工作记录与进度笔记本/runtime_trace_smokes/runtime_small_model_trace_matrix_2026_0706_p1_009/token_calibration.tsv
+  note: Measured values are for the current prompt files. The estimated_prompt_tokens fields remain target bucket design values, not measured lengths.
 prompts:
 - prompt_id: P000
   scenario: W0_short_qa
   context_len_bucket: "512"
   estimated_prompt_tokens: 420
+  measured_prompt_tokens_qwen3_5_4b: 51
   expected_output_tokens: 32
   max_new_tokens: 64
   arrival_pattern: single
@@ -26,6 +35,7 @@ prompts:
   scenario: W1_code_explanation
   context_len_bucket: 1K
   estimated_prompt_tokens: 980
+  measured_prompt_tokens_qwen3_5_4b: 161
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: single
@@ -45,6 +55,7 @@ prompts:
   scenario: W1_code_analysis
   context_len_bucket: 4K
   estimated_prompt_tokens: 3600
+  measured_prompt_tokens_qwen3_5_4b: 185
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: single
@@ -64,6 +75,7 @@ prompts:
   scenario: W2_long_system_prompt
   context_len_bucket: 8K
   estimated_prompt_tokens: 7600
+  measured_prompt_tokens_qwen3_5_4b: 120
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: single
@@ -83,6 +95,7 @@ prompts:
   scenario: W3_tool_output_text
   context_len_bucket: 8K
   estimated_prompt_tokens: 7900
+  measured_prompt_tokens_qwen3_5_4b: 161
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: single
@@ -102,6 +115,7 @@ prompts:
   scenario: W3_long_file_context
   context_len_bucket: 16K
   estimated_prompt_tokens: 15200
+  measured_prompt_tokens_qwen3_5_4b: 181
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: single
@@ -121,6 +135,7 @@ prompts:
   scenario: W4_multi_turn_recovery
   context_len_bucket: 16K
   estimated_prompt_tokens: 15800
+  measured_prompt_tokens_qwen3_5_4b: 160
   expected_output_tokens: 512
   max_new_tokens: 640
   arrival_pattern: single
@@ -140,6 +155,7 @@ prompts:
   scenario: W5_repeated_prefix
   context_len_bucket: 4K
   estimated_prompt_tokens: 3900
+  measured_prompt_tokens_qwen3_5_4b: 94
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: paired_prefix_a_first
@@ -159,6 +175,7 @@ prompts:
   scenario: W5_repeated_prefix
   context_len_bucket: 4K
   estimated_prompt_tokens: 3950
+  measured_prompt_tokens_qwen3_5_4b: 97
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: paired_prefix_a_second
@@ -178,6 +195,7 @@ prompts:
   scenario: W6_moe_diversity
   context_len_bucket: 8K
   estimated_prompt_tokens: 7800
+  measured_prompt_tokens_qwen3_5_4b: 68
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: single
@@ -197,6 +215,7 @@ prompts:
   scenario: W6_moe_long_context
   context_len_bucket: 32K
   estimated_prompt_tokens: 31000
+  measured_prompt_tokens_qwen3_5_4b: 161
   expected_output_tokens: 512
   max_new_tokens: 640
   arrival_pattern: single
@@ -216,6 +235,7 @@ prompts:
   scenario: W7_burst_queue
   context_len_bucket: 4K
   estimated_prompt_tokens: 3800
+  measured_prompt_tokens_qwen3_5_4b: 129
   expected_output_tokens: 128
   max_new_tokens: 192
   arrival_pattern: burst_8_requests_100ms_gap
@@ -235,6 +255,7 @@ prompts:
   scenario: W7_continuous_batching
   context_len_bucket: 8K
   estimated_prompt_tokens: 7600
+  measured_prompt_tokens_qwen3_5_4b: 104
   expected_output_tokens: 256
   max_new_tokens: 320
   arrival_pattern: continuous_16_requests_poisson
