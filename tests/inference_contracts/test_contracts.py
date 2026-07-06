@@ -13,6 +13,7 @@ from tools.observability_profile.catalog import build_field_catalog
 
 CONTRACT_DIR = Path("工作记录与进度笔记本/p1_inference_contracts")
 SERVER_TRACE_SMOKE_HANDOFF = CONTRACT_DIR / "server_runtime_trace_smoke_handoff.md"
+LONG_WORKLOAD_MANIFEST = CONTRACT_DIR / "workload_long_manifest.yaml"
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -100,6 +101,34 @@ def test_workload_manifest_has_required_prompts_and_coverage():
     assert "W7_burst_queue" in {prompt["scenario"] for prompt in prompts}
     assert "W7_continuous_batching" in {prompt["scenario"] for prompt in prompts}
     assert any(prompt["turn_count"] > 1 for prompt in prompts)
+    assert sum(1 for prompt in prompts if prompt["prefix_reuse_group"] == "prefix_group_a") >= 2
+
+
+def test_long_workload_manifest_materializes_prompt_paths():
+    manifest = load_yaml(LONG_WORKLOAD_MANIFEST)
+    prompts = manifest["prompts"]
+    prompt_ids = {prompt["prompt_id"] for prompt in prompts}
+
+    assert manifest["base_manifest"] == "workload_manifest.yaml"
+    assert manifest["token_policy"] == "server_tokenizer_calibration_required"
+    assert prompt_ids == {f"P{index:03d}" for index in range(13)}
+
+    for prompt in prompts:
+        assert set(REQUIRED_WORKLOAD_FIELDS).issubset(prompt)
+        assert prompt["materialization_policy"] == "deterministic_static_blocks"
+        assert prompt["measured_prompt_tokens_qwen3_5_4b"] is None
+        assert prompt["shape_fixture_measured_prompt_tokens_qwen3_5_4b"] > 0
+        assert prompt["prompt_path"].startswith("prompts_long/")
+        assert prompt["base_prompt_path"].startswith("prompts/")
+
+        prompt_path = CONTRACT_DIR / prompt["prompt_path"]
+        assert prompt_path.is_file()
+        text = prompt_path.read_text(encoding="utf-8")
+        assert "deterministic static prompt fixture" in text
+        assert len(text) == prompt["materialized_char_count"]
+        assert len(text) >= prompt["estimated_prompt_tokens"] * 3
+
+    assert any(prompt["context_len_bucket"] == "32K" for prompt in prompts)
     assert sum(1 for prompt in prompts if prompt["prefix_reuse_group"] == "prefix_group_a") >= 2
 
 

@@ -1,0 +1,281 @@
+{
+  "calibration_prompt_ids": [
+    "P000",
+    "P001",
+    "P002",
+    "P003",
+    "P004",
+    "P005",
+    "P006",
+    "P007",
+    "P008",
+    "P009",
+    "P010",
+    "P011",
+    "P012"
+  ],
+  "config_architectures": null,
+  "config_class": "Qwen3_5TextConfig",
+  "config_model_type": "qwen3_5_text",
+  "device": "npu:6",
+  "matrix_prompt_ids": [
+    "P003",
+    "P004",
+    "P005",
+    "P006",
+    "P007",
+    "P008",
+    "P009",
+    "P010",
+    "P011",
+    "P012"
+  ],
+  "matrix_success_prompt_count": 10,
+  "matrix_summary": [
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 378845,
+      "first_decode_latency_us": 130300,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 210,
+      "input_token_count": 120,
+      "prefill_latency_us": 1141168,
+      "prompt_id": "P003",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 373150,
+      "first_decode_latency_us": 128336,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 193,
+      "input_token_count": 161,
+      "prefill_latency_us": 578952,
+      "prompt_id": "P004",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 369373,
+      "first_decode_latency_us": 123956,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 174,
+      "input_token_count": 181,
+      "prefill_latency_us": 548256,
+      "prompt_id": "P005",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 367297,
+      "first_decode_latency_us": 123130,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 183,
+      "input_token_count": 160,
+      "prefill_latency_us": 555920,
+      "prompt_id": "P006",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 364589,
+      "first_decode_latency_us": 121660,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 173,
+      "input_token_count": 94,
+      "prefill_latency_us": 528036,
+      "prompt_id": "P007",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 362273,
+      "first_decode_latency_us": 120927,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 184,
+      "input_token_count": 97,
+      "prefill_latency_us": 540521,
+      "prompt_id": "P008",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 364456,
+      "first_decode_latency_us": 120964,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 174,
+      "input_token_count": 68,
+      "prefill_latency_us": 519057,
+      "prompt_id": "P009",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 367553,
+      "first_decode_latency_us": 121745,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 174,
+      "input_token_count": 161,
+      "prefill_latency_us": 545246,
+      "prompt_id": "P010",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 362042,
+      "first_decode_latency_us": 120993,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 183,
+      "input_token_count": 129,
+      "prefill_latency_us": 563351,
+      "prompt_id": "P011",
+      "status": "success"
+    },
+    {
+      "decode_step_count": 3,
+      "decode_total_latency_us": 361817,
+      "first_decode_latency_us": 120708,
+      "generated_text_nonempty": true,
+      "generated_token_count": 4,
+      "input_h2d_latency_us": 173,
+      "input_token_count": 104,
+      "prefill_latency_us": 521482,
+      "prompt_id": "P012",
+      "status": "success"
+    }
+  ],
+  "max_input_tokens": 4096,
+  "max_new_tokens": 4,
+  "model_class": "Qwen3_5ForCausalLM",
+  "model_path": "/data/node0_disk1/Public/Qwen3.5-4B",
+  "npu_device_count": 8,
+  "phase": "complete",
+  "prompt_root": "工作记录与进度笔记本/p1_inference_contracts/prompts",
+  "run_id": "runtime_small_model_remaining_prompt_trace_2026_0706_p1_010",
+  "status": "success",
+  "token_calibration": [
+    {
+      "full_token_count": 51,
+      "max_input_tokens": 4096,
+      "prompt_id": "P000",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P000.md",
+      "status": "success",
+      "truncated_token_count": 51
+    },
+    {
+      "full_token_count": 161,
+      "max_input_tokens": 4096,
+      "prompt_id": "P001",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P001.md",
+      "status": "success",
+      "truncated_token_count": 161
+    },
+    {
+      "full_token_count": 185,
+      "max_input_tokens": 4096,
+      "prompt_id": "P002",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P002.md",
+      "status": "success",
+      "truncated_token_count": 185
+    },
+    {
+      "full_token_count": 120,
+      "max_input_tokens": 4096,
+      "prompt_id": "P003",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P003.md",
+      "status": "success",
+      "truncated_token_count": 120
+    },
+    {
+      "full_token_count": 161,
+      "max_input_tokens": 4096,
+      "prompt_id": "P004",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P004.md",
+      "status": "success",
+      "truncated_token_count": 161
+    },
+    {
+      "full_token_count": 181,
+      "max_input_tokens": 4096,
+      "prompt_id": "P005",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P005.md",
+      "status": "success",
+      "truncated_token_count": 181
+    },
+    {
+      "full_token_count": 160,
+      "max_input_tokens": 4096,
+      "prompt_id": "P006",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P006.md",
+      "status": "success",
+      "truncated_token_count": 160
+    },
+    {
+      "full_token_count": 94,
+      "max_input_tokens": 4096,
+      "prompt_id": "P007",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P007.md",
+      "status": "success",
+      "truncated_token_count": 94
+    },
+    {
+      "full_token_count": 97,
+      "max_input_tokens": 4096,
+      "prompt_id": "P008",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P008.md",
+      "status": "success",
+      "truncated_token_count": 97
+    },
+    {
+      "full_token_count": 68,
+      "max_input_tokens": 4096,
+      "prompt_id": "P009",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P009.md",
+      "status": "success",
+      "truncated_token_count": 68
+    },
+    {
+      "full_token_count": 161,
+      "max_input_tokens": 4096,
+      "prompt_id": "P010",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P010.md",
+      "status": "success",
+      "truncated_token_count": 161
+    },
+    {
+      "full_token_count": 129,
+      "max_input_tokens": 4096,
+      "prompt_id": "P011",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P011.md",
+      "status": "success",
+      "truncated_token_count": 129
+    },
+    {
+      "full_token_count": 104,
+      "max_input_tokens": 4096,
+      "prompt_id": "P012",
+      "prompt_path": "工作记录与进度笔记本/p1_inference_contracts/prompts/P012.md",
+      "status": "success",
+      "truncated_token_count": 104
+    }
+  ],
+  "token_calibration_prompt_count": 13,
+  "tokenizer_class": "Qwen2Tokenizer",
+  "tokenizer_model_max_length": 262144,
+  "torch_profiler_export_error": "",
+  "torch_profiler_marker_event_count": 40,
+  "torch_profiler_npu_event_candidate_count": 923960,
+  "torch_profiler_trace_exists": true,
+  "torch_version": "2.9.0+cpu",
+  "trace_event_count": 60,
+  "trace_validation_errors": 0
+}

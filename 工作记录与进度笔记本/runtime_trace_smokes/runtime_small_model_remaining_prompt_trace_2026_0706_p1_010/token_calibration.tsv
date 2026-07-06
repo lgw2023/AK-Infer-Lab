@@ -1,0 +1,14 @@
+prompt_id	prompt_path	full_token_count	truncated_token_count	max_input_tokens	status
+P000	工作记录与进度笔记本/p1_inference_contracts/prompts/P000.md	51	51	4096	success
+P001	工作记录与进度笔记本/p1_inference_contracts/prompts/P001.md	161	161	4096	success
+P002	工作记录与进度笔记本/p1_inference_contracts/prompts/P002.md	185	185	4096	success
+P003	工作记录与进度笔记本/p1_inference_contracts/prompts/P003.md	120	120	4096	success
+P004	工作记录与进度笔记本/p1_inference_contracts/prompts/P004.md	161	161	4096	success
+P005	工作记录与进度笔记本/p1_inference_contracts/prompts/P005.md	181	181	4096	success
+P006	工作记录与进度笔记本/p1_inference_contracts/prompts/P006.md	160	160	4096	success
+P007	工作记录与进度笔记本/p1_inference_contracts/prompts/P007.md	94	94	4096	success
+P008	工作记录与进度笔记本/p1_inference_contracts/prompts/P008.md	97	97	4096	success
+P009	工作记录与进度笔记本/p1_inference_contracts/prompts/P009.md	68	68	4096	success
+P010	工作记录与进度笔记本/p1_inference_contracts/prompts/P010.md	161	161	4096	success
+P011	工作记录与进度笔记本/p1_inference_contracts/prompts/P011.md	129	129	4096	success
+P012	工作记录与进度笔记本/p1_inference_contracts/prompts/P012.md	104	104	4096	success
