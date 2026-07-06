@@ -1,0 +1,3 @@
+case_id	prompt_id	cap_tokens	max_new_tokens	full_token_count	expected_input_token_count	input_token_count	submitted_input_token_count	generated_token_count	generated_text_nonempty	finish_reason	prompt_input_mode	status	error_type	error
+P002_cap4096_gen32	P002	4096	32	5556	4096	4096	4096	32	1	length	decoded_text_after_transformers_token_cap	success		
+P003_cap8192_gen32	P003	8192	32	11144	8192	8192	8192	2	1	stop	decoded_text_after_transformers_token_cap	success		

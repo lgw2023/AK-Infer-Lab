@@ -18,6 +18,7 @@ LONG_PROMPT_TRACE_SMOKE_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_tra
 LONG_PROMPT_TRACE_MATRIX_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_matrix_handoff.md"
 LONG_PROMPT_ENVELOPE_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_envelope_handoff.md"
 VLLM_ENGINE_SINGLE_REQUEST_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_engine_single_request_smoke_handoff.md"
+VLLM_BATCHED_PREFIX_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_batched_prefix_smoke_handoff.md"
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -369,3 +370,37 @@ def test_vllm_engine_single_request_runner_case_plan_is_bounded():
     assert max(case["cap_tokens"] for case in VLLM_SMOKE_CASES) == 8192
     assert max(case["max_new_tokens"] for case in VLLM_SMOKE_CASES) == 32
     assert {case["prompt_id"] for case in VLLM_SMOKE_CASES} == {"P002", "P003"}
+
+
+def test_vllm_batched_prefix_handoff_defines_required_boundaries():
+    handoff = VLLM_BATCHED_PREFIX_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_batched_prefix_smoke_2026_0706_p1_017",
+        "vLLM Batched Prefix Smoke",
+        "VLLM_PLUGINS=ascend",
+        "source `/usr/local/Ascend/cann-9.0.0/set_env.sh`",
+        "source `/usr/local/Ascend/nnal/atb/set_env.sh`",
+        "P007_prefix_a_first_cap4096_gen32",
+        "P008_prefix_a_second_cap4096_gen32",
+        "llm.generate([text_for_P007, text_for_P008]",
+        "enable_prefix_caching=True",
+        "candidate_only_no_runtime_hit_signal",
+        "不安装、升级、卸载或修复任何包",
+        "不运行 `vllm serve`",
+        "不运行多 worker 并发客户端、burst 压测或连续到达流量",
+        "不输出性能 benchmark、吞吐结论、瓶颈归因、优化建议、prefix cache 命中结论或 CANN device timeline pairing 结论",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
+def test_vllm_batched_prefix_runner_case_plan_is_bounded():
+    from tools.inference_contracts.run_vllm_batched_prefix_smoke import VLLM_BATCHED_PREFIX_CASES
+
+    assert len(VLLM_BATCHED_PREFIX_CASES) == 2
+    assert max(case["cap_tokens"] for case in VLLM_BATCHED_PREFIX_CASES) == 4096
+    assert max(case["max_new_tokens"] for case in VLLM_BATCHED_PREFIX_CASES) == 32
+    assert {case["prompt_id"] for case in VLLM_BATCHED_PREFIX_CASES} == {"P007", "P008"}
+    assert {case["prefix_reuse_group"] for case in VLLM_BATCHED_PREFIX_CASES} == {"prefix_group_a"}
+    assert {case["batch_id"] for case in VLLM_BATCHED_PREFIX_CASES} == {"batch_prefix_a_0001"}

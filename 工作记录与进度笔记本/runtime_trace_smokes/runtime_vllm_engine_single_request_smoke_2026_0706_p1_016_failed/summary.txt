@@ -1,0 +1,74 @@
+## run_context
+run_id=runtime_vllm_engine_single_request_smoke_2026_0706_p1_016
+commit=85e8783c230b0ea0980b40a68ca14b449a66db80
+timestamp=2026-07-06T17:34:20+0800
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+DEVICE_LABEL=npu:6
+CONTRACT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/p1_inference_contracts
+LONG_MANIFEST=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/p1_inference_contracts/workload_long_manifest.yaml
+ASCEND_RT_VISIBLE_DEVICES=6
+VLLM_USE_V1=1
+VLLM_PLUGINS=vllm_ascend
+VLLM_WORKER_MULTIPROC_METHOD=spawn
+task_policy=vllm_engine_single_request_smoke_no_package_install
+matrix_policy=vllm_public_llm_generate_4k_8k_single_request
+profiler_policy=disabled_not_part_of_this_task
+performance_policy=smoke_only_no_benchmark_or_bottleneck_conclusion
+selected_cases=P002@4096+32,P003@8192+32
+max_model_len=9216
+gpu_memory_utilization=0.85
+tensor_parallel_size=1
+dtype=auto
+enforce_eager=1
+pytest_exit_code=0
+vllm_engine_single_request_exit_code=1
+
+## import_probe
+module	status	error
+torch	ok	
+torch_npu	ok	
+transformers	ok	
+vllm	ok	
+vllm_ascend	ok	
+
+## conclusion
+status=failed
+matrix_status=failed
+phase=fatal
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+device_label=npu:6
+tokenizer_class=Qwen2Tokenizer
+llm_class=
+attempted_case_count=0
+success_case_count=0
+failed_case_count=0
+input_count_mismatch_count=0
+submitted_count_mismatch_count=0
+trace_event_count=0
+trace_validation_errors=1
+policy=vllm_engine_single_request_smoke_no_package_install
+matrix_policy=vllm_public_llm_generate_4k_8k_single_request
+profiler_policy=disabled_not_part_of_this_task
+performance_policy=smoke_only_no_benchmark_or_bottleneck_conclusion
+
+## summary
+case_id	prompt_id	cap_tokens	max_new_tokens	full_token_count	expected_input_token_count	input_token_count	submitted_input_token_count	generated_token_count	generated_text_nonempty	finish_reason	prompt_input_mode	status	error_type	error
+
+## validation
+no trace events emitted
+
+## model_path_precheck
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+exists=1
+is_dir=1
+config.json	exists=1	bytes=3161
+config_model_type=qwen3_5
+config_architectures=['Qwen3_5ForConditionalGeneration']
+tokenizer_config.json	exists=1	bytes=16710
+tokenizer_class=Qwen2Tokenizer
+model_max_length=262144
+tokenizer.json	exists=1	bytes=12807982
+generation_config.json	exists=0	bytes=

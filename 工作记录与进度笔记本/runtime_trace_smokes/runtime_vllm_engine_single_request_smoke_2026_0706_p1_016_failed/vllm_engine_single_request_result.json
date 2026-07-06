@@ -1,0 +1,33 @@
+{
+  "run_id": "runtime_vllm_engine_single_request_smoke_2026_0706_p1_016",
+  "status": "failed",
+  "matrix_status": "failed",
+  "phase": "fatal",
+  "model_path": "/data/node0_disk1/Public/Qwen3.5-4B",
+  "device_label": "npu:6",
+  "tokenizer_class": "Qwen2Tokenizer",
+  "llm_class": "",
+  "attempted_case_count": 0,
+  "success_case_count": 0,
+  "failed_case_count": 0,
+  "input_count_mismatch_count": 0,
+  "submitted_count_mismatch_count": 0,
+  "trace_event_count": 0,
+  "trace_validation_errors": 1,
+  "trace_validation_error_messages": [
+    "no trace events emitted"
+  ],
+  "fatal_error": "Traceback (most recent call last):\n  File \"/data/node0_disk1/liguowei/AK-Infer-Lab/tools/inference_contracts/run_vllm_engine_single_request_smoke.py\", line 244, in run_vllm_smoke\n    llm = LLM(**llm_kwargs)\n          ^^^^^^^^^^^^^^^^^\n  File \"/data/node0_disk1/vllm/vllm/entrypoints/llm.py\", line 382, in __init__\n    self.llm_engine = LLMEngine.from_engine_args(\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/node0_disk1/vllm/vllm/v1/engine/llm_engine.py\", line 169, in from_engine_args\n    vllm_config = engine_args.create_engine_config(usage_context)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/node0_disk1/vllm/vllm/engine/arg_utils.py\", line 1488, in create_engine_config\n    device_config = DeviceConfig(device=cast(Device, current_platform.device_type))\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/pydantic/_internal/_dataclasses.py\", line 121, in __init__\n    s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)\n  File \"/data/node0_disk1/vllm/vllm/config/device.py\", line 73, in __post_init__\n    self.device = torch.device(self.device_type)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Device string must not be empty\n",
+  "import_probe": {
+    "torch": "ok",
+    "torch_npu": "ok",
+    "transformers": "ok",
+    "vllm": "ok",
+    "vllm_ascend": "ok"
+  },
+  "policy": "vllm_engine_single_request_smoke_no_package_install",
+  "matrix_policy": "vllm_public_llm_generate_4k_8k_single_request",
+  "profiler_policy": "disabled_not_part_of_this_task",
+  "performance_policy": "smoke_only_no_benchmark_or_bottleneck_conclusion",
+  "rows": []
+}

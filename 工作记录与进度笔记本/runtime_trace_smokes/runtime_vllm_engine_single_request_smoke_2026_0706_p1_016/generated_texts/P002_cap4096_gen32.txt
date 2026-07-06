@@ -1,0 +1,3 @@
+- run_id: Original Short Fixture
+- evidence boundary: static text fixture, not live command output
+- model path under test: /data/node0_disk

@@ -1,0 +1,1 @@
+case_id	prompt_id	cap_tokens	max_new_tokens	full_token_count	expected_input_token_count	input_token_count	submitted_input_token_count	generated_token_count	generated_text_nonempty	finish_reason	prompt_input_mode	status	error_type	error
