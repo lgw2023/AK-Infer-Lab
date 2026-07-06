@@ -1,0 +1,17 @@
+run_id=runtime_long_prompt_trace_matrix_2026_0706_p1_014
+commit=9123fc506cd365ac486f0f88176e2cf02a21b3b5
+timestamp=2026-07-06T16:37:25+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+DEVICE=npu:6
+MAX_NEW_TOKENS=4
+ENABLE_PROFILER=0
+CONTRACT_DIR=工作记录与进度笔记本/p1_inference_contracts
+LONG_MANIFEST=工作记录与进度笔记本/p1_inference_contracts/workload_long_manifest.yaml
+task_policy=existing_transformers_torch_npu_no_vllm_no_package_install
+selected_cases=P000@4096,P001@4096,P002@4096,P003@8192,P004@8192,P005@8192,P006@8192,P007@4096,P008@4096,P009@8192,P010@8192,P011@4096,P012@8192
+profiler_policy=candidate_only_optional_disabled_by_default
+pytest_exit_code=0
+long_prompt_trace_matrix_full_exit_code=0

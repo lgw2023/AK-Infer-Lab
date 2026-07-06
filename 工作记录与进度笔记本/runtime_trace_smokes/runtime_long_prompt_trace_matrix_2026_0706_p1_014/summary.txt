@@ -1,0 +1,93 @@
+## run_context
+run_id=runtime_long_prompt_trace_matrix_2026_0706_p1_014
+commit=9123fc506cd365ac486f0f88176e2cf02a21b3b5
+timestamp=2026-07-06T16:37:25+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+DEVICE=npu:6
+MAX_NEW_TOKENS=4
+ENABLE_PROFILER=0
+CONTRACT_DIR=工作记录与进度笔记本/p1_inference_contracts
+LONG_MANIFEST=工作记录与进度笔记本/p1_inference_contracts/workload_long_manifest.yaml
+task_policy=existing_transformers_torch_npu_no_vllm_no_package_install
+selected_cases=P000@4096,P001@4096,P002@4096,P003@8192,P004@8192,P005@8192,P006@8192,P007@4096,P008@4096,P009@8192,P010@8192,P011@4096,P012@8192
+profiler_policy=candidate_only_optional_disabled_by_default
+pytest_exit_code=0
+long_prompt_trace_matrix_full_exit_code=0
+
+## long_prompt_trace_matrix_full_conclusion
+status=success
+matrix_status=success
+phase=complete
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+device=npu:6
+tokenizer_class=Qwen2Tokenizer
+model_class=Qwen3_5ForCausalLM
+attempted_case_count=13
+success_case_count=13
+failed_case_count=0
+input_count_mismatch_count=0
+trace_event_count=91
+trace_validation_errors=0
+torch_profiler_trace_exists=0
+torch_profiler_marker_event_count=0
+torch_profiler_npu_event_candidate_count=0
+selected_cases=P000@4096,P001@4096,P002@4096,P003@8192,P004@8192,P005@8192,P006@8192,P007@4096,P008@4096,P009@8192,P010@8192,P011@4096,P012@8192
+execution_policy=existing_transformers_torch_npu_no_vllm_no_package_install
+performance_policy=trace_matrix_only_no_perf_or_bottleneck_conclusion
+profiler_policy=candidate_only_optional_disabled_by_default
+
+## long_prompt_trace_matrix_full_summary
+case_id	prompt_id	cap_tokens	full_token_count	expected_input_token_count	input_token_count	generated_token_count	status	error_type	error
+P000_cap4096	P000	4096	1184	1184	1184	4	success		
+P001_cap4096	P001	4096	1764	1764	1764	4	success		
+P002_cap4096	P002	4096	5556	4096	4096	4	success		
+P003_cap8192	P003	8192	11144	8192	8192	2	success		
+P004_cap8192	P004	8192	11656	8192	8192	2	success		
+P005_cap8192	P005	8192	21569	8192	8192	4	success		
+P006_cap8192	P006	8192	22490	8192	8192	4	success		
+P007_cap4096	P007	4096	5972	4096	4096	4	success		
+P008_cap4096	P008	4096	5975	4096	4096	4	success		
+P009_cap8192	P009	8192	11094	8192	8192	4	success		
+P010_cap8192	P010	8192	43216	8192	8192	4	success		
+P011_cap4096	P011	4096	5972	4096	4096	4	success		
+P012_cap8192	P012	8192	11128	8192	8192	4	success		
+
+## validation
+errors=0
+
+## profiler_summary
+{
+  "profiler_policy": "candidate_only_optional_disabled_by_default",
+  "torch_profiler_marker_event_count": 0,
+  "torch_profiler_npu_event_candidate_count": 0,
+  "torch_profiler_trace_bytes": 0,
+  "torch_profiler_trace_exists": 0,
+  "torch_profiler_trace_omitted_from_zip": 0
+}
+## package_inventory
+package	module	distribution_version	spec_found	origin
+torch	torch	2.9.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch/__init__.py
+torch_npu	torch_npu	2.9.0.post2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch_npu/__init__.py
+transformers	transformers	5.12.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/transformers/__init__.py
+tokenizers	tokenizers	0.22.2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/tokenizers/__init__.py
+sentencepiece	sentencepiece	0.2.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/sentencepiece/__init__.py
+accelerate	accelerate	1.14.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/accelerate/__init__.py
+safetensors	safetensors	0.8.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/safetensors/__init__.py
+vllm	vllm	0.18.0+empty	1	/data/node0_disk1/vllm/vllm/__init__.py
+vllm_ascend	vllm_ascend	0.18.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/vllm_ascend/__init__.py
+
+## model_path_precheck
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+exists=1
+is_dir=1
+config.json	exists=1	bytes=3161
+config_model_type=qwen3_5
+config_architectures=['Qwen3_5ForConditionalGeneration']
+tokenizer_config.json	exists=1	bytes=16710
+tokenizer_class=Qwen2Tokenizer
+model_max_length=262144
+tokenizer.json	exists=1	bytes=12807982
+generation_config.json	exists=0	bytes=

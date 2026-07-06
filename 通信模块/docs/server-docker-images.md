@@ -27,4 +27,4 @@
 - 这两个镜像是 CANN 9.0.0 基础镜像，邮件确认基础镜像不含 `torch` / `torch_npu`，这属于预期。
 - 后续如需在 Docker 内跑推理栈，应另行叠加 `torch_npu` / `vLLM-Ascend`，或直接使用合适的 vLLM-Ascend 镜像。
 - 后续单卡 Docker 基线默认优先使用 `py3.12` 镜像，因为它与 `工作记录与进度笔记本/00_原始材料/步骤 1 内容.md` 中的 Docker 单卡环境建议一致。
-- 当前 P1.14 `runtime_long_prompt_trace_matrix_2026_0706_p1_014` 仍按已下发任务使用服务器现有 `Qwen3.5-4B + transformers + torch_npu` 路径，不切换到 Docker 容器。
+- 当前 P1.15 `runtime_long_prompt_envelope_decode_2026_0706_p1_015` 仍按已下发任务使用服务器现有 `Qwen3.5-4B + transformers + torch_npu` 路径，不切换到 Docker 容器。

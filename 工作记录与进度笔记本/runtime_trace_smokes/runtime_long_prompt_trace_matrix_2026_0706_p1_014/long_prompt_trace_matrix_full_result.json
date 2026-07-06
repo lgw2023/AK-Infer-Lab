@@ -1,0 +1,251 @@
+{
+  "attempted_case_count": 13,
+  "device": "npu:6",
+  "failed_case_count": 0,
+  "input_count_mismatch_count": 0,
+  "matrix_status": "success",
+  "max_new_tokens": 4,
+  "model_class": "Qwen3_5ForCausalLM",
+  "model_path": "/data/node0_disk1/Public/Qwen3.5-4B",
+  "phase": "complete",
+  "policy": "existing_transformers_torch_npu_no_vllm_no_package_install",
+  "profiler_policy": "candidate_only_optional_disabled_by_default",
+  "rows": [
+    {
+      "cap_tokens": 4096,
+      "case_id": "P000_cap4096",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 1184,
+      "full_token_count": 1184,
+      "generated_token_count": 4,
+      "input_token_count": 1184,
+      "prompt_id": "P000",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P001_cap4096",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 1764,
+      "full_token_count": 1764,
+      "generated_token_count": 4,
+      "input_token_count": 1764,
+      "prompt_id": "P001",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P002_cap4096",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 4096,
+      "full_token_count": 5556,
+      "generated_token_count": 4,
+      "input_token_count": 4096,
+      "prompt_id": "P002",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P003_cap8192",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 8192,
+      "full_token_count": 11144,
+      "generated_token_count": 2,
+      "input_token_count": 8192,
+      "prompt_id": "P003",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P004_cap8192",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 8192,
+      "full_token_count": 11656,
+      "generated_token_count": 2,
+      "input_token_count": 8192,
+      "prompt_id": "P004",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P005_cap8192",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 8192,
+      "full_token_count": 21569,
+      "generated_token_count": 4,
+      "input_token_count": 8192,
+      "prompt_id": "P005",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P006_cap8192",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 8192,
+      "full_token_count": 22490,
+      "generated_token_count": 4,
+      "input_token_count": 8192,
+      "prompt_id": "P006",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P007_cap4096",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 4096,
+      "full_token_count": 5972,
+      "generated_token_count": 4,
+      "input_token_count": 4096,
+      "prompt_id": "P007",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P008_cap4096",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 4096,
+      "full_token_count": 5975,
+      "generated_token_count": 4,
+      "input_token_count": 4096,
+      "prompt_id": "P008",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P009_cap8192",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 8192,
+      "full_token_count": 11094,
+      "generated_token_count": 4,
+      "input_token_count": 8192,
+      "prompt_id": "P009",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P010_cap8192",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 8192,
+      "full_token_count": 43216,
+      "generated_token_count": 4,
+      "input_token_count": 8192,
+      "prompt_id": "P010",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P011_cap4096",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 4096,
+      "full_token_count": 5972,
+      "generated_token_count": 4,
+      "input_token_count": 4096,
+      "prompt_id": "P011",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P012_cap8192",
+      "error": "",
+      "error_type": "",
+      "expected_input_token_count": 8192,
+      "full_token_count": 11128,
+      "generated_token_count": 4,
+      "input_token_count": 8192,
+      "prompt_id": "P012",
+      "status": "success"
+    }
+  ],
+  "run_id": "runtime_long_prompt_trace_matrix_2026_0706_p1_014",
+  "selected_cases": [
+    {
+      "cap_tokens": 4096,
+      "case_id": "P000_cap4096",
+      "prompt_id": "P000"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P001_cap4096",
+      "prompt_id": "P001"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P002_cap4096",
+      "prompt_id": "P002"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P003_cap8192",
+      "prompt_id": "P003"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P004_cap8192",
+      "prompt_id": "P004"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P005_cap8192",
+      "prompt_id": "P005"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P006_cap8192",
+      "prompt_id": "P006"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P007_cap4096",
+      "prompt_id": "P007"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P008_cap4096",
+      "prompt_id": "P008"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P009_cap8192",
+      "prompt_id": "P009"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P010_cap8192",
+      "prompt_id": "P010"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P011_cap4096",
+      "prompt_id": "P011"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P012_cap8192",
+      "prompt_id": "P012"
+    }
+  ],
+  "status": "success",
+  "success_case_count": 13,
+  "tokenizer_class": "Qwen2Tokenizer",
+  "tokenizer_model_max_length": 262144,
+  "torch_profiler_marker_event_count": 0,
+  "torch_profiler_npu_event_candidate_count": 0,
+  "torch_profiler_trace_bytes": 0,
+  "torch_profiler_trace_exists": 0,
+  "torch_profiler_trace_omitted_from_zip": 0,
+  "trace_event_count": 91,
+  "trace_validation_error_messages": [],
+  "trace_validation_errors": 0
+}

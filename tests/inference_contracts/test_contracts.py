@@ -16,6 +16,7 @@ SERVER_TRACE_SMOKE_HANDOFF = CONTRACT_DIR / "server_runtime_trace_smoke_handoff.
 LONG_WORKLOAD_MANIFEST = CONTRACT_DIR / "workload_long_manifest.yaml"
 LONG_PROMPT_TRACE_SMOKE_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_trace_smoke_handoff.md"
 LONG_PROMPT_TRACE_MATRIX_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_matrix_handoff.md"
+LONG_PROMPT_ENVELOPE_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_envelope_handoff.md"
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -300,3 +301,42 @@ def test_long_prompt_trace_matrix_handoff_defines_required_boundaries():
     ]
     for text in required_text:
         assert text in handoff
+
+
+def test_long_prompt_envelope_handoff_defines_required_boundaries():
+    handoff = LONG_PROMPT_ENVELOPE_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_long_prompt_envelope_decode_2026_0706_p1_015",
+        "Qwen3.5-4B + transformers + torch_npu",
+        "P002_cap4096_gen32",
+        "P006_cap12288_gen32",
+        "P010_cap16384_gen32",
+        "P012_cap8192_gen128",
+        "max_new_tokens",
+        "不运行 vLLM",
+        "不安装、升级、卸载或修复任何包",
+        "不运行 full 32K",
+        "不启用 profiler 导出",
+        "不能声称 CANN device timeline pairing 已完成",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
+def test_long_prompt_envelope_runner_case_plan_is_bounded():
+    from tools.inference_contracts.run_long_prompt_envelope import ENVELOPE_CASES
+
+    assert len(ENVELOPE_CASES) == 8
+    assert max(case["cap_tokens"] for case in ENVELOPE_CASES) == 16384
+    assert max(case["max_new_tokens"] for case in ENVELOPE_CASES) == 128
+    assert {case["prompt_id"] for case in ENVELOPE_CASES} == {
+        "P002",
+        "P003",
+        "P005",
+        "P006",
+        "P007",
+        "P008",
+        "P010",
+        "P012",
+    }
