@@ -1,0 +1,59 @@
+P1.7 small model readiness 只读盘点已完成。
+
+任务 ID: runtime_small_model_readiness_2026_0706_p1_006
+附件: 工作记录与进度笔记本/runtime_trace_smokes/runtime_small_model_readiness_2026_0706_p1_006.zip
+
+## run_context
+run_id=runtime_small_model_readiness_2026_0706_p1_006
+commit=7c2e3ff
+timestamp=2026-07-06T00:53:44+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODELS_DIR=models
+pytest_exit_code=0
+package_inventory_exit_code=0
+model_inventory_exit_code=0
+readiness_conclusion_exit_code=0
+
+## readiness_conclusion
+models_dir=/data/node0_disk1/liguowei/AK-Infer-Lab/models
+models_dir_exists=1
+model_candidate_count=0
+metadata_file_count=0
+top_candidate=
+top_candidate_score=0
+top_candidate_reasons=
+torch_npu_visible=1
+transformers_entry_visible=1
+vllm_entry_visible=1
+readiness_status=blocked_no_readable_model_metadata
+next_step_policy=do_not_load_model_in_this_task; design a separate load smoke only if readiness_status is ready
+trace_pairing_policy=torch_profiler_trace_candidate_only; do not claim CANN device timeline pairing
+
+## package_inventory
+package	module	distribution_version	spec_found	origin
+torch	torch	2.9.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch/__init__.py
+torch_npu	torch_npu	2.9.0.post2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch_npu/__init__.py
+transformers	transformers	5.12.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/transformers/__init__.py
+tokenizers	tokenizers	0.22.2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/tokenizers/__init__.py
+sentencepiece	sentencepiece	0.2.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/sentencepiece/__init__.py
+accelerate	accelerate	1.14.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/accelerate/__init__.py
+safetensors	safetensors	0.8.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/safetensors/__init__.py
+vllm	vllm	0.18.0+empty	1	/data/node0_disk1/vllm/vllm/__init__.py
+vllm_ascend	vllm_ascend	0.18.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/vllm_ascend/__init__.py
+mindie	mindie		0
+mindspore	mindspore		0
+numpy	numpy	1.26.4	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/numpy/__init__.py
+pydantic	pydantic	2.13.4	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/pydantic/__init__.py
+
+## top_model_candidates
+rank	score	reasons	rel_path	model_type	architectures	torch_dtype	max_position_embeddings	num_hidden_layers	hidden_size	num_attention_heads	num_key_value_heads	num_experts	tokenizer_class	model_max_length	weight_file_count	weight_bytes_stat_only	metadata_files
+
+
+执行边界：
+- 未加载模型权重
+- 未实例化 tokenizer
+- 未运行 generate/serve/小模型 smoke/P000-P012 workload
+- 未安装、升级、卸载或修复任何推理框架包
+- 未修改 models/、CANN/driver/runtime/vLLM 源码

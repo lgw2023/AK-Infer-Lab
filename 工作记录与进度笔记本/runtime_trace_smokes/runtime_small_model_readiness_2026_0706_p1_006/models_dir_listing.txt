@@ -1,0 +1,12 @@
+# models_dir=/data/node0_disk1/liguowei/AK-Infer-Lab/models
+# Top-level entries
+dir	Qwen3-Embedding-4B	4096
+dir	Qwen3-Embedding-8B	4096
+dir	Qwen3-Reranker-4B	4096
+dir	Qwen3-Reranker-8B	4096
+dir	Qwen3.5-4B	4096
+dir	Qwen3.6-27B	4096
+dir	Qwen3.6-27B-FP8	4096
+file	README.md	1217
+dir	bge-m3	4096
+dir	knowledgator-gliner-x-small	4096

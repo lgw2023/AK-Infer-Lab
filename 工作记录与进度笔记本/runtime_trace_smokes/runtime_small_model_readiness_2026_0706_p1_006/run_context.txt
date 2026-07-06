@@ -1,0 +1,11 @@
+run_id=runtime_small_model_readiness_2026_0706_p1_006
+commit=7c2e3ff
+timestamp=2026-07-06T00:53:44+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODELS_DIR=models
+pytest_exit_code=0
+package_inventory_exit_code=0
+model_inventory_exit_code=0
+readiness_conclusion_exit_code=0

@@ -1,0 +1,1 @@
+rank	score	reasons	rel_path	model_type	architectures	torch_dtype	max_position_embeddings	num_hidden_layers	hidden_size	num_attention_heads	num_key_value_heads	num_experts	tokenizer_class	model_max_length	weight_file_count	weight_bytes_stat_only	metadata_files

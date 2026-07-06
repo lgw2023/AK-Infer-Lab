@@ -1,0 +1,13 @@
+{
+  "max_depth": 5,
+  "metadata_file_count": 0,
+  "model_candidate_count": 0,
+  "models_dir": "/data/node0_disk1/liguowei/AK-Infer-Lab/models",
+  "models_dir_exists": true,
+  "models_dir_is_dir": true,
+  "note": "metadata-only scan; no model/tokenizer load and no weight content read",
+  "top_candidate": "",
+  "top_candidate_reasons": "",
+  "top_candidate_score": 0,
+  "top_level_entry_count": 10
+}
