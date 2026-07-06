@@ -1,0 +1,93 @@
+{
+  "attempted_case_count": 4,
+  "device": "npu:6",
+  "failed_case_count": 0,
+  "matrix_status": "success",
+  "max_new_tokens": 4,
+  "model_class": "Qwen3_5ForCausalLM",
+  "model_path": "/data/node0_disk1/Public/Qwen3.5-4B",
+  "phase": "complete",
+  "policy": "existing_transformers_torch_npu_no_vllm_no_package_install",
+  "profiler_export_error": "AttributeError: 'NoneType' object has no attribute 'save'",
+  "rows": [
+    {
+      "cap_tokens": 4096,
+      "case_id": "P002_4k",
+      "error": "",
+      "error_type": "",
+      "full_token_count": 5556,
+      "generated_token_count": 4,
+      "input_token_count": 4096,
+      "prompt_id": "P002",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P003_8k",
+      "error": "",
+      "error_type": "",
+      "full_token_count": 11144,
+      "generated_token_count": 2,
+      "input_token_count": 8192,
+      "prompt_id": "P003",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P007_4k",
+      "error": "",
+      "error_type": "",
+      "full_token_count": 5972,
+      "generated_token_count": 4,
+      "input_token_count": 4096,
+      "prompt_id": "P007",
+      "status": "success"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P008_4k",
+      "error": "",
+      "error_type": "",
+      "full_token_count": 5975,
+      "generated_token_count": 4,
+      "input_token_count": 4096,
+      "prompt_id": "P008",
+      "status": "success"
+    }
+  ],
+  "run_id": "runtime_long_prompt_trace_smoke_2026_0706_p1_013",
+  "selected_cases": [
+    {
+      "cap_tokens": 4096,
+      "case_id": "P002_4k",
+      "prompt_id": "P002"
+    },
+    {
+      "cap_tokens": 8192,
+      "case_id": "P003_8k",
+      "prompt_id": "P003"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P007_4k",
+      "prompt_id": "P007"
+    },
+    {
+      "cap_tokens": 4096,
+      "case_id": "P008_4k",
+      "prompt_id": "P008"
+    }
+  ],
+  "status": "success",
+  "success_case_count": 4,
+  "tokenizer_class": "Qwen2Tokenizer",
+  "tokenizer_model_max_length": 262144,
+  "torch_profiler_marker_event_count": 0,
+  "torch_profiler_npu_event_candidate_count": 0,
+  "torch_profiler_trace_bytes": 0,
+  "torch_profiler_trace_exists": 0,
+  "torch_profiler_trace_omitted_from_zip": 0,
+  "trace_event_count": 28,
+  "trace_validation_error_messages": [],
+  "trace_validation_errors": 0
+}

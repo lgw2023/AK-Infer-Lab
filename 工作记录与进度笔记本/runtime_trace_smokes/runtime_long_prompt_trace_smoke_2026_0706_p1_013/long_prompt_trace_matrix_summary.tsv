@@ -1,0 +1,5 @@
+case_id	prompt_id	cap_tokens	full_token_count	input_token_count	generated_token_count	status	error_type	error
+P002_4k	P002	4096	5556	4096	4	success		
+P003_8k	P003	8192	11144	8192	2	success		
+P007_4k	P007	4096	5972	4096	4	success		
+P008_4k	P008	4096	5975	4096	4	success		

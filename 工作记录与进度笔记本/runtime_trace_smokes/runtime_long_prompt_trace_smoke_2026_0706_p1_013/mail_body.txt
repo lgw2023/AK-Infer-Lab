@@ -1,0 +1,86 @@
+P1.13 long prompt trace smoke 已完成。
+
+任务 ID: runtime_long_prompt_trace_smoke_2026_0706_p1_013
+附件: 工作记录与进度笔记本/runtime_trace_smokes/runtime_long_prompt_trace_smoke_2026_0706_p1_013.zip
+
+## run_context
+run_id=runtime_long_prompt_trace_smoke_2026_0706_p1_013
+commit=77ddb78291e5e8c1dab8c064d7e6dcd3ded1200c
+timestamp=2026-07-06T15:40:04+08:00
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+DEVICE=npu:6
+MAX_NEW_TOKENS=4
+CONTRACT_DIR=工作记录与进度笔记本/p1_inference_contracts
+LONG_MANIFEST=工作记录与进度笔记本/p1_inference_contracts/workload_long_manifest.yaml
+task_policy=existing_transformers_torch_npu_no_vllm_no_package_install
+selected_cases=P002@4096,P003@8192,P007@4096,P008@4096
+pytest_exit_code=0
+long_prompt_trace_matrix_exit_code=
+
+## long_prompt_trace_matrix_conclusion
+status=success
+matrix_status=success
+phase=complete
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+device=npu:6
+tokenizer_class=Qwen2Tokenizer
+model_class=Qwen3_5ForCausalLM
+attempted_case_count=4
+success_case_count=4
+failed_case_count=0
+trace_event_count=28
+trace_validation_errors=0
+torch_profiler_trace_exists=0
+torch_profiler_marker_event_count=0
+torch_profiler_npu_event_candidate_count=0
+torch_profiler_trace_omitted_from_zip=0
+selected_cases=P002@4096,P003@8192,P007@4096,P008@4096
+execution_policy=existing_transformers_torch_npu_no_vllm_no_package_install
+performance_policy=trace_smoke_only_no_perf_or_bottleneck_conclusion
+
+## long_prompt_trace_matrix_summary
+case_id	prompt_id	cap_tokens	full_token_count	input_token_count	generated_token_count	status	error_type	error
+P002_4k	P002	4096	5556	4096	4	success		
+P003_8k	P003	8192	11144	8192	2	success		
+P007_4k	P007	4096	5972	4096	4	success		
+P008_4k	P008	4096	5975	4096	4	success		
+
+## validation
+errors=0
+
+## package_inventory
+package	module	distribution_version	spec_found	origin
+torch	torch	2.9.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch/__init__.py
+torch_npu	torch_npu	2.9.0.post2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/torch_npu/__init__.py
+transformers	transformers	5.12.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/transformers/__init__.py
+tokenizers	tokenizers	0.22.2	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/tokenizers/__init__.py
+sentencepiece	sentencepiece	0.2.1	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/sentencepiece/__init__.py
+accelerate	accelerate	1.14.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/accelerate/__init__.py
+safetensors	safetensors	0.8.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/safetensors/__init__.py
+vllm	vllm	0.18.0+empty	1	/data/node0_disk1/vllm/vllm/__init__.py
+vllm_ascend	vllm_ascend	0.18.0	1	/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/lib/python3.11/site-packages/vllm_ascend/__init__.py
+
+## model_path_precheck
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+exists=1
+is_dir=1
+config.json	exists=1	bytes=3161
+config_model_type=qwen3_5
+config_architectures=['Qwen3_5ForConditionalGeneration']
+tokenizer_config.json	exists=1	bytes=16710
+tokenizer_class=Qwen2Tokenizer
+model_max_length=262144
+tokenizer.json	exists=1	bytes=12807982
+generation_config.json	exists=0	bytes=
+
+执行边界：
+- 本轮使用 Qwen3.5-4B + transformers + torch_npu
+- 本轮会加载模型权重并使用 NPU
+- 只执行 P002@4096、P003@8192、P007@4096、P008@4096 的顺序单请求 smoke
+- 未运行 vLLM serve/benchmark、并发、burst、continuous batching 或 prefix cache 结论型测试
+- 未安装、升级、卸载或修复任何包
+- 未修改 models/、Public/、CANN/driver/runtime/vLLM 源码
+- 本轮不输出性能或瓶颈归因结论

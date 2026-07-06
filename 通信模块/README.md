@@ -15,6 +15,7 @@
 - `docs/developer-to-server.md`：开发机写给服务器读取的消息模板。
 - `docs/server-to-developer.md`：服务器邮件通知的主题和正文模板。
 - `docs/mail-network-config.md`：最新服务器邮件确认的邮件与网络配置事实，已脱敏。
+- `docs/server-docker-images.md`：服务器侧已加载并冒烟通过的 Docker 镜像登记。
 
 ## 服务器侧配置
 

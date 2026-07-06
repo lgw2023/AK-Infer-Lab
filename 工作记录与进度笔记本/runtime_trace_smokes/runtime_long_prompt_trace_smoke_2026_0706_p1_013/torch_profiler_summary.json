@@ -1,0 +1,7 @@
+{
+  "torch_profiler_marker_event_count": 0,
+  "torch_profiler_npu_event_candidate_count": 0,
+  "torch_profiler_trace_bytes": 0,
+  "torch_profiler_trace_exists": 0,
+  "torch_profiler_trace_omitted_from_zip": 0
+}
