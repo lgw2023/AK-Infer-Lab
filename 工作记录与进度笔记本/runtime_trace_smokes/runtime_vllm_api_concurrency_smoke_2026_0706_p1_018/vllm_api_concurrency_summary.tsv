@@ -1,0 +1,4 @@
+case_id	prompt_id	endpoint	concurrency_group	prefix_reuse_group	arrival_delay_ms	cap_tokens	max_new_tokens	input_token_count	submitted_input_token_count	http_status	client_wall_us	generated_token_count	generated_text_nonempty	finish_reason	status	error_type	error
+P007_api_prefix_first_cap4096_gen32	P007	/v1/completions	api_concurrency_smoke_0001	prefix_group_a	0	4096	32	4096	4096	200	4487550	32	1	length	success		
+P008_api_prefix_second_cap4096_gen32	P008	/v1/completions	api_concurrency_smoke_0001	prefix_group_a	100	4096	32	4096	4096	200	4741550	32	1	length	success		
+P012_api_continuous_candidate_cap4096_gen32	P012	/v1/completions	api_concurrency_smoke_0001	continuous_prefix_a	200	4096	32	4096	4096	200	4893313	32	1	length	success		

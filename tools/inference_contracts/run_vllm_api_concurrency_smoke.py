@@ -62,6 +62,81 @@ VLLM_API_CONCURRENCY_CASES = [
     },
 ]
 
+VLLM_API_BURST_QUEUE_CASES = [
+    {
+        "case_id": "P007_api_burst_prefix_first_cap4096_gen32",
+        "prompt_id": "P007",
+        "cap_tokens": 4096,
+        "max_new_tokens": 32,
+        "arrival_delay_ms": 0,
+        "concurrency_group": "api_burst_queue_smoke_0001",
+        "prefix_reuse_group": "prefix_group_a",
+    },
+    {
+        "case_id": "P008_api_burst_prefix_second_cap4096_gen32",
+        "prompt_id": "P008",
+        "cap_tokens": 4096,
+        "max_new_tokens": 32,
+        "arrival_delay_ms": 100,
+        "concurrency_group": "api_burst_queue_smoke_0001",
+        "prefix_reuse_group": "prefix_group_a",
+    },
+    {
+        "case_id": "P011_api_burst_001_cap4096_gen32",
+        "prompt_id": "P011",
+        "cap_tokens": 4096,
+        "max_new_tokens": 32,
+        "arrival_delay_ms": 200,
+        "concurrency_group": "api_burst_queue_smoke_0001",
+        "prefix_reuse_group": "burst_prefix_a",
+    },
+    {
+        "case_id": "P011_api_burst_002_cap4096_gen32",
+        "prompt_id": "P011",
+        "cap_tokens": 4096,
+        "max_new_tokens": 32,
+        "arrival_delay_ms": 300,
+        "concurrency_group": "api_burst_queue_smoke_0001",
+        "prefix_reuse_group": "burst_prefix_a",
+    },
+    {
+        "case_id": "P011_api_burst_003_cap4096_gen32",
+        "prompt_id": "P011",
+        "cap_tokens": 4096,
+        "max_new_tokens": 32,
+        "arrival_delay_ms": 400,
+        "concurrency_group": "api_burst_queue_smoke_0001",
+        "prefix_reuse_group": "burst_prefix_a",
+    },
+    {
+        "case_id": "P012_api_continuous_001_cap4096_gen32",
+        "prompt_id": "P012",
+        "cap_tokens": 4096,
+        "max_new_tokens": 32,
+        "arrival_delay_ms": 500,
+        "concurrency_group": "api_burst_queue_smoke_0001",
+        "prefix_reuse_group": "continuous_prefix_a",
+    },
+    {
+        "case_id": "P012_api_continuous_002_cap4096_gen32",
+        "prompt_id": "P012",
+        "cap_tokens": 4096,
+        "max_new_tokens": 32,
+        "arrival_delay_ms": 600,
+        "concurrency_group": "api_burst_queue_smoke_0001",
+        "prefix_reuse_group": "continuous_prefix_a",
+    },
+    {
+        "case_id": "P012_api_continuous_003_cap4096_gen32",
+        "prompt_id": "P012",
+        "cap_tokens": 4096,
+        "max_new_tokens": 32,
+        "arrival_delay_ms": 700,
+        "concurrency_group": "api_burst_queue_smoke_0001",
+        "prefix_reuse_group": "continuous_prefix_a",
+    },
+]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -84,6 +159,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device-label", default=os.environ.get("AK_VLLM_DEVICE_LABEL", "npu:6"))
     parser.add_argument("--contract-dir", type=Path, default=DEFAULT_CONTRACT_DIR)
     parser.add_argument("--long-manifest", type=Path, default=DEFAULT_LONG_MANIFEST)
+    parser.add_argument(
+        "--case-plan",
+        choices=["three_request_smoke", "burst8"],
+        default=os.environ.get("AK_VLLM_API_CASE_PLAN", "three_request_smoke"),
+    )
     parser.add_argument("--max-model-len", type=int, default=int(os.environ.get("AK_VLLM_MAX_MODEL_LEN", "6144")))
     parser.add_argument(
         "--gpu-memory-utilization",
@@ -142,14 +222,35 @@ def load_prompt_index(contract_dir: Path, long_manifest: Path) -> dict[str, dict
     return prompt_index
 
 
+def select_cases(case_plan: str) -> list[dict[str, Any]]:
+    if case_plan == "three_request_smoke":
+        return VLLM_API_CONCURRENCY_CASES
+    if case_plan == "burst8":
+        return VLLM_API_BURST_QUEUE_CASES
+    raise ValueError(f"unknown case plan: {case_plan}")
+
+
+def matrix_policy_for(case_plan: str) -> str:
+    if case_plan == "burst8":
+        return "vllm_openai_api_server_eight_staggered_burst_queue_requests_candidate"
+    return "vllm_openai_api_server_three_overlapping_completion_requests_candidate"
+
+
+def continuous_policy_for(case_plan: str) -> str:
+    if case_plan == "burst8":
+        return "candidate_only_eight_staggered_clients_no_throughput_or_scheduler_claim"
+    return "candidate_only_three_overlapping_clients_no_scheduler_claim"
+
+
 def run_vllm_api_concurrency_smoke(args: argparse.Namespace) -> int:
     artifact_dir = args.artifact_dir or (DEFAULT_ARTIFACT_ROOT / args.run_id)
     generated_dir = artifact_dir / "generated_texts"
     artifact_dir.mkdir(parents=True, exist_ok=True)
     generated_dir.mkdir(parents=True, exist_ok=True)
 
+    selected_cases = select_cases(args.case_plan)
     args.port = args.port or pick_free_port(args.host)
-    write_run_context(artifact_dir / "run_context.txt", args, VLLM_API_CONCURRENCY_CASES)
+    write_run_context(artifact_dir / "run_context.txt", args, selected_cases)
     write_package_inventory(artifact_dir / "package_inventory.tsv")
     write_model_path_precheck(artifact_dir / "model_path_precheck.txt", args.model_path)
     import_probe = write_import_probe(artifact_dir / "vllm_import_probe.tsv")
@@ -181,7 +282,7 @@ def run_vllm_api_concurrency_smoke(args: argparse.Namespace) -> int:
                 case=case,
                 request_index=index,
             )
-            for index, case in enumerate(VLLM_API_CONCURRENCY_CASES, start=1)
+            for index, case in enumerate(selected_cases, start=1)
         ]
         rows = [item["row"] for item in prepared]
         events.extend(make_pre_request_events(prepared, args.device_label, args.enable_prefix_caching))
@@ -245,7 +346,7 @@ def run_vllm_api_concurrency_smoke(args: argparse.Namespace) -> int:
         "success"
         if not fatal_error
         and server_ready
-        and len(rows) == len(VLLM_API_CONCURRENCY_CASES)
+        and len(rows) == len(selected_cases)
         and failed_count == 0
         and overlap_candidate_count > 0
         and not validation_errors
@@ -263,9 +364,10 @@ def run_vllm_api_concurrency_smoke(args: argparse.Namespace) -> int:
         "device_label": args.device_label,
         "host": args.host,
         "port": args.port,
+        "case_plan": args.case_plan,
         "server_ready": int(server_ready),
         "server_return_code_after_shutdown": server_return_code,
-        "request_count": len(VLLM_API_CONCURRENCY_CASES),
+        "request_count": len(selected_cases),
         "success_case_count": success_count,
         "failed_case_count": failed_count,
         "client_overlap_candidate_count": overlap_candidate_count,
@@ -278,11 +380,11 @@ def run_vllm_api_concurrency_smoke(args: argparse.Namespace) -> int:
         "fatal_error": fatal_error,
         "import_probe": import_probe,
         "policy": "vllm_api_concurrency_smoke_no_package_install",
-        "matrix_policy": "vllm_openai_api_server_three_overlapping_completion_requests_candidate",
+        "matrix_policy": matrix_policy_for(args.case_plan),
         "profiler_policy": "disabled_not_part_of_this_task",
         "performance_policy": "smoke_only_no_benchmark_or_bottleneck_conclusion",
         "prefix_cache_policy": "requested_if_supported_no_hit_rate_claim",
-        "continuous_batching_policy": "candidate_only_three_overlapping_clients_no_scheduler_claim",
+        "continuous_batching_policy": continuous_policy_for(args.case_plan),
         "rows": rows,
     }
     result_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -549,8 +651,8 @@ def make_pre_request_events(
             "scheduler_policy_profile",
             timestamp_ns,
             policy_decision=(
-                "openai_api_server_three_staggered_clients_prefix_cache_requested_"
-                f"{int(enable_prefix_caching)}"
+                f"openai_api_server_{len(prepared)}_staggered_clients_"
+                f"prefix_cache_requested_{int(enable_prefix_caching)}"
             ),
             device_id=device_label,
         )
@@ -747,6 +849,7 @@ def write_run_context(path: Path, args: argparse.Namespace, selected_cases: list
         f"SERVED_MODEL_NAME={args.served_model_name}",
         f"API_HOST={args.host}",
         f"API_PORT={args.port}",
+        f"CASE_PLAN={args.case_plan}",
         f"DEVICE_LABEL={args.device_label}",
         f"CONTRACT_DIR={args.contract_dir}",
         f"LONG_MANIFEST={args.long_manifest}",
@@ -756,11 +859,11 @@ def write_run_context(path: Path, args: argparse.Namespace, selected_cases: list
         f"VLLM_WORKER_MULTIPROC_METHOD={os.environ.get('VLLM_WORKER_MULTIPROC_METHOD', '')}",
         f"ATB_HOME_PATH={os.environ.get('ATB_HOME_PATH', '')}",
         "task_policy=vllm_api_concurrency_smoke_no_package_install",
-        "matrix_policy=vllm_openai_api_server_three_overlapping_completion_requests_candidate",
+        f"matrix_policy={matrix_policy_for(args.case_plan)}",
         "profiler_policy=disabled_not_part_of_this_task",
         "performance_policy=smoke_only_no_benchmark_or_bottleneck_conclusion",
         "prefix_cache_policy=requested_if_supported_no_hit_rate_claim",
-        "continuous_batching_policy=candidate_only_three_overlapping_clients_no_scheduler_claim",
+        f"continuous_batching_policy={continuous_policy_for(args.case_plan)}",
         "selected_cases="
         + ",".join(
             f"{case['prompt_id']}@{case['cap_tokens']}+{case['max_new_tokens']}+delay{case['arrival_delay_ms']}ms"
@@ -889,7 +992,10 @@ def _event(
         "hit_or_miss": overrides.get("hit_or_miss", "unknown"),
         "stall_reason": overrides.get("stall_reason", "unknown"),
         "evidence_source": "vllm_openai_api_concurrency_smoke",
-        "artifact_path": f"runtime_trace_smokes/{DEFAULT_RUN_ID}/vllm_api_concurrency_trace.jsonl",
+        "artifact_path": (
+            "runtime_trace_smokes/"
+            f"{os.environ.get('RUN_ID', DEFAULT_RUN_ID)}/vllm_api_concurrency_trace.jsonl"
+        ),
     }
     event["case_id"] = case_id
     return event
@@ -939,6 +1045,7 @@ def _write_conclusion(path: Path, result: dict[str, Any]) -> None:
         "device_label",
         "host",
         "port",
+        "case_plan",
         "server_ready",
         "request_count",
         "success_case_count",

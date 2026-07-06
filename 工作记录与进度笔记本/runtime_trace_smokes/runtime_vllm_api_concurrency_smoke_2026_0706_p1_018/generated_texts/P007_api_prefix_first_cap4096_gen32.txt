@@ -1,0 +1,5 @@
+ pairing without aligned join keys
+
+Representative tool output:
+```text
+[request 0001] enqueue_ns=100000

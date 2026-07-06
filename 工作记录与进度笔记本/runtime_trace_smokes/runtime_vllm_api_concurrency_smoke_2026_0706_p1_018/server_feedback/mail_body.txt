@@ -1,0 +1,20 @@
+P1.18 vLLM API concurrency smoke 已完成。
+
+run_id: runtime_vllm_api_concurrency_smoke_2026_0706_p1_018
+commit: b500d4396c59ae02be4dc691ded1570899163e09
+artifact_dir: 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_concurrency_smoke_2026_0706_p1_018
+pytest_exit_code: 0
+vllm_api_concurrency_exit_code: 0
+
+请见附件 zip 和 summary.txt。
+
+边界说明：
+- 使用当前环境已有 vLLM / vLLM-Ascend。
+- 使用 VLLM_PLUGINS=ascend，并加载 CANN/ATB 环境。
+- 启动本机回环 vLLM OpenAI API server，只发送 3 个错开请求。
+- 这是 API server / 多客户端入口 smoke，不是 benchmark、压测或真实 continuous batching 验收。
+- enable_prefix_caching=True 只是候选路径请求，不声称命中率。
+- 未安装、升级、卸载或修复任何包。
+- 未运行 8 请求 burst、16 请求 continuous workload、full 16K/32K 或 full P010=43216 tokens。
+- 未启用 profiler；未声称 CANN device timeline pairing。
+- 未输出性能 benchmark、吞吐结论、调度效率结论、瓶颈归因或优化建议。

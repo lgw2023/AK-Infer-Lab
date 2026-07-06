@@ -20,6 +20,7 @@ LONG_PROMPT_ENVELOPE_HANDOFF = CONTRACT_DIR / "server_runtime_long_prompt_envelo
 VLLM_ENGINE_SINGLE_REQUEST_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_engine_single_request_smoke_handoff.md"
 VLLM_BATCHED_PREFIX_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_batched_prefix_smoke_handoff.md"
 VLLM_API_CONCURRENCY_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_concurrency_smoke_handoff.md"
+VLLM_API_BURST_QUEUE_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_burst_queue_smoke_handoff.md"
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -440,4 +441,55 @@ def test_vllm_api_concurrency_runner_case_plan_is_bounded():
     assert {case["prompt_id"] for case in VLLM_API_CONCURRENCY_CASES} == {"P007", "P008", "P012"}
     assert {case["concurrency_group"] for case in VLLM_API_CONCURRENCY_CASES} == {
         "api_concurrency_smoke_0001"
+    }
+
+
+def test_vllm_api_burst_queue_handoff_defines_required_boundaries():
+    handoff = VLLM_API_BURST_QUEUE_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_burst_queue_smoke_2026_0706_p1_019",
+        "vLLM API Burst Queue Smoke",
+        "/v1/completions",
+        "--case-plan burst8",
+        "P007_api_burst_prefix_first_cap4096_gen32",
+        "P008_api_burst_prefix_second_cap4096_gen32",
+        "P011_api_burst_001_cap4096_gen32",
+        "P011_api_burst_002_cap4096_gen32",
+        "P011_api_burst_003_cap4096_gen32",
+        "P012_api_continuous_001_cap4096_gen32",
+        "P012_api_continuous_002_cap4096_gen32",
+        "P012_api_continuous_003_cap4096_gen32",
+        "VLLM_PLUGINS=ascend",
+        "source `/usr/local/Ascend/cann-9.0.0/set_env.sh`",
+        "source `/usr/local/Ascend/nnal/atb/set_env.sh`",
+        "不安装、升级、卸载或修复任何包",
+        "不运行 16 请求 continuous workload",
+        "不输出性能 benchmark、吞吐结论、调度效率结论、瓶颈归因、优化建议、prefix cache 命中结论或 CANN device timeline pairing 结论",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
+def test_vllm_api_burst_queue_runner_case_plan_is_bounded():
+    from tools.inference_contracts.run_vllm_api_concurrency_smoke import (
+        VLLM_API_BURST_QUEUE_CASES,
+        VLLM_API_CONCURRENCY_CASES,
+        select_cases,
+    )
+
+    assert select_cases("three_request_smoke") == VLLM_API_CONCURRENCY_CASES
+    assert select_cases("burst8") == VLLM_API_BURST_QUEUE_CASES
+    assert len(VLLM_API_BURST_QUEUE_CASES) == 8
+    assert max(case["cap_tokens"] for case in VLLM_API_BURST_QUEUE_CASES) == 4096
+    assert max(case["max_new_tokens"] for case in VLLM_API_BURST_QUEUE_CASES) == 32
+    assert max(case["arrival_delay_ms"] for case in VLLM_API_BURST_QUEUE_CASES) == 700
+    assert {case["prompt_id"] for case in VLLM_API_BURST_QUEUE_CASES} == {
+        "P007",
+        "P008",
+        "P011",
+        "P012",
+    }
+    assert {case["concurrency_group"] for case in VLLM_API_BURST_QUEUE_CASES} == {
+        "api_burst_queue_smoke_0001"
     }
