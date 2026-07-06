@@ -1,0 +1,10 @@
+ while
+remaining deterministic and reviewable.
+
+
+### Static Context Block 0018 - P009
+
+Server evidence summary:
+- run_id: synthetic_materialized_context_P009_0018
+- evidence boundary: static text fixture,
+- evidence boundary: static text fixture,

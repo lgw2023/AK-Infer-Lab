@@ -25,6 +25,7 @@ VLLM_API_CONTINUOUS16_MIXED_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_co
 VLLM_API_CONTINUOUS16_MIXED_RETRY_HANDOFF = (
     CONTRACT_DIR / "server_runtime_vllm_api_continuous16_mixed_retry_handoff.md"
 )
+VLLM_API_PREFIX_CACHE_AB_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_prefix_cache_ab_handoff.md"
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -542,6 +543,34 @@ def test_vllm_api_continuous16_mixed_retry_handoff_defines_required_boundaries()
         "不删减 case",
         "不安装、升级、卸载或修复任何包",
         "不输出性能 benchmark、吞吐结论、调度效率结论、瓶颈归因、优化建议或 CANN device timeline pairing 结论",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
+def test_vllm_api_prefix_cache_ab_handoff_defines_required_boundaries():
+    handoff = VLLM_API_PREFIX_CACHE_AB_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_prefix_cache_ab_2026_0707_p1_022",
+        "prefix_cache_on",
+        "prefix_cache_off",
+        "--enable-prefix-caching",
+        "--case-plan continuous16_mixed",
+        "--max-model-len 9216",
+        "P007_api_continuous16_prefix_first_cap8192_gen64",
+        "P012_api_continuous16_006_cap8192_gen64",
+        "P009_api_continuous16_moe_002_cap8192_gen64",
+        "prefix_cache_ab_summary.tsv",
+        "vllm_api_server_stats_summary.tsv",
+        "AK_COMM_MAIL_TO=yilili1023@gmail.com",
+        "VLLM_PLUGINS=ascend",
+        "source `/usr/local/Ascend/cann-9.0.0/set_env.sh`",
+        "source `/usr/local/Ascend/nnal/atb/set_env.sh`",
+        "不安装、升级、卸载或修复任何包",
+        "不运行 benchmark、吞吐测试、压测或长时间服务",
+        "不启用 profiler 导出",
+        "不输出性能 benchmark、吞吐结论、调度效率结论、prefix cache 命中率结论、瓶颈归因、优化建议或 CANN device timeline pairing 结论",
     ]
     for text in required_text:
         assert text in handoff

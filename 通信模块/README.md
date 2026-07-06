@@ -6,7 +6,7 @@
 
 - **服务器 → 开发人员**：服务器只能通过邮件向外发消息，使用 `send_notify.py` 发送状态、日志、告警或附件。
 - **开发机 → 服务器**：开发人员直接在本目录写 Markdown/文本文档并提交，服务器通过 `git pull` 获取这些文档信息。
-- **不在仓库保存密钥**：SMTP 账号、授权码、默认收件人全部通过环境变量注入。
+- **不在仓库保存密钥**：SMTP 账号和授权码通过环境变量注入；默认收件人可通过环境变量覆盖。
 - **代理只属于昇腾服务器受限网络**：普通外部开发机网络通常不需要 proxychains 或 HTTP 代理。
 
 ## 文件说明
@@ -37,10 +37,10 @@ AK_COMM_SMTP_PORT=465
 AK_COMM_SMTP_USER=17621223203@163.com
 AK_COMM_SMTP_PASSWORD=你的 163 SMTP 授权码
 AK_COMM_MAIL_FROM=17621223203@163.com
-AK_COMM_MAIL_TO=gwlee1995@gmail.com,yilili1023@gmail.com
+AK_COMM_MAIL_TO=yilili1023@gmail.com
 ```
 
-`AK_COMM_MAIL_TO` 支持逗号分隔多个收件人。当前默认同时发送到 `gwlee1995@gmail.com` 和 `yilili1023@gmail.com`，避免服务器反馈只进入单一邮箱后开发机漏看。
+`AK_COMM_MAIL_TO` 支持逗号分隔多个收件人。当前项目默认只发送到 `yilili1023@gmail.com`，不再发送到 `gwlee1995@gmail.com`。
 
 可选配置：
 

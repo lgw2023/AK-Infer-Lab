@@ -1,6 +1,6 @@
 # 邮件与网络配置记录
 
-来源：2026-07-06 09:48 CST 最新服务器邮件，主题为 `[AK服务器] 本机邮件与网络代理配置说明`。
+来源：2026-07-06 09:48 CST 服务器邮件，主题为 `[AK服务器] 本机邮件与网络代理配置说明`；2026-07-07 用户要求当前项目默认收件人改为单收件人。
 
 本文件只记录外部开发者可见、可用、可知的非密钥信息。SMTP 授权码、代理账号、代理密码只允许保存在昇腾服务器本地 `.env` 或服务器本机 proxychains 配置中，不写入 Git 仓库。
 
@@ -21,12 +21,12 @@ AK_COMM_SMTP_PORT=465
 AK_COMM_SMTP_USER=17621223203@163.com
 AK_COMM_SMTP_PASSWORD=<163 SMTP 授权码，仅服务器本地 .env 保存>
 AK_COMM_MAIL_FROM=17621223203@163.com
-AK_COMM_MAIL_TO=gwlee1995@gmail.com,yilili1023@gmail.com
+AK_COMM_MAIL_TO=yilili1023@gmail.com
 ```
 
 - `AK_COMM_SMTP_PORT=465` 时使用 `SMTP_SSL`。
 - 其他端口使用 `STARTTLS`。
-- `AK_COMM_MAIL_TO` 支持逗号分隔多个收件人；当前默认同时发给两个邮箱。
+- `AK_COMM_MAIL_TO` 支持逗号分隔多个收件人；当前项目默认只发给 `yilili1023@gmail.com`。
 - `.env` 位于项目根目录，`send_notify.py` 启动时自动加载，且不会覆盖已经存在的 shell 环境变量。
 
 ## 昇腾服务器代理边界

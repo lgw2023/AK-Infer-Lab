@@ -1,0 +1,8 @@
+
+
+<think>
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   Input: A long context prompt fixture (P003 Materialized Long Context).
+    *   Task: The user has provided the prompt content. There is no explicit instruction *to do something* with it (

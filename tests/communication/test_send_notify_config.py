@@ -5,26 +5,41 @@ from pathlib import Path
 MODULE_PATH = Path("通信模块/send_notify.py")
 
 
-def load_send_notify(monkeypatch):
+def load_send_notify(monkeypatch, mail_to="yilili1023@gmail.com"):
     defaults = {
         "AK_COMM_SMTP_HOST": "smtp.163.com",
         "AK_COMM_SMTP_PORT": "465",
         "AK_COMM_SMTP_USER": "sender@example.com",
         "AK_COMM_SMTP_PASSWORD": "dummy-secret",
         "AK_COMM_MAIL_FROM": "sender@example.com",
-        "AK_COMM_MAIL_TO": "gwlee1995@gmail.com,yilili1023@gmail.com",
         "AK_COMM_USE_PROXYCHAINS": "1",
         "AK_COMM_PROXYCHAINS_BIN": "proxychains4",
         "AK_COMM_PAYLOAD_DIR": "/tmp",
     }
     for key, value in defaults.items():
         monkeypatch.setenv(key, value)
+    if mail_to is None:
+        monkeypatch.delenv("AK_COMM_MAIL_TO", raising=False)
+    else:
+        monkeypatch.setenv("AK_COMM_MAIL_TO", mail_to)
 
     spec = importlib.util.spec_from_file_location("send_notify_under_test", MODULE_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
+
+
+def test_default_mail_recipient_is_yilili_only(monkeypatch):
+    send_notify = load_send_notify(monkeypatch, mail_to=None)
+
+    assert send_notify.DEFAULT_MAIL_TO == "yilili1023@gmail.com"
+    assert send_notify.parse_mail_recipients(send_notify.DEFAULT_MAIL_TO) == [
+        "yilili1023@gmail.com"
+    ]
+    assert send_notify.build_config_report()["mail"]["recipients"] == [
+        "yilili1023@gmail.com"
+    ]
 
 
 def test_redact_url_credentials_masks_proxy_account_and_password(monkeypatch):
@@ -47,7 +62,7 @@ def test_build_config_report_uses_booleans_and_redacted_proxy_urls(monkeypatch):
         "AK_COMM_SMTP_USER": "17621223203@163.com",
         "AK_COMM_SMTP_PASSWORD": "smtp-auth-code",
         "AK_COMM_MAIL_FROM": "17621223203@163.com",
-        "AK_COMM_MAIL_TO": "gwlee1995@gmail.com,yilili1023@gmail.com",
+        "AK_COMM_MAIL_TO": "yilili1023@gmail.com",
         "AK_COMM_USE_PROXYCHAINS": "1",
         "AK_COMM_PROXYCHAINS_BIN": "proxychains4",
         "AK_COMM_PROXYCHAINS_CONFIG": "/etc/proxychains4.conf",
@@ -61,7 +76,7 @@ def test_build_config_report_uses_booleans_and_redacted_proxy_urls(monkeypatch):
 
     assert report["smtp"]["password_set"] is True
     assert "password" not in report["smtp"]
-    assert report["mail"]["recipients"] == ["gwlee1995@gmail.com", "yilili1023@gmail.com"]
+    assert report["mail"]["recipients"] == ["yilili1023@gmail.com"]
     assert report["proxychains"]["config"] == "/etc/proxychains4.conf"
     assert report["shell_proxy"]["AK_HTTP_PROXY"] == (
         "http://<credentials>@proxysg.huawei.com:8080/"

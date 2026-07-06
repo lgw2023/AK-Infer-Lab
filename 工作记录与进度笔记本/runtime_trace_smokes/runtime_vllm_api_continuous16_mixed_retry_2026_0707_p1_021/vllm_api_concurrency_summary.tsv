@@ -1,0 +1,17 @@
+case_id	prompt_id	endpoint	concurrency_group	prefix_reuse_group	arrival_delay_ms	cap_tokens	max_new_tokens	input_token_count	submitted_input_token_count	http_status	client_wall_us	generated_token_count	generated_text_nonempty	finish_reason	status	error_type	error
+P007_api_continuous16_prefix_first_cap8192_gen64	P007	/v1/completions	api_continuous16_mixed_0001	prefix_group_a	0	8192	64	5972	5972	200	18395353	64	1	length	success
+P008_api_continuous16_prefix_second_cap8192_gen64	P008	/v1/completions	api_continuous16_mixed_0001	prefix_group_a	100	8192	64	5975	5975	200	18666546	64	1	length	success
+P011_api_continuous16_burst_001_cap4096_gen64	P011	/v1/completions	api_continuous16_mixed_0001	burst_prefix_a	200	4096	64	4096	4096	200	18847653	64	1	length	success
+P011_api_continuous16_burst_002_cap4096_gen64	P011	/v1/completions	api_continuous16_mixed_0001	burst_prefix_a	300	4096	64	4096	4096	200	18840376	64	1	length	success
+P011_api_continuous16_burst_003_cap4096_gen64	P011	/v1/completions	api_continuous16_mixed_0001	burst_prefix_a	400	4096	64	4096	4096	200	18833028	64	1	length	success
+P011_api_continuous16_burst_004_cap4096_gen64	P011	/v1/completions	api_continuous16_mixed_0001	burst_prefix_a	500	4096	64	4096	4096	200	18833066	64	1	length	success
+P012_api_continuous16_001_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	600	8192	64	8192	8192	200	19458740	64	1	length	success
+P012_api_continuous16_002_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	800	8192	64	8192	8192	200	19349735	64	1	length	success
+P012_api_continuous16_003_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	1000	8192	64	8192	8192	200	19240502	64	1	length	success
+P012_api_continuous16_004_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	1200	8192	64	8192	8192	200	19134375	64	1	length	success
+P012_api_continuous16_005_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	1400	8192	64	8192	8192	200	19030387	64	1	length	success
+P012_api_continuous16_006_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	1600	8192	64	8192	8192	200	18921270	64	1	length	success
+P003_api_continuous16_system_001_cap8192_gen64	P003	/v1/completions	api_continuous16_mixed_0001	system_long_a	1800	8192	64	8192	8192	200	19437026	64	1	length	success
+P003_api_continuous16_system_002_cap8192_gen64	P003	/v1/completions	api_continuous16_mixed_0001	system_long_a	2000	8192	64	8192	8192	200	19327538	64	1	length	success
+P009_api_continuous16_moe_001_cap8192_gen64	P009	/v1/completions	api_continuous16_mixed_0001	none	2200	8192	64	8192	8192	200	19215785	57	1	stop	success
+P009_api_continuous16_moe_002_cap8192_gen64	P009	/v1/completions	api_continuous16_mixed_0001	none	2400	8192	64	8192	8192	200	19603969	64	1	length	success

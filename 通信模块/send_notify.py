@@ -7,7 +7,8 @@
 - 开发人员在开发机上通过收件箱获取服务器消息；
 - 开发机写入本目录内的 Markdown/文本指令，服务器通过 git pull 获取。
 
-安全说明：SMTP 账号、授权码、默认收件人通过环境变量配置，避免将密钥写入仓库。
+安全说明：SMTP 账号、授权码通过环境变量配置，避免将密钥写入仓库。
+默认收件人可通过环境变量覆盖；仓库默认只发给当前 Codex 可读邮箱。
 """
 
 from __future__ import annotations
@@ -68,7 +69,8 @@ SMTP_PORT = int(os.getenv("AK_COMM_SMTP_PORT", "465"))
 SMTP_USER = os.getenv("AK_COMM_SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("AK_COMM_SMTP_PASSWORD", "")
 MAIL_FROM = os.getenv("AK_COMM_MAIL_FROM", SMTP_USER)
-DEFAULT_MAIL_TO = os.getenv("AK_COMM_MAIL_TO", "")
+REPO_DEFAULT_MAIL_TO = "yilili1023@gmail.com"
+DEFAULT_MAIL_TO = os.getenv("AK_COMM_MAIL_TO", REPO_DEFAULT_MAIL_TO)
 
 USE_PROXYCHAINS_FOR_MAIL = os.getenv("AK_COMM_USE_PROXYCHAINS", "1") not in {"0", "false", "False", "no", "NO"}
 PROXYCHAINS_BIN = os.getenv("AK_COMM_PROXYCHAINS_BIN", "proxychains4")
@@ -108,7 +110,7 @@ def redact_url_credentials(value: str) -> str:
 
 def build_config_report(env: Mapping[str, str] | None = None) -> dict[str, object]:
     env = os.environ if env is None else env
-    mail_to = env.get("AK_COMM_MAIL_TO", "")
+    mail_to = env.get("AK_COMM_MAIL_TO", REPO_DEFAULT_MAIL_TO)
     try:
         recipients = parse_mail_recipients(mail_to)
     except ValueError:

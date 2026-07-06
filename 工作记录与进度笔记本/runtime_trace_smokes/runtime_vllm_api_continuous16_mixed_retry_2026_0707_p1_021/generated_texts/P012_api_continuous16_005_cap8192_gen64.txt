@@ -1,0 +1,10 @@
+_id, stream id, and timestamp
+base are all present in the same evidence chain. The current block repeats this
+constraint intentionally so the prompt has stable long-context pressure while
+remaining deterministic and reviewable.
+
+
+### Static Context Block 0018 - P012
+
+Server evidence summary:
+-

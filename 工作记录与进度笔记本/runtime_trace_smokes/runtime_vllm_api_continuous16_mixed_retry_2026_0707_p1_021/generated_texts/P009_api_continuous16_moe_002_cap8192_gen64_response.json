@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-ba2d07003fae2308",
+  "object": "text_completion",
+  "created": 1783357770,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": " while\nremaining deterministic and reviewable.\n\n\n### Static Context Block 0018 - P009\n\nServer evidence summary:\n- run_id: synthetic_materialized_context_P009_0018\n- evidence boundary: static text fixture,\n- evidence boundary: static text fixture,",
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 8192,
+    "total_tokens": 8256,
+    "completion_tokens": 64,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}

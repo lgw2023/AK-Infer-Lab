@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-998462d02f07b9cc",
+  "object": "text_completion",
+  "created": 1783357769,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": "\n\n<think>\nThinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long context prompt fixture (P003 Materialized Long Context).\n    *   Task: The user has provided the prompt content. There is no explicit instruction *to do something* with it (",
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 8192,
+    "total_tokens": 8256,
+    "completion_tokens": 64,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}
