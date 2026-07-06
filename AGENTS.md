@@ -56,6 +56,8 @@ Keep edits surgical. Do not rewrite neighboring research notes, generated decks,
 
 This local machine is an external development machine, not the Ascend server. Any work that depends on the real Ascend environment, NPU runtime, server paths, deployment, or server-side validation must be handed off for execution on the Ascend server.
 
+The external development machine may also use the pulled container image `quay.io/ascend/cann:9.0.0-910b-ubuntu22.04-py3.11` with `--platform linux/arm64` to inspect a CANN 9.0.0 / Ubuntu 22.04 / Python 3.11 userland and run limited compatibility checks. This container is intended to be placed on the Ascend server later as well, but local container results are still only development-machine evidence; they do not replace validation on the real Ascend server with NPU runtime, server paths, and hardware access.
+
 Use `通信模块/docs/developer-to-server.md` as the communication document from this development machine to the server. Every time a server task is handed off, clear the old historical contents of that file first, then write only the current server task, including all context, commands, paths, constraints, expected outputs, and reporting requirements the server operator needs.
 
 At the start and end of every task round, refresh the corresponding content under `工作记录与进度笔记本/`. Keep the notebook current with the task status, evidence, results, problems, and next actions.

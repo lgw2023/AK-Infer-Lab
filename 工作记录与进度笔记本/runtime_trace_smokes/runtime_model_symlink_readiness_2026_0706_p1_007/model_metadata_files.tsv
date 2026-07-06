@@ -1,0 +1,51 @@
+model_name	rel_path	metadata_kind	bytes	parse_error
+Qwen3-Embedding-4B	config.json	config	727
+Qwen3-Embedding-4B	generation_config.json	generation	117
+Qwen3-Embedding-4B	model.safetensors.index.json	safetensors_index	30431
+Qwen3-Embedding-4B	tokenizer.json	tokenizer	11422947	too_large:11422947
+Qwen3-Embedding-4B	tokenizer_config.json	tokenizer	7256
+Qwen3-Embedding-4B	1_Pooling/config.json	config	313
+Qwen3-Embedding-8B	config.json	config	729
+Qwen3-Embedding-8B	generation_config.json	generation	117
+Qwen3-Embedding-8B	model.safetensors.index.json	safetensors_index	30432
+Qwen3-Embedding-8B	tokenizer.json	tokenizer	11422947	too_large:11422947
+Qwen3-Embedding-8B	tokenizer_config.json	tokenizer	7256
+Qwen3-Embedding-8B	1_Pooling/config.json	config	313
+Qwen3-Reranker-4B	config.json	config	727
+Qwen3-Reranker-4B	generation_config.json	generation	214
+Qwen3-Reranker-4B	model.safetensors.index.json	safetensors_index	32819
+Qwen3-Reranker-4B	special_tokens_map.json	tokenizer	613
+Qwen3-Reranker-4B	tokenizer.json	tokenizer	11422654	too_large:11422654
+Qwen3-Reranker-4B	tokenizer_config.json	tokenizer	9706
+Qwen3-Reranker-4B	1_LogitScore/config.json	config	57
+Qwen3-Reranker-8B	config.json	config	729
+Qwen3-Reranker-8B	generation_config.json	generation	214
+Qwen3-Reranker-8B	model.safetensors.index.json	safetensors_index	32878
+Qwen3-Reranker-8B	tokenizer.json	tokenizer	11422654	too_large:11422654
+Qwen3-Reranker-8B	tokenizer_config.json	tokenizer	9706
+Qwen3-Reranker-8B	1_LogitScore/config.json	config	57
+Qwen3.5-4B	config.json	config	3161
+Qwen3.5-4B	model.safetensors.index.json	safetensors_index	76196
+Qwen3.5-4B	preprocessor_config.json	tokenizer	390
+Qwen3.5-4B	tokenizer.json	tokenizer	12807982	too_large:12807982
+Qwen3.5-4B	tokenizer_config.json	tokenizer	16710
+Qwen3.6-27B	config.json	config	4308
+Qwen3.6-27B	generation_config.json	generation	202
+Qwen3.6-27B	model.safetensors.index.json	safetensors_index	112216
+Qwen3.6-27B	preprocessor_config.json	tokenizer	390
+Qwen3.6-27B	tokenizer.json	tokenizer	12807982	too_large:12807982
+Qwen3.6-27B	tokenizer_config.json	tokenizer	16718
+Qwen3.6-27B-FP8	config.json	config	51346
+Qwen3.6-27B-FP8	generation_config.json	generation	202
+Qwen3.6-27B-FP8	model.safetensors.index.json	safetensors_index	137335
+Qwen3.6-27B-FP8	preprocessor_config.json	tokenizer	390
+Qwen3.6-27B-FP8	tokenizer.json	tokenizer	12807982	too_large:12807982
+Qwen3.6-27B-FP8	tokenizer_config.json	tokenizer	16718
+bge-m3	config.json	config	687
+bge-m3	special_tokens_map.json	tokenizer	964
+bge-m3	tokenizer.json	tokenizer	17098108	too_large:17098108
+bge-m3	tokenizer_config.json	tokenizer	444
+bge-m3	1_Pooling/config.json	config	191
+knowledgator-gliner-x-small	special_tokens_map.json	tokenizer	416
+knowledgator-gliner-x-small	tokenizer.json	tokenizer	16335050	too_large:16335050
+knowledgator-gliner-x-small	tokenizer_config.json	tokenizer	19602

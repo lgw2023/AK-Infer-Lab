@@ -2,29 +2,20 @@
 
 > 本文件每次只保留当前待执行任务；旧历史信息已清空。
 
-## 当前任务：P1.8 model symlink readiness 只读复核
+## 当前任务：P1.9 small model load smoke 独立验证
 
-- 任务 ID：`runtime_model_symlink_readiness_2026_0706_p1_007`
+- 任务 ID：`runtime_small_model_load_smoke_2026_0706_p1_008`
 - 证据基线：`obs_2026_0705_atlas800t_a2_006`
 - P1.6 profiler bridge：`runtime_profiler_bridge_2026_0706_p1_005`
-- P1.7 small model readiness：`runtime_small_model_readiness_2026_0706_p1_006`
+- P1.8 model symlink readiness：`runtime_model_symlink_readiness_2026_0706_p1_007`
 - 当前契约入口：`工作记录与进度笔记本/p1_inference_contracts/`
-- 详细 handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_model_symlink_readiness_handoff.md`
+- 详细 handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_small_model_load_smoke_handoff.md`
 
-P1.7 最新反馈邮件时间为 2026-07-06 00:54:20 CST，服务器执行 commit 为 `7c2e3ff`，`tests/inference_contracts` 为 `11 passed in 0.20s`。当前 conda 环境中 `torch_npu`、`transformers`、`safetensors`、`vllm`、`vllm_ascend` 均可见；`mindie`、`mindspore` 不可见。
+P1.8 最新反馈邮件时间为 2026-07-06 09:39:20 CST，服务器执行 commit 为 `b5cad00`。9 个 `models/` 顶层模型入口均为 symlink，并全部解析到 `/data/node0_disk1/Public/<name>`；跟随 symlink 后读取到 50 个 metadata 文件。`Qwen3.5-4B` 排名第一，真实路径为 `/data/node0_disk1/Public/Qwen3.5-4B`，具备 `config.json`、`tokenizer_config.json`、`model.safetensors.index.json` 和约 9.32 GB 权重文件 stat。
 
-P1.7 的正式扫描结果为：
+P1.8 自动结论为 `readiness_status=blocked_no_causal_lm_candidate`，原因是分类脚本只把 `ForCausalLM` 字符串视为 causal LM，而 `Qwen3.5-4B` 的 metadata 为 `architectures=Qwen3_5ForConditionalGeneration`。这属于分类规则偏窄，不是模型路径、metadata 或包可见性的 blocker。因此本轮作为独立任务，允许实际加载 `Qwen3.5-4B` 并执行最短 tokenizer / prefill / decode smoke。
 
-- `models_dir=/data/node0_disk1/liguowei/AK-Infer-Lab/models`
-- `models_dir_exists=1`
-- `top_level_entry_count=10`
-- `model_candidate_count=0`
-- `metadata_file_count=0`
-- `readiness_status=blocked_no_readable_model_metadata`
-
-邮件补充观察说明：`models/` 下 9 个模型目录入口是 symlink，指向 `../../../Public/<name>`；P1.7 脚本使用 `os.walk` 时没有 follow symlinks，因此只扫描到 `README.md`。服务器人工 `ls` 已确认 `/data/node0_disk1/Public/Qwen3.5-4B` 含 `config.json`、`tokenizer_config.json`、`model.safetensors.index.json` 等 metadata。
-
-本轮目标不是模型加载，不运行推理，不安装或修复任何包。本轮只做 symlink-aware metadata 复核：跟随 `models/` 顶层 symlink 到 `/data/node0_disk1/Public/...`，只读解析小型 metadata，区分生成式 causal LM、embedding、reranker、keyword/NER 等候选类型，并给出是否可以另起独立小模型加载 smoke 的候选路径。
+本轮和 P1.8 边界不同：本轮允许加载模型权重、实例化 tokenizer、执行极短推理；但仍不安装包、不修环境、不运行 vLLM 服务、不跑完整 P000-P012 workload、不输出性能或瓶颈归因结论。
 
 ## 服务器执行边界
 
@@ -33,17 +24,17 @@ P1.7 的正式扫描结果为：
 - 在服务器项目根目录 `/data/node0_disk1/liguowei/AK-Infer-Lab` 执行本文件命令。
 - 通过 `git pull --ff-only` 获取开发机已提交的最新项目状态。
 - 使用服务器当前 conda 环境；不创建新环境。
-- 默认扫描项目根目录下 `models/`，并跟随顶层 symlink 的真实目标。
-- 默认 Public 目录为 `/data/node0_disk1/Public`；如实际不同，可通过 `AK_PUBLIC_MODELS_DIR=/path/to/Public` 覆盖，并在邮件中说明。
-- 产出并邮件回传 `runtime_model_symlink_readiness_2026_0706_p1_007.zip`。
+- 默认模型路径为 `/data/node0_disk1/Public/Qwen3.5-4B`，可用 `AK_SMALL_MODEL_PATH=/path/to/model` 覆盖。
+- 默认 NPU 设备为 `npu:6`，可用 `AK_OBS_NPU_DEVICE=npu:<id>` 覆盖。
+- 默认只截断 `P000` 到 256 tokens，并最多生成 4 个 token。
+- 产出并邮件回传 `runtime_small_model_load_smoke_2026_0706_p1_008.zip`。
 
 请不要执行：
 
-- 不要加载模型权重，不要实例化模型，不要实例化 tokenizer。
-- 不要运行真实模型推理、小模型 smoke、vLLM engine serve/generate 或 P000-P012 workload。
-- 不要读取权重文件内容，只允许对权重文件做 `stat`。
+- 不要安装、升级、卸载或修复 `transformers`、`vllm`、`vllm_ascend`、`mindie`、`mindspore` 或其他包。
+- 不要创建新 conda 环境。
+- 不要运行 vLLM engine、serve、benchmark 或完整 P000-P012 workload。
 - 不要复制、移动、删除或改名 `models/` 或 `/data/node0_disk1/Public/` 下任何文件。
-- 不要安装、升级、卸载或修复 `transformers`、`vllm`、`vllm_ascend`、`mindie`、`mindspore` 或其他推理框架包。
 - 不要修改 driver、CANN、apt、dpkg、NPU runtime 或 vLLM/vLLM-Ascend 源码。
 - 不要自动修复或重装 `ascend910b-driver`。
 - 不要在服务器上修改、提交或 push 项目代码。
@@ -51,12 +42,13 @@ P1.7 的正式扫描结果为：
 
 ## 本轮必须回答的问题
 
-- `models/` 顶层目录项哪些是 symlink，分别解析到哪个真实路径？
-- symlink 目标是否存在、是否可读、是否位于 `/data/node0_disk1/Public/`？
-- 跟随 symlink 后能否读取 `config.json`、`tokenizer_config.json`、`generation_config.json`、`*.safetensors.index.json` 等 metadata？
-- 哪些候选是生成式 causal LM，哪些只是 embedding、reranker 或 keyword/NER 模型？
-- 是否存在一个最适合下一轮独立小模型加载 smoke 的候选路径？
-- 如果仍不能进入加载 smoke，阻塞原因是 symlink 目标不可读、metadata 缺失、候选不是生成模型，还是需要人工选择模型？
+- 当前服务器 conda 环境能否从本地路径加载 `Qwen3.5-4B` 的 config 与 tokenizer？
+- `AutoModelForCausalLM.from_pretrained(..., local_files_only=True, trust_remote_code=True)` 能否加载该模型权重？
+- 模型能否移动到指定 NPU 设备并完成一次极短 prefill 与 decode？
+- 最短推理能否产生非空 token / 文本输出？
+- 能否导出同一份 `torch_profiler_trace.json`，其中包含 `ak_p1_small_model_*` marker 与 NPU/op 事件候选？
+- 能否生成并通过校验 `small_model_trace.jsonl`，至少覆盖 request runtime、operator timeline、state object、transfer overlap 四类 resource scope？
+- 如果失败，失败点是 tokenizer/config、模型架构支持、权重加载、NPU 可用性、OOM、推理执行、profiler 导出，还是 trace 校验？
 
 ## 执行命令
 
@@ -71,11 +63,15 @@ if [ "${PULL_STATUS}" -ne 0 ]; then
   exit "${PULL_STATUS}"
 fi
 
-RUN_ID=runtime_model_symlink_readiness_2026_0706_p1_007
+RUN_ID=runtime_small_model_load_smoke_2026_0706_p1_008
 ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
-MODELS_DIR="${AK_MODELS_DIR:-models}"
-PUBLIC_MODELS_DIR="${AK_PUBLIC_MODELS_DIR:-/data/node0_disk1/Public}"
-export RUN_ID ARTIFACT_DIR MODELS_DIR PUBLIC_MODELS_DIR
+MODEL_PATH="${AK_SMALL_MODEL_PATH:-/data/node0_disk1/Public/Qwen3.5-4B}"
+PROMPT_PATH="${AK_SMALL_MODEL_PROMPT_PATH:-工作记录与进度笔记本/p1_inference_contracts/prompts/P000.md}"
+AK_OBS_NPU_DEVICE="${AK_OBS_NPU_DEVICE:-npu:6}"
+AK_SMALL_MODEL_MAX_INPUT_TOKENS="${AK_SMALL_MODEL_MAX_INPUT_TOKENS:-256}"
+AK_SMALL_MODEL_MAX_NEW_TOKENS="${AK_SMALL_MODEL_MAX_NEW_TOKENS:-4}"
+AK_SMALL_MODEL_TIMEOUT="${AK_SMALL_MODEL_TIMEOUT:-45m}"
+export RUN_ID ARTIFACT_DIR MODEL_PATH PROMPT_PATH AK_OBS_NPU_DEVICE AK_SMALL_MODEL_MAX_INPUT_TOKENS AK_SMALL_MODEL_MAX_NEW_TOKENS
 
 rm -rf "${ARTIFACT_DIR}"
 mkdir -p "${ARTIFACT_DIR}"
@@ -87,8 +83,12 @@ mkdir -p "${ARTIFACT_DIR}"
   echo "hostname=$(hostname)"
   echo "python=$(command -v python || true)"
   echo "cwd=$(pwd)"
-  echo "MODELS_DIR=${MODELS_DIR}"
-  echo "PUBLIC_MODELS_DIR=${PUBLIC_MODELS_DIR}"
+  echo "MODEL_PATH=${MODEL_PATH}"
+  echo "PROMPT_PATH=${PROMPT_PATH}"
+  echo "AK_OBS_NPU_DEVICE=${AK_OBS_NPU_DEVICE}"
+  echo "AK_SMALL_MODEL_MAX_INPUT_TOKENS=${AK_SMALL_MODEL_MAX_INPUT_TOKENS}"
+  echo "AK_SMALL_MODEL_MAX_NEW_TOKENS=${AK_SMALL_MODEL_MAX_NEW_TOKENS}"
+  echo "AK_SMALL_MODEL_TIMEOUT=${AK_SMALL_MODEL_TIMEOUT}"
 } | tee "${ARTIFACT_DIR}/run_context.txt"
 
 python -m pytest tests/inference_contracts -q > "${ARTIFACT_DIR}/pytest_inference_contracts.log" 2>&1
@@ -138,440 +138,531 @@ PACKAGE_STATUS=$?
 cat "${ARTIFACT_DIR}/package_inventory.tsv"
 echo "package_inventory_exit_code=${PACKAGE_STATUS}" >> "${ARTIFACT_DIR}/run_context.txt"
 
-python - <<'PY' > "${ARTIFACT_DIR}/model_symlink_inventory.log" 2>&1
+python - <<'PY' > "${ARTIFACT_DIR}/model_path_precheck.txt" 2>&1
 import json
 import os
-import re
 from pathlib import Path
 
-artifact_dir = Path(os.environ["ARTIFACT_DIR"])
-models_dir = Path(os.environ["MODELS_DIR"]).expanduser()
-public_dir = Path(os.environ["PUBLIC_MODELS_DIR"]).expanduser()
-if not models_dir.is_absolute():
-    models_dir = (Path.cwd() / models_dir).resolve()
-if not public_dir.is_absolute():
-    public_dir = (Path.cwd() / public_dir).resolve()
-
-max_depth = 5
-max_json_bytes = 10_000_000
-metadata_filenames = {
-    "config.json",
-    "tokenizer_config.json",
-    "generation_config.json",
-    "preprocessor_config.json",
-    "processor_config.json",
-    "special_tokens_map.json",
-    "tokenizer.json",
-}
-weight_suffixes = {".safetensors", ".bin", ".pt", ".pth", ".gguf"}
-
-def safe_stat(path, follow_symlinks=True):
+model_path = Path(os.environ["MODEL_PATH"]).expanduser()
+print(f"model_path={model_path}")
+print(f"exists={1 if model_path.exists() else 0}")
+print(f"is_dir={1 if model_path.is_dir() else 0}")
+for name in ["config.json", "tokenizer_config.json", "generation_config.json", "model.safetensors.index.json"]:
+    path = model_path / name
     try:
-        return path.stat() if follow_symlinks else path.lstat()
-    except OSError:
-        return None
-
-def clean(value):
-    text = "" if value is None else str(value)
-    return text.replace("\n", "\\n").replace("\t", " ")
-
-def json_load_small(path):
-    stat = safe_stat(path)
-    if stat is None:
-        return None, "stat_failed"
-    if stat.st_size > max_json_bytes:
-        return None, f"too_large:{stat.st_size}"
-    try:
-        return json.loads(path.read_text(encoding="utf-8", errors="replace")), ""
+        stat = path.stat()
+        print(f"{name}\texists=1\tbytes={stat.st_size}")
+        if name.endswith(".json") and stat.st_size <= 200000:
+            data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+            if name == "config.json":
+                print(f"config_model_type={data.get('model_type', '')}")
+                print(f"config_architectures={data.get('architectures', '')}")
+            if name == "tokenizer_config.json":
+                print(f"tokenizer_class={data.get('tokenizer_class', '')}")
+                print(f"model_max_length={data.get('model_max_length', '')}")
+    except FileNotFoundError:
+        print(f"{name}\texists=0\tbytes=")
     except Exception as exc:
-        return None, f"{type(exc).__name__}: {exc}"
-
-def metadata_kind(name):
-    lower = name.lower()
-    if lower == "config.json":
-        return "config"
-    if lower in {"tokenizer_config.json", "tokenizer.json", "special_tokens_map.json", "processor_config.json", "preprocessor_config.json"}:
-        return "tokenizer"
-    if lower == "generation_config.json":
-        return "generation"
-    if lower.endswith(".safetensors.index.json"):
-        return "safetensors_index"
-    return ""
-
-def under(path, parent):
-    try:
-        path.resolve(strict=False).relative_to(parent.resolve(strict=False))
-        return True
-    except ValueError:
-        return False
-
-def relative_to_root(path, root):
-    try:
-        return str(path.relative_to(root))
-    except ValueError:
-        return str(path)
-
-summary = {
-    "models_dir": str(models_dir),
-    "models_dir_exists": models_dir.exists(),
-    "models_dir_is_dir": models_dir.is_dir(),
-    "public_models_dir": str(public_dir),
-    "public_models_dir_exists": public_dir.exists(),
-    "public_models_dir_is_dir": public_dir.is_dir(),
-    "note": "symlink-aware metadata-only scan; no model/tokenizer load and no weight content read",
-}
-
-symlink_rows = ["entry\tentry_path\tkind\traw_link_target\tresolved_path\tresolved_exists\tresolved_is_dir\tunder_public\tbytes_lstat"]
-file_rows = ["model_name\trel_path\tmetadata_kind\tbytes\tparse_error"]
-metadata_rows = []
-candidates = {}
-scan_roots = []
-
-if models_dir.exists() and models_dir.is_dir():
-    entries = sorted(models_dir.iterdir(), key=lambda path: path.name)
-else:
-    entries = []
-
-for entry in entries:
-    lstat = safe_stat(entry, follow_symlinks=False)
-    raw_target = ""
-    try:
-        raw_target = os.readlink(entry) if entry.is_symlink() else ""
-    except OSError as exc:
-        raw_target = f"readlink_error:{type(exc).__name__}:{exc}"
-    resolved = entry.resolve(strict=False)
-    resolved_exists = resolved.exists()
-    resolved_is_dir = resolved.is_dir()
-    if entry.is_symlink():
-        kind = "symlink_dir" if resolved_is_dir else "symlink_other"
-    elif entry.is_dir():
-        kind = "dir"
-    elif entry.is_file():
-        kind = "file"
-    else:
-        kind = "other"
-    symlink_rows.append("\t".join([
-        clean(entry.name),
-        clean(str(entry)),
-        kind,
-        clean(raw_target),
-        clean(str(resolved)),
-        "1" if resolved_exists else "0",
-        "1" if resolved_is_dir else "0",
-        "1" if under(resolved, public_dir) else "0",
-        str(lstat.st_size if lstat else ""),
-    ]))
-    if resolved_exists and resolved_is_dir and kind in {"symlink_dir", "dir"}:
-        scan_roots.append((entry.name, resolved))
-
-def candidate_for(model_name, root):
-    key = str(root)
-    rec = candidates.setdefault(key, {
-        "model_name": model_name,
-        "resolved_path": str(root),
-        "under_public": under(root, public_dir),
-        "has_config": False,
-        "has_tokenizer_metadata": False,
-        "has_generation_config": False,
-        "has_safetensors_index": False,
-        "metadata_files": [],
-        "metadata_parse_errors": [],
-        "weight_file_count": 0,
-        "weight_bytes_stat_only": 0,
-        "model_type": "",
-        "architectures": [],
-        "torch_dtype": "",
-        "max_position_embeddings": "",
-        "num_hidden_layers": "",
-        "hidden_size": "",
-        "num_attention_heads": "",
-        "num_key_value_heads": "",
-        "num_experts": "",
-        "vocab_size": "",
-        "tokenizer_class": "",
-        "model_max_length": "",
-    })
-    return rec
-
-def record_metadata(model_name, root, path, kind):
-    rec = candidate_for(model_name, root)
-    rel = relative_to_root(path, root)
-    data, error = json_load_small(path)
-    stat = safe_stat(path)
-    rec["metadata_files"].append(rel)
-    if error:
-        rec["metadata_parse_errors"].append(f"{rel}:{error}")
-    if kind == "config":
-        rec["has_config"] = True
-    elif kind == "tokenizer":
-        rec["has_tokenizer_metadata"] = True
-    elif kind == "generation":
-        rec["has_generation_config"] = True
-    elif kind == "safetensors_index":
-        rec["has_safetensors_index"] = True
-
-    selected = {}
-    if isinstance(data, dict):
-        for key in [
-            "model_type",
-            "architectures",
-            "torch_dtype",
-            "vocab_size",
-            "max_position_embeddings",
-            "num_hidden_layers",
-            "num_attention_heads",
-            "num_key_value_heads",
-            "hidden_size",
-            "intermediate_size",
-            "num_experts",
-            "moe_intermediate_size",
-            "tokenizer_class",
-            "model_max_length",
-            "total_size",
-        ]:
-            if key in data:
-                selected[key] = data.get(key)
-        if kind == "config":
-            rec["model_type"] = clean(data.get("model_type", ""))
-            rec["architectures"] = data.get("architectures", []) or []
-            rec["torch_dtype"] = clean(data.get("torch_dtype", ""))
-            rec["max_position_embeddings"] = clean(data.get("max_position_embeddings", ""))
-            rec["num_hidden_layers"] = clean(data.get("num_hidden_layers", ""))
-            rec["hidden_size"] = clean(data.get("hidden_size", ""))
-            rec["num_attention_heads"] = clean(data.get("num_attention_heads", ""))
-            rec["num_key_value_heads"] = clean(data.get("num_key_value_heads", ""))
-            rec["num_experts"] = clean(data.get("num_experts", ""))
-            rec["vocab_size"] = clean(data.get("vocab_size", ""))
-        if kind == "tokenizer":
-            if not rec["tokenizer_class"]:
-                rec["tokenizer_class"] = clean(data.get("tokenizer_class", ""))
-            if not rec["model_max_length"]:
-                rec["model_max_length"] = clean(data.get("model_max_length", ""))
-
-    metadata_rows.append(json.dumps({
-        "model_name": model_name,
-        "root": str(root),
-        "path": rel,
-        "kind": kind,
-        "bytes": stat.st_size if stat else None,
-        "parse_error": error,
-        "selected": selected,
-    }, ensure_ascii=False, sort_keys=True))
-    file_rows.append("\t".join([
-        clean(model_name),
-        clean(rel),
-        clean(kind),
-        str(stat.st_size if stat else ""),
-        clean(error),
-    ]))
-
-for model_name, root in scan_roots:
-    candidate_for(model_name, root)
-    seen_dirs = set()
-    for current, dirs, files in os.walk(root, followlinks=True):
-        current_path = Path(current)
-        try:
-            depth = len(current_path.relative_to(root).parts)
-        except ValueError:
-            depth = 0
-        stat = safe_stat(current_path)
-        inode_key = None
-        if stat is not None:
-            inode_key = (stat.st_dev, stat.st_ino)
-            if inode_key in seen_dirs:
-                dirs[:] = []
-                continue
-            seen_dirs.add(inode_key)
-        dirs[:] = sorted([name for name in dirs if not name.startswith(".")])
-        files = sorted(files)
-        if depth >= max_depth:
-            dirs[:] = []
-        for name in files:
-            path = current_path / name
-            kind = metadata_kind(name)
-            suffix = path.suffix.lower()
-            if kind:
-                record_metadata(model_name, root, path, kind)
-            if suffix in weight_suffixes:
-                rec = candidate_for(model_name, root)
-                stat = safe_stat(path)
-                rec["weight_file_count"] += 1
-                rec["weight_bytes_stat_only"] += stat.st_size if stat else 0
-
-def classify_and_score(rec):
-    text = " ".join([
-        rec["model_name"],
-        rec["model_type"],
-        " ".join(str(x) for x in rec["architectures"]),
-        rec["resolved_path"],
-    ]).lower()
-    score = 0
-    reasons = []
-    kind = "unknown"
-    if rec["has_config"]:
-        score += 4
-        reasons.append("has_config")
-    if rec["has_tokenizer_metadata"]:
-        score += 3
-        reasons.append("has_tokenizer_metadata")
-    if rec["has_safetensors_index"] or rec["weight_file_count"] > 0:
-        score += 2
-        reasons.append("has_weight_manifest_or_files")
-    if "forcausallm" in text or "causal_lm" in text or "causallm" in text:
-        score += 5
-        reasons.append("causal_lm_architecture")
-        kind = "causal_lm"
-    elif any(token in text for token in ["embedding", "reranker", "bge", "gliner", "tokenclassification", "sequenceclassification"]):
-        score -= 5
-        reasons.append("non_generate_model_hint")
-        kind = "non_generate"
-    elif any(token in text for token in ["qwen", "llama", "baichuan", "internlm", "deepseek"]):
-        score += 2
-        reasons.append("llm_name_hint")
-        kind = "possible_lm"
-    if re.search(r"(^|[^0-9])(0\.5b|1\.5b|1b|2b|3b|4b|tiny|small)([^0-9]|$)", text):
-        score += 2
-        reasons.append("small_or_mid_name_hint")
-    if re.search(r"(^|[^0-9])(27b|30b|32b|70b|72b|110b)([^0-9]|$)", text):
-        score -= 4
-        reasons.append("large_name_hint")
-    if not rec["under_public"]:
-        score -= 1
-        reasons.append("outside_public_dir")
-    if rec["metadata_parse_errors"]:
-        score -= 1
-        reasons.append("metadata_parse_errors")
-    return kind, score, ",".join(reasons)
-
-ranking_rows = ["rank\tscore\tcandidate_kind\treasons\tmodel_name\tresolved_path\tunder_public\tmodel_type\tarchitectures\ttorch_dtype\tmax_position_embeddings\tnum_hidden_layers\thidden_size\tnum_attention_heads\tnum_key_value_heads\tnum_experts\tvocab_size\ttokenizer_class\tmodel_max_length\tweight_file_count\tweight_bytes_stat_only\tmetadata_files\tmetadata_parse_errors"]
-ranked = []
-for rec in candidates.values():
-    kind, score, reasons = classify_and_score(rec)
-    rec["candidate_kind"] = kind
-    rec["score"] = score
-    rec["reasons"] = reasons
-    ranked.append(rec)
-ranked.sort(key=lambda rec: (-rec["score"], rec["model_name"], rec["resolved_path"]))
-for index, rec in enumerate(ranked, start=1):
-    ranking_rows.append("\t".join([
-        str(index),
-        str(rec["score"]),
-        rec["candidate_kind"],
-        clean(rec["reasons"]),
-        clean(rec["model_name"]),
-        clean(rec["resolved_path"]),
-        "1" if rec["under_public"] else "0",
-        clean(rec["model_type"]),
-        clean(",".join(str(x) for x in rec["architectures"])),
-        clean(rec["torch_dtype"]),
-        clean(rec["max_position_embeddings"]),
-        clean(rec["num_hidden_layers"]),
-        clean(rec["hidden_size"]),
-        clean(rec["num_attention_heads"]),
-        clean(rec["num_key_value_heads"]),
-        clean(rec["num_experts"]),
-        clean(rec["vocab_size"]),
-        clean(rec["tokenizer_class"]),
-        clean(rec["model_max_length"]),
-        str(rec["weight_file_count"]),
-        str(rec["weight_bytes_stat_only"]),
-        clean(",".join(rec["metadata_files"][:30])),
-        clean(",".join(rec["metadata_parse_errors"][:10])),
-    ]))
-
-causal_candidates = [rec for rec in ranked if rec["candidate_kind"] == "causal_lm" and rec["has_config"] and rec["has_tokenizer_metadata"]]
-top_candidate = causal_candidates[0] if causal_candidates else (ranked[0] if ranked else None)
-summary.update({
-    "top_level_entry_count": len(entries),
-    "scan_root_count": len(scan_roots),
-    "metadata_file_count": len(metadata_rows),
-    "model_candidate_count": len(candidates),
-    "causal_lm_candidate_count": len(causal_candidates),
-    "top_candidate_model_name": top_candidate["model_name"] if top_candidate else "",
-    "top_candidate_resolved_path": top_candidate["resolved_path"] if top_candidate else "",
-    "top_candidate_kind": top_candidate["candidate_kind"] if top_candidate else "",
-    "top_candidate_score": top_candidate["score"] if top_candidate else 0,
-    "top_candidate_reasons": top_candidate["reasons"] if top_candidate else "",
-})
-
-(artifact_dir / "models_symlink_map.tsv").write_text("\n".join(symlink_rows) + "\n", encoding="utf-8")
-(artifact_dir / "model_metadata_files.tsv").write_text("\n".join(file_rows) + "\n", encoding="utf-8")
-(artifact_dir / "model_metadata_inventory.jsonl").write_text("\n".join(metadata_rows) + ("\n" if metadata_rows else ""), encoding="utf-8")
-(artifact_dir / "model_candidate_ranking.tsv").write_text("\n".join(ranking_rows) + "\n", encoding="utf-8")
-(artifact_dir / "model_symlink_inventory_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        print(f"{name}\terror={type(exc).__name__}: {exc}")
 PY
-MODEL_STATUS=$?
-cat "${ARTIFACT_DIR}/model_symlink_inventory.log"
-echo "model_symlink_inventory_exit_code=${MODEL_STATUS}" >> "${ARTIFACT_DIR}/run_context.txt"
+PRECHECK_STATUS=$?
+cat "${ARTIFACT_DIR}/model_path_precheck.txt"
+echo "model_path_precheck_exit_code=${PRECHECK_STATUS}" >> "${ARTIFACT_DIR}/run_context.txt"
 
-python - <<'PY' > "${ARTIFACT_DIR}/readiness_conclusion.txt"
+run_smoke() {
+python - <<'PY'
 import json
 import os
+import time
+import traceback
 from pathlib import Path
 
 artifact_dir = Path(os.environ["ARTIFACT_DIR"])
-summary = json.loads((artifact_dir / "model_symlink_inventory_summary.json").read_text(encoding="utf-8"))
+model_path = Path(os.environ["MODEL_PATH"]).expanduser()
+prompt_path = Path(os.environ["PROMPT_PATH"])
+device = os.environ.get("AK_OBS_NPU_DEVICE", "npu:6")
+max_input_tokens = int(os.environ.get("AK_SMALL_MODEL_MAX_INPUT_TOKENS", "256"))
+max_new_tokens = max(2, int(os.environ.get("AK_SMALL_MODEL_MAX_NEW_TOKENS", "4")))
 
-packages = {}
-lines = (artifact_dir / "package_inventory.tsv").read_text(encoding="utf-8", errors="replace").splitlines()
-for line in lines[1:]:
-    parts = line.split("\t")
-    if len(parts) >= 4:
-        packages[parts[0]] = {"version": parts[2], "found": parts[3] == "1"}
+result_path = artifact_dir / "small_model_smoke_result.json"
+error_path = artifact_dir / "small_model_smoke_error.txt"
+conclusion_path = artifact_dir / "small_model_load_conclusion.txt"
+trace_path = artifact_dir / "small_model_trace.jsonl"
+trace_validation_path = artifact_dir / "small_model_trace_validation.txt"
+profiler_path = artifact_dir / "torch_profiler_trace.json"
+profiler_summary_path = artifact_dir / "torch_profiler_summary.json"
+generated_text_path = artifact_dir / "generated_text.txt"
+generated_ids_path = artifact_dir / "generated_token_ids.json"
 
-def found(name):
-    return packages.get(name, {}).get("found", False)
+result = {
+    "run_id": os.environ["RUN_ID"],
+    "status": "started",
+    "phase": "init",
+    "model_path": str(model_path),
+    "prompt_path": str(prompt_path),
+    "device": device,
+    "max_input_tokens": max_input_tokens,
+    "max_new_tokens": max_new_tokens,
+}
 
-models_exists = bool(summary.get("models_dir_exists") and summary.get("models_dir_is_dir"))
-scan_root_count = int(summary.get("scan_root_count") or 0)
-metadata_count = int(summary.get("metadata_file_count") or 0)
-candidate_count = int(summary.get("model_candidate_count") or 0)
-causal_count = int(summary.get("causal_lm_candidate_count") or 0)
-top_path = str(summary.get("top_candidate_resolved_path") or "")
-top_kind = str(summary.get("top_candidate_kind") or "")
-has_torch_npu = found("torch") and found("torch_npu")
-has_transformers_entry = found("transformers") and found("safetensors")
-has_vllm_entry = found("vllm") or found("vllm_ascend")
+def write_json(path, data):
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
 
-if not models_exists:
-    status = "blocked_models_dir_missing"
-elif scan_root_count <= 0:
-    status = "blocked_no_readable_symlink_targets"
-elif metadata_count <= 0 or candidate_count <= 0:
-    status = "blocked_no_metadata_after_following_symlinks"
-elif causal_count <= 0:
-    status = "blocked_no_causal_lm_candidate"
-elif not has_torch_npu:
-    status = "blocked_torch_npu_not_visible"
-elif not (has_transformers_entry or has_vllm_entry):
-    status = "blocked_no_loading_framework_entry_visible"
-else:
-    status = "ready_for_separate_small_model_load_smoke_candidate_only"
+def update(**kwargs):
+    result.update(kwargs)
+    write_json(result_path, result)
 
-print(f"models_dir={summary.get('models_dir', '')}")
-print(f"public_models_dir={summary.get('public_models_dir', '')}")
-print(f"models_dir_exists={1 if models_exists else 0}")
-print(f"scan_root_count={scan_root_count}")
-print(f"model_candidate_count={candidate_count}")
-print(f"metadata_file_count={metadata_count}")
-print(f"causal_lm_candidate_count={causal_count}")
-print(f"top_candidate_model_name={summary.get('top_candidate_model_name', '')}")
-print(f"top_candidate_resolved_path={top_path}")
-print(f"top_candidate_kind={top_kind}")
-print(f"top_candidate_score={summary.get('top_candidate_score', '')}")
-print(f"top_candidate_reasons={summary.get('top_candidate_reasons', '')}")
-print(f"torch_npu_visible={1 if has_torch_npu else 0}")
-print(f"transformers_entry_visible={1 if has_transformers_entry else 0}")
-print(f"vllm_entry_visible={1 if has_vllm_entry else 0}")
-print(f"readiness_status={status}")
-print("next_step_policy=do_not_load_model_in_this_task; design a separate load smoke only if readiness_status is ready")
-print("trace_pairing_policy=torch_profiler_trace_candidate_only; do not claim CANN device timeline pairing")
+def write_conclusion():
+    lines = [
+        f"small_model_smoke_status={result.get('status', '')}",
+        f"failure_phase={result.get('failure_phase', '')}",
+        f"model_path={result.get('model_path', '')}",
+        f"device={result.get('device', '')}",
+        f"config_class={result.get('config_class', '')}",
+        f"tokenizer_class={result.get('tokenizer_class', '')}",
+        f"model_class={result.get('model_class', '')}",
+        f"input_token_count={result.get('input_token_count', '')}",
+        f"generated_token_count={result.get('generated_token_count', '')}",
+        f"generated_text_nonempty={1 if result.get('generated_text_nonempty') else 0}",
+        f"prefill_latency_us={result.get('prefill_latency_us', '')}",
+        f"decode_step_count={result.get('decode_step_count', '')}",
+        f"first_decode_latency_us={result.get('first_decode_latency_us', '')}",
+        f"torch_profiler_trace_exists={1 if result.get('torch_profiler_trace_exists') else 0}",
+        f"torch_profiler_marker_event_count={result.get('torch_profiler_marker_event_count', '')}",
+        f"torch_profiler_npu_event_candidate_count={result.get('torch_profiler_npu_event_candidate_count', '')}",
+        f"small_model_trace_validation_errors={result.get('small_model_trace_validation_errors', '')}",
+        f"error_type={result.get('error_type', '')}",
+        f"error={result.get('error', '')}",
+        "trace_pairing_policy=torch_profiler_trace_candidate_only; do not claim CANN device timeline pairing",
+        "performance_policy=smoke_only_no_perf_or_bottleneck_conclusion",
+        "environment_policy=no_package_install_no_environment_repair",
+    ]
+    conclusion_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+def fail(status, exc):
+    update(
+        status=status,
+        failure_phase=result.get("phase", ""),
+        error_type=type(exc).__name__,
+        error=str(exc),
+    )
+    error_path.write_text(traceback.format_exc(), encoding="utf-8")
+    write_conclusion()
+
+def make_event(**overrides):
+    event = {
+        "schema_version": "0.1.0",
+        "event_id": "",
+        "timestamp_ns": time.monotonic_ns(),
+        "time_base": "host_monotonic_ns",
+        "trace_id": "trace_p1_small_model_0001",
+        "request_id": "req_small_model_0001",
+        "session_id": "session_p1_small_model",
+        "phase": "prefill",
+        "event_type": "point",
+        "resource_scope": "request_runtime_profile",
+        "layer_id": None,
+        "op_name": None,
+        "kernel_name": None,
+        "stream_id": "host:runtime",
+        "device_id": "host:cpu",
+        "object_type": None,
+        "object_id": None,
+        "source_tier": "none",
+        "target_tier": "none",
+        "bytes_read": 0,
+        "bytes_write": 0,
+        "latency_us": 0,
+        "queue_wait_us": 0,
+        "overlap_ratio": None,
+        "policy_decision": "small_model_smoke",
+        "hit_or_miss": "not_applicable",
+        "stall_reason": "unknown",
+        "evidence_source": "runtime_queue_trace",
+        "artifact_path": "small_model_trace.jsonl",
+    }
+    event.update(overrides)
+    return event
+
+try:
+    update(phase="import_runtime")
+    import torch
+    import torch_npu  # noqa: F401
+    from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
+    from tools.inference_contracts.validation import validate_trace_fixture
+
+    if not model_path.is_dir():
+        raise RuntimeError(f"model path is not a directory: {model_path}")
+    if not hasattr(torch, "npu") or not torch.npu.is_available():
+        raise RuntimeError("torch.npu is not available")
+
+    update(
+        phase="set_device",
+        torch_version=getattr(torch, "__version__", ""),
+        npu_device_count=int(torch.npu.device_count()),
+    )
+    torch.npu.set_device(device)
+
+    update(phase="load_config")
+    config = AutoConfig.from_pretrained(
+        str(model_path),
+        trust_remote_code=True,
+        local_files_only=True,
+    )
+    update(
+        config_class=type(config).__name__,
+        config_model_type=getattr(config, "model_type", ""),
+        config_architectures=getattr(config, "architectures", None),
+    )
+
+    update(phase="load_tokenizer")
+    tokenizer = AutoTokenizer.from_pretrained(
+        str(model_path),
+        trust_remote_code=True,
+        local_files_only=True,
+    )
+    update(
+        tokenizer_class=type(tokenizer).__name__,
+        tokenizer_model_max_length=getattr(tokenizer, "model_max_length", None),
+    )
+
+    update(phase="load_model")
+    base_load_kwargs = {
+        "trust_remote_code": True,
+        "local_files_only": True,
+    }
+
+    model = None
+    type_errors = []
+    for extra_kwargs in [
+        {"torch_dtype": "auto", "low_cpu_mem_usage": True},
+        {"dtype": "auto", "low_cpu_mem_usage": True},
+        {"torch_dtype": "auto"},
+        {"dtype": "auto"},
+        {},
+    ]:
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                str(model_path),
+                **base_load_kwargs,
+                **extra_kwargs,
+            )
+            update(model_load_kwargs=extra_kwargs)
+            break
+        except TypeError as exc:
+            type_errors.append(f"{extra_kwargs}: {exc}")
+            continue
+    if model is None:
+        raise RuntimeError("AutoModelForCausalLM load failed with TypeError attempts: " + " | ".join(type_errors))
+
+    update(phase="move_model_to_device", model_class=type(model).__name__)
+    model.eval()
+    model.to(device)
+    torch.npu.synchronize()
+
+    update(phase="tokenize_prompt")
+    prompt_text = prompt_path.read_text(encoding="utf-8", errors="replace")
+    tokenize_start = time.monotonic_ns()
+    encoded_cpu = tokenizer(
+        prompt_text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=max_input_tokens,
+    )
+    tokenize_end = time.monotonic_ns()
+    input_token_count = int(encoded_cpu["input_ids"].shape[-1])
+    input_bytes = int(sum(t.numel() * t.element_size() for t in encoded_cpu.values() if hasattr(t, "numel")))
+    update(
+        input_token_count=input_token_count,
+        tokenizer_latency_us=(tokenize_end - tokenize_start) // 1000,
+        input_tensor_bytes=input_bytes,
+    )
+
+    update(phase="copy_inputs_to_device")
+    h2d_start = time.monotonic_ns()
+    inputs_npu = {
+        name: tensor.to(device) if hasattr(tensor, "to") else tensor
+        for name, tensor in encoded_cpu.items()
+    }
+    torch.npu.synchronize()
+    h2d_end = time.monotonic_ns()
+    h2d_latency_us = (h2d_end - h2d_start) // 1000
+    update(input_h2d_latency_us=h2d_latency_us)
+
+    activities = [torch.profiler.ProfilerActivity.CPU]
+    generated_ids = []
+    decode_latencies_us = []
+    prefill_start = prefill_end = 0
+
+    update(phase="prefill_decode_smoke")
+    with torch.inference_mode():
+        with torch.profiler.profile(
+            activities=activities,
+            record_shapes=False,
+            profile_memory=False,
+            with_stack=False,
+        ) as prof:
+            with torch.profiler.record_function("ak_p1_small_model_prefill"):
+                prefill_start = time.monotonic_ns()
+                outputs = model(**inputs_npu, use_cache=True)
+                torch.npu.synchronize()
+                prefill_end = time.monotonic_ns()
+
+            next_token = torch.argmax(outputs.logits[:, -1, :], dim=-1, keepdim=True)
+            generated_ids.append(int(next_token.detach().cpu().item()))
+            past_key_values = getattr(outputs, "past_key_values", None)
+            attention_mask = inputs_npu.get("attention_mask")
+
+            for step in range(1, max_new_tokens):
+                if attention_mask is not None:
+                    one_token_mask = torch.ones(
+                        (attention_mask.shape[0], 1),
+                        dtype=attention_mask.dtype,
+                        device=device,
+                    )
+                    attention_mask = torch.cat([attention_mask, one_token_mask], dim=-1)
+                decode_kwargs = {"input_ids": next_token, "use_cache": True}
+                if past_key_values is not None:
+                    decode_kwargs["past_key_values"] = past_key_values
+                if attention_mask is not None:
+                    decode_kwargs["attention_mask"] = attention_mask
+                with torch.profiler.record_function(f"ak_p1_small_model_decode_{step}"):
+                    decode_start = time.monotonic_ns()
+                    decode_outputs = model(**decode_kwargs)
+                    torch.npu.synchronize()
+                    decode_end = time.monotonic_ns()
+                decode_latencies_us.append((decode_end - decode_start) // 1000)
+                next_token = torch.argmax(decode_outputs.logits[:, -1, :], dim=-1, keepdim=True)
+                generated_ids.append(int(next_token.detach().cpu().item()))
+                past_key_values = getattr(decode_outputs, "past_key_values", past_key_values)
+
+        profiler_export_error = ""
+        try:
+            prof.export_chrome_trace(str(profiler_path))
+        except Exception as exc:
+            profiler_export_error = f"{type(exc).__name__}: {exc}"
+
+    generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True)
+    generated_text_path.write_text(generated_text, encoding="utf-8")
+    write_json(generated_ids_path, {"generated_token_ids": generated_ids})
+
+    prefill_latency_us = (prefill_end - prefill_start) // 1000
+    update(
+        phase="write_trace",
+        generated_token_count=len(generated_ids),
+        generated_text_nonempty=bool(generated_text.strip()),
+        prefill_latency_us=prefill_latency_us,
+        decode_step_count=len(decode_latencies_us),
+        first_decode_latency_us=decode_latencies_us[0] if decode_latencies_us else "",
+        decode_total_latency_us=sum(decode_latencies_us),
+        torch_profiler_export_error=profiler_export_error,
+        torch_profiler_trace_exists=profiler_path.is_file(),
+    )
+
+    input_object_id = "activation:req_small_model_0001:input_ids"
+    events = [
+        make_event(
+            event_id="evt_small_model_tokenize_done",
+            timestamp_ns=tokenize_end,
+            phase="tokenize",
+            event_type="point",
+            resource_scope="request_runtime_profile",
+            op_name="tokenizer_encode",
+            stream_id="host:tokenizer",
+            device_id="host:cpu",
+            latency_us=(tokenize_end - tokenize_start) // 1000,
+            policy_decision="truncate_to_smoke_max_input_tokens",
+            evidence_source="runtime_queue_trace",
+        ),
+        make_event(
+            event_id="evt_small_model_input_activation_ready",
+            timestamp_ns=h2d_end,
+            phase="prefill",
+            event_type="lifecycle",
+            resource_scope="state_object_profile",
+            layer_id=0,
+            op_name="input_activation_h2d_ready",
+            stream_id=f"{device}:copy:unknown",
+            device_id=device,
+            object_type="activation",
+            object_id=input_object_id,
+            source_tier="dram",
+            target_tier="hbm",
+            bytes_read=input_bytes,
+            bytes_write=input_bytes,
+            latency_us=h2d_latency_us,
+            policy_decision="copy_prompt_inputs_to_npu",
+            evidence_source="state_object_trace",
+        ),
+        make_event(
+            event_id="evt_small_model_input_h2d_done",
+            timestamp_ns=h2d_end,
+            phase="prefill",
+            event_type="span_end",
+            resource_scope="transfer_overlap_profile",
+            layer_id=0,
+            op_name="input_ids_h2d_copy",
+            kernel_name="torch_tensor_to_npu",
+            stream_id=f"{device}:copy:unknown",
+            device_id=device,
+            object_type="activation",
+            object_id=input_object_id,
+            source_tier="dram",
+            target_tier="hbm",
+            bytes_read=input_bytes,
+            bytes_write=input_bytes,
+            latency_us=h2d_latency_us,
+            overlap_ratio=None,
+            policy_decision="sync_copy_before_prefill",
+            evidence_source="copy_overlap_trace",
+        ),
+        make_event(
+            event_id="evt_small_model_prefill_done",
+            timestamp_ns=prefill_end,
+            phase="prefill",
+            event_type="span_end",
+            resource_scope="operator_timeline_profile",
+            layer_id=0,
+            op_name="model_prefill_forward",
+            kernel_name="torch_profiler_candidate",
+            stream_id=f"{device}:compute:unknown",
+            device_id=device,
+            bytes_read=None,
+            bytes_write=None,
+            latency_us=prefill_latency_us,
+            policy_decision="manual_prefill_forward",
+            evidence_source="operator_timeline",
+        ),
+        make_event(
+            event_id="evt_small_model_decode_done",
+            timestamp_ns=time.monotonic_ns(),
+            phase="decode",
+            event_type="span_end",
+            resource_scope="request_runtime_profile",
+            op_name="manual_greedy_decode",
+            stream_id="host:runtime",
+            device_id="host:cpu",
+            latency_us=sum(decode_latencies_us),
+            policy_decision="manual_decode_smoke",
+            evidence_source="runtime_queue_trace",
+        ),
+        make_event(
+            event_id="evt_small_model_decode_op_done",
+            timestamp_ns=time.monotonic_ns(),
+            phase="decode",
+            event_type="span_end",
+            resource_scope="operator_timeline_profile",
+            layer_id=0,
+            op_name="model_decode_forward",
+            kernel_name="torch_profiler_candidate",
+            stream_id=f"{device}:compute:unknown",
+            device_id=device,
+            bytes_read=None,
+            bytes_write=None,
+            latency_us=decode_latencies_us[0] if decode_latencies_us else 0,
+            policy_decision="manual_decode_forward",
+            evidence_source="operator_timeline",
+        ),
+    ]
+    trace_path.write_text(
+        "\n".join(json.dumps(event, ensure_ascii=False, sort_keys=True) for event in events) + "\n",
+        encoding="utf-8",
+    )
+
+    validation_report = validate_trace_fixture(trace_path)
+    trace_validation_path.write_text(
+        "\n".join([
+            f"errors={len(validation_report.errors)}",
+            f"events={len(validation_report.metadata.get('events', []))}",
+            "error_list=" + json.dumps(validation_report.errors, ensure_ascii=False),
+        ]) + "\n",
+        encoding="utf-8",
+    )
+
+    marker_count = ""
+    npu_candidate_count = ""
+    profiler_summary = {
+        "trace_exists": profiler_path.is_file(),
+        "export_error": profiler_export_error,
+        "marker_event_count": 0,
+        "npu_event_candidate_count": 0,
+        "trace_event_count": 0,
+    }
+    if profiler_path.is_file():
+        try:
+            profiler_data = json.loads(profiler_path.read_text(encoding="utf-8", errors="replace"))
+            trace_events = profiler_data.get("traceEvents", [])
+            profiler_summary["trace_event_count"] = len(trace_events)
+            marker_names = []
+            npu_names = []
+            for event in trace_events:
+                name = str(event.get("name", ""))
+                lower = name.lower()
+                if "ak_p1_small_model" in lower:
+                    marker_names.append(name)
+                if any(token in lower for token in ["npu", "acl", "aclnn", "matmul", "attention", "aten::"]):
+                    npu_names.append(name)
+            profiler_summary["marker_event_count"] = len(marker_names)
+            profiler_summary["npu_event_candidate_count"] = len(npu_names)
+            profiler_summary["marker_names_sample"] = marker_names[:20]
+            profiler_summary["npu_event_names_sample"] = npu_names[:40]
+        except Exception as exc:
+            profiler_summary["analysis_error"] = f"{type(exc).__name__}: {exc}"
+
+    write_json(profiler_summary_path, profiler_summary)
+    marker_count = profiler_summary.get("marker_event_count", "")
+    npu_candidate_count = profiler_summary.get("npu_event_candidate_count", "")
+
+    final_status = "success"
+    if validation_report.errors:
+        final_status = "partial_trace_validation_failed"
+    elif not profiler_path.is_file() or profiler_export_error:
+        final_status = "partial_profiler_trace_missing"
+    elif not generated_ids:
+        final_status = "partial_no_generated_tokens"
+
+    update(
+        status=final_status,
+        phase="complete",
+        small_model_trace_validation_errors=len(validation_report.errors),
+        torch_profiler_marker_event_count=marker_count,
+        torch_profiler_npu_event_candidate_count=npu_candidate_count,
+    )
+    write_conclusion()
+
+    try:
+        del model
+        torch.npu.empty_cache()
+    except Exception:
+        pass
+
+except Exception as exc:
+    fail("blocked_" + result.get("phase", "unknown"), exc)
 PY
-CONCLUSION_STATUS=$?
-cat "${ARTIFACT_DIR}/readiness_conclusion.txt"
-echo "readiness_conclusion_exit_code=${CONCLUSION_STATUS}" >> "${ARTIFACT_DIR}/run_context.txt"
+}
+
+if command -v timeout >/dev/null 2>&1; then
+  timeout "${AK_SMALL_MODEL_TIMEOUT}" bash -c "$(declare -f run_smoke); run_smoke" > "${ARTIFACT_DIR}/small_model_load_smoke.log" 2>&1
+  SMOKE_STATUS=$?
+else
+  run_smoke > "${ARTIFACT_DIR}/small_model_load_smoke.log" 2>&1
+  SMOKE_STATUS=$?
+fi
+cat "${ARTIFACT_DIR}/small_model_load_smoke.log"
+echo "small_model_load_smoke_exit_code=${SMOKE_STATUS}" >> "${ARTIFACT_DIR}/run_context.txt"
+
+if [ ! -f "${ARTIFACT_DIR}/small_model_load_conclusion.txt" ]; then
+  {
+    echo "small_model_smoke_status=blocked_process_exit_${SMOKE_STATUS}"
+    echo "failure_phase=process_or_timeout"
+    echo "model_path=${MODEL_PATH}"
+    echo "device=${AK_OBS_NPU_DEVICE}"
+    echo "error=small model smoke process did not produce a conclusion; inspect small_model_load_smoke.log"
+    echo "trace_pairing_policy=torch_profiler_trace_candidate_only; do not claim CANN device timeline pairing"
+    echo "performance_policy=smoke_only_no_perf_or_bottleneck_conclusion"
+    echo "environment_policy=no_package_install_no_environment_repair"
+  } > "${ARTIFACT_DIR}/small_model_load_conclusion.txt"
+fi
 
 python - <<'PY' > "${ARTIFACT_DIR}/summary.txt"
 import os
@@ -580,10 +671,12 @@ from pathlib import Path
 artifact_dir = Path(os.environ["ARTIFACT_DIR"])
 for title, filename, limit in [
     ("run_context", "run_context.txt", 80),
-    ("readiness_conclusion", "readiness_conclusion.txt", 80),
+    ("small_model_load_conclusion", "small_model_load_conclusion.txt", 80),
+    ("model_path_precheck", "model_path_precheck.txt", 80),
     ("package_inventory", "package_inventory.tsv", 40),
-    ("models_symlink_map", "models_symlink_map.tsv", 80),
-    ("top_model_candidates", "model_candidate_ranking.tsv", 30),
+    ("small_model_trace_validation", "small_model_trace_validation.txt", 30),
+    ("generated_text", "generated_text.txt", 20),
+    ("small_model_smoke_error", "small_model_smoke_error.txt", 80),
 ]:
     print(f"## {title}")
     path = artifact_dir / filename
@@ -602,18 +695,19 @@ artifact_dir = Path(os.environ["ARTIFACT_DIR"])
 run_id = os.environ["RUN_ID"]
 summary = (artifact_dir / "summary.txt").read_text(encoding="utf-8", errors="replace")
 
-print("P1.8 model symlink readiness 只读复核已完成。")
+print("P1.9 small model load smoke 独立验证已完成。")
 print()
 print(f"任务 ID: {run_id}")
 print(f"附件: 工作记录与进度笔记本/runtime_trace_smokes/{run_id}.zip")
 print()
 print(summary)
 print("执行边界：")
-print("- 未加载模型权重")
-print("- 未实例化模型或 tokenizer")
-print("- 未运行 generate/serve/小模型 smoke/P000-P012 workload")
+print("- 本轮允许加载 Qwen3.5-4B、实例化 tokenizer、执行极短 prefill/decode smoke")
 print("- 未安装、升级、卸载或修复任何推理框架包")
+print("- 未运行 vLLM serve/benchmark 或完整 P000-P012 workload")
 print("- 未修改 models/、Public/、CANN/driver/runtime/vLLM 源码")
+print("- torch_profiler_trace 仍只作为 candidate bridge，不声称 CANN device timeline pairing")
+print("- 本轮 smoke 不输出性能或瓶颈归因结论")
 PY
 
 (
@@ -624,7 +718,7 @@ PY
 )
 
 python 通信模块/send_notify.py \
-  -s "[AK服务器] 任务完成：model symlink readiness ${RUN_ID}" \
+  -s "[AK服务器] 任务完成：small model load smoke ${RUN_ID}" \
   --body-file "${ARTIFACT_DIR}/mail_body.txt" \
   --attach "工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}.zip"
 ```
@@ -633,26 +727,30 @@ python 通信模块/send_notify.py \
 
 请邮件附加：
 
-- `工作记录与进度笔记本/runtime_trace_smokes/runtime_model_symlink_readiness_2026_0706_p1_007.zip`
+- `工作记录与进度笔记本/runtime_trace_smokes/runtime_small_model_load_smoke_2026_0706_p1_008.zip`
 
 zip 内至少包含：
 
 - `run_context.txt`
 - `pytest_inference_contracts.log`
 - `package_inventory.tsv`
-- `models_symlink_map.tsv`
-- `model_metadata_files.tsv`
-- `model_metadata_inventory.jsonl`
-- `model_candidate_ranking.tsv`
-- `model_symlink_inventory_summary.json`
-- `model_symlink_inventory.log`
-- `readiness_conclusion.txt`
+- `model_path_precheck.txt`
+- `small_model_load_smoke.log`
+- `small_model_smoke_result.json`
+- `small_model_load_conclusion.txt`
+- `small_model_smoke_error.txt`，如果发生异常
+- `generated_token_ids.json`，如果推理执行成功
+- `generated_text.txt`，如果推理执行成功
+- `small_model_trace.jsonl`，如果 trace 生成成功
+- `small_model_trace_validation.txt`，如果 trace 生成成功
+- `torch_profiler_trace.json`，如果 profiler 导出成功
+- `torch_profiler_summary.json`，如果 profiler 分析成功
 - `summary.txt`
 
 邮件主题请使用：
 
 ```text
-[AK服务器] 任务完成：model symlink readiness runtime_model_symlink_readiness_2026_0706_p1_007
+[AK服务器] 任务完成：small model load smoke runtime_small_model_load_smoke_2026_0706_p1_008
 ```
 
 默认收件人继续使用：
@@ -667,14 +765,14 @@ gwlee1995@gmail.com,yilili1023@gmail.com
 
 - `git pull --ff-only` 成功。
 - `tests/inference_contracts` 执行并回传日志。
-- `models_symlink_map.tsv` 明确记录每个顶层入口的 symlink 目标与真实路径。
-- `model_candidate_ranking.tsv` 明确区分 causal LM 与非生成模型。
-- `readiness_conclusion.txt` 明确给出 `readiness_status` 和推荐候选路径。
-- 邮件正文明确说明本轮没有加载模型、没有运行推理、没有装包或修环境。
+- `small_model_load_conclusion.txt` 明确给出 `small_model_smoke_status`。
+- 成功时必须回传最短生成结果、P1 trace 校验结果和 profiler 摘要。
+- 失败时必须回传失败阶段、错误类型和 traceback。
+- 邮件正文明确说明本轮没有安装包、没有修环境、没有运行 vLLM 服务、没有做性能或瓶颈归因。
 
 本轮不要求：
 
-- 不要求模型能生成文本。
-- 不要求 vLLM 或 Transformers 成功加载模型。
-- 不要求修复缺失包。
-- 不要求确认 CANN device timeline pairing。
+- 不要求 vLLM engine 成功启动。
+- 不要求跑 P000-P012 全量 workload。
+- 不要求采集完整 CANN device timeline。
+- 不要求输出 TTFT/TPOT benchmark 或优化建议。

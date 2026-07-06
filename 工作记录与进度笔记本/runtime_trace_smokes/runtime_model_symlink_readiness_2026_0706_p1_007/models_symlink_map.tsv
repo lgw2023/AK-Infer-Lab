@@ -1,0 +1,11 @@
+entry	entry_path	kind	raw_link_target	resolved_path	resolved_exists	resolved_is_dir	under_public	bytes_lstat
+Qwen3-Embedding-4B	/data/node0_disk1/liguowei/AK-Infer-Lab/models/Qwen3-Embedding-4B	symlink_dir	../../../Public/Qwen3-Embedding-4B	/data/node0_disk1/Public/Qwen3-Embedding-4B	1	1	1	34
+Qwen3-Embedding-8B	/data/node0_disk1/liguowei/AK-Infer-Lab/models/Qwen3-Embedding-8B	symlink_dir	../../../Public/Qwen3-Embedding-8B	/data/node0_disk1/Public/Qwen3-Embedding-8B	1	1	1	34
+Qwen3-Reranker-4B	/data/node0_disk1/liguowei/AK-Infer-Lab/models/Qwen3-Reranker-4B	symlink_dir	../../../Public/Qwen3-Reranker-4B	/data/node0_disk1/Public/Qwen3-Reranker-4B	1	1	1	33
+Qwen3-Reranker-8B	/data/node0_disk1/liguowei/AK-Infer-Lab/models/Qwen3-Reranker-8B	symlink_dir	../../../Public/Qwen3-Reranker-8B	/data/node0_disk1/Public/Qwen3-Reranker-8B	1	1	1	33
+Qwen3.5-4B	/data/node0_disk1/liguowei/AK-Infer-Lab/models/Qwen3.5-4B	symlink_dir	../../../Public/Qwen3.5-4B	/data/node0_disk1/Public/Qwen3.5-4B	1	1	1	26
+Qwen3.6-27B	/data/node0_disk1/liguowei/AK-Infer-Lab/models/Qwen3.6-27B	symlink_dir	../../../Public/Qwen3.6-27B	/data/node0_disk1/Public/Qwen3.6-27B	1	1	1	27
+Qwen3.6-27B-FP8	/data/node0_disk1/liguowei/AK-Infer-Lab/models/Qwen3.6-27B-FP8	symlink_dir	../../../Public/Qwen3.6-27B-FP8	/data/node0_disk1/Public/Qwen3.6-27B-FP8	1	1	1	31
+README.md	/data/node0_disk1/liguowei/AK-Infer-Lab/models/README.md	file		/data/node0_disk1/liguowei/AK-Infer-Lab/models/README.md	1	0	0	1217
+bge-m3	/data/node0_disk1/liguowei/AK-Infer-Lab/models/bge-m3	symlink_dir	../../../Public/bge-m3	/data/node0_disk1/Public/bge-m3	1	1	1	22
+knowledgator-gliner-x-small	/data/node0_disk1/liguowei/AK-Infer-Lab/models/knowledgator-gliner-x-small	symlink_dir	../../../Public/knowledgator-gliner-x-small	/data/node0_disk1/Public/knowledgator-gliner-x-small	1	1	1	43

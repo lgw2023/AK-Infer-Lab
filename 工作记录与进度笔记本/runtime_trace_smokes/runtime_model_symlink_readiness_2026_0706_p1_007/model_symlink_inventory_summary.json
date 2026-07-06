@@ -1,0 +1,19 @@
+{
+  "causal_lm_candidate_count": 0,
+  "metadata_file_count": 50,
+  "model_candidate_count": 9,
+  "models_dir": "/data/node0_disk1/liguowei/AK-Infer-Lab/models",
+  "models_dir_exists": true,
+  "models_dir_is_dir": true,
+  "note": "symlink-aware metadata-only scan; no model/tokenizer load and no weight content read",
+  "public_models_dir": "/data/node0_disk1/Public",
+  "public_models_dir_exists": true,
+  "public_models_dir_is_dir": true,
+  "scan_root_count": 9,
+  "top_candidate_kind": "possible_lm",
+  "top_candidate_model_name": "Qwen3.5-4B",
+  "top_candidate_reasons": "has_config,has_tokenizer_metadata,has_weight_manifest_or_files,llm_name_hint,small_or_mid_name_hint,metadata_parse_errors",
+  "top_candidate_resolved_path": "/data/node0_disk1/Public/Qwen3.5-4B",
+  "top_candidate_score": 12,
+  "top_level_entry_count": 10
+}

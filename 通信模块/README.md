@@ -7,21 +7,23 @@
 - **服务器 → 开发人员**：服务器只能通过邮件向外发消息，使用 `send_notify.py` 发送状态、日志、告警或附件。
 - **开发机 → 服务器**：开发人员直接在本目录写 Markdown/文本文档并提交，服务器通过 `git pull` 获取这些文档信息。
 - **不在仓库保存密钥**：SMTP 账号、授权码、默认收件人全部通过环境变量注入。
+- **代理只属于昇腾服务器受限网络**：普通外部开发机网络通常不需要 proxychains 或 HTTP 代理。
 
 ## 文件说明
 
-- `send_notify.py`：服务器侧发信脚本，默认使用 `smtp.163.com:465`，并通过 `proxychains4` 发信。
+- `send_notify.py`：服务器侧发信脚本，默认使用 `smtp.163.com:465`，并在昇腾服务器上通过 `proxychains4` 发信。
 - `docs/developer-to-server.md`：开发机写给服务器读取的消息模板。
 - `docs/server-to-developer.md`：服务器邮件通知的主题和正文模板。
+- `docs/mail-network-config.md`：最新服务器邮件确认的邮件与网络配置事实，已脱敏。
 
 ## 服务器侧配置
 
-在昇腾服务器的项目根目录复制模板并填写真实 SMTP 信息：
+在昇腾服务器的项目根目录复制模板并填写真实 SMTP 授权码。普通外部开发机一般不需要创建 `.env`，除非要本地复现发信链路：
 
 ```bash
 cd <项目根目录>
 cp .env.example .env
-# 编辑 .env，填入真实 163 邮箱与 SMTP 授权码
+# 编辑 .env，填入真实 163 SMTP 授权码；不要提交 .env
 ```
 
 `.env` 只保留在服务器本地，不提交到仓库。`send_notify.py` 启动时会自动读取项目根目录 `.env`，且不会覆盖 shell 中已经存在的环境变量。
@@ -31,9 +33,9 @@ cp .env.example .env
 ```bash
 AK_COMM_SMTP_HOST=smtp.163.com
 AK_COMM_SMTP_PORT=465
-AK_COMM_SMTP_USER=你的 163 邮箱地址
+AK_COMM_SMTP_USER=17621223203@163.com
 AK_COMM_SMTP_PASSWORD=你的 163 SMTP 授权码
-AK_COMM_MAIL_FROM=通常与 AK_COMM_SMTP_USER 相同
+AK_COMM_MAIL_FROM=17621223203@163.com
 AK_COMM_MAIL_TO=gwlee1995@gmail.com,yilili1023@gmail.com
 ```
 
@@ -42,12 +44,30 @@ AK_COMM_MAIL_TO=gwlee1995@gmail.com,yilili1023@gmail.com
 可选配置：
 
 ```bash
-AK_COMM_USE_PROXYCHAINS=1      # 默认 1；设为 0/false/no 则直连 SMTP
+AK_COMM_USE_PROXYCHAINS=1      # 昇腾服务器默认 1；普通网络可设为 0/false/no 直连 SMTP
 AK_COMM_PROXYCHAINS_BIN=proxychains4
+AK_COMM_PROXYCHAINS_CONFIG=/etc/proxychains4.conf
 AK_COMM_PAYLOAD_DIR=/tmp
 ```
 
+服务器 shell 层出站代理只在昇腾服务器受限网络中使用，通常外部开发机不要设置：
+
+```bash
+AK_HTTP_PROXY=http://proxy_user:proxy_password@proxysg.huawei.com:8080/
+AK_HTTPS_PROXY=http://proxy_user:proxy_password@proxysg.huawei.com:8080/
+AK_FTP_PROXY=http://proxy_user:proxy_password@proxysg.huawei.com:8080/
+AK_NO_PROXY=localhost,127.0.0.1,::1,*.huawei.com,*.huaweicloud.com
+```
+
+SMTP 发信使用 `proxychains4` 时走服务器的 proxychains 配置；shell 代理用于 `curl`、`wget`、`apt`、`git` 等命令。两者不是同一个入口。
+
 ## 常用命令
+
+脱敏查看当前配置，不发送邮件：
+
+```bash
+python3 通信模块/send_notify.py --show-config
+```
 
 发送连通性测试邮件：
 
@@ -90,5 +110,7 @@ python3 通信模块/send_notify.py --test --no-proxy
 ## 安全注意事项
 
 - 不要把邮箱授权码、密码、Cookie、私钥写入本目录或任何提交文件。
+- `.env` 必须保持在 Git 忽略范围内；仓库只提交 `.env.example` 与脱敏说明。
+- 代理账号密码与 SMTP 授权码都属于密钥，不写入 README、任务交接文档、邮件模板或测试数据。
 - 邮件附件只放必要日志，发送前先脱敏路径、账号、机器标识等敏感信息。
 - `--send-mail-internal` 是脚本内部配合 `proxychains4` 使用的参数，不应手动调用。

@@ -16,10 +16,12 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import socket
 import smtplib
 import subprocess
 import sys
+from collections.abc import Mapping
 from datetime import datetime
 from email import encoders
 from email.header import Header
@@ -27,6 +29,7 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 
 def _strip_env_value(value: str) -> str:
@@ -69,8 +72,10 @@ DEFAULT_MAIL_TO = os.getenv("AK_COMM_MAIL_TO", "")
 
 USE_PROXYCHAINS_FOR_MAIL = os.getenv("AK_COMM_USE_PROXYCHAINS", "1") not in {"0", "false", "False", "no", "NO"}
 PROXYCHAINS_BIN = os.getenv("AK_COMM_PROXYCHAINS_BIN", "proxychains4")
+PROXYCHAINS_CONFIG = os.getenv("AK_COMM_PROXYCHAINS_CONFIG", "")
 PAYLOAD_DIR = os.getenv("AK_COMM_PAYLOAD_DIR", "/tmp")
 SCRIPT_PATH = os.path.abspath(__file__)
+SHELL_PROXY_KEYS = ("AK_HTTP_PROXY", "AK_HTTPS_PROXY", "AK_FTP_PROXY", "AK_NO_PROXY")
 
 
 logging.basicConfig(
@@ -84,6 +89,66 @@ def parse_mail_recipients(mail_to: str) -> list[str]:
     if not recipients:
         raise ValueError("收件人不能为空；请设置 AK_COMM_MAIL_TO 或使用 -t/--to")
     return recipients
+
+
+def redact_url_credentials(value: str) -> str:
+    parts = urlsplit(value)
+    if not parts.netloc or "@" not in parts.netloc:
+        return value
+
+    host_part = parts.netloc.rsplit("@", 1)[1]
+    return urlunsplit((
+        parts.scheme,
+        f"<credentials>@{host_part}",
+        parts.path,
+        parts.query,
+        parts.fragment,
+    ))
+
+
+def build_config_report(env: Mapping[str, str] | None = None) -> dict[str, object]:
+    env = os.environ if env is None else env
+    mail_to = env.get("AK_COMM_MAIL_TO", "")
+    try:
+        recipients = parse_mail_recipients(mail_to)
+    except ValueError:
+        recipients = []
+
+    proxychains_bin = env.get("AK_COMM_PROXYCHAINS_BIN", "proxychains4")
+    shell_proxy = {
+        key: redact_url_credentials(env[key])
+        for key in SHELL_PROXY_KEYS
+        if key in env and env[key]
+    }
+
+    return {
+        "project": {
+            "root": str(PROJECT_ROOT),
+            "script": SCRIPT_PATH,
+            "env_file": str(PROJECT_ROOT / ".env"),
+            "env_file_exists": (PROJECT_ROOT / ".env").is_file(),
+        },
+        "smtp": {
+            "host": env.get("AK_COMM_SMTP_HOST", "smtp.163.com"),
+            "port": env.get("AK_COMM_SMTP_PORT", "465"),
+            "user": env.get("AK_COMM_SMTP_USER", ""),
+            "from": env.get("AK_COMM_MAIL_FROM", env.get("AK_COMM_SMTP_USER", "")),
+            "password_set": bool(env.get("AK_COMM_SMTP_PASSWORD", "")),
+        },
+        "mail": {
+            "recipients": recipients,
+            "raw": mail_to,
+        },
+        "proxychains": {
+            "enabled": env.get("AK_COMM_USE_PROXYCHAINS", "1")
+            not in {"0", "false", "False", "no", "NO"},
+            "bin": proxychains_bin,
+            "bin_path": shutil.which(proxychains_bin) or "",
+            "config": env.get("AK_COMM_PROXYCHAINS_CONFIG", ""),
+            "payload_dir": env.get("AK_COMM_PAYLOAD_DIR", "/tmp"),
+        },
+        "shell_proxy": shell_proxy,
+    }
 
 
 def require_mail_config() -> None:
@@ -172,6 +237,25 @@ def _send_mail_direct(
             server.sendmail(MAIL_FROM, recipients, msg.as_string())
 
 
+def build_proxychains_command(
+    payload_path: str,
+    proxychains_bin: str = PROXYCHAINS_BIN,
+    script_path: str = SCRIPT_PATH,
+    python_executable: str = sys.executable,
+    proxychains_config: str = PROXYCHAINS_CONFIG,
+) -> list[str]:
+    cmd = [proxychains_bin]
+    if proxychains_config:
+        cmd.extend(["-f", proxychains_config])
+    cmd.extend([
+        python_executable,
+        script_path,
+        "--send-mail-internal",
+        payload_path,
+    ])
+    return cmd
+
+
 def _send_mail_via_proxychains(
     subject: str,
     body: str,
@@ -191,13 +275,7 @@ def _send_mail_via_proxychains(
     with open(payload_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False)
 
-    cmd = [
-        PROXYCHAINS_BIN,
-        sys.executable,
-        SCRIPT_PATH,
-        "--send-mail-internal",
-        payload_path,
-    ]
+    cmd = build_proxychains_command(payload_path)
     try:
         result = subprocess.run(
             cmd,
@@ -317,6 +395,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--test", action="store_true", help="发送测试邮件并退出")
     parser.add_argument("--no-proxy", action="store_true", help="不经 proxychains，直连 SMTP")
+    parser.add_argument("--show-config", action="store_true", help="脱敏打印当前通信配置并退出")
     parser.add_argument("--send-mail-internal", metavar="PAYLOAD_FILE", help=argparse.SUPPRESS)
     return parser.parse_args()
 
@@ -331,6 +410,10 @@ def main() -> int:
         except Exception:
             logging.exception("Internal mail send failed")
             return 1
+        return 0
+
+    if args.show_config:
+        print(json.dumps(build_config_report(), ensure_ascii=False, indent=2))
         return 0
 
     if args.test:
