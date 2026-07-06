@@ -1,0 +1,117 @@
+## run_context
+run_id=runtime_vllm_api_continuous16_mixed_2026_0706_p1_020
+commit=2b7b92905cfa106765eb20196d0c132dbd403ed0
+timestamp=2026-07-06T23:08:59+0800
+hostname=DevServer-BMS-3d97cc99-0
+python=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+cwd=/data/node0_disk1/liguowei/AK-Infer-Lab
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+SERVED_MODEL_NAME=Qwen3.5-4B
+API_HOST=127.0.0.1
+API_PORT=18080
+CASE_PLAN=continuous16_mixed
+DEVICE_LABEL=npu:6
+CONTRACT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/p1_inference_contracts
+LONG_MANIFEST=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/p1_inference_contracts/workload_long_manifest.yaml
+ASCEND_RT_VISIBLE_DEVICES=6
+VLLM_USE_V1=1
+VLLM_PLUGINS=ascend
+VLLM_WORKER_MULTIPROC_METHOD=spawn
+ATB_HOME_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1
+task_policy=vllm_api_concurrency_smoke_no_package_install
+matrix_policy=vllm_openai_api_server_sixteen_request_mixed_4k_8k_continuous_workload_candidate
+profiler_policy=disabled_not_part_of_this_task
+performance_policy=smoke_only_no_benchmark_or_bottleneck_conclusion
+prefix_cache_policy=requested_if_supported_no_hit_rate_claim
+continuous_batching_policy=candidate_only_sixteen_staggered_clients_mixed_4k_8k_no_throughput_or_scheduler_claim
+selected_cases=P007@8192+64+delay0ms,P008@8192+64+delay100ms,P011@4096+64+delay200ms,P011@4096+64+delay300ms,P011@4096+64+delay400ms,P011@4096+64+delay500ms,P012@8192+64+delay600ms,P012@8192+64+delay800ms,P012@8192+64+delay1000ms,P012@8192+64+delay1200ms,P012@8192+64+delay1400ms,P012@8192+64+delay1600ms,P003@8192+64+delay1800ms,P003@8192+64+delay2000ms,P009@8192+64+delay2200ms,P009@8192+64+delay2400ms
+request_count=16
+max_model_len=6144
+gpu_memory_utilization=0.85
+tensor_parallel_size=1
+dtype=auto
+enforce_eager=1
+enable_prefix_caching=1
+server_ready_timeout_sec=600.0
+request_timeout_sec=600.0
+pytest_exit_code=0
+vllm_api_continuous16_mixed_exit_code=1
+
+## import_probe
+module	status	error
+torch	ok
+torch_npu	ok
+transformers	ok
+vllm	ok
+vllm_ascend	ok
+
+## conclusion
+status=failed
+matrix_status=failed
+phase=complete
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+served_model_name=Qwen3.5-4B
+device_label=npu:6
+host=127.0.0.1
+port=18080
+case_plan=continuous16_mixed
+server_ready=1
+request_count=16
+success_case_count=6
+failed_case_count=10
+client_overlap_candidate_count=75
+prefix_cache_requested=1
+input_count_mismatch_count=0
+submitted_count_mismatch_count=0
+trace_event_count=113
+trace_validation_errors=0
+server_stats_sample_count=1
+server_stats_max_running_reqs=6
+server_stats_max_waiting_reqs=0
+server_stats_max_kv_cache_usage_pct=3.1
+server_stats_max_prefix_cache_hit_rate_pct=35.5
+policy=vllm_api_concurrency_smoke_no_package_install
+matrix_policy=vllm_openai_api_server_sixteen_request_mixed_4k_8k_continuous_workload_candidate
+profiler_policy=disabled_not_part_of_this_task
+performance_policy=smoke_only_no_benchmark_or_bottleneck_conclusion
+prefix_cache_policy=requested_if_supported_no_hit_rate_claim
+continuous_batching_policy=candidate_only_sixteen_staggered_clients_mixed_4k_8k_no_throughput_or_scheduler_claim
+
+## summary
+case_id	prompt_id	endpoint	concurrency_group	prefix_reuse_group	arrival_delay_ms	cap_tokens	max_new_tokens	input_token_count	submitted_input_token_count	http_status	client_wall_us	generated_token_count	generated_text_nonempty	finish_reason	status	error_type	error
+P007_api_continuous16_prefix_first_cap8192_gen64	P007	/v1/completions	api_continuous16_mixed_0001	prefix_group_a	0	8192	64	5972	5972	200	8756731	64	1	length	success
+P008_api_continuous16_prefix_second_cap8192_gen64	P008	/v1/completions	api_continuous16_mixed_0001	prefix_group_a	100	8192	64	5975	5975	200	9043174	64	1	length	success
+P011_api_continuous16_burst_001_cap4096_gen64	P011	/v1/completions	api_continuous16_mixed_0001	burst_prefix_a	200	4096	64	4096	4096	200	9235343	64	1	length	success
+P011_api_continuous16_burst_002_cap4096_gen64	P011	/v1/completions	api_continuous16_mixed_0001	burst_prefix_a	300	4096	64	4096	4096	200	9234482	64	1	length	success
+P011_api_continuous16_burst_003_cap4096_gen64	P011	/v1/completions	api_continuous16_mixed_0001	burst_prefix_a	400	4096	64	4096	4096	200	9226881	64	1	length	success
+P011_api_continuous16_burst_004_cap4096_gen64	P011	/v1/completions	api_continuous16_mixed_0001	burst_prefix_a	500	4096	64	4096	4096	200	9128143	64	1	length	success
+P012_api_continuous16_001_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	600	8192	64	8192	8192	400	41423	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+P012_api_continuous16_002_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	800	8192	64	8192	8192	400	35577	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+P012_api_continuous16_003_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	1000	8192	64	8192	8192	400	41843	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+P012_api_continuous16_004_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	1200	8192	64	8192	8192	400	35803	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+P012_api_continuous16_005_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	1400	8192	64	8192	8192	400	35555	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+P012_api_continuous16_006_cap8192_gen64	P012	/v1/completions	api_continuous16_mixed_0001	continuous_prefix_a	1600	8192	64	8192	8192	400	34132	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+P003_api_continuous16_system_001_cap8192_gen64	P003	/v1/completions	api_continuous16_mixed_0001	system_long_a	1800	8192	64	8192	8192	400	36418	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+P003_api_continuous16_system_002_cap8192_gen64	P003	/v1/completions	api_continuous16_mixed_0001	system_long_a	2000	8192	64	8192	8192	400	35835	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+P009_api_continuous16_moe_001_cap8192_gen64	P009	/v1/completions	api_continuous16_mixed_0001	none	2200	8192	64	8192	8192	400	38673	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+P009_api_continuous16_moe_002_cap8192_gen64	P009	/v1/completions	api_continuous16_mixed_0001	none	2400	8192	64	8192	8192	400	40740	0	0		failed	api_request_failed_or_empty_generation	{"error":{"message":"This model's maximum context length is 6144 tokens. However, you requested 64 output tokens and your prompt contains at least 6081 input tokens, for a total of at least 6145 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=6081)","type":"BadRequestError","param":"input_tokens","code":400}}
+
+## server_stats
+line_number	avg_prompt_throughput_tokens_s	avg_generation_throughput_tokens_s	running_reqs	waiting_reqs	gpu_kv_cache_usage_pct	prefix_cache_hit_rate_pct
+1116	703.0	11.4	6	0	3.1	35.5
+
+## validation
+errors=0
+
+## model_path_precheck
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+exists=1
+is_dir=1
+config.json	exists=1	bytes=3161
+config_model_type=qwen3_5
+config_architectures=['Qwen3_5ForConditionalGeneration']
+tokenizer_config.json	exists=1	bytes=16710
+tokenizer_class=Qwen2Tokenizer
+model_max_length=262144
+tokenizer.json	exists=1	bytes=12807982
+generation_config.json	exists=0	bytes=

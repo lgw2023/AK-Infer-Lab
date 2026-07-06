@@ -22,6 +22,9 @@ VLLM_BATCHED_PREFIX_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_batched_prefix
 VLLM_API_CONCURRENCY_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_concurrency_smoke_handoff.md"
 VLLM_API_BURST_QUEUE_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_burst_queue_smoke_handoff.md"
 VLLM_API_CONTINUOUS16_MIXED_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_continuous16_mixed_handoff.md"
+VLLM_API_CONTINUOUS16_MIXED_RETRY_HANDOFF = (
+    CONTRACT_DIR / "server_runtime_vllm_api_continuous16_mixed_retry_handoff.md"
+)
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -525,13 +528,38 @@ def test_vllm_api_continuous16_mixed_handoff_defines_required_boundaries():
         assert text in handoff
 
 
+def test_vllm_api_continuous16_mixed_retry_handoff_defines_required_boundaries():
+    handoff = VLLM_API_CONTINUOUS16_MIXED_RETRY_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_continuous16_mixed_retry_2026_0707_p1_021",
+        "P1.20 的部分失败",
+        "--max-model-len 9216",
+        "AK_VLLM_MAX_MODEL_LEN=9216",
+        "vllm_api_server_command.json",
+        "run_context.txt",
+        "不静默降低",
+        "不删减 case",
+        "不安装、升级、卸载或修复任何包",
+        "不输出性能 benchmark、吞吐结论、调度效率结论、瓶颈归因、优化建议或 CANN device timeline pairing 结论",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
 def test_vllm_api_continuous16_mixed_runner_case_plan_is_bounded():
-    from tools.inference_contracts.run_vllm_api_concurrency_smoke import VLLM_API_CONTINUOUS16_MIXED_CASES
+    from tools.inference_contracts.run_vllm_api_concurrency_smoke import (
+        VLLM_API_CONTINUOUS16_MIXED_CASES,
+        default_max_model_len_for,
+    )
 
     assert len(VLLM_API_CONTINUOUS16_MIXED_CASES) == 16
     assert max(case["cap_tokens"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES) == 8192
     assert max(case["max_new_tokens"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES) == 64
     assert max(case["arrival_delay_ms"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES) == 2400
+    assert default_max_model_len_for("three_request_smoke") == 6144
+    assert default_max_model_len_for("burst8") == 6144
+    assert default_max_model_len_for("continuous16_mixed") == 9216
     assert {case["prompt_id"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES} == {
         "P003",
         "P007",

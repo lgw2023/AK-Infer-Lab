@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-8eecb93f7a0e7afb",
+  "object": "text_completion",
+  "created": 1783350673,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": "Explain how the first request in a repeated-prefix pair should initialize prefix and KV cache metadata for later comparison.\n\n<think>\nThinking Process:\n\n1.  **Analyze the Request:**\n    *   **Input:** A materialized long-context prompt fixture (P007 Materialized Long Context).\n   ",
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 5972,
+    "total_tokens": 6036,
+    "completion_tokens": 64,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}

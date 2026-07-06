@@ -1,0 +1,31 @@
+P1.20 vLLM API continuous16 mixed smoke 已完成（部分失败）。
+
+run_id: runtime_vllm_api_continuous16_mixed_2026_0706_p1_020
+commit: 2b7b92905cfa106765eb20196d0c132dbd403ed0
+artifact_dir: 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_continuous16_mixed_2026_0706_p1_020
+pytest_exit_code: 0
+vllm_api_continuous16_mixed_exit_code: 1
+
+结果摘要：
+- status=failed
+- server_ready=1
+- request_count=16
+- success_case_count=6
+- failed_case_count=10
+- client_overlap_candidate_count=75
+- trace_validation_errors=0
+- server_stats_sample_count=1
+
+失败点：HTTP request（api_request_failed_or_empty_generation）
+根因：vLLM API server 以 max-model-len=6144 启动（见 vllm_api_server_command.json），10 个 8K cap case 返回 HTTP 400：
+"This model's maximum context length is 6144 tokens... prompt contains at least 6081 input tokens + 64 output = 6145 tokens"
+
+成功 case（6）：P007、P008、P011×4（4K cap）
+失败 case（10）：P012×6、P003×2、P009×2（8K cap，实际 input ~6081 tokens）
+
+请见附件 zip 和 summary.txt。
+
+边界说明：
+- 使用当前环境已有 vLLM / vLLM-Ascend，未在服务器修包或改源码。
+- 使用 VLLM_PLUGINS=ascend，并加载 CANN/ATB 环境。
+- 未输出性能 benchmark、吞吐结论或优化建议。

@@ -295,6 +295,12 @@ SERVER_STATS_PATTERN = re.compile(
 )
 
 
+def default_max_model_len_for(case_plan: str) -> int:
+    if case_plan == "continuous16_mixed":
+        return 9216
+    return 6144
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run a bounded vLLM OpenAI API server concurrency smoke on the Ascend server."
@@ -321,7 +327,7 @@ def parse_args() -> argparse.Namespace:
         choices=["three_request_smoke", "burst8", "continuous16_mixed"],
         default=os.environ.get("AK_VLLM_API_CASE_PLAN", "three_request_smoke"),
     )
-    parser.add_argument("--max-model-len", type=int, default=int(os.environ.get("AK_VLLM_MAX_MODEL_LEN", "6144")))
+    parser.add_argument("--max-model-len", type=int, default=None)
     parser.add_argument(
         "--gpu-memory-utilization",
         type=float,
@@ -349,7 +355,11 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=float(os.environ.get("AK_VLLM_API_REQUEST_TIMEOUT_SEC", "600")),
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.max_model_len is None:
+        env_max_model_len = os.environ.get("AK_VLLM_MAX_MODEL_LEN")
+        args.max_model_len = int(env_max_model_len) if env_max_model_len else default_max_model_len_for(args.case_plan)
+    return args
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
