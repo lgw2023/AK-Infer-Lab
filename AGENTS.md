@@ -62,4 +62,6 @@ As of the 2026-07-06 server email `[AK服务器] 任务完成：CANN 9.0.0 Docke
 
 Use `通信模块/docs/developer-to-server.md` as the communication document from this development machine to the server. Every time a server task is handed off, clear the old historical contents of that file first, then write only the current server task, including all context, commands, paths, constraints, expected outputs, and reporting requirements the server operator needs.
 
+The Ascend server communication channel is small-payload only. Treat every outbound email body and every attachment from the server as limited to at most 70KB. Do not ask the server to email raw profiler traces, large logs, datasets, model outputs, experiment directories, or other large artifacts. Large experimental data must remain on the Ascend server. If analysis over large data is needed, the external developer on this local machine should issue a follow-up task for the Ascend server to run the analysis in place, then return only concise summaries, small manifests, selected excerpts, and server-side paths within the 70KB limit.
+
 At the start and end of every task round, refresh the corresponding content under `工作记录与进度笔记本/`. Keep the notebook current with the task status, evidence, results, problems, and next actions.

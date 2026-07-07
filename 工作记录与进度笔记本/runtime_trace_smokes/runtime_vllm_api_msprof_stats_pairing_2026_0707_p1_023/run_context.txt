@@ -1,0 +1,9 @@
+run_id=runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023
+commit=6f2e3eb0d5cda17fa1558629bc847ab084531f18
+timestamp=2026-07-07T10:02:19+0800
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+CASE_PLAN=continuous16_mixed
+max_model_len=9216
+pytest_exit_code=0
+msprof_prefix_cache_on_exit_code=0
+msprof_prefix_cache_off_exit_code=0

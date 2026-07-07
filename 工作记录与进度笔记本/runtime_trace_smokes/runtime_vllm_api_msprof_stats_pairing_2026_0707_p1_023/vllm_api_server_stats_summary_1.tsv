@@ -1,0 +1,3 @@
+line_number	avg_prompt_throughput_tokens_s	avg_generation_throughput_tokens_s	running_reqs	waiting_reqs	gpu_kv_cache_usage_pct	prefix_cache_hit_rate_pct
+146	2556.5	7.0	10	4	7.1	0.0
+158	4095.8	55.3	3	0	2.8	0.0

@@ -1,0 +1,3 @@
+mode	msprof_exit_code	vllm_status	request_count	success_case_count	failed_case_count	client_overlap_candidate_count	trace_validation_errors	server_stats_sample_count	server_stats_max_running_reqs	server_stats_max_waiting_reqs	server_stats_max_kv_cache_usage_pct	server_stats_max_prefix_cache_hit_rate_pct	msprof_file_count	msprof_sqlite_count	msprof_json_count	msprof_host_dir_count	msprof_device_dir_count	msprof_timebase_candidate_count
+msprof_prefix_cache_on	0	success	16	16	0	120	0	1	13	3	7.0	51.4	582	17	4	1	1	56
+msprof_prefix_cache_off	0	success	16	16	0	120	0	2	10	4	7.1	0.0	808	17	4	1	1	56

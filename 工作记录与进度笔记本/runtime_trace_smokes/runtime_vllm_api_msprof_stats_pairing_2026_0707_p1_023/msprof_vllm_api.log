@@ -1,0 +1,42 @@
+[INFO] Start profiling....
+[INFO] Start export data in PROF_000001_20260707095540199_03336901RBMCCKAI.
+Tue 07 Jul 2026 09:57:03 [WARNING] [MSVP] [3340984] msprof_entrance.py: Msprof analysis is parsing data as root, which may cause potential system security risks.
+Tue 07 Jul 2026 09:57:03 [INFO] [MSVP] [3341008] msprof_common.py: Start analyzing data in "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/host" ...
+Tue 07 Jul 2026 09:57:03 [INFO] [MSVP] [3341008] msprof_common.py: It may take few minutes, please be patient ...
+Tue 07 Jul 2026 09:57:09 [INFO] [MSVP] [3341008] msprof_common.py: Analysis data in "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/host" finished.
+Tue 07 Jul 2026 09:57:09 [INFO] [MSVP] [3341008] msprof_common.py: Start analyzing data in "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/device_6" ...
+Tue 07 Jul 2026 09:57:09 [INFO] [MSVP] [3341008] msprof_common.py: It may take few minutes, please be patient ...
+Tue 07 Jul 2026 09:57:10 [INFO] [MSVP] [3341008] msprof_common.py: Analysis data in "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/device_6" finished.
+Tue 07 Jul 2026 09:57:25 [INFO] [MSVP] [3341008] msprof_export.py: All collected data will be exported, path is: /tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/device_6.
+2026-07-07 09:57:32 [INFO] [3342446] export_manager.cpp: Start to load data!
+2026-07-07 09:57:41 [INFO] [3342446] db_assembler.cpp: Start exporting the db!
+2026-07-07 09:57:41 [INFO] [3342446] export_manager.cpp: The report parameter is not used.
+2026-07-07 09:57:41 [INFO] [3342446] timeline_manager.cpp: Start exporting the timeline!
+2026-07-07 09:57:45 [INFO] [3342446] timeline_manager.cpp: End exporting timeline output_file. The file is stored in the PROF file.
+2026-07-07 09:57:53 [INFO] [3342446] db_assembler.cpp: End exporting db output_file. The file is stored in the PROF file.
+Tue 07 Jul 2026 09:57:54 [WARNING] [MSVP] [3342763] msprof_entrance.py: Msprof analysis is parsing data as root, which may cause potential system security risks.
+Tue 07 Jul 2026 09:57:54 [INFO] [MSVP] [3342766] msprof_export.py: The data in "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/host" has been analyzed. Parsing phase will be skipped.
+Tue 07 Jul 2026 09:57:54 [INFO] [MSVP] [3342766] msprof_export.py: The data in "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/device_6" has been analyzed. Parsing phase will be skipped.
+Tue 07 Jul 2026 09:57:55 [INFO] [MSVP] [3342766] msprof_export.py: All collected data will be exported, path is: /tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/device_6.
+Tue 07 Jul 2026 09:57:56 [INFO] [MSVP] [3342766] msprof_export.py: There is no summary data to export for "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/host"
+2026-07-07 09:57:56 [INFO] [3342827] export_manager.cpp: Start to load data!
+2026-07-07 09:58:05 [INFO] [3342827] summary_manager.cpp: Start exporting the summary!
+2026-07-07 09:58:05 [INFO] [3342827] db_assembler.cpp: Start exporting the db!
+2026-07-07 09:58:05 [INFO] [3342827] db_assembler.cpp: Find completed msprof db. End exporting db output_file.
+2026-07-07 09:58:09 [INFO] [3342827] summary_manager.cpp: End exporting summary output_file. The file is stored in the PROF file.
+Tue 07 Jul 2026 09:58:10 [INFO] [MSVP] [3342766] msprof_export.py: All collected data will be exported, path is: /tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/device_6.
+Tue 07 Jul 2026 09:58:10 [INFO] [MSVP] [3342766] msprof_export.py: There is no summary data to export for "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/device_6"
+Tue 07 Jul 2026 09:58:10 [INFO] [MSVP] [3342766] msprof_common.py: Start exporting summary output_file.
+Tue 07 Jul 2026 09:58:10 [INFO] [MSVP] [3342766] msprof_common.py: End exporting summary output_file.The file is stored in the /tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260707095540199_03336901RBMCCKAI done.
+[INFO] Start query data in PROF_000001_20260707095540199_03336901RBMCCKAI.
+Tue 07 Jul 2026 09:58:10 [WARNING] [MSVP] [3343477] msprof_entrance.py: Msprof analysis is parsing data as root, which may cause potential system security risks.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-07-07 09:55:41.704741	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-07-07 09:55:41.710194	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260707095540199_03336901RBMCCKAI done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI

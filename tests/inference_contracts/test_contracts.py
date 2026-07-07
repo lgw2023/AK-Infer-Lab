@@ -26,6 +26,9 @@ VLLM_API_CONTINUOUS16_MIXED_RETRY_HANDOFF = (
     CONTRACT_DIR / "server_runtime_vllm_api_continuous16_mixed_retry_handoff.md"
 )
 VLLM_API_PREFIX_CACHE_AB_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_prefix_cache_ab_handoff.md"
+VLLM_API_MSPROF_SQLITE_WINDOW_ANALYSIS_HANDOFF = (
+    CONTRACT_DIR / "server_runtime_vllm_api_msprof_sqlite_window_analysis_handoff.md"
+)
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -576,6 +579,30 @@ def test_vllm_api_prefix_cache_ab_handoff_defines_required_boundaries():
         assert text in handoff
 
 
+def test_vllm_api_msprof_sqlite_window_analysis_handoff_defines_required_boundaries():
+    handoff = VLLM_API_MSPROF_SQLITE_WINDOW_ANALYSIS_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_msprof_sqlite_window_analysis_2026_0707_p1_024",
+        "runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023",
+        "tools/inference_contracts/analyze_msprof_sqlite_windows.py",
+        "request_window_summary.tsv",
+        "profiler_sqlite_table_inventory.tsv",
+        "profiler_time_range_summary.tsv",
+        "request_profiler_overlap_summary.tsv",
+        "profiler_group_count_summary.tsv",
+        "msprof_sqlite_window_analysis_result.json",
+        "mail_attachment_candidates.tsv",
+        "70KB",
+        "优先复用 P1.23 raw msprof",
+        "如果 raw profiler 目录不存在",
+        "不安装、升级、卸载或修复任何包",
+        "不输出性能 benchmark、吞吐结论、调度效率结论、prefix cache 命中率结论、瓶颈归因或优化建议",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
 def test_vllm_api_continuous16_mixed_runner_case_plan_is_bounded():
     from tools.inference_contracts.run_vllm_api_concurrency_smoke import (
         VLLM_API_CONTINUOUS16_MIXED_CASES,
@@ -624,3 +651,75 @@ def test_vllm_api_server_stats_parser_extracts_vllm_log_samples(tmp_path):
         "max_prefix_cache_hit_rate_pct": 39.1,
     }
     assert "prefix_cache_hit_rate_pct" in output_path.read_text(encoding="utf-8")
+
+
+def test_msprof_sqlite_window_analyzer_extracts_request_overlap(tmp_path):
+    import json
+    import sqlite3
+
+    from tools.inference_contracts.analyze_msprof_sqlite_windows import analyze_msprof_windows
+
+    source_dir = tmp_path / "source"
+    mode_dir = source_dir / "msprof_prefix_cache_on" / "vllm"
+    mode_dir.mkdir(parents=True)
+    result_path = mode_dir / "vllm_api_concurrency_result.json"
+    result_path.write_text(
+        json.dumps(
+            {
+                "status": "success",
+                "rows": [
+                    {
+                        "case_id": "case_a",
+                        "prompt_id": "P007",
+                        "prefix_reuse_group": "prefix_group_a",
+                        "arrival_delay_ms": 0,
+                        "cap_tokens": 8192,
+                        "max_new_tokens": 64,
+                        "input_token_count": 5972,
+                        "generated_token_count": 64,
+                        "request_start_ns": 1000,
+                        "response_end_ns": 3000,
+                        "client_wall_us": 2,
+                        "status": "success",
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    msprof_root = tmp_path / "prof"
+    msprof_root.mkdir()
+    msprof_db = msprof_root / "msprof_test.db"
+    with sqlite3.connect(msprof_db) as conn:
+        conn.execute("CREATE TABLE CANN_API(startNs INTEGER, endNs INTEGER, type TEXT)")
+        conn.execute("INSERT INTO CANN_API VALUES (1200, 1800, 'aclrtLaunchKernel')")
+        conn.execute("CREATE TABLE TASK(startNs INTEGER, endNs INTEGER)")
+        conn.execute("INSERT INTO TASK VALUES (1300, 1700)")
+
+    device_db_dir = msprof_root / "device_6" / "sqlite"
+    device_db_dir.mkdir(parents=True)
+    device_db = device_db_dir / "ascend_task.db"
+    with sqlite3.connect(device_db) as conn:
+        conn.execute(
+            "CREATE TABLE AscendTask(start_time INTEGER, duration INTEGER, device_task_type TEXT)"
+        )
+        conn.execute("INSERT INTO AscendTask VALUES (1400, 200, 'AI_CORE')")
+
+    output_dir = tmp_path / "out"
+    result = analyze_msprof_windows(
+        run_id="test_run",
+        source_artifact_dir=source_dir,
+        artifact_dir=output_dir,
+        modes=("msprof_prefix_cache_on",),
+        explicit_roots={"msprof_prefix_cache_on": msprof_root},
+    )
+
+    assert result["overall_status"] == "success"
+    summary = result["mode_summaries"][0]
+    assert summary["sqlite_db_count"] == 2
+    assert summary["direct_overlap_candidate_count"] == 3
+    assert summary["time_alignment_status"] == "direct_request_window_overlap"
+    assert "CANN_API" in (output_dir / "profiler_time_range_summary.tsv").read_text(encoding="utf-8")
+    assert "AI_CORE" in (output_dir / "profiler_group_count_summary.tsv").read_text(encoding="utf-8")
