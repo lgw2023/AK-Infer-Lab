@@ -1,0 +1,7 @@
+run_id=runtime_vllm_api_msprof_sqlite_window_analysis_2026_0707_p1_024
+source_run_id=runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023
+commit=b51e779aa5d78ab164b70b308f5204b5390129de
+timestamp=2026-07-07T10:48:31+08:00
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+PYTHON_BIN=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+ASCEND_RT_VISIBLE_DEVICES=6

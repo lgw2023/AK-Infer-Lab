@@ -29,6 +29,9 @@ VLLM_API_PREFIX_CACHE_AB_HANDOFF = CONTRACT_DIR / "server_runtime_vllm_api_prefi
 VLLM_API_MSPROF_SQLITE_WINDOW_ANALYSIS_HANDOFF = (
     CONTRACT_DIR / "server_runtime_vllm_api_msprof_sqlite_window_analysis_handoff.md"
 )
+VLLM_API_MSPROF_REQUEST_DEVICE_AGGREGATE_HANDOFF = (
+    CONTRACT_DIR / "server_runtime_vllm_api_msprof_request_device_aggregate_handoff.md"
+)
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -603,6 +606,32 @@ def test_vllm_api_msprof_sqlite_window_analysis_handoff_defines_required_boundar
         assert text in handoff
 
 
+def test_vllm_api_msprof_request_device_aggregate_handoff_defines_required_boundaries():
+    handoff = VLLM_API_MSPROF_REQUEST_DEVICE_AGGREGATE_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025",
+        "runtime_vllm_api_msprof_sqlite_window_analysis_2026_0707_p1_024",
+        "runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023",
+        "tools/inference_contracts/analyze_msprof_request_device_aggregate.py",
+        "request_device_task_summary.tsv",
+        "request_device_task_type_summary.tsv",
+        "request_top_op_type_duration.tsv",
+        "request_ai_core_metric_summary.tsv",
+        "prefix_cache_mode_request_delta.tsv",
+        "prefix_pair_candidate_delta.tsv",
+        "msprof_request_device_aggregate_result.json",
+        "mail_attachment_candidates.tsv",
+        "70KB",
+        "优先复用 P1.23 raw msprof",
+        "不安装、升级、卸载或修复任何包",
+        "不重启 vLLM API server",
+        "不输出性能 benchmark、吞吐结论、调度效率结论、prefix cache 命中率结论、瓶颈归因或优化建议",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
 def test_vllm_api_continuous16_mixed_runner_case_plan_is_bounded():
     from tools.inference_contracts.run_vllm_api_concurrency_smoke import (
         VLLM_API_CONTINUOUS16_MIXED_CASES,
@@ -723,3 +752,101 @@ def test_msprof_sqlite_window_analyzer_extracts_request_overlap(tmp_path):
     assert summary["time_alignment_status"] == "direct_request_window_overlap"
     assert "CANN_API" in (output_dir / "profiler_time_range_summary.tsv").read_text(encoding="utf-8")
     assert "AI_CORE" in (output_dir / "profiler_group_count_summary.tsv").read_text(encoding="utf-8")
+
+
+def test_msprof_request_device_aggregate_extracts_request_level_metrics(tmp_path):
+    import csv
+    import json
+    import sqlite3
+
+    from tools.inference_contracts.analyze_msprof_request_device_aggregate import (
+        analyze_request_device_aggregate,
+    )
+
+    source_dir = tmp_path / "source"
+    mode_dir = source_dir / "msprof_prefix_cache_on" / "vllm"
+    mode_dir.mkdir(parents=True)
+    (mode_dir / "vllm_api_concurrency_result.json").write_text(
+        json.dumps(
+            {
+                "status": "success",
+                "rows": [
+                    {
+                        "case_id": "case_a",
+                        "prompt_id": "P007",
+                        "prefix_reuse_group": "prefix_group_a",
+                        "arrival_delay_ms": 0,
+                        "cap_tokens": 8192,
+                        "max_new_tokens": 64,
+                        "input_token_count": 5972,
+                        "generated_token_count": 64,
+                        "request_start_ns": 1000,
+                        "response_end_ns": 3000,
+                        "client_wall_us": 2,
+                        "status": "success",
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    sqlite_dir = tmp_path / "prof" / "device_6" / "sqlite"
+    sqlite_dir.mkdir(parents=True)
+    ai_core_db = sqlite_dir / "ai_core_op_summary.db"
+    with sqlite3.connect(ai_core_db) as conn:
+        conn.execute(
+            "CREATE TABLE task_time("
+            "task_id INTEGER, stream_id INTEGER, start_time INTEGER, duration_time INTEGER, "
+            "wait_time INTEGER, task_type TEXT, index_id INTEGER, model_id INTEGER, "
+            "batch_id INTEGER, subtask_id INTEGER)"
+        )
+        conn.execute("INSERT INTO task_time VALUES (1, 7, 1200, 100, 3, 'AI_CORE', 9, 1, 0, 0)")
+        conn.execute("INSERT INTO task_time VALUES (2, 7, 1500, 200, 5, 'AI_CORE', 10, 1, 0, 0)")
+        conn.execute("INSERT INTO task_time VALUES (3, 7, 5000, 100, 1, 'AI_CORE', 11, 1, 0, 0)")
+        conn.execute(
+            "CREATE TABLE ge_summary("
+            "model_id INTEGER, task_id INTEGER, stream_id INTEGER, op_name TEXT, op_type TEXT, "
+            "task_type TEXT, index_id INTEGER, batch_id INTEGER, context_id INTEGER)"
+        )
+        conn.execute("INSERT INTO ge_summary VALUES (1, 1, 7, 'matmul_a', 'MatMulV2', 'AI_CORE', 9, 0, 0)")
+        conn.execute("INSERT INTO ge_summary VALUES (1, 2, 7, 'slice_a', 'Slice', 'AI_CORE', 10, 0, 0)")
+        conn.execute(
+            "CREATE TABLE ai_core_metrics("
+            "task_id INTEGER, stream_id INTEGER, subtask_id INTEGER, batch_id INTEGER, "
+            "aic_total_time REAL, aiv_total_time REAL, aic_mac_time REAL, "
+            "aiv_vec_time REAL, aic_mac_ratio_extra REAL, aiv_vec_ratio REAL)"
+        )
+        conn.execute("INSERT INTO ai_core_metrics VALUES (1, 7, 0, 0, 10, 20, 3, 4, 0.1, 0.2)")
+        conn.execute("INSERT INTO ai_core_metrics VALUES (2, 7, 0, 0, 30, 40, 5, 6, 0.3, 0.4)")
+
+    ascend_task_db = sqlite_dir / "ascend_task.db"
+    with sqlite3.connect(ascend_task_db) as conn:
+        conn.execute(
+            "CREATE TABLE AscendTask("
+            "start_time INTEGER, duration INTEGER, device_task_type TEXT, host_task_type TEXT)"
+        )
+        conn.execute("INSERT INTO AscendTask VALUES (1300, 100, 'AI_CORE', 'aclrtLaunchKernel')")
+
+    output_dir = tmp_path / "out"
+    result = analyze_request_device_aggregate(
+        run_id="test_request_device",
+        source_artifact_dir=source_dir,
+        artifact_dir=output_dir,
+        modes=("msprof_prefix_cache_on",),
+        explicit_roots={"msprof_prefix_cache_on": tmp_path / "prof"},
+    )
+
+    assert result["overall_status"] == "success"
+    request_rows = list(
+        csv.DictReader((output_dir / "request_device_task_summary.tsv").open(encoding="utf-8"), delimiter="\t")
+    )
+    assert request_rows[0]["task_row_count"] == "2"
+    assert request_rows[0]["total_duration_time"] == "300"
+    assert "MatMulV2" in (output_dir / "request_top_op_type_duration.tsv").read_text(encoding="utf-8")
+    assert "AI_CORE" in (output_dir / "request_device_task_type_summary.tsv").read_text(encoding="utf-8")
+    metric_rows = list(
+        csv.DictReader((output_dir / "request_ai_core_metric_summary.tsv").open(encoding="utf-8"), delimiter="\t")
+    )
+    assert metric_rows[0]["aic_total_time_sum"] == "40"
