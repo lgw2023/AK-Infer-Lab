@@ -1,0 +1,143 @@
+## run_context
+run_id=runtime_vllm_api_prefix_cache_ab_2026_0707_p1_022
+commit=19e8fdf12aefdad2d1e8f1e1b8d1cebfad8d37a4
+timestamp=2026-07-07T01:54:36+0800
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+CASE_PLAN=continuous16_mixed
+max_model_len=9216
+pytest_exit_code=0
+prefix_cache_on_exit_code=0
+prefix_cache_off_exit_code=0
+prefix_cache_ab_validation_exit_code=0
+
+## prefix_cache_ab_summary
+mode	prefix_cache_requested	status	request_count	success_case_count	client_overlap_candidate_count	server_stats_sample_count	server_stats_max_running_reqs	server_stats_max_waiting_reqs	server_stats_max_kv_cache_usage_pct	server_stats_max_prefix_cache_hit_rate_pct	server_command_has_enable_prefix_caching
+prefix_cache_on	1	success	16	16	120	1	15	1	7.9	49.2	1
+prefix_cache_off	0	success	16	16	120	2	9	5	6.3	0.0	0
+
+## validation
+errors=0
+
+## prefix_cache_on conclusion
+status=success
+matrix_status=success
+phase=complete
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+served_model_name=Qwen3.5-4B
+device_label=npu:6
+host=127.0.0.1
+port=18080
+case_plan=continuous16_mixed
+server_ready=1
+request_count=16
+success_case_count=16
+failed_case_count=0
+client_overlap_candidate_count=120
+prefix_cache_requested=1
+input_count_mismatch_count=0
+submitted_count_mismatch_count=0
+trace_event_count=113
+trace_validation_errors=0
+server_stats_sample_count=1
+server_stats_max_running_reqs=15
+server_stats_max_waiting_reqs=1
+server_stats_max_kv_cache_usage_pct=7.9
+server_stats_max_prefix_cache_hit_rate_pct=49.2
+policy=vllm_api_concurrency_smoke_no_package_install
+matrix_policy=vllm_openai_api_server_sixteen_request_mixed_4k_8k_continuous_workload_candidate
+profiler_policy=disabled_not_part_of_this_task
+performance_policy=smoke_only_no_benchmark_or_bottleneck_conclusion
+prefix_cache_policy=requested_if_supported_no_hit_rate_claim
+continuous_batching_policy=candidate_only_sixteen_staggered_clients_mixed_4k_8k_no_throughput_or_scheduler_claim
+
+## prefix_cache_on server_command
+[
+  "/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python",
+  "-m",
+  "vllm.entrypoints.openai.api_server",
+  "--model",
+  "/data/node0_disk1/Public/Qwen3.5-4B",
+  "--served-model-name",
+  "Qwen3.5-4B",
+  "--host",
+  "127.0.0.1",
+  "--port",
+  "18080",
+  "--trust-remote-code",
+  "--max-model-len",
+  "9216",
+  "--tensor-parallel-size",
+  "1",
+  "--gpu-memory-utilization",
+  "0.85",
+  "--dtype",
+  "auto",
+  "--enforce-eager",
+  "--enable-prefix-caching"
+]
+
+## prefix_cache_on server_stats
+line_number	avg_prompt_throughput_tokens_s	avg_generation_throughput_tokens_s	running_reqs	waiting_reqs	gpu_kv_cache_usage_pct	prefix_cache_hit_rate_pct
+146	1496.5	9.1	15	1	7.9	49.2
+
+## prefix_cache_off conclusion
+status=success
+matrix_status=success
+phase=complete
+model_path=/data/node0_disk1/Public/Qwen3.5-4B
+served_model_name=Qwen3.5-4B
+device_label=npu:6
+host=127.0.0.1
+port=18080
+case_plan=continuous16_mixed
+server_ready=1
+request_count=16
+success_case_count=16
+failed_case_count=0
+client_overlap_candidate_count=120
+prefix_cache_requested=0
+input_count_mismatch_count=0
+submitted_count_mismatch_count=0
+trace_event_count=113
+trace_validation_errors=0
+server_stats_sample_count=2
+server_stats_max_running_reqs=9
+server_stats_max_waiting_reqs=5
+server_stats_max_kv_cache_usage_pct=6.3
+server_stats_max_prefix_cache_hit_rate_pct=0.0
+policy=vllm_api_concurrency_smoke_no_package_install
+matrix_policy=vllm_openai_api_server_sixteen_request_mixed_4k_8k_continuous_workload_candidate
+profiler_policy=disabled_not_part_of_this_task
+performance_policy=smoke_only_no_benchmark_or_bottleneck_conclusion
+prefix_cache_policy=requested_if_supported_no_hit_rate_claim
+continuous_batching_policy=candidate_only_sixteen_staggered_clients_mixed_4k_8k_no_throughput_or_scheduler_claim
+
+## prefix_cache_off server_command
+[
+  "/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python",
+  "-m",
+  "vllm.entrypoints.openai.api_server",
+  "--model",
+  "/data/node0_disk1/Public/Qwen3.5-4B",
+  "--served-model-name",
+  "Qwen3.5-4B",
+  "--host",
+  "127.0.0.1",
+  "--port",
+  "18080",
+  "--trust-remote-code",
+  "--max-model-len",
+  "9216",
+  "--tensor-parallel-size",
+  "1",
+  "--gpu-memory-utilization",
+  "0.85",
+  "--dtype",
+  "auto",
+  "--enforce-eager"
+]
+
+## prefix_cache_off server_stats
+line_number	avg_prompt_throughput_tokens_s	avg_generation_throughput_tokens_s	running_reqs	waiting_reqs	gpu_kv_cache_usage_pct	prefix_cache_hit_rate_pct
+146	2235.8	6.0	9	5	6.3	0.0
+158	4915.3	57.5	3	0	2.8	0.0

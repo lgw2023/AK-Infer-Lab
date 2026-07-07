@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-babe70b92c247a6f",
+  "object": "text_completion",
+  "created": 1783360447,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": " policy: torch TTFT is the time from request enqueue to the first token output.\n- CANN timeline policy: do not claim device timeline pairing without aligned join keys\n\nRepresentative tool output:\n```text\n[request 0001] enqueue_ns=100000000",
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 4096,
+    "total_tokens": 4160,
+    "completion_tokens": 64,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}

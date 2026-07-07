@@ -1,0 +1,10 @@
+run_id=runtime_vllm_api_prefix_cache_ab_2026_0707_p1_022
+commit=19e8fdf12aefdad2d1e8f1e1b8d1cebfad8d37a4
+timestamp=2026-07-07T01:54:36+0800
+MODEL_PATH=/data/node0_disk1/Public/Qwen3.5-4B
+CASE_PLAN=continuous16_mixed
+max_model_len=9216
+pytest_exit_code=0
+prefix_cache_on_exit_code=0
+prefix_cache_off_exit_code=0
+prefix_cache_ab_validation_exit_code=0

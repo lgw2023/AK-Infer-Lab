@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-a0e9e4c740e6d6b9",
+  "object": "text_completion",
+  "created": 1783360290,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": "Do not invent live measurements, do not claim CANN device timeline pairing, and do\nnot make performance or bottleneck conclusions beyond what the supplied static text can support.\n\n<think>\nThe user wants me to answer the original task for P008 using only the provided static context.\n\nOriginal task: \"Explain",
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 5975,
+    "total_tokens": 6039,
+    "completion_tokens": 64,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}

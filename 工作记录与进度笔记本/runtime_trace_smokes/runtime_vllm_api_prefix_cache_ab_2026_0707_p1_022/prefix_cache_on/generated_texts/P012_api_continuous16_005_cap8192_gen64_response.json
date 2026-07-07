@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-8a9fb85e17a47a29",
+  "object": "text_completion",
+  "created": 1783360292,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": "_id, stream id, and timestamp\nbase are all present in the same evidence chain. The current block repeats this\nconstraint intentionally so the prompt has stable long-context pressure while\nremaining deterministic and reviewable.\n\n\n### Static Context Block 0018 - P012\n\nServer evidence summary:\n-",
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 8192,
+    "total_tokens": 8256,
+    "completion_tokens": 64,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}

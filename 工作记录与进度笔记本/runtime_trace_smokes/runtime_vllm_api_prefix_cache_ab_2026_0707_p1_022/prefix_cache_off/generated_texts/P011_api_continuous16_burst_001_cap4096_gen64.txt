@@ -1,0 +1,6 @@
+ policy: torch TTFT is the time from request enqueue to the first token output.
+- CANN timeline policy: do not claim device timeline pairing without aligned join keys
+
+Representative tool output:
+```text
+[request 0001] enqueue_ns=100000000

@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-89bbda01a2278275",
+  "object": "text_completion",
+  "created": 1783360449,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": " target",
+      "logprobs": null,
+      "finish_reason": "stop",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 8192,
+    "total_tokens": 8194,
+    "completion_tokens": 2,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}

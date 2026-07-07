@@ -1,0 +1,10 @@
+ id, request_id, and timestamp
+base are all present in the same evidence chain. The current block repeats this
+constraint intentionally so the
+</think>
+
+# P012 Continuous Batching
+
+Turn 1 user: The workload keeps sending medium prompts while earlier decode steps are still running.
+
+Turn 1 assistant

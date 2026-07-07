@@ -1,0 +1,7 @@
+ id, synthetic_materialized_context_P012_0017, and timestamp
+base are all present in the same evidence chain. The current block repeats this
+constraint intentionally so the prompt has stable long-context pressure while
+remaining deterministic and reviewable.
+
+
+### Static Context Block 0018 -

@@ -1,0 +1,8 @@
+Explain how the first request in a repeated-prefix pair should initialize prefix and KV cache metadata for later comparison.
+
+<think>
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Input:** A materialized long-context prompt fixture (P007 Materialized Long Context).
+   

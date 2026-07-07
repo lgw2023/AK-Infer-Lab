@@ -1,0 +1,7 @@
+Do not invent live measurements, do not claim CANN device timeline pairing, and do
+not make performance or bottleneck conclusions beyond what the supplied static text can support.
+
+<think>
+The user wants me to answer the original task for P008 using only the provided static context.
+
+Original task: "Explain

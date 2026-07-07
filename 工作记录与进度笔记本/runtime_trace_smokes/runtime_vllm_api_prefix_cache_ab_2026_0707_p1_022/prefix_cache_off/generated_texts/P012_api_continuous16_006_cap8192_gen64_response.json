@@ -1,0 +1,27 @@
+{
+  "id": "cmpl-a07616629c4b1f74",
+  "object": "text_completion",
+  "created": 1783360449,
+  "model": "Qwen3.5-4B",
+  "choices": [
+    {
+      "index": 0,
+      "text": " id, request_id, and timestamp\nbase are all present in the same evidence chain. The current block repeats this\nconstraint intentionally so the\n</think>\n\n# P012 Continuous Batching\n\nTurn 1 user: The workload keeps sending medium prompts while earlier decode steps are still running.\n\nTurn 1 assistant",
+      "logprobs": null,
+      "finish_reason": "length",
+      "stop_reason": null,
+      "token_ids": null,
+      "prompt_logprobs": null,
+      "prompt_token_ids": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": null,
+  "usage": {
+    "prompt_tokens": 8192,
+    "total_tokens": 8256,
+    "completion_tokens": 64,
+    "prompt_tokens_details": null
+  },
+  "kv_transfer_params": null
+}
