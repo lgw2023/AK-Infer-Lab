@@ -5,6 +5,9 @@ import csv
 import json
 import os
 import sqlite3
+import time
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +23,7 @@ from tools.inference_contracts.analyze_msprof_sqlite_windows import (
 )
 
 
-DEFAULT_RUN_ID = "runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025"
+DEFAULT_RUN_ID = "runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b"
 DEFAULT_TOP_N_OP_TYPES = 20
 SUMMARY_METRIC_COLUMNS = (
     "aic_total_time",
@@ -69,6 +72,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--msprof-root-off", type=Path, default=None)
     parser.add_argument("--mode", action="append", choices=DEFAULT_MODES, default=None)
     parser.add_argument("--top-n-op-types", type=int, default=DEFAULT_TOP_N_OP_TYPES)
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=int(os.environ.get("P1_25B_SQLITE_WORKERS", "2")),
+        help="Number of independent msprof modes to aggregate in parallel.",
+    )
+    parser.add_argument(
+        "--skip-heavy-joins",
+        action="store_true",
+        help="Skip ge_summary and ai_core_metrics joins; still emit request and task-type summaries.",
+    )
     return parser.parse_args()
 
 
@@ -85,8 +99,19 @@ def main() -> int:
             "msprof_prefix_cache_off": args.msprof_root_off,
         },
         top_n_op_types=args.top_n_op_types,
+        workers=args.workers,
+        skip_heavy_joins=args.skip_heavy_joins,
     )
     return 0 if result["overall_status"] != "failed" else 1
+
+
+@dataclass
+class ModeAggregate:
+    mode_summary: dict[str, Any]
+    request_device_rows: list[dict[str, Any]]
+    task_type_rows: list[dict[str, Any]]
+    top_op_rows: list[dict[str, Any]]
+    metric_rows: list[dict[str, Any]]
 
 
 def analyze_request_device_aggregate(
@@ -97,6 +122,8 @@ def analyze_request_device_aggregate(
     modes: tuple[str, ...] = DEFAULT_MODES,
     explicit_roots: dict[str, Path | None] | None = None,
     top_n_op_types: int = DEFAULT_TOP_N_OP_TYPES,
+    workers: int = 1,
+    skip_heavy_joins: bool = False,
 ) -> dict[str, Any]:
     artifact_dir.mkdir(parents=True, exist_ok=True)
     explicit_roots = explicit_roots or {}
@@ -107,52 +134,20 @@ def analyze_request_device_aggregate(
     top_op_rows: list[dict[str, Any]] = []
     metric_rows: list[dict[str, Any]] = []
 
-    for mode in modes:
-        paths = discover_mode_paths(source_artifact_dir, mode, explicit_roots.get(mode))
-        requests, result_status = load_request_windows(paths.result_path)
-        db_paths = discover_device_databases(paths.msprof_root)
-
-        if db_paths["ai_core_op_summary"]:
-            aggregate_ai_core_database(
-                mode=mode,
-                db_path=db_paths["ai_core_op_summary"],
-                requests=requests,
-                top_n_op_types=top_n_op_types,
-                request_device_rows=request_device_rows,
-                task_type_rows=task_type_rows,
-                top_op_rows=top_op_rows,
-                metric_rows=metric_rows,
-            )
-        if db_paths["ascend_task"]:
-            aggregate_ascend_task_database(
-                mode=mode,
-                db_path=db_paths["ascend_task"],
-                requests=requests,
-                task_type_rows=task_type_rows,
-            )
-
-        mode_request_rows = [row for row in request_device_rows if row["mode"] == mode]
-        mode_summaries.append(
-            {
-                "mode": mode,
-                "result_path": str(paths.result_path or ""),
-                "result_status": result_status,
-                "request_count": len(requests),
-                "successful_request_count": sum(1 for row in requests if row["status"] == "success"),
-                "msprof_root": str(paths.msprof_root or ""),
-                "msprof_root_exists": int(bool(paths.msprof_root and paths.msprof_root.exists())),
-                "ai_core_op_summary_db": str(db_paths["ai_core_op_summary"] or ""),
-                "ascend_task_db": str(db_paths["ascend_task"] or ""),
-                "request_device_summary_rows": len(mode_request_rows),
-                "top_op_summary_rows": sum(1 for row in top_op_rows if row["mode"] == mode),
-                "metric_summary_rows": sum(1 for row in metric_rows if row["mode"] == mode),
-                "aggregate_status": (
-                    "request_device_aggregate_available"
-                    if mode_request_rows
-                    else "missing_direct_overlap_device_tables"
-                ),
-            }
-        )
+    mode_results = run_mode_aggregates(
+        source_artifact_dir=source_artifact_dir,
+        modes=modes,
+        explicit_roots=explicit_roots,
+        top_n_op_types=top_n_op_types,
+        workers=workers,
+        skip_heavy_joins=skip_heavy_joins,
+    )
+    for mode_result in mode_results:
+        mode_summaries.append(mode_result.mode_summary)
+        request_device_rows.extend(mode_result.request_device_rows)
+        task_type_rows.extend(mode_result.task_type_rows)
+        top_op_rows.extend(mode_result.top_op_rows)
+        metric_rows.extend(mode_result.metric_rows)
 
     mode_delta_rows = build_prefix_cache_mode_deltas(request_device_rows)
     pair_delta_rows = build_prefix_pair_deltas(request_device_rows)
@@ -175,6 +170,9 @@ def analyze_request_device_aggregate(
         "artifact_dir": str(artifact_dir),
         "overall_status": overall_status,
         "mode_summaries": mode_summaries,
+        "aggregation_strategy": "bulk_temp_window_join_parallel_modes",
+        "workers": max(1, workers),
+        "heavy_joins_skipped": skip_heavy_joins,
         "policy": "evidence_extraction_only_no_benchmark_or_bottleneck_claim",
     }
     (artifact_dir / "msprof_request_device_aggregate_result.json").write_text(
@@ -183,6 +181,113 @@ def analyze_request_device_aggregate(
     )
     write_summary(artifact_dir / "summary.txt", result)
     return result
+
+
+def run_mode_aggregates(
+    *,
+    source_artifact_dir: Path,
+    modes: tuple[str, ...],
+    explicit_roots: dict[str, Path | None],
+    top_n_op_types: int,
+    workers: int,
+    skip_heavy_joins: bool,
+) -> list[ModeAggregate]:
+    if workers > 1 and len(modes) > 1:
+        results_by_mode: dict[str, ModeAggregate] = {}
+        with ThreadPoolExecutor(max_workers=min(max(1, workers), len(modes))) as executor:
+            futures = {
+                executor.submit(
+                    aggregate_mode,
+                    source_artifact_dir=source_artifact_dir,
+                    mode=mode,
+                    explicit_root=explicit_roots.get(mode),
+                    top_n_op_types=top_n_op_types,
+                    skip_heavy_joins=skip_heavy_joins,
+                ): mode
+                for mode in modes
+            }
+            for future, mode in futures.items():
+                results_by_mode[mode] = future.result()
+        return [results_by_mode[mode] for mode in modes]
+    return [
+        aggregate_mode(
+            source_artifact_dir=source_artifact_dir,
+            mode=mode,
+            explicit_root=explicit_roots.get(mode),
+            top_n_op_types=top_n_op_types,
+            skip_heavy_joins=skip_heavy_joins,
+        )
+        for mode in modes
+    ]
+
+
+def aggregate_mode(
+    *,
+    source_artifact_dir: Path,
+    mode: str,
+    explicit_root: Path | None,
+    top_n_op_types: int,
+    skip_heavy_joins: bool,
+) -> ModeAggregate:
+    started = time.monotonic()
+    paths = discover_mode_paths(source_artifact_dir, mode, explicit_root)
+    requests, result_status = load_request_windows(paths.result_path)
+    db_paths = discover_device_databases(paths.msprof_root)
+
+    request_device_rows: list[dict[str, Any]] = []
+    task_type_rows: list[dict[str, Any]] = []
+    top_op_rows: list[dict[str, Any]] = []
+    metric_rows: list[dict[str, Any]] = []
+
+    if db_paths["ai_core_op_summary"]:
+        aggregate_ai_core_database(
+            mode=mode,
+            db_path=db_paths["ai_core_op_summary"],
+            requests=requests,
+            top_n_op_types=top_n_op_types,
+            skip_heavy_joins=skip_heavy_joins,
+            request_device_rows=request_device_rows,
+            task_type_rows=task_type_rows,
+            top_op_rows=top_op_rows,
+            metric_rows=metric_rows,
+        )
+    if db_paths["ascend_task"]:
+        aggregate_ascend_task_database(
+            mode=mode,
+            db_path=db_paths["ascend_task"],
+            requests=requests,
+            task_type_rows=task_type_rows,
+        )
+
+    mode_summary = {
+        "mode": mode,
+        "result_path": str(paths.result_path or ""),
+        "result_status": result_status,
+        "request_count": len(requests),
+        "successful_request_count": sum(1 for row in requests if row["status"] == "success"),
+        "msprof_root": str(paths.msprof_root or ""),
+        "msprof_root_exists": int(bool(paths.msprof_root and paths.msprof_root.exists())),
+        "ai_core_op_summary_db": str(db_paths["ai_core_op_summary"] or ""),
+        "ascend_task_db": str(db_paths["ascend_task"] or ""),
+        "request_device_summary_rows": len(request_device_rows),
+        "top_op_summary_rows": len(top_op_rows),
+        "metric_summary_rows": len(metric_rows),
+        "aggregate_status": (
+            "request_device_aggregate_available"
+            if request_device_rows
+            else "missing_direct_overlap_device_tables"
+        ),
+        "aggregation_strategy": "bulk_temp_window_join",
+        "heavy_joins_skipped": int(skip_heavy_joins),
+        "elapsed_sec": round(time.monotonic() - started, 3),
+    }
+    return ModeAggregate(
+        mode_summary=mode_summary,
+        request_device_rows=request_device_rows,
+        task_type_rows=task_type_rows,
+        top_op_rows=top_op_rows,
+        metric_rows=metric_rows,
+    )
 
 
 def discover_device_databases(msprof_root: Path | None) -> dict[str, Path | None]:
@@ -205,12 +310,14 @@ def aggregate_ai_core_database(
     db_path: Path,
     requests: list[dict[str, Any]],
     top_n_op_types: int,
+    skip_heavy_joins: bool,
     request_device_rows: list[dict[str, Any]],
     task_type_rows: list[dict[str, Any]],
     top_op_rows: list[dict[str, Any]],
     metric_rows: list[dict[str, Any]],
 ) -> None:
     with open_readonly(db_path) as conn:
+        configure_sqlite_for_bulk_temp(conn)
         tables = set(list_tables(conn))
         if "task_time" not in tables:
             return
@@ -223,14 +330,20 @@ def aggregate_ai_core_database(
         ge_columns = set(list_columns(conn, "ge_summary")) if has_ge else set()
         metric_columns = set(list_columns(conn, "ai_core_metrics")) if has_metrics else set()
 
-        for request in requests:
-            summary = query_task_time_summary(conn, mode, db_path, request)
-            request_device_rows.append(summary)
-            task_type_rows.extend(query_task_type_summary(conn, mode, db_path, request))
-            if has_ge and "op_type" in ge_columns:
-                top_op_rows.extend(query_top_op_types(conn, mode, db_path, request, top_n_op_types))
-            if has_metrics:
-                metric_rows.append(query_metric_summary(conn, mode, db_path, request, metric_columns))
+        prepare_request_window_table(conn, requests)
+        prepare_overlap_task_time_table(conn, task_columns)
+
+        request_device_rows.extend(query_task_time_summaries(conn, mode, db_path))
+        if "task_type" in task_columns:
+            task_type_rows.extend(query_task_type_summaries(conn, mode, db_path))
+        if skip_heavy_joins:
+            return
+        if has_ge and can_join_top_ops(task_columns, ge_columns):
+            prepare_ge_summary_join_table(conn)
+            top_op_rows.extend(query_top_op_types(conn, mode, db_path, top_n_op_types))
+        if has_metrics and can_join_metrics(task_columns, metric_columns):
+            prepare_ai_core_metrics_join_table(conn, metric_columns)
+            metric_rows.extend(query_metric_summaries(conn, mode, db_path, metric_columns))
 
 
 def aggregate_ascend_task_database(
@@ -241,79 +354,280 @@ def aggregate_ascend_task_database(
     task_type_rows: list[dict[str, Any]],
 ) -> None:
     with open_readonly(db_path) as conn:
+        configure_sqlite_for_bulk_temp(conn)
         if "AscendTask" not in set(list_tables(conn)):
             return
         columns = set(list_columns(conn, "AscendTask"))
         if not {"start_time", "duration"}.issubset(columns):
             return
-        for request in requests:
-            for column in ("device_task_type", "host_task_type"):
-                if column not in columns:
-                    continue
-                task_type_rows.extend(query_ascend_task_type_summary(conn, mode, db_path, request, column))
+        prepare_request_window_table(conn, requests)
+        prepare_overlap_ascend_task_table(conn, columns)
+        for column in ("device_task_type", "host_task_type"):
+            if column not in columns:
+                continue
+            task_type_rows.extend(query_ascend_task_type_summaries(conn, mode, db_path, column))
 
 
-def query_task_time_summary(
-    conn: sqlite3.Connection,
-    mode: str,
-    db_path: Path,
-    request: dict[str, Any],
-) -> dict[str, Any]:
-    sql = """
+def configure_sqlite_for_bulk_temp(conn: sqlite3.Connection) -> None:
+    conn.execute("PRAGMA automatic_index = ON")
+    conn.execute("PRAGMA temp_store = MEMORY")
+
+
+def prepare_request_window_table(conn: sqlite3.Connection, requests: list[dict[str, Any]]) -> None:
+    conn.execute("DROP TABLE IF EXISTS temp.request_windows")
+    conn.execute(
+        """
+        CREATE TEMP TABLE request_windows(
+          request_index INTEGER PRIMARY KEY,
+          case_id TEXT,
+          prompt_id TEXT,
+          prefix_reuse_group TEXT,
+          arrival_delay_ms TEXT,
+          cap_tokens TEXT,
+          max_new_tokens TEXT,
+          input_token_count TEXT,
+          generated_token_count TEXT,
+          request_start_ns INTEGER,
+          response_end_ns INTEGER,
+          client_wall_us TEXT,
+          status TEXT
+        )
+        """
+    )
+    conn.executemany(
+        """
+        INSERT INTO request_windows(
+          request_index, case_id, prompt_id, prefix_reuse_group, arrival_delay_ms,
+          cap_tokens, max_new_tokens, input_token_count, generated_token_count,
+          request_start_ns, response_end_ns, client_wall_us, status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            (
+                index,
+                request["case_id"],
+                request["prompt_id"],
+                request["prefix_reuse_group"],
+                request["arrival_delay_ms"],
+                request["cap_tokens"],
+                request["max_new_tokens"],
+                request["input_token_count"],
+                request["generated_token_count"],
+                request["request_start_ns"],
+                request["response_end_ns"],
+                request["client_wall_us"],
+                request["status"],
+            )
+            for index, request in enumerate(requests)
+        ],
+    )
+
+
+def prepare_overlap_task_time_table(conn: sqlite3.Connection, task_columns: set[str]) -> None:
+    fields = [
+        "r.request_index",
+        "CAST(t.start_time AS INTEGER) AS start_time_i",
+        "CAST(t.duration_time AS INTEGER) AS duration_time_i",
+        cast_column_or_null("t", "wait_time", "wait_time_i", task_columns, "INTEGER"),
+        cast_column_or_null("t", "task_type", "task_type_t", task_columns, "TEXT"),
+        cast_column_or_null("t", "stream_id", "stream_id_t", task_columns, "TEXT"),
+        cast_column_or_null("t", "task_id", "task_id_t", task_columns, "TEXT"),
+        cast_column_or_null("t", "model_id", "model_id_t", task_columns, "TEXT"),
+        cast_column_or_null("t", "batch_id", "batch_id_t", task_columns, "TEXT"),
+        cast_column_or_null("t", "index_id", "index_id_t", task_columns, "TEXT"),
+        cast_column_or_null("t", "subtask_id", "subtask_id_t", task_columns, "TEXT"),
+    ]
+    conn.execute("DROP TABLE IF EXISTS temp.overlap_task_time")
+    conn.execute(
+        f"""
+        CREATE TEMP TABLE overlap_task_time AS
+        SELECT {", ".join(fields)}
+        FROM request_windows AS r
+        JOIN task_time AS t
+          ON CAST(t.start_time AS INTEGER) < r.response_end_ns
+         AND CAST(t.start_time AS INTEGER) + CAST(t.duration_time AS INTEGER) > r.request_start_ns
+        """
+    )
+    conn.execute("CREATE INDEX temp.idx_overlap_task_request ON overlap_task_time(request_index)")
+    conn.execute(
+        "CREATE INDEX temp.idx_overlap_task_ge ON overlap_task_time("
+        "model_id_t, task_id_t, stream_id_t, batch_id_t, index_id_t)"
+    )
+    conn.execute(
+        "CREATE INDEX temp.idx_overlap_task_metric ON overlap_task_time("
+        "task_id_t, stream_id_t, batch_id_t, subtask_id_t)"
+    )
+
+
+def prepare_overlap_ascend_task_table(conn: sqlite3.Connection, columns: set[str]) -> None:
+    fields = [
+        "r.request_index",
+        "CAST(a.duration AS INTEGER) AS duration_i",
+        cast_column_or_null("a", "device_task_type", "device_task_type_t", columns, "TEXT"),
+        cast_column_or_null("a", "host_task_type", "host_task_type_t", columns, "TEXT"),
+    ]
+    conn.execute("DROP TABLE IF EXISTS temp.overlap_ascend_task")
+    conn.execute(
+        f"""
+        CREATE TEMP TABLE overlap_ascend_task AS
+        SELECT {", ".join(fields)}
+        FROM request_windows AS r
+        JOIN AscendTask AS a
+          ON CAST(a.start_time AS INTEGER) < r.response_end_ns
+         AND CAST(a.start_time AS INTEGER) + CAST(a.duration AS INTEGER) > r.request_start_ns
+        """
+    )
+    conn.execute("CREATE INDEX temp.idx_overlap_ascend_request ON overlap_ascend_task(request_index)")
+
+
+def prepare_ge_summary_join_table(conn: sqlite3.Connection) -> None:
+    conn.execute("DROP TABLE IF EXISTS temp.ge_summary_join")
+    conn.execute(
+        """
+        CREATE TEMP TABLE ge_summary_join AS
         SELECT
-          COUNT(*) AS task_row_count,
-          MIN(CAST(start_time AS INTEGER)) AS min_start_time,
-          MAX(CAST(start_time AS INTEGER) + CAST(duration_time AS INTEGER)) AS max_end_time,
-          SUM(CAST(duration_time AS INTEGER)) AS total_duration_time,
-          SUM(CAST(wait_time AS INTEGER)) AS total_wait_time,
-          COUNT(DISTINCT CAST(stream_id AS TEXT)) AS distinct_stream_count,
-          COUNT(DISTINCT CAST(task_id AS TEXT)) AS distinct_task_id_count
-        FROM task_time
-        WHERE CAST(start_time AS INTEGER) < ?
-          AND CAST(start_time AS INTEGER) + CAST(duration_time AS INTEGER) > ?
-    """
-    row = conn.execute(sql, (request["response_end_ns"], request["request_start_ns"])).fetchone()
+          CAST(model_id AS TEXT) AS model_id_t,
+          CAST(task_id AS TEXT) AS task_id_t,
+          CAST(stream_id AS TEXT) AS stream_id_t,
+          CAST(batch_id AS TEXT) AS batch_id_t,
+          CAST(index_id AS TEXT) AS index_id_t,
+          COALESCE(CAST(op_type AS TEXT), '') AS op_type
+        FROM ge_summary
+        """
+    )
+    conn.execute(
+        "CREATE INDEX temp.idx_ge_summary_join ON ge_summary_join("
+        "model_id_t, task_id_t, stream_id_t, batch_id_t, index_id_t)"
+    )
+
+
+def prepare_ai_core_metrics_join_table(
+    conn: sqlite3.Connection,
+    metric_columns: set[str],
+) -> None:
+    metric_fields = [
+        f"CAST({quote_identifier(column)} AS REAL) AS {quote_identifier(column)}"
+        for column in (*SUMMARY_METRIC_COLUMNS, *AVG_METRIC_COLUMNS)
+        if column in metric_columns
+    ]
+    fields = [
+        "CAST(task_id AS TEXT) AS task_id_t",
+        "CAST(stream_id AS TEXT) AS stream_id_t",
+        "CAST(batch_id AS TEXT) AS batch_id_t",
+        "CAST(subtask_id AS TEXT) AS subtask_id_t",
+        *metric_fields,
+    ]
+    conn.execute("DROP TABLE IF EXISTS temp.ai_core_metrics_join")
+    conn.execute(
+        f"""
+        CREATE TEMP TABLE ai_core_metrics_join AS
+        SELECT {", ".join(fields)}
+        FROM ai_core_metrics
+        """
+    )
+    conn.execute(
+        "CREATE INDEX temp.idx_ai_core_metrics_join ON ai_core_metrics_join("
+        "task_id_t, stream_id_t, batch_id_t, subtask_id_t)"
+    )
+
+
+def cast_column_or_null(
+    table_alias: str,
+    source_column: str,
+    output_column: str,
+    available_columns: set[str],
+    sqlite_type: str,
+) -> str:
+    if source_column in available_columns:
+        return (
+            f"CAST({table_alias}.{quote_identifier(source_column)} AS {sqlite_type}) "
+            f"AS {quote_identifier(output_column)}"
+        )
+    return f"NULL AS {quote_identifier(output_column)}"
+
+
+def can_join_top_ops(task_columns: set[str], ge_columns: set[str]) -> bool:
+    task_required = {"model_id", "task_id", "stream_id", "batch_id", "index_id"}
+    ge_required = {"model_id", "task_id", "stream_id", "batch_id", "index_id", "op_type"}
+    return task_required.issubset(task_columns) and ge_required.issubset(ge_columns)
+
+
+def can_join_metrics(task_columns: set[str], metric_columns: set[str]) -> bool:
+    required = {"task_id", "stream_id", "batch_id", "subtask_id"}
+    return required.issubset(task_columns) and required.issubset(metric_columns)
+
+
+def request_metadata_from_row(row: sqlite3.Row) -> dict[str, Any]:
     return {
-        "mode": mode,
-        "db_path": str(db_path),
-        "case_id": request["case_id"],
-        "prompt_id": request["prompt_id"],
-        "prefix_reuse_group": request["prefix_reuse_group"],
-        "arrival_delay_ms": request["arrival_delay_ms"],
-        "cap_tokens": request["cap_tokens"],
-        "max_new_tokens": request["max_new_tokens"],
-        "input_token_count": request["input_token_count"],
-        "generated_token_count": request["generated_token_count"],
-        "request_start_ns": request["request_start_ns"],
-        "response_end_ns": request["response_end_ns"],
-        "client_wall_us": request["client_wall_us"],
-        "task_row_count": safe_int(row["task_row_count"]),
-        "min_start_time": safe_int(row["min_start_time"]),
-        "max_end_time": safe_int(row["max_end_time"]),
-        "total_duration_time": safe_int(row["total_duration_time"]),
-        "total_wait_time": safe_int(row["total_wait_time"]),
-        "distinct_stream_count": safe_int(row["distinct_stream_count"]),
-        "distinct_task_id_count": safe_int(row["distinct_task_id_count"]),
-        "status": request["status"],
+        "case_id": row["case_id"],
+        "prompt_id": row["prompt_id"],
+        "prefix_reuse_group": row["prefix_reuse_group"],
+        "arrival_delay_ms": row["arrival_delay_ms"],
+        "cap_tokens": row["cap_tokens"],
+        "max_new_tokens": row["max_new_tokens"],
+        "input_token_count": row["input_token_count"],
+        "generated_token_count": row["generated_token_count"],
+        "request_start_ns": row["request_start_ns"],
+        "response_end_ns": row["response_end_ns"],
+        "client_wall_us": row["client_wall_us"],
+        "status": row["status"],
     }
 
 
-def query_task_type_summary(
+def query_task_time_summaries(
     conn: sqlite3.Connection,
     mode: str,
     db_path: Path,
-    request: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    if "task_type" not in set(list_columns(conn, "task_time")):
-        return []
     sql = """
-        SELECT CAST(task_type AS TEXT) AS value, COUNT(*) AS task_row_count,
-               SUM(CAST(duration_time AS INTEGER)) AS total_duration_time
-        FROM task_time
-        WHERE CAST(start_time AS INTEGER) < ?
-          AND CAST(start_time AS INTEGER) + CAST(duration_time AS INTEGER) > ?
-        GROUP BY value
-        ORDER BY task_row_count DESC
+        SELECT
+          r.*,
+          COUNT(o.start_time_i) AS task_row_count,
+          MIN(o.start_time_i) AS min_start_time,
+          MAX(o.start_time_i + o.duration_time_i) AS max_end_time,
+          SUM(o.duration_time_i) AS total_duration_time,
+          SUM(o.wait_time_i) AS total_wait_time,
+          COUNT(DISTINCT o.stream_id_t) AS distinct_stream_count,
+          COUNT(DISTINCT o.task_id_t) AS distinct_task_id_count
+        FROM request_windows AS r
+        LEFT JOIN overlap_task_time AS o
+          ON r.request_index = o.request_index
+        GROUP BY r.request_index
+        ORDER BY r.request_index
+    """
+    return [
+        {
+            "mode": mode,
+            "db_path": str(db_path),
+            **request_metadata_from_row(row),
+            "task_row_count": safe_int(row["task_row_count"]),
+            "min_start_time": safe_int(row["min_start_time"]),
+            "max_end_time": safe_int(row["max_end_time"]),
+            "total_duration_time": safe_int(row["total_duration_time"]),
+            "total_wait_time": safe_int(row["total_wait_time"]),
+            "distinct_stream_count": safe_int(row["distinct_stream_count"]),
+            "distinct_task_id_count": safe_int(row["distinct_task_id_count"]),
+        }
+        for row in conn.execute(sql)
+    ]
+
+
+def query_task_type_summaries(
+    conn: sqlite3.Connection,
+    mode: str,
+    db_path: Path,
+) -> list[dict[str, Any]]:
+    sql = """
+        SELECT r.case_id, r.prompt_id, r.prefix_reuse_group,
+               o.task_type_t AS value,
+               COUNT(*) AS task_row_count,
+               SUM(o.duration_time_i) AS total_duration_time
+        FROM overlap_task_time AS o
+        JOIN request_windows AS r
+          ON r.request_index = o.request_index
+        GROUP BY r.request_index, value
+        ORDER BY r.request_index, task_row_count DESC
     """
     return [
         {
@@ -322,32 +636,33 @@ def query_task_type_summary(
             "table": "task_time",
             "group_column": "task_type",
             "group_value": row["value"],
-            "case_id": request["case_id"],
-            "prompt_id": request["prompt_id"],
-            "prefix_reuse_group": request["prefix_reuse_group"],
+            "case_id": row["case_id"],
+            "prompt_id": row["prompt_id"],
+            "prefix_reuse_group": row["prefix_reuse_group"],
             "task_row_count": safe_int(row["task_row_count"]),
             "total_duration_time": safe_int(row["total_duration_time"]),
         }
-        for row in conn.execute(sql, (request["response_end_ns"], request["request_start_ns"]))
+        for row in conn.execute(sql)
     ]
 
 
-def query_ascend_task_type_summary(
+def query_ascend_task_type_summaries(
     conn: sqlite3.Connection,
     mode: str,
     db_path: Path,
-    request: dict[str, Any],
     column: str,
 ) -> list[dict[str, Any]]:
-    column_q = quote_identifier(column)
+    temp_column = f"{column}_t"
     sql = f"""
-        SELECT CAST({column_q} AS TEXT) AS value, COUNT(*) AS task_row_count,
-               SUM(CAST(duration AS INTEGER)) AS total_duration_time
-        FROM AscendTask
-        WHERE CAST(start_time AS INTEGER) < ?
-          AND CAST(start_time AS INTEGER) + CAST(duration AS INTEGER) > ?
-        GROUP BY value
-        ORDER BY task_row_count DESC
+        SELECT r.case_id, r.prompt_id, r.prefix_reuse_group,
+               {quote_identifier(temp_column)} AS value,
+               COUNT(*) AS task_row_count,
+               SUM(duration_i) AS total_duration_time
+        FROM overlap_ascend_task AS a
+        JOIN request_windows AS r
+          ON r.request_index = a.request_index
+        GROUP BY r.request_index, value
+        ORDER BY r.request_index, task_row_count DESC
     """
     return [
         {
@@ -356,13 +671,13 @@ def query_ascend_task_type_summary(
             "table": "AscendTask",
             "group_column": column,
             "group_value": row["value"],
-            "case_id": request["case_id"],
-            "prompt_id": request["prompt_id"],
-            "prefix_reuse_group": request["prefix_reuse_group"],
+            "case_id": row["case_id"],
+            "prompt_id": row["prompt_id"],
+            "prefix_reuse_group": row["prefix_reuse_group"],
             "task_row_count": safe_int(row["task_row_count"]),
             "total_duration_time": safe_int(row["total_duration_time"]),
         }
-        for row in conn.execute(sql, (request["response_end_ns"], request["request_start_ns"]))
+        for row in conn.execute(sql)
     ]
 
 
@@ -370,39 +685,41 @@ def query_top_op_types(
     conn: sqlite3.Connection,
     mode: str,
     db_path: Path,
-    request: dict[str, Any],
     top_n_op_types: int,
 ) -> list[dict[str, Any]]:
     sql = """
-        SELECT COALESCE(CAST(g.op_type AS TEXT), '') AS op_type,
+        SELECT r.request_index, r.case_id, r.prompt_id, r.prefix_reuse_group,
+               COALESCE(g.op_type, '') AS op_type,
                COUNT(*) AS task_row_count,
-               SUM(CAST(t.duration_time AS INTEGER)) AS total_duration_time,
-               SUM(CAST(t.wait_time AS INTEGER)) AS total_wait_time
-        FROM task_time AS t
-        LEFT JOIN ge_summary AS g
-          ON CAST(t.model_id AS TEXT) = CAST(g.model_id AS TEXT)
-         AND CAST(t.task_id AS TEXT) = CAST(g.task_id AS TEXT)
-         AND CAST(t.stream_id AS TEXT) = CAST(g.stream_id AS TEXT)
-         AND CAST(t.batch_id AS TEXT) = CAST(g.batch_id AS TEXT)
-         AND CAST(t.index_id AS TEXT) = CAST(g.index_id AS TEXT)
-        WHERE CAST(t.start_time AS INTEGER) < ?
-          AND CAST(t.start_time AS INTEGER) + CAST(t.duration_time AS INTEGER) > ?
-        GROUP BY op_type
-        ORDER BY total_duration_time DESC, task_row_count DESC
-        LIMIT ?
+               SUM(o.duration_time_i) AS total_duration_time,
+               SUM(o.wait_time_i) AS total_wait_time
+        FROM overlap_task_time AS o
+        JOIN request_windows AS r
+          ON r.request_index = o.request_index
+        LEFT JOIN ge_summary_join AS g
+          ON o.model_id_t = g.model_id_t
+         AND o.task_id_t = g.task_id_t
+         AND o.stream_id_t = g.stream_id_t
+         AND o.batch_id_t = g.batch_id_t
+         AND o.index_id_t = g.index_id_t
+        GROUP BY r.request_index, op_type
+        ORDER BY r.request_index, total_duration_time DESC, task_row_count DESC
     """
     rows = []
-    for rank, row in enumerate(
-        conn.execute(sql, (request["response_end_ns"], request["request_start_ns"], top_n_op_types)),
-        start=1,
-    ):
+    rank_by_request: dict[int, int] = {}
+    for row in conn.execute(sql):
+        request_index = int(row["request_index"])
+        rank = rank_by_request.get(request_index, 0) + 1
+        rank_by_request[request_index] = rank
+        if rank > top_n_op_types:
+            continue
         rows.append(
             {
                 "mode": mode,
                 "db_path": str(db_path),
-                "case_id": request["case_id"],
-                "prompt_id": request["prompt_id"],
-                "prefix_reuse_group": request["prefix_reuse_group"],
+                "case_id": row["case_id"],
+                "prompt_id": row["prompt_id"],
+                "prefix_reuse_group": row["prefix_reuse_group"],
                 "rank": rank,
                 "op_type": row["op_type"],
                 "task_row_count": safe_int(row["task_row_count"]),
@@ -413,49 +730,52 @@ def query_top_op_types(
     return rows
 
 
-def query_metric_summary(
+def query_metric_summaries(
     conn: sqlite3.Connection,
     mode: str,
     db_path: Path,
-    request: dict[str, Any],
     metric_columns: set[str],
-) -> dict[str, Any]:
+) -> list[dict[str, Any]]:
     sum_exprs = [
-        f"SUM(CAST(m.{quote_identifier(column)} AS REAL)) AS {quote_identifier(column + '_sum')}"
+        f"SUM(m.{quote_identifier(column)}) AS {quote_identifier(column + '_sum')}"
         for column in SUMMARY_METRIC_COLUMNS
         if column in metric_columns
     ]
     avg_exprs = [
-        f"AVG(CAST(m.{quote_identifier(column)} AS REAL)) AS {quote_identifier(column + '_avg')}"
+        f"AVG(m.{quote_identifier(column)}) AS {quote_identifier(column + '_avg')}"
         for column in AVG_METRIC_COLUMNS
         if column in metric_columns
     ]
-    select_exprs = ["COUNT(m.task_id) AS metric_row_count", *sum_exprs, *avg_exprs]
+    select_exprs = ["r.*", "COUNT(m.task_id_t) AS metric_row_count", *sum_exprs, *avg_exprs]
     sql = f"""
         SELECT {", ".join(select_exprs)}
-        FROM task_time AS t
-        LEFT JOIN ai_core_metrics AS m
-          ON CAST(t.task_id AS TEXT) = CAST(m.task_id AS TEXT)
-         AND CAST(t.stream_id AS TEXT) = CAST(m.stream_id AS TEXT)
-         AND CAST(t.batch_id AS TEXT) = CAST(m.batch_id AS TEXT)
-         AND CAST(t.subtask_id AS TEXT) = CAST(m.subtask_id AS TEXT)
-        WHERE CAST(t.start_time AS INTEGER) < ?
-          AND CAST(t.start_time AS INTEGER) + CAST(t.duration_time AS INTEGER) > ?
+        FROM request_windows AS r
+        LEFT JOIN overlap_task_time AS o
+          ON r.request_index = o.request_index
+        LEFT JOIN ai_core_metrics_join AS m
+          ON o.task_id_t = m.task_id_t
+         AND o.stream_id_t = m.stream_id_t
+         AND o.batch_id_t = m.batch_id_t
+         AND o.subtask_id_t = m.subtask_id_t
+        GROUP BY r.request_index
+        ORDER BY r.request_index
     """
-    row = conn.execute(sql, (request["response_end_ns"], request["request_start_ns"])).fetchone()
-    result: dict[str, Any] = {
-        "mode": mode,
-        "db_path": str(db_path),
-        "case_id": request["case_id"],
-        "prompt_id": request["prompt_id"],
-        "prefix_reuse_group": request["prefix_reuse_group"],
-        "metric_row_count": safe_int(row["metric_row_count"]),
-    }
-    for key in row.keys():
-        if key == "metric_row_count":
-            continue
-        result[key] = safe_number(row[key])
-    return result
+    rows = []
+    for row in conn.execute(sql):
+        result: dict[str, Any] = {
+            "mode": mode,
+            "db_path": str(db_path),
+            "case_id": row["case_id"],
+            "prompt_id": row["prompt_id"],
+            "prefix_reuse_group": row["prefix_reuse_group"],
+            "metric_row_count": safe_int(row["metric_row_count"]),
+        }
+        for key in row.keys():
+            if key in {"request_index", *request_metadata_from_row(row).keys(), "metric_row_count"}:
+                continue
+            result[key] = safe_number(row[key])
+        rows.append(result)
+    return rows
 
 
 def build_prefix_cache_mode_deltas(request_device_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -560,6 +880,9 @@ def write_summary(path: Path, result: dict[str, Any]) -> None:
         f"source_artifact_dir={result['source_artifact_dir']}",
         f"artifact_dir={result['artifact_dir']}",
         f"overall_status={result['overall_status']}",
+        f"aggregation_strategy={result['aggregation_strategy']}",
+        f"workers={result['workers']}",
+        f"heavy_joins_skipped={int(result['heavy_joins_skipped'])}",
         "",
         "## mode_summaries",
     ]
@@ -576,6 +899,8 @@ def write_summary(path: Path, result: dict[str, Any]) -> None:
                     "request_device_summary_rows",
                     "top_op_summary_rows",
                     "metric_summary_rows",
+                    "heavy_joins_skipped",
+                    "elapsed_sec",
                     "aggregate_status",
                 )
             )
