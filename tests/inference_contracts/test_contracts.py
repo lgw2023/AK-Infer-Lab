@@ -35,6 +35,9 @@ VLLM_API_MSPROF_REQUEST_DEVICE_AGGREGATE_HANDOFF = (
 VLLM_API_MSPROF_REQUEST_DEVICE_AGGREGATE_FAST_HANDOFF = (
     CONTRACT_DIR / "server_runtime_vllm_api_msprof_request_device_aggregate_fast_handoff.md"
 )
+VLLM_API_MSPROF_CONTROLLED_REPLAY_HANDOFF = (
+    CONTRACT_DIR / "server_runtime_vllm_api_msprof_controlled_replay_handoff.md"
+)
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -671,6 +674,31 @@ def test_vllm_api_msprof_request_device_aggregate_fast_handoff_defines_required_
         assert text in handoff
 
 
+def test_vllm_api_msprof_controlled_replay_handoff_defines_required_boundaries():
+    handoff = VLLM_API_MSPROF_CONTROLLED_REPLAY_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_msprof_controlled_replay_2026_0707_p1_026",
+        "runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b",
+        "P1.25b",
+        "--case-plan continuous16_mixed",
+        "--max-model-len 9216",
+        "--min-tokens 64",
+        "--ignore-eos",
+        "msprof_prefix_cache_on",
+        "msprof_prefix_cache_off",
+        "request_device_aggregate_fast_exit_code",
+        "prefix_cache_mode_request_delta.tsv",
+        "generated_token_count_mismatch_count",
+        "70KB",
+        "不安装、升级、卸载或修复任何包",
+        "不运行 full 16K/32K 或 full `P010=43216` tokens",
+        "不输出性能 benchmark、吞吐结论、调度效率结论、prefix cache 命中率结论、瓶颈归因或优化建议",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
 def test_vllm_api_continuous16_mixed_runner_case_plan_is_bounded():
     from tools.inference_contracts.run_vllm_api_concurrency_smoke import (
         VLLM_API_CONTINUOUS16_MIXED_CASES,
@@ -695,6 +723,21 @@ def test_vllm_api_continuous16_mixed_runner_case_plan_is_bounded():
     assert {case["concurrency_group"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES} == {
         "api_continuous16_mixed_0001"
     }
+
+
+def test_vllm_api_runner_can_request_fixed_generation_length():
+    import argparse
+
+    from tools.inference_contracts.run_vllm_api_concurrency_smoke import build_completion_payload
+
+    args = argparse.Namespace(served_model_name="Qwen3.5-4B", min_tokens=64, ignore_eos=True)
+    item = {"selected_text": "prompt", "row": {"max_new_tokens": 64}}
+
+    payload = build_completion_payload(args, item)
+
+    assert payload["max_tokens"] == 64
+    assert payload["min_tokens"] == 64
+    assert payload["ignore_eos"] is True
 
 
 def test_vllm_api_server_stats_parser_extracts_vllm_log_samples(tmp_path):

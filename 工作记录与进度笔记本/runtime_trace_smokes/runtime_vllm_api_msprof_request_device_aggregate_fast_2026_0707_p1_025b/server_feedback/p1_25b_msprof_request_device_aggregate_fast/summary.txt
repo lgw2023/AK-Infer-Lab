@@ -1,0 +1,48 @@
+## run_context
+run_id=runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b
+previous_run_id=runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025
+source_run_id=runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023
+window_run_id=runtime_vllm_api_msprof_sqlite_window_analysis_2026_0707_p1_024
+commit=85f28731c5d27de5967d4a2e17f0b5babb231999
+timestamp=2026-07-07T19:56:44+08:00
+PYTHON_BIN=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+SOURCE_ARTIFACT_DIR=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023
+WINDOW_ARTIFACT_DIR=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_sqlite_window_analysis_2026_0707_p1_024
+MSPROF_ROOT_ON=/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof
+MSPROF_ROOT_OFF=/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_off_msprof
+old_p1_25_process_found=1
+workers=2
+full_timeout_minutes=45
+fallback_timeout_minutes=15
+pytest_exit_code=0
+missing_raw=0
+analysis_mode=full
+full_analysis_exit_code=0
+fallback_analysis_exit_code=99
+request_device_aggregate_fast_exit_code=0
+
+## old_p1_25_process_status
+timestamp_before_stop=2026-07-07T19:56:32+08:00
+old_run_id=runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025
+old_artifact_dir=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025
+
+## matching analyzer processes before stop
+UID          PID    PPID  C STIME TTY      STAT   TIME CMD
+root     3457169 1564104  0 11:19 ?        Ss     0:00 /usr/bin/zsh -c snap=$(command cat <&3); builtin unsetopt aliases 2>/dev/null; builtin unalias -m '*' 2>/dev/null || true; builtin eval "$snap" && { builtin unsetopt nounset 2>/dev/null || true; builtin eval "${__CURSOR_SANDBOX_ENV_RESTORE:-}" 2>/dev/null; builtin export PWD="$(builtin pwd)"; builtin setopt aliases 2>/dev/null; builtin eval "$1" < /dev/null; }; COMMAND_EXIT_CODE=$?; dump_zsh_state >&4; builtin exit $COMMAND_EXIT_CODE -- set -euo pipefail  cd /data/node0_disk1/liguowei/AK-Infer-Lab  RUN_ID=runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025 SOURCE_RUN_ID=runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023 WINDOW_RUN_ID=runtime_vllm_api_msprof_sqlite_window_analysis_2026_0707_p1_024 SOURCE_ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${SOURCE_RUN_ID}" WINDOW_ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${WINDOW_RUN_ID}" ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}" FINAL_ANALYSIS_DIR="${ARTIFACT_DIR}/final_analysis" PYTHON_BIN="/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python" MSPROF_ROOT_ON="/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof" MSPROF_ROOT_OFF="/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_off_msprof"  mkdir -p "${ARTIFACT_DIR}" "${FINAL_ANALYSIS_DIR}"  {   echo "run_id=${RUN_ID}"   echo "source_run_id=${SOURCE_RUN_ID}"   echo "window_run_id=${WINDOW_RUN_ID}"   echo "commit=$(git rev-parse HEAD)"   echo "timestamp=$(date -Is)"   echo "PYTHON_BIN=${PYTHON_BIN}"   echo "SOURCE_ARTIFACT_DIR=${SOURCE_ARTIFACT_DIR}"   echo "WINDOW_ARTIFACT_DIR=${WINDOW_ARTIFACT_DIR}"   echo "MSPROF_ROOT_ON=${MSPROF_ROOT_ON}"   echo "MSPROF_ROOT_OFF=${MSPROF_ROOT_OFF}" } > "${ARTIFACT_DIR}/run_context.txt"  set +e "${PYTHON_BIN}" -m pytest tests/inference_contracts -q > "${ARTIFACT_DIR}/pytest.log" 2>&1 pytest_exit_code=$? set -e echo "${pytest_exit_code}" > "${ARTIFACT_DIR}/pytest_exit_code.txt"  missing_raw=0 if [ ! -d "${MSPROF_ROOT_ON}" ]; then   echo "missing_raw_msprof=${MSPROF_ROOT_ON}" >> "${ARTIFACT_DIR}/run_context.txt"   missing_raw=1 fi if [ ! -d "${MSPROF_ROOT_OFF}" ]; then   echo "missing_raw_msprof=${MSPROF_ROOT_OFF}" >> "${ARTIFACT_DIR}/run_context.txt"   missing_raw=1 fi  analysis_exit_code=99 if [ "${missing_raw}" -eq 0 ]; then   set +e   "${PYTHON_BIN}" tools/inference_contracts/analyze_msprof_request_device_aggregate.py \     --run-id "${RUN_ID}" \     --source-artifact-dir "${SOURCE_ARTIFACT_DIR}" \     --artifact-dir "${FINAL_ANALYSIS_DIR}" \     --msprof-root-on "${MSPROF_ROOT_ON}" \     --msprof-root-off "${MSPROF_ROOT_OFF}" \     > "${ARTIFACT_DIR}/request_device_aggregate.log" 2>&1   analysis_exit_code=$?   set -e else   {     echo "## run_context"     echo "run_id=${RUN_ID}"     echo "overall_status=failed"     echo ""     echo "## mode_summaries"     echo "missing_raw_msprof"   } > "${FINAL_ANALYSIS_DIR}/summary.txt"   cat > "${FINAL_ANALYSIS_DIR}/msprof_request_device_aggregate_result.json" <<'JSON' {   "overall_status": "failed",   "policy": "evidence_extraction_only_no_benchmark_or_bottleneck_claim",   "mode_summaries": [     {"aggregate_status": "missing_raw_msprof"}   ] } JSON fi  {   echo "## run_context"   cat "${ARTIFACT_DIR}/run_context.txt"   echo "pytest_exit_code=${pytest_exit_code}"   echo "missing_raw=${missing_raw}"   echo "request_device_aggregate_exit_code=${analysis_exit_code}"   echo ""   echo "## final_analysis_summary"   if [ -f "${FINAL_ANALYSIS_DIR}/summary.txt" ]; then     cat "${FINAL_ANALYSIS_DIR}/summary.txt"   else     echo "missing final_analysis/summary.txt"   fi } > "${ARTIFACT_DIR}/summary.txt"  "${PYTHON_BIN}" - <<'PY' "${ARTIFACT_DIR}" from pathlib import Path import sys  artifact_dir = Path(sys.argv[1]) candidate_relpaths = [     "summary.txt",     "run_context.txt",     "pytest.log",     "request_device_aggregate.log",     "final_analysis/summary.txt",     "final_analysis/request_device_task_summary.tsv",     "final_analysis/request_device_task_type_summary.tsv",     "final_analysis/request_top_op_type_duration.tsv",     "final_analysis/request_ai_core_metric_summary.tsv",     "final_analysis/prefix_cache_mode_request_delta.tsv",     "final_analysis/prefix_pair_candidate_delta.tsv",     "final_analysis/msprof_request_device_aggregate_result.json", ] lines = ["path\tsize_bytes\tmail_ok"] for relpath in candidate_relpaths:     path = artifact_dir / relpath     if not path.exists():         continue     size = path.stat().st_size     lines.append(f"{path}\t{size}\t{str(size <= 70 * 1024).lower()}") (artifact_dir / "mail_attachment_candidates.tsv").write_text("\n".join(lines) + "\n", encoding="utf-8") PY  echo "DONE" echo "artifact_dir=${ARTIFACT_DIR}" echo "pytest_exit_code=${pytest_exit_code}" echo "missing_raw=${missing_raw}" echo "request_device_aggregate_exit_code=${analysis_exit_code}" cat "${ARTIFACT_DIR}/summary.txt"
+root     3457496 3457169 99 11:19 ?        R    516:21 /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python tools/inference_contracts/analyze_msprof_request_device_aggregate.py --run-id runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025 --source-artifact-dir 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023 --artifact-dir 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025/final_analysis --msprof-root-on /tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof --msprof-root-off /tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_off_msprof
+
+## old request_device_aggregate.log tail
+
+## final_analysis_summary
+## run_context
+run_id=runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b
+source_artifact_dir=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023
+artifact_dir=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b/final_analysis
+overall_status=success
+aggregation_strategy=bulk_temp_window_join_parallel_modes
+workers=2
+heavy_joins_skipped=0
+
+## mode_summaries
+msprof_prefix_cache_on	success	16	16	1	16	320	16	0	56.034	request_device_aggregate_available
+msprof_prefix_cache_off	success	16	16	1	16	320	16	0	54.12	request_device_aggregate_available

@@ -1,0 +1,9 @@
+{
+  "overall_status": "aborted",
+  "policy": "evidence_extraction_only_no_benchmark_or_bottleneck_claim",
+  "abort_reason": "shell_913343_aborted_and_analyzer_killed_by_p1_25b",
+  "superseded_by": "runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b",
+  "mode_summaries": [
+    {"aggregate_status": "analysis_not_completed"}
+  ]
+}

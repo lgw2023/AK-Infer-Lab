@@ -355,6 +355,20 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=float(os.environ.get("AK_VLLM_API_REQUEST_TIMEOUT_SEC", "600")),
     )
+    parser.add_argument(
+        "--min-tokens",
+        type=int,
+        default=int(os.environ["AK_VLLM_API_MIN_TOKENS"])
+        if os.environ.get("AK_VLLM_API_MIN_TOKENS")
+        else None,
+        help="Optional vLLM SamplingParams min_tokens value for each completion request.",
+    )
+    parser.add_argument(
+        "--ignore-eos",
+        action=argparse.BooleanOptionalAction,
+        default=os.environ.get("AK_VLLM_API_IGNORE_EOS", "0") == "1",
+        help="Optional vLLM SamplingParams ignore_eos value for each completion request.",
+    )
     args = parser.parse_args()
     if args.max_model_len is None:
         env_max_model_len = os.environ.get("AK_VLLM_MAX_MODEL_LEN")
@@ -547,6 +561,8 @@ def run_vllm_api_concurrency_smoke(args: argparse.Namespace) -> int:
         "failed_case_count": failed_count,
         "client_overlap_candidate_count": overlap_candidate_count,
         "prefix_cache_requested": int(args.enable_prefix_caching),
+        "request_min_tokens": args.min_tokens,
+        "request_ignore_eos": int(args.ignore_eos),
         "input_count_mismatch_count": input_count_mismatch_count,
         "submitted_count_mismatch_count": submitted_count_mismatch_count,
         "trace_event_count": len(events),
@@ -708,12 +724,7 @@ def _request_worker(
 ) -> None:
     time.sleep(int(item["case"]["arrival_delay_ms"]) / 1000)
     row = item["row"]
-    payload = {
-        "model": args.served_model_name,
-        "prompt": item["selected_text"],
-        "max_tokens": int(row["max_new_tokens"]),
-        "temperature": 0,
-    }
+    payload = build_completion_payload(args, item)
     data = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(
         url,
@@ -746,6 +757,7 @@ def _request_worker(
             "response_end_ns": end_ns,
             "error": body,
         }
+
     except Exception:
         end_ns = time.monotonic_ns()
         results[index] = {
@@ -756,6 +768,21 @@ def _request_worker(
             "response_end_ns": end_ns,
             "error": traceback.format_exc(),
         }
+
+
+def build_completion_payload(args: argparse.Namespace, item: dict[str, Any]) -> dict[str, Any]:
+    row = item["row"]
+    payload = {
+        "model": args.served_model_name,
+        "prompt": item["selected_text"],
+        "max_tokens": int(row["max_new_tokens"]),
+        "temperature": 0,
+    }
+    if args.min_tokens is not None:
+        payload["min_tokens"] = int(args.min_tokens)
+    if args.ignore_eos:
+        payload["ignore_eos"] = True
+    return payload
 
 
 def apply_client_results(
@@ -1099,6 +1126,8 @@ def write_run_context(path: Path, args: argparse.Namespace, selected_cases: list
         f"enable_prefix_caching={int(args.enable_prefix_caching)}",
         f"server_ready_timeout_sec={args.server_ready_timeout_sec}",
         f"request_timeout_sec={args.request_timeout_sec}",
+        f"request_min_tokens={args.min_tokens}",
+        f"request_ignore_eos={int(args.ignore_eos)}",
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

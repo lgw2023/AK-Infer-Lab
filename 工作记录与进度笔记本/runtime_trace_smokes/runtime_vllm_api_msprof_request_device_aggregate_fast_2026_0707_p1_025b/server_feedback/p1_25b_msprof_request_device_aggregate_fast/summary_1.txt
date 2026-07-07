@@ -1,0 +1,12 @@
+## run_context
+run_id=runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b
+source_artifact_dir=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023
+artifact_dir=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b/final_analysis
+overall_status=success
+aggregation_strategy=bulk_temp_window_join_parallel_modes
+workers=2
+heavy_joins_skipped=0
+
+## mode_summaries
+msprof_prefix_cache_on	success	16	16	1	16	320	16	0	56.034	request_device_aggregate_available
+msprof_prefix_cache_off	success	16	16	1	16	320	16	0	54.12	request_device_aggregate_available

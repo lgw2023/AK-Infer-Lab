@@ -1,0 +1,17 @@
+## run_context
+run_id=runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025
+source_run_id=runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023
+window_run_id=runtime_vllm_api_msprof_sqlite_window_analysis_2026_0707_p1_024
+commit=947e72a636d57464cb068b201390d4f6fc0f4fce
+timestamp=2026-07-07T11:19:51+08:00
+PYTHON_BIN=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+pytest_exit_code=0
+missing_raw=0
+request_device_aggregate_exit_code=aborted
+overall_status=aborted
+abort_reason=shell_913343_aborted_after_8.6h_analyzer_pid_3457496_killed_by_p1_25b
+superseded_by=runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b
+
+## final_analysis_summary
+overall_status=aborted
+analysis_not_completed_no_tsv_outputs

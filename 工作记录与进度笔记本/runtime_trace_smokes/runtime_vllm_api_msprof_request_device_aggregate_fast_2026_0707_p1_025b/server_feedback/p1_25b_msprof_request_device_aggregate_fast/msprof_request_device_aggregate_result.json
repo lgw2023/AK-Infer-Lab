@@ -1,0 +1,48 @@
+{
+  "run_id": "runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b",
+  "source_artifact_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023",
+  "artifact_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b/final_analysis",
+  "overall_status": "success",
+  "mode_summaries": [
+    {
+      "mode": "msprof_prefix_cache_on",
+      "result_path": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023/vllm_api_concurrency_result.json",
+      "result_status": "success",
+      "request_count": 16,
+      "successful_request_count": 16,
+      "msprof_root": "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof",
+      "msprof_root_exists": 1,
+      "ai_core_op_summary_db": "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/device_6/sqlite/ai_core_op_summary.db",
+      "ascend_task_db": "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_on_msprof/PROF_000001_20260707095540199_03336901RBMCCKAI/device_6/sqlite/ascend_task.db",
+      "request_device_summary_rows": 16,
+      "top_op_summary_rows": 320,
+      "metric_summary_rows": 16,
+      "aggregate_status": "request_device_aggregate_available",
+      "aggregation_strategy": "bulk_temp_window_join",
+      "heavy_joins_skipped": 0,
+      "elapsed_sec": 56.034
+    },
+    {
+      "mode": "msprof_prefix_cache_off",
+      "result_path": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023/vllm_api_concurrency_result_1.json",
+      "result_status": "success",
+      "request_count": 16,
+      "successful_request_count": 16,
+      "msprof_root": "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_off_msprof",
+      "msprof_root_exists": 1,
+      "ai_core_op_summary_db": "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_off_msprof/PROF_000001_20260707095925945_03345800EHNMDQFJ/device_6/sqlite/ai_core_op_summary.db",
+      "ascend_task_db": "/tmp/runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023_msprof_prefix_cache_off_msprof/PROF_000001_20260707095925945_03345800EHNMDQFJ/device_6/sqlite/ascend_task.db",
+      "request_device_summary_rows": 16,
+      "top_op_summary_rows": 320,
+      "metric_summary_rows": 16,
+      "aggregate_status": "request_device_aggregate_available",
+      "aggregation_strategy": "bulk_temp_window_join",
+      "heavy_joins_skipped": 0,
+      "elapsed_sec": 54.12
+    }
+  ],
+  "aggregation_strategy": "bulk_temp_window_join_parallel_modes",
+  "workers": 2,
+  "heavy_joins_skipped": false,
+  "policy": "evidence_extraction_only_no_benchmark_or_bottleneck_claim"
+}
