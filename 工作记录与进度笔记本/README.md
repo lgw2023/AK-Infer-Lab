@@ -41,7 +41,7 @@ DeepSeek-V4-Flash on Ascend
 | 路径 | 用途 |
 | --- | --- |
 | `01_工作记录.md` | 记录当前工作条目、目标、价值、输入、输出和验收边界。 |
-| `02_阶段计划.md` | 记录 P0-P6 阶段、目标、交付物和验证标准。 |
+| `02_阶段计划.md` | 记录 P0-P9 阶段、目标、交付物和验证标准。 |
 | `03_阶段性进展.md` | 每轮推进后的实际进展和证据。 |
 | `04_结果与问题点.md` | 已得到结果、问题、风险、决策点和边界。 |
 | `05_下一步行动指导.md` | 只写下一步可执行动作。 |
@@ -49,9 +49,13 @@ DeepSeek-V4-Flash on Ascend
 | `07_可观测能力体检执行说明.md` | 服务器可观测能力体检框架说明。 |
 | `08_服务器体检结果分析与下一步计划.md` | Atlas 服务器体检结果和后续修正。 |
 | `09_DeepSeek_V4_Flash_专项计划.md` | 建议新增：DeepSeek-V4-Flash 八卡与极限硬件专项计划。 |
+| `10_P0_P4_阶段收尾评估.md` | P0-P4 当前阶段三类目标的完成判定和边界。 |
+| `11_P0_P4_阶段收尾报告.md` | P0-P4 当前阶段收尾报告和后续建议。 |
+| `12_P5_P9_后续阶段重排计划.md` | P5-P9 新路线：实验对象定版、八卡 baseline、单/双卡边界、AK 技术注入和硬件联合分析。 |
 | `p1_inference_contracts/` | workload、schema、handoff、fixture、prompt。 |
 | `runtime_trace_smokes/` | smoke、prefix A/B、msprof 和 request-device 聚合归档。 |
 | `observability_profiles/` | 服务器体检 run 归档。 |
+| `hardware_ceiling_runs/` | P0/P3 hardware ceiling sweep 归档。 |
 
 ## 维护规则
 

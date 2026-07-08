@@ -12,6 +12,8 @@ DeepSeek-V4-Flash 是 284B 总参数、13B 激活参数、1M context 的 MoE 模
 
 外部事实按 2026-07-08 校验，稳定记录放在 `docs/SOURCES_AND_BOUNDARIES.md`。后续如果 vLLM-Ascend、DeepSeek 权重或 Ascend 镜像版本变化，先刷新来源边界，再改实验命令。
 
+当前后续实验登记两个 DeepSeek-V4-Flash 对象：ModelScope `DeepSeek-V4-Flash-w8a8-mtp` 已在本地 `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` 下载完成，作为 P6 八卡 baseline 首选；官方 `deepseek-ai/DeepSeek-V4-Flash` 正在 `/Volumes/Elements/DeepSeek-V4-Flash` 下载，作为来源 checkpoint、转换/兼容性和单/双卡边界研究对象。用户会自行把模型目录拷贝到 Ascend 服务器；本地外置盘路径不等同于服务器路径。
+
 ## 两类实验场景
 
 ### 场景 A：单机八卡官方基准
@@ -38,6 +40,8 @@ AK-Infer-Lab/
   tools/
     observability_profile/           # P0.5 服务器可观测能力体检
     inference_contracts/             # P1 请求/trace/workload/分析脚本
+  benchmarks/
+    deepseek_v4_flash/                # P5 模型对象登记、readiness card 和 workload 模板
   工作记录与进度笔记本/
     README.md                        # 工作笔记本入口
     01_工作记录.md
@@ -45,8 +49,12 @@ AK-Infer-Lab/
     03_阶段性进展.md
     04_结果与问题点.md
     05_下一步行动指导.md
+    10_P0_P4_阶段收尾评估.md
+    11_P0_P4_阶段收尾报告.md
+    12_P5_P9_后续阶段重排计划.md
     p1_inference_contracts/          # prompt、schema、handoff、fixture
     runtime_trace_smokes/            # smoke 与 profiler run 归档
+    hardware_ceiling_runs/            # P0/P3 hardware ceiling sweep 归档
   docs/
     PROJECT_CHARTER.md
     DEEPSEEK_V4_FLASH_ASCEND_PLAN.md
@@ -59,7 +67,9 @@ AK-Infer-Lab/
 
 ## 当前状态摘要
 
-项目已经完成从服务器可观测能力体检到小模型 vLLM API/msprof 受控 trace 的早期闭环：Qwen3.5-4B 在单卡上完成 transformers 与 vLLM smoke；长 prompt 4K/8K/12K/16K envelope 已打通；vLLM OpenAI API server 的 burst/continuous 请求入口已跑通；prefix-cache on/off 对照、msprof 采集、request window 与 device SQLite 时间字段直接 overlap、request-device 聚合加速和固定 64 tokens 受控复现已完成。下一阶段应从“能采集”进入“能判读”，再进入 DeepSeek-V4-Flash 八卡基准和 MoE/KV 状态分层实验。
+P0-P4 已按三类目标收尾：服务器环境与硬件天花板基线已完成，小模型推理链路已跑通，小 prompt 推理链路观测已闭环。关键证据包括 P0/P3 `hardware_ceiling_sweep_2026_0708_p0_007` 成功，以及 P1.28 `runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028` 的 `continuous32_mixed` on/off 两轮 32/32 成功、固定生成 64 tokens、request-device 聚合和 readout 成功。
+
+边界必须保留：P0/P3 是合成硬件 microbench ceiling，不是模型推理 benchmark；P1.28 是 raw counter readout，不是吞吐、scheduler 效率、prefix cache 命中率验收、瓶颈归因或优化建议。当前 `通信模块/docs/developer-to-server.md` 保持 `no_active_server_task_after_p0_p4_closeout_2026_0708`，没有新的服务器任务。
 
 ## 不做什么
 
@@ -67,8 +77,8 @@ AK-Infer-Lab/
 
 ## 最小开工路径
 
-1. 以当前 P1.27 受控 readout 为收束点，确认 prefix-cache on/off 的 request-device raw delta 可读。
-2. 形成 `benchmarks/deepseek_v4_flash/a2_8card_w8a8_mtp_baseline.md`，只定义八卡实验，不先跑单卡幻想实验。
-3. 新增 DeepSeek-V4-Flash 专项 workload：384K/128K/32K/8K 分级，不直接上 1M。
-4. 在中型 MoE 上补齐 expert routing trace，再把专家分层策略迁到 DeepSeek-V4-Flash。
-5. 将 KV CPU Offload、UCM、Mooncake SSD offload 分别作为 P1、P2、P3 能力，而不是一次性混入同一个实验。
+1. P5：完成 `benchmarks/deepseek_v4_flash/` 的模型对象登记、P5 readiness card、来源版本和服务器路径占位，不下发服务器任务。
+2. P6：在用户完成服务器拷贝并提供真实模型路径后，用 `DeepSeek-V4-Flash-w8a8-mtp` 设计单机八卡 official/degraded baseline。
+3. P7：单卡/双卡只做极限边界，覆盖小模型、中型 MoE、DeepSeek 子图、低比特/裁剪变体、模拟 expert pool 和 simulator-only full model。
+4. P8：优先做 KV/Prefix 管理，再做 expert trace 与热温冷分层；SSD 只做 cold tier，不进入逐 token 热路径。
+5. P9：把 P0/P3 microbench 与 P6/P7/P8 trace 合并，输出下一代硬件优先级。

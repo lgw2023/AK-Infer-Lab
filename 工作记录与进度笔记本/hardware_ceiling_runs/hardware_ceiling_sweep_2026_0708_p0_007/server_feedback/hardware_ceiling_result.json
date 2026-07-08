@@ -1,0 +1,23 @@
+{
+  "run_id": "hardware_ceiling_sweep_2026_0708_p0_007",
+  "overall_status": "success",
+  "npu_status": "success",
+  "dram_status": "success",
+  "fio_status": "success",
+  "row_counts": {
+    "npu_copy_sweep": 64,
+    "npu_matmul_sweep": 5,
+    "cpu_dram_sweep": 3,
+    "ssd_fio_sweep": 48
+  },
+  "peaks": {
+    "h2d_best_gbps": 24.313915,
+    "d2h_best_gbps": 26.480714,
+    "matmul_best_tflops": 290.448949,
+    "dram_read_best_gbps": 5.332057,
+    "dram_copy_best_gbps": 2.963189,
+    "fio_read_best_mib_s": 394.721055,
+    "fio_write_best_mib_s": 377.724455
+  },
+  "policy": "hardware_microbench_only_no_model_inference_no_bottleneck_claim"
+}

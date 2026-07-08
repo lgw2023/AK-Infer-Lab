@@ -1,0 +1,4 @@
+bench,bytes,size_label,repetitions,status,read_best_gbps,copy_best_gbps,read_min_ms,copy_min_ms,error
+cpu_dram_numpy,268435456,256M,3,measurable,5.185864,2.952357,48.207979,84.678111,
+cpu_dram_numpy,1073741824,1G,3,measurable,5.332057,2.961359,187.544868,337.682745,
+cpu_dram_numpy,4294967296,4G,3,measurable,5.29474,2.963189,755.466701,1349.897127,

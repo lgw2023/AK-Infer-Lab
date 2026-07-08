@@ -1,0 +1,52 @@
+schema_version: 1
+date: "2026-07-08"
+scope: p5_model_object_registry
+model_objects:
+  - model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+    display_name: DeepSeek-V4-Flash-w8a8-mtp
+    source_family: modelscope
+    source_ref: DeepSeek-V4-Flash-w8a8-mtp
+    local_source_path: /Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp
+    local_download_status: downloaded
+    server_model_path: "<to_be_filled_after_user_copy>"
+    quantization_or_format: w8a8_mtp
+    intended_runtime:
+      runtime: vLLM-Ascend
+      quantization: ascend
+      reference_role: p6_eight_card_baseline_first_candidate
+    model_role: official_baseline
+    expected_scenarios:
+      - p5_readiness
+      - p6_eight_card_baseline
+      - p8_kv_prefix_tiering
+      - p9_hardware_sensitivity
+    boundaries:
+      - Local path is not a server path.
+      - Server path, metadata integrity, tokenizer/config compatibility and runtime load must be verified on Ascend.
+      - If official reference flags must be reduced to run, the run is degraded_smoke, not baseline benchmark.
+  - model_object_id: deepseek_v4_flash_official_hf
+    display_name: deepseek-ai/DeepSeek-V4-Flash
+    source_family: huggingface
+    source_ref: deepseek-ai/DeepSeek-V4-Flash
+    local_source_path: /Volumes/Elements/DeepSeek-V4-Flash
+    local_download_status: downloading
+    server_model_path: "<to_be_filled_after_user_copy>"
+    quantization_or_format: fp4_fp8_mixed_source_checkpoint
+    intended_runtime:
+      runtime: to_be_determined
+      quantization: to_be_determined
+      reference_role: source_checkpoint_readiness_and_conversion_candidate
+    model_role: source_checkpoint_readiness
+    expected_scenarios:
+      - p5_readiness
+      - p7_single_dual_extreme
+      - p8_expert_tiering
+      - p9_hardware_sensitivity
+    boundaries:
+      - Download is not complete as of 2026-07-08.
+      - It must not be treated as directly loadable by vLLM-Ascend --quantization ascend before conversion or validation.
+      - It can support source/version checks, config/tokenizer review, conversion feasibility and boundary experiments.
+global_boundaries:
+  - This registry does not copy, modify or validate model payloads.
+  - The user will copy model directories to the Ascend server.
+  - No server task is active until p5_readiness_card.yaml is completed and developer-to-server.md is explicitly rewritten.

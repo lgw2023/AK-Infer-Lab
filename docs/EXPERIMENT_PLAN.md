@@ -12,23 +12,51 @@
 
 第四组是 **Hardware Sensitivity / What-if**：用 trace 和 microbench 驱动仿真器，扫 HBM 容量、DRAM 带宽、SSD I/O、UB/HCCS、CPU 核数和下一代 HMM/PIM 参数。
 
-## 2. P0-P1：当前已完成基础与下一步收束
+## 2. P0-P4：当前已完成基础与收尾口径
 
-当前已经具备：服务器可观测体检、小模型 transformers/vLLM smoke、长 prompt calibration、vLLM API continuous16、prefix-cache on/off stats、msprof pairing、SQLite request window overlap、request-device 聚合加速、fixed 64 tokens 受控 replay。
+当前已经具备：服务器可观测体检、小模型 transformers/vLLM smoke、长 prompt calibration、vLLM API continuous16、prefix-cache on/off stats、msprof pairing、SQLite request window overlap、request-device 聚合加速、fixed 64 tokens 受控 replay、P0/P3 synthetic hardware ceiling sweep。
 
-下一步 P1.27 只读 P1.26 final analysis，输出小摘要，不重跑模型、不重新采集 msprof。P1.27 后应形成第一版 `controlled_replay_readout.md`，明确哪些字段可用于 DeepSeek 八卡基准。
+P0-P4 已按三类目标收尾：
 
-## 3. P2：DeepSeek-V4-Flash 八卡基准
+- 服务器环境与硬件天花板基线已完成。
+- 小模型推理链路已跑通。
+- 小 prompt 推理链路观测已闭环。
 
-### P2.1 环境准备
+边界：
+
+- P0/P3 `hardware_ceiling_sweep_2026_0708_p0_007` 是 synthetic hardware microbench ceiling，不是模型推理 benchmark。
+- P1.28 `runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028` 是 fixed 64 tokens raw counter readout，不是吞吐、scheduler 效率、prefix cache 命中率或瓶颈归因结论。
+- 当前不重复执行 P0/P3 sweep 或 P1.28，也不自动启动 DeepSeek-V4-Flash 服务器任务。
+
+## 3. P5：DeepSeek-V4-Flash 实验对象与环境可行性定版
+
+### P5.1 测试对象
+
+| 对象 | 本地状态 | 后续用途 | 边界 |
+| --- | --- | --- | --- |
+| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp`，ModelScope 版本已下载完成 | P6 单机八卡 baseline 的首选对象；优先匹配 vLLM-Ascend `--quantization ascend` reference | 本地路径不是服务器路径；服务器兼容性和权重完整性必须由后续 handoff 验证 |
+| `deepseek-ai/DeepSeek-V4-Flash` | `/Volumes/Elements/DeepSeek-V4-Flash`，仍在下载 | 官方来源、版本对照、转换/兼容性评估、P7/P8 边界研究候选 | 下载未完成前不能写成 ready；未验证前不能等同于 Ascend W8A8-MTP runtime 格式 |
+
+用户会自行把模型目录拷贝到 Ascend 服务器。本仓库只登记对象、版本、实验卡和边界，不复制模型 payload，不写服务器路径猜测。
+
+### P5.2 本地定版
+
+- 刷新并记录 DeepSeek HF model card、vLLM-Ascend DeepSeek-V4-Flash guide、KV CPU Offload、UCM、KV Pool 的 URL、版本和日期。
+- 建立 `benchmarks/deepseek_v4_flash/` 下的 model object registry、P5 readiness card 和固定输出 smoke workload。
+- 明确 official source checkpoint、ModelScope W8A8-MTP、非官方转换/PoC 候选之间的关系。
+- 只在用户提供服务器模型路径和目标 runtime 后，才重写 `通信模块/docs/developer-to-server.md`。
+
+## 4. P6：DeepSeek-V4-Flash 单机八卡 baseline
+
+### P6.1 环境准备
 
 - 确认 CANN / driver / torch-npu / vLLM-Ascend / container / conda 版本。
 - 确认 8 张 NPU health、HBM、HCCL/HCCS、CPU NUMA、DRAM、NVMe。
-- 准备 `DeepSeek-V4-Flash-w8a8-mtp` 权重路径。
+- 准备服务器上的 `DeepSeek-V4-Flash-w8a8-mtp` 权重路径。
 - 生成 `hardware_snapshot.yaml`。
-- 新建 `benchmarks/deepseek_v4_flash/`，先写 experiment card 和 runner 约束，再下发服务器任务。
+- 固定 experiment card 后再下发服务器任务。
 
-### P2.2 最小在线 serving
+### P6.2 最小在线 serving
 
 请求形态：
 
@@ -49,11 +77,12 @@ reasoning_mode: non-think first, then think/high if parser works
 - request-device aggregate 完成。
 
 产物边界：
+
 - `smoke` 产物只能证明 server、权重、runtime 和请求路径可运行。
 - `controlled_benchmark` 产物必须包含固定输出长度、单变量开关、完整 server command、server stats、msprof、request-device aggregate 和已知混杂因素。
 - 降低上下文长度或关闭官方教程关键开关完成的实验必须标为 `degraded_smoke`。
 
-### P2.3 受控 A/B
+### P6.3 受控 A/B
 
 | A/B | 控制变量 | 判读 |
 | --- | --- | --- |
@@ -63,9 +92,26 @@ reasoning_mode: non-think first, then think/high if parser works
 | max_model_len | 32K/128K/384K | HBM/KV/tail risk |
 | max_num_seqs | 1/4/8/16 | continuous batching behavior |
 
-## 4. P3：KV / Prefix 分层实验
+## 5. P7：单卡/双卡极限实验
 
-### P3.1 KV Cache CPU Offload
+单卡/双卡只做边界研究，不写成 official DeepSeek-V4-Flash 可部署承诺。
+
+### 单卡目标
+
+- 跑通小模型 4K/8K/16K trace。
+- 跑通中型 MoE expert trace。
+- 用 DeepSeek 子图、低比特/裁剪变体或模拟 expert pool 验证容量分层。
+- 记录为什么 full official DeepSeek-V4-Flash W8A8-MTP 不 fit。
+
+### 双卡目标
+
+- 验证 2-rank TP/EP 下 runtime 和 trace。
+- 测 rank 间通信、HBM 分布、KV placement。
+- 作为 simulator-only full model 或低资源校准点。
+
+## 6. P8：AK 协同技术注入与对照实验
+
+### P8.1 KV / Prefix 分层实验
 
 变量：
 
@@ -89,19 +135,15 @@ restore latency
 TTFT/TPOT/P95/P99
 ```
 
-### P3.2 UCM / external KV
+优先顺序：
 
-先做 DRAM local cache，再做 storage backend。SSD 只允许做冷层，不进入逐 token decode 热路径。
+- Prefix cache / KV CPU Offload。
+- UCM local DRAM hierarchy。
+- Mooncake/KV Pool later。SSD 只允许做 cold tier，不进入逐 token decode 热路径。
 
-### P3.3 Mooncake KV Pool / SSD offload
+### P8.2 MoE Expert 分层实验
 
-只在 P3 后半段进入。必须显式配置 SSD quota、per-rank buffer、eviction policy 和 offload path。所有 SSD 读写必须记录 I/O size、queue depth、P95/P99 latency。
-
-## 5. P4：MoE Expert 分层实验
-
-### P4.1 Expert Trace
-
-在中型 MoE 上先跑：
+在中型 MoE、DeepSeek 子图或 P6/P7 可观测 expert trace 上先跑：
 
 ```text
 top-k experts per layer
@@ -115,40 +157,9 @@ prefetch lead time
 wrong prefetch bytes
 ```
 
-### P4.2 Static Hotset
+静态 hotset 先计算 top-N 常驻命中率曲线，再进入 warm/cold tier。SSD cold expert 只做离线或提前预取，不允许在 decode step 发生随机小块读取。
 
-计算 top-N hot expert 常驻命中率曲线：
-
-```text
-N = 4, 8, 16, 32, 64 experts per layer
-```
-
-输出 hotset coverage、HBM cost、miss penalty。
-
-### P4.3 Warm Tier
-
-把 warm expert 放 DRAM/DUMA，测试 staged H2D 与 NPU execution 是否可重叠。若无法重叠，记录为失败边界。
-
-### P4.4 Cold Tier
-
-SSD cold expert 只做离线或提前预取，不允许在 decode step 发生随机小块读取。若必须读取，实验应标记为 cold miss failure case。
-
-## 6. P5：单卡/双卡极限实验
-
-### 单卡目标
-
-- 跑通小模型 4K/8K/16K trace。
-- 跑通中型 MoE expert trace。
-- 用 DeepSeek 子图或模拟 expert pool 验证容量分层。
-- 记录为什么 official DeepSeek-V4-Flash W8A8-MTP 不 fit。
-
-### 双卡目标
-
-- 验证 2-rank TP/EP 下 runtime 和 trace。
-- 测 rank 间通信、HBM 分布、KV placement。
-- 作为 simulator 的低资源校准点。
-
-## 7. P6：规格反推
+## 7. P9：规格反推
 
 输出 `hardware_sensitivity_report.md`：
 

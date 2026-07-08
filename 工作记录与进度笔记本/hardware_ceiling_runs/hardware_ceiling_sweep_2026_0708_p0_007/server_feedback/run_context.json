@@ -1,0 +1,16 @@
+{
+  "run_id": "hardware_ceiling_sweep_2026_0708_p0_007",
+  "timestamp": "2026-07-08T16:00:15+0800",
+  "python_bin": "/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python",
+  "npu_device": "npu:0",
+  "copy_sizes": "4K,16K,64K,1M,16M,64M,256M,1G",
+  "matmul_dims": "512,1024,2048,4096,8192",
+  "matmul_dtypes": "float16",
+  "dram_sizes": "256M,1G,4G",
+  "fio_block_sizes": "4k,128k,1m",
+  "fio_queue_depths": "1,4,16,32",
+  "fio_rw_modes": "read,write,randread,randwrite",
+  "fio_runtime_s": 5,
+  "fio_size": "1G",
+  "scratch_dir": "/data/ak-trace/hardware_ceiling_scratch"
+}

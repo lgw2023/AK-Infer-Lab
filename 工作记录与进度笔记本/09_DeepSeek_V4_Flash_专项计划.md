@@ -14,11 +14,22 @@
 - Ascend 部署基线按 vLLM-Ascend DeepSeek-V4-Flash 教程记录。
 - 本项目服务器是 Atlas 800T A2；官方 A2/A3 八卡口径需要在服务器侧做兼容性 smoke 后才能进入 benchmark。
 
-## 2. 场景 A：八卡基准
+## 2. 测试对象
+
+后续至少保留两个 DeepSeek-V4-Flash 测试对象：
+
+| 对象 | 当前本地状态 | 后续用途 | 边界 |
+| --- | --- | --- | --- |
+| `DeepSeek-V4-Flash-w8a8-mtp` | ModelScope 版本已下载到 `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | 八卡 Ascend official baseline 首选对象 | 本地路径不是服务器路径；服务器路径由用户拷贝后填入 |
+| `deepseek-ai/DeepSeek-V4-Flash` | 官方 HF 版本正在 `/Volumes/Elements/DeepSeek-V4-Flash` 下载 | 来源 checkpoint、格式兼容性、转换/对照、P7 边界研究对象 | 未验证前不能写成 vLLM-Ascend `--quantization ascend` 可直接加载的 W8A8-MTP 形态 |
+
+用户会自行把模型拷贝到服务器；本项目只在实验卡片中登记对象、来源、形态、server path 占位、预期 runtime 和边界。
+
+## 3. 场景 A：八卡基准
 
 ### 目标
 
-建立 DeepSeek-V4-Flash 在 Atlas 800 A2 / 800T A2 8×64GB 上的官方 Ascend 基准。
+建立 DeepSeek-V4-Flash 在 Atlas 800 A2 / 800T A2 8×64GB 上的官方 Ascend 基准。首选对象为 `DeepSeek-V4-Flash-w8a8-mtp`。
 
 ### 必备配置
 
@@ -46,7 +57,7 @@ mtp: enabled first, then A/B
 
 注意：如果 A1/A2 需要降低上下文、关闭 MTP、关闭 prefix cache 或改变官方教程关键开关才能跑通，记录为 `degraded_smoke`，不要写成正式八卡基准。
 
-## 3. 场景 B：单卡/双卡极限
+## 4. 场景 B：单卡/双卡极限
 
 ### 目标
 
@@ -56,7 +67,7 @@ mtp: enabled first, then A/B
 
 - 小模型：验证 trace、prefix、KV offload、profiler。
 - 中型 MoE：验证 expert trace 和 hotset。
-- DeepSeek 子图：验证模型局部算子、权重分片、KV shape。
+- DeepSeek 子图或 source checkpoint：验证模型局部算子、权重分片、KV shape、格式转换和 kernel/runtime 兼容性。
 - Simulator：用 DeepSeek 全模型参数进行 what-if。
 
 ### 禁止误写
@@ -66,23 +77,23 @@ mtp: enabled first, then A/B
 - 不写“CPU 可替代 NPU 主算”。
 - 不写“prefix hit rate 单次数字就是性能收益”。
 
-## 4. AK 技术插入点
+## 5. AK 技术插入点
 
 | 技术 | 插入阶段 | 先决条件 | 输出 |
 | --- | --- | --- | --- |
-| Prefix cache | P1/P2 | vLLM API 基线 | on/off controlled delta |
-| KV CPU Offload | P3 | fixed output + request-device join | HBM freed vs H2D stall |
-| UCM | P3 | KV object schema | DRAM/storage hierarchy report |
-| Mooncake KV Pool | P3/P4 | UCM 或 KV connector readiness | KV pool / SSD offload boundary |
-| Expert trace | P4 | 中型 MoE 可跑 | hotset/miss/reuse report |
-| Expert tiering | P4/P5 | expert trace | HBM/DRAM/SSD tiering report |
-| Simulator | 全程 | microbench + trace | hardware sensitivity report |
+| Prefix cache | P6/P8 | vLLM API baseline + fixed output | on/off controlled delta |
+| KV CPU Offload | P8 | fixed output + request-device join | HBM freed vs H2D stall |
+| UCM | P8 | KV object schema | DRAM/storage hierarchy report |
+| Mooncake KV Pool | P8 后半段 | UCM 或 KV connector readiness | KV pool / SSD offload boundary |
+| Expert trace | P7/P8 | 中型 MoE 或 DeepSeek 子图可跑 | hotset/miss/reuse report |
+| Expert tiering | P8 | expert trace | HBM/DRAM/SSD tiering report |
+| Simulator | P9 | microbench + trace | hardware sensitivity report |
 
-## 5. 下一步任务建议
+## 6. 下一步任务建议
 
-1. P1.27 完成后，新增 `benchmarks/deepseek_v4_flash/` 文档目录。
-2. 写 `deepseek_v4_flash_a2_8card_baseline_card.yaml`。
-3. 复用 P1 controlled replay 脚本，抽象出 DeepSeek benchmark runner。
+1. 先执行 P5：新增 `benchmarks/deepseek_v4_flash/` 文档目录和模型对象登记，不下发服务器任务。
+2. 写 `deepseek_v4_flash_model_objects.yaml`，把 `DeepSeek-V4-Flash-w8a8-mtp` 与 `deepseek-ai/DeepSeek-V4-Flash` 分开登记。
+3. 写 `p5_readiness_card.yaml`，以 W8A8-MTP 作为 P6 首选 baseline，并保留官方 HF checkpoint 的来源/转换/边界角色。
 4. 新增 fixed-output workload plan：4K、8K、32K、128K 四档。
-5. 先跑不带 msprof 的 quick smoke，再跑带 msprof 的 controlled replay。
+5. 等用户拷贝模型到服务器并填入 server path 后，再决定是否写新的 `developer-to-server.md`。
 6. 在 MoE 中型模型上补 expert trace，避免直接在 DeepSeek 上盲目实现专家分层。

@@ -1,0 +1,73 @@
+experiment_id: p5_deepseek_v4_flash_readiness_draft
+date: "2026-07-08"
+git_commit: "<filled_after_commit>"
+operator: external_development_machine
+server: atlas800t_a2_ascend_server
+scenario: p5_readiness
+is_smoke: false
+is_benchmark: false
+is_controlled_ab: false
+is_degraded_smoke: false
+model_objects:
+  - model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+    model: DeepSeek-V4-Flash-w8a8-mtp
+    model_variant: w8a8_mtp
+    model_source: modelscope
+    local_source_path: /Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp
+    server_model_path: "<to_be_filled_after_user_copy>"
+    model_role: official_baseline
+    readiness_status: local_downloaded_server_path_pending
+  - model_object_id: deepseek_v4_flash_official_hf
+    model: deepseek-ai/DeepSeek-V4-Flash
+    model_variant: fp4_fp8_mixed_source_checkpoint
+    model_source: huggingface
+    local_source_path: /Volumes/Elements/DeepSeek-V4-Flash
+    server_model_path: "<to_be_filled_after_user_copy>"
+    model_role: source_checkpoint_readiness
+    readiness_status: local_downloading_server_path_pending
+runtime:
+  container_or_conda: "<to_be_selected>"
+  cann_version: "<server_check_required>"
+  torch_npu_version: "<server_check_required>"
+  vllm_ascend_version: "<server_check_required>"
+  runtime_source: "<image_or_conda_path_required>"
+parallelism:
+  tp: 8
+  ep: enabled_for_p6_reference
+  single_dual_card_boundary: p7_only
+features:
+  prefix_cache: planned_ab
+  chunked_prefill: planned_ab
+  mtp: planned_ab
+  kv_cpu_offload: planned_p8
+  ucm: planned_p8
+  kv_pool_mooncake: later_p8_candidate
+workload:
+  first_template: workloads/fixed_output_smoke.yaml
+  output_tokens: 64
+  generated_length_control: required
+metrics:
+  required_before_claiming_benchmark:
+    - request_success
+    - fixed_generated_tokens
+    - server_command
+    - server_stats
+    - msprof
+    - request_device_aggregate
+    - known_confounds
+artifacts:
+  model_registry: deepseek_v4_flash_model_objects.yaml
+  workload_manifest: workloads/fixed_output_smoke.yaml
+  server_handoff: 通信模块/docs/developer-to-server.md
+boundaries:
+  - This card is a draft and does not start a server task.
+  - Server paths must be filled after the user copies model directories.
+  - P0/P3 hardware ceiling and P1.28 raw counter readout must not be rerun for this card.
+  - P0/P3 is synthetic hardware microbench, not model inference benchmark.
+  - P1.28 is raw counter readout, not throughput, scheduler efficiency, prefix cache acceptance, bottleneck attribution or optimization advice.
+acceptance:
+  source_versions_recorded: false
+  server_model_paths_filled: false
+  runtime_versions_filled: false
+  workload_fixed_output_defined: true
+  developer_to_server_ready: false

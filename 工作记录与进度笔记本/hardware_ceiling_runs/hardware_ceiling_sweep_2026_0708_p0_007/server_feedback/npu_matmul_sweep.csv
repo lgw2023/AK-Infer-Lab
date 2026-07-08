@@ -1,0 +1,6 @@
+bench,dtype,m,n,k,repetitions,status,min_ms,median_ms,tflops,error
+npu_matmul,float16,512,512,512,5,measurable,0.06552,0.07155,4.097004,
+npu_matmul,float16,1024,1024,1024,5,measurable,0.06471,0.06969,33.186192,
+npu_matmul,float16,2048,2048,2048,5,measurable,0.11191,0.118,153.514982,
+npu_matmul,float16,4096,4096,4096,3,measurable,0.48293,0.48515,284.593883,
+npu_matmul,float16,8192,8192,8192,1,measurable,3.785559,3.785559,290.448949,

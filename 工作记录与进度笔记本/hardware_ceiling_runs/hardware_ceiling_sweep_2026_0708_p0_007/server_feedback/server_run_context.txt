@@ -1,0 +1,9 @@
+run_id=hardware_ceiling_sweep_2026_0708_p0_007
+commit=7ce7493743a075a749a1c758079935ad159a448a
+timestamp=2026-07-08T15:56:16+08:00
+PYTHON_BIN=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab/bin/python
+SCRATCH_DIR=/data/ak-trace/hardware_ceiling_scratch
+ARTIFACT_DIR=工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007
+ASCEND_RT_VISIBLE_DEVICES=6
+NPU_DEVICE=npu:0
+git_pull_exit_code=0

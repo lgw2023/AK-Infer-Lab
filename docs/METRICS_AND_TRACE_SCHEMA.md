@@ -157,10 +157,19 @@ git_commit:
 operator:
 server:
 model:
+model_variant:
 model_source:
+local_source_path:
+server_model_path:
+model_role: official_baseline | source_checkpoint_readiness | conversion_candidate | boundary_probe
 runtime_source:
 runtime:
-scenario: eight_card_baseline | single_card_extreme | kv_tiering | expert_tiering | simulator
+scenario: p6_eight_card_baseline | p7_single_dual_extreme | p8_kv_prefix_tiering | p8_expert_tiering | p9_hardware_sensitivity
+parallelism:
+features:
+workload:
+metrics:
+boundaries:
 is_smoke:
 is_benchmark:
 is_controlled_ab:

@@ -1,0 +1,37 @@
+schema_version: 1
+workload_id: p6_fixed_output_smoke_draft
+date: "2026-07-08"
+purpose: first_p6_smoke_after_p5_readiness
+model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+scenario: p6_eight_card_baseline
+request_plan:
+  request_count: [1, 4]
+  prompt_len_tokens: [4096]
+  output_len_tokens: 64
+  arrival_pattern: sequential_then_small_overlap
+  sampling:
+    temperature: 0.0
+    ignore_eos: true
+    min_tokens: 64
+    max_tokens: 64
+controls:
+  fixed_generated_tokens_required: true
+  single_variable_change_only: true
+  no_fallback_context_reduction_without_degraded_smoke_label: true
+runtime_reference:
+  runtime: vLLM-Ascend
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_prefix_caching: true
+  enable_chunked_prefill: true
+  speculative_mtp: planned_after_basic_smoke
+metrics_required:
+  request_trace: true
+  server_log_stats: true
+  msprof: planned_after_non_profiled_smoke
+  request_device_aggregate: planned_after_msprof
+boundaries:
+  - This is a template, not a completed experiment.
+  - It must not be interpreted as benchmark until P6 controlled runs complete.
+  - If runtime flags are reduced to make the model run, label the output degraded_smoke.

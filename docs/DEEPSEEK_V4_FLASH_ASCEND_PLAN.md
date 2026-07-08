@@ -22,7 +22,16 @@ Runtime: vLLM-Ascend
 Key runtime features: chunked prefill, prefix caching, async scheduling, MTP speculative decode
 ```
 
-八卡基准的目的不是直接优化，而是建立可信的 reference point。所有单卡、双卡、KV Offload、UCM、Mooncake、专家分层和低比特实验都必须能回到这个 reference point 进行对比。
+当前登记两个后续测试对象：
+
+| 对象 | 本地状态 | 角色 | 边界 |
+| --- | --- | --- | --- |
+| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp`，ModelScope 版本已下载完成 | P6 八卡 baseline 首选 | 本地路径不是服务器路径；Atlas 800T A2 兼容性必须实测 |
+| `deepseek-ai/DeepSeek-V4-Flash` | `/Volumes/Elements/DeepSeek-V4-Flash`，仍在下载 | 官方来源、转换/兼容性和 P7/P8 边界研究对象 | 未验证前不能写成 vLLM-Ascend `--quantization ascend` 可直接加载的 W8A8-MTP 形态 |
+
+用户会自行把模型目录拷贝到服务器。实验卡片只能先写 server path 占位，不得推断服务器路径。
+
+八卡基准的目的不是直接优化，而是建立可信的 reference point。所有 P7 单卡/双卡、P8 KV Offload/UCM/Mooncake/专家分层和 P9 硬件敏感性实验都必须能回到这个 reference point 进行对比。
 
 如果服务器侧只能先用更低 `max_model_len`、更小 `max_num_seqs` 或关闭某个官方开关完成 smoke，文档必须标记为 `degraded_smoke`，不得归入正式八卡基准。
 
@@ -92,7 +101,7 @@ B2 进入条件：
 - vLLM prefix cache：作为当前最成熟的入口。
 - vLLM-Ascend KV Cache CPU Offload：作为 DRAM warm tier 的第一候选。
 - UCM：作为 external KV/prefix object 层。
-- Mooncake：作为 P/D、KV Pool、SSD offload 的 P2/P3 候选。
+- Mooncake：作为 P8 后半段的 P/D、KV Pool、SSD offload 候选。
 
 ### 5.2 第二优先级：专家热温冷分层
 
@@ -129,9 +138,14 @@ date:
 git_commit:
 server_id:
 model:
-model_path:
+model_variant:
+model_source:
+local_source_path:
+server_model_path:
+model_role:
 quantization:
 runtime:
+scenario:
 container_or_conda:
 cann_version:
 torch_npu_version:

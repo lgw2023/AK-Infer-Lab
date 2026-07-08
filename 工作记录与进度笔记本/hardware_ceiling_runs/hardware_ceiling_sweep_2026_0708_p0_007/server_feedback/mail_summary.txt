@@ -1,0 +1,29 @@
+# Hardware Ceiling Sweep Summary
+
+run_id=hardware_ceiling_sweep_2026_0708_p0_007
+overall_status=success
+policy=hardware_microbench_only_no_model_inference_no_bottleneck_claim
+
+## peak_readout
+h2d_best_gbps=24.313915
+d2h_best_gbps=26.480714
+matmul_best_tflops=290.448949
+dram_read_best_gbps=5.332057
+dram_copy_best_gbps=2.963189
+fio_read_best_mib_s=394.721055
+fio_write_best_mib_s=377.724455
+
+## row_counts
+copy_rows=64
+matmul_rows=5
+dram_rows=3
+fio_rows=48
+
+## boundary
+This is a synthetic hardware ceiling sweep. It does not run model inference,
+does not claim production benchmark throughput, and does not perform bottleneck attribution.
+
+## execution_status
+git_pull_exit_code=0
+pytest_exit_code=0
+hardware_ceiling_exit_code=0

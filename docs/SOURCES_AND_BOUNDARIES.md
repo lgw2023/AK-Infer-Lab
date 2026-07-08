@@ -22,9 +22,18 @@
 - 代表工作硬件拓扑映射：NEO、Tutti、Mooncake、Bidaw、SolidAttention、KTransformers、LMCache、ProfInfer、LLMServingSim2.0 等工作如何映射到硬件链路。
 - Ascend 服务器环境汇总：当前 Atlas 800T A2 / 8×910B1 / 64GB HBM / CANN 9.0.0 / vLLM-Ascend 环境边界。
 
+## 2.1 本地待测模型对象
+
+| 对象 | 本地路径 | 当前状态 | 用途 | 边界 |
+| --- | --- | --- | --- | --- |
+| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | ModelScope 版本已下载完成 | P6 单机八卡 baseline 首选对象；优先匹配 vLLM-Ascend `--quantization ascend` reference | 本地路径不是服务器路径；服务器模型路径、权重完整性、runtime 兼容性必须由后续服务器 handoff 验证 |
+| `deepseek-ai/DeepSeek-V4-Flash` | `/Volumes/Elements/DeepSeek-V4-Flash` | 仍在下载 | 官方来源、版本对照、转换/兼容性评估、P7/P8 边界研究候选 | 下载未完成前不能写成 ready；未验证前不能等同于 Ascend W8A8-MTP runtime 格式 |
+
+用户会自行把模型目录拷贝到 Ascend 服务器。本仓库只登记对象、来源、实验用途和边界，不复制模型 payload，不推断服务器路径。
+
 ## 3. 不确定性与边界
 
-- DeepSeek-V4-Flash 的非官方量化版本很多，但本项目八卡基准只以官方 Ascend W8A8-MTP 路线为 reference。
+- DeepSeek-V4-Flash 的来源和量化形态必须分开登记：P6 八卡基准首选 ModelScope `DeepSeek-V4-Flash-w8a8-mtp`；`deepseek-ai/DeepSeek-V4-Flash` 先作为官方来源、版本对照和转换/兼容性对象。
 - vLLM-Ascend `main` 文档和 stable `v0.18.0` 文档可能存在差异；正式服务器任务必须在 handoff 中固定版本、镜像、commit 或文档 URL。
 - 官方教程列出 Atlas 800 A2/A3；本项目服务器是 Atlas 800T A2，必须用服务器 smoke 证明实际兼容性。
 - 单卡/双卡极限实验不等同于官方模型可部署。
