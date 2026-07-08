@@ -1,0 +1,8 @@
+{
+  "run_id": "runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028",
+  "analysis_result_exists": 1,
+  "readout_result_exists": 1,
+  "generated_token_length_summary": "mode\tstatus\trequest_count\tsuccess_case_count\tfailed_case_count\tgenerated_token_count_mismatch_count\tmin_generated_token_count\tmax_generated_token_count\nmsprof_prefix_cache_on\tsuccess\t32\t32\t0\t0\t64\t64\nmsprof_prefix_cache_off\tsuccess\t32\t32\t0\t0\t64\t64\n",
+  "aggregate_exit_code": "0",
+  "controlled_readout_exit_code": "0"
+}

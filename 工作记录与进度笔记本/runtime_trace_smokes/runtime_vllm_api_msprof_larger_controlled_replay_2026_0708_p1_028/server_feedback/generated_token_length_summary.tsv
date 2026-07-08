@@ -1,0 +1,3 @@
+mode	status	request_count	success_case_count	failed_case_count	generated_token_count_mismatch_count	min_generated_token_count	max_generated_token_count
+msprof_prefix_cache_on	success	32	32	0	0	64	64
+msprof_prefix_cache_off	success	32	32	0	0	64	64

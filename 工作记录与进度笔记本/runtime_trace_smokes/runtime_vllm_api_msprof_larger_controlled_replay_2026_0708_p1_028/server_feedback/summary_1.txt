@@ -1,0 +1,12 @@
+## run_context
+run_id=runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028
+source_artifact_dir=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/source
+artifact_dir=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/final_analysis
+overall_status=success
+aggregation_strategy=bulk_temp_window_join_parallel_modes
+workers=2
+heavy_joins_skipped=0
+
+## mode_summaries
+msprof_prefix_cache_on	success	32	32	1	32	640	32	0	115.778	request_device_aggregate_available
+msprof_prefix_cache_off	success	32	32	1	32	640	32	0	149.228	request_device_aggregate_available
