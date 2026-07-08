@@ -1,22 +1,33 @@
 # Developer to Server
 
-## 当前任务：P1.29 Qwen3.5-4B vLLM API streaming perf + denominator
+## 当前任务：P1.30 Qwen3.5-4B vLLM prefix-cache phase memory readout
 
-- 状态 ID：`runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029`
-- Handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_vllm_api_streaming_perf_denominator_handoff.md`
-- 上一轮依据：P1.28 `runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028`
-- 本轮目的：补齐 Qwen3.5-4B / vLLM API 的 TTFT、TPOT、E2E latency、output tokens/s、server stats A/B、AISBench/MindIE-Motor 风格性能参数表、common metric 表、单位映射、MatMul FLOPs denominator 和 input/output tensor footprint bytes。
+- 状态 ID：`runtime_vllm_api_memory_phase_readout_2026_0708_p1_030`
+- 上一轮依据：P1.29 `runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029`
+- 本轮目的：补齐 P1.29 未覆盖的 `prefix_cache_on/off x prefill/decode` 显存/内存占用矩阵。
+- 任务性质：小文件采集与摘要；不做瓶颈归因，不做优化结论。
 
-## 执行要求
+## 背景
 
-请严格执行 handoff 文件中的命令和边界。
+P1.29 已经产出 Qwen3.5-4B / vLLM OpenAI streaming client 的 TTFT、TPOT、E2EL、ITL、AISBench-style Performance Parameters / Common Metrics 和 MatMulV2/MatMulV3 shape-derived denominator。
 
-本轮分两段：
+但 P1.29 没有证明以下内容：
 
-1. `perf_unprofiled`：不启用 msprof，运行 streaming `/v1/completions`，采集用户可见性能指标，并输出 AISBench-style `Performance Parameters` / `Common Metric` 小表。
-2. `msprof_denominator`：启用 msprof 跑同一 `continuous32_mixed` streaming workload，只用于 shape/unit/denominator 读数。
+- prefix_cache_on/off 在 prefill 阶段的 NPU HBM used/free。
+- prefix_cache_on/off 在 decode 阶段的 NPU HBM used/free。
+- prefix_cache_on/off 在 prefill/decode 阶段的 host process RSS/PSS/VmRSS/VmHWM。
+- KV/prefix object footprint、lookup、restore、eviction、bytes。
 
-关键固定条件：
+P1.29 只有 `server_stats_max_kv_cache_usage_pct`：
+
+- prefix_cache_on: `8.2%`
+- prefix_cache_off: `16.1%`
+
+这只能作为 overall vLLM KV cache usage proxy，不能冒充显存占用、host 内存占用或 phase-split memory readout。
+
+## 固定条件
+
+沿用 P1.29 条件，不降级：
 
 - 模型：`/data/node0_disk1/Public/Qwen3.5-4B`
 - workload：`continuous32_mixed`
@@ -27,69 +38,112 @@
 - device 默认：`ASCEND_RT_VISIBLE_DEVICES=6`
 - `VLLM_PLUGINS=ascend`
 - `VLLM_USE_V1=1`
+- output：on/off 均应为 32/32 success、fixed 64 tokens、mismatch=0
 
-## 必须回传
+## 采集要求
+
+请在 vLLM server 启动后、请求执行期间，用不高于 0.5s 的周期采样以下信息，并用 request timing 将样本归到 `prefill` 和 `decode` 窗口：
+
+- NPU/device 侧：
+  - HBM used/free MB。
+  - 如果工具能给出，记录 HBM utilization 或 memory utilization。
+  - 原始 `npu-smi` 命令、输出样例和解析策略必须保留。
+- Host/process 侧：
+  - vLLM API server 主进程和子进程 PID。
+  - process group RSS MB。
+  - 如果 `/proc/*/smaps_rollup` 可读，记录 PSS MB。
+  - 至少保留 VmRSS/VmHWM。
+- Request timing：
+  - request_start_ns。
+  - first_token_ns 或 TTFT 对应时间点。
+  - response_end_ns。
+  - phase policy：`prefill=request_start..first_token`，`decode=first_token..response_end`。
+
+如果多请求并发导致同一采样点同时覆盖多个 request/phase，请不要取巧丢弃样本；按 benchmark-window phase overlap 汇总，并在 policy 中说明。
+
+## 必须输出的小文件
+
+请在 artifact_dir 下输出：
+
+```text
+summary.txt
+p1_030_result.json
+memory_phase_summary.tsv
+memory_phase_samples_head.tsv
+memory_phase_sampling_policy.txt
+mail_attachment_candidates.tsv
+```
+
+建议 `memory_phase_summary.tsv` 字段：
+
+```text
+mode
+phase
+sample_count
+overlapped_request_count
+host_process_rss_mb_avg
+host_process_rss_mb_max
+host_process_pss_mb_avg
+host_process_pss_mb_max
+npu_hbm_used_mb_avg
+npu_hbm_used_mb_max
+npu_hbm_free_mb_avg
+npu_hbm_free_mb_min
+npu_hbm_usage_pct_avg
+npu_hbm_usage_pct_max
+kv_cache_usage_pct_max
+policy
+```
+
+期望 mode/phase 至少有 4 行：
+
+```text
+prefix_cache_on   prefill
+prefix_cache_on   decode
+prefix_cache_off  prefill
+prefix_cache_off  decode
+```
+
+## 必须回传邮件正文
 
 邮件正文控制在 70KB 内，必须包含：
 
 - `run_id`
+- `source_run_id=P1.29`
 - `commit`
 - `git_pull_exit_code`
 - `pytest_exit_code`
-- `perf_on_exit_code`
-- `perf_off_exit_code`
-- `perf_pair_exit_code`
-- `msprof_on_exit_code`
-- `msprof_off_exit_code`
-- `shape_denominator_exit_code`
-- unprofiled on/off 的 request_count、success、failed、generated mismatch
-- unprofiled on/off 的 TTFT median/p95、TPOT median/p95、E2E median/p95、aggregate output tokens/s
-- unprofiled on/off 的 AISBench-style 指标：`E2EL`、`TTFT`、`TPOT`、`ITL`、`InputTokens`、`OutputTokens`、`OutputTokenThroughput`、`PrefillTokenThroughput`
-- unprofiled on/off 的 common metrics：`Benchmark Duration`、`Concurrency`、`Max Concurrency`、`Request Throughput`、`Input Token Throughput`、`Output Token Throughput`、`Total Token Throughput`
-- on/off 的 max running、max waiting、max KV cache usage、max prefix cache hit rate
-- denominator 的 `shape_row_count`、`op_type_row_count`
-- MatMulV2/MatMulV3 的 denominator 状态
-- unit mapping confidence
+- `memory_probe_on_exit_code`
+- `memory_probe_off_exit_code`
+- `summary_exit_code`
+- on/off request_count、success、failed、generated mismatch
+- on/off 的 max KV cache usage pct
+- 4 行 mode/phase memory summary 摘要
+- NPU HBM 采样命令和解析可信度
+- host RSS/PSS 采样方法和解析可信度
 - artifact_dir
 - mail_attachment_candidates
-
-建议附件：
-
-- `summary.txt`
-- `p1_029_result.json`
-- `perf_pair_readout/vllm_api_streaming_perf_mode_summary.tsv`
-- `perf_pair_readout/vllm_api_streaming_perf_delta_summary.tsv`
-- `perf_pair_readout/vllm_api_streaming_perf_parameters.tsv`
-- `perf_pair_readout/vllm_api_streaming_perf_common_metrics.tsv`
-- `perf_pair_readout/vllm_api_streaming_perf_pair_result.json`
-- `msprof_denominator_readout/msprof_shape_denominator_result.json`
-- `msprof_denominator_readout/msprof_shape_denominator_by_op_type.tsv`
-- `msprof_denominator_readout/msprof_unit_mapping.tsv`
-- `msprof_denominator_readout/hardware_denominator_mapping.tsv`
-- `mail_attachment_candidates.tsv`
 
 ## 边界
 
 - 不启动 P5。
 - 不启动 DeepSeek-V4-Flash。
-- 不重复 P1.28 原任务。
 - 不重复 P0/P3 hardware ceiling sweep。
+- 不重复 P1.29 的 AISBench-style 性能表和 denominator 任务，除非为了对齐 request timing 必须重跑同一 workload。
 - 不安装、升级、卸载或修复任何包。
 - 不修改、提交或 push 服务器仓库代码。
-- 不静默降低 `max_model_len`、不删减 case、不降低输入 cap、不缩短 output token。
-- 不把 profiler 下的 TTFT/TPOT 当作 unprofiled 性能结论。
-- 不把 vLLM OpenAI streaming client 的 AISBench-style 指标当作 MindIE native `prefill_time/decode_time`。
-- `ITL` 是 host streaming inter-chunk latency，不是 runtime native decode event。
-- 不把 shape-derived tensor bytes 当作 HBM traffic。
-- 不输出 compute-bound、memory-bound、scheduler-bound、prefix-cache benefit 或其他瓶颈归因结论。
-- 不回传 raw msprof、大日志、大 zip、完整 generated text 或超过 70KB 的附件。
+- 不降低 `max_model_len`、不删减 case、不降低输入 cap、不缩短 output token。
+- 不把 KV cache usage pct 当作 HBM used/free。
+- 不把 device-level HBM used/free 当作某个单 request 的精确显存。
+- 不输出 memory-bound、scheduler-bound、prefix-cache memory benefit、HBM bottleneck 等归因结论。
+- 不回传大日志、大 zip、raw profiler、完整 generated text 或超过 70KB 的附件。
 
 ## 完成后
 
 请发送任务完成邮件，标题建议：
 
 ```text
-[AK服务器] 任务完成：P1.29 Qwen3.5-4B vLLM API streaming perf denominator
+[AK服务器] 任务完成：P1.30 Qwen3.5-4B vLLM prefix-cache phase memory readout
 ```
 
-如果任何一步失败，不要取巧缩小任务；保留失败产物在服务器本地，回传 70KB 内摘要、退出码和小文件清单。
+如果无法解析 NPU HBM 或 host process memory，不要用别的指标冒充；请回传失败原因、原始小样例、可用字段和下一步建议。
