@@ -41,6 +41,9 @@ VLLM_API_MSPROF_CONTROLLED_REPLAY_HANDOFF = (
 VLLM_API_MSPROF_CONTROLLED_READOUT_HANDOFF = (
     CONTRACT_DIR / "server_runtime_vllm_api_msprof_controlled_readout_handoff.md"
 )
+VLLM_API_MSPROF_LARGER_CONTROLLED_REPLAY_HANDOFF = (
+    CONTRACT_DIR / "server_runtime_vllm_api_msprof_larger_controlled_replay_handoff.md"
+)
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -726,6 +729,31 @@ def test_vllm_api_msprof_controlled_readout_handoff_defines_required_boundaries(
         assert text in handoff
 
 
+def test_vllm_api_msprof_larger_controlled_replay_handoff_defines_required_boundaries():
+    handoff = VLLM_API_MSPROF_LARGER_CONTROLLED_REPLAY_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028",
+        "runtime_vllm_api_msprof_controlled_readout_2026_0708_p1_027",
+        "--case-plan continuous32_mixed",
+        "--max-model-len 9216",
+        "--min-tokens 64",
+        "--ignore-eos",
+        "msprof_prefix_cache_on",
+        "msprof_prefix_cache_off",
+        "request_device_aggregate_fast_exit_code",
+        "controlled_readout_exit_code",
+        "controlled_replay_readout_result.json",
+        "mail_attachment_candidates.tsv",
+        "70KB",
+        "不安装、升级、卸载或修复任何包",
+        "不运行 full 16K/32K 或 full `P010=43216` tokens",
+        "不输出性能 benchmark、吞吐结论、调度效率结论、prefix cache 命中率结论、瓶颈归因或优化建议",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
 def test_vllm_api_continuous16_mixed_runner_case_plan_is_bounded():
     from tools.inference_contracts.run_vllm_api_concurrency_smoke import (
         VLLM_API_CONTINUOUS16_MIXED_CASES,
@@ -750,6 +778,33 @@ def test_vllm_api_continuous16_mixed_runner_case_plan_is_bounded():
     assert {case["concurrency_group"] for case in VLLM_API_CONTINUOUS16_MIXED_CASES} == {
         "api_continuous16_mixed_0001"
     }
+
+
+def test_vllm_api_continuous32_mixed_runner_case_plan_is_bounded():
+    from tools.inference_contracts.run_vllm_api_concurrency_smoke import (
+        VLLM_API_CONTINUOUS32_MIXED_CASES,
+        default_max_model_len_for,
+        select_cases,
+    )
+
+    assert select_cases("continuous32_mixed") == VLLM_API_CONTINUOUS32_MIXED_CASES
+    assert len(VLLM_API_CONTINUOUS32_MIXED_CASES) == 32
+    assert max(case["cap_tokens"] for case in VLLM_API_CONTINUOUS32_MIXED_CASES) == 8192
+    assert max(case["max_new_tokens"] for case in VLLM_API_CONTINUOUS32_MIXED_CASES) == 64
+    assert max(case["arrival_delay_ms"] for case in VLLM_API_CONTINUOUS32_MIXED_CASES) == 5000
+    assert default_max_model_len_for("continuous32_mixed") == 9216
+    assert {case["prompt_id"] for case in VLLM_API_CONTINUOUS32_MIXED_CASES} == {
+        "P003",
+        "P007",
+        "P008",
+        "P009",
+        "P011",
+        "P012",
+    }
+    assert {case["concurrency_group"] for case in VLLM_API_CONTINUOUS32_MIXED_CASES} == {
+        "api_continuous32_mixed_0001"
+    }
+    assert len({case["case_id"] for case in VLLM_API_CONTINUOUS32_MIXED_CASES}) == 32
 
 
 def test_vllm_api_runner_can_request_fixed_generation_length():

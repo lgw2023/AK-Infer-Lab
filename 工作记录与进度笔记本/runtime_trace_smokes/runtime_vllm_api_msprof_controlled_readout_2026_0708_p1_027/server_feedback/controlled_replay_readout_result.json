@@ -1,0 +1,24 @@
+{
+  "run_id": "runtime_vllm_api_msprof_controlled_readout_2026_0708_p1_027",
+  "source_run_id": "runtime_vllm_api_msprof_controlled_replay_2026_0707_p1_026",
+  "source_artifact_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_controlled_replay_2026_0707_p1_026",
+  "analysis_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_controlled_replay_2026_0707_p1_026/final_analysis",
+  "artifact_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_controlled_readout_2026_0708_p1_027",
+  "overall_status": "success",
+  "missing_files": [],
+  "generated_length_status": {
+    "status": "fixed_64",
+    "mode_count": 2,
+    "request_count": 32,
+    "success_case_count": 32,
+    "failed_case_count": 0,
+    "generated_token_count_mismatch_count": 0,
+    "min_generated_token_count": 64,
+    "max_generated_token_count": 64
+  },
+  "mode_delta_group_count": 12,
+  "pair_delta_row_count": 8,
+  "top_op_delta_row_count": 22,
+  "metric_delta_row_count": 21,
+  "policy": "raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim"
+}

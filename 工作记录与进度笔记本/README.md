@@ -1,52 +1,65 @@
 # 工作记录与进度笔记本
 
-这个文件夹用于记录 AK-Infer-Lab 后续工作的条目、阶段、进展、结果、问题和下一步行动。
+本目录是 AK-Infer-Lab 的任务事实账本。稳定项目说明放在仓库根 `README.md` 和 `docs/` 下；本目录只记录每轮任务、实验、结果、问题、边界和下一步行动。
+
+## 当前主线
+
+当前主线已从“静态提示词推理负载可观测性”升级为：
+
+```text
+DeepSeek-V4-Flash on Ascend
+  → 单机八卡官方 W8A8-MTP 基准
+  → 单卡/双卡极限硬件边界
+  → KV/Prefix 状态分层
+  → MoE Expert 热温冷分层
+  → CPU/NPU 阶段级协同
+  → trace-driven simulator 与下一代硬件规格反推
+```
 
 ## 当前范围
 
-本项目当前只研究模型推理本身在硬件和底层链路上的负载情况。所谓“模拟 coding agent 情况”，不代表要运行真实 coding agent，也不负责工具调用、仓库读写、命令执行、浏览器操作或 agent 调度系统。
+范围内：
 
-当前口径是：构造一批具有 coding-agent 风格的静态提示词数据，让模型按普通推理请求执行；我们只观测模型推理侧的 TTFT、TPOT、HBM、NPU kernel、CPU、DRAM、H2D/D2H、PCIe/UB、SSD、KV/prefix 和 MoE expert 等指标。
+- DeepSeek-V4-Flash 八卡官方 Ascend 基准。
+- 单卡/双卡极限硬件实验边界。
+- Qwen/GLM/DeepSeek 小模型和中型 MoE 作为前置验证模型。
+- vLLM-Ascend、MindIE、KV Cache CPU Offload、UCM、Mooncake、prefix cache、msprof、CANN/NPU trace。
+- KV、Prefix、Context、Expert、Weight、Activation、Workspace 状态对象的生命周期、迁移、命中、恢复、重算和驱逐。
+- MoE router top-k、expert hotset、expert miss、prefetch、warm/cold tier。
+- 硬件 microbench、request-device 聚合、bottleneck report、what-if simulator。
+
+范围外：
+
+- 真实 Coding Agent 运行和工具调用质量评测。
+- 多 Agent 编排、浏览器自动化、代码补丁质量评估。
+- 单卡 64GB 官方 DeepSeek-V4-Flash 生产部署承诺。
+- 缺少 trace 证据时宣称 CPU/NPU 协同加速。
+- 第一阶段把 SSD cold tier 或 NPU-SSD 直通放入逐 token 热路径。
 
 ## 文件结构
 
 | 路径 | 用途 |
 | --- | --- |
-| `00_原始材料/` | 收纳已有方案、融合方案和步骤 1 文档，作为历史输入材料。 |
-| `01_工作记录.md` | 记录当前工作条目、价值、输入、输出和验收口径。 |
-| `02_阶段计划.md` | 记录阶段划分、每阶段目标、交付物和验证标准。 |
-| `03_阶段性进展.md` | 记录每次推进后的实际进展和证据。 |
-| `04_结果与问题点.md` | 记录已经得到的结果、尚未解决的问题、风险和决策点。 |
-| `05_下一步行动指导.md` | 记录下一步可以直接执行的行动清单。 |
-| `06_提示词推理负载设计.md` | 记录静态提示词 workload 的构造原则、类型和元数据。 |
-| `07_可观测能力体检执行说明.md` | 记录服务器可观测能力体检框架的运行方式、输出判读和 P0 边界。 |
-
-## 原始材料索引
-
-- `00_原始材料/方案 1.md`
-- `00_原始材料/方案 2.md`
-- `00_原始材料/融合方案.md`
-- `00_原始材料/步骤 1 内容.md`
-
-## 当前实现状态
-
-截至 2026-07-03，P0 服务器可观测能力体检框架已经进入代码实现阶段并合入当前主线。当前已经具备：
-
-- 字段目录生成。
-- manifest 生成。
-- 安全 probe runner。
-- field availability 评估。
-- join-key readiness 评估。
-- P0 acceptance fields 生成。
-- 人读摘要渲染。
-- CLI 一次性生成完整体检 run 目录。
-
-注意：本地个人开发机 dry-run 只能证明框架可运行，不能作为 Atlas 服务器可观测能力证据。正式证据必须来自 Atlas 服务器上生成的 `observability_profiles/<run>/`。
+| `01_工作记录.md` | 记录当前工作条目、目标、价值、输入、输出和验收边界。 |
+| `02_阶段计划.md` | 记录 P0-P6 阶段、目标、交付物和验证标准。 |
+| `03_阶段性进展.md` | 每轮推进后的实际进展和证据。 |
+| `04_结果与问题点.md` | 已得到结果、问题、风险、决策点和边界。 |
+| `05_下一步行动指导.md` | 只写下一步可执行动作。 |
+| `06_提示词推理负载设计.md` | 静态 prompt workload 设计。 |
+| `07_可观测能力体检执行说明.md` | 服务器可观测能力体检框架说明。 |
+| `08_服务器体检结果分析与下一步计划.md` | Atlas 服务器体检结果和后续修正。 |
+| `09_DeepSeek_V4_Flash_专项计划.md` | 建议新增：DeepSeek-V4-Flash 八卡与极限硬件专项计划。 |
+| `p1_inference_contracts/` | workload、schema、handoff、fixture、prompt。 |
+| `runtime_trace_smokes/` | smoke、prefix A/B、msprof 和 request-device 聚合归档。 |
+| `observability_profiles/` | 服务器体检 run 归档。 |
 
 ## 维护规则
 
-- 新进展写入 `03_阶段性进展.md`，不要覆盖历史记录。
-- 新实验结果写入 `04_结果与问题点.md`，并注明数据来源。
-- 下一步只写可执行动作，避免泛泛讨论。
-- 如果范围发生变化，先更新本页“当前范围”。
-- 本地 dry-run 结果不要长期保留为服务器证据；服务器正式体检结果可以按 run 目录归档。
+1. 新实验必须先写实验卡片，再跑命令。
+2. 新进展写入 `03_阶段性进展.md`，不要覆盖历史。
+3. 新结果写入 `04_结果与问题点.md`，必须注明 run id、commit、服务器路径和边界。
+4. 下一步只写可执行动作，避免泛泛讨论。
+5. 服务器任务必须通过 `通信模块/docs/developer-to-server.md` 交接，且每次只保留当前任务。
+6. 服务器邮件和附件受 70KB 限制，大 artifact 留在服务器，只回传摘要、路径和小表。
+7. 本地 dry-run 不能作为 Atlas 服务器证据。
+8. 所有性能结论必须经过 controlled replay；smoke、stats、profile collected、request-device join 分别有不同证明力。

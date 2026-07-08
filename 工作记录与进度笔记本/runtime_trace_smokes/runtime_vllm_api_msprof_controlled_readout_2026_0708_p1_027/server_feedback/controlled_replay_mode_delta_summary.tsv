@@ -1,0 +1,13 @@
+scope	group_value	request_count	on_task_row_count_sum	off_task_row_count_sum	delta_task_row_count_sum_on_minus_off	on_total_duration_time_sum	off_total_duration_time_sum	delta_total_duration_time_sum_on_minus_off	negative_duration_delta_request_count	positive_duration_delta_request_count	zero_duration_delta_request_count	negative_task_delta_request_count	positive_task_delta_request_count	policy
+all	all	16	1763786	1930586	-166800	120628938759	209613401007	-88984462248	16	0	0	16	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prefix_reuse_group	burst_prefix_a	4	432921	459947	-27026	31327187935	53751505977	-22424318042	4	0	0	4	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prefix_reuse_group	continuous_prefix_a	6	669718	733917	-64199	45124060371	78650289033	-33526228662	6	0	0	6	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prefix_reuse_group	none	2	223598	255506	-31908	13945806506	24759046164	-10813239658	2	0	0	2	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prefix_reuse_group	prefix_group_a	2	210389	224486	-14097	15887947734	27109955528	-11222007794	2	0	0	2	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prefix_reuse_group	system_long_a	2	227160	256730	-29570	14343936213	25342604305	-10998668092	2	0	0	2	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prompt_id	P003	2	227160	256730	-29570	14343936213	25342604305	-10998668092	2	0	0	2	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prompt_id	P007	1	103951	111446	-7495	7938382177	13561691708	-5623309531	1	0	0	1	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prompt_id	P008	1	106438	113040	-6602	7949565557	13548263820	-5598698263	1	0	0	1	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prompt_id	P009	2	223598	255506	-31908	13945806506	24759046164	-10813239658	2	0	0	2	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prompt_id	P011	4	432921	459947	-27026	31327187935	53751505977	-22424318042	4	0	0	4	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim
+prompt_id	P012	6	669718	733917	-64199	45124060371	78650289033	-33526228662	6	0	0	6	0	raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim

@@ -285,6 +285,24 @@ VLLM_API_CONTINUOUS16_MIXED_CASES = [
     },
 ]
 
+
+def _make_continuous32_mixed_cases() -> list[dict[str, Any]]:
+    cases: list[dict[str, Any]] = []
+    for wave_index, delay_offset_ms in enumerate((0, 2600), start=1):
+        for case in VLLM_API_CONTINUOUS16_MIXED_CASES:
+            expanded = dict(case)
+            expanded["case_id"] = str(case["case_id"]).replace(
+                "_api_continuous16_",
+                f"_api_continuous32_w{wave_index}_",
+            )
+            expanded["arrival_delay_ms"] = int(case["arrival_delay_ms"]) + delay_offset_ms
+            expanded["concurrency_group"] = "api_continuous32_mixed_0001"
+            cases.append(expanded)
+    return cases
+
+
+VLLM_API_CONTINUOUS32_MIXED_CASES = _make_continuous32_mixed_cases()
+
 SERVER_STATS_PATTERN = re.compile(
     r"Avg prompt throughput:\s*(?P<prompt_throughput>[0-9.]+)\s*tokens/s,\s*"
     r"Avg generation throughput:\s*(?P<generation_throughput>[0-9.]+)\s*tokens/s,\s*"
@@ -296,7 +314,7 @@ SERVER_STATS_PATTERN = re.compile(
 
 
 def default_max_model_len_for(case_plan: str) -> int:
-    if case_plan == "continuous16_mixed":
+    if case_plan in {"continuous16_mixed", "continuous32_mixed"}:
         return 9216
     return 6144
 
@@ -324,7 +342,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--long-manifest", type=Path, default=DEFAULT_LONG_MANIFEST)
     parser.add_argument(
         "--case-plan",
-        choices=["three_request_smoke", "burst8", "continuous16_mixed"],
+        choices=["three_request_smoke", "burst8", "continuous16_mixed", "continuous32_mixed"],
         default=os.environ.get("AK_VLLM_API_CASE_PLAN", "three_request_smoke"),
     )
     parser.add_argument("--max-model-len", type=int, default=None)
@@ -410,10 +428,14 @@ def select_cases(case_plan: str) -> list[dict[str, Any]]:
         return VLLM_API_BURST_QUEUE_CASES
     if case_plan == "continuous16_mixed":
         return VLLM_API_CONTINUOUS16_MIXED_CASES
+    if case_plan == "continuous32_mixed":
+        return VLLM_API_CONTINUOUS32_MIXED_CASES
     raise ValueError(f"unknown case plan: {case_plan}")
 
 
 def matrix_policy_for(case_plan: str) -> str:
+    if case_plan == "continuous32_mixed":
+        return "vllm_openai_api_server_thirty_two_request_mixed_4k_8k_continuous_workload_candidate"
     if case_plan == "continuous16_mixed":
         return "vllm_openai_api_server_sixteen_request_mixed_4k_8k_continuous_workload_candidate"
     if case_plan == "burst8":
@@ -422,6 +444,8 @@ def matrix_policy_for(case_plan: str) -> str:
 
 
 def continuous_policy_for(case_plan: str) -> str:
+    if case_plan == "continuous32_mixed":
+        return "candidate_only_thirty_two_staggered_clients_mixed_4k_8k_no_throughput_or_scheduler_claim"
     if case_plan == "continuous16_mixed":
         return "candidate_only_sixteen_staggered_clients_mixed_4k_8k_no_throughput_or_scheduler_claim"
     if case_plan == "burst8":
