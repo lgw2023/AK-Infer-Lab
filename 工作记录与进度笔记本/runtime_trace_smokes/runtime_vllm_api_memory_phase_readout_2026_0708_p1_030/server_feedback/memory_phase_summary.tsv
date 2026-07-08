@@ -1,0 +1,5 @@
+mode,phase,sample_count,overlapped_request_count,host_process_rss_mb_avg,host_process_rss_mb_max,host_process_pss_mb_avg,host_process_pss_mb_max,npu_hbm_used_mb_avg,npu_hbm_used_mb_max,npu_hbm_free_mb_avg,npu_hbm_free_mb_min,npu_hbm_usage_pct_avg,npu_hbm_usage_pct_max,kv_cache_usage_pct_max,policy
+prefix_cache_on,prefill,5,26,5109.184,5111.36,4377.083,4379.112,55050.24,55050.24,10485.76,10485.76,84.0,84.0,9.4,prefill=request_start..first_token;decode=first_token..response_end;overlap_not_discarded
+prefix_cache_on,decode,8,31,5110.943,5114.344,4378.816,4382.152,55050.24,55050.24,10485.76,10485.76,84.0,84.0,9.4,prefill=request_start..first_token;decode=first_token..response_end;overlap_not_discarded
+prefix_cache_off,prefill,12,25,5090.707,5091.871,4376.619,4377.767,55050.24,55050.24,10485.76,10485.76,84.0,84.0,16.1,prefill=request_start..first_token;decode=first_token..response_end;overlap_not_discarded
+prefix_cache_off,decode,14,19,5090.991,5092.816,4376.917,4378.814,55050.24,55050.24,10485.76,10485.76,84.0,84.0,16.1,prefill=request_start..first_token;decode=first_token..response_end;overlap_not_discarded

@@ -1,0 +1,15 @@
+{
+  "run_id": "runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029",
+  "commit": "a77da36874e8f7167e4ffb13e75b4f1cc87c49d9",
+  "git_pull_exit_code": "0",
+  "pytest_exit_code": "0",
+  "perf_on_exit_code": "0",
+  "perf_off_exit_code": "0",
+  "perf_pair_exit_code": "0",
+  "msprof_on_exit_code": "0",
+  "msprof_off_exit_code": "0",
+  "shape_denominator_exit_code": "0",
+  "perf_pair_result_exists": 1,
+  "shape_denominator_result_exists": 1,
+  "policy": "qwen_vllm_streaming_perf_and_shape_denominator_no_bottleneck_claim"
+}

@@ -1,12 +1,12 @@
 # AK-Infer-Lab P0-P4 收尾后硬件性能与推理观测数据资产全量审计
 生成位置: /tmp/ak_infer_lab_p0_p4_data_asset_audit_2026_0708.txt
-审计依据: 当前本地 HEAD、当前工作区、已归档服务器 artifact、CSV/TSV/JSON、采集/分析源码，以及 P1.29 服务器反馈附件。未使用网络规格补洞。
+审计依据: 当前本地 HEAD、当前工作区、已归档服务器 artifact、CSV/TSV/JSON、采集/分析源码、P1.29 服务器反馈附件，以及 P1.30 phase memory readout 服务器反馈附件。未使用网络规格补洞。
 重要边界: 本报告没有修改仓库文件，没有提交/推送，没有启动服务器任务，没有运行模型、msprof、fio 或硬件 benchmark。
 
 # 1. Executive Summary
 - 当前本地仓库在 branch=main, HEAD=a77da36874e8f7167e4ffb13e75b4f1cc87c49d9, HEAD message=feat(inference): add P1.29 streaming perf readout, HEAD date=2026-07-08 20:28:10 +0800。
-- local checkout freshness: current: HEAD equals pushed P1.29 tooling/handoff commit；关键 artifact hardware_ceiling_sweep_2026_0708_p0_007、runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028、runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029、11/12/13 号收尾/重排/成果包索引文档均存在。
-- working tree clean at refresh start: yes, main...origin/main；本次刷新将修改本报告、展示页和审计计划。
+- local checkout freshness: current: HEAD equals pushed P1.29 tooling/handoff commit；关键 artifact hardware_ceiling_sweep_2026_0708_p0_007、runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028、runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029、runtime_vllm_api_memory_phase_readout_2026_0708_p1_030、11/12/13/14 号收尾/重排/成果包索引/性能指标文档均存在。
+- working tree clean at refresh start: no；当前工作区包含 P1.30 反馈归档、进度笔记和本报告/展示页/审计计划刷新内容，尚未提交。
 - P0-P4 可以按“阶段目标”收尾：服务器环境/硬件 ceiling 采集链路闭环、小模型推理链路跑通、小 prompt 观测链路闭环。
 - P0-P4 不能按“性能瓶颈归因”收尾：compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core/AIV/MTE bottleneck 等均未形成可发布结论。
 - 当前最强 hardware ceiling baseline 是 P0/P3 sweep: H2D 24.313915 GB/s, D2H 26.480714 GB/s, FP16 square matmul 290.448949 TFLOPS, NumPy DRAM read 5.332057 GB/s, fio read/write 394.721055/377.724455 MiB/s。
@@ -15,10 +15,12 @@
 - P1.28 提供 fixed 64-token Qwen3.5-4B/vLLM prefix-cache on/off raw counter readout：on/off 各 32/32 成功，request-device aggregate 与 readout 成功。
 - P1.29 在同一 `continuous32_mixed` / fixed 64-token 条件下补齐 unprofiled streaming 性能读数与 msprof denominator：on/off 各 32/32 成功，TTFT/TPOT/E2E、AISBench-style performance/common metric 表、MatMulV2/V3 shape-derived FLOPs denominator、input/output tensor footprint bytes 和 unit mapping 均已生成。
 - P1.29 scoped result：prefix_cache_on 相对 off 的 TTFT median 为 8276.868 ms vs 12916.854 ms，TPOT median 为 137.3645 ms vs 270.6705 ms，E2E median 为 16404.872 ms vs 30024.8085 ms；common metrics 还给出 Benchmark Duration 20701.285 ms vs 37692.712 ms、Request Throughput 1.545798 vs 0.848970 req/s、Output Token Throughput 98.931057 vs 54.334111 token/s、Total Token Throughput 10750.540365 vs 5904.324422 token/s。
+- P1.30 在 P1.29 同源 workload 上补齐 `prefix_cache_on/off x prefill/decode` 阶段内存读数：on/off 各 32/32 成功；本地归档附件显示 on/off `kv_cache_usage_pct_max` 为 9.4%/16.1%，四个 phase 的整卡 HBM used/free 均为 55050.24 MB / 10485.76 MB、HBM usage max 84.0%，host process-group RSS/PSS 约 5090-5114 MB / 4376-4383 MB。
 - P1.29 可以作为“本轮 Qwen3.5-4B/vLLM controlled streaming 条件下 prefix_cache_on 指标更好”的事实表；仍不能外推成通用 prefix-cache benefit，因为缺多轮稳定性、server lifecycle/warm cache 控制、精确 KV/prefix object hit/lookup/bytes 证据和 token-level 因果链。
+- P1.30 可以作为“本轮 Qwen3.5-4B/vLLM controlled streaming 条件下 process-group RSS/PSS 与 whole-device HBM phase occupancy”的 scoped fact；仍不能外推成 per-request KV object bytes、HBM bandwidth/read/write、cache hit/miss 或 memory-bound 归因。
 - P1.29 top op denominator 已使 MatMulV2/MatMulV3 的 shape-derived FLOPs 部分可比；但 top op delta 与 AI Core/AIV/MTE metric delta 仍不能宣称 bottleneck，因为缺 HBM bandwidth/read-write bytes/utilization、非重叠 op 时间、token/request stall join 和 shape-specific hardware peak。
 - 旧 P0.5 H2D/D2H 和新 hardware ceiling 差异来自不同复制 API、allocation、pinned/non_blocking 维度、size sweep、重复策略和 timing path；不是“SSD/NPU 优化了若干倍”。
-- 当前最大证据缺口：HBM bandwidth/utilization、KV/prefix object event、copy-compute overlap、host async issue、多轮/lifecycle 稳定性、slow token -> op/stall 的闭合 join，以及 DeepSeek-V4-Flash 服务器模型路径与真实多卡 runtime 证据。
+- 当前最大证据缺口：HBM bandwidth/read-write/utilization、KV/prefix object hit/miss/bytes/tier/restore latency、copy-compute overlap、host async issue、多轮/lifecycle 稳定性、slow token -> op/stall 的闭合 join，以及 DeepSeek-V4-Flash 服务器模型路径与真实多卡 runtime 证据。
 - 对 DeepSeek-V4-Flash：P0/P3 的 copy/matmul/CPU/DRAM/fio envelope 和 P1 的 msprof/request-device/readout 工具链可复用；Qwen3.5-4B runtime 结论不可迁移。
 
 # 2. Repository State
@@ -28,9 +30,9 @@
 | HEAD | a77da36874e8f7167e4ffb13e75b4f1cc87c49d9 |
 | HEAD message | feat(inference): add P1.29 streaming perf readout |
 | HEAD date | 2026-07-08 20:28:10 +0800 |
-| working tree | clean at refresh start; this refresh modifies the audit/report files |
+| working tree | not clean at refresh start; this refresh incorporates P1.30 feedback, progress notes and website/doc updates |
 | local checkout freshness | current: HEAD equals pushed P1.29 tooling/handoff commit |
-| active server task | P1.29 completed by server feedback; no next server task selected in this refresh |
+| active server task | P1.30 completed by server feedback; no active next server task in this refresh |
 
 # 3. Experiment Run Ledger
 | run_id | date | commit | model | device | workload | status | 核心产物 | experiment_type |
@@ -50,6 +52,7 @@
 | runtime_vllm_api_msprof_controlled_readout_2026_0708_p1_027 | 2026-07-08 | 4ff4e15 | Qwen3.5-4B | device_6 | offline readout over P1.26 | success | mode/top-op/metric delta | offline_readout |
 | runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028 | 2026-07-08 | 40a4cdd | Qwen3.5-4B | device_6 | continuous32_mixed, min_tokens=64 ignore_eos | success | server_feedback small readout files | controlled_runtime_replay |
 | runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029 | 2026-07-08 | a77da36 | Qwen3.5-4B | device_6 | continuous32_mixed, unprofiled streaming perf + msprof denominator | success | TTFT/TPOT/E2E + AISBench-style tables + MatMul denominator | streaming_perf_denominator |
+| runtime_vllm_api_memory_phase_readout_2026_0708_p1_030 | 2026-07-08 | a0ec678 | Qwen3.5-4B | device_6 | continuous32_mixed, phase-aligned memory sampling after P1.29 | success | memory_phase_summary.tsv + sampling policy + p1_030_result.json | memory_phase_readout |
 
 # 4. Server Inventory Baseline
 | metric | value | unit | source | status |
@@ -292,7 +295,7 @@ fio command evidence: filename under scratch_dir /data/ak-trace/hardware_ceiling
 This is not NVMe hardware peak: it is a single-job filesystem scratch-path envelope with short 5s runs and one file per rw/bs/iodepth case.
 Old P0.5 SSD fio was randrw 4k, size=64M, direct=1, iodepth=1, runtime=3s at /data/ak-trace/observability_scratch. Old total BW 11.759101 MiB/s cannot be compared to new sequential read 1m/QD1 394.721055 MiB/s as a 33x optimization.
 
-# 15. P1.23-P1.29 Progress Ledger
+# 15. P1.23-P1.30 Progress Ledger
 | run | 目的 | workload | request count | fixed output | msprof | direct overlap | aggregate | readout | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | P1.23 | msprof stats pairing | continuous16_mixed on/off | 16+16 | NO/unclean for later delta | yes | timebase candidates only | no | no | success profiler collection |
@@ -303,6 +306,7 @@ Old P0.5 SSD fio was randrw 4k, size=64M, direct=1, iodepth=1, runtime=3s at /da
 | P1.27 | controlled readout | read P1.26 final_analysis | 16 paired | YES fixed_64 | no new msprof | n/a | uses P1.26 aggregate | success | success raw small readout |
 | P1.28 | larger controlled replay/readout | continuous32_mixed on/off | 32+32 | YES 64 tokens | yes | yes | success | success | success raw counter readout |
 | P1.29 | streaming perf + denominator | continuous32_mixed on/off | 32+32 | YES 64 tokens | yes for denominator only | yes | n/a for unprofiled perf; shape readout for msprof | success | success TTFT/TPOT/E2E/common metrics + MatMul denominator |
+| P1.30 | phase memory readout | reuse P1.29 source workload | 32+32 | YES 64 tokens inherited from P1.29 | no new msprof | phase-window sampling | n/a | success | success process-group RSS/PSS + whole-device HBM phase matrix |
 
 # 16. P1.29 AISBench-style Streaming Performance Readout
 These tables are vLLM OpenAI streaming client metrics shaped like AISBench/MindIE-Motor output. They are valid performance readouts for this Qwen3.5-4B controlled workload, but they are not MindIE native prefill_time/decode_time and do not by themselves prove bottleneck class.
@@ -361,17 +365,21 @@ Policy notes: E2EL is client wall time; TTFT is host client first non-empty stre
 
 Common metrics are benchmark-window metrics: Benchmark Duration is max(response_end_ns) - min(request_start_ns); Concurrency is sum(client_wall_us) / benchmark_duration_us; Max Concurrency is request interval sweep; request/token throughput use totals divided by benchmark duration. These fields are valuable and reusable for DeepSeek Flash later, but they still do not expose HBM read/write bandwidth, AI Core utilization, KV/prefix object lookup/restore bytes, or slow-token-to-op causality.
 
-# 16.3 Prefix Cache x Phase Memory Occupancy Gap
-The requested `prefix_cache_on/off x prefill/decode` memory matrix is not available in P1.29. Current artifacts do not contain phase-aligned host RSS/PSS, NPU HBM used/free, HBM read/write bytes, or per-phase KV object footprint. The only related P1.29 proxy is overall vLLM server stat `server_stats_max_kv_cache_usage_pct`, which is useful but cannot be treated as total HBM usage or host memory usage.
+# 16.3 P1.30 Prefix Cache x Phase Memory Occupancy Readout
+P1.30 补齐了 P1.29 当时缺失的 `prefix_cache_on/off x prefill/decode` 阶段内存矩阵，但它的适用范围必须严格限定：NPU HBM 采样是 `npu-smi` whole-device occupancy，Host RSS/PSS 是 vLLM API server root pid + descendants 的 process-group footprint；二者都不是 per-request KV object bytes，也不是 HBM read/write bandwidth。
 
-| mode | phase | NPU HBM / 显存占用 | Host DRAM / 进程内存 | current available proxy | status |
-| --- | --- | --- | --- | --- | --- |
-| prefix_cache_on | prefill | not measured | not measured | overall max KV cache usage pct=8.2%; not phase-split | MISSING |
-| prefix_cache_on | decode | not measured | not measured | overall max KV cache usage pct=8.2%; not phase-split | MISSING |
-| prefix_cache_off | prefill | not measured | not measured | overall max KV cache usage pct=16.1%; not phase-split | MISSING |
-| prefix_cache_off | decode | not measured | not measured | overall max KV cache usage pct=16.1%; not phase-split | MISSING |
+| mode | phase | sample_count | overlapped_request_count | Host RSS avg/max MB | Host PSS avg/max MB | NPU HBM used avg/max MB | NPU HBM free min MB | HBM usage max | KV usage max | status |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| prefix_cache_on | prefill | 5 | 26 | 5109.184 / 5111.360 | 4377.083 / 4379.112 | 55050.24 / 55050.24 | 10485.76 | 84.0% | 9.4% | READY_AS_SCOPED_FACT |
+| prefix_cache_on | decode | 8 | 31 | 5110.943 / 5114.344 | 4378.816 / 4382.152 | 55050.24 / 55050.24 | 10485.76 | 84.0% | 9.4% | READY_AS_SCOPED_FACT |
+| prefix_cache_off | prefill | 12 | 25 | 5090.707 / 5091.871 | 4376.619 / 4377.767 | 55050.24 / 55050.24 | 10485.76 | 84.0% | 16.1% | READY_AS_SCOPED_FACT |
+| prefix_cache_off | decode | 14 | 19 | 5090.991 / 5092.816 | 4376.917 / 4378.814 | 55050.24 / 55050.24 | 10485.76 | 84.0% | 16.1% | READY_AS_SCOPED_FACT |
 
-Required follow-up evidence: for each prefix-cache mode, collect sampler-aligned `prefill` and `decode` windows with NPU HBM used/free, host process RSS/PSS or VmRSS/VmHWM, vLLM KV cache usage, request phase timestamps and sampling policy. A valid table must state whether samples are per-request, overlapped benchmark-window, process-level, device-level or model-engine-level. Without this, memory-bound, HBM pressure, KV pressure and prefix-cache memory benefit claims remain unsupported.
+Sampling policy: sample interval is 0.4s; prefill window is `request_start..first_token`; decode window is `first_token..response_end`; overlapping requests are not discarded. Source files are `工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_memory_phase_readout_2026_0708_p1_030/server_feedback/memory_phase_summary.tsv`, `memory_phase_sampling_policy.txt`, `p1_030_result.json` and `summary.txt`.
+
+Mail-body discrepancy: the user-pasted server email body reports prefix_cache_on/off `max_kv_cache_usage_pct=10.1/16.0`, while the local archived attachment reports 9.4/16.1 in `summary.txt` and `memory_phase_summary.tsv`. This audit treats the local archived attachment as the artifact-of-record and records the mail-body mismatch as a traceability note.
+
+Remaining follow-up evidence: P1.30 still does not expose HBM read/write bytes, HBM bandwidth/utilization counters, KV/prefix object hit/miss/bytes/tier/restore latency, or per-token/per-request memory causality. Therefore memory-bound, HBM pressure, KV object pressure and prefix-cache memory-benefit claims remain unsupported beyond the scoped occupancy facts above.
 
 # 16A. P1.28 Controlled Replay Conditions
 | field | value | evidence |
@@ -463,11 +471,13 @@ These are largest raw op-duration delta candidates, not top bottlenecks. Unit=UN
 AIC/AIV/MTE raw metric deltas do not prove memory-bound or compute-bound. P1.29 reduces the missing denominator set for MatMulV2/MatMulV3 only; still missing per-core active cycles, exact duration/unit semantics, HBM read/write bytes, transfer bytes, queue wait and request/token stall mapping.
 
 # 20. Hardware Ceiling ↔ Runtime Metric Mapping Audit
-| P1.28/P1.29 runtime metric | 对应 hardware ceiling metric | 当前是否可直接比较 | 缺什么 |
+| P1.28/P1.29/P1.30 runtime metric | 对应 hardware ceiling metric | 当前是否可直接比较 | 缺什么 |
 | --- | --- | --- | --- |
-| request H2D/D2H duration | copy GB/s ceiling | NOT_COMPARABLE | P1.28/P1.29 readouts have no request transfer bytes/directions/events |
+| request H2D/D2H duration | copy GB/s ceiling | NOT_COMPARABLE | P1.28/P1.29/P1.30 readouts have no request transfer bytes/directions/events |
 | MatMulV2/MatMulV3 shape-derived FLOPs | FP16 square matmul TFLOPS ceiling | PARTIALLY_COMPARABLE | exact duration unit, non-overlapped op time, dtype/shape-specific peak, request/token attribution |
-| MTE time / MTE ratios | HBM/transfer ceiling | NOT_COMPARABLE | HBM bandwidth counters, bytes, utilization denominator |
+| MTE time / MTE ratios | HBM/transfer ceiling | NOT_COMPARABLE | P1.30 adds whole-device occupancy, but still lacks HBM bandwidth counters, bytes, utilization denominator |
+| phase NPU HBM used/free | HBM capacity | PARTIALLY_COMPARABLE | P1.30 whole-device occupancy can be compared to 64GB capacity only; no per-request allocation or traffic |
+| phase host RSS/PSS | host memory capacity | PARTIALLY_COMPARABLE | process-group footprint only; no object-level attribution or NUMA path |
 | CPU wait / total_wait_time | CPU perf/DRAM baseline | NOT_COMPARABLE | CPU-side wait attribution, runqueue, core/NUMA, request wait semantics |
 | SSD latency | fio matrix | NOT_COMPARABLE | no runtime storage events, IO size, QD, object path |
 | request wait time | none in hardware ceiling | NOT_COMPARABLE | scheduler queue trace and timing semantics |
@@ -489,10 +499,13 @@ AIC/AIV/MTE raw metric deltas do not prove memory-bound or compute-bound. P1.29 
 | NPU | FP16 square matmul observed ceiling | 290.448949 | TFLOPS | hardware_ceiling_sweep_2026_0708_p0_007 | 8192x8192, 1 repeat, wall-clock+sync | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/npu_matmul_sweep.csv | hardware_ceiling_baseline | READY_AS_BASELINE |
 | NPU | AI Core/AIV/MTE delta | 21 raw metrics | raw | P1.28 | request-level aggregate on_minus_off | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/controlled_replay_ai_core_metric_delta.tsv | raw_profiler_counter | RAW_ONLY |
 | HBM | capacity | 64GB per NPU, 512GB derived aggregate | GB | obs_006 | manifest/npu-smi | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory | READY_AS_BASELINE |
+| HBM | phase whole-device occupancy | used 55050.24 MB; free min 10485.76 MB; usage max 84.0% across on/off prefill/decode | MB/% | P1.30 | npu-smi whole-device sampling, 0.4s interval, overlap not discarded | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_memory_phase_readout_2026_0708_p1_030/server_feedback/memory_phase_summary.tsv | runtime_observed | READY_AS_SCOPED_FACT |
 | HBM | bandwidth/utilization | unknown | n/a | none | no counter/benchmark mapping | none | unknown | NOT_READY |
 | SSD | sequential read/write envelope | 394.721055 / 377.724455 | MiB/s | hardware_ceiling_sweep_2026_0708_p0_007 | fio single-job direct=1 1G 5s | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/ssd_fio_sweep.csv | hardware_ceiling_baseline | READY_AS_BASELINE |
 | SSD | P99 latency | not stored in new sweep CSV | us | hardware_ceiling_sweep_2026_0708_p0_007 | CSV lacks p99 columns | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/ssd_fio_sweep.csv | available_not_aggregated | NOT_READY |
 | Runtime | request-device aggregate | 32 rows per mode | rows | P1.28 | fixed 64 tokens | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/msprof_request_device_aggregate_result.json | runtime_observed | READY_AS_RUNTIME_FACT |
+| Runtime | phase host process memory | RSS avg/max 5090.707-5110.943 / 5091.871-5114.344 MB; PSS avg/max 4376.619-4378.816 / 4377.767-4382.152 MB | MB | P1.30 | vLLM API server root pid + descendants, prefill/decode windows | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_memory_phase_readout_2026_0708_p1_030/server_feedback/memory_phase_summary.tsv | runtime_observed | READY_AS_SCOPED_FACT |
+| Runtime | KV cache usage pct proxy | on max 9.4%; off max 16.1% in P1.30 local attachment | % | P1.30 | vLLM server stats proxy; not object bytes | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_memory_phase_readout_2026_0708_p1_030/server_feedback/summary.txt | runtime_observed_proxy | PARTIAL |
 | Runtime | prefix stats benefit | not proven | n/a | P1.28 | raw delta only | server_feedback | candidate_signal | NOT_READY |
 | Attribution | slow request/token stall reason | not available | n/a | none | no slow token -> op/stall join | none | planned_not_measured | NOT_READY |
 | Stability | power/temp/frequency/throttling | snapshot only, no stability sweep | raw | obs_006 npu-smi excerpt | not time series | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/probe_results/npu_smi_probe.md | runtime_observed | RAW_ONLY |
@@ -517,9 +530,9 @@ AIC/AIV/MTE raw metric deltas do not prove memory-bound or compute-bound. P1.29 
 | 15 AI Core utilization | NO | raw counters not utilization |
 | 16 AIC/AIV time relation | PARTIAL | raw sums exist; semantics incomplete |
 | 17 MAC/MTE/vector raw differences | YES | 21 metric deltas |
-| 18 decode memory-bound | NO | no denominator/mapping |
-| 19 HBM bandwidth | NO | not measured |
-| 20 KV cache usage | PARTIAL | P1.29 server stats include max KV cache usage pct, but no page/bytes/eviction/object pressure model |
+| 18 decode memory-bound | NO | P1.30 gives scoped occupancy, but no HBM traffic/utilization or stall causality |
+| 19 HBM bandwidth | NO | P1.30 measures whole-device used/free occupancy, not read/write bandwidth |
+| 20 KV cache usage | PARTIAL | P1.30 local attachment gives on/off max KV cache usage pct 9.4/16.1, but no page/bytes/eviction/object pressure model |
 | 21 KV cache capacity pressure | NO | no pressure sweep |
 | 22 request queue pressure | PARTIAL | server stats/running/waiting samples exist earlier; not attribution |
 | 23 request wait time | PARTIAL | total_wait_time zero in P1.28 aggregate, semantics raw |
@@ -535,11 +548,12 @@ AIC/AIV/MTE raw metric deltas do not prove memory-bound or compute-bound. P1.29 
 | 文档 claim | artifact evidence | 审计结果 |
 | --- | --- | --- |
 | 硬件天花板基线完成 | hardware_ceiling_result success + 64/5/3/48 rows | SUPPORTED_WITH_BOUNDARY |
-| 硬件瓶颈归因完成 | P1.29 adds TTFT/TPOT and MatMul denominator, but HBM/utilization/token-stall causality still absent | OVERSTATED if read that way; report itself states boundary |
-| 小模型推理链路跑通 | P1.9-P1.22/P1.28/P1.29 progression, Qwen/vLLM success artifacts | SUPPORTED |
-| 小 prompt 推理链路观测闭环 | P1.23-P1.29 msprof, SQLite overlap, aggregate, streaming perf, denominator readout | SUPPORTED_WITH_BOUNDARY |
+| 硬件瓶颈归因完成 | P1.29 adds TTFT/TPOT and MatMul denominator; P1.30 adds scoped memory occupancy, but HBM traffic/utilization/token-stall causality still absent | OVERSTATED if read that way; report itself states boundary |
+| 小模型推理链路跑通 | P1.9-P1.22/P1.28/P1.29/P1.30 progression, Qwen/vLLM success artifacts | SUPPORTED |
+| 小 prompt 推理链路观测闭环 | P1.23-P1.30 msprof, SQLite overlap, aggregate, streaming perf, denominator and phase memory readout | SUPPORTED_WITH_BOUNDARY |
 | slow-token attribution 闭环 | no slow token -> op/stall join | OVERSTATED if implied; current docs mostly preserve boundary |
 | prefix cache benefit proven | P1.29 shows scoped TTFT/TPOT/E2E direction under one controlled workload | SUPPORTED_WITH_BOUNDARY if scoped to this run; OVERSTATED if generalized |
+| phase memory occupancy matrix available | P1.30 memory_phase_summary.tsv gives on/off x prefill/decode RSS/PSS and whole-device HBM used/free | SUPPORTED_WITH_BOUNDARY; scoped occupancy only, not KV object bytes or HBM traffic |
 | P1.25 still waiting | P1.25 aborted, P1.25b completed | STALE |
 
 # 24. DeepSeek-V4-Flash Reuse Matrix
@@ -554,6 +568,7 @@ AIC/AIV/MTE raw metric deltas do not prove memory-bound or compute-bound. P1.29 
 | fixed-output methodology | YES | control generated length for DeepSeek smoke/A-B | must adapt tokenizer/model config; 64 tokens may be too shallow |
 | AISBench-style streaming perf schema | YES | reuse TTFT/TPOT/E2E/ITL/common metric output tables | vLLM client timing only; not MindIE native prefill/decode timing |
 | MatMul shape denominator readout | PARTIAL | reuse shape/dtype/FLOPs extraction pattern for DeepSeek profiled smoke | DeepSeek MoE/W8A8/MTP op mix and multi-rank shape semantics differ |
+| phase memory readout schema | PARTIAL | reuse process-group RSS/PSS and whole-device HBM used/free sampling policy for DeepSeek smoke | does not expose KV object bytes, HBM traffic, per-rank/multi-card allocation or cache-tier events |
 | Qwen3.5-4B runtime deltas | NO | do not migrate as DeepSeek performance claims | MoE, EP, MTP, KV scale, 1M context, W8A8/HBM pressure differ |
 Qwen runtime conclusions that must not migrate: scoped prefix-cache TTFT/TPOT direction, scheduler behavior, bottleneck class, top-op importance, AI Core/MTE meaning, HBM pressure, KV capacity, expert reuse, EP communication, MTP impact, SSD/cold-tier feasibility.
 
@@ -565,7 +580,7 @@ Qwen runtime conclusions that must not migrate: scoped prefix-cache TTFT/TPOT di
 | P0_CRITICAL | repeated lifecycle-controlled TTFT/TPOT A/B plus prefix object evidence | P1.29 proves one scoped fixed-output A/B, not general prefix-cache benefit |
 | P1_HIGH | copy-compute overlap and host async issue benchmark | KV/offload benefit depends on hidden transfer time |
 | P1_HIGH | HBM bandwidth/read/write/utilization counters | MTE/MAC ratios cannot classify memory-bound |
-| P1_HIGH | KV/prefix object events: hit/miss/bytes/tier/restore latency | state-tiering claims need object-level evidence |
+| P1_HIGH | KV/prefix object events: hit/miss/bytes/tier/restore latency | P1.30 has only usage pct proxy and scoped process/device occupancy; state-tiering claims need object-level evidence |
 | P1_HIGH | DeepSeek eight-card runtime readiness and server model path | P6 baseline cannot start from local path |
 | P2_MEDIUM | fio mean/P99 and object IO histogram in current envelope | cold tier needs tail latency and IO granularity |
 | P2_MEDIUM | NUMA affinity/pinned-memory DRAM path sweep | CPU/DRAM warm-tier denominator is too weak |
@@ -579,13 +594,13 @@ Qwen runtime conclusions that must not migrate: scoped prefix-cache TTFT/TPOT di
 | transfer_overlap_event_microbench | Does copy overlap compute or only throughput look good? | Current sweep syncs after each copy; old overlap is copy-copy only | pinned, size, stream, compute payload | same NPU, same tensor sizes | copy+compute event timing | event elapsed, exposed host time, overlap ratio | separate copy-throughput vs overlap evidence | KV/offload transfer can be reasoned about |
 | hbm_counter_mapping_probe | Can msprof/CANN expose HBM or utilization denominators? | MTE/MAC raw counters are insufficient | selected msprof metrics/table inventory | fixed tiny workload or reuse existing raw if possible | offline/schema readout first | available columns, units, denominators | unit and semantic confidence documented | AI Core/MTE bottleneck claims become testable |
 | prefix_object_event_probe | Can prefix/KV object hit, lookup, bytes and restore latency be observed? | P1.29 shows scoped TTFT/TPOT direction but not cache-object causality | prefix cache on/off, repeated lifecycle, request groups | fixed prompts, fixed output, stable server warmup policy | controlled streaming workload | hit/lookup/bytes/eviction/restore latency + TTFT/TPOT | small object-event table + perf summary | scoped prefix benefit can be tied to object evidence |
-These do not repeat P0/P3 hardware ceiling sweep or P1.28; they fill missing evidence needed for P6/P8/P9 decisions.
+These do not repeat P0/P3 hardware ceiling sweep, P1.28, P1.29 or P1.30 phase memory readout; they fill missing evidence needed for P6/P8/P9 decisions.
 
 # 27. Final Verdict
 | verdict item | answer | evidence |
 | --- | --- | --- |
 | A. Ascend 服务器硬件性能参数现状表 | YES | inventory + synthetic ceiling + raw observations can form a status table with boundaries |
 | B. hardware observed ceiling baseline | PARTIAL | copy/matmul/fio baseline ready; DRAM only NumPy path; HBM/copy-overlap incomplete |
-| C. Qwen3.5-4B hardware behavior and streaming performance readout | YES | P1.28 fixed-output raw counter readout plus P1.29 TTFT/TPOT/E2E/common metrics and MatMul denominator exist |
-| D. Qwen3.5-4B hardware bottleneck attribution conclusion | NO | P1.29 reduces TTFT/shape gaps, but no HBM BW/utilization, KV object evidence, repeated lifecycle stability, or slow-token stall closure |
+| C. Qwen3.5-4B hardware behavior and streaming performance readout | YES | P1.28 fixed-output raw counter readout, P1.29 TTFT/TPOT/E2E/common metrics/MatMul denominator, and P1.30 phase memory occupancy matrix exist |
+| D. Qwen3.5-4B hardware bottleneck attribution conclusion | NO | P1.29 reduces TTFT/shape gaps and P1.30 reduces scoped occupancy gaps, but no HBM BW/utilization, KV object evidence, repeated lifecycle stability, or slow-token stall closure |
 | E. Enough evidence to decide DeepSeek KV offload/expert hot cache/CPU fallback/SSD tiering priority | NO | reusable baselines exist, but DeepSeek runtime, MoE/EP/KV/MTP evidence is absent |

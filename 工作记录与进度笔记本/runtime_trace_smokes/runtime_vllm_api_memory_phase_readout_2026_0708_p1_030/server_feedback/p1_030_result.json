@@ -1,0 +1,32 @@
+{
+  "run_id": "runtime_vllm_api_memory_phase_readout_2026_0708_p1_030",
+  "source_run_id": "runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029",
+  "commit": "a0ec67868697ebdab1368fc7c1a06c738a5168bb",
+  "git_pull_exit_code": "0",
+  "pytest_exit_code": "0",
+  "memory_probe_on_exit_code": "0",
+  "memory_probe_off_exit_code": "0",
+  "summary_exit_code": "0",
+  "mode_results": {
+    "prefix_cache_on": {
+      "request_count": 32,
+      "success_case_count": 32,
+      "failed_case_count": 0,
+      "generated_token_count_mismatch_count": 0,
+      "server_stats_max_kv_cache_usage_pct": 9.4,
+      "memory_sample_count": 9,
+      "status": "success"
+    },
+    "prefix_cache_off": {
+      "request_count": 32,
+      "success_case_count": 32,
+      "failed_case_count": 0,
+      "generated_token_count_mismatch_count": 0,
+      "server_stats_max_kv_cache_usage_pct": 16.1,
+      "memory_sample_count": 15,
+      "status": "success"
+    }
+  },
+  "memory_phase_summary_row_count": 4,
+  "policy": "phase_memory_readout_no_bottleneck_claim"
+}

@@ -1,0 +1,10 @@
+run_id=runtime_vllm_api_memory_phase_readout_2026_0708_p1_030
+source_run_id=runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029
+commit=a0ec67868697ebdab1368fc7c1a06c738a5168bb
+git_pull_exit_code=0
+pytest_exit_code=0
+memory_probe_on_exit_code=0
+memory_probe_off_exit_code=0
+summary_exit_code=0
+prefix_cache_on request_count=32 success=32 failed=0 mismatch=0 max_kv_cache_usage_pct=9.4
+prefix_cache_off request_count=32 success=32 failed=0 mismatch=0 max_kv_cache_usage_pct=16.1

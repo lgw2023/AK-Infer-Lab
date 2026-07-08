@@ -1,0 +1,605 @@
+{
+  "run_id": "runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029_perf_pair",
+  "overall_status": "success",
+  "prefix_cache_on_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029/perf_unprofiled/prefix_cache_on",
+  "prefix_cache_off_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029/perf_unprofiled/prefix_cache_off",
+  "artifact_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029/perf_pair_readout",
+  "mode_rows": [
+    {
+      "mode": "prefix_cache_on",
+      "status": "success",
+      "request_count": 32,
+      "success_case_count": 32,
+      "failed_case_count": 0,
+      "generated_token_count_mismatch_count": 0,
+      "total_input_token_count": 220502,
+      "total_generated_token_count": 2048,
+      "ttft_us_median": 8276868.0,
+      "ttft_us_p95": 9612211.0,
+      "tpot_us_median": 137364.5,
+      "tpot_us_p95": 211114.15,
+      "client_wall_us_median": 16404872.0,
+      "client_wall_us_p95": 16931305.85,
+      "output_tokens_per_s_median": 3.901281,
+      "aggregate_output_tokens_per_s": 3.912141,
+      "server_stats_sample_count": 2,
+      "server_stats_max_running_reqs": 15,
+      "server_stats_max_waiting_reqs": 17,
+      "server_stats_max_kv_cache_usage_pct": 8.2,
+      "server_stats_max_prefix_cache_hit_rate_pct": 63.3,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "status": "success",
+      "request_count": 32,
+      "success_case_count": 32,
+      "failed_case_count": 0,
+      "generated_token_count_mismatch_count": 0,
+      "total_input_token_count": 220502,
+      "total_generated_token_count": 2048,
+      "ttft_us_median": 12916854.0,
+      "ttft_us_p95": 25161761.05,
+      "tpot_us_median": 270670.5,
+      "tpot_us_p95": 302538.55,
+      "client_wall_us_median": 30024808.5,
+      "client_wall_us_p95": 32504488.8,
+      "output_tokens_per_s_median": 2.131571,
+      "aggregate_output_tokens_per_s": 2.297828,
+      "server_stats_sample_count": 3,
+      "server_stats_max_running_reqs": 21,
+      "server_stats_max_waiting_reqs": 21,
+      "server_stats_max_kv_cache_usage_pct": 16.1,
+      "server_stats_max_prefix_cache_hit_rate_pct": 0.0,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    }
+  ],
+  "delta_rows": [
+    {
+      "metric": "ttft_us_median",
+      "on_value": 8276868.0,
+      "off_value": 12916854.0,
+      "delta_on_minus_off": -4639986.0,
+      "ratio_on_div_off": 0.64078,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "ttft_us_p95",
+      "on_value": 9612211.0,
+      "off_value": 25161761.05,
+      "delta_on_minus_off": -15549550.05,
+      "ratio_on_div_off": 0.382017,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "tpot_us_median",
+      "on_value": 137364.5,
+      "off_value": 270670.5,
+      "delta_on_minus_off": -133306.0,
+      "ratio_on_div_off": 0.507497,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "tpot_us_p95",
+      "on_value": 211114.15,
+      "off_value": 302538.55,
+      "delta_on_minus_off": -91424.4,
+      "ratio_on_div_off": 0.697809,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "client_wall_us_median",
+      "on_value": 16404872.0,
+      "off_value": 30024808.5,
+      "delta_on_minus_off": -13619936.5,
+      "ratio_on_div_off": 0.546377,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "client_wall_us_p95",
+      "on_value": 16931305.85,
+      "off_value": 32504488.8,
+      "delta_on_minus_off": -15573182.95,
+      "ratio_on_div_off": 0.520891,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "output_tokens_per_s_median",
+      "on_value": 3.901281,
+      "off_value": 2.131571,
+      "delta_on_minus_off": 1.76971,
+      "ratio_on_div_off": 1.830237,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "aggregate_output_tokens_per_s",
+      "on_value": 3.912141,
+      "off_value": 2.297828,
+      "delta_on_minus_off": 1.614313,
+      "ratio_on_div_off": 1.702539,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "server_stats_max_waiting_reqs",
+      "on_value": 17.0,
+      "off_value": 21.0,
+      "delta_on_minus_off": -4.0,
+      "ratio_on_div_off": 0.809524,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "server_stats_max_kv_cache_usage_pct",
+      "on_value": 8.2,
+      "off_value": 16.1,
+      "delta_on_minus_off": -7.9,
+      "ratio_on_div_off": 0.509317,
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    },
+    {
+      "metric": "server_stats_max_prefix_cache_hit_rate_pct",
+      "on_value": 63.3,
+      "off_value": 0.0,
+      "delta_on_minus_off": 63.3,
+      "ratio_on_div_off": "",
+      "policy": "streaming_perf_pair_summary_no_bottleneck_claim"
+    }
+  ],
+  "parameter_rows": [
+    {
+      "mode": "prefix_cache_on",
+      "performance_parameter": "E2EL",
+      "stage": "total",
+      "Average": 16359.330187,
+      "Min": 15442.011,
+      "Max": 17143.512,
+      "Median": 16404.872,
+      "P75": 16724.2245,
+      "P90": 16828.388,
+      "P99": 17111.81667,
+      "N": 32,
+      "unit": "ms",
+      "policy": "client_wall_us_div_1000"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "performance_parameter": "TTFT",
+      "stage": "total",
+      "Average": 6803.978875,
+      "Min": 1549.062,
+      "Max": 9695.89,
+      "Median": 8276.868,
+      "P75": 9029.21125,
+      "P90": 9475.67,
+      "P99": 9677.67657,
+      "N": 32,
+      "unit": "ms",
+      "policy": "host_client_first_nonempty_text_chunk"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "performance_parameter": "TPOT",
+      "stage": "total",
+      "Average": 151.671656,
+      "Min": 96.094,
+      "Max": 220.522,
+      "Median": 137.3645,
+      "P75": 185.3515,
+      "P90": 207.0061,
+      "P99": 218.43198,
+      "N": 32,
+      "unit": "ms",
+      "policy": "response_end_minus_first_token_div_generated_tokens_minus_one"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "performance_parameter": "ITL",
+      "stage": "total",
+      "Average": 143.693531,
+      "Min": 96.489,
+      "Max": 228.659,
+      "Median": 97.861,
+      "P75": 228.30325,
+      "P90": 228.5169,
+      "P99": 228.65683,
+      "N": 32,
+      "unit": "ms",
+      "policy": "host_stream_inter_chunk_median_per_request_not_runtime_native_decode_event"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "performance_parameter": "InputTokens",
+      "stage": "total",
+      "Average": 6890.6875,
+      "Min": 4096.0,
+      "Max": 8192.0,
+      "Median": 8192.0,
+      "P75": 8192.0,
+      "P90": 8192.0,
+      "P99": 8192.0,
+      "N": 32,
+      "unit": "token",
+      "policy": "submitted_input_token_count"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "performance_parameter": "OutputTokens",
+      "stage": "total",
+      "Average": 64.0,
+      "Min": 64.0,
+      "Max": 64.0,
+      "Median": 64.0,
+      "P75": 64.0,
+      "P90": 64.0,
+      "P99": 64.0,
+      "N": 32,
+      "unit": "token",
+      "policy": "generated_token_count"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "performance_parameter": "OutputTokenThroughput",
+      "stage": "total",
+      "Average": 3.91468,
+      "Min": 3.733191,
+      "Max": 4.144538,
+      "Median": 3.901281,
+      "P75": 4.004698,
+      "P90": 4.026894,
+      "P99": 4.124142,
+      "N": 32,
+      "unit": "token/s",
+      "policy": "generated_tokens_div_client_wall_time"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "performance_parameter": "PrefillTokenThroughput",
+      "stage": "total",
+      "Average": 1219.219136,
+      "Min": 469.543253,
+      "Max": 3855.236266,
+      "Median": 947.939686,
+      "P75": 1532.822176,
+      "P90": 1731.848217,
+      "P99": 3477.647747,
+      "N": 32,
+      "unit": "token/s",
+      "policy": "input_tokens_div_ttft_host_client_approximation"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "performance_parameter": "E2EL",
+      "stage": "total",
+      "Average": 27852.395219,
+      "Min": 18534.275,
+      "Max": 32682.666,
+      "Median": 30024.8085,
+      "P75": 31286.32775,
+      "P90": 32201.3195,
+      "P99": 32659.3323,
+      "N": 32,
+      "unit": "ms",
+      "policy": "client_wall_us_div_1000"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "performance_parameter": "TTFT",
+      "stage": "total",
+      "Average": 12732.687219,
+      "Min": 1332.521,
+      "Max": 26508.421,
+      "Median": 12916.854,
+      "P75": 18841.98175,
+      "P90": 23591.3554,
+      "P99": 26263.08452,
+      "N": 32,
+      "unit": "ms",
+      "policy": "host_client_first_nonempty_text_chunk"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "performance_parameter": "TPOT",
+      "stage": "total",
+      "Average": 239.994969,
+      "Min": 98.003,
+      "Max": 304.487,
+      "Median": 270.6705,
+      "P75": 287.973,
+      "P90": 301.6377,
+      "P99": 304.07377,
+      "N": 32,
+      "unit": "ms",
+      "policy": "response_end_minus_first_token_div_generated_tokens_minus_one"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "performance_parameter": "ITL",
+      "stage": "total",
+      "Average": 243.828281,
+      "Min": 99.382,
+      "Max": 308.139,
+      "Median": 295.1785,
+      "P75": 304.1765,
+      "P90": 307.4565,
+      "P99": 308.04197,
+      "N": 32,
+      "unit": "ms",
+      "policy": "host_stream_inter_chunk_median_per_request_not_runtime_native_decode_event"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "performance_parameter": "InputTokens",
+      "stage": "total",
+      "Average": 6890.6875,
+      "Min": 4096.0,
+      "Max": 8192.0,
+      "Median": 8192.0,
+      "P75": 8192.0,
+      "P90": 8192.0,
+      "P99": 8192.0,
+      "N": 32,
+      "unit": "token",
+      "policy": "submitted_input_token_count"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "performance_parameter": "OutputTokens",
+      "stage": "total",
+      "Average": 64.0,
+      "Min": 64.0,
+      "Max": 64.0,
+      "Median": 64.0,
+      "P75": 64.0,
+      "P90": 64.0,
+      "P99": 64.0,
+      "N": 32,
+      "unit": "token",
+      "policy": "generated_token_count"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "performance_parameter": "OutputTokenThroughput",
+      "stage": "total",
+      "Average": 2.369745,
+      "Min": 1.958225,
+      "Max": 3.453062,
+      "Median": 2.131571,
+      "P75": 2.62253,
+      "P90": 3.122464,
+      "P99": 3.40623,
+      "N": 32,
+      "unit": "token/s",
+      "policy": "generated_tokens_div_client_wall_time"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "performance_parameter": "PrefillTokenThroughput",
+      "stage": "total",
+      "Average": 945.207866,
+      "Min": 250.154407,
+      "Max": 4481.730494,
+      "Median": 555.821868,
+      "P75": 1239.986519,
+      "P90": 1771.481354,
+      "P99": 4054.405433,
+      "N": 32,
+      "unit": "token/s",
+      "policy": "input_tokens_div_ttft_host_client_approximation"
+    }
+  ],
+  "common_metric_rows": [
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Benchmark Duration",
+      "stage": "total",
+      "value": 20701.285,
+      "unit": "ms",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Total Requests",
+      "stage": "total",
+      "value": 32.0,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Failed Requests",
+      "stage": "total",
+      "value": 0.0,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Success Requests",
+      "stage": "total",
+      "value": 32.0,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Concurrency",
+      "stage": "total",
+      "value": 25.288216,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Max Concurrency",
+      "stage": "total",
+      "value": 32.0,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Request Throughput",
+      "stage": "total",
+      "value": 1.545798,
+      "unit": "req/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Total Input Tokens",
+      "stage": "total",
+      "value": 220502.0,
+      "unit": "token",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Prefill Token Throughput",
+      "stage": "total",
+      "value": 10651.609308,
+      "unit": "token/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Total generated tokens",
+      "stage": "total",
+      "value": 2048.0,
+      "unit": "token",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Input Token Throughput",
+      "stage": "total",
+      "value": 10651.609308,
+      "unit": "token/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Output Token Throughput",
+      "stage": "total",
+      "value": 98.931057,
+      "unit": "token/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_on",
+      "common_metric": "Total Token Throughput",
+      "stage": "total",
+      "value": 10750.540365,
+      "unit": "token/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Benchmark Duration",
+      "stage": "total",
+      "value": 37692.712,
+      "unit": "ms",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Total Requests",
+      "stage": "total",
+      "value": 32.0,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Failed Requests",
+      "stage": "total",
+      "value": 0.0,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Success Requests",
+      "stage": "total",
+      "value": 32.0,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Concurrency",
+      "stage": "total",
+      "value": 23.645861,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Max Concurrency",
+      "stage": "total",
+      "value": 32.0,
+      "unit": "request",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Request Throughput",
+      "stage": "total",
+      "value": 0.84897,
+      "unit": "req/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Total Input Tokens",
+      "stage": "total",
+      "value": 220502.0,
+      "unit": "token",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Prefill Token Throughput",
+      "stage": "total",
+      "value": 5849.990311,
+      "unit": "token/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Total generated tokens",
+      "stage": "total",
+      "value": 2048.0,
+      "unit": "token",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Input Token Throughput",
+      "stage": "total",
+      "value": 5849.990311,
+      "unit": "token/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Output Token Throughput",
+      "stage": "total",
+      "value": 54.334111,
+      "unit": "token/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    },
+    {
+      "mode": "prefix_cache_off",
+      "common_metric": "Total Token Throughput",
+      "stage": "total",
+      "value": 5904.324422,
+      "unit": "token/s",
+      "policy": "benchmark_duration_based_vllm_openai_streaming_client_metric"
+    }
+  ],
+  "policy": "streaming_perf_pair_summary_no_bottleneck_claim",
+  "ttft_policy": "host_client_stream_first_nonempty_text_chunk",
+  "tpot_policy": "host_client_response_end_minus_first_token_div_generated_tokens_minus_one",
+  "itl_policy": "host_client_stream_inter_chunk_median_per_request_not_runtime_native_decode_event",
+  "aisbench_style_policy": "vllm_openai_streaming_client_metrics_not_mindie_native_timing",
+  "bottleneck_policy": "no_bottleneck_claim"
+}

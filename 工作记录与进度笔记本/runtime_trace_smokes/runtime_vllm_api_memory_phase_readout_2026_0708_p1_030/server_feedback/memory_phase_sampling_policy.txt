@@ -1,0 +1,13 @@
+memory_phase_sampling_policy
+sample_interval_sec=0.4
+phase_policy=prefill=request_start..first_token;decode=first_token..response_end
+overlap_policy=benchmark_window_phase_overlap_not_discarded
+host_process_scope=server_root_pid_and_all_descendants
+host_rss_source=/proc/<pid>/status VmRSS summed across process group
+host_pss_source=/proc/<pid>/smaps_rollup Pss summed across process group when readable
+host_main_vm_rss_hwm=/proc/<server_pid>/status VmRSS/VmHWM
+npu_hbm_primary_cmd=npu-smi info -t usages -i 6
+npu_hbm_primary_fields=HBM Capacity(MB), HBM Usage Rate(%), derived used/free MB
+npu_hbm_table_crosscheck_cmd=npu-smi info HBM-Usage(MB) used/total row for device 6
+kv_cache_usage_pct=overall vLLM server log proxy from write_server_stats_summary; not HBM used/free
+credibility_notes=device-level HBM is whole-NPU occupancy, not per-request exact allocation; host RSS/PSS is process-group footprint, not KV object bytes

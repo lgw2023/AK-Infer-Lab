@@ -1,0 +1,6 @@
+metric	source	unit	confidence	boundary
+request_start_ns,response_end_ns,first_token_ns	client time.monotonic_ns	ns	HIGH	host client wall-clock; not device execution time
+ttft_us,tpot_us,client_wall_us	streaming client derived fields	us	HIGH	user-visible client metric; affected by server/client/profiler mode
+task_time.start_time,duration_time	msprof ai_core_op_summary.db task_time	raw profiler time column	MEDIUM	used for overlap/grouping; do not publish as wall latency without unit confirmation
+ai_core_metrics.*_time,*_ratio	msprof ai_core_metrics	raw CANN metric	LOW	raw counter only; no utilization/bottleneck claim without denominator
+input_shapes,output_shapes,input_data_types,output_data_types	msprof ge_summary	tensor shape and dtype strings	HIGH	sufficient for tensor footprint and selected MatMul FLOPs estimates

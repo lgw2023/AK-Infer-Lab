@@ -1,0 +1,31 @@
+{
+  "run_id": "runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029_shape_denominators",
+  "source_artifact_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029/msprof_source",
+  "artifact_dir": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029/msprof_denominator_readout",
+  "overall_status": "success",
+  "mode_summaries": [
+    {
+      "mode": "msprof_prefix_cache_on",
+      "result_path": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029/msprof_source/msprof_prefix_cache_on/vllm/vllm_api_streaming_perf_result.json",
+      "request_count": 32,
+      "ai_core_op_summary_db": "/tmp/runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029_msprof_prefix_cache_on_msprof/PROF_000001_20260708211549420_01908994FJIDOFBQ/device_6/sqlite/ai_core_op_summary.db",
+      "shape_row_count": 80,
+      "status": "success"
+    },
+    {
+      "mode": "msprof_prefix_cache_off",
+      "result_path": "工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029/msprof_source/msprof_prefix_cache_off/vllm/vllm_api_streaming_perf_result.json",
+      "request_count": 32,
+      "ai_core_op_summary_db": "/tmp/runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029_msprof_prefix_cache_off_msprof/PROF_000001_20260708211954092_01915528JJJFMQML/device_6/sqlite/ai_core_op_summary.db",
+      "shape_row_count": 80,
+      "status": "success"
+    }
+  ],
+  "shape_row_count": 160,
+  "op_type_row_count": 33,
+  "policy": "shape_derived_denominator_no_hbm_bandwidth_or_bottleneck_claim",
+  "flops_policy": "matmul_flops_estimated_from_msprof_shapes_when_available",
+  "bytes_policy": "input_output_tensor_footprint_not_hbm_traffic",
+  "duration_policy": "raw_msprof_duration_time_not_user_latency",
+  "bottleneck_policy": "no_bottleneck_claim_without_hbm_bytes_utilization_and_request_token_join"
+}

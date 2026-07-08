@@ -1,0 +1,17 @@
+mode	performance_parameter	stage	Average	Min	Max	Median	P75	P90	P99	N	unit	policy
+prefix_cache_on	E2EL	total	16359.330187	15442.011	17143.512	16404.872	16724.2245	16828.388	17111.81667	32	ms	client_wall_us_div_1000
+prefix_cache_on	TTFT	total	6803.978875	1549.062	9695.89	8276.868	9029.21125	9475.67	9677.67657	32	ms	host_client_first_nonempty_text_chunk
+prefix_cache_on	TPOT	total	151.671656	96.094	220.522	137.3645	185.3515	207.0061	218.43198	32	ms	response_end_minus_first_token_div_generated_tokens_minus_one
+prefix_cache_on	ITL	total	143.693531	96.489	228.659	97.861	228.30325	228.5169	228.65683	32	ms	host_stream_inter_chunk_median_per_request_not_runtime_native_decode_event
+prefix_cache_on	InputTokens	total	6890.6875	4096.0	8192.0	8192.0	8192.0	8192.0	8192.0	32	token	submitted_input_token_count
+prefix_cache_on	OutputTokens	total	64.0	64.0	64.0	64.0	64.0	64.0	64.0	32	token	generated_token_count
+prefix_cache_on	OutputTokenThroughput	total	3.91468	3.733191	4.144538	3.901281	4.004698	4.026894	4.124142	32	token/s	generated_tokens_div_client_wall_time
+prefix_cache_on	PrefillTokenThroughput	total	1219.219136	469.543253	3855.236266	947.939686	1532.822176	1731.848217	3477.647747	32	token/s	input_tokens_div_ttft_host_client_approximation
+prefix_cache_off	E2EL	total	27852.395219	18534.275	32682.666	30024.8085	31286.32775	32201.3195	32659.3323	32	ms	client_wall_us_div_1000
+prefix_cache_off	TTFT	total	12732.687219	1332.521	26508.421	12916.854	18841.98175	23591.3554	26263.08452	32	ms	host_client_first_nonempty_text_chunk
+prefix_cache_off	TPOT	total	239.994969	98.003	304.487	270.6705	287.973	301.6377	304.07377	32	ms	response_end_minus_first_token_div_generated_tokens_minus_one
+prefix_cache_off	ITL	total	243.828281	99.382	308.139	295.1785	304.1765	307.4565	308.04197	32	ms	host_stream_inter_chunk_median_per_request_not_runtime_native_decode_event
+prefix_cache_off	InputTokens	total	6890.6875	4096.0	8192.0	8192.0	8192.0	8192.0	8192.0	32	token	submitted_input_token_count
+prefix_cache_off	OutputTokens	total	64.0	64.0	64.0	64.0	64.0	64.0	64.0	32	token	generated_token_count
+prefix_cache_off	OutputTokenThroughput	total	2.369745	1.958225	3.453062	2.131571	2.62253	3.122464	3.40623	32	token/s	generated_tokens_div_client_wall_time
+prefix_cache_off	PrefillTokenThroughput	total	945.207866	250.154407	4481.730494	555.821868	1239.986519	1771.481354	4054.405433	32	token/s	input_tokens_div_ttft_host_client_approximation

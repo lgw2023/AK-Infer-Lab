@@ -1,0 +1,12 @@
+metric	on_value	off_value	delta_on_minus_off	ratio_on_div_off	policy
+ttft_us_median	8276868.0	12916854.0	-4639986.0	0.64078	streaming_perf_pair_summary_no_bottleneck_claim
+ttft_us_p95	9612211.0	25161761.05	-15549550.05	0.382017	streaming_perf_pair_summary_no_bottleneck_claim
+tpot_us_median	137364.5	270670.5	-133306.0	0.507497	streaming_perf_pair_summary_no_bottleneck_claim
+tpot_us_p95	211114.15	302538.55	-91424.4	0.697809	streaming_perf_pair_summary_no_bottleneck_claim
+client_wall_us_median	16404872.0	30024808.5	-13619936.5	0.546377	streaming_perf_pair_summary_no_bottleneck_claim
+client_wall_us_p95	16931305.85	32504488.8	-15573182.95	0.520891	streaming_perf_pair_summary_no_bottleneck_claim
+output_tokens_per_s_median	3.901281	2.131571	1.76971	1.830237	streaming_perf_pair_summary_no_bottleneck_claim
+aggregate_output_tokens_per_s	3.912141	2.297828	1.614313	1.702539	streaming_perf_pair_summary_no_bottleneck_claim
+server_stats_max_waiting_reqs	17.0	21.0	-4.0	0.809524	streaming_perf_pair_summary_no_bottleneck_claim
+server_stats_max_kv_cache_usage_pct	8.2	16.1	-7.9	0.509317	streaming_perf_pair_summary_no_bottleneck_claim
+server_stats_max_prefix_cache_hit_rate_pct	63.3	0.0	63.3		streaming_perf_pair_summary_no_bottleneck_claim
