@@ -38,6 +38,9 @@ VLLM_API_MSPROF_REQUEST_DEVICE_AGGREGATE_FAST_HANDOFF = (
 VLLM_API_MSPROF_CONTROLLED_REPLAY_HANDOFF = (
     CONTRACT_DIR / "server_runtime_vllm_api_msprof_controlled_replay_handoff.md"
 )
+VLLM_API_MSPROF_CONTROLLED_READOUT_HANDOFF = (
+    CONTRACT_DIR / "server_runtime_vllm_api_msprof_controlled_readout_handoff.md"
+)
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -693,6 +696,30 @@ def test_vllm_api_msprof_controlled_replay_handoff_defines_required_boundaries()
         "70KB",
         "不安装、升级、卸载或修复任何包",
         "不运行 full 16K/32K 或 full `P010=43216` tokens",
+        "不输出性能 benchmark、吞吐结论、调度效率结论、prefix cache 命中率结论、瓶颈归因或优化建议",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
+def test_vllm_api_msprof_controlled_readout_handoff_defines_required_boundaries():
+    handoff = VLLM_API_MSPROF_CONTROLLED_READOUT_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_msprof_controlled_readout_2026_0708_p1_027",
+        "runtime_vllm_api_msprof_controlled_replay_2026_0707_p1_026",
+        "tools/inference_contracts/summarize_msprof_controlled_replay.py",
+        "generated_length_status.status=fixed_64",
+        "controlled_replay_mode_delta_summary.tsv",
+        "controlled_replay_pair_delta_summary.tsv",
+        "controlled_replay_top_op_delta.tsv",
+        "controlled_replay_ai_core_metric_delta.tsv",
+        "mail_attachment_candidates.tsv",
+        "70KB",
+        "不启动 vLLM API server",
+        "不运行新的模型推理请求",
+        "不重新运行 msprof",
+        "不安装、升级、卸载或修复任何包",
         "不输出性能 benchmark、吞吐结论、调度效率结论、prefix cache 命中率结论、瓶颈归因或优化建议",
     ]
     for text in required_text:
