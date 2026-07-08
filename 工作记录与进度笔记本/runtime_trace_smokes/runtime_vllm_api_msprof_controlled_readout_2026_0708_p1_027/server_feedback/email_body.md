@@ -9,7 +9,7 @@ P1.27 vLLM API msprof controlled readout 已完成。
 
 run_id: runtime_vllm_api_msprof_controlled_readout_2026_0708_p1_027
 source_run_id: runtime_vllm_api_msprof_controlled_replay_2026_0707_p1_026
-commit: 4ff4e1552ddc1c7432f372fc268897730c38ec0b
+commit: c65d9d63c9ec2a0f2ac87ca1d79cb732a2b905eb
 artifact_dir: 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_controlled_readout_2026_0708_p1_027
 git_pull_exit_code: 0
 pytest_exit_code: 0
