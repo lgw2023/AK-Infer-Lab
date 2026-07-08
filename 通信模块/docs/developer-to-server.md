@@ -1,71 +1,95 @@
 # Developer to Server
 
-## 当前任务：无新服务器执行任务
+## 当前任务：P1.29 Qwen3.5-4B vLLM API streaming perf + denominator
 
-- 状态 ID：`no_active_server_task_after_p0_p4_closeout_2026_0708`
-- 最近完成任务 1：P1.28 `runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028`
-- 最近完成任务 2：P0/P3 `hardware_ceiling_sweep_2026_0708_p0_007`
+- 状态 ID：`runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029`
+- Handoff：`工作记录与进度笔记本/p1_inference_contracts/server_runtime_vllm_api_streaming_perf_denominator_handoff.md`
+- 上一轮依据：P1.28 `runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028`
+- 本轮目的：补齐 Qwen3.5-4B / vLLM API 的 TTFT、TPOT、E2E latency、output tokens/s、server stats A/B、AISBench/MindIE-Motor 风格性能参数表、common metric 表、单位映射、MatMul FLOPs denominator 和 input/output tensor footprint bytes。
 
-## 当前结论
+## 执行要求
 
-P0-P4 当前阶段已经收尾。
+请严格执行 handoff 文件中的命令和边界。
 
-三类阶段目标均已满足：
+本轮分两段：
 
-1. 服务器环境与硬件天花板基线：P0.5/006 加 P0/P3 `hardware_ceiling_sweep_2026_0708_p0_007`。
-2. 小模型推理链路跑通：`transformers + torch_npu` 与 vLLM / vLLM-Ascend 小模型路径。
-3. 小 prompt 推理链路观测：P1.23-P1.28 的 msprof、request-device 聚合和 readout 闭环。
+1. `perf_unprofiled`：不启用 msprof，运行 streaming `/v1/completions`，采集用户可见性能指标，并输出 AISBench-style `Performance Parameters` / `Common Metric` 小表。
+2. `msprof_denominator`：启用 msprof 跑同一 `continuous32_mixed` streaming workload，只用于 shape/unit/denominator 读数。
 
-## 最近完成结果摘要
+关键固定条件：
 
-### P1.28
+- 模型：`/data/node0_disk1/Public/Qwen3.5-4B`
+- workload：`continuous32_mixed`
+- `--max-model-len 9216`
+- `--min-tokens 64`
+- `--ignore-eos`
+- prefix cache A/B：on/off 各一轮
+- device 默认：`ASCEND_RT_VISIBLE_DEVICES=6`
+- `VLLM_PLUGINS=ascend`
+- `VLLM_USE_V1=1`
 
-- `git_pull_exit_code=0`
-- `pytest_exit_code=0`
-- `msprof_prefix_cache_on_exit_code=0`
-- `msprof_prefix_cache_off_exit_code=0`
-- `request_device_aggregate_fast_exit_code=0`
-- `controlled_readout_exit_code=0`
-- on/off 两轮均 32/32 成功，固定生成 64 tokens。
-- readout `overall_status=success`、`missing_files=[]`。
-- 边界：raw counter readout，不是 benchmark、吞吐、prefix cache 命中率验收或瓶颈归因。
+## 必须回传
 
-### P0/P3 hardware ceiling sweep
+邮件正文控制在 70KB 内，必须包含：
 
-- run_id：`hardware_ceiling_sweep_2026_0708_p0_007`
-- commit：`7ce7493743a075a749a1c758079935ad159a448a`
-- `git_pull_exit_code=0`
-- `pytest_exit_code=0`
-- `hardware_ceiling_exit_code=0`
-- `overall_status=success`
-- `npu_status=success`
-- `dram_status=success`
-- `fio_status=success`
-- 行数：copy `64`、matmul `5`、DRAM `3`、fio `48`
+- `run_id`
+- `commit`
+- `git_pull_exit_code`
+- `pytest_exit_code`
+- `perf_on_exit_code`
+- `perf_off_exit_code`
+- `perf_pair_exit_code`
+- `msprof_on_exit_code`
+- `msprof_off_exit_code`
+- `shape_denominator_exit_code`
+- unprofiled on/off 的 request_count、success、failed、generated mismatch
+- unprofiled on/off 的 TTFT median/p95、TPOT median/p95、E2E median/p95、aggregate output tokens/s
+- unprofiled on/off 的 AISBench-style 指标：`E2EL`、`TTFT`、`TPOT`、`ITL`、`InputTokens`、`OutputTokens`、`OutputTokenThroughput`、`PrefillTokenThroughput`
+- unprofiled on/off 的 common metrics：`Benchmark Duration`、`Concurrency`、`Max Concurrency`、`Request Throughput`、`Input Token Throughput`、`Output Token Throughput`、`Total Token Throughput`
+- on/off 的 max running、max waiting、max KV cache usage、max prefix cache hit rate
+- denominator 的 `shape_row_count`、`op_type_row_count`
+- MatMulV2/MatMulV3 的 denominator 状态
+- unit mapping confidence
+- artifact_dir
+- mail_attachment_candidates
 
-peak readout：
+建议附件：
 
-- H2D best：`24.313915 GB/s`
-- D2H best：`26.480714 GB/s`
-- matmul best：`290.448949 TFLOPS`
-- DRAM read best：`5.332057 GB/s`
-- DRAM copy best：`2.963189 GB/s`
-- fio read best：`394.721055 MiB/s`
-- fio write best：`377.724455 MiB/s`
+- `summary.txt`
+- `p1_029_result.json`
+- `perf_pair_readout/vllm_api_streaming_perf_mode_summary.tsv`
+- `perf_pair_readout/vllm_api_streaming_perf_delta_summary.tsv`
+- `perf_pair_readout/vllm_api_streaming_perf_parameters.tsv`
+- `perf_pair_readout/vllm_api_streaming_perf_common_metrics.tsv`
+- `perf_pair_readout/vllm_api_streaming_perf_pair_result.json`
+- `msprof_denominator_readout/msprof_shape_denominator_result.json`
+- `msprof_denominator_readout/msprof_shape_denominator_by_op_type.tsv`
+- `msprof_denominator_readout/msprof_unit_mapping.tsv`
+- `msprof_denominator_readout/hardware_denominator_mapping.tsv`
+- `mail_attachment_candidates.tsv`
 
-边界：这是独立硬件 microbench ceiling，不是模型推理 benchmark、生产吞吐或瓶颈归因。
+## 边界
 
-## 请不要执行
+- 不启动 P5。
+- 不启动 DeepSeek-V4-Flash。
+- 不重复 P1.28 原任务。
+- 不重复 P0/P3 hardware ceiling sweep。
+- 不安装、升级、卸载或修复任何包。
+- 不修改、提交或 push 服务器仓库代码。
+- 不静默降低 `max_model_len`、不删减 case、不降低输入 cap、不缩短 output token。
+- 不把 profiler 下的 TTFT/TPOT 当作 unprofiled 性能结论。
+- 不把 vLLM OpenAI streaming client 的 AISBench-style 指标当作 MindIE native `prefill_time/decode_time`。
+- `ITL` 是 host streaming inter-chunk latency，不是 runtime native decode event。
+- 不把 shape-derived tensor bytes 当作 HBM traffic。
+- 不输出 compute-bound、memory-bound、scheduler-bound、prefix-cache benefit 或其他瓶颈归因结论。
+- 不回传 raw msprof、大日志、大 zip、完整 generated text 或超过 70KB 的附件。
 
-- 不要重复执行 P1.28。
-- 不要重复执行 P0/P3 hardware ceiling sweep。
-- 不要启动 P5。
-- 不要启动 DeepSeek-V4-Flash。
-- 不要运行新的 benchmark、msprof、vLLM server 或模型加载任务。
-- 不要安装、升级、卸载或修复任何包。
+## 完成后
 
-## 等待下一步
+请发送任务完成邮件，标题建议：
 
-请等待开发侧重新整理全局计划或 DeepSeek-V4-Flash 专项实验卡片后，再根据新的 `developer-to-server.md` 执行下一轮任务。
+```text
+[AK服务器] 任务完成：P1.29 Qwen3.5-4B vLLM API streaming perf denominator
+```
 
-在收到新任务前，服务器侧无需执行命令，也无需回传邮件。
+如果任何一步失败，不要取巧缩小任务；保留失败产物在服务器本地，回传 70KB 内摘要、退出码和小文件清单。

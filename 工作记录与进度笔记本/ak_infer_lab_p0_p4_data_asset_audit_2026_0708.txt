@@ -1,0 +1,517 @@
+# AK-Infer-Lab P0-P4 收尾后硬件性能与推理观测数据资产全量审计
+生成位置: /tmp/ak_infer_lab_p0_p4_data_asset_audit_2026_0708.txt
+审计依据: 当前本地 HEAD、当前工作区、已归档服务器 artifact、CSV/TSV/JSON、采集/分析源码。未使用网络规格补洞。
+重要边界: 本报告没有修改仓库文件，没有提交/推送，没有启动服务器任务，没有运行模型、msprof、fio 或硬件 benchmark。
+
+# 1. Executive Summary
+- 当前本地仓库在 branch=main, HEAD=7a126a548bc3eefe49d99c839a571ccb720d6b4a, HEAD message=docs: close out p0 p4 phase and archive hardware ceiling, HEAD date=2026-07-08 17:11:54 +0800。
+- local checkout freshness: current: HEAD equals required P0-P4 closeout commit；关键 artifact hardware_ceiling_sweep_2026_0708_p0_007、runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028、11/12 号收尾/重排文档均存在。
+- working tree clean: no; untracked/modified entries: ?? "tools/P0-P4 \346\224\266\345\260\276\345\220\216\347\241\254\344\273\266\346\200\247\350\203\275\344\270\216\346\216\250\347\220\206\350\247\202\346\265\213\346\225\260\346\215\256\350\265\204\344\272\247\345\205\250\351\207\217\345\256\241\350\256\241.md"。未跟踪项是本次审计计划文件，不是历史实验 artifact。
+- P0-P4 可以按“阶段目标”收尾：服务器环境/硬件 ceiling 采集链路闭环、小模型推理链路跑通、小 prompt 观测链路闭环。
+- P0-P4 不能按“性能瓶颈归因”收尾：compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core/AIV/MTE bottleneck 等均未形成可发布结论。
+- 当前最强 hardware ceiling baseline 是 P0/P3 sweep: H2D 24.313915 GB/s, D2H 26.480714 GB/s, FP16 square matmul 290.448949 TFLOPS, NumPy DRAM read 5.332057 GB/s, fio read/write 394.721055/377.724455 MiB/s。
+- DRAM 5.332057 GB/s 是 observed_cpu_numpy_memory_path_ceiling，不是 server_dram_hardware_peak。
+- fio 394.721055 MiB/s 是 single-job, direct=1, filesystem scratch path, 1G file, 5s sweep 的 observed envelope，不是 NVMe theoretical peak。
+- P1.28 提供 fixed 64-token Qwen3.5-4B/vLLM prefix-cache on/off raw counter readout：on/off 各 32/32 成功，request-device aggregate 与 readout 成功。
+- P1.28 all-request raw delta 为 on_minus_off: task rows -1,679,946，total_duration_time -474,892,147,577；32/32 request duration delta 为负。
+- 该负 delta 不能直接解释为 prefix-cache benefit，因为缺 TTFT/TPOT、server lifecycle/warm cache、精确 hit/lookup 证据、单位确认和单变量性能验收。
+- top op delta 与 AI Core/AIV/MTE metric delta 是 raw profiler counters；没有 shape、denominator、utilization、HBM bandwidth 或 hardware ceiling mapping 时，不得宣称 bottleneck。
+- 旧 P0.5 H2D/D2H 和新 hardware ceiling 差异来自不同复制 API、allocation、pinned/non_blocking 维度、size sweep、重复策略和 timing path；不是“SSD/NPU 优化了若干倍”。
+- 当前最大证据缺口：HBM bandwidth/utilization、真实模型 op shape、TTFT/TPOT、KV/prefix object event、copy-compute overlap、host async issue、slow token -> op/stall 的闭合 join。
+- 对 DeepSeek-V4-Flash：P0/P3 的 copy/matmul/CPU/DRAM/fio envelope 和 P1 的 msprof/request-device/readout 工具链可复用；Qwen3.5-4B runtime 结论不可迁移。
+
+# 2. Repository State
+| field | value |
+| --- | --- |
+| branch | main |
+| HEAD | 7a126a548bc3eefe49d99c839a571ccb720d6b4a |
+| HEAD message | docs: close out p0 p4 phase and archive hardware ceiling |
+| HEAD date | 2026-07-08 17:11:54 +0800 |
+| working tree | no; untracked/modified entries: ?? "tools/P0-P4 \346\224\266\345\260\276\345\220\216\347\241\254\344\273\266\346\200\247\350\203\275\344\270\216\346\216\250\347\220\206\350\247\202\346\265\213\346\225\260\346\215\256\350\265\204\344\272\247\345\205\250\351\207\217\345\256\241\350\256\241.md" |
+| local checkout freshness | current: HEAD equals required P0-P4 closeout commit |
+| active server task | no_active_server_task_after_p0_p4_closeout_2026_0708 in 通信模块/docs/developer-to-server.md |
+
+# 3. Experiment Run Ledger
+| run_id | date | commit | model | device | workload | status | 核心产物 | experiment_type |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| obs_2026_0703_atlas800t_a2_001 | 2026-07-03 | 4015000 | n/a | atlas800t-a2-node-001 | inventory | available | manifest + profile + microbench/probes | inventory |
+| obs_2026_0703_atlas800t_a2_002 | 2026-07-03 | c1d14a3 | n/a | atlas800t-a2-node-001 | inventory + microbench | available | manifest + profile + microbench/probes | lightweight_microbench |
+| obs_2026_0704_atlas800t_a2_003 | 2026-07-04 | 41c86f7 | n/a | atlas800t-a2-node-001 | inventory + microbench | available | manifest + profile + microbench/probes | lightweight_microbench |
+| obs_2026_0705_atlas800t_a2_004 | 2026-07-04 | 4e4bdf9 | n/a | atlas800t-a2-node-001 | inventory + microbench | available | manifest + profile + microbench/probes | lightweight_microbench |
+| obs_2026_0705_atlas800t_a2_005 | 2026-07-05 | d9c4c71 | n/a | atlas800t-a2-node-001 | inventory + microbench | available | manifest + profile + microbench/probes | lightweight_microbench |
+| obs_2026_0705_atlas800t_a2_006 | 2026-07-05 | d9c4c71 | n/a | atlas800t-a2-node-001 | inventory + microbench | available | manifest + profile + microbench/probes | lightweight_microbench |
+| hardware_ceiling_sweep_2026_0708_p0_007 | 2026-07-08 | 7ce7493 / archived under HEAD 7a126a5 | n/a | npu:0 | copy/matmul/DRAM/fio sweep | success | hardware_ceiling_result.json + 4 CSV | hardware_ceiling |
+| runtime_vllm_api_msprof_stats_pairing_2026_0707_p1_023 | 2026-07-07 | 6f2e3eb | Qwen3.5-4B | device_6 | continuous16_mixed, prefix on/off under msprof | success | summary + msprof sqlite inventory | profiler_collection |
+| runtime_vllm_api_msprof_sqlite_window_analysis_2026_0707_p1_024 | 2026-07-07 | b51e779 | Qwen3.5-4B | device_6 | reuse P1.23 raw msprof; request window overlap | success | request/profiler overlap TSV | offline_readout |
+| runtime_vllm_api_msprof_request_device_aggregate_2026_0707_p1_025 | 2026-07-07 | 947e72a | Qwen3.5-4B | device_6 | serial request-device aggregate | aborted after 8.6h; superseded | aborted result json | request_device_aggregation |
+| runtime_vllm_api_msprof_request_device_aggregate_fast_2026_0707_p1_025b | 2026-07-07 | 85f2873 | Qwen3.5-4B | device_6 | fast aggregate over P1.23 | success | final_analysis aggregate TSV | request_device_aggregation |
+| runtime_vllm_api_msprof_controlled_replay_2026_0707_p1_026 | 2026-07-08 | e2fa57c | Qwen3.5-4B | device_6 | continuous16_mixed, min_tokens=64 ignore_eos | success | generated length + aggregate | controlled_runtime_replay |
+| runtime_vllm_api_msprof_controlled_readout_2026_0708_p1_027 | 2026-07-08 | 4ff4e15 | Qwen3.5-4B | device_6 | offline readout over P1.26 | success | mode/top-op/metric delta | offline_readout |
+| runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028 | 2026-07-08 | 40a4cdd | Qwen3.5-4B | device_6 | continuous32_mixed, min_tokens=64 ignore_eos | success | server_feedback small readout files | controlled_runtime_replay |
+
+# 4. Server Inventory Baseline
+| metric | value | unit | source | status |
+| --- | --- | --- | --- | --- |
+| OS | Linux | text | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory |
+| kernel | 5.15.0-91-generic | text | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory |
+| architecture | aarch64 | text | 工作记录与进度笔记本/08_服务器体检结果分析与下一步计划.md | confirmed_inventory |
+| host | DevServer-BMS-3d97cc99-0 | text | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory |
+| CPU model | HiSilicon Kunpeng-920 | text | 工作记录与进度笔记本/08_服务器体检结果分析与下一步计划.md | confirmed_inventory |
+| socket count | 4 | count | 工作记录与进度笔记本/08_服务器体检结果分析与下一步计划.md | confirmed_inventory |
+| cores/socket | 48 | count | 工作记录与进度笔记本/08_服务器体检结果分析与下一步计划.md | confirmed_inventory |
+| logical CPUs | 192 | count | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/numa_topology.csv | confirmed_inventory |
+| NUMA nodes | 8 | count | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/numa_topology.csv | confirmed_inventory |
+| L3 cache | 192 MiB | MiB | 工作记录与进度笔记本/08_服务器体检结果分析与下一步计划.md | confirmed_inventory |
+| total memory | 1542613 MB (~1.5 TiB) | MB | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/numa_topology.csv | confirmed_inventory |
+| swap | none | text | 工作记录与进度笔记本/08_服务器体检结果分析与下一步计划.md | confirmed_inventory |
+| NPU model | Ascend 910B1 | text | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/probe_results/npu_smi_probe.md | confirmed_inventory |
+| NPU count | 8 | count | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory |
+| HBM per NPU | 64.0 | GB | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory |
+| aggregate physical HBM | 512 GB (derived=8*64GB) | GB | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory |
+| driver | 26.0.rc1 | version | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | runtime_version |
+| firmware | unknown | version | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | unknown |
+| CANN | 9.0.0 | version | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | runtime_version |
+| torch | 2.9.0+cpu import seen in project records | version | 工作记录与进度笔记本/08_服务器体检结果分析与下一步计划.md | runtime_version |
+| torch_npu | 2.9.0.post2 | version | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | runtime_version |
+| vllm | available/editable root /data/node0_disk1/vllm/vllm | path | 工作记录与进度笔记本/08_服务器体检结果分析与下一步计划.md | runtime_version |
+| vllm_ascend | 0.18.0 | version | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | runtime_version |
+| SSD/NVMe devices | /data/node0_disk1/2/3 7.0T-class NVMe; project on node0_disk1 | text | 工作记录与进度笔记本/08_服务器体检结果分析与下一步计划.md | confirmed_inventory |
+
+# 5. P0.5 vs Hardware Ceiling Methodology Comparison
+| 差异项 | P0.5 microbench | hardware ceiling | 可能影响 | 是否有证据 |
+| --- | --- | --- | --- | --- |
+| source allocation | torch.empty CPU source, pageable only; .to(device) | torch.empty CPU source/destination; optional pin_memory() | pinned path exposed in new sweep | source code + CSV |
+| destination allocation | implicit tensor returned by .to() or .cpu() | preallocated npu_dst / cpu_dst then copy_() | allocation behavior differs from copy measurement path | source code |
+| copy API | source.to(device) and source.cpu() | npu_dst.copy_(cpu_src) / cpu_dst.copy_(npu_src) | not the same API path | source code |
+| pinned | not parameterized | host_pinned 0/1 | new values can be much higher for large transfers | CSV 64 rows |
+| non_blocking | only overlap path uses non_blocking=True | non_blocking 0/1 for every copy case | label does not imply async overlap due immediate synchronize | source code |
+| synchronize | timed() calls torch.npu.synchronize() | timed() calls torch.npu.synchronize() after each fn() | both measure exposed synchronized latency | source code |
+| warmup | once()+sync before timing | fn()+sync before timing each direction/config | similar high-level warmup, different API | source code |
+| repetition count | 1 for >=256M else <=5 | 5 for all copy sizes in artifact | old large transfers less stable | source code + CSV |
+| statistic | old stores averaged elapsed-derived bandwidth | new stores min and median but peak uses min/best | peak comparison is not median comparison | source code + CSV |
+| size sweep | 4K..256M in old artifact | 4K..1G | new includes 1G and full matrix | CSV |
+| device | AK_OBS_NPU_DEVICE default; 006 used server NPU env | npu:0 in run_context | different device/time may affect values | run_context |
+| NUMA binding | not controlled | not controlled | NUMA source not isolated | no evidence |
+| timing implementation | time.perf_counter + sync | time.perf_counter + sync | wall clock not NPU event timing | source code |
+旧值保留价值: synthetic_microbench_measurement，代表早期 .to()/.cpu() pageable path 与 copy-overlap smoke；不适合作为当前 ceiling baseline。
+新值替代边界: P0/P3 sweep 的 pinned large-copy min/best values 可作为 hardware_ceiling_baseline for current benchmark path；仍不是 PCIe/UB 理论值或模型 H2D/D2H exposed stall。
+旧 256M 典型值: H2D 5.415008 GB/s, D2H 2.117694 GB/s。新 large-copy peaks: H2D 24.313915 GB/s, D2H 26.480714 GB/s。
+
+# 6. Complete NPU Copy Sweep
+| direction | size | pinned | non_blocking | repetitions | min_ms | median_ms | best_gbps | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h2d | 4K | 0 | 0 | 5 | 0.08186 | 0.08646 | 0.0466 | measurable |
+| d2h | 4K | 0 | 0 | 5 | 0.07047 | 0.07534 | 0.054132 | measurable |
+| h2d | 4K | 0 | 1 | 5 | 0.07937 | 0.08007 | 0.048062 | measurable |
+| d2h | 4K | 0 | 1 | 5 | 0.08331 | 0.08414 | 0.045789 | measurable |
+| h2d | 4K | 1 | 0 | 5 | 0.06969 | 0.07 | 0.054738 | measurable |
+| d2h | 4K | 1 | 0 | 5 | 0.06803 | 0.07014 | 0.056074 | measurable |
+| h2d | 4K | 1 | 1 | 5 | 0.04851 | 0.04988 | 0.078638 | measurable |
+| d2h | 4K | 1 | 1 | 5 | 0.04819 | 0.0498 | 0.079159 | measurable |
+| h2d | 16K | 0 | 0 | 5 | 0.0748 | 0.07642 | 0.203994 | measurable |
+| d2h | 16K | 0 | 0 | 5 | 0.06973 | 0.07165 | 0.218827 | measurable |
+| h2d | 16K | 0 | 1 | 5 | 0.07955 | 0.08358 | 0.191814 | measurable |
+| d2h | 16K | 0 | 1 | 5 | 0.08414 | 0.0869 | 0.18135 | measurable |
+| h2d | 16K | 1 | 0 | 5 | 0.06899 | 0.07008 | 0.221174 | measurable |
+| d2h | 16K | 1 | 0 | 5 | 0.06584 | 0.06616 | 0.231755 | measurable |
+| h2d | 16K | 1 | 1 | 5 | 0.04658 | 0.04892 | 0.327582 | measurable |
+| d2h | 16K | 1 | 1 | 5 | 0.04998 | 0.05389 | 0.305299 | measurable |
+| h2d | 64K | 0 | 0 | 5 | 0.07792 | 0.07868 | 0.783305 | measurable |
+| d2h | 64K | 0 | 0 | 5 | 0.0735 | 0.07446 | 0.830411 | measurable |
+| h2d | 64K | 0 | 1 | 5 | 0.08274 | 0.08526 | 0.737675 | measurable |
+| d2h | 64K | 0 | 1 | 5 | 0.08376 | 0.08945 | 0.72869 | measurable |
+| h2d | 64K | 1 | 0 | 5 | 0.06858 | 0.07041 | 0.889984 | measurable |
+| d2h | 64K | 1 | 0 | 5 | 0.06582 | 0.0683 | 0.927307 | measurable |
+| h2d | 64K | 1 | 1 | 5 | 0.04555 | 0.04782 | 1.339958 | measurable |
+| d2h | 64K | 1 | 1 | 5 | 0.04749 | 0.05091 | 1.285221 | measurable |
+| h2d | 1M | 0 | 0 | 5 | 0.24191 | 0.25426 | 4.036882 | measurable |
+| d2h | 1M | 0 | 0 | 5 | 0.17956 | 0.18643 | 5.438644 | measurable |
+| h2d | 1M | 0 | 1 | 5 | 0.24416 | 0.24883 | 3.99968 | measurable |
+| d2h | 1M | 0 | 1 | 5 | 0.18952 | 0.19814 | 5.152822 | measurable |
+| h2d | 1M | 1 | 0 | 5 | 0.14401 | 0.165559 | 6.781205 | measurable |
+| d2h | 1M | 1 | 0 | 5 | 0.13222 | 0.13678 | 7.385885 | measurable |
+| h2d | 1M | 1 | 1 | 5 | 0.09879 | 0.12085 | 9.885232 | measurable |
+| d2h | 1M | 1 | 1 | 5 | 0.10768 | 0.11272 | 9.069118 | measurable |
+| h2d | 16M | 0 | 0 | 5 | 2.8024 | 2.878669 | 5.575578 | measurable |
+| d2h | 16M | 0 | 0 | 5 | 2.5728 | 2.596949 | 6.07315 | measurable |
+| h2d | 16M | 0 | 1 | 5 | 2.16523 | 2.22473 | 7.216323 | measurable |
+| d2h | 16M | 0 | 1 | 5 | 2.95413 | 2.991829 | 5.289205 | measurable |
+| h2d | 16M | 1 | 0 | 5 | 1.2559 | 1.26004 | 12.441276 | measurable |
+| d2h | 16M | 1 | 0 | 5 | 0.893959 | 0.90121 | 17.478429 | measurable |
+| h2d | 16M | 1 | 1 | 5 | 1.595609 | 1.63152 | 9.7925 | measurable |
+| d2h | 16M | 1 | 1 | 5 | 1.19702 | 1.24635 | 13.053248 | measurable |
+| h2d | 64M | 0 | 0 | 5 | 6.914568 | 6.981758 | 9.038887 | measurable |
+| d2h | 64M | 0 | 0 | 5 | 3.13907 | 3.495149 | 19.910356 | measurable |
+| h2d | 64M | 0 | 1 | 5 | 7.884058 | 8.049639 | 7.92739 | measurable |
+| d2h | 64M | 0 | 1 | 5 | 4.285619 | 4.33365 | 14.583657 | measurable |
+| h2d | 64M | 1 | 0 | 5 | 4.890499 | 4.916639 | 12.779882 | measurable |
+| d2h | 64M | 1 | 0 | 5 | 3.334289 | 3.347639 | 18.744625 | measurable |
+| h2d | 64M | 1 | 1 | 5 | 6.443129 | 6.842668 | 9.700256 | measurable |
+| d2h | 64M | 1 | 1 | 5 | 4.826209 | 5.000929 | 12.950123 | measurable |
+| h2d | 256M | 0 | 0 | 5 | 40.300541 | 41.050491 | 6.203391 | measurable |
+| d2h | 256M | 0 | 0 | 5 | 31.119933 | 31.361283 | 8.033436 | measurable |
+| h2d | 256M | 0 | 1 | 5 | 30.234664 | 30.605083 | 8.268655 | measurable |
+| d2h | 256M | 0 | 1 | 5 | 30.690583 | 31.428323 | 8.145821 | measurable |
+| h2d | 256M | 1 | 0 | 5 | 10.385548 | 10.392708 | 24.071912 | measurable |
+| d2h | 256M | 1 | 0 | 5 | 9.684518 | 9.694728 | 25.814398 | measurable |
+| h2d | 256M | 1 | 1 | 5 | 11.968848 | 12.004527 | 20.887557 | measurable |
+| d2h | 256M | 1 | 1 | 5 | 12.593307 | 12.752267 | 19.851815 | measurable |
+| h2d | 1G | 0 | 0 | 5 | 116.017524 | 118.052504 | 8.619388 | measurable |
+| d2h | 1G | 0 | 0 | 5 | 60.061597 | 60.413986 | 16.649574 | measurable |
+| h2d | 1G | 0 | 1 | 5 | 115.552724 | 118.073693 | 8.654058 | measurable |
+| d2h | 1G | 0 | 1 | 5 | 60.070987 | 60.197697 | 16.646971 | measurable |
+| h2d | 1G | 1 | 0 | 5 | 41.128711 | 41.14712 | 24.313915 | measurable |
+| d2h | 1G | 1 | 0 | 5 | 37.763332 | 37.764312 | 26.480714 | measurable |
+| h2d | 1G | 1 | 1 | 5 | 43.19543 | 43.22749 | 23.150597 | measurable |
+| d2h | 1G | 1 | 1 | 5 | 44.49217 | 50.457489 | 22.475865 | measurable |
+
+# 7. Copy Scaling / Pinned / Non-blocking Analysis
+H2D peak: 24.313915 GB/s, size=1G, pinned=1, non_blocking=0, min_ms=41.128711, median_ms=41.14712.
+D2H peak: 26.480714 GB/s, size=1G, pinned=1, non_blocking=0, min_ms=37.763332, median_ms=37.764312.
+| size | best H2D GB/s | best H2D config | best D2H GB/s | best D2H config | best_h2d/best_d2h |
+| --- | --- | --- | --- | --- | --- |
+| 4K | 0.078638 | pinned=1,nb=1 | 0.079159 | pinned=1,nb=1 | 0.993 |
+| 16K | 0.327582 | pinned=1,nb=1 | 0.305299 | pinned=1,nb=1 | 1.073 |
+| 64K | 1.339958 | pinned=1,nb=1 | 1.285221 | pinned=1,nb=1 | 1.043 |
+| 1M | 9.885232 | pinned=1,nb=1 | 9.069118 | pinned=1,nb=1 | 1.090 |
+| 16M | 12.441276 | pinned=1,nb=0 | 17.478429 | pinned=1,nb=0 | 0.712 |
+| 64M | 12.779882 | pinned=1,nb=0 | 19.910356 | pinned=0,nb=0 | 0.642 |
+| 256M | 24.071912 | pinned=1,nb=0 | 25.814398 | pinned=1,nb=0 | 0.932 |
+| 1G | 24.313915 | pinned=1,nb=0 | 26.480714 | pinned=1,nb=0 | 0.918 |
+h2d pinned speedup: median=1.694, max=3.880, negative cases=none.
+d2h pinned speedup: median=1.637, max=3.213, negative cases=64M,nb=0:0.941 (19.910->18.745); 64M,nb=1:0.888 (14.584->12.950).
+h2d non_blocking speedup under immediate synchronize: median=0.997, max=1.506, negative cases=16K,pinned=0:0.940 (0.204->0.192); 64K,pinned=0:0.942 (0.783->0.738); 1M,pinned=0:0.991 (4.037->4.000); 16M,pinned=1:0.787 (12.441->9.793); 64M,pinned=0:0.877 (9.039->7.927); 64M,pinned=1:0.759 (12.780->9.700); 256M,pinned=1:0.868 (24.072->20.888); 1G,pinned=1:0.952 (24.314->23.151).
+d2h non_blocking speedup under immediate synchronize: median=0.874, max=1.412, negative cases=4K,pinned=0:0.846 (0.054->0.046); 16K,pinned=0:0.829 (0.219->0.181); 64K,pinned=0:0.878 (0.830->0.729); 1M,pinned=0:0.947 (5.439->5.153); 16M,pinned=0:0.871 (6.073->5.289); 16M,pinned=1:0.747 (17.478->13.053); 64M,pinned=0:0.732 (19.910->14.584); 64M,pinned=1:0.691 (18.745->12.950); 256M,pinned=1:0.769 (25.814->19.852); 1G,pinned=0:1.000 (16.650->16.647); 1G,pinned=1:0.849 (26.481->22.476).
+Timing check: every timed copy calls synchronize immediately after fn(); therefore non_blocking=True does not preserve host-side async overlap opportunity in this benchmark. It is a synchronized API-parameter comparison, not async-overlap proof.
+H2D/D2H asymmetry: small sizes are roughly symmetric under best configs (4K ratio 0.993, 16K 1.073, 64K 1.043, 1M 1.090); mid sizes favor D2H (16M ratio 0.712, 64M 0.642); large sizes converge but D2H remains slightly higher (256M 0.932, 1G 0.918). No PCIe/UB root-cause claim is made.
+
+# 8. Copy Overlap Evidence Audit
+| 能力问题 | 有实验吗 | artifact | 可回答程度 |
+| --- | --- | --- | --- |
+| copy throughput ceiling | yes | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/npu_copy_sweep.csv | YES |
+| two-stream copy concurrency | old P0.5 only | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/npu_copy_overlap.csv | PARTIAL |
+| copy-compute overlap | no | none | NO |
+| host async issue | no; non_blocking synchronized immediately | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/npu_copy_sweep.csv + hardware_ceiling.py | NO |
+| device overlap | old two-stream H2D smoke only; no event/timeline proof | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/npu_copy_overlap.csv | PARTIAL |
+| event wait / sync barrier exposed time | no dedicated event wait/barrier benchmark | none | NO |
+Old overlap values: ratio=0.964327, sequential_ms=6.033079, concurrent_ms=6.256258. This is not enough to prove copy-compute overlap.
+
+# 9. Complete NPU Matmul Sweep
+| dtype | M | N | K | repetitions | min_ms | median_ms | TFLOPS | % observed sweep peak | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| float16 | 512 | 512 | 512 | 5 | 0.06552 | 0.07155 | 4.097004 | 1.41% | measurable |
+| float16 | 1024 | 1024 | 1024 | 5 | 0.06471 | 0.06969 | 33.186192 | 11.43% | measurable |
+| float16 | 2048 | 2048 | 2048 | 5 | 0.11191 | 0.118 | 153.514982 | 52.85% | measurable |
+| float16 | 4096 | 4096 | 4096 | 3 | 0.48293 | 0.48515 | 284.593883 | 97.98% | measurable |
+| float16 | 8192 | 8192 | 8192 | 1 | 3.785559 | 3.785559 | 290.448949 | 100.00% | measurable |
+
+# 10. Matmul Observed Ceiling Analysis
+FLOP formula: 2*M*N*K from source. Tensor allocation occurs outside timed fn. timed fn is left @ right, followed by torch.npu.synchronize(), measured with time.perf_counter wall clock. One warmup call precedes timed reps. 8192 runs 1 repetition by policy. Result is not explicitly consumed beyond launch/sync.
+290.448949 TFLOPS can be called observed FP16 square-matmul ceiling for this benchmark path. It cannot be called Ascend 910B1 theoretical peak because no local theoretical spec evidence is present and external specs were not used.
+It also cannot be used as Qwen operator efficiency denominator unless runtime MatMulV2 shapes are known; P1.28 top-op table has op_type only, not M/N/K.
+
+# 11. Complete CPU/DRAM Sweep
+| size | repetitions | read_best_gbps | copy_best_gbps | read_min_ms | copy_min_ms | read_median_gbps | copy_median_gbps | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 256M | 3 | 5.185864 | 2.952357 | 48.207979 | 84.678111 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | measurable |
+| 1G | 3 | 5.332057 | 2.961359 | 187.544868 | 337.682745 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | measurable |
+| 4G | 3 | 5.29474 | 2.963189 | 755.466701 | 1349.897127 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | measurable |
+
+# 12. DRAM Measurement Credibility
+Source path: NumPy float64 source=np.ones, dest=np.empty_like, source.sum() for read, np.copyto(dest, source) for copy; 3 repeats; min/best stored, not median. No NUMA binding, no multi-thread bandwidth tool, no STREAM, no page-fault/first-touch control recorded.
+Therefore dram_read_best_gbps=5.332057 is observed_cpu_numpy_memory_path_ceiling, not server_dram_hardware_peak.
+Old P0.5 DRAM used python internal bytearray scan and recorded dram_read_gbps=0.109 GB/s; it measured a Python bytearray scan path, not hardware DRAM peak. New NumPy path is a different software path, not an optimization multiplier.
+
+# 13. Complete SSD Fio Sweep
+Note: current hardware ceiling CSV stores IOPS, BW, and P95 only. It does not store mean/P99 latency although the older parser supports those fields. Missing columns are marked NOT_IN_ARTIFACT, not inferred.
+| rw | bs | iodepth | read_iops | write_iops | read_bw_mib_s | write_bw_mib_s | read_mean_latency_us | read_p95_us | read_p99_us | write_mean_latency_us | write_p95_us | write_p99_us | status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| read | 4k | 1 | 3384.523095 | 0.0 | 13.220793 | 0.0 | NOT_IN_ARTIFACT | 407.552 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 4k | 4 | 3388.122376 | 0.0 | 13.234853 | 0.0 | NOT_IN_ARTIFACT | 411.648 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 4k | 16 | 3392.521496 | 0.0 | 13.252037 | 0.0 | NOT_IN_ARTIFACT | 391.168 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 4k | 32 | 3428.514297 | 0.0 | 13.392633 | 0.0 | NOT_IN_ARTIFACT | 374.784 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 128k | 1 | 1387.722456 | 0.0 | 173.465306 | 0.0 | NOT_IN_ARTIFACT | 978.944 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 128k | 4 | 1415.916817 | 0.0 | 176.989601 | 0.0 | NOT_IN_ARTIFACT | 929.792 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 128k | 16 | 1428.114377 | 0.0 | 178.514297 | 0.0 | NOT_IN_ARTIFACT | 864.256 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 128k | 32 | 1419.316137 | 0.0 | 177.414516 | 0.0 | NOT_IN_ARTIFACT | 905.216 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 1m | 1 | 394.721056 | 0.0 | 394.721055 | 0.0 | NOT_IN_ARTIFACT | 2146.304 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 1m | 4 | 326.511799 | 0.0 | 326.511799 | 0.0 | NOT_IN_ARTIFACT | 2179.072 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 1m | 16 | 327.071823 | 0.0 | 327.071823 | 0.0 | NOT_IN_ARTIFACT | 2211.84 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| read | 1m | 32 | 324.265109 | 0.0 | 324.265108 | 0.0 | NOT_IN_ARTIFACT | 1974.272 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| write | 4k | 1 | 0.0 | 4257.74845 | 0.0 | 16.631829 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 305.152 | NOT_IN_ARTIFACT | measurable |
+| write | 4k | 4 | 0.0 | 4316.736653 | 0.0 | 16.862252 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 313.344 | NOT_IN_ARTIFACT | measurable |
+| write | 4k | 16 | 0.0 | 4380.923815 | 0.0 | 17.112983 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 296.96 | NOT_IN_ARTIFACT | measurable |
+| write | 4k | 32 | 0.0 | 4330.933813 | 0.0 | 16.917709 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 301.056 | NOT_IN_ARTIFACT | measurable |
+| write | 128k | 1 | 0.0 | 1877.024595 | 0.0 | 234.628074 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 749.568 | NOT_IN_ARTIFACT | measurable |
+| write | 128k | 4 | 0.0 | 1829.834033 | 0.0 | 228.729254 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 782.336 | NOT_IN_ARTIFACT | measurable |
+| write | 128k | 16 | 0.0 | 1847.430514 | 0.0 | 230.928814 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 757.76 | NOT_IN_ARTIFACT | measurable |
+| write | 128k | 32 | 0.0 | 1870.225955 | 0.0 | 233.778244 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 741.376 | NOT_IN_ARTIFACT | measurable |
+| write | 1m | 1 | 0.0 | 368.019821 | 0.0 | 368.01982 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 2023.424 | NOT_IN_ARTIFACT | measurable |
+| write | 1m | 4 | 0.0 | 377.724455 | 0.0 | 377.724455 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 2277.376 | NOT_IN_ARTIFACT | measurable |
+| write | 1m | 16 | 0.0 | 376.724655 | 0.0 | 376.724654 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 2179.072 | NOT_IN_ARTIFACT | measurable |
+| write | 1m | 32 | 0.0 | 338.841441 | 0.0 | 338.84144 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 2113.536 | NOT_IN_ARTIFACT | measurable |
+| randread | 4k | 1 | 2676.464707 | 0.0 | 10.45494 | 0.0 | NOT_IN_ARTIFACT | 585.728 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 4k | 4 | 2672.065587 | 0.0 | 10.437756 | 0.0 | NOT_IN_ARTIFACT | 618.496 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 4k | 16 | 2624.875025 | 0.0 | 10.253418 | 0.0 | NOT_IN_ARTIFACT | 569.344 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 4k | 32 | 2528.894221 | 0.0 | 9.878492 | 0.0 | NOT_IN_ARTIFACT | 626.688 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 128k | 1 | 1271.345731 | 0.0 | 158.918216 | 0.0 | NOT_IN_ARTIFACT | 1073.152 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 128k | 4 | 1320.935813 | 0.0 | 165.116976 | 0.0 | NOT_IN_ARTIFACT | 1056.768 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 128k | 16 | 1293.941212 | 0.0 | 161.742651 | 0.0 | NOT_IN_ARTIFACT | 1105.92 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 128k | 32 | 1290.741852 | 0.0 | 161.342731 | 0.0 | NOT_IN_ARTIFACT | 1011.712 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 1m | 1 | 354.529094 | 0.0 | 354.529094 | 0.0 | NOT_IN_ARTIFACT | 2244.608 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 1m | 4 | 324.732768 | 0.0 | 324.732768 | 0.0 | NOT_IN_ARTIFACT | 2088.96 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 1m | 16 | 353.529294 | 0.0 | 353.529294 | 0.0 | NOT_IN_ARTIFACT | 2113.536 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randread | 1m | 32 | 328.402367 | 0.0 | 328.402367 | 0.0 | NOT_IN_ARTIFACT | 2146.304 | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | measurable |
+| randwrite | 4k | 1 | 0.0 | 3047.390522 | 0.0 | 11.903869 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 536.576 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 4k | 4 | 0.0 | 3072.985403 | 0.0 | 12.003849 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 593.92 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 4k | 16 | 0.0 | 3080.383923 | 0.0 | 12.032749 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 610.304 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 4k | 32 | 0.0 | 3108.778244 | 0.0 | 12.143664 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 593.92 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 128k | 1 | 0.0 | 1590.481904 | 0.0 | 198.810238 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 954.368 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 128k | 4 | 0.0 | 1589.482104 | 0.0 | 198.685263 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 954.368 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 128k | 16 | 0.0 | 1607.878424 | 0.0 | 200.984802 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 929.792 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 128k | 32 | 0.0 | 1607.078584 | 0.0 | 200.884823 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 937.984 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 1m | 1 | 0.0 | 367.599467 | 0.0 | 367.599466 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 2342.912 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 1m | 4 | 0.0 | 377.124575 | 0.0 | 377.124575 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 2342.912 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 1m | 16 | 0.0 | 374.325135 | 0.0 | 374.325134 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 2408.448 | NOT_IN_ARTIFACT | measurable |
+| randwrite | 1m | 32 | 0.0 | 342.134623 | 0.0 | 342.134622 | NOT_IN_ARTIFACT |  | NOT_IN_ARTIFACT | NOT_IN_ARTIFACT | 2211.84 | NOT_IN_ARTIFACT | measurable |
+
+# 14. SSD Envelope Analysis
+| case | rw | bs | iodepth | metric | value |
+| --- | --- | --- | --- | --- | --- |
+| best sequential read bandwidth | read | 1m | 1 | fio_read_bw_mib_s | 394.721055 |
+| best sequential write bandwidth | write | 1m | 4 | fio_write_bw_mib_s | 377.724455 |
+| best random read IOPS | randread | 4k | 1 | fio_read_iops | 2676.464707 |
+| best random write IOPS | randwrite | 4k | 32 | fio_write_iops | 3108.778244 |
+| lowest read P95 | read | 4k | 32 | fio_read_clat_p95_us | 374.784 |
+| lowest write P95 | write | 4k | 16 | fio_write_clat_p95_us | 296.96 |
+| highest read P95 | randread | 1m | 1 | fio_read_clat_p95_us | 2244.608 |
+| highest write P95 | randwrite | 1m | 16 | fio_write_clat_p95_us | 2408.448 |
+fio command evidence: filename under scratch_dir /data/ak-trace/hardware_ceiling_scratch, --direct=1, --size=1G, --runtime=5, --time_based=1, output-format=json; numjobs and ioengine are not explicitly set in project code, so they are not claimed as tuned values.
+This is not NVMe hardware peak: it is a single-job filesystem scratch-path envelope with short 5s runs and one file per rw/bs/iodepth case.
+Old P0.5 SSD fio was randrw 4k, size=64M, direct=1, iodepth=1, runtime=3s at /data/ak-trace/observability_scratch. Old total BW 11.759101 MiB/s cannot be compared to new sequential read 1m/QD1 394.721055 MiB/s as a 33x optimization.
+
+# 15. P1.23-P1.28 Progress Ledger
+| run | 目的 | workload | request count | fixed output | msprof | direct overlap | aggregate | readout | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| P1.23 | msprof stats pairing | continuous16_mixed on/off | 16+16 | NO/unclean for later delta | yes | timebase candidates only | no | no | success profiler collection |
+| P1.24 | SQLite request-window overlap | reuse P1.23 | 16+16 | inherits P1.23 | reuse raw | yes direct_request_window_overlap | no | no | success offline overlap analysis |
+| P1.25 | first request-device aggregate | reuse P1.23 | 16+16 | inherits P1.23 | reuse raw | yes | serial aggregate aborted after 8.6h | no | aborted, superseded by P1.25b |
+| P1.25b | fast request-device aggregate | reuse P1.23 | 16+16 | not fully controlled; on 1 mismatch/off 5 mismatch per notes | reuse raw | yes | success full aggregate ~1 min | no | success but not controlled performance delta |
+| P1.26 | controlled replay | continuous16_mixed on/off | 16+16 | YES 64 tokens | yes | yes | success | no | success controlled raw aggregate |
+| P1.27 | controlled readout | read P1.26 final_analysis | 16 paired | YES fixed_64 | no new msprof | n/a | uses P1.26 aggregate | success | success raw small readout |
+| P1.28 | larger controlled replay/readout | continuous32_mixed on/off | 32+32 | YES 64 tokens | yes | yes | success | success | success raw counter readout |
+
+# 16. P1.28 Controlled Replay Conditions
+| field | value | evidence |
+| --- | --- | --- |
+| model | Qwen3.5-4B / /data/node0_disk1/Public/Qwen3.5-4B | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/run_context.txt |
+| case_plan | continuous32_mixed | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/run_context.txt |
+| max_model_len | 9216 | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/run_context.txt |
+| request_min_tokens | 64 | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/run_context.txt |
+| ignore_eos | 1 | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/run_context.txt |
+| workers | 2 | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/run_context.txt |
+| on success | 32/32, generated 64, mismatch 0 | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/generated_token_length_summary.tsv |
+| off success | 32/32, generated 64, mismatch 0 | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/generated_token_length_summary.tsv |
+| readout | overall_status=success, missing_files=[] | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/controlled_replay_readout_result.json |
+Comparability audit: request IDs/prompt IDs/prefix groups are paired by case_id; output length is controlled at 64; model path, case_plan, max_model_len, min_tokens, ignore_eos are recorded. Uncontrolled/unknown: full server command not in returned small artifact, server process lifecycle, warm cache/allocator state, NPU thermal/power, host load, exact generated text/token identity, profiler overhead. comparability_grade=MEDIUM for raw-counter pairing, LOW for performance/benefit claims.
+
+# 17. P1.28 Request/Mode Raw Delta
+| scope | group_value | request_count | on_task_row_count_sum | off_task_row_count_sum | delta_task_row_count_sum_on_minus_off | on_total_duration_time_sum | off_total_duration_time_sum | delta_total_duration_time_sum_on_minus_off | negative_duration_delta_request_count | positive_duration_delta_request_count | zero_duration_delta_request_count | negative_task_delta_request_count | positive_task_delta_request_count | policy |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| all | all | 32 | 3998488 | 5678434 | -1679946 | 342823894685 | 817716042262 | -474892147577 | 32 | 0 | 0 | 32 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prefix_reuse_group | burst_prefix_a | 8 | 1004439 | 1310893 | -306454 | 88162023139 | 191542507435 | -103380484296 | 8 | 0 | 0 | 8 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prefix_reuse_group | continuous_prefix_a | 12 | 1507289 | 2165951 | -658662 | 128358748209 | 312715171112 | -184356422903 | 12 | 0 | 0 | 12 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prefix_reuse_group | none | 4 | 494777 | 790495 | -295718 | 40564608085 | 110179859874 | -69615251789 | 4 | 0 | 0 | 4 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prefix_reuse_group | prefix_group_a | 4 | 498058 | 630438 | -132380 | 44516116538 | 92442147714 | -47926031176 | 4 | 0 | 0 | 4 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prefix_reuse_group | system_long_a | 4 | 493925 | 780657 | -286732 | 41222398714 | 110836356127 | -69613957413 | 4 | 0 | 0 | 4 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prompt_id | P003 | 4 | 493925 | 780657 | -286732 | 41222398714 | 110836356127 | -69613957413 | 4 | 0 | 0 | 4 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prompt_id | P007 | 2 | 247802 | 312095 | -64293 | 22254434964 | 45789352610 | -23534917646 | 2 | 0 | 0 | 2 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prompt_id | P008 | 2 | 250256 | 318343 | -68087 | 22261681574 | 46652795104 | -24391113530 | 2 | 0 | 0 | 2 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prompt_id | P009 | 4 | 494777 | 790495 | -295718 | 40564608085 | 110179859874 | -69615251789 | 4 | 0 | 0 | 4 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prompt_id | P011 | 8 | 1004439 | 1310893 | -306454 | 88162023139 | 191542507435 | -103380484296 | 8 | 0 | 0 | 8 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| prompt_id | P012 | 12 | 1507289 | 2165951 | -658662 | 128358748209 | 312715171112 | -184356422903 | 12 | 0 | 0 | 12 | 0 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+Delta direction is on_minus_off as proven by headers and build_prefix_cache_mode_deltas source. Unit for total_duration_time remains UNKNOWN_RAW_PROFILER_TIME_UNIT: the analyzer sums msprof SQLite task_time.duration_time without local unit conversion evidence.
+All 32 request-level duration deltas are negative, but policy fields explicitly say raw_counter_delta_no_performance_or_hit_rate_claim. No prefix-cache benefit claim is made.
+Request-level delta file has 32 rows in 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/prefix_cache_mode_request_delta.tsv.
+
+# 18. P1.28 Top Op Raw Delta
+| op_type | paired_case_count | on_task_row_count_sum | off_task_row_count_sum | on_total_duration_time_sum | off_total_duration_time_sum | delta_task_row_count_sum_on_minus_off | delta_total_duration_time_sum_on_minus_off | policy |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| chunk_gated_delta_rule_fwd_kernel_h_blockdim64 | 32 | 73204 | 136956 | 51242064805 | 137358833185 | -63752 | -86116768380 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| CausalConv1d | 32 | 36589 | 68477 | 33169663844 | 104855723461 | -31888 | -71686059617 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| MatMulV2 | 32 | 356338 | 360909 | 47090120059 | 109938715544 | -4571 | -62848595485 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| recompute_w_u_fwd_kernel | 32 | 73200 | 136952 | 27624646975 | 74233032329 | -63752 | -46608385354 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| chunk_fwd_kernel_o | 32 | 73208 | 136958 | 23904777422 | 63414057853 | -63750 | -39509280431 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| merge_16x16_to_64x64_inverse_kernel | 32 | 73200 | 136950 | 19642875718 | 46210296379 | -63750 | -26567420661 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| FusedInferAttentionScore | 32 | 48732 | 56710 | 28859353369 | 54722358269 | -7978 | -25863004900 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| MatMulV3 | 32 | 109540 | 181410 | 19832876159 | 45641993547 | -71870 | -25809117388 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| IndexPutV2 | 32 | 42070 | 91235 | 14748072558 | 33225463623 | -49165 | -18477391065 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| Index | 32 | 64414 | 100881 | 19444975948 | 36486562796 | -36467 | -17041586848 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| solve_tril_16x16_kernel | 32 | 36600 | 68474 | 15617459725 | 31893197759 | -31874 | -16275738034 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| chunk_scaled_dot_kkt_fwd_kernel | 32 | 73196 | 136948 | 5827354111 | 14167168143 | -63752 | -8339814032 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+|  | 32 | 147683 | 190153 | 884323296 | 8141858506 | -42470 | -7257535210 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| AddRmsNormBias | 32 | 194889 | 226851 | 3923422542 | 9974458202 | -31962 | -6051035660 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| fused_sigmoid_gating_delta_rule_update_kernel | 32 | 36474 | 11461 | 6506205934 | 955336663 | 25013 | 5550869271 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| Slice | 32 | 498184 | 605604 | 3039115688 | 7122960231 | -107420 | -4083844543 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| _layer_norm_fwd_1pass_kernel_npu | 32 | 73078 | 85073 | 2057134965 | 5889096488 | -11995 | -3831961523 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| SwiGlu | 32 | 97447 | 113425 | 2774081133 | 6059785446 | -15978 | -3285704313 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| Transpose | 32 | 292659 | 495917 | 4614650160 | 7380103080 | -203258 | -2765452920 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| split_qkv_rmsnorm_mrope_kernel | 30 | 0 | 26215 | 0 | 2531314250 | -26215 | -2531314250 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| TensorMove | 25 | 24862 | 162224 | 253814920 | 2174913460 | -137362 | -1921098540 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| _causal_conv1d_update_kernel_npu_tiled | 26 | 33393 | 0 | 1616698645 | 0 | 33393 | 1616698645 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+| Cumsum | 12 | 15914 | 0 | 530409752 | 0 | 15914 | 530409752 | raw_counter_readout_no_benchmark_hit_rate_or_bottleneck_claim |
+Largest 10 negative raw op-duration delta candidates: chunk_gated_delta_rule_fwd_kernel_h_blockdim64:-86116768380, CausalConv1d:-71686059617, MatMulV2:-62848595485, recompute_w_u_fwd_kernel:-46608385354, chunk_fwd_kernel_o:-39509280431, merge_16x16_to_64x64_inverse_kernel:-26567420661, FusedInferAttentionScore:-25863004900, MatMulV3:-25809117388, IndexPutV2:-18477391065, Index:-17041586848
+Largest 10 positive raw op-duration delta candidates: fused_sigmoid_gating_delta_rule_update_kernel:5550869271, _causal_conv1d_update_kernel_npu_tiled:1616698645, Cumsum:530409752, TensorMove:-1921098540, split_qkv_rmsnorm_mrope_kernel:-2531314250, Transpose:-2765452920, SwiGlu:-3285704313, _layer_norm_fwd_1pass_kernel_npu:-3831961523, Slice:-4083844543, AddRmsNormBias:-6051035660
+These are largest raw op-duration delta candidates, not top bottlenecks. Unit=UNKNOWN_RAW_PROFILER_TIME_UNIT.
+
+# 19. P1.28 AI Core/AIV/MTE Raw Metrics
+| metric | aggregation | on | off | delta | unit/semantic confidence |
+| --- | --- | --- | --- | --- | --- |
+| aic_total_time_sum | SUM metric | 137224060.115293 | 327637997.728654 | -190413937.613361 | MEDIUM |
+| aiv_total_time_sum | SUM metric | 123025107.156485 | 273062927.477468 | -150037820.320983 | MEDIUM |
+| aic_mte2_time_sum | SUM metric | 77554792.113519 | 185304563.951355 | -107749771.837836 | MEDIUM |
+| aic_mac_time_sum | SUM metric | 43077791.146894 | 133932185.331002 | -90854394.184108 | MEDIUM |
+| aic_scalar_time_sum | SUM metric | 71254873.17512 | 150992806.499144 | -79737933.324024 | MEDIUM |
+| aic_mte1_time_sum | SUM metric | 41340306.958981 | 113366411.267178 | -72026104.308197 | MEDIUM |
+| aiv_scalar_time_sum | SUM metric | 48812620.380901 | 107690885.640549 | -58878265.259648 | MEDIUM |
+| aiv_vec_time_sum | SUM metric | 32721721.925091 | 76875046.968658 | -44153325.043567 | MEDIUM |
+| aic_fixpipe_time_sum | SUM metric | 13637735.439118 | 45961379.447434 | -32323644.008316 | MEDIUM |
+| aiv_mte2_time_sum | SUM metric | 18557323.957042 | 44374541.721841 | -25817217.764799 | MEDIUM |
+| aiv_mte3_time_sum | SUM metric | 13229341.330504 | 33749997.642012 | -20520656.311508 | MEDIUM |
+| metric_row_count | row count | 3503614 | 4979555 | -1475941 | HIGH |
+| aiv_mte2_ratio_avg | AVG metric / raw ratio average | 6.851101 | 8.403955 | -1.552854 | LOW |
+| aiv_mte3_ratio_avg | AVG metric / raw ratio average | 4.004534 | 5.021815 | -1.017281 | LOW |
+| aiv_vec_ratio_avg | AVG metric / raw ratio average | 3.54838 | 4.342895 | -0.794515 | LOW |
+| aic_mac_ratio_extra_avg | AVG metric / raw ratio average | 1.711667 | 2.303221 | -0.591554 | LOW |
+| aic_mte2_ratio_avg | AVG metric / raw ratio average | 4.064974 | 3.526444 | 0.53853 | LOW |
+| aiv_scalar_ratio_avg | AVG metric / raw ratio average | 7.432792 | 7.003074 | 0.429718 | LOW |
+| aic_scalar_ratio_avg | AVG metric / raw ratio average | 2.940556 | 2.604533 | 0.336023 | LOW |
+| aic_fixpipe_ratio_avg | AVG metric / raw ratio average | 0.469603 | 0.712497 | -0.242894 | LOW |
+| aic_mte1_ratio_extra_avg | AVG metric / raw ratio average | 1.814654 | 2.048674 | -0.23402 | LOW |
+AIC/AIV/MTE raw metric deltas do not prove memory-bound or compute-bound. Missing denominator/utilization: per-core active cycles, hardware peak mapping, op shape, HBM read/write bytes, transfer bytes, queue wait, and request/token latency mapping.
+
+# 20. Hardware Ceiling ↔ Runtime Metric Mapping Audit
+| P1.28 runtime metric | 对应 hardware ceiling metric | 当前是否可直接比较 | 缺什么 |
+| --- | --- | --- | --- |
+| request H2D/D2H duration | copy GB/s ceiling | NOT_COMPARABLE | P1.28 readout has no request transfer bytes/directions/events |
+| MatMulV2 total_duration_time | FP16 square matmul TFLOPS ceiling | PARTIALLY_COMPARABLE | runtime MatMulV2 M/N/K, dtype, FLOPs, denominator |
+| MTE time / MTE ratios | HBM/transfer ceiling | NOT_COMPARABLE | HBM bandwidth counters, bytes, utilization denominator |
+| CPU wait / total_wait_time | CPU perf/DRAM baseline | NOT_COMPARABLE | CPU-side wait attribution, runqueue, core/NUMA, request wait semantics |
+| SSD latency | fio matrix | NOT_COMPARABLE | no runtime storage events, IO size, QD, object path |
+| request wait time | none in hardware ceiling | NOT_COMPARABLE | scheduler queue trace and timing semantics |
+| top op duration delta | op type candidates | PARTIALLY_COMPARABLE | unit, shape, per-request token alignment, hardware counters |
+
+# 21. Complete Hardware Metric Asset Table
+| category | metric | value/range | unit | experiment | conditions | source | evidence_class | claim_readiness |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Server | OS/kernel | Linux 5.15.0-91-generic | text | obs_006 | one-shot manifest | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory | READY_AS_BASELINE |
+| Server | NPU/HBM | 8 x 910B1, 64GB each, 512GB derived | GB | obs_006 | npu-smi/manifest | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory | READY_AS_BASELINE |
+| CPU | perf IPC | 3.166082 | instructions/cycle | obs_006 | 3s Python loop perf stat | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/cpu_perf.csv | synthetic_microbench_measurement | RAW_ONLY |
+| CPU | context switches/cache misses/runqueue | not collected | n/a | none | planned schema only | field catalog | planned_not_measured | NOT_READY |
+| DRAM | NumPy read best | 5.332057 | GB/s | hardware_ceiling_sweep_2026_0708_p0_007 | float64 np.ones sum, 1G best | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/cpu_dram_sweep.csv | synthetic_microbench_measurement | READY_AS_BASELINE |
+| DRAM | server DRAM hardware peak | unknown | GB/s | none | no STREAM/NUMA/multithread tool | none | unknown | NOT_READY |
+| Transfer | H2D observed ceiling | 24.313915 | GB/s | hardware_ceiling_sweep_2026_0708_p0_007 | 1G pinned blocking copy_ | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/npu_copy_sweep.csv | hardware_ceiling_baseline | READY_AS_BASELINE |
+| Transfer | D2H observed ceiling | 26.480714 | GB/s | hardware_ceiling_sweep_2026_0708_p0_007 | 1G pinned blocking copy_ | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/npu_copy_sweep.csv | hardware_ceiling_baseline | READY_AS_BASELINE |
+| Transfer | copy overlap | ratio 0.964327 | ratio | obs_006 | old two-stream H2D smoke <=16M | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/microbench/npu_copy_overlap.csv | synthetic_microbench_measurement | RAW_ONLY |
+| Transfer | copy-compute overlap | not measured | n/a | none | no experiment | none | planned_not_measured | NOT_READY |
+| NPU | FP16 square matmul observed ceiling | 290.448949 | TFLOPS | hardware_ceiling_sweep_2026_0708_p0_007 | 8192x8192, 1 repeat, wall-clock+sync | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/npu_matmul_sweep.csv | hardware_ceiling_baseline | READY_AS_BASELINE |
+| NPU | AI Core/AIV/MTE delta | 21 raw metrics | raw | P1.28 | request-level aggregate on_minus_off | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/controlled_replay_ai_core_metric_delta.tsv | raw_profiler_counter | RAW_ONLY |
+| HBM | capacity | 64GB per NPU, 512GB derived aggregate | GB | obs_006 | manifest/npu-smi | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/manifest.yaml | confirmed_inventory | READY_AS_BASELINE |
+| HBM | bandwidth/utilization | unknown | n/a | none | no counter/benchmark mapping | none | unknown | NOT_READY |
+| SSD | sequential read/write envelope | 394.721055 / 377.724455 | MiB/s | hardware_ceiling_sweep_2026_0708_p0_007 | fio single-job direct=1 1G 5s | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/ssd_fio_sweep.csv | hardware_ceiling_baseline | READY_AS_BASELINE |
+| SSD | P99 latency | not stored in new sweep CSV | us | hardware_ceiling_sweep_2026_0708_p0_007 | CSV lacks p99 columns | 工作记录与进度笔记本/hardware_ceiling_runs/hardware_ceiling_sweep_2026_0708_p0_007/server_feedback/ssd_fio_sweep.csv | available_not_aggregated | NOT_READY |
+| Runtime | request-device aggregate | 32 rows per mode | rows | P1.28 | fixed 64 tokens | 工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028/server_feedback/msprof_request_device_aggregate_result.json | runtime_observed | READY_AS_RUNTIME_FACT |
+| Runtime | prefix stats benefit | not proven | n/a | P1.28 | raw delta only | server_feedback | candidate_signal | NOT_READY |
+| Attribution | slow request/token stall reason | not available | n/a | none | no slow token -> op/stall join | none | planned_not_measured | NOT_READY |
+| Stability | power/temp/frequency/throttling | snapshot only, no stability sweep | raw | obs_006 npu-smi excerpt | not time series | 工作记录与进度笔记本/observability_profiles/obs_2026_0705_atlas800t_a2_006/probe_results/npu_smi_probe.md | runtime_observed | RAW_ONLY |
+
+# 22. 30 Key Questions YES/PARTIAL/NO
+| question | answer | evidence |
+| --- | --- | --- |
+| 1 H2D observed ceiling | YES | 24.313915 GB/s, 1G pinned blocking copy_ |
+| 2 D2H observed ceiling | YES | 26.480714 GB/s, 1G pinned blocking copy_ |
+| 3 copy scaling by size | YES | 64-row size/direction/pinned/non_blocking matrix |
+| 4 pinned H2D benefit | YES | median speedup 1.694; no negative H2D cases |
+| 5 pinned D2H benefit | YES | median speedup 1.637; negative at 64M |
+| 6 non_blocking throughput effect | PARTIAL | measured under immediate synchronize, not async overlap |
+| 7 host async issue | NO | no host issue timing kept async |
+| 8 copy-copy overlap | PARTIAL | old two-stream H2D smoke only |
+| 9 copy-compute overlap | NO | no experiment |
+| 10 best CPU-NPU NUMA affinity | NO | no affinity sweep |
+| 11 server DRAM hardware peak | NO | NumPy path only |
+| 12 NumPy memory-path ceiling | YES | 5.332057 GB/s read |
+| 13 FP16 square matmul observed ceiling | YES | 290.448949 TFLOPS |
+| 14 Qwen real GEMM efficiency | NO | no runtime shape/FLOP denominator |
+| 15 AI Core utilization | NO | raw counters not utilization |
+| 16 AIC/AIV time relation | PARTIAL | raw sums exist; semantics incomplete |
+| 17 MAC/MTE/vector raw differences | YES | 21 metric deltas |
+| 18 decode memory-bound | NO | no denominator/mapping |
+| 19 HBM bandwidth | NO | not measured |
+| 20 KV cache usage | PARTIAL | vLLM stats in earlier smoke; P1.28 readout not enough |
+| 21 KV cache capacity pressure | NO | no pressure sweep |
+| 22 request queue pressure | PARTIAL | server stats/running/waiting samples exist earlier; not attribution |
+| 23 request wait time | PARTIAL | total_wait_time zero in P1.28 aggregate, semantics raw |
+| 24 request window to device task | YES | P1.24/P1.28 aggregate path |
+| 25 request to op type | YES | top-op aggregate by request via ge_summary join |
+| 26 slow token to op | NO | no token-level alignment |
+| 27 prefix cache improves TTFT | NO | no TTFT A/B claim |
+| 28 prefix cache improves TPOT | NO | no TPOT A/B claim |
+| 29 top-3 stall reason per slow request | NO | stall reason unavailable |
+| 30 enough data for DeepSeek P8/P9 hardware priority | NO | baseline reusable, runtime conclusions missing |
+
+# 23. P0-P4 Closeout Claim Audit
+| 文档 claim | artifact evidence | 审计结果 |
+| --- | --- | --- |
+| 硬件天花板基线完成 | hardware_ceiling_result success + 64/5/3/48 rows | SUPPORTED_WITH_BOUNDARY |
+| 硬件瓶颈归因完成 | no denominator/utilization/TTFT/TPOT/op shape mapping | OVERSTATED if read that way; report itself states boundary |
+| 小模型推理链路跑通 | P1.9-P1.22/P1.28 progression, Qwen/vLLM success artifacts | SUPPORTED |
+| 小 prompt 推理链路观测闭环 | P1.23-P1.28 msprof, SQLite overlap, aggregate, readout | SUPPORTED_WITH_BOUNDARY |
+| slow-token attribution 闭环 | no slow token -> op/stall join | OVERSTATED if implied; current docs mostly preserve boundary |
+| prefix cache benefit proven | P1.28 raw on/off deltas only | OVERSTATED if implied; artifact policy forbids claim |
+| P1.25 still waiting | P1.25 aborted, P1.25b completed | STALE |
+
+# 24. DeepSeek-V4-Flash Reuse Matrix
+| 已有 P0-P4 数据 | P6/P8/P9 是否可复用 | 怎么复用 | 风险 |
+| --- | --- | --- | --- |
+| copy ceiling matrix | YES | KV/prefix/expert restore transfer envelope input | not copy-compute overlap; no runtime transfer bytes |
+| matmul ceiling | PARTIAL | rough NPU dense GEMM denominator | DeepSeek MoE/operator shapes differ; no W8A8/MTP mapping |
+| CPU/DRAM NumPy path | PARTIAL | host warm-tier software-path sanity bound | not DRAM hardware peak; no pinned/NUMA/multithread |
+| SSD fio envelope | PARTIAL | cold tier feasibility lower-level envelope | single-job filesystem 5s; no object IO/histogram/P99 in new CSV |
+| msprof SQLite parsing | YES | reuse request-device aggregate/readout pipeline | schema/unit confidence still needs server validation |
+| request-device aggregation | YES | P6/P8 profiled smoke/readout basis | needs DeepSeek request IDs/ranks/multi-card support |
+| fixed-output methodology | YES | control generated length for DeepSeek smoke/A-B | must adapt tokenizer/model config; 64 tokens may be too shallow |
+| Qwen3.5-4B runtime deltas | NO | do not migrate as DeepSeek performance claims | MoE, EP, MTP, KV scale, 1M context, W8A8/HBM pressure differ |
+Qwen runtime conclusions that must not migrate: prefix-cache benefit, TTFT/TPOT direction, scheduler behavior, bottleneck class, top-op importance, AI Core/MTE meaning, HBM pressure, KV capacity, expert reuse, EP communication, MTP impact, SSD/cold-tier feasibility.
+
+# 25. Current Missing Evidence
+| priority | missing evidence | why it matters |
+| --- | --- | --- |
+| P0_CRITICAL | profiler time unit and denominator mapping | raw duration/counter cannot become utilization or bottleneck |
+| P0_CRITICAL | runtime op shapes/dtypes/FLOPs for MatMulV2 and attention kernels | matmul ceiling cannot map to Qwen/DeepSeek efficiency |
+| P0_CRITICAL | TTFT/TPOT/request latency fixed-output A/B | raw task duration does not prove user-visible benefit |
+| P1_HIGH | copy-compute overlap and host async issue benchmark | KV/offload benefit depends on hidden transfer time |
+| P1_HIGH | HBM bandwidth/read/write/utilization counters | MTE/MAC ratios cannot classify memory-bound |
+| P1_HIGH | KV/prefix object events: hit/miss/bytes/tier/restore latency | state-tiering claims need object-level evidence |
+| P1_HIGH | DeepSeek eight-card runtime readiness and server model path | P6 baseline cannot start from local path |
+| P2_MEDIUM | fio mean/P99 and object IO histogram in current envelope | cold tier needs tail latency and IO granularity |
+| P2_MEDIUM | NUMA affinity/pinned-memory DRAM path sweep | CPU/DRAM warm-tier denominator is too weak |
+| P3_NICE_TO_HAVE | power/temp/frequency stability over time | needed for long benchmark drift but not first smoke |
+
+# 26. Recommended Next Minimal Experiments
+| experiment_name | question | why current evidence is insufficient | independent variables | controlled variables | workload | metrics | artifact | acceptance/claim enabled |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| deepseek_p5_server_path_readiness | Can the registered model object be located and versioned on server? | Current evidence only has local paths/placeholders | model object, server path, runtime/container | no model load, no benchmark | metadata/readiness only | path exists, tokenizer/config, versions, 8 NPU health | small readiness artifact | server paths and runtime fixed without performance claim |
+| p6_deepseek_fixed64_smoke_no_msprof | Can official/degraded DeepSeek path serve 4K fixed 64 tokens? | No DeepSeek runtime evidence exists | model path, TP/EP/runtime flags | fixed output, one prompt set, no msprof first | 1/4 requests, 4K cap, 64 out | HTTP status, generated tokens, server command/stats | all requests 200, fixed output, command archived | DeepSeek serving path runnable or degraded boundary known |
+| transfer_overlap_event_microbench | Does copy overlap compute or only throughput look good? | Current sweep syncs after each copy; old overlap is copy-copy only | pinned, size, stream, compute payload | same NPU, same tensor sizes | copy+compute event timing | event elapsed, exposed host time, overlap ratio | separate copy-throughput vs overlap evidence | KV/offload transfer can be reasoned about |
+| qwen_runtime_shape_readout | What shapes/dtypes underlie P1 top MatMul/attention ops? | Top op duration cannot map to TFLOPS ceiling | same P1 fixed workload, shape extraction only | no new benchmark; reuse controlled workload pattern | small controlled readout | op_type, shape, dtype, FLOPs if available | top MatMulV2 rows carry shape/dtype | Qwen efficiency denominator becomes possible |
+| hbm_counter_mapping_probe | Can msprof/CANN expose HBM or utilization denominators? | MTE/MAC raw counters are insufficient | selected msprof metrics/table inventory | fixed tiny workload or reuse existing raw if possible | offline/schema readout first | available columns, units, denominators | unit and semantic confidence documented | AI Core/MTE bottleneck claims become testable |
+These do not repeat P0/P3 hardware ceiling sweep or P1.28; they fill missing evidence needed for P6/P8/P9 decisions.
+
+# 27. Final Verdict
+| verdict item | answer | evidence |
+| --- | --- | --- |
+| A. Ascend 服务器硬件性能参数现状表 | YES | inventory + synthetic ceiling + raw observations can form a status table with boundaries |
+| B. hardware observed ceiling baseline | PARTIAL | copy/matmul/fio baseline ready; DRAM only NumPy path; HBM/copy-overlap incomplete |
+| C. Qwen3.5-4B hardware behavior raw readout | YES | P1.28 fixed-output request-device/top-op/AI metric raw counter readout exists |
+| D. Qwen3.5-4B hardware bottleneck attribution conclusion | NO | no TTFT/TPOT, unit/denominator, op shape, HBM BW, KV object, slow-token stall closure |
+| E. Enough evidence to decide DeepSeek KV offload/expert hot cache/CPU fallback/SSD tiering priority | NO | reusable baselines exist, but DeepSeek runtime, MoE/EP/KV/MTP evidence is absent |

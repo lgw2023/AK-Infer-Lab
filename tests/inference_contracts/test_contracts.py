@@ -44,6 +44,9 @@ VLLM_API_MSPROF_CONTROLLED_READOUT_HANDOFF = (
 VLLM_API_MSPROF_LARGER_CONTROLLED_REPLAY_HANDOFF = (
     CONTRACT_DIR / "server_runtime_vllm_api_msprof_larger_controlled_replay_handoff.md"
 )
+VLLM_API_STREAMING_PERF_DENOMINATOR_HANDOFF = (
+    CONTRACT_DIR / "server_runtime_vllm_api_streaming_perf_denominator_handoff.md"
+)
 EXPECTED_PHASES = {
     "enqueue",
     "tokenize",
@@ -749,6 +752,48 @@ def test_vllm_api_msprof_larger_controlled_replay_handoff_defines_required_bound
         "不安装、升级、卸载或修复任何包",
         "不运行 full 16K/32K 或 full `P010=43216` tokens",
         "不输出性能 benchmark、吞吐结论、调度效率结论、prefix cache 命中率结论、瓶颈归因或优化建议",
+    ]
+    for text in required_text:
+        assert text in handoff
+
+
+def test_vllm_api_streaming_perf_denominator_handoff_defines_required_boundaries():
+    handoff = VLLM_API_STREAMING_PERF_DENOMINATOR_HANDOFF.read_text(encoding="utf-8")
+
+    required_text = [
+        "runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029",
+        "runtime_vllm_api_msprof_larger_controlled_replay_2026_0708_p1_028",
+        "perf_unprofiled",
+        "msprof_denominator",
+        "tools/inference_contracts/run_vllm_api_streaming_perf.py",
+        "tools/inference_contracts/summarize_vllm_api_streaming_perf_pair.py",
+        "tools/inference_contracts/summarize_msprof_shape_denominators.py",
+        "--case-plan continuous32_mixed",
+        "--max-model-len 9216",
+        "--min-tokens 64",
+        "--ignore-eos",
+        "stream=true",
+        "TTFT",
+        "TPOT",
+        "ITL",
+        "vllm_api_streaming_perf_parameters.tsv",
+        "vllm_api_streaming_perf_common_metrics.tsv",
+        "Benchmark Duration",
+        "Request Throughput",
+        "Total Token Throughput",
+        "vllm_api_streaming_perf_pair_result.json",
+        "msprof_shape_denominator_result.json",
+        "msprof_unit_mapping.tsv",
+        "hardware_denominator_mapping.tsv",
+        "shape-derived FLOPs denominator",
+        "tensor footprint bytes != HBM traffic",
+        "不启动 P5",
+        "不启动 DeepSeek-V4-Flash",
+        "不安装或调用 MindIE-Motor/AISBench",
+        "不把 profiler 下的 TTFT/TPOT 当作无 profiler 性能结论",
+        "不把 vLLM OpenAI streaming client 口径的 `ITL`、`PrefillTokenThroughput` 当作 MindIE native `prefill_time/decode_time`",
+        "不输出瓶颈归因或优化建议",
+        "70KB",
     ]
     for text in required_text:
         assert text in handoff

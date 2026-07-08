@@ -52,6 +52,9 @@ DeepSeek-V4-Flash on Ascend
 | `10_P0_P4_阶段收尾评估.md` | P0-P4 当前阶段三类目标的完成判定和边界。 |
 | `11_P0_P4_阶段收尾报告.md` | P0-P4 当前阶段收尾报告和后续建议。 |
 | `12_P5_P9_后续阶段重排计划.md` | P5-P9 新路线：实验对象定版、八卡 baseline、单/双卡边界、AK 技术注入和硬件联合分析。 |
+| `13_P0_P4_数据资产成果包索引.md` | P0-P4 硬件性能与推理观测数据资产成果包入口，串联审计计划、审计结果正文、静态仪表盘和副本关系。 |
+| `ak_infer_lab_p0_p4_data_asset_audit_2026_0708.txt` | P0-P4 数据资产全量审计结果正文，作为成果包主读文本版本。 |
+| `P0_P4_硬件性能与推理观测数据资产仪表盘_2026_0708.html` | P0-P4 数据资产全量审计的静态可视化仪表盘，作为成果包主展示版本。 |
 | `p1_inference_contracts/` | workload、schema、handoff、fixture、prompt。 |
 | `runtime_trace_smokes/` | smoke、prefix A/B、msprof 和 request-device 聚合归档。 |
 | `observability_profiles/` | 服务器体检 run 归档。 |
