@@ -1,0 +1,4 @@
+mode=prefix_cache_off；status=success；cell_count=15。
+服务器路径=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031/prefix_cache_off
+
+附件：/Users/liguowei/Downloads/akp1_31prefixcacheprefix_cache_offsum

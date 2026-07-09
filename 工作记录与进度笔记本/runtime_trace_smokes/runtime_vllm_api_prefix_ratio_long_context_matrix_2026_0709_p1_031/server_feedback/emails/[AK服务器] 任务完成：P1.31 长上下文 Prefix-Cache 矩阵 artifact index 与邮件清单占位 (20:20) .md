@@ -1,0 +1,7 @@
+末封：artifact 相对路径索引（服务器本地完整目录）。
+run_id=runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031
+commit=7e84c7e5a6141fc1a00bb4f57cbf98ac6b32ae66
+artifact_dir=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031
+本批发送后写入 mail_manifest.tsv（同目录）。
+
+附件：/Users/liguowei/Downloads/akp1_31prefixcacheartifactindex

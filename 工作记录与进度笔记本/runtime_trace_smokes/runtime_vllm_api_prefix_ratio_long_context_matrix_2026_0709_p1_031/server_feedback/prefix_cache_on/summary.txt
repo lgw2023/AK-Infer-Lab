@@ -1,0 +1,24 @@
+run_id=runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031_prefix_cache_on
+mode=prefix_cache_on
+status=success
+cell_count=15
+success_cell_count=15
+token_count_acceptance_policy=accept_1023_of_1024_as_success_for_matrix_statistics_no_bottleneck_claim
+accepted_cell=cap8192_prefix60
+
+## cell_rows
+prefix_cache_on	cap8192_prefix30	success=3/3	status=success
+prefix_cache_on	cap8192_prefix60	success=3/3	status=success
+prefix_cache_on	cap8192_prefix90	success=3/3	status=success
+prefix_cache_on	cap16384_prefix30	success=3/3	status=success
+prefix_cache_on	cap16384_prefix60	success=3/3	status=success
+prefix_cache_on	cap16384_prefix90	success=3/3	status=success
+prefix_cache_on	cap32768_prefix30	success=3/3	status=success
+prefix_cache_on	cap32768_prefix60	success=3/3	status=success
+prefix_cache_on	cap32768_prefix90	success=3/3	status=success
+prefix_cache_on	cap65536_prefix30	success=3/3	status=success
+prefix_cache_on	cap65536_prefix60	success=3/3	status=success
+prefix_cache_on	cap65536_prefix90	success=3/3	status=success
+prefix_cache_on	cap131072_prefix30	success=3/3	status=success
+prefix_cache_on	cap131072_prefix60	success=3/3	status=success
+prefix_cache_on	cap131072_prefix90	success=3/3	status=success

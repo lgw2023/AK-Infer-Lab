@@ -2,7 +2,7 @@
 
 日期：2026-07-09
 
-本页专门记录 P1.28、P1.29、P1.30 三轮服务器回传结果中与 Qwen3.5-4B / vLLM 推理性能指标最相关的证据。它不是网站内容，也不刷新网站相关文档；它只作为 `工作记录与进度笔记本/` 内的详细事实账本。
+本页专门记录 P1.28、P1.29、P1.30、P1.31 四轮服务器回传结果中与 Qwen3.5-4B / vLLM 推理性能指标最相关的证据；当前也作为展示页第 5 节与审计正文的细节账本。
 
 ## 结论摘要
 
@@ -17,6 +17,8 @@ P1.29 是当前阶段最有价值的一轮 Qwen3.5-4B / vLLM OpenAI streaming cl
 - Total Token Throughput：on `10750.54 token/s`，off `5904.32 token/s`。
 
 P1.30 则补齐 P1.29 之后仍缺的 phase memory matrix：`prefix_cache_on/off x prefill/decode` 的 host RSS/PSS 与 NPU HBM used/free。P1.30 显示，在本轮采样口径下，四个 phase row 的 whole-device HBM 汇总均为 `55050.24 MB used / 10485.76 MB free / 84.0% max usage`；host process-group RSS/PSS 在 on/off 之间只有十几 MB 到几 MB 级差异；vLLM server log proxy 的 `kv_cache_usage_pct_max` 在附件表中为 on `9.4`、off `16.1`。
+
+P1.31 把输入 cap 扩展到 `8K/16K/32K/64K/128K`，把 target shared-prefix ratio 扩展到 `30%/60%/90%`，固定输出目标为 `1024 tokens`，并对 prefix-cache on/off 做 15 cell 成对矩阵。它证明当前 Qwen3.5-4B / vLLM OpenAI streaming client 能完成长上下文矩阵：on/off 均 15/15 cell success，64K/128K 全部成功；off 侧 observed hit rate 全为 `0.0`，on 侧 observed hit rate 为 `22.5%` 到 `84.8%`。一个 `cap8192_prefix60` measured request 生成 `1023/1024` tokens，按用户确认和服务器 acceptance policy 作为成功样本处理。
 
 这些结果可以作为“scoped performance facts”入账，但仍不能发布为 MindIE native AISBench 结果、compute-bound/memory-bound 结论、HBM bottleneck 结论、scheduler-bound 结论或 prefix-cache benefit 归因。
 
@@ -46,6 +48,17 @@ source_run_id=runtime_vllm_api_streaming_perf_denominator_2026_0708_p1_029
 归档=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_memory_phase_readout_2026_0708_p1_030/server_feedback/
 附件来源=/Users/liguowei/Downloads/akp1_30qwen3_54bvllmprefixcachephasememory
 ```
+
+P1.31：
+
+```text
+run_id=runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031
+归档=工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031/server_feedback/
+附件来源=/Users/liguowei/Downloads/ 下 20 封 P1.31 邮件和小附件
+服务器完整目录=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031
+```
+
+P1.31 本地归档需要保留一个下载细节：第一次手动下载时，部分 on/off 同名附件被覆盖，包括 `request_summary.tsv`、`server_stats_summary.tsv`、`phase_memory_summary.tsv`、`result.json`；用户随后补充了带邮件名和附件名的唯一命名附件，本地归档已补齐 on/off 双侧表。prefix-cache on 的 `server_stats_summary.tsv` 附件中 mode/cell 标签列为空，但 stats 数值保留；本页引用分 cell hit rate 与 KV cache proxy 时优先采用 `matrix_summary/prefix_ratio_matrix_delta_summary.tsv`。完整 raw artifact 仍以服务器本地 artifact index 为准。
 
 P1.30 邮件正文与本地附件存在一个小差异，需要保留：
 
@@ -249,6 +262,125 @@ P1.30 可信边界：
 - phase rows 的 sample_count 会因为 overlap policy 而不能简单相加为 overall sample count。
 - P1.30 证明 memory matrix 已补采，但不证明 memory-bound、HBM bottleneck、scheduler-bound 或 prefix-cache memory benefit。
 
+## P1.31：长上下文 prefix ratio matrix
+
+P1.31 条件：
+
+- 模型：`Qwen3.5-4B`。
+- 路径：vLLM OpenAI streaming client。
+- 服务器 device：`ASCEND_RT_VISIBLE_DEVICES=7`。
+- commit：`7e84c7e5a6141fc1a00bb4f57cbf98ac6b32ae66`。
+- 输入 cap：`8192`、`16384`、`32768`、`65536`、`131072`。
+- target shared-prefix ratio：`30%`、`60%`、`90%`。
+- prefix-cache on/off 成对运行。
+- 每个 cell 1 个 warmup request，3 个 measured request。
+- 目标输出：`1024 tokens`。
+- `git_pull_exit_code=0`、`pytest_exit_code=0`、`prefix_cache_on_exit_code=0`、`prefix_cache_off_exit_code=0`、`summary_exit_code=0`。
+- `tests/inference_contracts`：`53 passed in 0.53s`。
+
+完成度：
+
+- on/off 均 `cell_count=15`。
+- 30 个 mode-cell 全部 `cell_status=success`。
+- 每个 cell 均 `measured_success_count=3`、`measured_request_count=3`。
+- 64K/128K 全部成功，无失败 cell。
+- `cap8192_prefix60` 中一个 measured request 为 `1023/1024`，按用户确认和服务器 `accept_1023_of_1024_as_success_for_matrix_statistics_no_bottleneck_claim` 策略计入成功样本。
+
+Observed prefix hit rate：
+
+| Input cap | target 30% on | target 60% on | target 90% on | off |
+| ---: | ---: | ---: | ---: | ---: |
+| 8192 | 22.5% | 43.8% | 68.8% | 0.0% |
+| 16384 | 23.4% | 50.5% | 72.9% | 0.0% |
+| 32768 | 26.9% | 55.7% | 76.6% | 0.0% |
+| 65536 | 29.0% | 57.4% | 81.4% | 0.0% |
+| 131072 | 29.4% | 58.3% | 84.8% | 0.0% |
+
+TTFT median on/off ratio：
+
+| Input cap | target 30% | target 60% | target 90% |
+| ---: | ---: | ---: | ---: |
+| 8192 | 0.921 | 0.640 | 0.360 |
+| 16384 | 0.964 | 0.656 | 0.212 |
+| 32768 | 1.035 | 0.627 | 0.199 |
+| 65536 | 0.954 | 0.597 | 0.206 |
+| 131072 | 0.959 | 0.590 | 0.189 |
+
+TPOT median on/off ratio：
+
+| Input cap | target 30% | target 60% | target 90% |
+| ---: | ---: | ---: | ---: |
+| 8192 | 1.044 | 1.008 | 0.951 |
+| 16384 | 1.029 | 0.993 | 1.008 |
+| 32768 | 1.030 | 1.061 | 0.959 |
+| 65536 | 0.983 | 0.972 | 0.963 |
+| 131072 | 1.012 | 0.959 | 0.881 |
+
+Client wall median on/off ratio：
+
+| Input cap | target 30% | target 60% | target 90% |
+| ---: | ---: | ---: | ---: |
+| 8192 | 1.041 | 0.999 | 0.937 |
+| 16384 | 1.026 | 0.979 | 0.973 |
+| 32768 | 1.030 | 1.027 | 0.899 |
+| 65536 | 0.978 | 0.915 | 0.849 |
+| 131072 | 0.997 | 0.853 | 0.688 |
+
+Memory and server stats facts:
+
+- vLLM server stats `server_stats_max_kv_cache_usage_pct` stays lower on prefix-cache on than off in every delta row.
+- 128K target 30%: on `22.9%` vs off `28.3%`.
+- 128K target 60%: on `17.4%` vs off `28.3%`.
+- 128K target 90%: on `12.0%` vs off `28.3%`.
+- delta summary 中 on/off 的 `hbm_used_max_mb` 均为 `57671.68 MB`；这是 whole-device occupancy，不是 per-request KV object bytes。
+
+AISBench-style 表结构补充：
+
+| asset | count/range | scope | notes |
+| --- | --- | --- | --- |
+| Performance Parameters rows | 240 | 30 mode-cells x 8 parameters | E2EL/TTFT/TPOT/ITL/InputTokens/OutputTokens/PrefillTokenThroughput/OutputTokenThroughput |
+| Common Metric rows | 390 | 30 mode-cells x 13 metrics | Benchmark Duration through Total Token Throughput |
+| Request rows | 120 total / 90 measured | on 60, off 60; measured 45+45 | 每个 cell 1 warmup + 3 measured |
+| Phase memory rows | 60 | on/off x 15 cells x prefill/decode | process-group RSS/PSS + whole-device HBM |
+
+Performance median 范围：
+
+| metric | prefix-cache on | prefix-cache off | notes |
+| --- | --- | --- | --- |
+| TTFT median | 0.783-40.301 s | 2.174-42.404 s | from aisbench parameters / delta summary |
+| TPOT median | 88.089-107.259 ms | 87.976-105.975 ms | decode wall after first token / generated tokens minus one |
+| E2EL/client wall median | 90.835-150.028 s | 92.173-150.452 s | client wall us / 1000 |
+| OutputTokenThroughput median | 6.825-11.273 token/s | 6.806-11.110 token/s | per-cell median |
+| PrefillTokenThroughput median | 1,888.9-24,890.1 token/s | 3,484.3-30,631.8 token/s | input tokens divided by host-client TTFT approximation |
+
+硬件/process 范围：
+
+| metric | prefix-cache on | prefix-cache off | notes |
+| --- | --- | --- | --- |
+| HBM used max | 57671.68 MB | 57671.68 MB | whole-device occupancy in every delta row |
+| HBM free min / usage max | 7864.32 MB / 88.0% | 7864.32 MB / 88.0% | phase memory probe; not bandwidth |
+| RSS max range | 5091.84-5431.83 MB | 5083.84-5365.70 MB | vLLM process group |
+| PSS max range | 4235.60-4696.33 MB | 4347.94-4662.93 MB | shared pages proportionally charged |
+| KV usage proxy range | 1.7%-22.9% | 2.6%-28.3% | vLLM server stats; not KV object bytes |
+| server stats samples | 289 total | 299 total | cell_summary sums |
+
+这些表参考 MindIE-Motor quick_start 的 `Performance Parameters` / `Common Metric` 双表风格组织展示，但 P1.31 的数值来源仍是本地归档的 vLLM OpenAI streaming client server-feedback artifact。
+
+P1.31 可入账事实：
+
+- 当前 Qwen3.5-4B / vLLM path 可以完成 8K 到 128K、30% 到 90% target shared-prefix ratio、1024 输出目标的 on/off 长上下文矩阵。
+- target shared-prefix ratio 与 observed prefix hit rate 已分字段记录。
+- off 侧 observed hit rate 全为 `0.0`，可作为 prefix-cache off 开关路径的 sanity check。
+- P1.31 的 AISBench-style parameter/common metric 表可作为后续 DeepSeek-V4-Flash 表格 schema 参考。
+
+P1.31 不能入账：
+
+- 不能把 target shared-prefix ratio 写成 observed hit rate。
+- 不能把 P1.31 称为 MindIE native AISBench/MindIE-Motor 结果。
+- 不能把 TPOT ratio 或 client wall ratio 直接写成 prefix-cache 收益归因。
+- 不能把 `server_stats_max_kv_cache_usage_pct` 称为 HBM used/free 或 KV object bytes。
+- 不能把 Qwen3.5-4B 单卡长上下文事实外推为 DeepSeek-V4-Flash 八卡 benchmark。
+
 ## 可入账的结论和仍缺证据
 
 可以入账：
@@ -258,6 +390,7 @@ P1.30 可信边界：
 - P1.29 的 fixed-output A/B 条件成立：on/off 输入 token 总量一致，输出 token 总量一致，每请求输出 token 固定为 64。
 - P1.29 可以作为后续 DeepSeek-V4-Flash 性能表 schema 的模板。
 - P1.30 补齐了 `prefix_cache_on/off x prefill/decode` 的 host RSS/PSS 与 NPU whole-device HBM readout。
+- P1.31 补齐了 Qwen3.5-4B / vLLM 长上下文 prefix ratio matrix，覆盖 8K 到 128K、30%/60%/90% target shared-prefix ratio 和 1024 输出目标。
 
 不能入账：
 

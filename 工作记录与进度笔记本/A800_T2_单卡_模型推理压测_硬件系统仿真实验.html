@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>AK-Infer-Lab 技术评审汇报 2026-07-09</title>
+  <style>
+    :root {
+      --red: #b00000;
+      --red-dark: #8f0000;
+      --blue: #0033cc;
+      --blue-soft: #e8efff;
+      --yellow: #fff4c2;
+      --green: #e7f4df;
+      --gray-0: #ffffff;
+      --gray-1: #f4f4f4;
+      --gray-2: #e4e4e4;
+      --gray-3: #999999;
+      --gray-4: #666666;
+      --black: #101010;
+      --good: #006a38;
+      --warn: #a55300;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 52px;
+    }
+
+    body {
+      margin: 0;
+      background: #d9d9d9;
+      color: var(--black);
+      font-family: "Microsoft YaHei", "PingFang SC", "Heiti SC", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 16px;
+      background: #f2f2f2;
+      border-bottom: 1px solid #777;
+      font-size: 12px;
+    }
+
+    .toolbar strong {
+      color: var(--red);
+      font-size: 14px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .nav a,
+    .toolbar button {
+      border: 1px solid #777;
+      background: #fff;
+      color: #111;
+      padding: 4px 8px;
+      text-decoration: none;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .nav a:hover,
+    .toolbar button:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .deck {
+      display: grid;
+      gap: 26px;
+      justify-items: center;
+      padding: 24px;
+    }
+
+    .slide {
+      position: relative;
+      width: min(96vw, 1440px);
+      aspect-ratio: 16 / 9;
+      scroll-margin-top: 48px;
+      background: var(--gray-0);
+      border: 1px solid #555;
+      display: grid;
+      grid-template-rows: 72px 1fr 70px 22px;
+      gap: 8px;
+      padding: 20px 26px 14px;
+      overflow: hidden;
+    }
+
+    .slide h1 {
+      margin: 0;
+      color: var(--red);
+      font-size: clamp(22px, 2.05vw, 34px);
+      line-height: 1.12;
+      font-weight: 800;
+      border-bottom: 2px solid var(--red);
+      padding-bottom: 8px;
+    }
+
+    .content {
+      min-height: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .grid-2 {
+      grid-template-columns: 1.05fr 1fr;
+    }
+
+    .grid-3 {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .rows-2 {
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .hardware-content {
+      grid-template-columns: 0.92fr 1.08fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .hardware-content .module-body {
+      padding: 6px 7px;
+    }
+
+    .hardware-content table {
+      font-size: 9.4px;
+      line-height: 1.12;
+    }
+
+    .forecast-content {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .forecast-content .module-body {
+      padding: 6px 7px;
+    }
+
+    .forecast-content table {
+      font-size: 9.2px;
+      line-height: 1.12;
+    }
+
+    .forecast-content td,
+    .forecast-content th {
+      padding: 2px 3px;
+    }
+
+    .perf-forecast {
+      font-size: 7.35px !important;
+      line-height: 1.02 !important;
+    }
+
+    .perf-forecast th,
+    .perf-forecast td {
+      padding: 1px 2px !important;
+    }
+
+    .metric-caption {
+      margin: 0 0 3px;
+      color: #333;
+      font-size: 9px;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+
+    .hardware-content td,
+    .hardware-content th {
+      padding: 2px 3px;
+    }
+
+    .split-tables {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 6px;
+      min-height: 0;
+    }
+
+    .mini-note {
+      margin-top: 5px;
+      padding: 4px 5px;
+      border: 1px solid #999;
+      background: #f7f7f7;
+      color: #222;
+      font-size: 9.5px;
+      line-height: 1.22;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    .module {
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid #777;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .module-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 30px;
+      padding: 5px 8px;
+      border-bottom: 1px solid #777;
+      background: var(--yellow);
+      color: #111;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .module-title.blue {
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
+    .module-title.green {
+      background: var(--green);
+      color: #174a20;
+    }
+
+    .module-body {
+      min-height: 0;
+      padding: 7px 8px;
+      font-size: 11px;
+      line-height: 1.28;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+      line-height: 1.2;
+    }
+
+    th,
+    td {
+      border: 1px solid #888;
+      padding: 3px 4px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--yellow);
+      font-weight: 800;
+      color: #111;
+    }
+
+    td.num,
+    th.num {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .tight td,
+    .tight th {
+      padding: 2px 3px;
+      font-size: 10px;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .metric {
+      border: 1px solid #777;
+      background: #f8f8f8;
+      padding: 6px 7px;
+      min-height: 54px;
+    }
+
+    .metric .label {
+      color: #333;
+      font-size: 10px;
+      line-height: 1.15;
+    }
+
+    .metric .value {
+      margin-top: 3px;
+      color: var(--red);
+      font-size: 18px;
+      line-height: 1.05;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .metric .note {
+      margin-top: 2px;
+      color: #333;
+      font-size: 9.5px;
+    }
+
+    .blue-text {
+      color: var(--blue);
+      font-weight: 800;
+    }
+
+    .red-text {
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    .green-text {
+      color: var(--good);
+      font-weight: 800;
+    }
+
+    .warn-text {
+      color: var(--warn);
+      font-weight: 800;
+    }
+
+    .tag {
+      display: inline-block;
+      border: 1px solid #777;
+      background: #fff;
+      padding: 1px 5px;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .tag.ok {
+      background: #e5f6e7;
+      color: var(--good);
+    }
+
+    .tag.risk {
+      background: #ffe5e5;
+      color: var(--red);
+    }
+
+    .tag.plan {
+      background: #e8efff;
+      color: var(--blue);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      align-items: stretch;
+    }
+
+    .flow-step {
+      border: 1px solid #777;
+      background: #f7f7f7;
+      padding: 6px;
+      min-height: 78px;
+      position: relative;
+    }
+
+    .flow-step::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -7px;
+      width: 8px;
+      height: 1px;
+      background: #777;
+    }
+
+    .flow-step:last-child::after {
+      display: none;
+    }
+
+    .flow-step b {
+      display: block;
+      color: var(--red);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .flow-step span {
+      display: block;
+      font-size: 10px;
+      line-height: 1.2;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr 0.7fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 7px;
+      min-height: 178px;
+    }
+
+    .arch-box {
+      border: 1px solid #777;
+      background: #f7f7f7;
+      padding: 7px;
+      font-size: 11px;
+      line-height: 1.25;
+      position: relative;
+    }
+
+    .arch-box h3 {
+      margin: 0 0 5px;
+      font-size: 13px;
+      color: var(--blue);
+    }
+
+    .arch-box.strong {
+      background: var(--green);
+      border-color: #4b7b4b;
+    }
+
+    .arrow-label {
+      display: grid;
+      place-items: center;
+      color: var(--red);
+      font-weight: 900;
+      font-size: 12px;
+      text-align: center;
+      border-top: 1px solid #777;
+      border-bottom: 1px solid #777;
+    }
+
+    .bar-table td:last-child {
+      width: 32%;
+    }
+
+    .bar {
+      height: 9px;
+      background: #e6e6e6;
+      border: 1px solid #999;
+      position: relative;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: var(--blue);
+    }
+
+    .heat td,
+    .heat th {
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .heat .cap {
+      background: #f1f1f1;
+      color: #111;
+      text-align: right;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .h0 { background: #f1f1f1; color: #111; }
+    .h1 { background: #d9e8ff; color: #0033cc; }
+    .h2 { background: #a9c8ff; color: #00298a; }
+    .h3 { background: #6fa2f5; color: #001e66; }
+    .h4 { background: #2d72d9; color: #fff; }
+    .h5 { background: #0051ad; color: #fff; }
+    .r-good { background: #d8ecff; color: #0033cc; }
+    .r-mid { background: #f3f3f3; color: #333; }
+    .r-risk { background: #ffe3e3; color: #a00000; }
+
+    ul.compact {
+      margin: 0;
+      padding-left: 16px;
+    }
+
+    ul.compact li {
+      margin: 0 0 3px;
+    }
+
+    .source-line {
+      margin-top: 6px;
+      padding-top: 5px;
+      border-top: 1px dashed #999;
+      color: #444;
+      font-size: 9.5px;
+      line-height: 1.25;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 86px 1fr;
+      border: 1px solid #777;
+      background: #fff;
+      min-height: 0;
+    }
+
+    .summary-label {
+      display: grid;
+      place-items: center;
+      background: var(--red);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .summary ul {
+      margin: 0;
+      padding: 7px 10px 7px 23px;
+      font-size: 11px;
+      line-height: 1.28;
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      color: #333;
+      font-size: 10px;
+      align-items: center;
+      border-top: 1px solid #999;
+      padding-top: 4px;
+    }
+
+    .footer span:nth-child(2) {
+      text-align: center;
+    }
+
+    .footer span:nth-child(3) {
+      text-align: right;
+    }
+
+    .slide-index {
+      color: var(--red);
+      font-weight: 900;
+    }
+
+    .page-watermark {
+      position: absolute;
+      right: 22px;
+      top: 88px;
+      color: #efefef;
+      font-size: 64px;
+      font-weight: 900;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .slide > *:not(.page-watermark) {
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 900px) {
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .slide {
+        width: 1280px;
+        transform-origin: top center;
+      }
+
+      .deck {
+        overflow-x: auto;
+        justify-items: start;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .toolbar {
+        display: none;
+      }
+
+      .deck {
+        padding: 0;
+        gap: 0;
+      }
+
+      .slide {
+        width: 100vw;
+        height: 100vh;
+        page-break-after: always;
+        border: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div><strong>AK-Infer-Lab 技术评审汇报</strong> ｜ 2026-07-09 ｜ 固定 16:9 仿 PPT 页面</div>
+    <nav class="nav" aria-label="slides">
+      <a href="#s1">1 总览</a>
+      <a href="#s2">2 硬件</a>
+      <a href="#s3">3 长上下文矩阵</a>
+      <a href="#s4">4 推理结果</a>
+      <a href="#s5">5 DeepSeek 预测</a>
+      <button type="button" onclick="window.print()">打印/PDF</button>
+    </nav>
+  </div>
+
+  <main class="deck">
+    <section class="slide" id="s1" aria-label="测量闭环总览">
+      <div class="page-watermark">01</div>
+      <h1>证据底座：从硬件天花板到长上下文推理，形成 DeepSeek-V4-Flash 实测口径</h1>
+      <div class="content grid-3">
+        <div class="module">
+          <div class="module-title">软硬件背景与当前证据口径</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>层级</th><th>当前事实</th><th>汇报口径</th></tr>
+              <tr><td>服务器</td><td>Atlas 800T A2；真实 NPU 侧结果来自服务器回传</td><td><span class="tag ok">已实测</span></td></tr>
+              <tr><td>单卡 HBM</td><td>长上下文矩阵观测 capacity 约 64GB；最高 used 57.67GB</td><td><span class="tag ok">设备级</span></td></tr>
+              <tr><td>基础栈</td><td>CANN 9.0.0、vLLM-Ascend、OpenAI streaming client</td><td><span class="tag ok">可跑通</span></td></tr>
+              <tr><td>模型链路</td><td>Qwen3.5-4B 用于单卡 vLLM 观测；DeepSeek-V4-Flash 尚未跑八卡 baseline</td><td><span class="tag risk">不可外推</span></td></tr>
+              <tr><td>展示目标</td><td>把数据资产转成可执行的工程判断</td><td><span class="tag plan">评审页</span></td></tr>
+            </table>
+            <div class="source-line">证据：hardware ceiling sweep、streaming performance/common metrics、phase-memory readout、long-context prefix-ratio matrix；本页不替代原始实验账本。</div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title blue">实验设计主线：先建立测量能力，再进入大模型需求验证</div>
+          <div class="module-body">
+            <div class="flow">
+              <div class="flow-step"><b>硬件基线</b><span>microbench 天花板：copy、matmul、DRAM、fio。</span></div>
+              <div class="flow-step"><b>回放校准</b><span>32 请求 fixed-output replay；msprof/request-device readout 可用。</span></div>
+              <div class="flow-step"><b>性能事实表</b><span>AISBench-style parameter/common metric：TTFT、TPOT、吞吐分母补齐。</span></div>
+              <div class="flow-step"><b>Phase memory</b><span>prefill/decode 内存读数：RSS/PSS/HBM/KV proxy 补齐。</span></div>
+              <div class="flow-step"><b>长上下文矩阵</b><span>8K-128K prefix-ratio matrix：共享前缀与尾部风险闭环。</span></div>
+            </div>
+            <table class="tight" style="margin-top:7px;">
+              <tr><th>设计原则</th><th>当前采用方式</th><th>后续迁移到 DeepSeek 的意义</th></tr>
+              <tr><td>固定输出</td><td>64 tokens 或 1024 tokens</td><td>消除 EOS/长度混杂，便于 TPOT/tail 对比</td></tr>
+              <tr><td>成对 A/B</td><td>prefix-cache on/off 同负载</td><td>作为大模型开关策略的测量模板</td></tr>
+              <tr><td>边界声明</td><td>不做 bottleneck 归因</td><td>先建立数据可信度，再做专项归因实验</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title green">当前可复用数据资产一览</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>资产</th><th class="num">规模</th><th>可复用价值</th></tr>
+              <tr><td>Hardware ceiling sweep</td><td class="num">120 rows</td><td>硬件上限与边界基线</td></tr>
+              <tr><td>Streaming parameter/common metrics</td><td class="num">2 tables</td><td>性能指标模板与分母口径</td></tr>
+              <tr><td>Phase-memory readout</td><td class="num">4 rows</td><td>prefill/decode 内存读数口径</td></tr>
+              <tr><td>Long-context performance parameters</td><td class="num">240 rows</td><td>长上下文分 cell 性能事实表</td></tr>
+              <tr><td>Long-context common metrics</td><td class="num">390 rows</td><td>benchmark-window 吞吐/并发指标</td></tr>
+              <tr><td>Long-context phase memory</td><td class="num">60 rows</td><td>长上下文内存与 KV proxy 矩阵</td></tr>
+            </table>
+            <div class="source-line">长上下文矩阵：on/off 共 30 个 mode-cell，120 requests，其中 90 个 measured request。</div>
+          </div>
+        </div>
+
+        <div class="module span-3">
+          <div class="module-title">结论先行：已验证测量链路，不把小模型结果外推为 DeepSeek 性能</div>
+          <div class="module-body">
+            <table>
+              <tr><th>问题</th><th>已有数据依据</th><th>当前判断</th><th>下一步动作</th></tr>
+              <tr>
+                <td>服务器硬件能力是否有基线？</td>
+                <td>H2D/D2H、FP16 matmul、DRAM、SSD fio sweep 全部 success。</td>
+                <td><span class="blue-text">硬件 microbench ceiling 已闭环</span>，但不等于模型推理瓶颈归因。</td>
+                <td>作为 DeepSeek simulator/what-if 的底座参数。</td>
+              </tr>
+              <tr>
+                <td>小模型推理观测链路是否可用？</td>
+                <td>已产出 TTFT/TPOT/E2EL/throughput/common metric/memory matrix。</td>
+                <td><span class="blue-text">Qwen3.5-4B / vLLM 数据链路已可用于评审页</span>。</td>
+                <td>复制 schema 到 DeepSeek 8卡 baseline 与 degraded smoke。</td>
+              </tr>
+              <tr>
+                <td>现在能否宣称 DeepSeek 性能？</td>
+                <td>当前 DeepSeek 尚未完成服务器侧 8卡 official benchmark。</td>
+                <td><span class="red-text">不能宣称实测性能</span>；只能给出需求预测、风险区间和验收口径。</td>
+                <td>先跑 official W8A8-MTP baseline，再判断优化优先级。</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">总结</div>
+        <ul>
+          <li>证据资产已从“能跑”升级到“可比较”：120 行硬件 ceiling、2 张 streaming 指标表、4 行 phase-memory、240/390/60 行长上下文指标，把 E2EL、TTFT、TPOT、吞吐、HBM 与 KV proxy 统一到同一口径。</li>
+          <li>Qwen3.5-4B / vLLM 是测量链路校准样本，不是 DeepSeek 性能代理；DeepSeek-V4-Flash 只接受同 schema 八卡 W8A8-MTP 实测，核心验收项是 E2EL/TTFT/TPOT、output throughput、HBM free 与 P90/P99 tail。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>PROJECT / TECHNOLOGY REVIEW</span><span>Internal Technical Analysis</span><span class="slide-index">Page 1 / 5</span></div>
+    </section>
+
+    <section class="slide" id="s2" aria-label="硬件系统性能天花板">
+      <div class="page-watermark">02</div>
+      <h1>硬件天花板：八卡 910B1 具备容量分母，Host/IO 不进入 token 热路径</h1>
+      <div class="content hardware-content">
+        <div class="module">
+          <div class="module-title">硬件事实资产：静态清单 + 120 行 microbench</div>
+          <div class="module-body">
+            <table>
+              <tr><th>对象</th><th>当前读数</th><th>证据/用途</th></tr>
+              <tr><td>CPU/内存</td><td>Kunpeng-920；4 sockets；192 logical CPUs；8 NUMA；约 1.5 TiB DRAM</td><td>系统拓扑与 Host 资源上限</td></tr>
+              <tr><td>NPU/HBM</td><td>8 x Ascend 910B1；单卡 64GB HBM；聚合 512GB</td><td>容量规划分母</td></tr>
+              <tr><td>软件栈</td><td>CANN 9.0.0；driver 26.0.rc1；torch_npu 2.9.0.post2；vLLM-Ascend 0.18.0</td><td>推理链路上下文</td></tr>
+              <tr><td>NPU copy sweep</td><td><span class="red-text">64 rows</span>；4K-1G；H2D/D2H x pinned/non_blocking</td><td>Host-NPU 批量传输包络</td></tr>
+              <tr><td>FP16 matmul sweep</td><td><span class="red-text">5 rows</span>；512³-8192³；最大 290.449 TFLOPS</td><td>AI Core synthetic compute ceiling</td></tr>
+              <tr><td>Host/io sweep</td><td><span class="red-text">51 rows</span>；DRAM 256M-4G；fio 4k/128k/1m x qd 1/4/16/32</td><td>冷层/离线路径边界</td></tr>
+            </table>
+            <div class="mini-note">读法：这些表是硬件包络与可复用 denominator；它们不自动等价于模型吞吐、token 热路径或 DeepSeek 的瓶颈归因。</div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title blue">NPU Copy Sweep：64 行矩阵显示传输平台期只在大 payload 出现</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>payload</th><th class="num">best H2D GB/s</th><th>H2D 配置</th><th class="num">best D2H GB/s</th><th>D2H 配置</th><th>工程判断</th></tr>
+              <tr><td>4K</td><td class="num">0.079</td><td>pinned / nb</td><td class="num">0.079</td><td>pinned / nb</td><td>固定开销主导</td></tr>
+              <tr><td>16K</td><td class="num">0.328</td><td>pinned / nb</td><td class="num">0.305</td><td>pinned / nb</td><td>仍在小包低效区</td></tr>
+              <tr><td>64K</td><td class="num">1.340</td><td>pinned / nb</td><td class="num">1.285</td><td>pinned / nb</td><td>未进入平台</td></tr>
+              <tr><td>1M</td><td class="num">9.885</td><td>pinned / nb</td><td class="num">9.069</td><td>pinned / nb</td><td>开始爬升</td></tr>
+              <tr><td>16M</td><td class="num">12.441</td><td>pinned / sync</td><td class="num">17.478</td><td>pinned / sync</td><td>D2H 更快进入中高段</td></tr>
+              <tr><td>64M</td><td class="num">12.780</td><td>pinned / sync</td><td class="num">19.910</td><td>unpinned / sync</td><td>方向差异明显</td></tr>
+              <tr><td>256M</td><td class="num">24.072</td><td>pinned / sync</td><td class="num">25.814</td><td>pinned / sync</td><td><span class="blue-text">进入平台期</span></td></tr>
+              <tr><td>1G</td><td class="num">24.314</td><td>pinned / sync</td><td class="num">26.481</td><td>pinned / sync</td><td><span class="blue-text">平台期确认</span></td></tr>
+            </table>
+            <div class="mini-note">non_blocking 在本轮每次计时后同步，只能读作接口配置下的 ceiling 观测，不能读作异步 overlap 收益。</div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title green">Compute / Host / SSD Envelope：三类路径必须分层使用</div>
+          <div class="module-body">
+            <div class="split-tables">
+              <table class="tight">
+                <tr><th>FP16 matmul</th><th class="num">TFLOPS</th><th>状态</th></tr>
+                <tr><td>512³</td><td class="num">4.097</td><td>measurable</td></tr>
+                <tr><td>1024³</td><td class="num">33.186</td><td>measurable</td></tr>
+                <tr><td>2048³</td><td class="num">153.515</td><td>measurable</td></tr>
+                <tr><td>4096³</td><td class="num">284.594</td><td>平台前沿</td></tr>
+                <tr><td>8192³</td><td class="num">290.449</td><td><span class="red-text">峰值</span></td></tr>
+              </table>
+              <table class="tight">
+                <tr><th>Host / fio 路径</th><th class="num">读</th><th class="num">写/拷贝</th><th>含义</th></tr>
+                <tr><td>DRAM NumPy 1G</td><td class="num">5.332 GB/s</td><td class="num">2.961 GB/s</td><td>非硬件 DRAM peak</td></tr>
+                <tr><td>DRAM NumPy 4G</td><td class="num">5.295 GB/s</td><td class="num">2.963 GB/s</td><td>Host 路径偏冷</td></tr>
+                <tr><td>fio 4k best</td><td class="num">13.393 MiB/s</td><td class="num">17.113 MiB/s</td><td>小块不适合热路径</td></tr>
+                <tr><td>fio 128k best</td><td class="num">178.514 MiB/s</td><td class="num">234.628 MiB/s</td><td>冷层吞吐级别</td></tr>
+                <tr><td>fio 1m best</td><td class="num">394.721 MiB/s</td><td class="num">377.724 MiB/s</td><td>加载/离线可用</td></tr>
+              </table>
+            </div>
+            <div class="mini-note">边界：GEMM 只支持 synthetic ceiling；Host/io 只支持冷层，不支持逐 token 专家或 KV 热回取。</div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title">推理系统规划边界：整体硬件指标、可支撑结论与局限</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>硬件/运行层</th><th>当前数值摘要</th><th>可支撑结论</th><th>局限边界</th></tr>
+              <tr><td>整机 CPU/DRAM</td><td>Kunpeng-920；4 sockets；192 logical CPUs；8 NUMA；总内存 <span class="red-text">1,542,613MB</span></td><td>Host 资源规模明确，可作为部署容量底账</td><td>未做 NUMA affinity / STREAM 多线程峰值</td></tr>
+              <tr><td>NPU/HBM</td><td>8 x 910B1；<span class="red-text">64GB/card</span>；聚合 <span class="red-text">512GB</span></td><td>可做八卡容量规划和 per-card 红线</td><td>聚合 512GB 不能写成单卡 512GB</td></tr>
+              <tr><td>软件栈</td><td>Linux 5.15；CANN <span class="blue-text">9.0.0</span>；driver <span class="blue-text">26.0.rc1</span>；torch_npu 2.9.0.post2；vLLM-Ascend 0.18.0</td><td>推理链路环境可复述</td><td>版本可用不等于 DeepSeek 已跑通</td></tr>
+              <tr><td>Copy / compute ceiling</td><td>H2D <span class="red-text">24.314GB/s</span>；D2H <span class="red-text">26.481GB/s</span>；FP16 GEMM <span class="red-text">290.449TFLOPS</span></td><td>大块传输与 synthetic GEMM 有平台期</td><td>不能推出模型吞吐或 offload 收益</td></tr>
+              <tr><td>Host / SSD envelope</td><td>DRAM NumPy read/copy <span class="red-text">5.332/2.963GB/s</span>；fio 1M read/write <span class="red-text">394.7/377.7MiB/s</span></td><td>可定义冷层、加载、离线边界</td><td>不支持逐 token 热 expert/KV 回取</td></tr>
+              <tr><td>运行时容量观测</td><td>长上下文 Qwen used max <span class="red-text">57.67GB</span>，free min <span class="red-text">7.86GB</span>，usage max <span class="red-text">88.0%</span></td><td>单卡 HBM 容量压力可见</td><td>是 whole-device occupancy，不是 HBM traffic 或 KV object bytes</td></tr>
+            </table>
+            <div class="mini-note">可纳入但不宜放主结论：CPU perf IPC 3.166、Python loop score、早期 bytearray DRAM 0.109GB/s；这些是工具链/口径 sanity check，不是硬件峰值。</div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">总结</div>
+        <ul>
+          <li>整机分母明确：192 logical CPUs、8 NUMA、约 1.5TiB DRAM、8 x 64GB HBM；大块 copy ceiling 为 H2D/D2H 24.314/26.481GB/s，FP16 GEMM ceiling 为 290.449TFLOPS，只能支撑容量与包络判断。</li>
+          <li>冷层边界同样清楚：Host DRAM NumPy read/copy 5.332/2.963GB/s，fio 1M read/write 394.7/377.7MiB/s；这些路径可承担加载/离线/极冷层，不能承担逐 token expert 或 KV 热回取。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>PROJECT / TECHNOLOGY REVIEW</span><span>Hardware Ceiling Sweep</span><span class="slide-index">Page 2 / 5</span></div>
+    </section>
+
+    <section class="slide" id="s3" aria-label="长上下文矩阵">
+      <div class="page-watermark">03</div>
+      <h1>长上下文矩阵：Prefix-cache 命中率可控，TTFT 收益随共享前缀放大</h1>
+      <div class="content grid-3">
+        <div class="module">
+          <div class="module-title">长上下文矩阵实验设计与完成度</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>项目</th><th>配置/结果</th></tr>
+              <tr><td>server 归档</td><td>runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709</td></tr>
+              <tr><td>模型/路径</td><td>Qwen3.5-4B / vLLM OpenAI streaming client</td></tr>
+              <tr><td>device</td><td>ASCEND_RT_VISIBLE_DEVICES=7</td></tr>
+              <tr><td>input cap</td><td>8K / 16K / 32K / 64K / 128K</td></tr>
+              <tr><td>target prefix ratio</td><td>30% / 60% / 90%</td></tr>
+              <tr><td>输出目标</td><td>1024 tokens；一个 1023/1024 样本按成功入账</td></tr>
+              <tr><td>完成度</td><td><span class="red-text">30/30 mode-cell success</span>；120 requests；90 measured</td></tr>
+              <tr><td>表规模</td><td>240 rows Performance Parameters；390 rows Common Metrics；60 rows phase memory</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title blue">Observed prefix hit rate：off 侧全为 0，可作为开关 sanity check</div>
+          <div class="module-body">
+            <table class="heat">
+              <tr><th>Input cap</th><th>Target 30%</th><th>Target 60%</th><th>Target 90%</th></tr>
+              <tr><td class="cap">8K</td><td class="h1">22.5%</td><td class="h2">43.8%</td><td class="h3">68.8%</td></tr>
+              <tr><td class="cap">16K</td><td class="h1">23.4%</td><td class="h2">50.5%</td><td class="h4">72.9%</td></tr>
+              <tr><td class="cap">32K</td><td class="h1">26.9%</td><td class="h3">55.7%</td><td class="h4">76.6%</td></tr>
+              <tr><td class="cap">64K</td><td class="h2">29.0%</td><td class="h3">57.4%</td><td class="h5">81.4%</td></tr>
+              <tr><td class="cap">128K</td><td class="h2">29.4%</td><td class="h3">58.3%</td><td class="h5">84.8%</td></tr>
+            </table>
+            <ul class="compact" style="margin-top:8px;">
+              <li><span class="blue-text">target ratio 不是 observed hit rate</span>：表中记录的是服务器 stats 观测值。</li>
+              <li>off 侧 observed hit rate 全为 <span class="red-text">0.0%</span>，说明 prefix-cache off 路径基本符合预期。</li>
+              <li>128K / target 90% 的 observed hit rate 达 <span class="red-text">84.8%</span>，是当前矩阵最高点。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title green">TTFT median on/off ratio：高共享比例下 prefill 侧改善最明显</div>
+          <div class="module-body">
+            <table class="heat">
+              <tr><th>Input cap</th><th>30%</th><th>60%</th><th>90%</th></tr>
+              <tr><td class="cap">8K</td><td class="r-mid">0.921</td><td class="r-good">0.640</td><td class="r-good">0.360</td></tr>
+              <tr><td class="cap">16K</td><td class="r-mid">0.964</td><td class="r-good">0.656</td><td class="r-good">0.212</td></tr>
+              <tr><td class="cap">32K</td><td class="r-risk">1.035</td><td class="r-good">0.627</td><td class="r-good">0.199</td></tr>
+              <tr><td class="cap">64K</td><td class="r-mid">0.954</td><td class="r-good">0.597</td><td class="r-good">0.206</td></tr>
+              <tr><td class="cap">128K</td><td class="r-mid">0.959</td><td class="r-good">0.590</td><td class="r-good">0.189</td></tr>
+            </table>
+            <table class="tight" style="margin-top:8px;">
+              <tr><th>观察</th><th>解释边界</th></tr>
+              <tr><td>target 90% 时 ratio 约 0.189-0.360</td><td>可说“TTFT 指标显著下降”；不能直接称为通用收益。</td></tr>
+              <tr><td>target 30% 有一格 ratio &gt; 1</td><td>低共享场景可能被噪声、调度或负载形态抵消。</td></tr>
+              <tr><td>越长上下文高共享越明显</td><td>对 DeepSeek 设计意味着 prefix-cache A/B 必须保留。</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="module span-3">
+          <div class="module-title">可复用评审口径：把“能不能跑通”升级为“不同上下文/共享比例下指标如何变化”</div>
+          <div class="module-body">
+            <table>
+              <tr><th>结论项</th><th>数据支撑</th><th>可采用表达</th><th>禁止表达</th></tr>
+              <tr><td>长上下文覆盖</td><td>8K/16K/32K/64K/128K 全部 cell success</td><td><span class="blue-text">小模型长上下文矩阵跑通</span></td><td>不能说 DeepSeek 已跑通</td></tr>
+              <tr><td>Prefix-cache 信号</td><td>on hit 22.5%-84.8%，off 全 0.0%</td><td><span class="blue-text">开关路径可观测、可量化</span></td><td>不能把 target ratio 当 hit rate</td></tr>
+              <tr><td>TTFT 变化</td><td>128K/90% ratio 0.189；64K/90% ratio 0.206</td><td><span class="blue-text">prefill 侧对共享前缀敏感</span></td><td>不能据此宣称全链路瓶颈归因</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">总结</div>
+        <ul>
+          <li>矩阵完成度满足评审口径：8K-128K x 30/60/90 目标共享前缀，30/30 mode-cell success，120 requests、90 measured，产出 240 行 Performance、390 行 Common、60 行 phase-memory。</li>
+          <li>Prefix-cache 开关可测且可关：off 侧 observed hit rate 全 0.0%，on 侧 22.5%-84.8%；高共享格 TTFT on/off ratio 降至 128K/90% = 0.189、64K/90% = 0.206，收益集中在 prefill。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>PROJECT / TECHNOLOGY REVIEW</span><span>Prefix-Ratio Matrix: Qwen3.5-4B / vLLM</span><span class="slide-index">Page 3 / 5</span></div>
+    </section>
+
+    <section class="slide" id="s4" aria-label="Qwen3.5-4B vLLM 推理结果">
+      <div class="page-watermark">04</div>
+      <h1>推理观测结果：Prefix-cache 优化 prefill，不提供稳定 decode 吞吐收益</h1>
+      <div class="content grid-3">
+        <div class="module">
+          <div class="module-title">长上下文 AISBench-style 性能范围</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>Metric</th><th>prefix-cache on</th><th>prefix-cache off</th><th>读法</th></tr>
+              <tr><td>TTFT median</td><td class="num">0.783-40.301 s</td><td class="num">2.174-42.404 s</td><td>prefill 敏感</td></tr>
+              <tr><td>TPOT median</td><td class="num">88.089-107.259 ms</td><td class="num">87.976-105.975 ms</td><td>decode 改善不稳定</td></tr>
+              <tr><td>E2EL median</td><td class="num">90.835-150.028 s</td><td class="num">92.173-150.452 s</td><td>含 1024 token 输出</td></tr>
+              <tr><td>OutputTokenThroughput median</td><td class="num">6.825-11.273 tok/s</td><td class="num">6.806-11.110 tok/s</td><td>per-request 口径</td></tr>
+              <tr><td>Common Output Throughput</td><td class="num">19.46-33.75 tok/s</td><td class="num">19.67-33.20 tok/s</td><td>benchmark window</td></tr>
+              <tr><td>Request Throughput</td><td class="num">0.019-0.033 req/s</td><td class="num">0.019-0.032 req/s</td><td>每 cell 3 measured</td></tr>
+            </table>
+            <div class="source-line">Performance Parameters 240 rows；Common Metrics 390 rows。单位和分母不同，不能混用。</div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title blue">TPOT median on/off ratio：多数 cell 接近 1，不能把 prefix-cache 写成解码吞吐通用收益</div>
+          <div class="module-body">
+            <table class="heat">
+              <tr><th>Input cap</th><th>30%</th><th>60%</th><th>90%</th></tr>
+              <tr><td class="cap">8K</td><td class="r-risk">1.044</td><td class="r-mid">1.008</td><td class="r-good">0.951</td></tr>
+              <tr><td class="cap">16K</td><td class="r-risk">1.029</td><td class="r-mid">0.993</td><td class="r-mid">1.008</td></tr>
+              <tr><td class="cap">32K</td><td class="r-risk">1.030</td><td class="r-risk">1.061</td><td class="r-good">0.959</td></tr>
+              <tr><td class="cap">64K</td><td class="r-mid">0.983</td><td class="r-good">0.972</td><td class="r-good">0.963</td></tr>
+              <tr><td class="cap">128K</td><td class="r-mid">1.012</td><td class="r-good">0.959</td><td class="r-good">0.881</td></tr>
+            </table>
+            <table class="heat" style="margin-top:8px;">
+              <tr><th>Client wall ratio</th><th>30%</th><th>60%</th><th>90%</th></tr>
+              <tr><td class="cap">8K</td><td class="r-risk">1.041</td><td class="r-mid">0.999</td><td class="r-good">0.937</td></tr>
+              <tr><td class="cap">32K</td><td class="r-risk">1.030</td><td class="r-risk">1.027</td><td class="r-good">0.899</td></tr>
+              <tr><td class="cap">128K</td><td class="r-mid">0.997</td><td class="r-good">0.853</td><td class="r-good">0.688</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title green">硬件/process 读数：容量压力可见，瓶颈归因仍缺 counter</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>Metric</th><th>prefix-cache on</th><th>prefix-cache off</th><th>口径</th></tr>
+              <tr><td>HBM used max</td><td class="num">57,671.68 MB</td><td class="num">57,671.68 MB</td><td>whole-device</td></tr>
+              <tr><td>HBM free min</td><td class="num">7,864.32 MB</td><td class="num">7,864.32 MB</td><td>phase probe</td></tr>
+              <tr><td>HBM usage max</td><td class="num red-text">88.0%</td><td class="num red-text">88.0%</td><td>非 bandwidth</td></tr>
+              <tr><td>RSS max range</td><td class="num">5,091-5,432 MB</td><td class="num">5,084-5,366 MB</td><td>process group</td></tr>
+              <tr><td>PSS max range</td><td class="num">4,235-4,696 MB</td><td class="num">4,348-4,663 MB</td><td>shared proportional</td></tr>
+              <tr><td>KV usage proxy</td><td class="num blue-text">1.7%-22.9%</td><td class="num red-text">2.6%-28.3%</td><td>server stats</td></tr>
+            </table>
+            <div class="source-line">HBM used/free 是设备级占用；KV usage proxy 不是 KV object bytes，也不是 HBM traffic。</div>
+          </div>
+        </div>
+
+        <div class="module span-3">
+          <div class="module-title">前序校准实验：短输出 32 请求 A/B 证明性能表与内存 phase 表的基础口径可用</div>
+          <div class="module-body">
+            <table>
+              <tr><th>证据片段</th><th>实验形态</th><th>关键读数</th><th>对长上下文/DeepSeek 的作用</th></tr>
+              <tr>
+                <td>短输出 streaming A/B</td>
+                <td>continuous32_mixed；prefix-cache on/off；固定 64 tokens</td>
+                <td>TTFT median on/off <span class="red-text">8.277s / 12.917s</span>；TPOT <span class="red-text">137.4ms / 270.7ms</span>；Request throughput <span class="red-text">1.546 / 0.849 req/s</span></td>
+                <td>证明 AISBench-style parameter/common metric 生成链路可读。</td>
+              </tr>
+              <tr>
+                <td>Phase-memory 四格读数</td>
+                <td>prefix_cache_on/off x prefill/decode phase memory</td>
+                <td>HBM <span class="red-text">55,050.24 MB used / 10,485.76 MB free / 84.0%</span>；KV proxy on/off <span class="red-text">9.4% / 16.1%</span></td>
+                <td>证明 phase memory 读数口径可复用，但仍不能宣称 memory-bound。</td>
+              </tr>
+              <tr>
+                <td>长上下文 prefix-ratio 矩阵</td>
+                <td>8K-128K，30/60/90 target ratio，1024 tokens</td>
+                <td>TTFT ratio 最低 <span class="red-text">0.189</span>；client wall ratio 最低 <span class="red-text">0.688</span>；TPOT ratio 多数接近 <span class="red-text">1</span></td>
+                <td>证明长上下文矩阵 schema 可用于 DeepSeek 设计，但还不是 DeepSeek baseline。</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">总结</div>
+        <ul>
+          <li>性能结论只收敛到 prefill：高共享格 TTFT median on/off ratio 为 0.189-0.360；TPOT ratio 多数落在 0.95-1.06，不能把 prefix-cache 写成 decode 阶段的稳定吞吐收益。</li>
+          <li>资源结论只收敛到容量：HBM used max 57,671.68MB、free min 7,864.32MB、usage max 88.0%；KV usage proxy on/off 为 1.7%-22.9% / 2.6%-28.3%，不足以宣称 HBM bandwidth 或 memory-bound。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>PROJECT / TECHNOLOGY REVIEW</span><span>Inference Observation: Qwen3.5-4B / vLLM</span><span class="slide-index">Page 4 / 5</span></div>
+    </section>
+
+    <section class="slide" id="s5" aria-label="DeepSeek-V4-Flash 硬件形态与性能预测">
+      <div class="page-watermark">05</div>
+      <h1>系统形态预测：八卡优先建立实测基线，128GB HBM 单卡受分层内存 tail 约束</h1>
+      <div class="content forecast-content">
+        <div class="module">
+          <div class="module-title">八卡服务器硬件系统需求预测：容量分母充足，关键转向跨卡与 tail</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>资源项</th><th>数学估算</th><th>结论</th></tr>
+              <tr><td>HBM 总量</td><td>8 x 64GB = <span class="red-text">512GB</span></td><td>具备全局容量分母</td></tr>
+              <tr><td>混合权重账本</td><td>外部权重口径约 <span class="red-text">163GB</span>；163/512 = <span class="blue-text">31.8%</span></td><td>聚合 HBM 不以权重容量为首要风险</td></tr>
+              <tr><td>均摊权重/卡</td><td>163/8 = <span class="red-text">20.4GB/card</span>；64-20.4 = <span class="blue-text">43.6GB/card</span></td><td>每卡仍需给 KV、workspace、通信 buffer 留余量</td></tr>
+              <tr><td>观测安全线</td><td>Qwen 长上下文最高 <span class="red-text">57.67GB/card</span>、free <span class="red-text">7.86GB</span></td><td>DeepSeek 实测应把单卡 free &lt;8GB 视为红线</td></tr>
+              <tr><td>冷层约束</td><td>当前 fio 1M read <span class="red-text">394.7MiB/s</span>，DRAM path read <span class="red-text">5.33GB/s</span></td><td>Host/SSD 不进入 token 热路径</td></tr>
+              <tr><td>必须采集</td><td>HBM used/free、KV proxy、server stats、TTFT/TPOT P90/P99</td><td>用事实表判断容量/调度/通信风险</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title blue">八卡服务器性能预测：AISBench-style 指标表，先给区间再等实测收敛</div>
+          <div class="module-body">
+            <div class="metric-caption">Forecast scene: 64K input / 1024 output / high shared-prefix / N=3</div>
+            <table class="perf-forecast">
+              <tr><th>Performance Parameters</th><th>Stage</th><th>Average</th><th>Min</th><th>Max</th><th>Median</th><th>P75</th><th>P90</th><th>P99</th><th>N</th></tr>
+              <tr><td>E2EL</td><td>total</td><td>125-160 s</td><td>105-120 s</td><td>190-210 s</td><td>120-150 s</td><td>140-175 s</td><td>150-190 s</td><td>170-205 s</td><td>3</td></tr>
+              <tr><td>TTFT</td><td>total</td><td>6-12 s</td><td>3-5 s</td><td>20-24 s</td><td>5-10 s</td><td>9-16 s</td><td>12-20 s</td><td>18-23 s</td><td>3</td></tr>
+              <tr><td>TPOT</td><td>total</td><td>110-145 ms</td><td>90-105 ms</td><td>180-220 ms</td><td>105-140 ms</td><td>125-160 ms</td><td>140-180 ms</td><td>160-215 ms</td><td>3</td></tr>
+              <tr><td>ITL</td><td>total</td><td>105-150 ms</td><td>90-105 ms</td><td>190-225 ms</td><td>100-145 ms</td><td>125-165 ms</td><td>145-185 ms</td><td>165-220 ms</td><td>3</td></tr>
+              <tr><td>InputTokens</td><td>total</td><td>65,536</td><td>65,536</td><td>65,536</td><td>65,536</td><td>65,536</td><td>65,536</td><td>65,536</td><td>3</td></tr>
+              <tr><td>OutputTokens</td><td>total</td><td>1,024</td><td>1,024</td><td>1,024</td><td>1,024</td><td>1,024</td><td>1,024</td><td>1,024</td><td>3</td></tr>
+              <tr><td>OutputTokenThroughput</td><td>total</td><td>6.4-8.5 tok/s</td><td>5.4-6.1</td><td>9.2-9.8</td><td>6.8-8.3</td><td>7.5-8.9</td><td>8.6-9.5</td><td>9.1-9.8</td><td>3</td></tr>
+            </table>
+            <table class="perf-forecast" style="margin-top:3px;">
+              <tr><th>Common Metric</th><th>Stage</th><th>Value</th><th>Common Metric</th><th>Stage</th><th>Value</th></tr>
+              <tr><td>Benchmark Duration</td><td>total</td><td>120-160 s</td><td>Total Requests</td><td>total</td><td>3</td></tr>
+              <tr><td>Failed Requests</td><td>total</td><td>0</td><td>Success Requests</td><td>total</td><td>3</td></tr>
+              <tr><td>Concurrency</td><td>total</td><td>2.8-3.0</td><td>Max Concurrency</td><td>total</td><td>3</td></tr>
+              <tr><td>Request Throughput</td><td>total</td><td>0.019-0.025 req/s</td><td>Total Input Tokens</td><td>total</td><td>196,608</td></tr>
+              <tr><td>Prefill Token Throughput</td><td>total</td><td>1.2K-1.6K tok/s</td><td>Total generated tokens</td><td>total</td><td>3,072</td></tr>
+              <tr><td>Input Token Throughput</td><td>total</td><td>1.20K-1.61K tok/s</td><td>Output Token Throughput</td><td>total</td><td>19-26 tok/s</td></tr>
+              <tr><td>Total Token Throughput</td><td>total</td><td>1.22K-1.63K tok/s</td><td>Forecast Samples</td><td>total</td><td>3</td></tr>
+            </table>
+            <div class="source-line">预测锚点：Qwen 64K/90% on 的 TTFT median 3.66s、TPOT median 93.8ms、output throughput 30.65 tok/s；DeepSeek 八卡表只给验收区间。</div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title green">128GB HBM 单卡一体机硬件系统需求预测：模型可跑通，但不是全驻留</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>资源项</th><th>数学估算</th><th>结论</th></tr>
+              <tr><td>HBM 账本</td><td>公共层 7-8GB + 热 expert 55GB + workspace 25-40GB + KV 3-5GB + runtime 15-25GB = <span class="red-text">105-133GB</span></td><td>128GB HBM 余量约 <span class="red-text">-5 至 23GB</span></td></tr>
+              <tr><td>热 expert 覆盖</td><td>55GB 热 expert 约覆盖 <span class="blue-text">35%</span> expert pool</td><td>长上下文会频繁触达冷 expert</td></tr>
+              <tr><td>冷 expert DDR</td><td>低并发 <span class="red-text">512GB</span> 较稳；高 batch/多 agent <span class="red-text">1TB 起</span></td><td>DDR 是冷权重/状态/KV 下沉池</td></tr>
+              <tr><td>NVMe</td><td>基础运行 <span class="blue-text">1-2TB</span>；多 agent/RAG <span class="blue-text">2-4TB</span></td><td>只做极冷层，不做 token 级换入</td></tr>
+              <tr><td>当前项目保守链路</td><td>实测 H2D ceiling <span class="red-text">24.314GB/s</span>，远低于文档假设 200GB/s</td><td>若无 200GB/s 级链路，单卡 TTFT 风险放大</td></tr>
+            </table>
+            <div class="mini-note">辅助假设来自 128GB HBM 单卡调研文档；页面判断仍以本项目硬件 ceiling 与 Qwen 长上下文观测作主分母。</div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title">128GB HBM 单卡一体机性能预测：AISBench-style 指标表，TTFT 受冷 expert 换入放大</div>
+          <div class="module-body">
+            <div class="metric-caption">Forecast scene: 64K input / 1024 output / 200GB/s target link / N=3</div>
+            <table class="perf-forecast">
+              <tr><th>Performance Parameters</th><th>Stage</th><th>Average</th><th>Min</th><th>Max</th><th>Median</th><th>P75</th><th>P90</th><th>P99</th><th>N</th></tr>
+              <tr><td>E2EL</td><td>total</td><td>250-340 s</td><td>200-240 s</td><td>430-520 s</td><td>240-320 s</td><td>300-390 s</td><td>330-430 s</td><td>380-510 s</td><td>3</td></tr>
+              <tr><td>TTFT</td><td>total</td><td>28-55 s</td><td>18-24 s</td><td>80-95 s</td><td>24-48 s</td><td>42-65 s</td><td>50-75 s</td><td>70-92 s</td><td>3</td></tr>
+              <tr><td>TPOT</td><td>total</td><td>200-285 ms</td><td>165-190 ms</td><td>360-420 ms</td><td>190-270 ms</td><td>250-320 ms</td><td>275-360 ms</td><td>330-410 ms</td><td>3</td></tr>
+              <tr><td>ITL</td><td>total</td><td>190-300 ms</td><td>160-190 ms</td><td>380-440 ms</td><td>180-285 ms</td><td>260-335 ms</td><td>285-370 ms</td><td>340-430 ms</td><td>3</td></tr>
+              <tr><td>InputTokens</td><td>total</td><td>65,536</td><td>65,536</td><td>65,536</td><td>65,536</td><td>65,536</td><td>65,536</td><td>65,536</td><td>3</td></tr>
+              <tr><td>OutputTokens</td><td>total</td><td>1,024</td><td>1,024</td><td>1,024</td><td>1,024</td><td>1,024</td><td>1,024</td><td>1,024</td><td>3</td></tr>
+              <tr><td>OutputTokenThroughput</td><td>total</td><td>3.0-4.1 tok/s</td><td>2.4-2.8</td><td>5.1-5.4</td><td>3.2-4.3</td><td>3.8-4.7</td><td>4.5-5.1</td><td>5.0-5.4</td><td>3</td></tr>
+            </table>
+            <table class="perf-forecast" style="margin-top:3px;">
+              <tr><th>Common Metric</th><th>Stage</th><th>Value</th><th>Common Metric</th><th>Stage</th><th>Value</th></tr>
+              <tr><td>Benchmark Duration</td><td>total</td><td>240-340 s</td><td>Total Requests</td><td>total</td><td>3</td></tr>
+              <tr><td>Failed Requests</td><td>total</td><td>0*</td><td>Success Requests</td><td>total</td><td>3*</td></tr>
+              <tr><td>Concurrency</td><td>total</td><td>2.5-3.0</td><td>Max Concurrency</td><td>total</td><td>3</td></tr>
+              <tr><td>Request Throughput</td><td>total</td><td>0.009-0.013 req/s</td><td>Total Input Tokens</td><td>total</td><td>196,608</td></tr>
+              <tr><td>Prefill Token Throughput</td><td>total</td><td>0.58K-0.82K tok/s</td><td>Total generated tokens</td><td>total</td><td>3,072</td></tr>
+              <tr><td>Input Token Throughput</td><td>total</td><td>0.58K-0.82K tok/s</td><td>Output Token Throughput</td><td>total</td><td>9-13 tok/s</td></tr>
+              <tr><td>Total Token Throughput</td><td>total</td><td>0.59K-0.83K tok/s</td><td>Forecast Samples</td><td>total</td><td>3</td></tr>
+            </table>
+            <div class="source-line">*成功数是假设模型可加载且 200GB/s 级链路成立；若只能按本项目 H2D ceiling 24.314GB/s 换入，TTFT 可能扩大到分钟级。</div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">总结</div>
+        <ul>
+          <li>八卡路线的容量账本成立：163GB 混合权重占 512GB HBM 的 31.8%，均摊 20.4GB/card 后仍有 43.6GB/card 供 KV、workspace 与通信 buffer；64K/1024 预测验收区间为 E2EL 125-160s、TTFT 6-12s、TPOT 110-145ms、总输出吞吐 19-26 tok/s。</li>
+          <li>单卡一体机是分层内存路线，不是全驻留路线：HBM 账本 105-133GB，余量 -5 至 23GB；在 200GB/s 目标链路下预测 E2EL 250-340s、TTFT 28-55s、TPOT 200-285ms、总输出吞吐 9-13 tok/s，P90/P99 由冷 expert 换入决定。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>PROJECT / TECHNOLOGY REVIEW</span><span>DeepSeek-V4-Flash Hardware & Performance Forecast</span><span class="slide-index">Page 5 / 5</span></div>
+    </section>
+  </main>
+
+  <script>
+    const slideIds = ["s1", "s2", "s3", "s4", "s5"];
+    function currentSlideIndex() {
+      const mid = window.scrollY + window.innerHeight / 2;
+      let index = 0;
+      for (const [i, id] of slideIds.entries()) {
+        const el = document.getElementById(id);
+        if (el.offsetTop <= mid) index = i;
+      }
+      return index;
+    }
+    function go(delta) {
+      const next = Math.max(0, Math.min(slideIds.length - 1, currentSlideIndex() + delta));
+      document.getElementById(slideIds[next]).scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown") go(1);
+      if (event.key === "ArrowLeft" || event.key === "PageUp") go(-1);
+    });
+  </script>
+</body>
+</html>

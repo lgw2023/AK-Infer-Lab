@@ -1,0 +1,4 @@
+P1.31 矩阵产物：AISBench-style E2EL/TTFT/TPOT/ITL 等 performance_parameter 表。
+path=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031/matrix_summary/prefix_ratio_matrix_aisbench_parameters.tsv
+
+附件：/Users/liguowei/Downloads/prefix_ratio_matrix_aisbench_parameters

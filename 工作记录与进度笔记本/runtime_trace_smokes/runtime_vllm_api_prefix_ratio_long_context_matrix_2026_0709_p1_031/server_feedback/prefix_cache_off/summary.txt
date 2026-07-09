@@ -1,0 +1,32 @@
+run_id=runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031_prefix_cache_off
+mode=prefix_cache_off
+status=success
+cell_count=15
+expected_cell_count=15
+success_cell_count=15
+failed_cell_count=0
+output_tokens=1024
+warmup_requests_per_cell=1
+measured_requests_per_cell=3
+policy=long_context_prefix_ratio_matrix_no_bottleneck_claim
+length_policy=input_cap_tokens_are_8k_16k_32k_64k_128k_output_tokens_fixed_1024
+prefix_ratio_policy=target_ratio_is_shared_prefix_tokens_div_input_cap_observed_hit_rate_from_vllm_stats_only
+memory_policy=process_group_rss_pss_and_whole_device_hbm_occupancy_not_kv_object_bytes
+bottleneck_policy=no_bottleneck_claim
+
+## cell_rows
+prefix_cache_off	cap8192_prefix30	cap=8192	target_prefix_pct=30	success=3/3	generated_mismatch=0	ttft_median_us=2173572.0	tpot_median_us=87976.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap8192_prefix60	cap=8192	target_prefix_pct=60	success=3/3	generated_mismatch=0	ttft_median_us=2178241.0	tpot_median_us=89207.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap8192_prefix90	cap=8192	target_prefix_pct=90	success=3/3	generated_mismatch=0	ttft_median_us=2173995.0	tpot_median_us=92606.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap16384_prefix30	cap=16384	target_prefix_pct=30	success=3/3	generated_mismatch=0	ttft_median_us=4110124.0	tpot_median_us=91137.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap16384_prefix60	cap=16384	target_prefix_pct=60	success=3/3	generated_mismatch=0	ttft_median_us=4167365.0	tpot_median_us=91325.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap16384_prefix90	cap=16384	target_prefix_pct=90	success=3/3	generated_mismatch=0	ttft_median_us=4185691.0	tpot_median_us=88996.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap32768_prefix30	cap=32768	target_prefix_pct=30	success=3/3	generated_mismatch=0	ttft_median_us=8228180.0	tpot_median_us=92093.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap32768_prefix60	cap=32768	target_prefix_pct=60	success=3/3	generated_mismatch=0	ttft_median_us=8052301.0	tpot_median_us=90126.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap32768_prefix90	cap=32768	target_prefix_pct=90	success=3/3	generated_mismatch=0	ttft_median_us=8264910.0	tpot_median_us=94850.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap65536_prefix30	cap=65536	target_prefix_pct=30	success=3/3	generated_mismatch=0	ttft_median_us=18308874.0	tpot_median_us=97051.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap65536_prefix60	cap=65536	target_prefix_pct=60	success=3/3	generated_mismatch=0	ttft_median_us=17880190.0	tpot_median_us=97978.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap65536_prefix90	cap=65536	target_prefix_pct=90	success=3/3	generated_mismatch=0	ttft_median_us=17769446.0	tpot_median_us=97368.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap131072_prefix30	cap=131072	target_prefix_pct=30	success=3/3	generated_mismatch=0	ttft_median_us=42038873.0	tpot_median_us=105975.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap131072_prefix60	cap=131072	target_prefix_pct=60	success=3/3	generated_mismatch=0	ttft_median_us=42404059.0	tpot_median_us=103547.0	observed_prefix_hit_pct=0.0	status=success
+prefix_cache_off	cap131072_prefix90	cap=131072	target_prefix_pct=90	success=3/3	generated_mismatch=0	ttft_median_us=41686130.0	tpot_median_us=105263.0	observed_prefix_hit_pct=0.0	status=success

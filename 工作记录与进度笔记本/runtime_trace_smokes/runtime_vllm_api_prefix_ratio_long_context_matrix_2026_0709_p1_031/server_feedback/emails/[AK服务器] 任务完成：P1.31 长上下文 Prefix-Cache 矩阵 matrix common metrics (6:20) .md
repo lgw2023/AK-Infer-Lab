@@ -1,0 +1,4 @@
+P1.31 矩阵产物：Benchmark Duration/Throughput 等 common metrics 表。
+path=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031/matrix_summary/prefix_ratio_matrix_common_metrics.tsv
+
+附件：/Users/liguowei/Downloads/prefix_ratio_matrix_common_metrics

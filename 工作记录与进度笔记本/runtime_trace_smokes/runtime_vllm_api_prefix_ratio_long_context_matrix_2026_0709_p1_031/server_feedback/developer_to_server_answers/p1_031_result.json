@@ -1,0 +1,27 @@
+{
+  "run_id": "runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031",
+  "commit": "7e84c7e5a6141fc1a00bb4f57cbf98ac6b32ae66",
+  "git_pull_exit_code": "0",
+  "pytest_exit_code": "0",
+  "prefix_cache_on_exit_code": "0",
+  "prefix_cache_off_exit_code": "0",
+  "summary_exit_code": "0",
+  "on_status": "success",
+  "off_status": "success",
+  "summary_status": "success",
+  "on_cell_count": 15,
+  "off_cell_count": 15,
+  "expected_cell_count_per_mode": 15,
+  "output_tokens": 1024,
+  "token_count_acceptance_policy": "accept_1023_of_1024_as_success_for_matrix_statistics_no_bottleneck_claim",
+  "accepted_cells": [
+    {
+      "cell_id": "cap8192_prefix60",
+      "raw_generated_token_count_mismatch_count": 1,
+      "accepted_measured_02_generated_token_count": 1023,
+      "target_output_tokens": 1024,
+      "reason": "matrix_statistics_negligible_1_token_delta"
+    }
+  ],
+  "policy": "long_context_prefix_ratio_matrix_no_bottleneck_claim"
+}

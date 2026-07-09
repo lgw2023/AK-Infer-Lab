@@ -1,0 +1,35 @@
+run_id=runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031_summary
+overall_status=success
+prefix_cache_on_status=success
+prefix_cache_off_status=success
+expected_cell_count_per_mode=15
+policy=prefix_ratio_matrix_summary_no_bottleneck_claim
+length_policy=input_cap_tokens_are_8k_16k_32k_64k_128k_output_tokens_fixed_1024
+prefix_ratio_policy=target_prefix_ratio_is_shared_prefix_tokens_div_input_cap_not_observed_hit_rate
+aisbench_style_policy=vllm_openai_streaming_client_metrics_not_mindie_native_timing
+itl_policy=host_client_stream_inter_chunk_median_per_request_not_runtime_native_decode_event
+memory_policy=phase_memory_is_process_group_rss_pss_and_whole_device_hbm_not_kv_object_bytes
+bottleneck_policy=no_compute_memory_hbm_scheduler_or_prefix_cache_benefit_claim
+
+## delta_cells
+cap=8192	target_prefix_pct=30	on_status=success	off_status=success	on_observed_hit_pct=22.5	off_observed_hit_pct=0.0	ttft_ratio=0.921369	tpot_ratio=1.044069
+cap=8192	target_prefix_pct=60	on_status=success	off_status=success	on_observed_hit_pct=43.8	off_observed_hit_pct=0.0	ttft_ratio=0.640437	tpot_ratio=1.008385
+cap=8192	target_prefix_pct=90	on_status=success	off_status=success	on_observed_hit_pct=68.8	off_observed_hit_pct=0.0	ttft_ratio=0.360308	tpot_ratio=0.951223
+cap=16384	target_prefix_pct=30	on_status=success	off_status=success	on_observed_hit_pct=23.4	off_observed_hit_pct=0.0	ttft_ratio=0.963551	tpot_ratio=1.029154
+cap=16384	target_prefix_pct=60	on_status=success	off_status=success	on_observed_hit_pct=50.5	off_observed_hit_pct=0.0	ttft_ratio=0.656166	tpot_ratio=0.993364
+cap=16384	target_prefix_pct=90	on_status=success	off_status=success	on_observed_hit_pct=72.9	off_observed_hit_pct=0.0	ttft_ratio=0.212177	tpot_ratio=1.008326
+cap=32768	target_prefix_pct=30	on_status=success	off_status=success	on_observed_hit_pct=26.9	off_observed_hit_pct=0.0	ttft_ratio=1.034678	tpot_ratio=1.029709
+cap=32768	target_prefix_pct=60	on_status=success	off_status=success	on_observed_hit_pct=55.7	off_observed_hit_pct=0.0	ttft_ratio=0.627043	tpot_ratio=1.061492
+cap=32768	target_prefix_pct=90	on_status=success	off_status=success	on_observed_hit_pct=76.6	off_observed_hit_pct=0.0	ttft_ratio=0.198727	tpot_ratio=0.958693
+cap=65536	target_prefix_pct=30	on_status=success	off_status=success	on_observed_hit_pct=29.0	off_observed_hit_pct=0.0	ttft_ratio=0.954193	tpot_ratio=0.982648
+cap=65536	target_prefix_pct=60	on_status=success	off_status=success	on_observed_hit_pct=57.4	off_observed_hit_pct=0.0	ttft_ratio=0.59725	tpot_ratio=0.972055
+cap=65536	target_prefix_pct=90	on_status=success	off_status=success	on_observed_hit_pct=81.4	off_observed_hit_pct=0.0	ttft_ratio=0.206051	tpot_ratio=0.963232
+cap=131072	target_prefix_pct=30	on_status=success	off_status=success	on_observed_hit_pct=29.4	off_observed_hit_pct=0.0	ttft_ratio=0.958663	tpot_ratio=1.012116
+cap=131072	target_prefix_pct=60	on_status=success	off_status=success	on_observed_hit_pct=58.3	off_observed_hit_pct=0.0	ttft_ratio=0.590242	tpot_ratio=0.958714
+cap=131072	target_prefix_pct=90	on_status=success	off_status=success	on_observed_hit_pct=84.8	off_observed_hit_pct=0.0	ttft_ratio=0.188568	tpot_ratio=0.880746
+
+## outputs
+prefix_ratio_matrix_aisbench_parameters.tsv
+prefix_ratio_matrix_common_metrics.tsv
+prefix_ratio_matrix_delta_summary.tsv
+prefix_ratio_matrix_completeness.tsv
