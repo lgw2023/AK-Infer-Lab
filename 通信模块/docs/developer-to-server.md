@@ -14,7 +14,7 @@ runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031
 
 ## 必须回答
 
-1. `git pull --ff-only` 后 commit 是什么？
+1. 使用服务器本地 `git pull-remote` / `server_local/git_pull_remote_wins.sh` 同步后 commit 是什么？
 2. `tests/inference_contracts` 是否通过？
 3. prefix-cache on/off 两个 mode 是否都覆盖 15 个 cell？
 4. 每个成功 cell 是否 `measured_request_count=3`、`measured_success_count=3`？
@@ -31,7 +31,7 @@ runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031
 
 允许：
 
-- `git pull --ff-only`。
+- 使用服务器本地 `server_local/git_pull_remote_wins.sh`（或 alias `git pull-remote`）同步到 `origin/main`；若 helper 不存在且工作区干净，才 fallback 到 `git pull --ff-only`。
 - `python -m pytest tests/inference_contracts -q`。
 - 使用服务器当前 conda 环境。
 - source `/usr/local/Ascend/cann-9.0.0/set_env.sh`。
@@ -81,7 +81,11 @@ MODEL_PATH="${MODEL_PATH:-/data/node0_disk1/Public/Qwen3.5-4B}"
 
 mkdir -p "${ARTIFACT_DIR}" "${ON_DIR}" "${OFF_DIR}" "${SUMMARY_DIR}"
 
-git pull --ff-only > "${ARTIFACT_DIR}/git_pull.log" 2>&1
+if [ -x server_local/git_pull_remote_wins.sh ]; then
+  server_local/git_pull_remote_wins.sh > "${ARTIFACT_DIR}/git_pull.log" 2>&1
+else
+  git pull --ff-only > "${ARTIFACT_DIR}/git_pull.log" 2>&1
+fi
 git_pull_exit_code=$?
 echo "${git_pull_exit_code}" > "${ARTIFACT_DIR}/git_pull_exit_code.txt"
 
