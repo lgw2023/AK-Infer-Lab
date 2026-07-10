@@ -1,0 +1,20 @@
+artifact_sha256:
+  placement_decisions.jsonl: 3860b000eadec356446c8719ee57c7c001237c625f3e595d9e979ec4b9579a3c
+  state_events.jsonl: e84634024b98eca1b73ae0e9538e7d334d2cf5423093b58d75207d5afd09b780
+  state_objects.jsonl: 85dfc8c36403d163f5ddf41213ff0e47c4f9e0fc741d0647c36633c4ca73ae0d
+  validation_report.json: df25a8d2e185534fc029a67f9fffd1386145b9c89fdce24b4f2a7b83b0053494
+claim_level: toolchain_only
+emitted_event_count: 8
+placement_decision_count: 5
+provenance_mode: offline_fixture
+runtime_label: vllm_ascend
+schema_version: 0.2.0
+server_validated: false
+skipped_record_count: 0
+slice_id: p8_offline_observe_only_tracer_bullet
+source_artifact: 工作记录与进度笔记本/p1_inference_contracts/fixtures/minimal_runtime_trace.jsonl
+source_record_count: 8
+source_sha256: bb6cde44713c29fb78428df4589f81574455409a0cb10baf2f72961d99d94ad8
+state_object_count: 2
+trace_validation_errors: 0
+warning_count: 2

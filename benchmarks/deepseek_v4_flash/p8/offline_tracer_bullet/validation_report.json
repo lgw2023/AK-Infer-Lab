@@ -1,0 +1,16 @@
+{
+  "errors": [],
+  "trace_validation_errors": 0,
+  "warnings": [
+    {
+      "line_number": 3,
+      "reason": "ambiguous_read_write_bytes",
+      "source_event_id": "evt_op_l00_prefill_attention_start"
+    },
+    {
+      "line_number": 7,
+      "reason": "ambiguous_read_write_bytes",
+      "source_event_id": "evt_op_l00_decode_attention_end"
+    }
+  ]
+}

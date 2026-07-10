@@ -1,0 +1,89 @@
+schema_name: ak_state_object
+schema_version: 0.2.0
+record_name: state_object
+required_fields:
+- schema_version
+- object_id
+- object_type
+- model_id
+- layer_id
+- expert_id
+- owner_request_id
+- session_id
+- scope
+- payload_ref
+- bytes
+- precision
+- layout
+- checksum_or_version
+- current_tier
+- current_rank
+- target_tier
+- hotness_score
+- reuse_distance
+- next_use_estimate_ms
+- load_cost_ms
+- evict_cost_ms
+- recompute_cost_ms
+- prefetch_lead_time_ms
+- hit_count
+- miss_count
+- last_access_ts_ns
+- evidence_source
+- quality_risk
+nullable_fields:
+- layer_id
+- expert_id
+- owner_request_id
+- session_id
+- payload_ref
+- bytes
+- precision
+- layout
+- checksum_or_version
+- current_rank
+- hotness_score
+- reuse_distance
+- next_use_estimate_ms
+- load_cost_ms
+- evict_cost_ms
+- recompute_cost_ms
+- prefetch_lead_time_ms
+- last_access_ts_ns
+field_types:
+  schema_version: string
+  object_id: string
+  object_type: string
+  model_id: string
+  layer_id: integer
+  expert_id: integer
+  owner_request_id: string
+  session_id: string
+  scope: string
+  payload_ref: string
+  bytes: integer
+  precision: string
+  layout: string
+  checksum_or_version: string
+  current_tier: string
+  current_rank: integer
+  target_tier: string
+  hotness_score: number
+  reuse_distance: integer
+  next_use_estimate_ms: number
+  load_cost_ms: number
+  evict_cost_ms: number
+  recompute_cost_ms: number
+  prefetch_lead_time_ms: number
+  hit_count: integer
+  miss_count: integer
+  last_access_ts_ns: integer
+  evidence_source: string
+  quality_risk: string
+enums:
+  object_type: [kv_block, prefix_block, expert_weight, weight_shard, session]
+  scope: [request, session, model, global]
+  current_tier: [hbm, dram, pinned_dram, ssd, remote, unknown]
+  target_tier: [hbm, dram, pinned_dram, ssd, remote, none]
+  evidence_source: [offline_fixture, runtime_event, server_stats, profiler, derived, simulated]
+  quality_risk: [none, low, medium, high]

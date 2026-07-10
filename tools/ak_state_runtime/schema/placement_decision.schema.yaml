@@ -1,0 +1,50 @@
+schema_name: placement_decision
+schema_version: 0.2.0
+record_name: placement_decision
+required_fields:
+- schema_version
+- decision_id
+- object_id
+- policy_name
+- policy_version
+- action
+- source_tier
+- target_tier
+- issued_ts_ns
+- deadline_ts_ns
+- expected_benefit_ms
+- expected_cost_ms
+- confidence
+- execution_mode
+- executed
+- execution_result
+- reason
+nullable_fields:
+- deadline_ts_ns
+- expected_benefit_ms
+- expected_cost_ms
+- confidence
+field_types:
+  schema_version: string
+  decision_id: string
+  object_id: string
+  policy_name: string
+  policy_version: string
+  action: string
+  source_tier: string
+  target_tier: string
+  issued_ts_ns: integer
+  deadline_ts_ns: integer
+  expected_benefit_ms: number
+  expected_cost_ms: number
+  confidence: number
+  execution_mode: string
+  executed: boolean
+  execution_result: string
+  reason: string
+enums:
+  action: [keep, prefetch, offload, restore, evict, recompute, no_op]
+  source_tier: [hbm, dram, pinned_dram, ssd, remote, none, unknown]
+  target_tier: [hbm, dram, pinned_dram, ssd, remote, none, unknown]
+  execution_mode: [observe_only, simulate_only, static_placement, real_move]
+  execution_result: [success, failed, skipped, unsupported]
