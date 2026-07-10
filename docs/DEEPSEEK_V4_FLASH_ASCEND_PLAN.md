@@ -1,191 +1,249 @@
-# DeepSeek-V4-Flash on Ascend：八卡基准与极限硬件专项计划
+# DeepSeek-V4-Flash on Ascend：P5-P9 专项计划
 
-## 1. 模型事实
+日期：2026-07-10
 
-DeepSeek-V4-Flash 是 DeepSeek-V4 系列中的 MoE Flash 版本，官方口径为 284B total parameters、13B activated parameters、1M context。开源主权重采用 FP4 + FP8 Mixed：MoE expert parameters 使用 FP4，绝大多数其他参数使用 FP8。这个事实决定了两件事：第一，模型并不是 BF16 dense 模型；第二，容量压力主要来自全量专家权重和状态对象，而不是单 token 激活参数。
+## 1. 专项目标
 
-来源锁定：
-- DeepSeek 模型事实以 `deepseek-ai/DeepSeek-V4-Flash` Hugging Face model card 为准。
-- Ascend 部署事实以 vLLM-Ascend `DeepSeek-V4-Flash` 教程为准。
-- 本文档按 2026-07-08 校验；后续实际执行前必须重新核对权重、镜像、vLLM-Ascend 版本和服务器硬件。
+围绕 DeepSeek-V4-Flash 建立三层证据链：
 
-## 2. Ascend 官方可运行基线
+1. 在 Atlas 800T A2 8×64GB 上形成 W8A8-MTP 八卡可复现基线。
+2. 在单卡/双卡和等效压力组件上定位容量、格式、kernel、通信和状态恢复边界。
+3. 用 KV/Prefix、MoE expert 与统一状态对象 trace 驱动 simulator，反推下一代硬件优先级。
 
-当前应采用官方 vLLM-Ascend 路线作为八卡基准：
+完整阶段契约见 `docs/EXPERIMENT_PLAN.md`，P8 工程详案见 `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`。
+
+## 2. 模型对象与当前路径
+
+DeepSeek-V4-Flash 的模型规格和量化事实以 `docs/SOURCES_AND_BOUNDARIES.md` 登记的官方 model card 为准。本项目必须始终区分来源 checkpoint 与 Ascend runtime object：
+
+| object_id | 本地镜像 | 服务器路径 | 当前角色 | 边界 |
+| --- | --- | --- | --- | --- |
+| `deepseek_v4_flash_w8a8_mtp_modelscope` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` | P5/P6 vLLM-Ascend W8A8-MTP 首选 runtime object | P5 未回传前不声称服务器权重完整或 runtime 兼容 |
+| `deepseek_v4_flash_official_hf` | `/Volumes/Elements/DeepSeek-V4-Flash` | `/data/node0_disk1/Public/DeepSeek-V4-Flash` | 来源、metadata、格式/转换和 P7 边界对象 | 未验证前不能等同于 `--quantization ascend` runtime object |
+
+本地目录存在和结构相同只用于准备实验卡，不代替服务器路径、inode、分片完整性和 runtime load 验证。
+
+## 3. 当前运行底座
+
+### 3.1 主路：vLLM-Ascend
+
+当前服务器已有证据：
 
 ```text
-Model: DeepSeek-V4-Flash-w8a8-mtp
-Hardware: official reference 1 × Atlas 800 A2, 64GB × 8; project target Atlas 800T A2 requires server-side compatibility proof
-Parallelism: tensor_parallel_size=8, expert_parallel=enabled
-Quantization: ascend
-Runtime: vLLM-Ascend
-Key runtime features: chunked prefill, prefix caching, async scheduling, MTP speculative decode
+Python 3.11.15
+CANN 9.0.0
+torch_npu 2.9.0.post2
+vLLM-Ascend 0.18.0
+host conda environment
 ```
 
-当前登记两个后续测试对象：
+P5/P6 优先使用这条已存在的宿主机路径，不在当前阶段切换容器或升级包。
 
-| 对象 | 本地状态 | 角色 | 边界 |
-| --- | --- | --- | --- |
-| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp`，ModelScope 版本已下载完成 | P6 八卡 baseline 首选 | 本地路径不是服务器路径；Atlas 800T A2 兼容性必须实测 |
-| `deepseek-ai/DeepSeek-V4-Flash` | `/Volumes/Elements/DeepSeek-V4-Flash`，仍在下载 | 官方来源、转换/兼容性和 P7/P8 边界研究对象 | 未验证前不能写成 vLLM-Ascend `--quantization ascend` 可直接加载的 W8A8-MTP 形态 |
+### 3.2 对照路：MindIE
 
-用户会自行把模型目录拷贝到服务器。实验卡片只能先写 server path 占位，不得推断服务器路径。
+MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务器体检把 `mindie_version` 记为 unknown，package inventory 记录 `mindie=missing`。只有用户另行确认可用环境、版本和模型支持后，才创建 MindIE 对照实验；不得在 P5/P6 vLLM 基线任务中顺带安装。
 
-八卡基准的目的不是直接优化，而是建立可信的 reference point。所有 P7 单卡/双卡、P8 KV Offload/UCM/Mooncake/专家分层和 P9 硬件敏感性实验都必须能回到这个 reference point 进行对比。
+## 4. P5：八卡拉起与 128K Context Ladder
 
-如果服务器侧只能先用更低 `max_model_len`、更小 `max_num_seqs` 或关闭某个官方开关完成 smoke，文档必须标记为 `degraded_smoke`，不得归入正式八卡基准。
+当前任务：
 
-## 3. 八卡实验矩阵
+```text
+p5_deepseek_v4_flash_8card_128k_smoke_2026_0710
+```
 
-### 3.1 B0：官方基线
+参考配置：
 
-| 变量 | 默认值 | 记录 |
+```text
+tensor_parallel_size=8
+expert_parallel=enabled
+quantization=ascend
+max_model_len=135168
+max_num_seqs=16 first
+prefix_cache=enabled
+chunked_prefill=enabled
+MTP=enabled first
+```
+
+请求阶梯：
+
+```text
+4096 -> 32768 -> 65536 -> 98304 -> 131072
+fixed output = 64 tokens
+```
+
+P5 只回答：是否 ready、最高成功上下文、是否保持固定输出、发生了何种降级。P5 不跑 msprof，不做性能基准或瓶颈归因。
+
+状态门：
+
+- `green`：MTP 保持开启并完成 `131072+64`。
+- `yellow`：有成功请求，但降低 `max_num_seqs`、关闭 MTP 或未达到 131072。
+- `red`：八卡不 ready 或没有成功请求。
+
+## 5. P6：八卡 Reference Baseline
+
+八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信 reference point。
+
+### 5.1 Baseline freeze
+
+- 复用 P5 最终成功 command，不从目录名反推参数。
+- P5 yellow 先稳定 degraded profile，修复前不升级为 official baseline。
+- 固定 server lifecycle、rank mapping、workload、输出、采样和 warmup。
+
+### 5.2 Unprofiled 性能
+
+先跑 `4K+64+c1`、`中档+64+c4`、`最高稳定档+64+c1` 三个 tracer-bullet cell，每个重复 3 次；稳定后再扩展 4K/中档/最高稳定档、64/256 输出和 1/4/8 并发。记录 TTFT、TPOT、ITL、E2EL、throughput、P95/P99、server stats 和 token control。
+
+### 5.3 Profiled evidence
+
+从 unprofiled 矩阵选代表 cell，单独运行 msprof、request-device aggregate、memory/transfer 读数。Profiled latency 不回填为用户性能。
+
+### 5.4 单变量对照
+
+顺序为 Prefix Cache、MTP、Chunked Prefill、`max_num_seqs`、`max_model_len`。每次只改变一项，任何组合约束或被迫降级都另建实验卡。
+
+### 5.5 MindIE 对照
+
+只有 runtime availability gate 关闭后才执行；先统一模型对象、请求与指标语义，再比较，不把不同 runtime 的原生字段直接视为同一测量。
+
+## 6. P7：单卡/双卡极致硬件边界
+
+P7 不套用八卡 full-model 部署承诺。测试对象按证明目的拆分：
+
+| 对象 | 证明目的 | 有效输出 |
 | --- | --- | --- |
-| TP | 8 | rank 映射、HCCL/HCCS 状态 |
-| EP | enabled | expert parallel 状态 |
-| quantization | ascend | 权重路径、scale 元数据 |
-| max_model_len | 先 32K/128K，再扩展 | 不直接首跑 1M |
-| max_num_seqs | 1/4/8/16 | 连续 batching 行为 |
-| max_num_batched_tokens | 4096 起 | chunked prefill 行为 |
-| prefix cache | on | server stats + trace |
-| MTP | on/off A/B | acceptance、TPOT、tail |
+| 小模型 | KV/Prefix、adapter、trace、transfer 链路 | 工具链与状态路径可运行 |
+| 中型 MoE | expert hotness、placement、miss/reuse | P8 expert 校准数据 |
+| DeepSeek 子图/partial shard | weight format、scale、kernel、KV shape | 兼容性和失败边界 |
+| 模拟 expert pool | HBM/DRAM/SSD 预算与策略 | replay/simulator 输入 |
+| simulator-only full model | 全模型 what-if | 误差区间，不是实机部署 |
 
-输出：`benchmark_card.yaml`、`server_config.sh`、`request_trace.jsonl`、`vllm_stats.jsonl`、`msprof_summary/`、`request_device_summary.tsv`、`hardware_snapshot.yaml`。
+必须分类记录第一失败点：capacity、format/scale、kernel、runtime、collective、state restore 或 feature combination。
 
-### 3.2 B1：功能开关 A/B
+## 7. P8：AK 分层工程原型
 
-优先做四组受控对照：
+### 7.1 不是“直接接一个完整框架”
 
-1. prefix-cache on/off。
-2. chunked-prefill on/off。
-3. MTP on/off。
-4. max_model_len 32K / 128K / 384K 梯度。
-
-每组只改变一个变量。所有请求必须固定 `min_tokens`、`ignore_eos` 或等价策略，避免生成长度混杂导致 raw delta 不能解释。
-
-单变量对照必须记录完整 server command。特别是 MTP、prefix cache、chunked prefill 和 hybrid KV cache manager 之间可能存在组合约束，不能只用结果目录名反推配置。
-
-### 3.3 B2：AK 状态分层候选
-
-在官方基线稳定后，再引入：
-
-1. KV Cache CPU Offload：inactive KV HBM→CPU DRAM。
-2. UCM：HBM→DRAM→Storage Backend 的 external KV/prefix cache。
-3. Mooncake KV Pool：KV pool / SSD offload / PD 相关验证。
-
-B2 的第一目标是“路径可运行、trace 可采集、tail 风险可见”，不是立刻证明吞吐提升。
-
-B2 进入条件：
-- B0 至少完成 4K/8K/32K 的固定输出 smoke。
-- B1 至少完成 prefix-cache on/off 和 MTP on/off 的受控读数。
-- `request_id`、时间窗、rank、KV/prefix 对象或 proxy 字段至少有一种稳定 join 路径。
-
-## 4. 单卡/双卡极限实验矩阵
-
-单卡/双卡不能套用官方 W8A8-MTP full model。该场景用于边界研究：
-
-| 实验 | 模型对象 | 成功标准 | 失败也要记录 |
-| --- | --- | --- | --- |
-| E0 | 小模型/中型 MoE | trace pipeline 完整 | 无 |
-| E1 | DeepSeek-V4-Flash 子图 / partial shard | 能加载模块、跑局部算子 | 具体哪类权重/算子/内存不足 |
-| E2 | 低比特或裁剪变体 | 低上下文少量 token | kernel/格式/scale 不兼容 |
-| E3 | 模拟 expert pool | expert hot/warm/cold 策略可复现 | miss penalty 和 wrong prefetch |
-| E4 | simulator-only full model | what-if 能解释硬件差距 | 仿真误差和缺失字段 |
-
-单卡/双卡实验的文档必须明确：这是硬件极限探索，不是官方模型部署说明。
-
-## 5. AK 技术优先级
-
-### 5.1 第一优先级：KV / Prefix 管理
-
-- vLLM prefix cache：作为当前最成熟的入口。
-- vLLM-Ascend KV Cache CPU Offload：作为 DRAM warm tier 的第一候选。
-- UCM：作为 external KV/prefix object 层。
-- Mooncake：作为 P8 后半段的 P/D、KV Pool、SSD offload 候选。
-
-### 5.2 第二优先级：专家热温冷分层
-
-在 DeepSeek-V4-Flash 之前，先在中型 MoE 上建立 expert trace：
+P8 的底座和自研边界是：
 
 ```text
-request_id
-layer_id
-token_id
-topk_expert_ids
-expert_scores
-expert_tier
-expert_hit
-expert_load_latency_ms
-expert_load_bytes
-prefetch_lead_time_ms
-wrong_prefetch_bytes
-stall_reason
+vLLM-Ascend / MindIE:
+  模型执行、scheduler、已有 Prefix/KV/EP/EPLB 能力
+
+AK State Runtime:
+  capability matrix、事件规范化、StateObject metadata、policy、replay、simulator handoff
+
+不自研：
+  通用推理引擎、完整生产级 object store、NPU-SSD 直通、跨节点一致性系统
 ```
 
-然后迁移到 DeepSeek-V4-Flash：shared expert、non-expert main path 和高频 routed experts 放 HBM；warm experts 放 DRAM/DUMA；cold experts 放 SSD 或仅在 simulator 中建模。
+### 7.2 KV/Prefix 主线
 
-### 5.3 第三优先级：CPU/NPU 阶段级协同
+```text
+P6 Prefix baseline
+  -> vLLM-Ascend KV Cache CPU Offload
+  -> UCM / External KV Cache DRAM-first
+  -> cold persistence only after warm-tier evidence
+  -> MindIE Prefix/KV Pool comparison when available
+```
 
-CPU 优先承担：tokenizer、sampling、request scheduling、prefix hash、KV metadata、expert hotness prediction、prefetch planner、I/O aggregation、offline readout、simulator。只有在 microbench 与 trace 证明收益为正时，才允许进入 partial attention、fallback expert 或小矩阵计算。
+### 7.3 MoE 主线
 
-## 6. 关键实验卡片模板
+```text
+expert aggregated hotness
+  -> expert map / static placement / replication
+  -> request/session-aware trace when needed
+  -> Expert Tier V0 simulation
+  -> gated DRAM-to-HBM warm prefetch V1
+```
 
-每个 DeepSeek-V4-Flash 实验必须生成：
+EPLB 和冗余专家部署只作为 hotness/placement 支点，不包装成 expert offload。SSD cold expert 第一阶段只做 checkpoint、离线 preload 和 simulator cost，不进入 decode step。
+
+### 7.4 StateObject 主线
+
+统一对象只包含：
+
+```text
+KV block
+Prefix block
+Expert weight
+Weight shard
+Session
+```
+
+Trace 是事件，不是对象。对象 registry 只保存 metadata 和 opaque runtime reference，不持有模型 payload。
+
+完整对象字段、runtime adapter、P8.0-P8.6 门槛与交付物见 P8 详案。
+
+## 8. P9：硬件参数联合分析
+
+P9 合并：
+
+```text
+P0/P3 microbench
+P6 eight-card baseline
+P7 one/two-card boundary
+P8 KV/expert/state trace and policy outcomes
+```
+
+优先扫描：HBM capacity/bandwidth、DRAM capacity/bandwidth、NPU-CPU link、HCCL collective、SSD I/O、CPU cores/vector、HMM/PIM modeled parameters。
+
+每条 hardware ask 必须给出：触发实验、测量机制、受影响指标、模型误差、软件前提、workload 范围和置信度。
+
+## 9. DeepSeek 实验卡最小字段
 
 ```yaml
 experiment_id:
 date:
 git_commit:
-server_id:
-model:
-model_variant:
-model_source:
-local_source_path:
+claim_level: readiness | smoke | controlled_benchmark | profile_readout | calibrated_simulation
+
+model_object_id:
 server_model_path:
-model_role:
-quantization:
 runtime:
-scenario:
-container_or_conda:
-cann_version:
-torch_npu_version:
-vllm_ascend_version:
+runtime_version:
+server_id:
 npu_count:
 hbm_per_npu_gb:
+
 parallelism:
   tp:
   ep:
   dp:
   pp:
+
 features:
   prefix_cache:
   chunked_prefill:
   mtp:
   kv_cpu_offload:
   ucm:
-  mooncake:
+  eplb:
+  expert_tier_policy:
+
 workload:
-  prompt_set:
-  request_count:
+  manifest:
   prompt_tokens:
-  generated_tokens:
-  concurrency_plan:
-metrics:
-  ttft_ms:
-  tpot_ms:
-  p95_tpot_ms:
-  throughput_tok_s:
-  hbm_peak_gb_by_rank:
-  kv_cache_usage_pct:
-  prefix_cache_hit_rate_pct:
-  cpu_dram_peak_gb:
-  d2h_bytes:
-  h2d_bytes:
-  ai_core_top_ops:
-  stall_top_reasons:
+  output_tokens:
+  concurrency:
+  warmup:
+  repeats:
+
+artifacts:
+  server_command:
+  request_summary:
+  server_stats:
+  profiler_summary:
+  state_trace:
+
 boundaries:
-  is_benchmark:
-  is_smoke:
-  can_compare_performance:
+  scope:
+  not_claim:
   known_confounds:
 ```
+
+## 10. 当前下一步
+
+1. 等待 P5 服务器真实回传并判定 green/yellow/red。
+2. 不因本轮文档刷新改写当前 `developer-to-server.md`。
+3. P5 回传后先生成 P6 baseline contract，不直接下发大矩阵。
+4. P8 本地第一实现任务将是 capability matrix + observe-only schema/fixture，不是 expert payload move。

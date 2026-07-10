@@ -40,6 +40,12 @@ Use `rg "keyword" .` from the root for fast research and document lookup.
 
 Use TypeScript, React function components, 2-space indentation, semicolons, and existing local formatting. Keep components in PascalCase, data/types as descriptive camelCase exports, Vitest files as `*.test.ts`, and Playwright files as `*.spec.ts`. For Markdown research files, keep descriptive titles and source-backed claims.
 
+## Terminology and Evidence Naming
+
+Project metrics, systems, and mechanisms must follow the terminology already evidenced under `AK 协同/`. For performance metrics, communication patterns, cache mechanisms, memory/state tiers, inference phases, NPU/CPU data paths, and collective communication, prefer names used by the local paper corpus, official-document snapshots, framework materials, and benchmark outputs. Project-level Chinese explanations may aid reading, but must not replace an established term or be presented as an external standard.
+
+When a term first appears in a page or report, record its standard term, source type, and scope boundary. Use `AK 协同/references/bibliography_inference_sim.md` as the routing index and cite the relevant local paper or `AK 协同/references/web/` snapshot. If no supporting term can be found in `AK 协同/`, label the wording as a project explanation or pending source alignment instead of inventing a technical name.
+
 ## Testing Guidelines
 
 Add or update Vitest coverage when changing structured data, route maps, or schema-like exports. Add Playwright coverage for layout, search/filter behavior, screenshots, or responsive behavior. Before handoff, run `pnpm check`; run `pnpm test:e2e` when UI layout or interaction changed.

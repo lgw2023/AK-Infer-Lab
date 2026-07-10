@@ -1,6 +1,25 @@
 # Sources and Boundaries
 
-本文档记录 AK-Infer-Lab DeepSeek-V4-Flash 专项的事实来源、项目内证据和边界。外部事实最后校验时间：2026-07-08。
+本文档记录 AK-Infer-Lab DeepSeek-V4-Flash 专项的事实来源、项目内证据和边界。DeepSeek 模型与 vLLM-Ascend v0.18.0 部署事实校验时间为 2026-07-08；术语来源映射和 P8 runtime capability 候选于 2026-07-10 复核。
+
+术语与字段命名优先级为：`AK 协同/` 内的官方文档 / 框架资料 / benchmark 输出字段 > 本地系统论文中的通用表达 > 项目内中文解释。项目内可使用“状态底座”或“热/温/冷层”帮助阅读，但首次出现时必须对齐 External KV Cache / state-object management 以及 HBM / DRAM / SSD-NVMe tier 等可检索术语，并注明来源类型和适用边界。若 `AK 协同/` 内找不到对应来源，只能标记为“项目内解释”或“待来源对齐”，不能包装成领域标准名词。
+
+## 0.1 术语来源映射
+
+`AK 协同/references/bibliography_inference_sim.md` 是术语来源路由索引；以下路径均相对于 `AK 协同/`。
+
+| 标准术语 | 来源类型 | 本地来源锚点 | 适用边界 |
+| --- | --- | --- | --- |
+| TTFT / ITL；Prefill/Decode disaggregation | 官方框架文档快照 | `references/web/vLLM-disaggregated-prefill.html` | 证明 vLLM 使用这些阶段和指标名称；本项目 host-client 计算口径仍以采集脚本为准，不等于 device event |
+| TPOT / E2EL / throughput | benchmark / 框架指标命名与本项目输出字段 | `Deep Research 反向回顾报告 第三轮可核验版 小算力大模型推理落地与推理仿真系统构建.md`、MindIE/vLLM 资料快照 | 证明字段属于推理服务指标体系；P1.29/P1.31 的具体公式和数值只适用于当前 vLLM streaming client |
+| H2D / D2H | 官方框架 release-note 与数据路径用语 | `references/web/vLLM-Ascend-release-notes-v0.18.html`、`references/web/vLLM-Ascend-KV-CPU-offload-live.html` | 只定义 Host↔Device 方向和相关路径，不定义本机 PCIe/UB 理论峰值，也不代表 NPU-NPU 通信 |
+| KV Cache CPU Offload / UCM Store | vLLM-Ascend 官方文档快照 | `references/web/vLLM-Ascend-KV-CPU-offload-live.html`、`references/web/vLLM-Ascend-UCM-deployment-live.html` | 证明 inactive KV block 下沉、CPU↔NPU restore 与分层 store 机制存在；不证明本机净收益 |
+| External KV Cache / tiered KV cache offloading | 框架文档与系统论文 | `references/web/LMCache-docs.html`、`references/papers/LMCache__arxiv-2510.09665.pdf`、`references/papers/Mooncake__arxiv-2407.00079.pdf` | 用于外部化、复用和多级存储机制；不是当前项目已完成的 object bytes / hit-miss 闭环 |
+| Expert Parallelism Load Balancer (EPLB) / expert hotness / expert map | vLLM-Ascend 官方文档与 release-note 快照 | `references/web/vLLM-Ascend-docs.html`、`references/web/vLLM-Ascend-release-notes-live.html` | 证明 Ascend runtime 有专家热度、复制和放置入口；EPLB 不等于 Expert Offload / Expert Cache，也不证明当前服务器 0.18.0 已暴露最新配置 |
+| MoE Expert Offload / Expert Cache | 系统论文 | `references/papers/KTransformers.pdf`、`references/papers/fMoE-FineMoE__arxiv-2502.05370.pdf`、`references/papers/DALI__arxiv-2602.03495.pdf`、`references/papers/FluxMoE__arxiv-2604.02715v2.pdf` | 作为 expert placement/offload/cache 机制参考；x86/CUDA 结果不能直接外推到 Kunpeng/Ascend |
+| MindIE Prefix Cache / KV Cache 池化 / 冗余专家部署 | MindIE 官方产品索引与 2.3 live official 页面 | `references/web/MindIE-docs.html`；具体特性页待本地快照对齐 | 只登记 MindIE 候选能力；当前服务器 `mindie_version=unknown` 且 package inventory 为 missing，不得写成可执行路径或本机收益 |
+| HCCL collective；all-reduce / all-gather / reduce-scatter / all-to-all | vLLM-Ascend 官方资料与 collective benchmark 论文 | `references/web/vLLM-Ascend-release-notes-main.html`、`references/web/vLLM-Ascend-KV-pool-live.html`、`references/papers/CCL-Bench__arxiv-2605.06544.pdf` | 证明 HCCL 和 collective 模式属于相关系统/benchmark 认知体系；当前没有本机八卡 sweep |
+| algbw / busbw | 待选 collective benchmark 的输出字段 | 当前 `AK 协同/` 无独立权威定义页；执行实验时必须随工具版本和原始字段一并登记 | 仅作计划字段，不得写成 HCCL 官方字段或本机已测“卡间带宽” |
 
 ## 1. 外部事实来源
 
@@ -11,16 +30,22 @@
 | [vLLM-Ascend KV Cache CPU Offload guide](https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/kv_cache_cpu_offload.html) | DRAM warm tier 候选 | inactive KV blocks 从 NPU memory offload 到 CPU memory；基于 `OffloadingConnector` 和 `NPUOffloadingSpec`；D2H/H2D 使用独立 NPU streams。 |
 | [vLLM-Ascend UCM Store guide](https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/ucm_deployment.html) | external KV / prefix cache 候选 | UCM 面向 prefix cache 的外部 KV storage layer，采用 HBM → DRAM → SSD/NFS/3FS hierarchy，并支持 vLLM/vLLM-Ascend 与 CANN/Atlas A2/A3 平台。 |
 | [vLLM-Ascend KV Cache Pool guide](https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/kv_pool.html) | Mooncake/KV pool 候选 | AscendStoreConnector / MooncakeBackend、embedded client、SSD offload、SSD quota、per-rank buffer 和 eviction policy 等部署约束。 |
+| [vLLM-Ascend EPLB guide](https://docs.vllm.ai/projects/ascend/en/latest/user_guide/feature_guide/eplb_swift_balancer.html) | expert hotness / placement 候选 | 最新文档包含 recording、static map、redundant expert 和 placement 配置；执行前必须在服务器 0.18.0 做 capability probe，且不能解释为 expert offload。 |
+| [MindIE 2.3 Prefix Cache](https://www.hiascend.com/document/detail/zh/mindie/230/mindiellm/llmdev/mindie_llm0302.html) | MindIE 对照候选 | 官方页面记录跨 session prefix reuse 与支持/组合约束；当前服务器尚无 MindIE 可用性证据。 |
+| [MindIE 2.3 KV Cache 池化](https://www.hiascend.com/document/detail/zh/mindie/230/mindiellm/llmdev/mindie_llm0538.html) | MindIE DRAM pool 对照候选 | 官方页面说明当前该版本仅支持 DRAM 池化；不证明本项目 server/model 组合可运行。 |
+| [MindIE 2.3 冗余专家部署表](https://www.hiascend.com/document/detail/zh/mindie/230/mindiellm/llmdev/mindie_llm0431.html) | expert hotness / static placement 对照候选 | 官方页面记录热点采集和冗余专家部署表生成；不等于动态 warm/cold expert offload。 |
 | [Mooncake documentation](https://kvcache-ai.github.io/Mooncake/) | KV store 生态参考 | Mooncake 是面向 LLM inference 的分布式 KV cache/storage 体系，可作为 vLLM-Ascend KV pool、PD 和 storage-backed cache 的机制参考。 |
 
 ## 2. 项目内部来源
 
-- 硬件规格材料：n+1 分级内存与 n+2 HMM/PIM 路线。
+- `AK 协同/` 硬件规格材料：n+1 分级内存与 n+2 HMM/PIM 路线。
 - 小算力系统论证关键问题：显存放不下、CPU/NPU 交互、KV Cache、Agent Swarm、Prefix Cache 收益等问题。
 - 一体机汇报：Mini / 塔式工作站场景、84GB Bailu、DDR5、SSD、UB、NPU-SSD 直通等设计目标。
 - Deep Research 第三轮可核验报告：vLLM-Ascend、UCM、KV Pool、MoE expert、KV state、simulator 和 P0/P1/P2/P3 路线。
 - 代表工作硬件拓扑映射：NEO、Tutti、Mooncake、Bidaw、SolidAttention、KTransformers、LMCache、ProfInfer、LLMServingSim2.0 等工作如何映射到硬件链路。
 - Ascend 服务器环境汇总：当前 Atlas 800T A2 / 8×910B1 / 64GB HBM / CANN 9.0.0 / vLLM-Ascend 环境边界。
+
+这些项目材料可以组织证据和提出实验假设，但其中的中文概括不自动成为领域标准术语。页面引用时应回到上表的论文、官方文档、框架或 benchmark 来源锚点。
 
 ## 2.1 本地待测模型对象
 
@@ -42,3 +67,7 @@
 - SSD cold tier 的账面容量不等于 decode 热路径可用；必须证明 I/O 粒度、异步和预取能隐藏。
 - P/D 分离不是默认正收益；小算力单机优先做逻辑队列和状态对象，不先做完整物理拆分。
 - 任何性能数字必须明确来自 smoke、controlled benchmark、profile readout、request-device aggregate 还是 simulator；不同证明力不能混用。
+- H2D/D2H 表示 Host↔Device copy，不表示 NPU-NPU interconnect。当前项目尚无单机八卡 pairwise P2P 或 HCCL all-reduce / all-gather / reduce-scatter / all-to-all 的 algbw / busbw 实测结论。
+- `non_blocking=True` 后立即 synchronize 的数据只能解释为同步完成计时下的 API 参数对比，不是 host async issue 或 copy-compute overlap 证据。
+- `ITL` 在 P1.29/P1.31 中是 host streaming inter-chunk median per request；`TPOT` 是 `(response_end - first_token) / (generated_tokens - 1)`。两者都不是 runtime native decode event。
+- NumPy `source.sum()` / `np.copyto()` 数据是 Python/NumPy 软件路径的 observed CPU memory path ceiling，不是 server DRAM hardware peak。

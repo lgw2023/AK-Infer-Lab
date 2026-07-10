@@ -1,4 +1,8 @@
-# 技术架构：AK 状态分层推理实验栈
+# 技术架构：KV/Prefix/Expert Memory Tiering 推理实验栈
+
+术语来源：Memory tiering / External KV Cache 对齐 `AK 协同/references/web/LMCache-docs.html`、Mooncake/LMCache 系统论文与 vLLM-Ascend UCM 文档；KV Cache CPU Offload 对齐 vLLM-Ascend 官方 guide；MoE Expert Offload / Expert Cache 对齐 KTransformers、FineMoE、DALI、FluxMoE 等论文；Prefill/Decode disaggregation 对齐 vLLM 官方文档与 DistServe/Splitwise 论文。这里的“热层 / 温层 / 冷层”和“状态对象”是项目内解释，不是新的外部技术名词；架构映射也不代表相关机制已经在 Atlas 800T A2 上验证为正收益。
+
+本页描述长期技术架构；当前 P8 的 runtime adapter、StateObject metadata 边界、垂直切片和证据门见 `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`。P8 不要求一次性实现本页所有真实迁移路径。
 
 ## 1. 架构视图
 
@@ -15,7 +19,7 @@ Request / Workload
       → request-device join, bottleneck attribution, what-if hardware scan
 ```
 
-## 2. 热层、温层、冷层
+## 2. HBM / DRAM / SSD-NVMe Memory Tiers（项目内：热层 / 温层 / 冷层）
 
 | 层 | 硬件 | 状态对象 | 目标 | 约束 |
 | --- | --- | --- | --- | --- |
@@ -53,13 +57,13 @@ quality_risk: none | low | medium | high
 
 ### 4.1 Prefill
 
-Prefill 更偏 compute-bound。主要记录：prompt tokens、chunked prefill 配置、AI Core task、HBM peak、KV write bytes、prefix reuse、full prefill latency、first token latency。
+Prefill 在论文和推理系统中常作为 compute-sensitive 阶段分析，但本项目不预设当前 workload 已经 compute-bound。主要记录：prompt tokens、chunked prefill 配置、AI Core task、HBM peak、KV write bytes、prefix reuse、full prefill latency、first token latency。
 
 ### 4.2 Decode
 
-Decode 更偏 memory/state-bound。主要记录：per-token latency、KV read、expert dispatch、hot expert hit、H2D/D2H、scheduler queue、prefix hit、MTP accept、tail latency。
+Decode 在论文和推理系统中常作为 memory/state-sensitive 阶段分析，但本项目不预设当前 workload 已经 memory-bound。主要记录：per-token latency、KV read、expert dispatch、hot expert hit、H2D/D2H、scheduler queue、prefix hit、MTP accept、tail latency。
 
-### 4.3 KV/Prefix 分层路径
+### 4.3 KV Cache CPU Offload / External KV Cache 路径
 
 ```text
 NPU HBM active KV
@@ -74,7 +78,7 @@ UCM/Mooncake 进一步扩展为：
 HBM → DRAM local cache → SSD/NFS/3FS storage backend
 ```
 
-### 4.4 Expert 分层路径
+### 4.4 MoE Expert Offload / Expert Cache 路径
 
 ```text
 Router top-k
@@ -127,3 +131,13 @@ Router top-k
 | KTransformers/FineMoE/DALI/FluxMoE | MoE expert tiering 机制参考 | B |
 | Tutti/Bidaw/SolidAttention | SSD cold tier 边界参考 | C |
 | Profiler + Simulator | 硬件规格反推 | A |
+
+## 7. 当前证据状态
+
+| 机制 / 指标 | 状态 | 当前可声明 | 当前不可声明 |
+| --- | --- | --- | --- |
+| H2D / D2H copy | YES | 当前 benchmark 路径下的同步端到端 observed copy ceiling | PCIe/UB 理论峰值、NPU-NPU 通信或 copy-compute overlap |
+| Two-stream copy concurrency | PARTIAL | 已有早期双 stream copy smoke | 不是 host async issue 或 copy-compute overlap 证据 |
+| NPU-NPU interconnect / HCCL collective | NO | 待做 pairwise P2P 和 HCCL sweep | 不得用 H2D/D2H 替代 algbw / busbw |
+| KV Cache CPU Offload / External KV Cache | PARTIAL | 已有 copy ceiling、phase memory 和 KV usage proxy | 不能声称 offload 净收益、object bytes 或 hit/miss 闭环 |
+| Bottleneck attribution | NO | 待 request-token-operator-stall 证据闭合 | 不得声称 compute/memory/queue/scheduler-bound |

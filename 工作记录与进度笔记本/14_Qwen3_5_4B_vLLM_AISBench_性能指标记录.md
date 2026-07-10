@@ -4,6 +4,8 @@
 
 本页专门记录 P1.28、P1.29、P1.30、P1.31 四轮服务器回传结果中与 Qwen3.5-4B / vLLM 推理性能指标最相关的证据；当前也作为展示页第 5 节与审计正文的细节账本。
 
+术语来源类型：TTFT/ITL 与 Prefill/Decode 采用 `AK 协同/references/web/vLLM-disaggregated-prefill.html` 中的官方框架命名；TPOT/E2EL/throughput 对齐 `AK 协同/` 第三轮可核验报告与 MindIE/vLLM benchmark 资料；HBM/KV cache 字段沿用设备监控、vLLM server stats 和本轮 artifact 原始字段。来源只证明命名归属，P1.29/P1.31 的计算公式、采集位置和数值仍是本项目 host streaming client 口径。
+
 ## 结论摘要
 
 P1.29 是当前阶段最有价值的一轮 Qwen3.5-4B / vLLM OpenAI streaming client 性能事实表。它在同一 `continuous32_mixed` workload、固定 64 输出 token、prefix-cache on/off A/B 条件下，补齐了 AISBench/MindIE-Motor 风格的 parameter 表和 common metric 表：
@@ -21,6 +23,21 @@ P1.30 则补齐 P1.29 之后仍缺的 phase memory matrix：`prefix_cache_on/off
 P1.31 把输入 cap 扩展到 `8K/16K/32K/64K/128K`，把 target shared-prefix ratio 扩展到 `30%/60%/90%`，固定输出目标为 `1024 tokens`，并对 prefix-cache on/off 做 15 cell 成对矩阵。它证明当前 Qwen3.5-4B / vLLM OpenAI streaming client 能完成长上下文矩阵：on/off 均 15/15 cell success，64K/128K 全部成功；off 侧 observed hit rate 全为 `0.0`，on 侧 observed hit rate 为 `22.5%` 到 `84.8%`。一个 `cap8192_prefix60` measured request 生成 `1023/1024` tokens，按用户确认和服务器 acceptance policy 作为成功样本处理。
 
 这些结果可以作为“scoped performance facts”入账，但仍不能发布为 MindIE native AISBench 结果、compute-bound/memory-bound 结论、HBM bottleneck 结论、scheduler-bound 结论或 prefix-cache benefit 归因。
+
+## 统一术语与读法
+
+| 标准术语 | 来源类型 / `AK 协同/` 锚点 | 本页口径 | Not Claim |
+| --- | --- | --- | --- |
+| TTFT | 官方框架文档：vLLM disaggregated prefill 快照 | host client 收到 first non-empty streaming chunk 的耗时 | 不是纯 NPU prefill device time |
+| TPOT | benchmark / 框架指标：第三轮可核验报告与 MindIE/vLLM 资料 | `(response_end - first_token) / (generated_tokens - 1)` | 不是单个 decode kernel latency |
+| ITL | 官方框架文档：vLLM disaggregated prefill 快照 | host streaming inter-chunk median per request；P1.29 on/off median 为 `97.861 / 295.179 ms` | 不是 runtime native decode event 或算子执行间隔 |
+| E2EL / client wall time | benchmark / 框架指标：第三轮可核验报告与 MindIE/vLLM 资料 | request start 到 response end 的客户端端到端耗时 | 不是纯设备执行时间 |
+| HBM used/free | 设备监控 / artifact 原始字段 | whole-device HBM occupancy | 不是 HBM traffic 或 per-request KV object bytes |
+| KV cache usage | vLLM server stats 原始字段 | vLLM server stats proxy | 不是 KV 真实字节数 |
+
+`Scope`：P1.29 是 Qwen3.5-4B、`continuous32_mixed`、fixed 64-token、vLLM OpenAI streaming client、prefix-cache on/off A/B；P1.31 是 Qwen3.5-4B、8K-128K、30%/60%/90% target shared-prefix ratio、目标输出 1024 tokens 的 on/off 矩阵。
+
+`Not Claim`：不是 MindIE native AISBench/MindIE-Motor 计时，不是 DeepSeek-V4-Flash 八卡结论，不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 或通用 prefix-cache benefit 归因。
 
 ## 证据与归档
 
@@ -348,7 +365,7 @@ Performance median 范围：
 | metric | prefix-cache on | prefix-cache off | notes |
 | --- | --- | --- | --- |
 | TTFT median | 0.783-40.301 s | 2.174-42.404 s | from aisbench parameters / delta summary |
-| TPOT median | 88.089-107.259 ms | 87.976-105.975 ms | decode wall after first token / generated tokens minus one |
+| TPOT median | 88.089-107.259 ms | 87.976-105.975 ms | host-client `(response_end-first_token)/(generated_tokens-1)` |
 | E2EL/client wall median | 90.835-150.028 s | 92.173-150.452 s | client wall us / 1000 |
 | OutputTokenThroughput median | 6.825-11.273 token/s | 6.806-11.110 token/s | per-cell median |
 | PrefillTokenThroughput median | 1,888.9-24,890.1 token/s | 3,484.3-30,631.8 token/s | input tokens divided by host-client TTFT approximation |

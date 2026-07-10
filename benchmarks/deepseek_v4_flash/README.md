@@ -23,3 +23,15 @@ P5 deliverables:
 - `p5_readiness_card.yaml`: eight-card startup and 128K context-ladder smoke card.
 - `workloads/p5_8card_context_ladder.yaml`: fixed-output context ladder from 4K through 128K.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
+
+Planning references:
+
+- `docs/EXPERIMENT_PLAN.md`: canonical P5-P9 stage graph, evidence gates and experiment contracts.
+- `docs/DEEPSEEK_V4_FLASH_ASCEND_PLAN.md`: DeepSeek-specific runtime, model-object and boundary plan.
+- `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`: P8 runtime capability matrix, StateObject control plane, KV/Prefix and MoE prototype details.
+
+Next artifact boundary:
+
+- Do not create P6 benchmark cards until the P5 server result is graded green/yellow/red and the final successful command is archived.
+- Do not create P8 real-move cards before P8.0 capability probe and P8.1 observe-only trace pass.
+- MindIE cards are conditional on a separately confirmed server runtime; current server evidence does not show MindIE as available.

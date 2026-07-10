@@ -1,5 +1,23 @@
 # Metrics and Trace Schema
 
+## 0. 术语、来源与当前采集口径
+
+| 标准术语 | 来源类型 / `AK 协同/` 锚点 | 当前项目口径 | 不可替代为 |
+| --- | --- | --- | --- |
+| TTFT / Time To First Token | 官方框架文档：`references/web/vLLM-disaggregated-prefill.html` | host client 收到 first non-empty streaming chunk 的耗时 | NPU 首个 kernel 或纯 prefill device time |
+| TPOT / Time Per Output Token | benchmark / 框架指标：第三轮可核验报告与 MindIE/vLLM 资料 | `(response_end - first_token) / (generated_tokens - 1)` | 单个 decode kernel latency |
+| ITL / Inter-Token or Inter-Chunk Latency | 官方框架文档：`references/web/vLLM-disaggregated-prefill.html` | P1.29/P1.31 中为 host streaming inter-chunk median per request | runtime native decode event 或算子执行间隔 |
+| E2EL / client wall time | benchmark / 框架指标：第三轮可核验报告与 MindIE/vLLM 资料 | 客户端从 request start 到 response end 的端到端耗时 | 纯设备执行时间 |
+| H2D / D2H | 官方框架 release-note/guide：vLLM-Ascend release notes 与 KV CPU Offload guide | Host to Device / Device to Host copy | NPU-NPU interconnect 或 HCCL collective 带宽 |
+| HBM used/free | 设备监控与项目 artifact 字段 | whole-device NPU HBM occupancy | per-request KV object bytes 或 HBM traffic |
+| KV cache usage | vLLM server stats 输出字段 | vLLM server stats 中的 KV cache usage proxy | KV 真实字节数 |
+| all-reduce / all-gather / reduce-scatter / all-to-all | 官方框架资料 + CCL-Bench：vLLM-Ascend release notes、`CCL-Bench__arxiv-2605.06544.pdf` | 待测 HCCL collective 通信模式 | 泛化的“多卡通信速度” |
+| algbw / busbw | 待选 collective benchmark 的原始输出字段；当前资料库无独立权威定义页 | 计划随工具版本、collective、world size、payload 一并登记 | HCCL 官方字段或未标口径的“卡间带宽” |
+
+完整来源路径和机制类术语映射见 `docs/SOURCES_AND_BOUNDARIES.md`。来源锚点证明术语或机制在领域认知体系中存在，不提升当前实验的证据等级。
+
+写入网站、README 或阶段报告时，每个性能数字都必须附带 `Scope` 和 `Not Claim`。当前 P0-P4 仅能提供特定路径的 observed facts，不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
+
 ## 1. 指标分组
 
 ### Request-level
@@ -202,3 +220,7 @@ acceptance:
 - 如果 request window 与 device timebase 未对齐，不得做 request-device 归因。
 - 如果 SSD I/O size 不可见，不得声称 SSD cold tier 可用。
 - 如果 expert miss penalty 不可见，不得声称专家分层收益。
+- `size=1G, pinned=1, non_blocking=0` 的 H2D/D2H `24.313915 / 26.480714 GB/s` 只是当前 benchmark 路径下的同步端到端 observed copy ceiling；不是 PCIe/UB 理论峰值、NPU-NPU 带宽或 copy-compute overlap 证据。
+- `non_blocking=True` 后立即 synchronize 的 sweep 不保留 host async issue 或 copy-compute overlap 证明力。
+- NumPy read/copy `5.332057 / 2.963189 GB/s` 只是 Python/NumPy 路径下的 observed CPU memory path ceiling；不是 server DRAM hardware peak。
+- 当前没有 Atlas 800T A2 单机八卡 NPU-NPU interconnect 实测；H2D/D2H 不得代替 pairwise P2P 或 HCCL collective 数据。

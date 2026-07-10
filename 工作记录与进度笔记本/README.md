@@ -8,12 +8,12 @@
 
 ```text
 DeepSeek-V4-Flash on Ascend
-  → 单机八卡官方 W8A8-MTP 基准
+  → P5 单机八卡 W8A8-MTP 拉起与 128K smoke
+  → P6 单机八卡 controlled baseline
   → 单卡/双卡极限硬件边界
-  → KV/Prefix 状态分层
-  → MoE Expert 热温冷分层
+  → P8 KV/Prefix + MoE Expert + StateObject 分层工程原型
   → CPU/NPU 阶段级协同
-  → trace-driven simulator 与下一代硬件规格反推
+  → P9 trace-driven simulator 与下一代硬件规格反推
 ```
 
 ## 当前范围
@@ -48,10 +48,10 @@ DeepSeek-V4-Flash on Ascend
 | `06_提示词推理负载设计.md` | 静态 prompt workload 设计。 |
 | `07_可观测能力体检执行说明.md` | 服务器可观测能力体检框架说明。 |
 | `08_服务器体检结果分析与下一步计划.md` | Atlas 服务器体检结果和后续修正。 |
-| `09_DeepSeek_V4_Flash_专项计划.md` | 建议新增：DeepSeek-V4-Flash 八卡与极限硬件专项计划。 |
+| `09_DeepSeek_V4_Flash_专项计划.md` | DeepSeek-V4-Flash P5-P9 八卡、极限硬件、P8 原型与规格反推专项状态。 |
 | `10_P0_P4_阶段收尾评估.md` | P0-P4 当前阶段三类目标的完成判定和边界。 |
 | `11_P0_P4_阶段收尾报告.md` | P0-P4 当前阶段收尾报告和后续建议。 |
-| `12_P5_P9_后续阶段重排计划.md` | P5-P9 新路线：实验对象定版、八卡 baseline、单/双卡边界、AK 技术注入和硬件联合分析。 |
+| `12_P5_P9_后续阶段重排计划.md` | P5-P9 当前路线、阶段门、P8 分层工程原型和硬件联合分析。 |
 | `13_P0_P4_数据资产成果包索引.md` | P0-P4 硬件性能与推理观测数据资产成果包入口，串联审计计划、审计结果正文、静态仪表盘和副本关系。 |
 | `14_Qwen3_5_4B_vLLM_AISBench_性能指标记录.md` | P1.28-P1.30 Qwen3.5-4B / vLLM AISBench 风格性能指标、phase memory matrix、server stats 和边界记录。 |
 | `ak_infer_lab_p0_p4_data_asset_audit_2026_0708.txt` | P0-P4 数据资产全量审计结果正文，作为成果包主读文本版本。 |
