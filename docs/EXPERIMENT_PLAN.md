@@ -1,6 +1,6 @@
 # P5-P9 实验计划
 
-日期：2026-07-10
+日期：2026-07-11
 
 本文档是 P5-P9 的稳定阶段契约。P8 的工程细节见 `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`；每轮实时状态、服务器回传和下一动作写入 `工作记录与进度笔记本/`。
 
@@ -16,10 +16,10 @@ P0-P4 已建立两类可复用资产：
 当前服务器任务为 P5 官方 checkpoint runtime gate：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710
+p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
 ```
 
-上一轮 `0.20.2/0.20.2rc1` 四卡探针已在 NPU 量化平台门得到 `diagnostic_red_quant_format`。项目现已停止使用 W8A8，主对象改为官方 mixed FP8+FP4 checkpoint。当前新建独立 `0.22.1/0.22.1rc1` 栈，只用 NPU 4-7 按 base-no-MTP、base 成功后 MTP-on 的顺序执行 4K+64 runtime gate。
+上一轮 `0.20.2/0.20.2rc1` 四卡探针已在 NPU 量化平台门得到 `diagnostic_red_quant_format`。项目现已停止使用 W8A8，主对象改为官方 mixed FP8+FP4 checkpoint。独立 `0.22.1/0.22.1rc1` 栈已在服务器构建完成，精确核心版本和 `deepseek_v4_fp8` 注册通过；首次任务因旧环境同样存在的非核心辅助包冲突被全量 `pip check` 硬门停止，未执行 runtime。当前只读复用该栈，用 NPU 4-7 按 base-no-MTP、base 成功后 MTP-on 的顺序继续 4K+64 runtime gate。
 
 ## 2. 阶段依赖
 
@@ -127,7 +127,7 @@ max_num_seqs 16 -> 4 -> 1 -> disable MTP
 
 - 授权范围：`ASCEND_RT_VISIBLE_DEVICES=4,5,6,7`；不得扩大到其他 NPU。
 - 配置：TP4/EP、`max_model_len=8192`、`max_num_seqs=1`、eager mode、无 CPU/NVMe/KV offload。
-- 环境：从已验证旧环境克隆新隔离 `vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1` 栈；旧环境不改。
+- 环境：只读复用已建成且核心版本/量化注册通过的隔离 `vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1` 栈；全量 `pip check` 只作诊断，已知非核心冲突不再一票否决，任何新冲突仍阻塞。
 - 对象与容量：46 分片 / `148.66 GiB` mixed FP8+FP4 checkpoint，静态余量约 `107.34 GiB`；W8A8 禁止启动或转换。
 - 格式边界：不显式传 `--quantization`、不改 checkpoint config；量化格式拒绝、容量失败或其他首错均立即停止。
 - profile：先 `base_no_mtp`，只在 base 请求成功后运行 `mtp_on`；每个 profile 最多一个 `4096+64`，不跑 context ladder。

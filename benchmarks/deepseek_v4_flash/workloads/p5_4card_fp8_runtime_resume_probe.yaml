@@ -1,0 +1,123 @@
+schema_version: 1
+workload_id: p5_deepseek_v4_flash_4card_fp8_runtime_resume_probe_v0221rc1
+date: "2026-07-11"
+purpose: resume_the_unexecuted_official_checkpoint_runtime_probe_after_accepting_the_built_core_stack
+model_object_id: deepseek_v4_flash_official_hf
+scenario: reuse_verified_isolated_runtime_then_four_card_startup_and_single_request_probe
+is_smoke: true
+is_benchmark: false
+is_canonical_p5_runtime_gate: true
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+prior_environment_probe:
+  workload: p5_4card_fp8_stack_upgrade_probe.yaml
+  reported_grade: blocked_environment
+  project_interpretation: environment_built_and_core_quantization_registration_verified_runtime_not_attempted
+  full_pip_check_exit_code: 1
+  conflict_policy_error: preexisting_non_core_auxiliary_conflicts_were_treated_as_a_hard_gate
+target_runtime:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  lifecycle: reuse_read_only_no_rebuild_or_package_changes
+  vllm_source_path: /data/node0_disk1/vllm-0.22.1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_expected_version: 0.22.1+empty
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  vllm_ascend_expected_version: 0.22.1rc1
+  torch: "2.10.0"
+  torch_npu: "2.10.0"
+  transformers: "5.5.4"
+  triton_ascend: "3.2.1"
+environment_gate:
+  hard_requirements:
+    - exact_core_versions
+    - clean_vllm_source_at_expected_commit
+    - core_imports
+    - npu_available_and_four_visible_devices
+    - fp8_and_deepseek_v4_fp8_registered
+    - inference_contracts_pass
+    - exact_model_metadata_and_weight_inventory
+  full_pip_check: diagnostic_not_global_hard_gate
+  allowed_preexisting_non_core_conflicts:
+    mindstudio-kpp:
+      - plotly
+    ms-service-profiler:
+      - matplotlib
+      - msguard
+      - openpyxl
+      - opentelemetry-exporter-otlp-proto-grpc
+      - opentelemetry-exporter-otlp-proto-http
+      - pandas
+    te:
+      - ml-dtypes
+      - tornado
+    pyvers:
+      - packaging
+    opencv-python-headless:
+      - numpy
+  block_on_any_unlisted_dependent_or_requirement_conflict: true
+  package_changes_to_fix_auxiliary_conflicts: forbidden
+  status_capture: preflight_runs_in_subshell_and_caller_always_records_exit_code
+resource_gate:
+  authorized_visible_devices: "4,5,6,7"
+  expected_visible_device_count: 4
+  all_authorized_devices_must_be_healthy_and_idle: true
+  any_other_device_forbidden: true
+runtime_reference:
+  command: vllm serve
+  tensor_parallel_size: 4
+  enable_expert_parallel: true
+  data_parallel_size: 1
+  max_model_len: 8192
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  gpu_memory_utilization: 0.92
+  quantization: auto_from_checkpoint_config
+  explicit_quantization_argument: forbidden
+  enforce_eager: true
+  prefix_cache: disabled_for_startup_probe
+  cpu_offload_gb: 0
+  additional_config:
+    enable_flashcomm1: true
+    enable_dsa_cp: true
+    enable_cpu_binding: true
+    multistream_overlap_shared_expert: false
+profiles:
+  - name: base_no_mtp
+    order: 1
+    goal: validate_model_load_server_ready_and_one_request_without_speculative_decoding
+  - name: mtp_on
+    order: 2
+    run_only_if: base_no_mtp_request_succeeds
+    speculative_config:
+      num_speculative_tokens: 1
+      method: mtp
+      enforce_eager: true
+request_plan:
+  request_count_per_profile: 1
+  input_tokens: 4096
+  output_tokens: 64
+  temperature: 0.0
+  min_tokens: 64
+  max_tokens: 64
+  ignore_eos: true
+stop_policy:
+  stop_after_preflight_failure: true
+  stop_after_base_profile_startup_or_request_failure: true
+  no_w8a8_checkpoint_attempt: true
+  no_quantization_config_override: true
+  no_context_ladder: true
+  no_cpu_disk_or_kv_offload: true
+  no_source_patch: true
+grading:
+  diagnostic_green: base_no_mtp_and_mtp_on_each_complete_one_4096_plus_64_request
+  diagnostic_yellow_mtp: base_no_mtp_succeeds_but_mtp_on_fails
+  diagnostic_red_quant_format: deepseek_v4_fp8_or_fp4_rejected_on_target_stack
+  diagnostic_red_weight_load: target_stack_passes_format_gate_but_weight_load_fails
+  diagnostic_red_capacity: hbm_or_weight_allocation_failure
+  diagnostic_red_runtime: architecture_parser_operator_collective_or_request_failure
+  blocked_preflight: exact_core_environment_model_contract_or_dependency_allowlist_failure
+  blocked_resource: any_authorized_device_not_healthy_idle_or_visible
+boundaries:
+  - The official checkpoint is a mixed FP8 plus FP4-expert object, not pure FP8.
+  - A clean core preflight permits this probe but does not certify the cloned environment for unrelated profiling tools.
+  - Four-card success closes only the current runtime gate and does not authorize the eight-card context ladder or P6.
+  - Raw logs and large artifacts remain server-local.

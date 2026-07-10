@@ -126,3 +126,30 @@ boundaries:
   - Four-card success closes the current runtime gate but does not authorize or complete the eight-card 128K context ladder.
   - No P6 benchmark, profiler, A/B, offload, conversion or bottleneck claim is allowed.
   - Raw logs and large artifacts remain server-local.
+execution_result:
+  feedback_date: "2026-07-11"
+  reported_probe_grade: blocked_environment
+  first_failure_stage: pip_check_non_core_conflicts
+  environment_functionally_built: true
+  core_versions_match_contract: true
+  vllm_source_clean_at_expected_commit: true
+  supported_quantization_contains:
+    - fp8
+    - deepseek_v4_fp8
+  pip_check:
+    exit_code: 1
+    conflict_lines: 11
+    all_conflicts_preexisting_in_base_environment: true
+    dependent_packages:
+      - mindstudio-kpp
+      - ms-service-profiler
+      - te
+      - pyvers
+      - opencv-python-headless
+    involves_inference_core_packages: false
+  runtime_preflight_executed: false
+  model_load_started: false
+  runtime_profiles_executed: false
+  handoff_script_issue: function_local_set_e_leaked_to_caller_before_status_files_were_written
+  project_interpretation: target_core_stack_ready_for_bounded_runtime_probe_but_runtime_not_attempted_due_overbroad_dependency_gate
+  superseded_by: p5_4card_fp8_runtime_resume_probe.yaml

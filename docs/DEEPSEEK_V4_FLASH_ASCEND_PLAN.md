@@ -1,6 +1,6 @@
 # DeepSeek-V4-Flash on Ascend：P5-P9 专项计划
 
-日期：2026-07-10
+日期：2026-07-11
 
 ## 1. 专项目标
 
@@ -38,10 +38,10 @@ vLLM 0.22.1+empty
 vLLM-Ascend 0.22.1rc1
 triton-ascend 3.2.1
 transformers 5.5.4
-new isolated host conda environment pending server build
+new isolated host conda environment built; core versions and deepseek_v4_fp8 registration verified; model runtime pending
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但官方 checkpoint 在 `ModelConfig` 量化平台门失败。当前任务新建完全独立的 `0.22.1/0.22.1rc1` 环境；旧环境和源码保持不动。真实 DeepSeek DSA/MoE/MTP/EP/weight-load 路径仍未验证。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但官方 checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境现已建成，核心版本和 `deepseek_v4_fp8` 注册通过；首次任务因克隆前已存在的非核心辅助包 `pip check` 冲突被过宽硬门停止。当前只读复用该环境继续 runtime probe；真实 DeepSeek DSA/MoE/MTP/EP/weight-load 路径仍未验证。
 
 ### 3.2 对照路：MindIE
 
@@ -52,12 +52,12 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 当前先执行的前置诊断为：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710
+p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
 ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
 TP=4, EP=enabled, max_model_len=8192, max_num_seqs=1
 ```
 
-上一轮 `0.20.2rc1` 已得到 `diagnostic_red_quant_format`，且失败早于权重加载。当前诊断先构建 `0.22.1/0.22.1rc1` 独立栈，按 `base_no_mtp -> mtp_on after base success` 顺序运行；不显式传 `--quantization`，不使用 offload，不跑 128K ladder。W8A8 已退出项目执行。
+上一轮 `0.20.2rc1` 已得到 `diagnostic_red_quant_format`，且失败早于权重加载。`0.22.1/0.22.1rc1` 独立栈现已构建并通过量化注册门；当前诊断不再重建或修包，而是以核心 preflight 和已知辅助冲突白名单验收后，按 `base_no_mtp -> mtp_on after base success` 顺序继续运行；不显式传 `--quantization`，不使用 offload，不跑 128K ladder。W8A8 已退出项目执行。
 
 当前任务：
 

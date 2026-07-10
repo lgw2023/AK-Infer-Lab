@@ -18,12 +18,18 @@ def test_p5_readiness_card_targets_official_fp8_runtime_gate():
     card = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
 
     assert card["experiment_id"] == "p5_deepseek_v4_flash_official_fp8_runtime_gate"
-    assert card["scenario"] == "four_card_stack_upgrade_then_eight_card_context_smoke"
+    assert card["scenario"] == "four_card_runtime_resume_then_eight_card_context_smoke"
     assert card["target_runtime"]["container_or_conda"] == "host_conda"
     assert card["target_runtime"]["vllm_version"] == "0.22.1+empty"
     assert card["target_runtime"]["vllm_ascend_version"] == "0.22.1rc1"
     assert card["target_runtime"]["torch_npu_version"] == "2.10.0"
     assert card["prior_runtime_result"]["probe_grade"] == "diagnostic_red_quant_format"
+    assert card["latest_environment_result"]["reported_probe_grade"] == "blocked_environment"
+    assert card["latest_environment_result"]["environment_functionally_built"] is True
+    assert card["latest_environment_result"]["runtime_attempted"] is False
+    assert "built_core_versions" in card["target_runtime"]["runtime_status"]
+    assert card["authorized_runtime_gate"]["workload"] == "workloads/p5_4card_fp8_runtime_resume_probe.yaml"
+    assert card["authorized_runtime_gate"]["task_id"] == "p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711"
     assert card["authorized_runtime_gate"]["visible_devices"] == "4,5,6,7"
     assert card["authorized_runtime_gate"]["tp"] == 4
     assert card["authorized_runtime_gate"]["model_object_id"] == "deepseek_v4_flash_official_hf"
@@ -57,6 +63,8 @@ def test_model_registry_retires_w8a8_and_promotes_official_mixed_checkpoint():
     assert smaller["model_role"] == "project_primary_runtime_object"
     assert smaller["intended_runtime"]["runtime"] == "vllm_0_22_1_plus_vllm_ascend_0_22_1rc1"
     assert smaller["intended_runtime"]["reference_role"] == "project_primary_p5_runtime_and_future_p6_baseline_candidate"
+    assert "registration_passed_runtime_probe_pending" in smaller["server_inventory"]["inventory_status"]
+    assert "p5_4card_fp8_runtime_resume_probe" in smaller["expected_scenarios"]
 
     assert "The W8A8-MTP object is retired from future project execution and remains inventory-only." in registry["global_boundaries"]
 
@@ -126,6 +134,7 @@ def test_p5_four_card_fp8_stack_upgrade_probe_is_isolated_and_bounded():
     assert probe["model_object_id"] == "deepseek_v4_flash_official_hf"
     assert probe["target_runtime"]["vllm_commit"] == "0decac0d96c42b49572498019f0a0e3600f50398"
     assert probe["target_runtime"]["vllm_ascend_commit"] == "5f6faa0cb8830f667266f3b8121cd1383606f2a1"
+    assert probe["target_runtime"]["vllm_ascend_commit"] == "5f6faa0cb8830f667266f3b8121cd1383606f2a1"
     assert probe["target_runtime"]["vllm_expected_version"] == "0.22.1+empty"
     assert probe["target_runtime"]["vllm_ascend_expected_version"] == "0.22.1rc1"
     assert probe["target_runtime"]["torch_npu"] == "2.10.0"
@@ -139,12 +148,49 @@ def test_p5_four_card_fp8_stack_upgrade_probe_is_isolated_and_bounded():
     assert probe["profiles"][1]["run_only_if"] == "base_no_mtp_request_succeeds"
     assert probe["stop_policy"]["no_w8a8_checkpoint_attempt"] is True
     assert probe["stop_policy"]["no_source_patch"] is True
+    assert probe["execution_result"]["reported_probe_grade"] == "blocked_environment"
+    assert probe["execution_result"]["environment_functionally_built"] is True
+    assert probe["execution_result"]["pip_check"]["involves_inference_core_packages"] is False
+    assert probe["execution_result"]["runtime_profiles_executed"] is False
+    assert probe["execution_result"]["superseded_by"] == "p5_4card_fp8_runtime_resume_probe.yaml"
 
 
-def test_server_handoff_builds_isolated_fp8_capable_stack_then_runs_only_four_cards():
+def test_p5_four_card_fp8_runtime_resume_probe_reuses_core_stack_and_bounds_dependency_gate():
+    probe = load_yaml(BENCHMARK_DIR / "workloads" / "p5_4card_fp8_runtime_resume_probe.yaml")
+
+    assert probe["workload_id"] == "p5_deepseek_v4_flash_4card_fp8_runtime_resume_probe_v0221rc1"
+    assert probe["target_runtime"]["lifecycle"] == "reuse_read_only_no_rebuild_or_package_changes"
+    assert probe["target_runtime"]["vllm_commit"] == "0decac0d96c42b49572498019f0a0e3600f50398"
+    assert probe["environment_gate"]["full_pip_check"] == "diagnostic_not_global_hard_gate"
+    assert probe["environment_gate"]["block_on_any_unlisted_dependent_or_requirement_conflict"] is True
+    allowed = probe["environment_gate"]["allowed_preexisting_non_core_conflicts"]
+    assert set(allowed) == {
+        "mindstudio-kpp",
+        "ms-service-profiler",
+        "te",
+        "pyvers",
+        "opencv-python-headless",
+    }
+    assert set(allowed["ms-service-profiler"]) == {
+        "matplotlib",
+        "msguard",
+        "openpyxl",
+        "opentelemetry-exporter-otlp-proto-grpc",
+        "opentelemetry-exporter-otlp-proto-http",
+        "pandas",
+    }
+    assert probe["resource_gate"]["authorized_visible_devices"] == "4,5,6,7"
+    assert probe["runtime_reference"]["explicit_quantization_argument"] == "forbidden"
+    assert probe["runtime_reference"]["tensor_parallel_size"] == 4
+    assert [profile["name"] for profile in probe["profiles"]] == ["base_no_mtp", "mtp_on"]
+    assert probe["profiles"][1]["run_only_if"] == "base_no_mtp_request_succeeds"
+    assert probe["stop_policy"]["no_w8a8_checkpoint_attempt"] is True
+
+
+def test_server_handoff_reuses_fp8_capable_stack_then_runs_only_four_cards():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710" in handoff
+    assert "p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711" in handoff
     assert "当前任务" in handoff
     assert "vLLM-Ascend" in handoff
     assert "vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1" in handoff
@@ -175,7 +221,12 @@ def test_server_handoff_builds_isolated_fp8_capable_stack_then_runs_only_four_ca
     assert "base_failed_stop_no_fallback" in handoff
     assert "diagnostic_red_quant_format" in handoff
     assert "diagnostic_red_weight_load" in handoff
-    assert "blocked_environment" in handoff
+    assert "run_preflight() (" in handoff
+    assert "full_pip_check_is_diagnostic_known_non_core_conflicts_are_allowed" in handoff
+    assert "allowed_requirements" in handoff
+    assert "blocked_preflight" in handoff
+    assert "禁止 `conda create`、`pip install`" in handoff
+    assert '"${PYTHON_BIN}" -m pip install' not in handoff
     assert "base_no_mtp" in handoff
     assert "mtp_on" in handoff
     assert "不添加附件" in handoff

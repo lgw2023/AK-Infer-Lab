@@ -8,7 +8,7 @@
 
 ```text
 DeepSeek-V4-Flash on Ascend
-  → P5 单机八卡 W8A8-MTP 拉起与 128K smoke
+  → P5 官方 mixed FP8+FP4 checkpoint runtime gate 与八卡 128K smoke
   → P6 单机八卡 controlled baseline
   → 单卡/双卡极限硬件边界
   → P8 KV/Prefix + MoE Expert + StateObject 分层工程原型

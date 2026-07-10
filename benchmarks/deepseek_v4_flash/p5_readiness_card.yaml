@@ -1,9 +1,9 @@
 experiment_id: p5_deepseek_v4_flash_official_fp8_runtime_gate
-date: "2026-07-10"
+date: "2026-07-11"
 git_commit: server_fills_after_pull
 operator: external_development_machine
 server: atlas800t_a2_ascend_server
-scenario: four_card_stack_upgrade_then_eight_card_context_smoke
+scenario: four_card_runtime_resume_then_eight_card_context_smoke
 is_smoke: true
 is_benchmark: false
 model_objects:
@@ -13,7 +13,7 @@ model_objects:
     model_source: huggingface
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
     model_role: project_primary_runtime_and_future_p6_baseline_candidate
-    readiness_status: v0202_quant_gate_failed_v0221rc1_probe_ready
+    readiness_status: v0221rc1_core_stack_built_quant_registration_verified_runtime_probe_pending
   - model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
     model: DeepSeek-V4-Flash-w8a8-mtp
     model_variant: w8a8_mtp
@@ -28,6 +28,14 @@ prior_runtime_result:
   probe_grade: diagnostic_red_quant_format
   first_failure: deepseek_v4_fp8_quantization_is_currently_not_supported_in_npu
   first_failure_before_weight_load_hbm_or_mtp: true
+latest_environment_result:
+  task_id: p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710
+  reported_probe_grade: blocked_environment
+  first_failure_stage: pip_check_non_core_conflicts
+  environment_functionally_built: true
+  supported_quantization_registered: true
+  runtime_attempted: false
+  project_interpretation: core_stack_ready_full_pip_check_gate_was_overbroad
 target_runtime:
   container_or_conda: host_conda
   conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
@@ -41,10 +49,10 @@ target_runtime:
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
   triton_ascend_version: "3.2.1"
   transformers_version: "5.5.4"
-  runtime_status: isolated_environment_not_yet_server_validated
+  runtime_status: isolated_environment_built_core_versions_and_quant_registration_server_verified_runtime_not_yet_executed
 authorized_runtime_gate:
-  workload: workloads/p5_4card_fp8_stack_upgrade_probe.yaml
-  task_id: p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710
+  workload: workloads/p5_4card_fp8_runtime_resume_probe.yaml
+  task_id: p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
   model_object_id: deepseek_v4_flash_official_hf
   visible_devices: "4,5,6,7"
   tp: 4
@@ -80,7 +88,7 @@ features:
   kv_cpu_offload: planned_p8_not_p5
 metrics:
   required_for_current_gate:
-    - environment_build_and_pip_check_status
+    - reused_environment_core_preflight_and_pip_check_classification
     - runtime_versions_and_source_commits
     - supported_quantization_methods
     - server_startup_status_per_profile
@@ -95,7 +103,8 @@ metrics:
     - controlled_concurrency_baseline
 artifacts:
   model_registry: deepseek_v4_flash_model_objects.yaml
-  current_workload: workloads/p5_4card_fp8_stack_upgrade_probe.yaml
+  prior_environment_workload: workloads/p5_4card_fp8_stack_upgrade_probe.yaml
+  current_workload: workloads/p5_4card_fp8_runtime_resume_probe.yaml
   future_workload: workloads/p5_8card_context_ladder.yaml
   server_handoff: 通信模块/docs/developer-to-server.md
 status_grading:
@@ -105,7 +114,7 @@ status_grading:
 boundaries:
   - The project has retired the W8A8 checkpoint from future execution, but retains its inventory as historical evidence.
   - The official DeepSeek checkpoint is mixed FP8 plus FP4 experts, not pure FP8.
-  - vLLM-Ascend v0.22.1rc1 source support is a reason to probe, not proof of runtime success on this server.
+  - vLLM-Ascend v0.22.1rc1 core build and quantization registration permit this probe but do not prove model load or request success.
   - Four-card success does not authorize the future eight-card context ladder or P6 benchmark.
   - Raw logs and large artifacts remain on the server.
 acceptance:

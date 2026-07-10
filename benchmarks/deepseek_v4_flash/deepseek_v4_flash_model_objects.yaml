@@ -1,5 +1,5 @@
 schema_version: 1
-date: "2026-07-10"
+date: "2026-07-11"
 scope: p5_model_object_registry
 model_objects:
   - model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
@@ -40,14 +40,15 @@ model_objects:
       reference_role: project_primary_p5_runtime_and_future_p6_baseline_candidate
     model_role: project_primary_runtime_object
     server_inventory:
-      evidence_date: "2026-07-10"
+      evidence_date: "2026-07-11"
       shard_count: 46
       weight_bytes: 159617149040
       weight_gib: 148.66
-      inventory_status: continuous_shards_metadata_verified_v0202_quant_gate_failed_v0221rc1_probe_pending
+      inventory_status: continuous_shards_metadata_verified_v0221rc1_core_registration_passed_runtime_probe_pending
     expected_scenarios:
       - p5_readiness
       - p5_4card_fp8_stack_upgrade_probe
+      - p5_4card_fp8_runtime_resume_probe
       - p5_8card_context_ladder_smoke_after_separate_authorization
       - p6_eight_card_baseline_after_p5_success
       - p7_single_dual_extreme
@@ -56,7 +57,7 @@ model_objects:
     boundaries:
       - This is a mixed FP8 plus FP4-expert checkpoint, not pure FP8.
       - vLLM-Ascend 0.20.2rc1 rejected deepseek_v4_fp8 before weight load; that runtime is not retried.
-      - vLLM-Ascend 0.22.1rc1 registers fp8 and deepseek_v4_fp8 and contains the Ascend mixed-quantization schemes, but server runtime validation is still required.
+      - vLLM-Ascend 0.22.1rc1 is now built on the server and registers fp8 plus deepseek_v4_fp8, but model load and request validation are still required.
       - Do not pass --quantization ascend or rewrite checkpoint quantization metadata for this object.
 global_boundaries:
   - This registry does not copy, modify or validate model payloads.
