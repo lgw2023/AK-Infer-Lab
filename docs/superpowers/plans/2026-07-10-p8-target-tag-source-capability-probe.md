@@ -274,4 +274,4 @@ Expected: both comparisons return exit code 0.
   `git diff --check`**
 - [x] **Step 6: Record exact source statuses, target commits, artifact paths,
   static-evidence ceiling, and the still-closed adapter gate**
-- [ ] **Step 7: Commit the completed probe without issuing a server task**
+- [x] **Step 7: Commit the completed probe without issuing a server task**
