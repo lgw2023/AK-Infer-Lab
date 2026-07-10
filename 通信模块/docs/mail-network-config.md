@@ -1,6 +1,6 @@
 # 邮件与网络配置记录
 
-来源：2026-07-06 09:48 CST 服务器邮件，主题为 `[AK服务器] 本机邮件与网络代理配置说明`；2026-07-07 用户要求当前项目默认收件人改为单收件人，并补充昇腾服务器邮件/附件不超过 70KB 的通信上限。
+来源：2026-07-06 09:48 CST 服务器邮件，主题为 `[AK服务器] 本机邮件与网络代理配置说明`；2026-07-07 用户要求当前项目默认收件人改为单收件人，并补充昇腾服务器邮件/附件不超过 70KB 的通信上限；2026-07-10 用户要求把上传 API 纳入候选文件通道，并在每次传文件前确认所选方式。
 
 本文件只记录外部开发者可见、可用、可知的非密钥信息。SMTP 授权码、代理账号、代理密码只允许保存在昇腾服务器本地 `.env` 或服务器本机 proxychains 配置中，不写入 Git 仓库。
 
@@ -35,6 +35,20 @@ AK_COMM_MAIL_TO=yilili1023@gmail.com
 - 邮件只用于回传任务状态、精简摘要、小清单、少量样例、失败阶段和服务器侧路径。
 - 实验产生的大规模数据、raw profiler、完整日志、模型输出、实验目录和大 zip 都必须留在昇腾服务器上。
 - 外部开发者（本机）需要分析大数据时，应通过 `docs/developer-to-server.md` 下达新的服务器本地分析任务；服务器完成就地分析后，只回传 70KB 以内的摘要和路径。
+
+## 可选上传 API
+
+上传 API 只是在用户明确选择后的候选文件通道，不替代邮件状态消息，也不是默认方式。仓库只记录非密钥配置：
+
+```bash
+AK_COMM_UPLOAD_URL=https://upload.ultrahardcore.net/v1/files
+AK_COMM_UPLOAD_TOKEN=<上传 token，仅服务器本地 .env 保存>
+AK_COMM_UPLOAD_USE_PROXYCHAINS=1
+AK_COMM_UPLOAD_MAX_TIME=600
+AK_COMM_CURL_BIN=curl
+```
+
+实际命令由 `通信模块/upload_file.py` 生成。昇腾服务器受限网络默认复用本页的 `proxychains4` 路径；普通公网可由操作者在确认直连可用后加 `--no-proxy`。本地实现和 mock 测试不等于真实昇腾服务器已经验证该通路，首次服务器使用仍需在用户选择 `upload-api` 后运行小文件预检。
 
 ## 昇腾服务器代理边界
 
@@ -98,6 +112,12 @@ AK_NO_PROXY=localhost,127.0.0.1,::1,*.huawei.com,*.huaweicloud.com
 python3 通信模块/send_notify.py --show-config
 ```
 
+脱敏查看上传配置，不访问网络：
+
+```bash
+python3 通信模块/upload_file.py --show-config
+```
+
 发送测试邮件：
 
 ```bash
@@ -114,5 +134,7 @@ python3 通信模块/send_notify.py --test --no-proxy
 
 - 不提交 `.env`。
 - 不把 SMTP 授权码、代理账号、代理密码写入 README、任务交接文档、邮件模板、测试数据或工作笔记。
+- 不把上传 token 写入 README、任务交接、邮件、测试数据或工作笔记；只在服务器本地 `.env` 保存。
 - 不通过邮件发送超过 70KB 的正文或附件；大文件保留在昇腾服务器本地，通过路径和后续任务继续处理。
+- 任何文件附件或 API 上传前都要让用户在 `email`、`upload-api`、`server-local` 中明确选择；失败后重新确认，不自动换通道。
 - 如授权码或代理密码轮换，同步更新昇腾服务器本地 `.env` 与 `/etc/proxychains4.conf`，再通过脱敏邮件说明“已轮换”，不要邮件发送明文密钥。
