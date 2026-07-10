@@ -1,73 +1,116 @@
-experiment_id: p5_deepseek_v4_flash_readiness_draft
-date: "2026-07-08"
-git_commit: "<filled_after_commit>"
+experiment_id: p5_deepseek_v4_flash_8card_128k_smoke
+date: "2026-07-10"
+git_commit: server_fills_after_pull
 operator: external_development_machine
 server: atlas800t_a2_ascend_server
-scenario: p5_readiness
-is_smoke: false
+scenario: eight_card_vllm_startup_and_context_ladder_smoke
+is_smoke: true
 is_benchmark: false
 is_controlled_ab: false
-is_degraded_smoke: false
+is_degraded_smoke: conditional
 model_objects:
   - model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
     model: DeepSeek-V4-Flash-w8a8-mtp
     model_variant: w8a8_mtp
     model_source: modelscope
     local_source_path: /Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp
-    server_model_path: "<to_be_filled_after_user_copy>"
-    model_role: official_baseline
-    readiness_status: local_downloaded_server_path_pending
+    server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+    model_role: official_baseline_runtime_candidate
+    readiness_status: server_path_provided_for_p5_8card_smoke
   - model_object_id: deepseek_v4_flash_official_hf
     model: deepseek-ai/DeepSeek-V4-Flash
     model_variant: fp4_fp8_mixed_source_checkpoint
     model_source: huggingface
     local_source_path: /Volumes/Elements/DeepSeek-V4-Flash
-    server_model_path: "<to_be_filled_after_user_copy>"
-    model_role: source_checkpoint_readiness
-    readiness_status: local_downloading_server_path_pending
+    server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+    model_role: source_checkpoint_readiness_and_conversion_candidate
+    readiness_status: metadata_only_not_runtime_baseline
 runtime:
-  container_or_conda: "<to_be_selected>"
-  cann_version: "<server_check_required>"
-  torch_npu_version: "<server_check_required>"
-  vllm_ascend_version: "<server_check_required>"
-  runtime_source: "<image_or_conda_path_required>"
+  container_or_conda: host_conda
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab
+  python_version: "3.11.15"
+  cann_version: "9.0.0"
+  torch_npu_version: "2.9.0.post2"
+  vllm_ascend_version: "0.18.0"
+  runtime_source: existing_server_host_environment
 parallelism:
   tp: 8
-  ep: enabled_for_p6_reference
+  ep: enabled
+  dp: 1
+  pp: 1
   single_dual_card_boundary: p7_only
 features:
-  prefix_cache: planned_ab
-  chunked_prefill: planned_ab
-  mtp: planned_ab
-  kv_cpu_offload: planned_p8
-  ucm: planned_p8
-  kv_pool_mooncake: later_p8_candidate
+  prefix_cache: enabled_for_reference_startup
+  chunked_prefill: enabled_for_reference_startup
+  mtp: enabled_first_then_disabled_only_as_degraded_fallback
+  async_scheduling: enabled_for_reference_startup
+  cpu_binding: enabled_for_reference_startup
+  kv_cpu_offload: planned_p8_not_p5
+  ucm: planned_p8_not_p5
+  kv_pool_mooncake: later_p8_candidate_not_p5
 workload:
-  first_template: workloads/fixed_output_smoke.yaml
+  manifest: workloads/p5_8card_context_ladder.yaml
+  max_model_len: 135168
+  context_ladder_tokens:
+    - 4096
+    - 32768
+    - 65536
+    - 98304
+    - 131072
   output_tokens: 64
-  generated_length_control: required
+  generated_length_control: min_tokens_64_ignore_eos_true
+  success_target: highest_possible_context_with_goal_131072_plus_64
+degrade_policy:
+  max_num_seqs_order:
+    - 16
+    - 4
+    - 1
+  disable_mtp_after_max_num_seqs_exhausted: true
+  keep_fixed:
+    - max_model_len_135168_until_request_level_context_failure_is_observed
+    - tensor_parallel_size_8
+    - enable_expert_parallel
+    - quantization_ascend
+    - enable_prefix_caching
+    - enable_chunked_prefill
+  degraded_smoke_if:
+    - max_num_seqs_below_16
+    - mtp_disabled
+    - highest_successful_context_below_131072
 metrics:
-  required_before_claiming_benchmark:
-    - request_success
+  required_for_p5_smoke:
+    - server_startup_status
+    - health_endpoint_ready
+    - per_context_request_status
     - fixed_generated_tokens
+    - ttft_tpot_e2e_client_timing
     - server_command
-    - server_stats
+    - server_stats_log_summary
+    - npu_hbm_used_free_snapshot
+    - failure_reason_and_artifact_path
+  deferred_until_p6:
     - msprof
     - request_device_aggregate
-    - known_confounds
+    - controlled_concurrency_baseline
+    - prefix_chunked_mtp_ab
 artifacts:
   model_registry: deepseek_v4_flash_model_objects.yaml
-  workload_manifest: workloads/fixed_output_smoke.yaml
+  workload_manifest: workloads/p5_8card_context_ladder.yaml
   server_handoff: 通信模块/docs/developer-to-server.md
+  expected_server_output_root: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_8card_128k_smoke_2026_0710
+status_grading:
+  green: reference_flags_include_mtp_and_131072_plus_64_success
+  yellow: startup_and_some_inference_success_but_degraded_or_below_131072
+  red: no_8card_startup_or_no_successful_request
 boundaries:
-  - This card is a draft and does not start a server task.
-  - Server paths must be filled after the user copies model directories.
-  - P0/P3 hardware ceiling and P1.28 raw counter readout must not be rerun for this card.
-  - P0/P3 is synthetic hardware microbench, not model inference benchmark.
-  - P1.28 is raw counter readout, not throughput, scheduler efficiency, prefix cache acceptance, bottleneck attribution or optimization advice.
+  - P5 is now an eight-card DeepSeek-V4-Flash startup and long-context smoke, not metadata-only readiness.
+  - P5 is still not a benchmark and must not produce bottleneck or optimization-benefit claims.
+  - The Hugging Face source checkpoint is metadata/source evidence only for this round.
+  - If any official startup flag is removed or max_num_seqs is lowered, the result is degraded_smoke.
+  - Raw logs, generated text, profiler output and large artifacts remain on the server.
 acceptance:
-  source_versions_recorded: false
-  server_model_paths_filled: false
-  runtime_versions_filled: false
+  source_versions_recorded: true
+  server_model_paths_filled: true
+  runtime_versions_filled: true
   workload_fixed_output_defined: true
-  developer_to_server_ready: false
+  developer_to_server_ready: true
