@@ -1,11 +1,15 @@
 .DS_Store
-AGENTS.md
+
+# Machine-local agent rules. The development machine and Ascend server keep
+# independent physical copies; never commit or synchronize them through Git.
+/AGENTS.md
+/CLAUDE.md
 .env
 .conda/
 server_local/
 __pycache__/
 .pytest_cache/
 
-# Local shallow clones used only as code-reading references.
-/reference_repos/*
+# Third-party reference source trees for P8 code reading; never vendor them.
+/reference_repos/**
 !/reference_repos/README.md
