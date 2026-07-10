@@ -16,7 +16,7 @@
 ## 文件说明
 
 - `send_notify.py`：服务器侧发信脚本，默认使用 `smtp.163.com:465`，并在昇腾服务器上通过 `proxychains4` 发信。
-- `upload_file.py`：用户选择 `upload-api` 后使用的单文件检查/上传工具；支持脱敏配置、100MB 默认保护、HTTP 201 与 SHA-256 双校验。
+- `upload_file.py`：用户选择 `upload-api` 后使用的单文件检查/上传工具；支持脱敏配置、100MB 默认保护、HTTP 201 与 SHA-256 双校验；2026-07-10 已在真实昇腾服务器通过 proxychains4 完成预检和首个汇总文件回传。
 - `docs/developer-to-server.md`：开发机写给服务器读取的消息模板。
 - `docs/server-to-developer.md`：服务器邮件通知的主题和正文模板。
 - `docs/file-transfer-policy.md`：三种文件传输方式、用户确认模板、上传命令和失败边界。

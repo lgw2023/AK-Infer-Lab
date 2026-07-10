@@ -46,6 +46,16 @@ parallelism:
   single_dual_card_boundary: p7_only
   required_visible_devices: "0,1,2,3,4,5,6,7"
   resource_gate: waiting_user_confirmed_eight_card_scope
+authorized_diagnostic_probe:
+  workload: workloads/p5_4card_startup_probe.yaml
+  task_id: p5_deepseek_v4_flash_4card_startup_probe_v0202_2026_0710
+  visible_devices: "4,5,6,7"
+  tp: 4
+  max_model_len: 8192
+  max_num_seqs: 1
+  role: runtime_compatibility_and_capacity_probe_not_canonical_p5
+  developer_to_server_ready: true
+  canonical_eight_card_gate_unchanged: true
 features:
   prefix_cache: enabled_for_reference_startup
   chunked_prefill: enabled_for_reference_startup

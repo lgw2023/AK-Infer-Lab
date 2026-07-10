@@ -32,18 +32,32 @@ DeepSeek-V4-Flash 的模型规格和量化事实以 `docs/SOURCES_AND_BOUNDARIES
 ```text
 Python 3.11.15
 CANN 9.0.0
-torch_npu 2.9.0.post2
-vLLM-Ascend 0.18.0
-host conda environment
+torch 2.10.0+cpu
+torch_npu 2.10.0
+vLLM 0.20.2+empty
+vLLM-Ascend 0.20.2rc1
+triton-ascend 3.2.1
+transformers 5.5.3
+isolated host conda environment
 ```
 
-P5/P6 优先使用这条已存在的宿主机路径，不在当前阶段切换容器或升级包。
+新隔离环境已以 Qwen2.5-3B-Instruct 完成纯注意力端到端 smoke，但真实 DeepSeek DSA/MoE/MTP/EP/W8A8 路径仍未验证。P5/P6 固定使用该宿主机隔离环境，不在当前阶段切换容器或升级包。
 
 ### 3.2 对照路：MindIE
 
 MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务器体检把 `mindie_version` 记为 unknown，package inventory 记录 `mindie=missing`。只有用户另行确认可用环境、版本和模型支持后，才创建 MindIE 对照实验；不得在 P5/P6 vLLM 基线任务中顺带安装。
 
 ## 4. P5：八卡拉起与 128K Context Ladder
+
+当前先执行的前置诊断为：
+
+```text
+p5_deepseek_v4_flash_4card_startup_probe_v0202_2026_0710
+ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
+TP=4, EP=enabled, max_model_len=8192, max_num_seqs=1
+```
+
+该诊断只固定新运行时的首失败点，不使用 offload，不跑 128K ladder，不改 canonical 八卡 P5 状态门。约 `279.41 GiB` canonical 权重大于四卡约 `256 GiB` 原始 HBM，因此容量失败是强预期。
 
 当前任务：
 

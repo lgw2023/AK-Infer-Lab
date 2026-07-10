@@ -22,6 +22,7 @@ P5 deliverables:
 - `deepseek_v4_flash_model_objects.yaml`: model object registry and boundaries.
 - `p5_readiness_card.yaml`: eight-card startup and 128K context-ladder smoke card.
 - `workloads/p5_8card_context_ladder.yaml`: fixed-output context ladder from 4K through 128K.
+- `workloads/p5_4card_startup_probe.yaml`: authorized NPU 4-7 TP4 startup/capacity diagnostic; it cannot satisfy the canonical eight-card P5 gate.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:

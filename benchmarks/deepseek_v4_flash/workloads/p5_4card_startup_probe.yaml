@@ -1,0 +1,84 @@
+schema_version: 1
+workload_id: p5_deepseek_v4_flash_4card_startup_probe_v0202
+date: "2026-07-10"
+purpose: expose_the_first_real_deepseek_v4_failure_on_the_authorized_four_card_scope
+model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+scenario: four_card_runtime_compatibility_and_capacity_probe
+is_smoke: true
+is_benchmark: false
+is_canonical_p5: false
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
+  vllm: "0.20.2+empty"
+  vllm_ascend: "0.20.2rc1"
+  torch: "2.10.0+cpu"
+  torch_npu: "2.10.0"
+  triton_ascend: "3.2.1"
+  transformers: "5.5.3"
+resource_gate:
+  authorized_visible_devices: "4,5,6,7"
+  expected_visible_device_count: 4
+  all_authorized_devices_must_be_healthy_and_idle: true
+  any_other_device_forbidden: true
+capacity_prior:
+  canonical_weight_size_gib: 279.41
+  four_card_raw_hbm_gib: 256
+  expected_fit: unlikely_before_runtime_overhead
+  proceed_once_despite_prior: true
+runtime_reference:
+  command: vllm serve
+  tensor_parallel_size: 4
+  enable_expert_parallel: true
+  data_parallel_size: 1
+  max_model_len: 8192
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  gpu_memory_utilization: 0.92
+  quantization: ascend
+  tokenizer_mode: deepseek_v4
+  tool_call_parser: deepseek_v4
+  reasoning_parser: deepseek_v4
+  enable_auto_tool_choice: true
+  block_size: 128
+  enforce_eager: true
+  mlapo: disabled_to_reduce_four_card_diagnostic_memory
+  cpu_offload_gb: 0
+  additional_config:
+    enable_flashcomm1: true
+    enable_dsa_cp: true
+    enable_mlapo: false
+    enable_cpu_binding: true
+    multistream_overlap_shared_expert: false
+  speculative_mtp:
+    first_attempt: enabled
+    num_speculative_tokens: 1
+    method: mtp
+    enforce_eager: true
+request_plan:
+  run_only_if_server_health_is_ready: true
+  request_count: 1
+  input_tokens: 4096
+  output_tokens: 64
+  temperature: 0.0
+  min_tokens: 64
+  max_tokens: 64
+  ignore_eos: true
+fallback_policy:
+  mtp_off_only_after_explicit_mtp_failure: true
+  stop_after_capacity_failure: true
+  no_max_num_seqs_ladder: true
+  no_context_ladder: true
+  no_cpu_or_disk_offload: true
+grading:
+  diagnostic_green: four_card_server_ready_and_4096_plus_64_success
+  diagnostic_yellow: server_ready_but_request_failed_or_only_no_mtp_profile_succeeded
+  diagnostic_red_expected_capacity: startup_failed_at_weight_or_hbm_capacity
+  diagnostic_red_runtime: startup_failed_before_capacity_at_architecture_parser_kernel_or_runtime
+  blocked_resource: any_authorized_device_not_healthy_idle_or_visible
+boundaries:
+  canonical_p5_eight_card_gate_unchanged: true
+  canonical_p5_green_cannot_be_earned_by_this_probe: true
+  four_card_failure_cannot_be_extrapolated_to_eight_cards: true
+  no_p6_benchmark_msprof_ab_or_bottleneck_claim: true
+  raw_logs_and_large_artifacts_remain_server_local: true

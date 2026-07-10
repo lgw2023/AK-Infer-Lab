@@ -13,13 +13,13 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-当前服务器任务为：
+当前服务器任务为 canonical P5 前置诊断：
 
 ```text
-p5_deepseek_v4_flash_8card_128k_smoke_2026_0710
+p5_deepseek_v4_flash_4card_startup_probe_v0202_2026_0710
 ```
 
-P5 已从 readiness-only 调整为 W8A8-MTP 八卡拉起与 128K context ladder smoke。`通信模块/docs/developer-to-server.md` 已是当前可执行 handoff，本轮计划更新不改写该文件。
+P5 已从 readiness-only 调整为 W8A8-MTP 八卡拉起与 128K context ladder smoke。由于当前只授权 NPU 4-7，先用 TP4/EP、8K 配置上限和单个 4K+64 请求固定新运行时首失败点。`通信模块/docs/developer-to-server.md` 已是该四卡诊断的当前可执行 handoff。
 
 ## 2. 阶段依赖
 
@@ -123,6 +123,14 @@ max_num_seqs 16 -> 4 -> 1 -> disable MTP
 | `green` | MTP 保持开启，八卡 ready，`131072+64` 成功 | 进入 P6.0 baseline freeze |
 | `yellow` | 八卡至少一个请求成功，但发生降级或未达 131072 | 只进入 P6.0 stabilization；修复前不称 official baseline |
 | `red` | 八卡不能 ready 或无请求成功 | 留在 P5 remediation；P7 工具链预研可继续 |
+
+### 4.4 当前四卡前置诊断
+
+- 授权范围：`ASCEND_RT_VISIBLE_DEVICES=4,5,6,7`；不得扩大到其他 NPU。
+- 配置：TP4/EP、`max_model_len=8192`、`max_num_seqs=1`、eager mode、无 CPU/NVMe/KV offload。
+- 容量先验：约 `279.41 GiB` canonical 权重大于四卡约 `256 GiB` 原始 HBM；容量失败即停，不用 offload 改变问题。
+- 请求：server ready 时只执行一个 `4096+64`；不跑 context ladder。
+- 证据上限：四卡成功不能使 canonical P5 判绿，四卡失败不能外推为八卡失败。
 
 P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化收益。
 

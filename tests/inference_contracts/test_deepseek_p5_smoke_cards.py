@@ -27,6 +27,10 @@ def test_p5_readiness_card_targets_eight_card_128k_smoke():
     assert card["parallelism"]["ep"] == "enabled"
     assert card["parallelism"]["required_visible_devices"] == "0,1,2,3,4,5,6,7"
     assert card["parallelism"]["resource_gate"] == "waiting_user_confirmed_eight_card_scope"
+    assert card["authorized_diagnostic_probe"]["visible_devices"] == "4,5,6,7"
+    assert card["authorized_diagnostic_probe"]["tp"] == 4
+    assert card["authorized_diagnostic_probe"]["developer_to_server_ready"] is True
+    assert card["authorized_diagnostic_probe"]["canonical_eight_card_gate_unchanged"] is True
     assert card["workload"]["context_ladder_tokens"] == [4096, 32768, 65536, 98304, 131072]
     assert card["workload"]["output_tokens"] == 64
 
@@ -57,15 +61,50 @@ def test_p5_context_ladder_workload_preserves_official_startup_flags_and_degrade
     assert workload["degrade_policy"]["disable_mtp_after_max_num_seqs_exhausted"] is True
 
 
-def test_server_handoff_waits_for_eight_card_scope_without_reissuing_p5():
+def test_p5_four_card_startup_probe_is_bounded_capacity_diagnostic():
+    probe = load_yaml(BENCHMARK_DIR / "workloads" / "p5_4card_startup_probe.yaml")
+
+    assert probe["workload_id"] == "p5_deepseek_v4_flash_4card_startup_probe_v0202"
+    assert probe["scenario"] == "four_card_runtime_compatibility_and_capacity_probe"
+    assert probe["resource_gate"]["authorized_visible_devices"] == "4,5,6,7"
+    assert probe["runtime_reference"]["tensor_parallel_size"] == 4
+    assert probe["runtime_reference"]["enable_expert_parallel"] is True
+    assert probe["runtime_reference"]["max_model_len"] == 8192
+    assert probe["runtime_reference"]["max_num_seqs"] == 1
+    assert probe["runtime_reference"]["additional_config"]["enable_flashcomm1"] is True
+    assert probe["runtime_reference"]["additional_config"]["enable_dsa_cp"] is True
+    assert probe["runtime_reference"]["additional_config"]["enable_mlapo"] is False
+    assert probe["runtime_reference"]["cpu_offload_gb"] == 0
+    assert probe["request_plan"]["input_tokens"] == 4096
+    assert probe["request_plan"]["output_tokens"] == 64
+    assert probe["fallback_policy"]["mtp_off_only_after_explicit_mtp_failure"] is True
+    assert probe["fallback_policy"]["stop_after_capacity_failure"] is True
+    assert probe["boundaries"]["canonical_p5_eight_card_gate_unchanged"] is True
+
+
+def test_server_handoff_authorizes_only_bounded_four_card_startup_probe():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_8card_128k_smoke_retry_v0202_2026_0710" in handoff
-    assert "no_new_server_task_waiting_8card_scope_for_p5_retry_2026_0710" in handoff
-    assert "当前无新增服务器任务" in handoff
+    assert "p5_deepseek_v4_flash_4card_startup_probe_v0202_2026_0710" in handoff
+    assert "当前任务" in handoff
     assert "vLLM-Ascend" in handoff
     assert "0.20.2rc1" in handoff
-    assert "不要重跑" in handoff
-    assert "0,1,2,3,4,5,6,7" in handoff
+    assert "ASCEND_RT_VISIBLE_DEVICES=4,5,6,7" in handoff
+    assert "server_local/git_pull_remote_wins.sh" in handoff
+    assert "blocked_resource" in handoff
+    assert "--tensor-parallel-size 4" in handoff
+    assert "--max-model-len 8192" in handoff
+    assert "--max-num-seqs 1" in handoff
+    assert '"enable_flashcomm1":true' in handoff
+    assert '"enable_dsa_cp":true' in handoff
+    assert '"enable_mlapo":false' in handoff
+    assert "VLLM_ASCEND_APPLY_DSV4_PATCH=1" in handoff
+    assert "VLLM_ASCEND_ENABLE_MLAPO=0" not in handoff
+    assert "    --cpu-offload-gb" not in handoff
     assert "--tensor-parallel-size 8" not in handoff
+    assert "131072" not in handoff
+    assert "no_new_server_task_waiting_8card_scope_for_p5_retry_2026_0710" not in handoff
+    assert "capacity_failure_stop_no_retry" in handoff
+    assert "不添加附件" in handoff
+    assert "不执行 upload-api" in handoff
     assert "runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031" not in handoff
