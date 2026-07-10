@@ -1,6 +1,6 @@
 # Sources and Boundaries
 
-本文档记录 AK-Infer-Lab DeepSeek-V4-Flash 专项的事实来源、项目内证据和边界。DeepSeek 模型与 vLLM-Ascend v0.18.0 部署事实校验时间为 2026-07-08；术语来源映射和 P8 runtime capability 候选于 2026-07-10 复核。
+本文档记录 AK-Infer-Lab DeepSeek-V4-Flash 专项的事实来源、项目内证据和边界。DeepSeek 模型与 vLLM-Ascend v0.18.0 部署事实于 2026-07-08 校验，并在 P5 首轮中形成不兼容的历史证据；2026-07-10 已登记 `vLLM 0.20.2 / vLLM-Ascend 0.20.2rc1 / CANN 9.0.0 / PyTorch 2.10.0 / torch-npu 2.10.0 / triton-ascend 3.2.1` 目标开发栈，尚待服务器升级回传。
 
 术语与字段命名优先级为：`AK 协同/` 内的官方文档 / 框架资料 / benchmark 输出字段 > 本地系统论文中的通用表达 > 项目内中文解释。项目内可使用“状态底座”或“热/温/冷层”帮助阅读，但首次出现时必须对齐 External KV Cache / state-object management 以及 HBM / DRAM / SSD-NVMe tier 等可检索术语，并注明来源类型和适用边界。若 `AK 协同/` 内找不到对应来源，只能标记为“项目内解释”或“待来源对齐”，不能包装成领域标准名词。
 
@@ -27,10 +27,12 @@
 | --- | --- | --- |
 | [DeepSeek-V4-Flash Hugging Face model card](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash) | 模型规格 | 284B total parameters、13B activated parameters、1M context、FP4+FP8 Mixed；MoE expert parameters 使用 FP4，多数其他参数使用 FP8。 |
 | [vLLM-Ascend DeepSeek-V4-Flash tutorial v0.18.0](https://docs.vllm.ai/projects/ascend/en/v0.18.0/tutorials/models/DeepSeek-V4-Flash.html) | Ascend 官方部署基线 | `DeepSeek-V4-Flash-w8a8-mtp`，1 台 Atlas 800 A2 64GB×8 或 Atlas 800 A3 128GB×8；部署命令包含 TP、EP、`--quantization ascend`、prefix cache、chunked prefill、MTP speculative config 等要素。 |
+| [vLLM tag v0.20.2](https://github.com/vllm-project/vllm/tree/v0.20.2) | 目标开发基线 | 官方 tag commit `bc150f50299199599673614f80d12a196f377655`；已取回到本地滚动 `vllm/` shallow checkout。 |
+| [vLLM-Ascend tag v0.20.2rc1](https://github.com/vllm-project/vllm-ascend/tree/v0.20.2rc1) | Ascend 目标开发基线 | 官方 tag commit `367b8e62da799870a7476ce34f5f7658589a8aad`；已取回到本地滚动 `vllm-ascend/` shallow checkout，不代表服务器升级成功。 |
 | [vLLM-Ascend KV Cache CPU Offload guide](https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/kv_cache_cpu_offload.html) | DRAM warm tier 候选 | inactive KV blocks 从 NPU memory offload 到 CPU memory；基于 `OffloadingConnector` 和 `NPUOffloadingSpec`；D2H/H2D 使用独立 NPU streams。 |
 | [vLLM-Ascend UCM Store guide](https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/ucm_deployment.html) | external KV / prefix cache 候选 | UCM 面向 prefix cache 的外部 KV storage layer，采用 HBM → DRAM → SSD/NFS/3FS hierarchy，并支持 vLLM/vLLM-Ascend 与 CANN/Atlas A2/A3 平台。 |
 | [vLLM-Ascend KV Cache Pool guide](https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/kv_pool.html) | Mooncake/KV pool 候选 | AscendStoreConnector / MooncakeBackend、embedded client、SSD offload、SSD quota、per-rank buffer 和 eviction policy 等部署约束。 |
-| [vLLM-Ascend EPLB guide](https://docs.vllm.ai/projects/ascend/en/latest/user_guide/feature_guide/eplb_swift_balancer.html) | expert hotness / placement 候选 | 最新文档包含 recording、static map、redundant expert 和 placement 配置；执行前必须在服务器 0.18.0 做 capability probe，且不能解释为 expert offload。 |
+| [vLLM-Ascend EPLB guide](https://docs.vllm.ai/projects/ascend/en/latest/user_guide/feature_guide/eplb_swift_balancer.html) | expert hotness / placement 候选 | 最新文档包含 recording、static map、redundant expert 和 placement 配置；执行前必须在服务器目标 0.20.2rc1 运行时做 capability probe，且不能解释为 expert offload。 |
 | [MindIE 2.3 Prefix Cache](https://www.hiascend.com/document/detail/zh/mindie/230/mindiellm/llmdev/mindie_llm0302.html) | MindIE 对照候选 | 官方页面记录跨 session prefix reuse 与支持/组合约束；当前服务器尚无 MindIE 可用性证据。 |
 | [MindIE 2.3 KV Cache 池化](https://www.hiascend.com/document/detail/zh/mindie/230/mindiellm/llmdev/mindie_llm0538.html) | MindIE DRAM pool 对照候选 | 官方页面说明当前该版本仅支持 DRAM 池化；不证明本项目 server/model 组合可运行。 |
 | [MindIE 2.3 冗余专家部署表](https://www.hiascend.com/document/detail/zh/mindie/230/mindiellm/llmdev/mindie_llm0431.html) | expert hotness / static placement 对照候选 | 官方页面记录热点采集和冗余专家部署表生成；不等于动态 warm/cold expert offload。 |
@@ -59,7 +61,7 @@
 ## 3. 不确定性与边界
 
 - DeepSeek-V4-Flash 的来源和量化形态必须分开登记：P6 八卡基准首选 ModelScope `DeepSeek-V4-Flash-w8a8-mtp`；`deepseek-ai/DeepSeek-V4-Flash` 先作为官方来源、版本对照和转换/兼容性对象。
-- vLLM-Ascend `main` 文档和 stable `v0.18.0` 文档可能存在差异；正式服务器任务必须在 handoff 中固定版本、镜像、commit 或文档 URL。
+- vLLM/vLLM-Ascend `main` 只用于跟踪最新代码；当前一方开发起点分别是 `v0.20.2@bc150f5` 和 `v0.20.2rc1@367b8e6`。正式服务器任务必须在 handoff 中固定版本、镜像、commit 或文档 URL，不能照抄 `main` 参数。
 - 官方教程列出 Atlas 800 A2/A3；本项目服务器是 Atlas 800T A2，必须用服务器 smoke 证明实际兼容性。
 - 单卡/双卡极限实验不等同于官方模型可部署。
 - KV CPU Offload、UCM、Mooncake、LMCache 的思想可以迁移，但具体收益必须由本机 trace 证明。

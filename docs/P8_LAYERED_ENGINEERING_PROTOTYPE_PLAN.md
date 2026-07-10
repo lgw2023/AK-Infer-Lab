@@ -20,18 +20,33 @@ P8 的目标是建立一个**分层工程原型**：
 
 | 项目 | 当前证据 | P8 解释 |
 | --- | --- | --- |
-| vLLM-Ascend | `obs_2026_0705_atlas800t_a2_006` 记录 `vllm_ascend_version=0.18.0`；P1 已跑通 vLLM OpenAI API 和 Prefix Cache A/B | 当前主运行底座 |
+| vLLM-Ascend | P1 在 `0.18.0` 上跑通 Qwen/vLLM 观测链路；P5 DeepSeek-V4 首轮在该版本为 RED；服务器正在升级目标栈 | `0.18.0` 只作历史证据；`0.20.2rc1` 是目标主运行底座，尚待服务器回传 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
-| DeepSeek-V4-Flash | P5 正在按 W8A8-MTP 八卡与 128K context ladder smoke 交接 | P8 不绕过 P5/P6 直接修改模型执行路径 |
+| DeepSeek-V4-Flash | P5 首轮未进入请求阶段，当前等待 `0.20.2/0.20.2rc1` 隔离运行时升级回传 | P8 不绕过 P5/P6 直接修改模型执行路径 |
 | KV/Prefix object trace | 当前有 server stats proxy、phase memory、H2D/D2H microbench 和统一事件契约 | 尚无 object bytes、真实 hit/miss、restore/recompute 闭环 |
 | Expert trace | 当前无 DeepSeek-V4-Flash router top-k / per-expert trace 闭环 | P8.3 必须先观测，再谈分层 |
 | SSD cold tier | 已有 fio envelope | 只能校准冷层；不能证明逐 token restore 可用 |
 
-### 2.2 框架能力只先登记为候选
+### 2.2 后续自研的目标开发基线
+
+```text
+vLLM             0.20.2        tag v0.20.2@bc150f5
+vLLM-Ascend      0.20.2rc1     tag v0.20.2rc1@367b8e6
+CANN              9.0.0
+PyTorch           2.10.0
+torch-npu         2.10.0
+triton-ascend     3.2.1
+```
+
+`reference_repos/vllm/` 与 `reference_repos/vllm-ascend/` 继续跟踪最新 `main`，上述两个标签已取回到各自 shallow 仓库，不再保留并行的 `vllm-ascend-v0.18.0/` 目录。后续一方修改应在 `reference_repos/` 之外从两个标签 commit 创建开发分支；不直接在被忽略的第三方参考树中积累项目代码。
+
+这套版本当前是 `target / upgrade_in_progress`，不是本机安装证据，也不是服务器升级成功证据。P8.0 仍需记录服务器精确版本、commit、DeepSeek-V4 注册、MTP/parser 入口与 capability probe 结果。
+
+### 2.3 框架能力只先登记为候选
 
 截至 2026-07-10，vLLM-Ascend 最新官方资料包含 KV Cache CPU Offload、UCM Store、KV Cache Pool、EPLB 和 Weight Prefetch 等入口；MindIE 2.3 官方资料包含 Prefix Cache、KV Cache 池化、专家热点采集和冗余专家部署等机制。但是：
 
-- 最新官方文档不等于服务器 `vLLM-Ascend 0.18.0` 已包含同一接口和参数。
+- 最新 `main` 文档不等于目标 `vLLM-Ascend 0.20.2rc1` 标签包含同一接口和参数，更不等于服务器已升级成功。
 - 官方功能存在不等于它支持 DeepSeek-V4-Flash W8A8-MTP、当前 CANN 版本和本项目 workload 组合。
 - MindIE 官方能力存在不等于当前服务器已安装 MindIE，也不授权本轮安装或升级。
 - vLLM-Ascend Weight Prefetch 是设备侧权重/L2 预取优化入口，不等于 CPU/SSD 专家卸载框架。
