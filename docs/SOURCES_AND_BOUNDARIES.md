@@ -1,6 +1,6 @@
 # Sources and Boundaries
 
-本文档记录 AK-Infer-Lab DeepSeek-V4-Flash 专项的事实来源、项目内证据和边界。DeepSeek 模型与 vLLM-Ascend v0.18.0 部署事实于 2026-07-08 校验，并在 P5 首轮中形成不兼容的历史证据；2026-07-10 已登记 `vLLM 0.20.2 / vLLM-Ascend 0.20.2rc1 / CANN 9.0.0 / PyTorch 2.10.0 / torch-npu 2.10.0 / triton-ascend 3.2.1` 目标开发栈，尚待服务器升级回传。
+本文档记录 AK-Infer-Lab DeepSeek-V4-Flash 专项的事实来源、项目内证据和边界。DeepSeek 模型与 vLLM-Ascend v0.18.0 部署事实于 2026-07-08 校验，并在 P5 首轮中形成不兼容的历史证据；2026-07-10 服务器已构建 `vLLM 0.20.2 / vLLM-Ascend 0.20.2rc1 / CANN 9.0.0 / PyTorch 2.10.0 / torch-npu 2.10.0 / triton-ascend 3.2.1` 隔离栈，并以 Qwen2.5-3B-Instruct 完成纯注意力端到端 smoke。该结果证明通用 Ascend/vLLM 链路，不证明 DeepSeek DSA/MTP/TP8/EP/W8A8 路径。
 
 术语与字段命名优先级为：`AK 协同/` 内的官方文档 / 框架资料 / benchmark 输出字段 > 本地系统论文中的通用表达 > 项目内中文解释。项目内可使用“状态底座”或“热/温/冷层”帮助阅读，但首次出现时必须对齐 External KV Cache / state-object management 以及 HBM / DRAM / SSD-NVMe tier 等可检索术语，并注明来源类型和适用边界。若 `AK 协同/` 内找不到对应来源，只能标记为“项目内解释”或“待来源对齐”，不能包装成领域标准名词。
 
@@ -28,7 +28,7 @@
 | [DeepSeek-V4-Flash Hugging Face model card](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash) | 模型规格 | 284B total parameters、13B activated parameters、1M context、FP4+FP8 Mixed；MoE expert parameters 使用 FP4，多数其他参数使用 FP8。 |
 | [vLLM-Ascend DeepSeek-V4-Flash tutorial v0.18.0](https://docs.vllm.ai/projects/ascend/en/v0.18.0/tutorials/models/DeepSeek-V4-Flash.html) | Ascend 官方部署基线 | `DeepSeek-V4-Flash-w8a8-mtp`，1 台 Atlas 800 A2 64GB×8 或 Atlas 800 A3 128GB×8；部署命令包含 TP、EP、`--quantization ascend`、prefix cache、chunked prefill、MTP speculative config 等要素。 |
 | [vLLM tag v0.20.2](https://github.com/vllm-project/vllm/tree/v0.20.2) | 目标开发基线 | 官方 tag commit `bc150f50299199599673614f80d12a196f377655`；已取回到本地滚动 `vllm/` shallow checkout。 |
-| [vLLM-Ascend tag v0.20.2rc1](https://github.com/vllm-project/vllm-ascend/tree/v0.20.2rc1) | Ascend 目标开发基线 | 官方 tag commit `367b8e62da799870a7476ce34f5f7658589a8aad`；已取回到本地滚动 `vllm-ascend/` shallow checkout，不代表服务器升级成功。 |
+| [vLLM-Ascend tag v0.20.2rc1](https://github.com/vllm-project/vllm-ascend/tree/v0.20.2rc1) | Ascend 目标开发基线 | 官方 tag commit `367b8e62da799870a7476ce34f5f7658589a8aad`；已取回到本地滚动 `vllm-ascend/` shallow checkout，服务器已验证同版本隔离环境的 Qwen 纯注意力链路，但 DeepSeek-V4 八卡路径仍待 P5。 |
 | [vLLM-Ascend KV Cache CPU Offload guide](https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/kv_cache_cpu_offload.html) | DRAM warm tier 候选 | inactive KV blocks 从 NPU memory offload 到 CPU memory；基于 `OffloadingConnector` 和 `NPUOffloadingSpec`；D2H/H2D 使用独立 NPU streams。 |
 | [vLLM-Ascend UCM Store guide](https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/ucm_deployment.html) | external KV / prefix cache 候选 | UCM 面向 prefix cache 的外部 KV storage layer，采用 HBM → DRAM → SSD/NFS/3FS hierarchy，并支持 vLLM/vLLM-Ascend 与 CANN/Atlas A2/A3 平台。 |
 | [vLLM-Ascend KV Cache Pool guide](https://docs.vllm.ai/projects/ascend/en/main/user_guide/feature_guide/kv_pool.html) | Mooncake/KV pool 候选 | AscendStoreConnector / MooncakeBackend、embedded client、SSD offload、SSD quota、per-rank buffer 和 eviction policy 等部署约束。 |

@@ -27,24 +27,33 @@ model_objects:
     readiness_status: metadata_only_not_runtime_baseline
 runtime:
   container_or_conda: host_conda
-  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
   python_version: "3.11.15"
   cann_version: "9.0.0"
-  torch_npu_version: "2.9.0.post2"
-  vllm_ascend_version: "0.18.0"
-  runtime_source: existing_server_host_environment
+  torch_version: "2.10.0+cpu"
+  torch_npu_version: "2.10.0"
+  vllm_version: "0.20.2+empty"
+  vllm_ascend_version: "0.20.2rc1"
+  triton_ascend_version: "3.2.1"
+  transformers_version: "5.5.3"
+  runtime_source: isolated_server_host_environment_qwen_attention_smoke_validated
+  validation_scope: qwen2_5_3b_pure_attention_end_to_end_not_deepseek_dsa_mtp
 parallelism:
   tp: 8
   ep: enabled
   dp: 1
   pp: 1
   single_dual_card_boundary: p7_only
+  required_visible_devices: "0,1,2,3,4,5,6,7"
+  resource_gate: waiting_user_confirmed_eight_card_scope
 features:
   prefix_cache: enabled_for_reference_startup
   chunked_prefill: enabled_for_reference_startup
   mtp: enabled_first_then_disabled_only_as_degraded_fallback
   async_scheduling: enabled_for_reference_startup
   cpu_binding: enabled_for_reference_startup
+  flashcomm1: additional_config_enabled_for_v0_20_2rc1
+  dsa_cp: explicitly_enabled_with_flashcomm1_for_v0_20_2rc1
   kv_cpu_offload: planned_p8_not_p5
   ucm: planned_p8_not_p5
   kv_pool_mooncake: later_p8_candidate_not_p5
@@ -113,4 +122,5 @@ acceptance:
   server_model_paths_filled: true
   runtime_versions_filled: true
   workload_fixed_output_defined: true
-  developer_to_server_ready: true
+  developer_to_server_ready: false
+  blocked_by: user_confirmed_eight_card_scope

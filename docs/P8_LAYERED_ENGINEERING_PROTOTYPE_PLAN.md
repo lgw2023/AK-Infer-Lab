@@ -20,9 +20,9 @@ P8 的目标是建立一个**分层工程原型**：
 
 | 项目 | 当前证据 | P8 解释 |
 | --- | --- | --- |
-| vLLM-Ascend | P1 在 `0.18.0` 上跑通 Qwen/vLLM 观测链路；P5 DeepSeek-V4 首轮在该版本为 RED；服务器正在升级目标栈 | `0.18.0` 只作历史证据；`0.20.2rc1` 是目标主运行底座，尚待服务器回传 |
+| vLLM-Ascend | P1 在 `0.18.0` 上跑通 Qwen/vLLM 观测链路；P5 DeepSeek-V4 首轮在该版本为 RED；`0.20.2rc1` 隔离栈已通过 Qwen2.5 纯注意力端到端 smoke | `0.18.0` 只作历史证据；`0.20.2rc1` 是目标主运行底座，但 DeepSeek DSA/MTP/TP8/EP 路径仍待八卡 P5 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
-| DeepSeek-V4-Flash | P5 首轮未进入请求阶段，当前等待 `0.20.2/0.20.2rc1` 隔离运行时升级回传 | P8 不绕过 P5/P6 直接修改模型执行路径 |
+| DeepSeek-V4-Flash | P5 首轮未进入请求阶段；新隔离运行时已就绪，当前等待用户确认完整八卡范围后复跑 | P8 不绕过 P5/P6 直接修改模型执行路径 |
 | KV/Prefix object trace | 当前有 server stats proxy、phase memory、H2D/D2H microbench 和统一事件契约 | 尚无 object bytes、真实 hit/miss、restore/recompute 闭环 |
 | Expert trace | 当前无 DeepSeek-V4-Flash router top-k / per-expert trace 闭环 | P8.3 必须先观测，再谈分层 |
 | SSD cold tier | 已有 fio envelope | 只能校准冷层；不能证明逐 token restore 可用 |
@@ -40,7 +40,7 @@ triton-ascend     3.2.1
 
 `reference_repos/vllm/` 与 `reference_repos/vllm-ascend/` 继续跟踪最新 `main`，上述两个标签已取回到各自 shallow 仓库，不再保留并行的 `vllm-ascend-v0.18.0/` 目录。后续一方修改应在 `reference_repos/` 之外从两个标签 commit 创建开发分支；不直接在被忽略的第三方参考树中积累项目代码。
 
-这套版本当前是 `target / upgrade_in_progress`，不是本机安装证据，也不是服务器升级成功证据。P8.0 仍需记录服务器精确版本、commit、DeepSeek-V4 注册、MTP/parser 入口与 capability probe 结果。
+这套版本现已是服务器隔离环境的已验证安装事实，但验证范围仅到 Qwen2.5 纯注意力端到端 smoke，不是开发机本地安装证据，也不是 DeepSeek-V4 能力闭环。P8.0 仍需记录 DeepSeek-V4 注册、MTP/parser、DSA/FlashComm1 入口与 selected-workload capability probe 结果。
 
 ### 2.3 框架能力只先登记为候选
 

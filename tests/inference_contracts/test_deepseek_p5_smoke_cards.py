@@ -20,9 +20,13 @@ def test_p5_readiness_card_targets_eight_card_128k_smoke():
     assert card["experiment_id"] == "p5_deepseek_v4_flash_8card_128k_smoke"
     assert card["scenario"] == "eight_card_vllm_startup_and_context_ladder_smoke"
     assert card["runtime"]["container_or_conda"] == "host_conda"
-    assert card["runtime"]["vllm_ascend_version"] == "0.18.0"
+    assert card["runtime"]["vllm_version"] == "0.20.2+empty"
+    assert card["runtime"]["vllm_ascend_version"] == "0.20.2rc1"
+    assert card["runtime"]["torch_npu_version"] == "2.10.0"
     assert card["parallelism"]["tp"] == 8
     assert card["parallelism"]["ep"] == "enabled"
+    assert card["parallelism"]["required_visible_devices"] == "0,1,2,3,4,5,6,7"
+    assert card["parallelism"]["resource_gate"] == "waiting_user_confirmed_eight_card_scope"
     assert card["workload"]["context_ladder_tokens"] == [4096, 32768, 65536, 98304, 131072]
     assert card["workload"]["output_tokens"] == 64
 
@@ -42,21 +46,26 @@ def test_p5_context_ladder_workload_preserves_official_startup_flags_and_degrade
     assert workload["runtime_reference"]["quantization"] == "ascend"
     assert workload["runtime_reference"]["enable_prefix_caching"] is True
     assert workload["runtime_reference"]["enable_chunked_prefill"] is True
+    assert workload["runtime_reference"]["additional_config"]["enable_flashcomm1"] is True
+    assert workload["runtime_reference"]["additional_config"]["enable_dsa_cp"] is True
     assert workload["runtime_reference"]["speculative_mtp"]["method"] == "mtp"
+    assert workload["resource_gate"]["required_visible_devices"] == "0,1,2,3,4,5,6,7"
+    assert workload["runtime_environment"]["vllm_ascend"] == "0.20.2rc1"
     assert workload["request_plan"]["context_ladder_tokens"] == [4096, 32768, 65536, 98304, 131072]
     assert workload["request_plan"]["output_len_tokens"] == 64
     assert workload["degrade_policy"]["max_num_seqs_order"] == [16, 4, 1]
     assert workload["degrade_policy"]["disable_mtp_after_max_num_seqs_exhausted"] is True
 
 
-def test_server_handoff_waits_for_runtime_upgrade_feedback_without_reissuing_p5():
+def test_server_handoff_waits_for_eight_card_scope_without_reissuing_p5():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_8card_128k_smoke_2026_0710" in handoff
-    assert "no_new_server_task_waiting_vllm_0202_upgrade_feedback_2026_0710" in handoff
+    assert "p5_deepseek_v4_flash_8card_128k_smoke_retry_v0202_2026_0710" in handoff
+    assert "no_new_server_task_waiting_8card_scope_for_p5_retry_2026_0710" in handoff
     assert "当前无新增服务器任务" in handoff
     assert "vLLM-Ascend" in handoff
     assert "0.20.2rc1" in handoff
     assert "不要重跑" in handoff
+    assert "0,1,2,3,4,5,6,7" in handoff
     assert "--tensor-parallel-size 8" not in handoff
     assert "runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031" not in handoff
