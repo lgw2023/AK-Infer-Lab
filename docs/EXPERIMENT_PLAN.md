@@ -13,13 +13,13 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-当前服务器任务为 canonical P5 前置诊断：
+当前服务器任务为 P5 官方 checkpoint runtime gate：
 
 ```text
-p5_deepseek_v4_flash_4card_small_checkpoint_probe_v0202_2026_0710
+p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710
 ```
 
-P5 已从 readiness-only 调整为 W8A8-MTP 八卡拉起与 128K context ladder smoke。由于当前只授权 NPU 4-7，先对 148.66GiB FP8/FP4 checkpoint 用 TP4/EP、8K 配置上限和单个 4K+64 请求固定格式或运行时首失败点。`通信模块/docs/developer-to-server.md` 已明确先完整同步远端 `main`，再只执行该四卡诊断。
+上一轮 `0.20.2/0.20.2rc1` 四卡探针已在 NPU 量化平台门得到 `diagnostic_red_quant_format`。项目现已停止使用 W8A8，主对象改为官方 mixed FP8+FP4 checkpoint。当前新建独立 `0.22.1/0.22.1rc1` 栈，只用 NPU 4-7 按 base-no-MTP、base 成功后 MTP-on 的顺序执行 4K+64 runtime gate。
 
 ## 2. 阶段依赖
 
@@ -87,14 +87,13 @@ Scope / Not Claim
 ### 4.1 目标与对象
 
 ```text
-runtime object: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-source object:  /data/node0_disk1/Public/DeepSeek-V4-Flash
+runtime object: /data/node0_disk1/Public/DeepSeek-V4-Flash
 runtime:        server host conda
 parallelism:    TP=8, EP=enabled
-quantization:   ascend
+quantization:   auto from checkpoint deepseek_v4_fp8 config
 ```
 
-HF source object 仅作为本轮四卡格式/运行时诊断对象，不能代替 W8A8-MTP canonical runtime object。
+W8A8 对象已退出项目执行。未来八卡 smoke 继续使用同一官方 checkpoint，但必须等待四卡新栈 gate 成功和独立八卡授权。
 
 ### 4.2 Smoke 契约
 
@@ -124,20 +123,21 @@ max_num_seqs 16 -> 4 -> 1 -> disable MTP
 | `yellow` | 八卡至少一个请求成功，但发生降级或未达 131072 | 只进入 P6.0 stabilization；修复前不称 official baseline |
 | `red` | 八卡不能 ready 或无请求成功 | 留在 P5 remediation；P7 工具链预研可继续 |
 
-### 4.4 当前四卡前置诊断
+### 4.4 当前四卡新栈 runtime gate
 
 - 授权范围：`ASCEND_RT_VISIBLE_DEVICES=4,5,6,7`；不得扩大到其他 NPU。
 - 配置：TP4/EP、`max_model_len=8192`、`max_num_seqs=1`、eager mode、无 CPU/NVMe/KV offload。
-- 对象与容量：选中 46 分片 / `148.66 GiB` FP8/FP4 checkpoint，静态余量约 `107.34 GiB`；`279.41 GiB` W8A8 目录不在四卡启动。
+- 环境：从已验证旧环境克隆新隔离 `vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1` 栈；旧环境不改。
+- 对象与容量：46 分片 / `148.66 GiB` mixed FP8+FP4 checkpoint，静态余量约 `107.34 GiB`；W8A8 禁止启动或转换。
 - 格式边界：不显式传 `--quantization`、不改 checkpoint config；量化格式拒绝、容量失败或其他首错均立即停止。
-- 请求：server ready 时只执行一个 `4096+64`；不跑 context ladder。
-- 证据上限：四卡成功不能使 canonical P5 判绿，四卡失败不能外推为八卡失败。
+- profile：先 `base_no_mtp`，只在 base 请求成功后运行 `mtp_on`；每个 profile 最多一个 `4096+64`，不跑 context ladder。
+- 证据上限：四卡成功关闭当前 runtime gate，但不授权八卡或 P6；失败只适用于固定新栈和当前 checkpoint。
 
 P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化收益。
 
 ## 5. P6：单机八卡 Controlled Baseline
 
-目标：在 Atlas 800T A2 8×64GB 上建立可复现的 DeepSeek-V4-Flash W8A8-MTP reference point。
+目标：在 Atlas 800T A2 8×64GB 上建立可复现的 DeepSeek-V4-Flash 官方 mixed FP8+FP4 checkpoint reference point。
 
 ### P6.0：Baseline Freeze / Stabilization
 

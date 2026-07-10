@@ -2,10 +2,9 @@ schema_version: 1
 workload_id: p5_8card_context_ladder_smoke
 date: "2026-07-10"
 purpose: p5_deepseek_v4_flash_8card_startup_and_near_128k_context_smoke
-model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+model_object_id: deepseek_v4_flash_official_hf
 scenario: p5_eight_card_vllm_startup_and_context_ladder_smoke
-server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-source_checkpoint_metadata_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
 request_plan:
   request_count_per_context: 1
   context_ladder_tokens:
@@ -31,13 +30,13 @@ resource_gate:
   execute_only_after_user_confirmed_scope: true
   all_eight_devices_must_be_healthy_and_idle: true
 runtime_environment:
-  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
-  vllm: "0.20.2+empty"
-  vllm_ascend: "0.20.2rc1"
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: "0.22.1+empty"
+  vllm_ascend: "0.22.1rc1"
   torch: "2.10.0+cpu"
   torch_npu: "2.10.0"
   triton_ascend: "3.2.1"
-  transformers: "5.5.3"
+  transformers: "5.5.4"
 runtime_reference:
   runtime: vLLM-Ascend
   command: vllm serve
@@ -50,7 +49,8 @@ runtime_reference:
   data_parallel_size: 1
   tensor_parallel_size: 8
   enable_expert_parallel: true
-  quantization: ascend
+  quantization: auto_from_checkpoint_config
+  explicit_quantization_argument: forbidden
   port: 7000
   block_size: 128
   enable_chunked_prefill: true
@@ -110,7 +110,7 @@ degrade_policy:
     - max_model_len=135168
     - tensor_parallel_size=8
     - enable_expert_parallel=true
-    - quantization=ascend
+    - quantization=auto_from_checkpoint_config
     - enable_prefix_caching=true
     - enable_chunked_prefill=true
   degraded_smoke_labels:
@@ -136,4 +136,6 @@ boundaries:
   - This workload is a P5 smoke and not a benchmark.
   - It must not be interpreted as P6 controlled baseline.
   - Any fallback from reference startup flags makes the result degraded_smoke.
+  - The checkpoint is the official mixed FP8 plus FP4-expert object; the W8A8 object is retired from project execution.
+  - This workload remains blocked until the four-card v0.22.1/v0.22.1rc1 runtime gate succeeds and eight-card scope is separately authorized.
   - Do not mail raw generated text, raw server logs, raw memory samples, profiler output or large artifact directories.

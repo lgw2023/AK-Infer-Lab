@@ -26,8 +26,8 @@ Refresh date: **2026-07-10 (Asia/Shanghai)**.
 
 | Local path | Upstream / ref | Local state | P8 role |
 | --- | --- | --- | --- |
-| `vllm-ascend/` | [vllm-project/vllm-ascend](https://github.com/vllm-project/vllm-ascend), `main`; fetched tag `v0.20.2rc1` | `main@73998d1`; base tag `367b8e6` | Latest-main discovery plus the exact vLLM-Ascend development-base object for Ascend adapters, KV paths, EPLB, UCM integration, and weight-prefetch work. |
-| `vllm/` | [vllm-project/vllm](https://github.com/vllm-project/vllm), `main`; fetched tag `v0.20.2` | `main@e5588e4`; base tag `bc150f5` | Latest scheduler/KV/serving reference plus the exact compatible vLLM development-base object. |
+| `vllm-ascend/` | [vllm-project/vllm-ascend](https://github.com/vllm-project/vllm-ascend), `main`; fetched tags through `v0.22.1rc1` | local `main@73998d1`; target tag `5f6faa0` | Rolling discovery plus the exact current P5 source object; `origin/main@dbcbf02` was observed without changing the working tree. |
+| `vllm/` | [vllm-project/vllm](https://github.com/vllm-project/vllm), `main`; fetched tags through `v0.22.1` | local `main@e5588e4`; target tag `0decac0` | Rolling scheduler/KV/serving reference plus the exact current P5 vLLM source object; `origin/main@c227aaa` was observed without changing the working tree. |
 | `lmcache-ascend/` | [LMCache/LMCache-Ascend](https://github.com/LMCache/LMCache-Ascend), `main` | `79fc599` | Ascend KV connector, NPU transfer, HCCL/HIXL, and adapter patterns. |
 | `unified-cache-management/` | [ModelEngine-Group/unified-cache-management](https://github.com/ModelEngine-Group/unified-cache-management), `develop` | `22f0145` | UCM implementation reference for external KV/prefix object management and DRAM-first tiering. |
 | `mindie-llm/` | [Ascend/MindIE-LLM](https://github.com/Ascend/MindIE-LLM), `master` | `238c543` | MindIE LLM source reference for prefix/KV, expert-parallel, and Ascend runtime comparison. Source presence does not prove the server runtime is installed. |
@@ -49,8 +49,8 @@ commits below rather than editing these third-party reference trees in place.
 
 | Component | Target version | Local source evidence | Current evidence boundary |
 | --- | --- | --- | --- |
-| vLLM | `0.20.2` | `reference_repos/vllm`, tag `v0.20.2@bc150f5` | Tag available locally; server upgrade still awaiting feedback. |
-| vLLM-Ascend | `0.20.2rc1` | `reference_repos/vllm-ascend`, tag `v0.20.2rc1@367b8e6` | Primary future development base; not yet server-validated. |
+| vLLM | `0.22.1` | `reference_repos/vllm`, tag `v0.22.1@0decac0` | Current P5 source object; server environment build pending. |
+| vLLM-Ascend | `0.22.1rc1` | `reference_repos/vllm-ascend`, tag `v0.22.1rc1@5f6faa0` | Registers `deepseek_v4_fp8`; server runtime validation pending. |
 | CANN | `9.0.0` | Existing project/server evidence | Runtime dependency; no source checkout added here. |
 | PyTorch | `2.10.0` | Target stack declaration | Runtime dependency; no source checkout added here. |
 | torch-npu | `2.10.0` | Target stack declaration | Runtime dependency; no source checkout added here. |

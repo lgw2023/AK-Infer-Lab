@@ -100,3 +100,16 @@ boundaries:
   w8a8_checkpoint_is_not_launched_on_four_cards: true
   no_p6_benchmark_msprof_ab_or_bottleneck_claim: true
   raw_logs_and_large_artifacts_remain_server_local: true
+execution_result:
+  executed_at: "2026-07-10T23:29:11+08:00"
+  git_commit: d8e7399ccb1c050763d50424c7a5c9600fed242b
+  probe_grade: diagnostic_red_quant_format
+  server_ready: false
+  request_status: not_run_server_not_ready
+  first_failure_stage: model_config_quantization_platform_validation
+  first_failure: deepseek_v4_fp8_quantization_is_currently_not_supported_in_npu
+  weight_load_started: false
+  hbm_allocation_started: false
+  mtp_initialization_started: false
+  authorized_devices_released_cleanly: true
+  evidence_scope: vllm_0_20_2_plus_vllm_ascend_0_20_2rc1_only

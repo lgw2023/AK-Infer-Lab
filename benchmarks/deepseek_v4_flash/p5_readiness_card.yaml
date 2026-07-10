@@ -1,80 +1,67 @@
-experiment_id: p5_deepseek_v4_flash_8card_128k_smoke
+experiment_id: p5_deepseek_v4_flash_official_fp8_runtime_gate
 date: "2026-07-10"
 git_commit: server_fills_after_pull
 operator: external_development_machine
 server: atlas800t_a2_ascend_server
-scenario: eight_card_vllm_startup_and_context_ladder_smoke
+scenario: four_card_stack_upgrade_then_eight_card_context_smoke
 is_smoke: true
 is_benchmark: false
-is_controlled_ab: false
-is_degraded_smoke: conditional
 model_objects:
+  - model_object_id: deepseek_v4_flash_official_hf
+    model: deepseek-ai/DeepSeek-V4-Flash
+    model_variant: fp8_non_expert_plus_fp4_experts
+    model_source: huggingface
+    server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+    model_role: project_primary_runtime_and_future_p6_baseline_candidate
+    readiness_status: v0202_quant_gate_failed_v0221rc1_probe_ready
   - model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
     model: DeepSeek-V4-Flash-w8a8-mtp
     model_variant: w8a8_mtp
     model_source: modelscope
-    local_source_path: /Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-    model_role: official_baseline_runtime_candidate
-    readiness_status: server_inventory_verified_70_shards_279_41_gib_runtime_not_loaded
-  - model_object_id: deepseek_v4_flash_official_hf
-    model: deepseek-ai/DeepSeek-V4-Flash
-    model_variant: fp4_fp8_mixed_source_checkpoint
-    model_source: huggingface
-    local_source_path: /Volumes/Elements/DeepSeek-V4-Flash
-    server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
-    model_role: source_checkpoint_and_authorized_four_card_format_probe
-    readiness_status: server_inventory_verified_46_shards_148_66_gib_runtime_not_loaded
-runtime:
-  container_or_conda: host_conda
+    model_role: retired_inventory_only
+    readiness_status: project_abandoned_do_not_start_or_convert
+prior_runtime_result:
   conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
-  python_version: "3.11.15"
+  vllm_version: 0.20.2+empty
+  vllm_ascend_version: 0.20.2rc1
+  probe_grade: diagnostic_red_quant_format
+  first_failure: deepseek_v4_fp8_quantization_is_currently_not_supported_in_npu
+  first_failure_before_weight_load_hbm_or_mtp: true
+target_runtime:
+  container_or_conda: host_conda
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  python_version: "3.11"
   cann_version: "9.0.0"
-  torch_version: "2.10.0+cpu"
+  torch_version: "2.10.0"
   torch_npu_version: "2.10.0"
-  vllm_version: "0.20.2+empty"
-  vllm_ascend_version: "0.20.2rc1"
+  vllm_version: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_version: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
   triton_ascend_version: "3.2.1"
-  transformers_version: "5.5.3"
-  runtime_source: isolated_server_host_environment_qwen_attention_smoke_validated
-  validation_scope: qwen2_5_3b_pure_attention_end_to_end_not_deepseek_dsa_mtp
-parallelism:
-  tp: 8
-  ep: enabled
-  dp: 1
-  pp: 1
-  single_dual_card_boundary: p7_only
-  required_visible_devices: "0,1,2,3,4,5,6,7"
-  resource_gate: waiting_user_confirmed_eight_card_scope
-authorized_diagnostic_probe:
-  workload: workloads/p5_4card_startup_probe.yaml
-  task_id: p5_deepseek_v4_flash_4card_small_checkpoint_probe_v0202_2026_0710
+  transformers_version: "5.5.4"
+  runtime_status: isolated_environment_not_yet_server_validated
+authorized_runtime_gate:
+  workload: workloads/p5_4card_fp8_stack_upgrade_probe.yaml
+  task_id: p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710
   model_object_id: deepseek_v4_flash_official_hf
-  server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
   visible_devices: "4,5,6,7"
   tp: 4
+  ep: enabled
   max_model_len: 8192
   max_num_seqs: 1
   quantization_argument: omitted_use_checkpoint_config
-  role: runtime_format_compatibility_and_capacity_probe_not_canonical_p5
-  excluded_four_card_object: deepseek_v4_flash_w8a8_mtp_modelscope
-  excluded_reason: 279_41_gib_static_weights_exceed_256_gib_raw_hbm
+  profile_order:
+    - base_no_mtp
+    - mtp_on_after_base_success
   developer_to_server_ready: true
-  canonical_eight_card_gate_unchanged: true
-features:
-  prefix_cache: enabled_for_reference_startup
-  chunked_prefill: enabled_for_reference_startup
-  mtp: enabled_first_then_disabled_only_as_degraded_fallback
-  async_scheduling: enabled_for_reference_startup
-  cpu_binding: enabled_for_reference_startup
-  flashcomm1: additional_config_enabled_for_v0_20_2rc1
-  dsa_cp: explicitly_enabled_with_flashcomm1_for_v0_20_2rc1
-  kv_cpu_offload: planned_p8_not_p5
-  ucm: planned_p8_not_p5
-  kv_pool_mooncake: later_p8_candidate_not_p5
-workload:
-  manifest: workloads/p5_8card_context_ladder.yaml
-  max_model_len: 135168
+future_eight_card_smoke:
+  workload: workloads/p5_8card_context_ladder.yaml
+  visible_devices: "0,1,2,3,4,5,6,7"
+  tp: 8
+  ep: enabled
+  resource_gate: waiting_separate_user_authorization_after_four_card_success
   context_ladder_tokens:
     - 4096
     - 32768
@@ -82,60 +69,48 @@ workload:
     - 98304
     - 131072
   output_tokens: 64
-  generated_length_control: min_tokens_64_ignore_eos_true
-  success_target: highest_possible_context_with_goal_131072_plus_64
-degrade_policy:
-  max_num_seqs_order:
-    - 16
-    - 4
-    - 1
-  disable_mtp_after_max_num_seqs_exhausted: true
-  keep_fixed:
-    - max_model_len_135168_until_request_level_context_failure_is_observed
-    - tensor_parallel_size_8
-    - enable_expert_parallel
-    - quantization_ascend
-    - enable_prefix_caching
-    - enable_chunked_prefill
-  degraded_smoke_if:
-    - max_num_seqs_below_16
-    - mtp_disabled
-    - highest_successful_context_below_131072
+features:
+  checkpoint_quantization: auto_detect_deepseek_v4_fp8_with_fp4_experts
+  explicit_quantization_argument: forbidden
+  prefix_cache: disabled_for_four_card_startup_then_enabled_for_future_context_ladder
+  mtp: base_off_then_on_after_base_success
+  cpu_binding: enabled
+  flashcomm1: additional_config_enabled
+  dsa_cp: explicitly_enabled_with_flashcomm1
+  kv_cpu_offload: planned_p8_not_p5
 metrics:
-  required_for_p5_smoke:
-    - server_startup_status
+  required_for_current_gate:
+    - environment_build_and_pip_check_status
+    - runtime_versions_and_source_commits
+    - supported_quantization_methods
+    - server_startup_status_per_profile
     - health_endpoint_ready
-    - per_context_request_status
-    - fixed_generated_tokens
-    - ttft_tpot_e2e_client_timing
-    - server_command
-    - server_stats_log_summary
-    - npu_hbm_used_free_snapshot
-    - failure_reason_and_artifact_path
-  deferred_until_p6:
+    - single_request_status_and_fixed_generated_tokens
+    - first_failure_stage
+    - npu_hbm_snapshots
+  deferred_until_future_stages:
+    - context_ladder
     - msprof
     - request_device_aggregate
     - controlled_concurrency_baseline
-    - prefix_chunked_mtp_ab
 artifacts:
   model_registry: deepseek_v4_flash_model_objects.yaml
-  workload_manifest: workloads/p5_8card_context_ladder.yaml
+  current_workload: workloads/p5_4card_fp8_stack_upgrade_probe.yaml
+  future_workload: workloads/p5_8card_context_ladder.yaml
   server_handoff: 通信模块/docs/developer-to-server.md
-  expected_server_output_root: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_8card_128k_smoke_2026_0710
 status_grading:
-  green: reference_flags_include_mtp_and_131072_plus_64_success
-  yellow: startup_and_some_inference_success_but_degraded_or_below_131072
-  red: no_8card_startup_or_no_successful_request
+  green: base_no_mtp_and_mtp_on_each_complete_one_fixed_request
+  yellow: base_no_mtp_succeeds_but_mtp_on_fails
+  red: no_successful_base_request
 boundaries:
-  - P5 is now an eight-card DeepSeek-V4-Flash startup and long-context smoke, not metadata-only readiness.
-  - P5 is still not a benchmark and must not produce bottleneck or optimization-benefit claims.
-  - The Hugging Face source checkpoint is used only for the authorized four-card format/runtime diagnostic and does not replace the W8A8-MTP canonical P5 object.
-  - If any official startup flag is removed or max_num_seqs is lowered, the result is degraded_smoke.
-  - Raw logs, generated text, profiler output and large artifacts remain on the server.
+  - The project has retired the W8A8 checkpoint from future execution, but retains its inventory as historical evidence.
+  - The official DeepSeek checkpoint is mixed FP8 plus FP4 experts, not pure FP8.
+  - vLLM-Ascend v0.22.1rc1 source support is a reason to probe, not proof of runtime success on this server.
+  - Four-card success does not authorize the future eight-card context ladder or P6 benchmark.
+  - Raw logs and large artifacts remain on the server.
 acceptance:
   source_versions_recorded: true
-  server_model_paths_filled: true
-  runtime_versions_filled: true
-  workload_fixed_output_defined: true
-  developer_to_server_ready: false
-  blocked_by: user_confirmed_eight_card_scope
+  server_model_path_filled: true
+  current_four_card_scope_authorized: true
+  developer_to_server_ready: true
+  blocked_by: server_execution

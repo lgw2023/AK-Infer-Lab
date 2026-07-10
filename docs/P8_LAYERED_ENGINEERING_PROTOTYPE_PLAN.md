@@ -20,9 +20,9 @@ P8 的目标是建立一个**分层工程原型**：
 
 | 项目 | 当前证据 | P8 解释 |
 | --- | --- | --- |
-| vLLM-Ascend | P1 在 `0.18.0` 上跑通 Qwen/vLLM 观测链路；P5 DeepSeek-V4 首轮在该版本为 RED；`0.20.2rc1` 隔离栈已通过 Qwen2.5 纯注意力端到端 smoke | `0.18.0` 只作历史证据；`0.20.2rc1` 是目标主运行底座，但 DeepSeek DSA/MTP/TP8/EP 路径仍待八卡 P5 |
+| vLLM-Ascend | `0.20.2rc1` 通过 Qwen2.5 smoke，但官方 checkpoint 被 `deepseek_v4_fp8` 平台门拒绝；`0.22.1rc1` tag 已注册该格式 | 当前 P5 新建 `0.22.1rc1` 独立栈；结果回来前 P8 runtime adapter 仍受 gate 约束 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
-| DeepSeek-V4-Flash | P5 首轮未进入请求阶段；新隔离运行时已就绪，当前已授权 NPU 4-7 对 148.66GiB FP8/FP4 checkpoint 做 TP4 格式/拉起诊断，279.41GiB W8A8 不在四卡启动，canonical 八卡 P5 仍受资源门控 | P8 不绕过 P5/P6 直接修改模型执行路径；四卡诊断不启用 offload或现场转换 |
+| DeepSeek-V4-Flash | 官方 148.66GiB mixed checkpoint 是项目主对象；W8A8 已退出执行；当前授权 NPU 4-7 做新栈 TP4 runtime gate | P8 不绕过 P5/P6 修改模型路径；四卡任务不启用 offload、转换或 profiler |
 | KV/Prefix object trace | 当前有 server stats proxy、phase memory、H2D/D2H microbench 和统一事件契约 | 尚无 object bytes、真实 hit/miss、restore/recompute 闭环 |
 | Expert trace | 当前无 DeepSeek-V4-Flash router top-k / per-expert trace 闭环 | P8.3 必须先观测，再谈分层 |
 | SSD cold tier | 已有 fio envelope | 只能校准冷层；不能证明逐 token restore 可用 |
@@ -30,8 +30,8 @@ P8 的目标是建立一个**分层工程原型**：
 ### 2.2 后续自研的目标开发基线
 
 ```text
-vLLM             0.20.2        tag v0.20.2@bc150f5
-vLLM-Ascend      0.20.2rc1     tag v0.20.2rc1@367b8e6
+vLLM             0.22.1        tag v0.22.1@0decac0
+vLLM-Ascend      0.22.1rc1     tag v0.22.1rc1@5f6faa0
 CANN              9.0.0
 PyTorch           2.10.0
 torch-npu         2.10.0
@@ -40,14 +40,14 @@ triton-ascend     3.2.1
 
 `reference_repos/vllm/` 与 `reference_repos/vllm-ascend/` 继续跟踪最新 `main`，上述两个标签已取回到各自 shallow 仓库，不再保留并行的 `vllm-ascend-v0.18.0/` 目录。后续一方修改应在 `reference_repos/` 之外从两个标签 commit 创建开发分支；不直接在被忽略的第三方参考树中积累项目代码。
 
-这套版本现已是服务器隔离环境的已验证安装事实，但验证范围仅到 Qwen2.5 纯注意力端到端 smoke，不是开发机本地安装证据，也不是 DeepSeek-V4 能力闭环。P8.0 仍需记录 DeepSeek-V4 注册、MTP/parser、DSA/FlashComm1 入口与 selected-workload capability probe 结果。
+这套新版本尚未在服务器构建完成。其 tag 源码已证明 `deepseek_v4_fp8` 和 Ascend mixed-quantization scheme 存在，但真实权重加载、DSA、MTP 和请求路径仍由当前四卡任务验证。
 
 ### 2.3 框架能力只先登记为候选
 
 截至 2026-07-10，vLLM-Ascend 最新官方资料包含 KV Cache CPU Offload、UCM Store、KV Cache Pool、EPLB 和 Weight Prefetch 等入口；MindIE 2.3 官方资料包含 Prefix Cache、KV Cache 池化、专家热点采集和冗余专家部署等机制。但是：
 
-- 最新 `main` 文档不等于目标 `vLLM-Ascend 0.20.2rc1` 标签包含同一接口和参数，更不等于服务器已升级成功。
-- 官方功能存在不等于它支持 DeepSeek-V4-Flash W8A8-MTP、当前 CANN 版本和本项目 workload 组合。
+- 最新 `main` 文档不等于固定 `vLLM-Ascend 0.22.1rc1` 标签或服务器环境已包含同一接口。
+- `deepseek_v4_fp8` 源码注册不等于官方 mixed checkpoint、当前 CANN 和本项目 workload 已运行成功。
 - MindIE 官方能力存在不等于当前服务器已安装 MindIE，也不授权本轮安装或升级。
 - vLLM-Ascend Weight Prefetch 是设备侧权重/L2 预取优化入口，不等于 CPU/SSD 专家卸载框架。
 - EPLB 是专家负载均衡、复制和放置支点，不等于完整的专家热温冷卸载和回温系统。
@@ -73,6 +73,10 @@ validated_for_selected_workload
 `benchmarks/deepseek_v4_flash/p8/runtime_capability_matrix.yaml` 和
 `p8_0_source_capability_probe_report.md`。真实 `VllmAscendAdapter` 继续受
 `waiting_selected_workload_runtime_gate` 约束。
+
+这份 13 项矩阵是 `0.20.2/0.20.2rc1` 的历史目标-tag快照。P5 改用
+`0.22.1/0.22.1rc1` 后，不直接覆盖历史产物；当前四卡 runtime gate 成功后，
+应另建新版本 capability matrix，再决定 P8 adapter 是否解除门控。
 
 ## 3. 总体架构
 

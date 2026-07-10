@@ -1,32 +1,35 @@
 # Developer to Server
 
-## 当前任务：DeepSeek-V4-Flash 较小 checkpoint 四卡格式/拉起诊断
+## 当前任务：构建 v0.22.1rc1 独立栈并复跑官方 FP8/FP4 checkpoint 四卡拉起
 
 任务 ID：
 
 ```text
-p5_deepseek_v4_flash_4card_small_checkpoint_probe_v0202_2026_0710
+p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710
 ```
 
-用户本轮只授权：
+本轮唯一授权设备范围：
 
 ```text
 ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
 ```
 
-目标：先完整同步远端 `main` 的全部缺失提交，再只执行本文档规定的四卡任务。使用已验证的独立 `vLLM 0.20.2+empty / vLLM-Ascend 0.20.2rc1` 环境，对较小的 `/data/node0_disk1/Public/DeepSeek-V4-Flash` 做一次有界 TP4/EP 真实拉起，固定 FP8/FP4 checkpoint 在 Ascend 上的首个格式或运行时失败点；若 server ready，只发送一个 `4096 input + 64 output` 请求。
+目标：完整同步远端 `main` 后，在不修改任何旧环境的前提下，新建独立 `vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1` 环境。先确认该栈在 NPU 平台注册 `deepseek_v4_fp8`，再仅对 `/data/node0_disk1/Public/DeepSeek-V4-Flash` 执行 TP4/EP、8K 上限的真实拉起和单请求 smoke。
 
-服务器新回传的磁盘事实：
+上一轮服务器事实已经关闭：
 
-- 本轮选中目录共有 46 个连续分片、`159,617,149,040 B ≈ 148.66 GiB`；相对四张 64GB NPU 的约 `256 GiB` 原始 HBM，静态余量约 `107.34 GiB`，但仍不保证计入 KV、activation、workspace 和通信 buffer 后可以拉起。
-- `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` 共有 70 个连续分片、`300,013,759,966 B ≈ 279.41 GiB`，静态权重已超过四卡原始 HBM，因此本轮明确不启动该目录。
-- 选中目录的 `config.json` 含 `quant_method=fp8`、`expert_dtype=fp4` 和 `num_nextn_predict_layers=1`，但不含 `kv_lora_rank`。目标 vLLM tag 的源码会识别为 `deepseek_v4_fp8`；目标 vLLM-Ascend tag 的 NPU 平台公开量化方法为 `ascend` / `compressed-tensors`。这只是静态源码风险，不是服务器运行结论，本轮要记录真实首错。
+- `vLLM 0.20.2+empty / vLLM-Ascend 0.20.2rc1` 在 `ModelConfig` 校验阶段返回 `deepseek_v4_fp8 quantization is currently not supported in npu`。
+- 失败发生在权重加载、HBM 分配和 MTP 初始化之前；不是容量、MTP 或设备健康问题。
+- NPU `4,5,6,7` 全部健康、空闲，任务结束后无残留进程。
 
-这是 P5 前置诊断，不是 canonical W8A8 八卡 P5 验收，不是 P6 benchmark。
+本轮路线变更：
 
-## 1. 仓库同步：拉完整 `main`，不是只拉一个提交
+- 项目停止使用 `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp`；该目录只保留历史 inventory，禁止启动、转换、benchmark 或作为 fallback。
+- 主对象改为官方 `DeepSeek-V4-Flash` checkpoint。其准确格式是“非 expert 权重 FP8 + expert 权重 FP4”的混合 checkpoint，不是纯 FP8。
+- `vLLM-Ascend v0.22.1rc1@5f6faa0` 已在源码中把 `fp8` 和 `deepseek_v4_fp8` 加入 NPU `supported_quantization`，并含官方 checkpoint 对应的 FP8 linear / FP4 expert Ascend scheme；这只是下发本轮探针的源码依据，不是本机已通过的结论。
+- 当前 vLLM-Ascend 官方 DeepSeek-V4 部署教程仍以 W8A8 为示例，因此本轮必须把官方 FP8/FP4 checkpoint 结果标为项目 runtime probe，不得提前写成官方 Ascend deployment baseline。
 
-在服务器项目根目录执行：
+## 1. 仓库同步：完整拉取 `main`
 
 ```bash
 set -euo pipefail
@@ -47,134 +50,205 @@ printf 'ahead_behind=%s\n' "$(git rev-list --left-right --count HEAD...origin/ma
 
 同步要求：
 
-1. 这是正常的 `main` 全量快进同步；会拉取服务器缺失的全部提交。
-2. 禁止 `cherry-pick` 单个提交，禁止按某个哈希做 detached checkout，禁止只取一份文件覆盖仓库。
-3. 同步后必须满足 `HEAD == origin/main` 且 ahead/behind 为 `0 0`；提交哈希只用于记录同步结果，不是“只拉该提交”的指令。
-4. 同步完成后重新打开拉取后的 `通信模块/docs/developer-to-server.md`。只有任务 ID 仍为 `p5_deepseek_v4_flash_4card_small_checkpoint_probe_v0202_2026_0710` 才继续；若任务 ID 已变化，以新文档为准，不执行旧命令。
-5. 同步整个仓库不等于执行整个仓库。本轮只执行下述四卡诊断，不运行 P8、其他 workload、历史 handoff 或额外测试任务。
+1. 必须拉取远端 `main` 的全部缺失提交；禁止 `cherry-pick` 单提交、detached checkout 或单文件覆盖。
+2. 必须满足 `HEAD == origin/main` 且 ahead/behind=`0 0`。
+3. 同步后重新打开本文档。只有任务 ID 仍为 `p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710` 才继续。
+4. 同步整个仓库不等于执行全部任务。本轮不运行历史 handoff、P8、P6、msprof 或其他 workload。
 
-## 2. 必须先做的资源门检查
+## 2. 固定版本、路径和不变项
 
-1. 只检查物理 NPU `4,5,6,7`。四卡必须全部健康且空闲；任一卡不满足时返回 `blocked_resource`，不启动模型。
-2. 不允许使用 NPU `0,1,2,3`，不允许自动扩大到八卡。
-3. 记录四卡启动前和可行时的 HBM used/free 小摘要；raw `npu-smi` 输出留在服务器。
-4. 若仓库未完整同步、模型文件预检不通过或 inference contracts 失败，分别返回 `blocked_git_not_fully_synced`、`blocked_model_files`、`blocked_inference_contracts`，不启动模型。
+```text
+基础环境（只读保留）:
+/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
 
-## 3. 固定实验边界
+新环境:
+/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 
-- 固定环境：`/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1`。
-- 固定模型：`/data/node0_disk1/Public/DeepSeek-V4-Flash`；本轮不启动 W8A8-MTP 目录。
-- 固定 `TP4 + EP`、`max_model_len=8192`、`max_num_seqs=1`、eager mode。
-- 不传 `--quantization ascend`，也不传其他 `--quantization`；让 checkpoint 自带的 FP8/FP4 配置暴露真实 runtime 识别结果。禁止改写/删除 `config.json` 的量化字段。
-- 使用 `additional_config.enable_flashcomm1=true`、`additional_config.enable_dsa_cp=true` 和 `additional_config.enable_mlapo=false`。关闭 MLAPO 只用于缩小四卡诊断开销，不可写成 official reference baseline。
-- 首次保留 MTP。只有首次日志明确是 MTP/speculative 错误，且不是量化格式、HBM/权重容量或其他更早失败，才允许补一次 `MTP off` 诊断。
-- 一旦出现量化格式拒绝、HBM OOM、权重分配不足或其他明确容量失败，立即停止；不重试、不切换到 W8A8、不改量化配置。
-- 不启用 `--cpu-offload-gb`、swap、NVMe offload、KV offload、UCM、LMCache 或任何权重分层。
-- 不跑 128K context ladder、msprof、并发矩阵、A/B、吞吐 benchmark、瓶颈归因或 P8 real-move。
-- 不安装、升级、降级、卸载或修复包；不改 vLLM/vLLM-Ascend 源码、CANN、driver、apt 或 NPU runtime。
+新 vLLM 源码:
+/data/node0_disk1/vllm-0.22.1
+v0.22.1@0decac0d96c42b49572498019f0a0e3600f50398
 
-## 4. 建议执行命令
+vLLM-Ascend:
+v0.22.1rc1@5f6faa0cb8830f667266f3b8121cd1383606f2a1
+wheel=vllm_ascend-0.22.1rc1-cp311-cp311-manylinux_2_34_aarch64.whl
+本地开发机从 Ascend index 观测的 wheel SHA-256:
+0e08c50ff27b174232c65bbb7feb3605734b09982bdc786d1b874d9ac9615ff1
 
-完成全量同步并重新打开本文档，且确认 NPU `4,5,6,7` 全部健康、空闲后执行：
+保持不变:
+Python 3.11 / CANN 9.0.0 / torch 2.10.0 / torch-npu 2.10.0
+torchvision 0.25.0 / torchaudio 2.10.0 / triton-ascend 3.2.1
+
+目标更新:
+transformers 5.5.4
+vLLM 0.22.1+empty
+vLLM-Ascend 0.22.1rc1
+```
+
+约束：
+
+- 禁止修改、删除或重装基础环境和原 `ak-infer-lab` 环境。
+- 禁止修改共享 `/data/node0_disk1/vllm`、旧 `/data/node0_disk1/vllm-0.20.2` 或其 tag。
+- 禁止改 CANN、driver、firmware、apt、系统 Python 或系统级 NPU runtime。
+- 禁止 patch vLLM/vLLM-Ascend 源码，禁止绕过 `supported_quantization` 校验。
+- 若新环境或新源码目录已存在但无法证明版本完全一致，不删除、不覆盖，返回 `blocked_existing_target_requires_review`。
+- vLLM 0.22.1 的 build-system 声明 `torch==2.11.0`，而 vLLM-Ascend 0.22.1rc1 固定 `torch/torch-npu==2.10.0`。因此沿用已验证的 `VLLM_TARGET_DEVICE=empty + --no-deps + --no-build-isolation` 路线，并在独立环境中显式安装除 torch 2.11 外的 build tooling；禁止让 pip 把 torch 主栈升级到 2.11。
+
+## 3. 资源门
+
+环境构建前后均检查：
+
+1. 只允许物理 NPU `4,5,6,7`；禁止接触 NPU `0,1,2,3`，禁止扩大到八卡。
+2. 四卡必须全部 `Health=OK`、空闲且无进程；否则返回 `blocked_resource`，环境可保留，但不启动模型。
+3. 记录启动前、每个 profile ready/失败后和最终释放后的四卡 HBM 摘要。raw `npu-smi` 输出留在服务器。
+4. 模型必须仍是 46 个连续分片、权重字节数 `159617149040`；config 必须为 `DeepseekV4ForCausalLM`、`model_type=deepseek_v4`、`quant_method=fp8`、`expert_dtype=fp4`。不满足则返回 `blocked_model_files`。
+
+## 4. 构建独立环境
+
+从项目根目录执行。环境构建日志留在服务器；任一步失败即返回 `blocked_environment`，不得改用 `main`、nightly、其他 rc 或源码 patch。
 
 ```bash
 set -uo pipefail
-
 cd /data/node0_disk1/liguowei/AK-Infer-Lab
 
-RUN_ID=p5_deepseek_v4_flash_4card_small_checkpoint_probe_v0202_2026_0710
+RUN_ID=p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710
 ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
-ENV_PREFIX=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
-PYTHON_BIN="${ENV_PREFIX}/bin/python"
-VLLM_BIN="${ENV_PREFIX}/bin/vllm"
+BASE_ENV=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
+NEW_ENV=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+VLLM_SRC=/data/node0_disk1/vllm-0.22.1
+VLLM_COMMIT=0decac0d96c42b49572498019f0a0e3600f50398
+WHEEL_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/.wheel-cache/vllm-ascend-0.22.1rc1
+WHEEL_SHA256=0e08c50ff27b174232c65bbb7feb3605734b09982bdc786d1b874d9ac9615ff1
 MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash
-EXCLUDED_W8A8_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-HOST=127.0.0.1
-PORT=7000
-SERVED_MODEL_NAME=dsv4-four-card-probe
-STARTUP_TIMEOUT_SEC=3600
+RETIRED_W8A8_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
 
-mkdir -p "${ARTIFACT_DIR}"
+mkdir -p "${ARTIFACT_DIR}" "${WHEEL_DIR}"
 
-set +e
 git fetch origin main > "${ARTIFACT_DIR}/git_fetch_verify.log" 2>&1
-git_fetch_exit_code=$?
-set -e
-echo "${git_fetch_exit_code}" > "${ARTIFACT_DIR}/git_fetch_verify_exit_code.txt"
 LOCAL_HEAD="$(git rev-parse HEAD)"
 REMOTE_MAIN="$(git rev-parse origin/main)"
-printf 'local_head=%s\norigin_main=%s\n' "${LOCAL_HEAD}" "${REMOTE_MAIN}" \
-  > "${ARTIFACT_DIR}/git_sync_state.txt"
-git rev-list --left-right --count HEAD...origin/main \
-  >> "${ARTIFACT_DIR}/git_sync_state.txt"
+{
+  printf 'local_head=%s\n' "${LOCAL_HEAD}"
+  printf 'origin_main=%s\n' "${REMOTE_MAIN}"
+  git rev-list --left-right --count HEAD...origin/main
+} > "${ARTIFACT_DIR}/git_sync_state.txt"
 
-if [ "${git_fetch_exit_code}" -ne 0 ] || [ "${LOCAL_HEAD}" != "${REMOTE_MAIN}" ]; then
-  echo "blocked_git_not_fully_synced" > "${ARTIFACT_DIR}/probe_status.txt"
+if [ "${LOCAL_HEAD}" != "${REMOTE_MAIN}" ]; then
+  echo blocked_git_not_fully_synced > "${ARTIFACT_DIR}/probe_status.txt"
+  exit 0
+fi
+if ! grep -q 'p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710' 通信模块/docs/developer-to-server.md; then
+  echo blocked_handoff_task_id_changed > "${ARTIFACT_DIR}/probe_status.txt"
   exit 0
 fi
 
-if ! grep -q 'p5_deepseek_v4_flash_4card_small_checkpoint_probe_v0202_2026_0710' \
-  通信模块/docs/developer-to-server.md; then
-  echo "blocked_handoff_task_id_changed" > "${ARTIFACT_DIR}/probe_status.txt"
+build_target_environment() {
+  set -euo pipefail
+
+  if [ -e "${NEW_ENV}" ]; then
+    if [ ! -f "${NEW_ENV}/.ak_v0221rc1_build_complete" ]; then
+      echo "target environment exists without completion marker" >&2
+      return 91
+    fi
+  else
+    conda create --prefix "${NEW_ENV}" --clone "${BASE_ENV}" -y
+  fi
+
+  if [ -d "${VLLM_SRC}/.git" ]; then
+    test -z "$(git -C "${VLLM_SRC}" status --porcelain)"
+    test "$(git -C "${VLLM_SRC}" rev-parse HEAD)" = "${VLLM_COMMIT}"
+  elif [ -e "${VLLM_SRC}" ]; then
+    echo "target vllm path exists but is not the required git checkout" >&2
+    return 92
+  else
+    git clone --depth 1 --branch v0.22.1 https://github.com/vllm-project/vllm.git "${VLLM_SRC}"
+    test "$(git -C "${VLLM_SRC}" rev-parse HEAD)" = "${VLLM_COMMIT}"
+  fi
+
+  PYTHON_BIN="${NEW_ENV}/bin/python"
+  "${PYTHON_BIN}" -m pip download \
+    --no-deps --pre \
+    --platform manylinux_2_34_aarch64 \
+    --python-version 311 --implementation cp --abi cp311 \
+    --only-binary=:all: \
+    --dest "${WHEEL_DIR}" \
+    --extra-index-url https://mirrors.huaweicloud.com/ascend/repos/pypi/variant \
+    --extra-index-url https://mirrors.huaweicloud.com/ascend/repos/pypi \
+    'vllm-ascend==0.22.1rc1'
+
+  WHEEL="$(find "${WHEEL_DIR}" -maxdepth 1 -type f -name 'vllm_ascend-0.22.1rc1-cp311-cp311-manylinux_2_34_aarch64.whl' -print -quit)"
+  test -n "${WHEEL}"
+  printf '%s  %s\n' "${WHEEL_SHA256}" "${WHEEL}" | sha256sum --check
+
+  "${PYTHON_BIN}" -m pip install -r "${VLLM_SRC}/requirements/common.txt"
+  "${PYTHON_BIN}" -m pip install "${WHEEL}"
+  "${PYTHON_BIN}" -m pip install \
+    'cmake>=3.26.1' ninja 'packaging>=24.2' \
+    'setuptools>=77.0.3,<81.0.0' 'setuptools-scm>=8.0' \
+    'setuptools-rust>=1.9.0' wheel jinja2
+  (
+    cd "${VLLM_SRC}"
+    VLLM_TARGET_DEVICE=empty "${PYTHON_BIN}" -m pip install -e . --no-deps --no-build-isolation
+  )
+
+  "${PYTHON_BIN}" -m pip check
+  touch "${NEW_ENV}/.ak_v0221rc1_build_complete"
+}
+
+set +e
+build_target_environment > "${ARTIFACT_DIR}/environment_build.log" 2>&1
+ENV_BUILD_EXIT_CODE=$?
+set -e
+echo "${ENV_BUILD_EXIT_CODE}" > "${ARTIFACT_DIR}/environment_build_exit_code.txt"
+if [ "${ENV_BUILD_EXIT_CODE}" -ne 0 ]; then
+  if [ "${ENV_BUILD_EXIT_CODE}" -eq 91 ] || [ "${ENV_BUILD_EXIT_CODE}" -eq 92 ]; then
+    echo blocked_existing_target_requires_review > "${ARTIFACT_DIR}/probe_status.txt"
+  else
+    echo blocked_environment > "${ARTIFACT_DIR}/probe_status.txt"
+  fi
+  tail -n 120 "${ARTIFACT_DIR}/environment_build.log" > "${ARTIFACT_DIR}/first_failure_excerpt.txt"
   exit 0
 fi
+```
 
+## 5. 版本、源码能力与模型预检
+
+继续在同一 shell 中执行：
+
+```bash
 set +u
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
 source /usr/local/Ascend/nnal/atb/set_env.sh
 set -u
 
-export PATH="${ENV_PREFIX}/bin:${PATH}"
+export PATH="${NEW_ENV}/bin:${PATH}"
 export ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
 export VLLM_PLUGINS=ascend
 export VLLM_USE_V1=1
 export VLLM_WORKER_MULTIPROC_METHOD=spawn
-export VLLM_ASCEND_APPLY_DSV4_PATCH=1
-export LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libjemalloc.so.2${LD_PRELOAD:+:${LD_PRELOAD}}"
 export OMP_PROC_BIND=false
 export OMP_NUM_THREADS=8
 export PYTORCH_NPU_ALLOC_CONF=expandable_segments:True
-export ACL_OP_INIT_MODE=1
-export USE_MULTI_GROUPS_KV_CACHE=1
+export LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libjemalloc.so.2${LD_PRELOAD:+:${LD_PRELOAD}}"
+export HCCL_BUFFSIZE=1024
 export TASK_QUEUE_ENABLE=1
 export HCCL_OP_EXPANSION_MODE=AIV
-export HCCL_BUFFSIZE=512
-export USE_MULTI_BLOCK_POOL=1
 
-{
-  echo "run_id=${RUN_ID}"
-  echo "commit=${LOCAL_HEAD}"
-  echo "origin_main=${REMOTE_MAIN}"
-  echo "timestamp=$(date -Is)"
-  echo "environment=${ENV_PREFIX}"
-  echo "model_path=${MODEL_PATH}"
-  echo "excluded_w8a8_path=${EXCLUDED_W8A8_PATH}"
-  echo "ASCEND_RT_VISIBLE_DEVICES=${ASCEND_RT_VISIBLE_DEVICES}"
-  echo "tensor_parallel_size=4"
-  echo "max_model_len=8192"
-  echo "max_num_seqs=1"
-  echo "request_shape=4096+64"
-  echo "quantization_argument=omitted_use_checkpoint_config"
-  echo "cpu_offload_gb=0"
-  echo "mlapo=disabled_for_four_card_diagnostic"
-  echo "canonical_p5_gate=unchanged"
-} > "${ARTIFACT_DIR}/run_context.txt"
+PYTHON_BIN="${NEW_ENV}/bin/python"
+VLLM_BIN="${NEW_ENV}/bin/vllm"
 
 set +e
-"${PYTHON_BIN}" -m pytest tests/inference_contracts -q \
-  > "${ARTIFACT_DIR}/pytest.log" 2>&1
-pytest_exit_code=$?
+"${PYTHON_BIN}" -m pytest tests/inference_contracts -q > "${ARTIFACT_DIR}/pytest.log" 2>&1
+PYTEST_EXIT_CODE=$?
 set -e
-echo "${pytest_exit_code}" > "${ARTIFACT_DIR}/pytest_exit_code.txt"
-if [ "${pytest_exit_code}" -ne 0 ]; then
-  echo "blocked_inference_contracts" > "${ARTIFACT_DIR}/probe_status.txt"
+echo "${PYTEST_EXIT_CODE}" > "${ARTIFACT_DIR}/pytest_exit_code.txt"
+if [ "${PYTEST_EXIT_CODE}" -ne 0 ]; then
+  echo blocked_inference_contracts > "${ARTIFACT_DIR}/probe_status.txt"
   exit 0
 fi
 
-npu-smi info > "${ARTIFACT_DIR}/npu_smi_info.txt" 2>&1 || true
-npu-smi info -t usages > "${ARTIFACT_DIR}/npu_smi_usage_before.txt" 2>&1 || true
+npu-smi info > "${ARTIFACT_DIR}/npu_smi_before.txt" 2>&1 || true
 
-"${PYTHON_BIN}" - "${ARTIFACT_DIR}" "${MODEL_PATH}" "${EXCLUDED_W8A8_PATH}" <<'PY'
+"${PYTHON_BIN}" - "${MODEL_PATH}" "${ARTIFACT_DIR}" <<'PY'
 import csv
 import importlib.metadata as metadata
 import json
@@ -182,129 +256,104 @@ import platform
 import sys
 from pathlib import Path
 
-artifact_dir = Path(sys.argv[1])
-model_path = Path(sys.argv[2])
-excluded_w8a8_path = Path(sys.argv[3])
+model_path = Path(sys.argv[1])
+artifact_dir = Path(sys.argv[2])
 
-def pkg(name):
+def version(name):
     try:
         return metadata.version(name)
     except metadata.PackageNotFoundError:
         return "missing"
 
-def payload_shards(root, pattern):
-    return sorted(path for path in root.glob(pattern) if not path.name.startswith("._"))
+import torch
+import torch_npu  # noqa: F401
+import vllm
+import vllm_ascend
+from vllm.platforms import current_platform
 
-config = {}
-try:
-    config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
-except Exception as exc:
-    config = {"metadata_error": f"{type(exc).__name__}: {exc}"}
-
-selected_shards = payload_shards(model_path, "model-*.safetensors")
-selected_bytes = sum(path.stat().st_size for path in selected_shards)
-excluded_shards = payload_shards(excluded_w8a8_path, "quant_model_weights-*.safetensors")
-excluded_bytes = sum(path.stat().st_size for path in excluded_shards)
-quant_config = config.get("quantization_config") or {}
+supported = list(current_platform.supported_quantization)
+config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
+quant = config.get("quantization_config") or {}
+shards = sorted(p for p in model_path.glob("model-*.safetensors") if not p.name.startswith("._"))
+weight_bytes = sum(p.stat().st_size for p in shards)
 
 rows = [
-    {
-        "role": "selected_four_card_probe",
-        "model_path": str(model_path),
-        "path_exists": str(model_path.exists()).lower(),
-        "shard_count": len(selected_shards),
-        "weight_bytes": selected_bytes,
-        "weight_gib": round(selected_bytes / 1024**3, 6),
-        "four_card_raw_hbm_gib": 256,
-        "static_capacity_margin_gib": round(256 - selected_bytes / 1024**3, 6),
-        "architecture": ",".join(config.get("architectures", []) or []),
-        "model_type": config.get("model_type", ""),
-        "quant_method": quant_config.get("quant_method", ""),
-        "expert_dtype": config.get("expert_dtype", ""),
-        "num_nextn_predict_layers": config.get("num_nextn_predict_layers", ""),
-        "has_kv_lora_rank": str("kv_lora_rank" in config).lower(),
-    },
-    {
-        "role": "excluded_static_overcapacity_w8a8",
-        "model_path": str(excluded_w8a8_path),
-        "path_exists": str(excluded_w8a8_path.exists()).lower(),
-        "shard_count": len(excluded_shards),
-        "weight_bytes": excluded_bytes,
-        "weight_gib": round(excluded_bytes / 1024**3, 6),
-        "four_card_raw_hbm_gib": 256,
-        "static_capacity_margin_gib": round(256 - excluded_bytes / 1024**3, 6),
-        "architecture": "",
-        "model_type": "",
-        "quant_method": "ascend_modelslim",
-        "expert_dtype": "",
-        "num_nextn_predict_layers": "",
-        "has_kv_lora_rank": "",
-    },
+    ("python", platform.python_version()),
+    ("torch", version("torch")),
+    ("torch_npu", version("torch-npu")),
+    ("vllm", version("vllm")),
+    ("vllm_ascend", version("vllm-ascend")),
+    ("triton_ascend", version("triton-ascend")),
+    ("transformers", version("transformers")),
+    ("npu_available", str(torch.npu.is_available()).lower()),
+    ("visible_device_count", str(torch.npu.device_count())),
+    ("supported_quantization", ",".join(supported)),
 ]
-with (artifact_dir / "model_capacity_preflight.tsv").open("w", encoding="utf-8", newline="") as handle:
-    writer = csv.DictWriter(handle, fieldnames=list(rows[0]), delimiter="\t", lineterminator="\n")
-    writer.writeheader()
+with (artifact_dir / "runtime_versions.tsv").open("w", encoding="utf-8", newline="") as handle:
+    writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
+    writer.writerow(["name", "value"])
     writer.writerows(rows)
 
-selected_ok = (
-    model_path.is_dir()
-    and len(selected_shards) == 46
-    and selected_bytes > 0
+preflight = {
+    "model_path": str(model_path),
+    "shard_count": len(shards),
+    "weight_bytes": weight_bytes,
+    "architecture": config.get("architectures"),
+    "model_type": config.get("model_type"),
+    "quant_method": quant.get("quant_method"),
+    "expert_dtype": config.get("expert_dtype"),
+    "supported_quantization": supported,
+}
+(artifact_dir / "model_preflight.json").write_text(json.dumps(preflight, indent=2) + "\n", encoding="utf-8")
+
+ok = (
+    version("vllm").startswith("0.22.1")
+    and version("vllm-ascend") == "0.22.1rc1"
+    and version("torch") == "2.10.0"
+    and version("torch-npu") == "2.10.0"
+    and version("transformers") == "5.5.4"
+    and torch.npu.is_available()
+    and torch.npu.device_count() == 4
+    and "deepseek_v4_fp8" in supported
+    and len(shards) == 46
+    and weight_bytes == 159617149040
     and config.get("architectures") == ["DeepseekV4ForCausalLM"]
     and config.get("model_type") == "deepseek_v4"
-    and quant_config.get("quant_method") == "fp8"
+    and quant.get("quant_method") == "fp8"
     and config.get("expert_dtype") == "fp4"
 )
-(artifact_dir / "model_preflight_status.txt").write_text(
-    "ready\n" if selected_ok else "blocked_model_files\n", encoding="utf-8"
-)
-
-runtime_rows = [
-    {"name": "python", "value": platform.python_version()},
-    {"name": "torch", "value": pkg("torch")},
-    {"name": "torch_npu", "value": pkg("torch-npu")},
-    {"name": "vllm", "value": pkg("vllm")},
-    {"name": "vllm_ascend", "value": pkg("vllm-ascend")},
-    {"name": "triton_ascend", "value": pkg("triton-ascend")},
-    {"name": "transformers", "value": pkg("transformers")},
-]
-try:
-    import torch
-    import torch_npu  # noqa: F401
-    runtime_rows.extend([
-        {"name": "npu_available", "value": str(torch.npu.is_available()).lower()},
-        {"name": "visible_device_count", "value": str(torch.npu.device_count())},
-    ])
-except Exception as exc:
-    runtime_rows.append({"name": "torch_npu_probe", "value": f"failed:{type(exc).__name__}:{exc}"})
-
-with (artifact_dir / "runtime_versions.tsv").open("w", encoding="utf-8", newline="") as handle:
-    writer = csv.DictWriter(handle, fieldnames=["name", "value"], delimiter="\t", lineterminator="\n")
-    writer.writeheader()
-    writer.writerows(runtime_rows)
+(artifact_dir / "preflight_status.txt").write_text("ready\n" if ok else "blocked_preflight\n", encoding="utf-8")
 PY
 
-if [ "$(tr -d '\r\n' < "${ARTIFACT_DIR}/model_preflight_status.txt")" != "ready" ]; then
-  echo "blocked_model_files" > "${ARTIFACT_DIR}/probe_status.txt"
+if [ "$(tr -d '\r\n' < "${ARTIFACT_DIR}/preflight_status.txt")" != ready ]; then
+  echo blocked_preflight > "${ARTIFACT_DIR}/probe_status.txt"
   exit 0
 fi
+```
 
-VISIBLE_COUNT="$(awk -F '\t' '$1 == "visible_device_count" {print $2}' "${ARTIFACT_DIR}/runtime_versions.tsv")"
-if [ "${VISIBLE_COUNT}" != "4" ]; then
-  echo "blocked_resource" > "${ARTIFACT_DIR}/probe_status.txt"
-  exit 0
-fi
+开始模型前，人工确认 `npu-smi info` 中物理 NPU 4-7 全部健康、空闲、无进程。脚本只能证明进程内可见 4 卡，不能替代物理卡号核对。若不满足，写 `blocked_resource` 后退出。
+
+## 6. 两个有序 profile
+
+只允许以下顺序：
+
+1. `base_no_mtp`：先验证格式门、权重加载、server ready 和一个 `4096+64` 请求。
+2. 只有 `base_no_mtp` 请求成功，才运行 `mtp_on`；除此之外一律停止，不做 fallback。
+
+两个 profile 都不传 `--quantization`，不改 checkpoint config。
+
+```bash
+HOST=127.0.0.1
+PORT=7000
+SERVED_MODEL_NAME=dsv4-official-fp8-four-card
+STARTUP_TIMEOUT_SEC=3600
 
 wait_health_or_exit() {
   local pid="$1"
   local deadline=$((SECONDS + STARTUP_TIMEOUT_SEC))
   while [ "${SECONDS}" -lt "${deadline}" ]; do
-    if ! kill -0 "${pid}" 2>/dev/null; then
-      return 2
-    fi
-    if curl -fsS --max-time 5 "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then
-      return 0
-    fi
+    if ! kill -0 "${pid}" 2>/dev/null; then return 2; fi
+    if curl -fsS --max-time 5 "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then return 0; fi
     sleep 5
   done
   return 1
@@ -319,26 +368,18 @@ stop_profile() {
 run_single_request() {
   local profile_dir="$1"
   "${PYTHON_BIN}" - "${MODEL_PATH}" "http://${HOST}:${PORT}" "${SERVED_MODEL_NAME}" "${profile_dir}" <<'PY'
-import json
-import sys
-import time
-import urllib.request
+import json, sys, time, urllib.request
 from pathlib import Path
-
 from transformers import AutoTokenizer
 
 model_path, base_url, served_model, profile_dir = sys.argv[1:]
 profile_dir = Path(profile_dir)
 tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 ids = []
-block = 0
+i = 0
 while len(ids) < 4096:
-    block += 1
-    text = (
-        f"DeepSeek four-card format probe block {block:06d}. "
-        "This deterministic input is only for a bounded runtime smoke. "
-    )
-    ids.extend(tokenizer(text, add_special_tokens=False).input_ids)
+    i += 1
+    ids.extend(tokenizer(f"DeepSeek official FP8 four-card runtime probe block {i:06d}. ", add_special_tokens=False).input_ids)
 payload = {
     "model": served_model,
     "prompt": ids[:4096],
@@ -349,31 +390,20 @@ payload = {
     "stream": False,
 }
 request = urllib.request.Request(
-    base_url.rstrip("/") + "/v1/completions",
-    data=json.dumps(payload).encode("utf-8"),
+    base_url + "/v1/completions",
+    data=json.dumps(payload).encode(),
     headers={"Content-Type": "application/json"},
     method="POST",
 )
 started = time.perf_counter()
-result = {
-    "status": "failed",
-    "http_status": 0,
-    "input_tokens": 4096,
-    "requested_output_tokens": 64,
-    "completion_tokens": 0,
-    "finish_reason": "",
-    "client_wall_s": 0.0,
-    "error": "",
-}
+result = {"status": "failed", "input_tokens": 4096, "requested_output_tokens": 64, "completion_tokens": 0, "error": ""}
 try:
     with urllib.request.urlopen(request, timeout=7200) as response:
-        body = json.loads(response.read().decode("utf-8"))
+        body = json.loads(response.read().decode())
         result["http_status"] = response.status
+        result["prompt_tokens"] = int((body.get("usage") or {}).get("prompt_tokens") or 0)
         result["completion_tokens"] = int((body.get("usage") or {}).get("completion_tokens") or 0)
-        choices = body.get("choices") or []
-        result["finish_reason"] = str((choices[0] if choices else {}).get("finish_reason") or "")
-        if response.status == 200 and result["completion_tokens"] == 64:
-            result["status"] = "success"
+        result["status"] = "success" if response.status == 200 and result["prompt_tokens"] == 4096 and result["completion_tokens"] == 64 else "failed"
 except Exception as exc:
     result["error"] = f"{type(exc).__name__}: {exc}"
 result["client_wall_s"] = round(time.perf_counter() - started, 6)
@@ -386,7 +416,6 @@ run_profile() {
   local mtp_mode="$2"
   local profile_dir="${ARTIFACT_DIR}/${profile_name}"
   mkdir -p "${profile_dir}"
-
   local cmd=(
     "${VLLM_BIN}" serve "${MODEL_PATH}"
     --safetensors-load-strategy prefetch
@@ -398,23 +427,23 @@ run_profile() {
     --data-parallel-size 1
     --tensor-parallel-size 4
     --enable-expert-parallel
-    --host "${HOST}"
-    --port "${PORT}"
+    --host "${HOST}" --port "${PORT}"
     --block-size 128
     --tokenizer-mode deepseek_v4
     --tool-call-parser deepseek_v4
     --enable-auto-tool-choice
     --reasoning-parser deepseek_v4
+    --no-enable-prefix-caching
     --enforce-eager
-    --additional-config '{"enable_flashcomm1":true,"enable_dsa_cp":true,"enable_mlapo":false,"enable_cpu_binding":true,"multistream_overlap_shared_expert":false}'
+    --additional-config '{"enable_flashcomm1":true,"enable_dsa_cp":true,"enable_cpu_binding":true,"multistream_overlap_shared_expert":false}'
   )
-  if [ "${mtp_mode}" = "mtp_on" ]; then
+  if [ "${mtp_mode}" = mtp_on ]; then
     cmd+=(--speculative-config '{"num_speculative_tokens":1,"method":"mtp","enforce_eager":true}')
   fi
 
   printf '%q ' "${cmd[@]}" > "${profile_dir}/server_command.txt"
   printf '\n' >> "${profile_dir}/server_command.txt"
-  npu-smi info -t usages > "${profile_dir}/npu_smi_usage_before_start.txt" 2>&1 || true
+  npu-smi info > "${profile_dir}/npu_smi_before.txt" 2>&1 || true
 
   set +e
   setsid "${cmd[@]}" > "${profile_dir}/vllm_server.log" 2>&1 &
@@ -423,36 +452,28 @@ run_profile() {
   wait_health_or_exit "${server_pid}"
   local ready_exit_code=$?
   echo "${ready_exit_code}" > "${profile_dir}/server_ready_exit_code.txt"
-  npu-smi info -t usages > "${profile_dir}/npu_smi_usage_after_start.txt" 2>&1 || true
-
   if [ "${ready_exit_code}" -eq 0 ]; then
     run_single_request "${profile_dir}" > "${profile_dir}/request_client.log" 2>&1
     echo "$?" > "${profile_dir}/request_client_exit_code.txt"
   else
-    echo "not_run_server_not_ready" > "${profile_dir}/request_client_exit_code.txt"
+    echo not_run_server_not_ready > "${profile_dir}/request_client_exit_code.txt"
   fi
-
-  npu-smi info -t usages > "${profile_dir}/npu_smi_usage_after_request.txt" 2>&1 || true
+  npu-smi info > "${profile_dir}/npu_smi_after.txt" 2>&1 || true
   stop_profile "${server_pid}"
   set -e
 }
 
-set +e
-run_profile mtp_on mtp_on
+run_profile base_no_mtp mtp_off
+BASE_STATUS="$("${PYTHON_BIN}" -c 'import json, pathlib; p=pathlib.Path("'"${ARTIFACT_DIR}"'/base_no_mtp/request_result.json"); print(json.loads(p.read_text()).get("status", "not_run") if p.exists() else "not_run")')"
 
-MTP_LOG="${ARTIFACT_DIR}/mtp_on/vllm_server.log"
-if grep -Eqi 'unknown quantization|quantization[^[:cntrl:]]*(not supported|unsupported|does not match)|unsupported[^[:cntrl:]]*(fp4|mxfp4)|deepseek_v4_fp8[^[:cntrl:]]*(not supported|unsupported)' "${MTP_LOG}"; then
-  echo "quantization_format_failure_stop_no_retry" > "${ARTIFACT_DIR}/fallback_decision.txt"
-elif grep -Eqi 'out of memory|npu[^[:cntrl:]]*oom|failed to allocate|not enough memory|insufficient memory' "${MTP_LOG}"; then
-  echo "capacity_failure_stop_no_retry" > "${ARTIFACT_DIR}/fallback_decision.txt"
-elif [ "$(cat "${ARTIFACT_DIR}/mtp_on/server_ready_exit_code.txt")" != "0" ] \
-  && grep -Eqi 'unsupported speculative|speculative[^[:cntrl:]]*(error|fail|unsupported)|mtp[^[:cntrl:]]*(error|fail|unsupported)|DeepSeekV4MTP[^[:cntrl:]]*(error|exception|attribute)' "${MTP_LOG}"; then
-  echo "explicit_mtp_failure_retry_once_without_mtp" > "${ARTIFACT_DIR}/fallback_decision.txt"
-  run_profile mtp_off mtp_off
+if [ "${BASE_STATUS}" = success ]; then
+  echo base_success_run_mtp > "${ARTIFACT_DIR}/profile_decision.txt"
+  run_profile mtp_on mtp_on
 else
-  echo "no_fallback" > "${ARTIFACT_DIR}/fallback_decision.txt"
+  echo base_failed_stop_no_fallback > "${ARTIFACT_DIR}/profile_decision.txt"
 fi
-set -e
+
+npu-smi info > "${ARTIFACT_DIR}/npu_smi_final.txt" 2>&1 || true
 
 "${PYTHON_BIN}" - "${ARTIFACT_DIR}" <<'PY'
 import json
@@ -461,156 +482,143 @@ import sys
 from pathlib import Path
 
 artifact_dir = Path(sys.argv[1])
+
+def request_result(name):
+    path = artifact_dir / name / "request_result.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"status": "not_run"}
+
+def log_text(name):
+    path = artifact_dir / name / "vllm_server.log"
+    return path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
+
+def ready_code(name):
+    path = artifact_dir / name / "server_ready_exit_code.txt"
+    return path.read_text(encoding="utf-8").strip() if path.exists() else "not_run"
+
+base = request_result("base_no_mtp")
+mtp = request_result("mtp_on")
+base_log = log_text("base_no_mtp")
+all_logs = base_log + "\n" + log_text("mtp_on")
+
+quant_re = re.compile(r"deepseek_v4_fp8.*(not supported|unsupported)|unsupported.*(fp4|mxfp4)|quantization.*(not supported|unsupported)", re.I)
+weight_re = re.compile(r"(weight|safetensor|checkpoint).*(shape|dtype|scale|name|loader|load).*(error|fail|mismatch|missing)|KeyError.*weight", re.I)
+capacity_re = re.compile(r"out of memory|npu.*oom|failed to allocate|not enough memory|insufficient memory", re.I)
+
+if base.get("status") == "success" and mtp.get("status") == "success":
+    grade = "diagnostic_green"
+    first_failure_stage = "none"
+elif base.get("status") == "success":
+    grade = "diagnostic_yellow_mtp"
+    first_failure_stage = "mtp_startup_or_request"
+elif quant_re.search(base_log):
+    grade = "diagnostic_red_quant_format"
+    first_failure_stage = "model_config_or_quantization_scheme"
+elif weight_re.search(base_log):
+    grade = "diagnostic_red_weight_load"
+    first_failure_stage = "weight_load"
+elif capacity_re.search(base_log):
+    grade = "diagnostic_red_capacity"
+    first_failure_stage = "hbm_or_weight_allocation"
+else:
+    grade = "diagnostic_red_runtime"
+    first_failure_stage = "architecture_operator_collective_or_request"
+
 profiles = []
-any_ready = False
-any_success = False
-mtp_success = False
-capacity_failure = False
-quant_format_failure = False
-
-capacity_pattern = re.compile(r"out of memory|npu.*oom|failed to allocate|not enough memory|insufficient memory", re.I)
-quant_pattern = re.compile(
-    r"unknown quantization|quantization.*(not supported|unsupported|does not match)|"
-    r"unsupported.*(fp4|mxfp4)|deepseek_v4_fp8.*(not supported|unsupported)",
-    re.I,
-)
-
-for name, mtp_enabled in (("mtp_on", True), ("mtp_off", False)):
+for name in ("base_no_mtp", "mtp_on"):
     root = artifact_dir / name
     if not root.exists():
         continue
-    ready = (root / "server_ready_exit_code.txt").read_text(encoding="utf-8", errors="replace").strip() if (root / "server_ready_exit_code.txt").exists() else "missing"
-    request = {}
-    if (root / "request_result.json").exists():
-        request = json.loads((root / "request_result.json").read_text(encoding="utf-8"))
-    log_text = (root / "vllm_server.log").read_text(encoding="utf-8", errors="replace") if (root / "vllm_server.log").exists() else ""
-    is_capacity = bool(capacity_pattern.search(log_text))
-    is_quant_format = bool(quant_pattern.search(log_text))
-    request_success = request.get("status") == "success"
-    any_ready = any_ready or ready == "0"
-    any_success = any_success or request_success
-    mtp_success = mtp_success or (mtp_enabled and request_success)
-    capacity_failure = capacity_failure or is_capacity
-    quant_format_failure = quant_format_failure or is_quant_format
+    request = request_result(name)
     profiles.append({
         "profile": name,
-        "mtp_enabled": mtp_enabled,
-        "server_ready_exit_code": ready,
+        "server_ready_exit_code": ready_code(name),
         "request_status": request.get("status", "not_run"),
+        "prompt_tokens": request.get("prompt_tokens", 0),
         "completion_tokens": request.get("completion_tokens", 0),
-        "quant_format_failure_matched": is_quant_format,
-        "capacity_failure_matched": is_capacity,
         "server_command_path": str(root / "server_command.txt"),
         "server_log_path": str(root / "vllm_server.log"),
     })
 
-if mtp_success:
-    grade = "diagnostic_green"
-elif any_ready:
-    grade = "diagnostic_yellow"
-elif quant_format_failure:
-    grade = "diagnostic_red_quant_format"
-elif capacity_failure:
-    grade = "diagnostic_red_capacity"
-else:
-    grade = "diagnostic_red_runtime"
-
 result = {
     "run_id": artifact_dir.name,
     "probe_grade": grade,
+    "first_failure_stage": first_failure_stage,
+    "environment_build_exit_code": (artifact_dir / "environment_build_exit_code.txt").read_text().strip(),
     "authorized_visible_devices": "4,5,6,7",
-    "selected_checkpoint": "/data/node0_disk1/Public/DeepSeek-V4-Flash",
-    "excluded_w8a8_checkpoint": "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp",
-    "canonical_p5_eight_card_gate_unchanged": True,
-    "four_card_failure_extrapolates_to_eight_cards": False,
+    "model_path": "/data/node0_disk1/Public/DeepSeek-V4-Flash",
+    "checkpoint_format": "fp8_non_expert_plus_fp4_experts",
+    "retired_w8a8_started": False,
+    "explicit_quantization_argument_used": False,
     "profiles": profiles,
+    "residual_process_check": "operator_confirms_from_npu_smi_final",
 }
 (artifact_dir / "probe_result.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 excerpts = []
-for profile in profiles:
-    log_path = Path(profile["server_log_path"])
-    if not log_path.exists():
-        continue
-    lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
-    excerpts.append(f"## {profile['profile']} last 80 lines")
-    excerpts.extend(lines[-80:])
-excerpt_text = "\n".join(excerpts)[:30000]
-(artifact_dir / "first_failure_excerpt.txt").write_text(excerpt_text + "\n", encoding="utf-8")
-
-candidate_names = [
-    "run_context.txt",
-    "git_sync_state.txt",
-    "pytest_exit_code.txt",
-    "runtime_versions.tsv",
-    "model_capacity_preflight.tsv",
-    "model_preflight_status.txt",
-    "fallback_decision.txt",
-    "probe_result.json",
-    "first_failure_excerpt.txt",
-]
-manifest_lines = ["path\tsize_bytes\tunder_70kb"]
-for name in candidate_names:
-    path = artifact_dir / name
-    if path.exists():
-        manifest_lines.append(f"{path}\t{path.stat().st_size}\t{str(path.stat().st_size <= 70 * 1024).lower()}")
-(artifact_dir / "return_candidate_manifest.tsv").write_text("\n".join(manifest_lines) + "\n", encoding="utf-8")
-
-summary_lines = [
-    f"run_id={artifact_dir.name}",
-    f"probe_grade={grade}",
-    "authorized_visible_devices=4,5,6,7",
-    "selected_checkpoint=DeepSeek-V4-Flash_148.66GiB",
-    "excluded_w8a8_checkpoint=279.41GiB_static_overcapacity",
-    f"any_server_ready={str(any_ready).lower()}",
-    f"any_request_success={str(any_success).lower()}",
-    f"quant_format_failure_matched={str(quant_format_failure).lower()}",
-    f"capacity_failure_matched={str(capacity_failure).lower()}",
-    "canonical_p5_eight_card_gate_unchanged=true",
-    f"artifact_dir={artifact_dir}",
-]
-(artifact_dir / "mail_summary.txt").write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
+for name in ("base_no_mtp", "mtp_on"):
+    text = log_text(name)
+    if text:
+        excerpts.append(f"## {name} last 100 lines")
+        excerpts.extend(text.splitlines()[-100:])
+(artifact_dir / "first_failure_excerpt.txt").write_text("\n".join(excerpts)[:30000] + "\n", encoding="utf-8")
 PY
 ```
 
-## 5. 结果分级
+## 7. 分级与停止规则
 
-| 本轮状态 | 条件 | 开发机下一步 |
-| --- | --- | --- |
-| `diagnostic_green` | 选中 checkpoint 在 TP4 + MTP 下 server ready，且 `4096+64` 成功 | 只记四卡格式/运行时诊断成功；不解锁 P6，再决定 canonical 八卡 P5 |
-| `diagnostic_yellow` | server ready 但请求失败，或只有 MTP off 成功 | 留在 P5，按请求或 MTP 第一失败点稳定化 |
-| `diagnostic_red_quant_format` | `deepseek_v4_fp8`、FP4/MXFP4 或 NPU quantization platform gate 拒绝 | 停止四卡原 checkpoint 路线；评估 ModelSlim W4A8/其他可装入四卡的 Ascend 格式，不改包、不现场转换 |
-| `diagnostic_red_capacity` | 选中 148.66GiB checkpoint 仍在权重/HBM 分配失败 | 记录真实运行时开销；不启用 offload，不切 W8A8 |
-| `diagnostic_red_runtime` | architecture/parser/`kv_lora_rank`/DSA/MTP/kernel 等其他运行时错误 | 留在 P5，按首个真实失败点定向修复 |
-| `blocked_resource` | NPU 4-7 任一卡不健康、不空闲或不可见 | 不启动模型，等资源恢复 |
+| 状态 | 条件 |
+| --- | --- |
+| `diagnostic_green` | `base_no_mtp` 和 `mtp_on` 均 ready，且各自一个 `4096+64` 请求成功 |
+| `diagnostic_yellow_mtp` | base 请求成功，但 MTP profile 未 ready 或请求失败 |
+| `diagnostic_red_quant_format` | 新栈仍拒绝 `deepseek_v4_fp8` / FP4 / quantization format |
+| `diagnostic_red_weight_load` | 已通过量化平台门，但 checkpoint 权重名称、shape、scale、dtype 或 loader 失败 |
+| `diagnostic_red_capacity` | HBM/权重分配 OOM 或容量不足 |
+| `diagnostic_red_runtime` | architecture/parser/DSA/operator/collective/request 等其他真实首错 |
+| `blocked_environment` | 独立环境无法按固定版本构建、`pip check` 或 import 失败 |
+| `blocked_resource` | NPU 4-7 不健康、不空闲或不可见 |
 
-任何四卡结果都不得把 canonical W8A8 八卡 P5 标记为 `green`，也不得把四卡失败外推为八卡 W8A8 不可行。
+停止规则：
 
-## 6. 回传要求
+- base 失败后立即停止；禁止用 MTP off/on、W8A8、其他模型格式、offload、context 降级或源码 patch 继续试错。
+- 禁止 `--quantization ascend`，禁止任何显式 `--quantization`。
+- 禁止 CPU/NVMe/KV offload、swap、UCM、LMCache、KV Pool、weight offload。
+- 禁止 128K ladder、并发矩阵、msprof、P6 benchmark、A/B 或瓶颈归因。
+- 即使四卡 green，也不自动使用 NPU 0-3，不执行未来八卡任务；等待新的明确授权。
 
-本轮只回传不超过 70KB 的状态邮件正文，不添加附件，不执行 upload-api。邮件正文必须包含：
+请生成 `probe_result.json` 和不超过 30KB 的 `first_failure_excerpt.txt`。`probe_result.json` 至少包含：环境构建状态、精确版本/commit、`supported_quantization`、每个 profile 的完整命令路径、ready/request 状态、prompt/completion tokens、分级、第一失败阶段、模型路径、设备范围和最终残留进程结论。
 
-1. 全量拉取后的 `local_head`、`origin_main`、ahead/behind，明确是否为 `0 0`；不要只写某个提交已存在。
-2. `pytest` 结果、精确 runtime 版本。
-3. NPU `4,5,6,7` 健康/空闲结论和启动前 HBM 小摘要。
-4. 两个目录各自的 shard 数、权重字节数/GiB、四卡 256GiB 静态差额，并明确 W8A8 未启动。
-5. 每个实际运行 profile 的完整启动命令、server ready 状态、请求结果、第一失败点类型和精简错误摘要；明确命令没有 `--quantization` 参数。
-6. `probe_grade`、服务器 artifact 目录和以下小文件的精确路径/字节数，供开发机后续决定是否传输：
+## 8. 回传要求
+
+只发送不超过 70KB 的状态邮件正文；不添加附件，不执行 upload-api。邮件标题建议：
 
 ```text
-run_context.txt
+[P5-FP8-v0221rc1] <probe_grade> | <first_failure_or_success> | 2026-07-10
+```
+
+正文必须包含：
+
+1. `local_head`、`origin_main`、ahead/behind，明确完整同步而非单提交。
+2. 新环境构建是否成功；基础环境和旧源码是否保持未改动。
+3. vLLM/vLLM-Ascend tag、commit、wheel 文件名/SHA-256、精确包版本和 `pip check` 结果。
+4. `supported_quantization` 是否包含 `fp8`、`deepseek_v4_fp8`。
+5. NPU 4-7 健康/空闲、启动前与最终 HBM、残留进程结论；明确 NPU 0-3 未触碰。
+6. 模型 46 分片/字节数和 FP8+FP4 metadata；明确 W8A8 目录未启动、未转换。
+7. 每个实际 profile 的完整命令、ready、请求 token 数、第一失败点和精简错误；明确没有 `--quantization`。
+8. `probe_grade`、artifact 目录，以及下列小文件的精确路径和字节数：
+
+```text
 git_sync_state.txt
+environment_build_exit_code.txt
 runtime_versions.tsv
-model_capacity_preflight.tsv
-model_preflight_status.txt
-fallback_decision.txt
+model_preflight.json
+preflight_status.txt
+pytest_exit_code.txt
+profile_decision.txt
 probe_result.json
 first_failure_excerpt.txt
-return_candidate_manifest.tsv
-mail_summary.txt
 */server_command.txt
 */server_ready_exit_code.txt
 */request_result.json
 ```
 
-raw `vllm_server.log`、raw `npu-smi` 时序、生成文本、模型文件、环境目录和完整 artifact 目录必须留在服务器。如后续需要传输具体小文件，先由开发机向用户报告精确路径、字节数、敏感性和候选方式，取得本次范围的明确选择后才能发送。
+raw `environment_build.log`、raw `vllm_server.log`、raw `npu-smi`、模型、wheel、conda 环境、源码目录和完整 artifact 目录全部留在服务器。后续如需传某个小文件，仍必须先报告精确路径、字节数、敏感性与候选传输方式，由用户逐文件选择后再执行。

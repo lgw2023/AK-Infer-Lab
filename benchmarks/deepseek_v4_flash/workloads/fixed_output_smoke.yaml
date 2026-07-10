@@ -2,7 +2,7 @@ schema_version: 1
 workload_id: p6_fixed_output_smoke_draft
 date: "2026-07-08"
 purpose: first_p6_smoke_after_p5_readiness
-model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+model_object_id: deepseek_v4_flash_official_hf
 scenario: p6_eight_card_baseline
 request_plan:
   request_count: [1, 4]
@@ -22,7 +22,8 @@ runtime_reference:
   runtime: vLLM-Ascend
   tensor_parallel_size: 8
   enable_expert_parallel: true
-  quantization: ascend
+  quantization: auto_from_checkpoint_config
+  explicit_quantization_argument: forbidden
   enable_prefix_caching: true
   enable_chunked_prefill: true
   speculative_mtp: planned_after_basic_smoke
@@ -35,3 +36,4 @@ boundaries:
   - This is a template, not a completed experiment.
   - It must not be interpreted as benchmark until P6 controlled runs complete.
   - If runtime flags are reduced to make the model run, label the output degraded_smoke.
+  - The W8A8 object is retired; this draft applies only to the official mixed FP8 plus FP4-expert checkpoint after P5 succeeds.

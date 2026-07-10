@@ -1,0 +1,128 @@
+schema_version: 1
+workload_id: p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1
+date: "2026-07-10"
+purpose: validate_official_deepseek_fp8_fp4_checkpoint_on_the_first_released_ascend_stack_that_registers_deepseek_v4_fp8
+model_object_id: deepseek_v4_flash_official_hf
+scenario: isolated_runtime_upgrade_then_four_card_startup_and_single_request_probe
+is_smoke: true
+is_benchmark: false
+is_canonical_p5_runtime_gate: true
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+retired_model_object:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  policy: inventory_only_do_not_start_convert_or_use_for_future_p5_p6
+prior_result:
+  workload: p5_4card_startup_probe.yaml
+  runtime: vllm_0_20_2_plus_vllm_ascend_0_20_2rc1
+  grade: diagnostic_red_quant_format
+  first_failure: deepseek_v4_fp8_quantization_is_currently_not_supported_in_npu
+  failure_before_weight_load_hbm_or_mtp: true
+target_runtime:
+  base_conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
+  new_conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm_source_path: /data/node0_disk1/vllm-0.22.1
+  vllm_tag: v0.22.1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_install_mode: editable_empty_no_deps_no_build_isolation
+  vllm_build_tooling: build_requirements_except_torch_2_11_installed_explicitly_in_isolated_env
+  vllm_expected_version: 0.22.1+empty
+  vllm_ascend_tag: v0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  vllm_ascend_expected_version: 0.22.1rc1
+  vllm_ascend_wheel: vllm_ascend-0.22.1rc1-cp311-cp311-manylinux_2_34_aarch64.whl
+  wheel_sha256_observed_from_ascend_index: 0e08c50ff27b174232c65bbb7feb3605734b09982bdc786d1b874d9ac9615ff1
+  python: "3.11"
+  cann: "9.0.0"
+  torch: "2.10.0"
+  torch_npu: "2.10.0"
+  torchvision: "0.25.0"
+  torchaudio: "2.10.0"
+  triton_ascend: "3.2.1"
+  transformers: "5.5.4"
+source_evidence:
+  npu_platform_supported_quantization:
+    - ascend
+    - compressed-tensors
+    - fp8
+    - deepseek_v4_fp8
+  official_checkpoint_quantization: fp8_non_expert_plus_fp4_experts
+  official_checkpoint_detection: deepseek_v4_fp8
+  a2_support_scope: source_and_release_tag_claim_requires_server_runtime_validation
+resource_gate:
+  authorized_visible_devices: "4,5,6,7"
+  expected_visible_device_count: 4
+  all_authorized_devices_must_be_healthy_and_idle: true
+  any_other_device_forbidden: true
+capacity_prior:
+  checkpoint_weight_size_gib: 148.66
+  four_card_raw_hbm_gib: 256
+  static_capacity_margin_gib: 107.34
+  expected_fit: plausible_but_not_proven_after_runtime_overhead
+runtime_reference:
+  command: vllm serve
+  tensor_parallel_size: 4
+  enable_expert_parallel: true
+  data_parallel_size: 1
+  max_model_len: 8192
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  gpu_memory_utilization: 0.92
+  quantization: auto_from_checkpoint_config
+  explicit_quantization_argument: forbidden
+  tokenizer_mode: deepseek_v4
+  tool_call_parser: deepseek_v4
+  reasoning_parser: deepseek_v4
+  enable_auto_tool_choice: true
+  block_size: 128
+  enforce_eager: true
+  prefix_cache: disabled_for_startup_probe
+  cpu_offload_gb: 0
+  additional_config:
+    enable_flashcomm1: true
+    enable_dsa_cp: true
+    enable_cpu_binding: true
+    multistream_overlap_shared_expert: false
+profiles:
+  - name: base_no_mtp
+    order: 1
+    goal: validate_model_load_server_ready_and_one_request_without_speculative_decoding
+  - name: mtp_on
+    order: 2
+    run_only_if: base_no_mtp_request_succeeds
+    speculative_config:
+      num_speculative_tokens: 1
+      method: mtp
+      enforce_eager: true
+request_plan:
+  run_only_if_server_health_is_ready: true
+  request_count_per_profile: 1
+  input_tokens: 4096
+  output_tokens: 64
+  temperature: 0.0
+  min_tokens: 64
+  max_tokens: 64
+  ignore_eos: true
+stop_policy:
+  stop_after_environment_build_or_import_failure: true
+  stop_after_base_profile_startup_or_request_failure: true
+  no_w8a8_checkpoint_attempt: true
+  no_quantization_config_override: true
+  no_context_ladder: true
+  no_cpu_disk_or_kv_offload: true
+  no_source_patch: true
+grading:
+  diagnostic_green: base_no_mtp_and_mtp_on_each_complete_one_4096_plus_64_request
+  diagnostic_yellow_mtp: base_no_mtp_succeeds_but_mtp_on_fails
+  diagnostic_red_quant_format: deepseek_v4_fp8_or_fp4_rejected_on_target_stack
+  diagnostic_red_weight_load: target_stack_passes_format_gate_but_weight_load_fails
+  diagnostic_red_capacity: hbm_or_weight_allocation_failure
+  diagnostic_red_runtime: architecture_parser_operator_collective_or_request_failure
+  blocked_environment: isolated_target_stack_cannot_be_built_or_imported
+  blocked_resource: any_authorized_device_not_healthy_idle_or_visible
+boundaries:
+  - The official checkpoint is a mixed FP8 plus FP4-expert object, not pure FP8.
+  - vLLM-Ascend release documentation still demonstrates W8A8 deployment; source registration does not replace this server smoke.
+  - Four-card success closes the current runtime gate but does not authorize or complete the eight-card 128K context ladder.
+  - No P6 benchmark, profiler, A/B, offload, conversion or bottleneck claim is allowed.
+  - Raw logs and large artifacts remain server-local.

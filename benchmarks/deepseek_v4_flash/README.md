@@ -6,23 +6,25 @@ Current objects:
 
 | model_object_id | source | server path | role |
 | --- | --- | --- | --- |
-| `deepseek_v4_flash_w8a8_mtp_modelscope` | ModelScope `DeepSeek-V4-Flash-w8a8-mtp` | `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` | P5 eight-card startup smoke and P6 baseline first candidate |
-| `deepseek_v4_flash_official_hf` | Hugging Face `deepseek-ai/DeepSeek-V4-Flash` | `/data/node0_disk1/Public/DeepSeek-V4-Flash` | source checkpoint, conversion/readiness and boundary candidate |
+| `deepseek_v4_flash_official_hf` | Hugging Face `deepseek-ai/DeepSeek-V4-Flash` | `/data/node0_disk1/Public/DeepSeek-V4-Flash` | project primary runtime object; mixed FP8 plus FP4 experts |
+| `deepseek_v4_flash_w8a8_mtp_modelscope` | ModelScope `DeepSeek-V4-Flash-w8a8-mtp` | `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` | retired inventory only; do not start or convert |
 
 Boundaries:
 
 - Downloaded model files do not prove Ascend runtime compatibility.
-- The official HF checkpoint must not be treated as the vLLM-Ascend W8A8-MTP `--quantization ascend` runtime object before validation.
-- The authorized four-card probe uses the 148.66GiB HF checkpoint only for FP8/FP4 format/runtime diagnosis and omits an explicit `--quantization`; canonical P5 still uses the W8A8-MTP object on eight cards.
+- The official checkpoint is mixed FP8 plus FP4 experts, not pure FP8 and not a `--quantization ascend` object.
+- The completed v0.20.2/v0.20.2rc1 probe failed at the NPU quantization gate before weight load. The current four-card task builds an isolated v0.22.1/v0.22.1rc1 stack, which registers `deepseek_v4_fp8`, then reruns the same checkpoint without an explicit `--quantization`.
+- W8A8 is retired from future project execution; its inventory remains historical evidence only.
 - P5 is a startup and long-context smoke, not a benchmark or bottleneck attribution run.
 - Any server task must be written by clearing and rewriting `通信模块/docs/developer-to-server.md`, with body and returned attachments kept within the 70KB communication limit.
 
 P5 deliverables:
 
 - `deepseek_v4_flash_model_objects.yaml`: model object registry and boundaries.
-- `p5_readiness_card.yaml`: eight-card startup and 128K context-ladder smoke card.
-- `workloads/p5_8card_context_ladder.yaml`: fixed-output context ladder from 4K through 128K.
-- `workloads/p5_4card_startup_probe.yaml`: authorized NPU 4-7 TP4 startup/capacity diagnostic; it cannot satisfy the canonical eight-card P5 gate.
+- `p5_readiness_card.yaml`: current official-checkpoint runtime gate and future eight-card boundary.
+- `workloads/p5_4card_startup_probe.yaml`: completed v0.20.2/v0.20.2rc1 probe with `diagnostic_red_quant_format` result.
+- `workloads/p5_4card_fp8_stack_upgrade_probe.yaml`: current NPU 4-7 isolated-stack build and TP4 startup/request probe.
+- `workloads/p5_8card_context_ladder.yaml`: future fixed-output context ladder, blocked until the four-card gate succeeds and eight-card scope is separately authorized.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:
