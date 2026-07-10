@@ -53,14 +53,14 @@
 
 | 对象 | 本地路径 | 当前状态 | 用途 | 边界 |
 | --- | --- | --- | --- | --- |
-| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | ModelScope 版本已下载完成 | P6 单机八卡 baseline 首选对象；优先匹配 vLLM-Ascend `--quantization ascend` reference | 本地路径不是服务器路径；服务器模型路径、权重完整性、runtime 兼容性必须由后续服务器 handoff 验证 |
-| `deepseek-ai/DeepSeek-V4-Flash` | `/Volumes/Elements/DeepSeek-V4-Flash` | 仍在下载 | 官方来源、版本对照、转换/兼容性评估、P7/P8 边界研究候选 | 下载未完成前不能写成 ready；未验证前不能等同于 Ascend W8A8-MTP runtime 格式 |
+| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | 本地已下载；服务器盘点 70 连续分片 / `300,013,759,966 B ≈ 279.41 GiB` | P6 单机八卡 baseline 首选对象；优先匹配 vLLM-Ascend `--quantization ascend` reference | 服务器分片事实不等于 runtime load；静态权重超过四卡约 256GiB HBM，本轮四卡不启动 |
+| `deepseek-ai/DeepSeek-V4-Flash` | `/Volumes/Elements/DeepSeek-V4-Flash` | 本地 metadata 已观测；服务器盘点 46 连续分片 / `159,617,149,040 B ≈ 148.66 GiB` | 官方来源、版本对照，以及当前 NPU 4-7 FP8/FP4 格式兼容性探针 | checkpoint config 的 `fp8` + expert `fp4` 不等同于 Ascend ModelSlim 格式；四卡实跑前不得写成 runtime ready |
 
 用户会自行把模型目录拷贝到 Ascend 服务器。本仓库只登记对象、来源、实验用途和边界，不复制模型 payload，不推断服务器路径。
 
 ## 3. 不确定性与边界
 
-- DeepSeek-V4-Flash 的来源和量化形态必须分开登记：P6 八卡基准首选 ModelScope `DeepSeek-V4-Flash-w8a8-mtp`；`deepseek-ai/DeepSeek-V4-Flash` 先作为官方来源、版本对照和转换/兼容性对象。
+- DeepSeek-V4-Flash 的来源和量化形态必须分开登记：P6 八卡基准首选 ModelScope `DeepSeek-V4-Flash-w8a8-mtp`；`deepseek-ai/DeepSeek-V4-Flash` 当前只承担四卡 FP8/FP4 格式/运行时诊断，不因体积较小而升级为 canonical runtime object。
 - vLLM/vLLM-Ascend `main` 只用于跟踪最新代码；当前一方开发起点分别是 `v0.20.2@bc150f5` 和 `v0.20.2rc1@367b8e6`。正式服务器任务必须在 handoff 中固定版本、镜像、commit 或文档 URL，不能照抄 `main` 参数。
 - 官方教程列出 Atlas 800 A2/A3；本项目服务器是 Atlas 800T A2，必须用服务器 smoke 证明实际兼容性。
 - 单卡/双卡极限实验不等同于官方模型可部署。

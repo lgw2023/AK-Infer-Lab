@@ -15,6 +15,12 @@ model_objects:
       quantization: ascend
       reference_role: p5_8card_smoke_and_p6_baseline_first_candidate
     model_role: official_baseline_runtime_candidate
+    server_inventory:
+      evidence_date: "2026-07-10"
+      shard_count: 70
+      weight_bytes: 300013759966
+      weight_gib: 279.41
+      inventory_status: continuous_shards_metadata_verified_runtime_not_loaded
     expected_scenarios:
       - p5_8card_context_ladder_smoke
       - p6_eight_card_baseline
@@ -33,10 +39,16 @@ model_objects:
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
     quantization_or_format: fp4_fp8_mixed_source_checkpoint
     intended_runtime:
-      runtime: to_be_determined
-      quantization: to_be_determined
-      reference_role: source_checkpoint_readiness_and_conversion_candidate
-    model_role: source_checkpoint_readiness
+      runtime: vllm_0_20_2_plus_vllm_ascend_0_20_2rc1_probe_only
+      quantization: checkpoint_config_fp8_with_fp4_experts_no_explicit_ascend_override
+      reference_role: authorized_four_card_format_compatibility_probe
+    model_role: source_checkpoint_and_four_card_format_probe
+    server_inventory:
+      evidence_date: "2026-07-10"
+      shard_count: 46
+      weight_bytes: 159617149040
+      weight_gib: 148.66
+      inventory_status: continuous_shards_metadata_verified_runtime_not_loaded
     expected_scenarios:
       - p5_readiness
       - p7_single_dual_extreme
@@ -44,8 +56,10 @@ model_objects:
       - p9_hardware_sensitivity
     boundaries:
       - It must not be treated as directly loadable by vLLM-Ascend --quantization ascend before conversion or validation.
+      - Target-tag source shows vLLM detects deepseek_v4_fp8 while the Ascend platform publicly lists only ascend and compressed-tensors; real NPU behavior remains a runtime probe.
       - It can support source/version checks, config/tokenizer review, conversion feasibility and boundary experiments.
 global_boundaries:
   - This registry does not copy, modify or validate model payloads.
   - The model directories are now provided as server paths for P5.
-  - P5 uses the W8A8-MTP object for runtime smoke; the Hugging Face source checkpoint remains metadata-only in this round.
+  - Canonical eight-card P5 still uses the W8A8-MTP object.
+  - The authorized four-card diagnostic uses the smaller Hugging Face checkpoint only to expose its first format/runtime failure; it does not replace the canonical P5 object.

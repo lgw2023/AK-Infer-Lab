@@ -13,7 +13,7 @@ Boundaries:
 
 - Downloaded model files do not prove Ascend runtime compatibility.
 - The official HF checkpoint must not be treated as the vLLM-Ascend W8A8-MTP `--quantization ascend` runtime object before validation.
-- P5 runtime smoke uses only the W8A8-MTP object; the HF source checkpoint is metadata/source evidence in this round.
+- The authorized four-card probe uses the 148.66GiB HF checkpoint only for FP8/FP4 format/runtime diagnosis and omits an explicit `--quantization`; canonical P5 still uses the W8A8-MTP object on eight cards.
 - P5 is a startup and long-context smoke, not a benchmark or bottleneck attribution run.
 - Any server task must be written by clearing and rewriting `通信模块/docs/developer-to-server.md`, with body and returned attachments kept within the 70KB communication limit.
 

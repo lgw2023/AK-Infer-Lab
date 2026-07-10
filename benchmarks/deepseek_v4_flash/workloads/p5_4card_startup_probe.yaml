@@ -1,13 +1,13 @@
 schema_version: 1
 workload_id: p5_deepseek_v4_flash_4card_startup_probe_v0202
 date: "2026-07-10"
-purpose: expose_the_first_real_deepseek_v4_failure_on_the_authorized_four_card_scope
-model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
-scenario: four_card_runtime_compatibility_and_capacity_probe
+purpose: expose_the_first_real_deepseek_v4_format_or_runtime_failure_on_the_authorized_four_card_scope
+model_object_id: deepseek_v4_flash_official_hf
+scenario: four_card_runtime_format_compatibility_and_capacity_probe
 is_smoke: true
 is_benchmark: false
 is_canonical_p5: false
-server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
 runtime_environment:
   conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
   vllm: "0.20.2+empty"
@@ -22,10 +22,21 @@ resource_gate:
   all_authorized_devices_must_be_healthy_and_idle: true
   any_other_device_forbidden: true
 capacity_prior:
-  canonical_weight_size_gib: 279.41
+  selected_checkpoint_weight_size_gib: 148.66
   four_card_raw_hbm_gib: 256
-  expected_fit: unlikely_before_runtime_overhead
-  proceed_once_despite_prior: true
+  static_capacity_margin_gib: 107.34
+  expected_fit: plausible_but_not_proven_after_runtime_overhead
+  excluded_w8a8_checkpoint_weight_size_gib: 279.41
+  excluded_w8a8_checkpoint_reason: static_weights_exceed_four_card_raw_hbm
+format_prior:
+  checkpoint_quantization_config: fp8_e4m3_ue8m0_block_128x128
+  checkpoint_expert_dtype: fp4
+  vllm_target_tag_detection: deepseek_v4_fp8
+  vllm_ascend_target_tag_public_platform_methods:
+    - ascend
+    - compressed-tensors
+  expected_risk: deepseek_v4_fp8_or_fp4_format_may_be_rejected_before_weight_load
+  evidence_level: target_tag_source_only_not_server_runtime
 runtime_reference:
   command: vllm serve
   tensor_parallel_size: 4
@@ -35,7 +46,8 @@ runtime_reference:
   max_num_batched_tokens: 4096
   max_num_seqs: 1
   gpu_memory_utilization: 0.92
-  quantization: ascend
+  quantization: auto_from_checkpoint_config
+  explicit_quantization_argument: forbidden_for_this_probe
   tokenizer_mode: deepseek_v4
   tool_call_parser: deepseek_v4
   reasoning_parser: deepseek_v4
@@ -67,18 +79,24 @@ request_plan:
 fallback_policy:
   mtp_off_only_after_explicit_mtp_failure: true
   stop_after_capacity_failure: true
+  stop_after_quantization_format_failure: true
+  no_w8a8_checkpoint_attempt: true
+  no_quantization_config_override: true
   no_max_num_seqs_ladder: true
   no_context_ladder: true
   no_cpu_or_disk_offload: true
 grading:
   diagnostic_green: four_card_server_ready_and_4096_plus_64_success
   diagnostic_yellow: server_ready_but_request_failed_or_only_no_mtp_profile_succeeded
-  diagnostic_red_expected_capacity: startup_failed_at_weight_or_hbm_capacity
+  diagnostic_red_quant_format: startup_failed_at_deepseek_v4_fp8_fp4_or_quantization_platform_gate
+  diagnostic_red_capacity: startup_failed_at_weight_or_hbm_capacity_despite_positive_static_margin
   diagnostic_red_runtime: startup_failed_before_capacity_at_architecture_parser_kernel_or_runtime
   blocked_resource: any_authorized_device_not_healthy_idle_or_visible
 boundaries:
   canonical_p5_eight_card_gate_unchanged: true
   canonical_p5_green_cannot_be_earned_by_this_probe: true
   four_card_failure_cannot_be_extrapolated_to_eight_cards: true
+  selected_checkpoint_is_not_the_canonical_w8a8_p5_object: true
+  w8a8_checkpoint_is_not_launched_on_four_cards: true
   no_p6_benchmark_msprof_ab_or_bottleneck_claim: true
   raw_logs_and_large_artifacts_remain_server_local: true

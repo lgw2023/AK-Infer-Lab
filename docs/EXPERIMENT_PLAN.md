@@ -16,10 +16,10 @@ P0-P4 已建立两类可复用资产：
 当前服务器任务为 canonical P5 前置诊断：
 
 ```text
-p5_deepseek_v4_flash_4card_startup_probe_v0202_2026_0710
+p5_deepseek_v4_flash_4card_small_checkpoint_probe_v0202_2026_0710
 ```
 
-P5 已从 readiness-only 调整为 W8A8-MTP 八卡拉起与 128K context ladder smoke。由于当前只授权 NPU 4-7，先用 TP4/EP、8K 配置上限和单个 4K+64 请求固定新运行时首失败点。`通信模块/docs/developer-to-server.md` 已是该四卡诊断的当前可执行 handoff。
+P5 已从 readiness-only 调整为 W8A8-MTP 八卡拉起与 128K context ladder smoke。由于当前只授权 NPU 4-7，先对 148.66GiB FP8/FP4 checkpoint 用 TP4/EP、8K 配置上限和单个 4K+64 请求固定格式或运行时首失败点。`通信模块/docs/developer-to-server.md` 已明确先完整同步远端 `main`，再只执行该四卡诊断。
 
 ## 2. 阶段依赖
 
@@ -94,7 +94,7 @@ parallelism:    TP=8, EP=enabled
 quantization:   ascend
 ```
 
-HF source object本轮只做 metadata/source 登记，不能代替 W8A8-MTP runtime object。
+HF source object 仅作为本轮四卡格式/运行时诊断对象，不能代替 W8A8-MTP canonical runtime object。
 
 ### 4.2 Smoke 契约
 
@@ -128,7 +128,8 @@ max_num_seqs 16 -> 4 -> 1 -> disable MTP
 
 - 授权范围：`ASCEND_RT_VISIBLE_DEVICES=4,5,6,7`；不得扩大到其他 NPU。
 - 配置：TP4/EP、`max_model_len=8192`、`max_num_seqs=1`、eager mode、无 CPU/NVMe/KV offload。
-- 容量先验：约 `279.41 GiB` canonical 权重大于四卡约 `256 GiB` 原始 HBM；容量失败即停，不用 offload 改变问题。
+- 对象与容量：选中 46 分片 / `148.66 GiB` FP8/FP4 checkpoint，静态余量约 `107.34 GiB`；`279.41 GiB` W8A8 目录不在四卡启动。
+- 格式边界：不显式传 `--quantization`、不改 checkpoint config；量化格式拒绝、容量失败或其他首错均立即停止。
 - 请求：server ready 时只执行一个 `4096+64`；不跑 context ladder。
 - 证据上限：四卡成功不能使 canonical P5 判绿，四卡失败不能外推为八卡失败。
 

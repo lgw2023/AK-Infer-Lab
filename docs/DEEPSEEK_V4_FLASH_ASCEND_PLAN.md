@@ -18,8 +18,8 @@ DeepSeek-V4-Flash 的模型规格和量化事实以 `docs/SOURCES_AND_BOUNDARIES
 
 | object_id | 本地镜像 | 服务器路径 | 当前角色 | 边界 |
 | --- | --- | --- | --- | --- |
-| `deepseek_v4_flash_w8a8_mtp_modelscope` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` | P5/P6 vLLM-Ascend W8A8-MTP 首选 runtime object | P5 未回传前不声称服务器权重完整或 runtime 兼容 |
-| `deepseek_v4_flash_official_hf` | `/Volumes/Elements/DeepSeek-V4-Flash` | `/data/node0_disk1/Public/DeepSeek-V4-Flash` | 来源、metadata、格式/转换和 P7 边界对象 | 未验证前不能等同于 `--quantization ascend` runtime object |
+| `deepseek_v4_flash_w8a8_mtp_modelscope` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` | P5/P6 vLLM-Ascend W8A8-MTP 首选 runtime object；服务器已盘点 70 分片 / 279.41GiB | 分片盘点不等于 runtime 兼容；静态权重超过四卡 HBM，本轮不启动 |
+| `deepseek_v4_flash_official_hf` | `/Volumes/Elements/DeepSeek-V4-Flash` | `/data/node0_disk1/Public/DeepSeek-V4-Flash` | 服务器已盘点 46 分片 / 148.66GiB；当前四卡 FP8/FP4 格式探针 | 未验证前不能等同于 `--quantization ascend` runtime object，也不替代 canonical 八卡 P5 |
 
 本地目录存在和结构相同只用于准备实验卡，不代替服务器路径、inode、分片完整性和 runtime load 验证。
 
@@ -52,12 +52,12 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 当前先执行的前置诊断为：
 
 ```text
-p5_deepseek_v4_flash_4card_startup_probe_v0202_2026_0710
+p5_deepseek_v4_flash_4card_small_checkpoint_probe_v0202_2026_0710
 ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
 TP=4, EP=enabled, max_model_len=8192, max_num_seqs=1
 ```
 
-该诊断只固定新运行时的首失败点，不使用 offload，不跑 128K ladder，不改 canonical 八卡 P5 状态门。约 `279.41 GiB` canonical 权重大于四卡约 `256 GiB` 原始 HBM，因此容量失败是强预期。
+该诊断选择约 `148.66 GiB` 的 FP8/FP4 checkpoint，在四卡约 `256 GiB` 原始 HBM 上保留约 `107.34 GiB` 静态余量，重点验证 `deepseek_v4_fp8` / FP4 格式门和真实运行时首错；不显式传 `--quantization`，不使用 offload，不跑 128K ladder。约 `279.41 GiB` 的 canonical W8A8 目录因静态超容量不在四卡启动，八卡 P5 状态门不变。
 
 当前任务：
 

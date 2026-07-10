@@ -16,15 +16,15 @@ model_objects:
     local_source_path: /Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
     model_role: official_baseline_runtime_candidate
-    readiness_status: server_path_provided_for_p5_8card_smoke
+    readiness_status: server_inventory_verified_70_shards_279_41_gib_runtime_not_loaded
   - model_object_id: deepseek_v4_flash_official_hf
     model: deepseek-ai/DeepSeek-V4-Flash
     model_variant: fp4_fp8_mixed_source_checkpoint
     model_source: huggingface
     local_source_path: /Volumes/Elements/DeepSeek-V4-Flash
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
-    model_role: source_checkpoint_readiness_and_conversion_candidate
-    readiness_status: metadata_only_not_runtime_baseline
+    model_role: source_checkpoint_and_authorized_four_card_format_probe
+    readiness_status: server_inventory_verified_46_shards_148_66_gib_runtime_not_loaded
 runtime:
   container_or_conda: host_conda
   conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
@@ -48,12 +48,17 @@ parallelism:
   resource_gate: waiting_user_confirmed_eight_card_scope
 authorized_diagnostic_probe:
   workload: workloads/p5_4card_startup_probe.yaml
-  task_id: p5_deepseek_v4_flash_4card_startup_probe_v0202_2026_0710
+  task_id: p5_deepseek_v4_flash_4card_small_checkpoint_probe_v0202_2026_0710
+  model_object_id: deepseek_v4_flash_official_hf
+  server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
   visible_devices: "4,5,6,7"
   tp: 4
   max_model_len: 8192
   max_num_seqs: 1
-  role: runtime_compatibility_and_capacity_probe_not_canonical_p5
+  quantization_argument: omitted_use_checkpoint_config
+  role: runtime_format_compatibility_and_capacity_probe_not_canonical_p5
+  excluded_four_card_object: deepseek_v4_flash_w8a8_mtp_modelscope
+  excluded_reason: 279_41_gib_static_weights_exceed_256_gib_raw_hbm
   developer_to_server_ready: true
   canonical_eight_card_gate_unchanged: true
 features:
@@ -124,7 +129,7 @@ status_grading:
 boundaries:
   - P5 is now an eight-card DeepSeek-V4-Flash startup and long-context smoke, not metadata-only readiness.
   - P5 is still not a benchmark and must not produce bottleneck or optimization-benefit claims.
-  - The Hugging Face source checkpoint is metadata/source evidence only for this round.
+  - The Hugging Face source checkpoint is used only for the authorized four-card format/runtime diagnostic and does not replace the W8A8-MTP canonical P5 object.
   - If any official startup flag is removed or max_num_seqs is lowered, the result is degraded_smoke.
   - Raw logs, generated text, profiler output and large artifacts remain on the server.
 acceptance:
