@@ -69,3 +69,32 @@ def test_registry_and_policy_depend_only_on_core_models() -> None:
                     violations.append(f"{path}: {node.module}")
 
     assert violations == []
+
+
+def test_only_cli_imports_concrete_capability_probe_components() -> None:
+    source_importers: list[str] = []
+    report_importers: list[str] = []
+    for path in sorted(PACKAGE_DIR.rglob("*.py")):
+        relative = path.relative_to(PACKAGE_DIR).as_posix()
+        text = path.read_text(encoding="utf-8")
+        if "capabilities.source import" in text or "from .source import" in text:
+            source_importers.append(relative)
+        if "capabilities.report import" in text or "from .report import" in text:
+            report_importers.append(relative)
+
+    assert source_importers == ["cli.py"]
+    assert report_importers == ["cli.py"]
+
+
+def test_real_vllm_ascend_adapter_is_not_present_before_runtime_gate() -> None:
+    occurrences = []
+    forbidden_name = "Vllm" + "AscendAdapter"
+    for path in sorted(PACKAGE_DIR.rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        if any(
+            isinstance(node, ast.ClassDef) and node.name == forbidden_name
+            for node in ast.walk(tree)
+        ):
+            occurrences.append(path.relative_to(PACKAGE_DIR).as_posix())
+
+    assert occurrences == []

@@ -1,0 +1,662 @@
+schema_name: ak_runtime_capability_matrix
+schema_version: 0.1.0
+probe_kind: target_tag_source
+probe_id: p8_target_tag_source_capability_probe_2026_0710
+probe_date: '2026-07-10'
+claim_ceiling: instrumented
+selected_workload_model_id: deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
+selected_workload_validated: false
+selected_workload_gate: waiting_selected_workload_runtime_gate
+real_vllm_ascend_adapter_gate: waiting_selected_workload_runtime_gate
+target_count: 2
+capability_count: 13
+status_counts:
+  unsupported: 0
+  documented_unverified: 0
+  available_uninstrumented: 7
+  instrumented: 6
+  validated_for_selected_workload: 0
+targets:
+- target_id: vllm
+  repo_path: reference_repos/vllm
+  tag: v0.20.2
+  expected_commit: bc150f50299199599673614f80d12a196f377655
+  observed_commit: bc150f50299199599673614f80d12a196f377655
+  ref_verified: true
+- target_id: vllm_ascend
+  repo_path: reference_repos/vllm-ascend
+  tag: v0.20.2rc1
+  expected_commit: 367b8e62da799870a7476ce34f5f7658589a8aad
+  observed_commit: 367b8e62da799870a7476ce34f5f7658589a8aad
+  ref_verified: true
+capabilities:
+- capability_id: deepseek_v4_model_registration
+  runtime_scope:
+  - vllm
+  - vllm_ascend
+  status: available_uninstrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: vllm_deepseek_v4_registry
+    target_id: vllm
+    path: vllm/model_executor/models/registry.py
+    contains: '"DeepseekV4ForCausalLM": ("deepseek_v4", "DeepseekV4ForCausalLM")'
+    matched: true
+    blob_oid: 01f357a4993a6d451ddae109cddda03bc58672a6
+    matched_lines:
+    - 99
+    error: null
+  - evidence_id: ascend_deepseek_v4_registry
+    target_id: vllm_ascend
+    path: vllm_ascend/models/__init__.py
+    contains: ModelRegistry.register_model("DeepseekV4ForCausalLM"
+    matched: true
+    blob_oid: f6bc5e70796ff099e02a5b06331dbe7bf80db5b2
+    matched_lines:
+    - 5
+    error: null
+  instrumentation_evidence: []
+  documentation_evidence:
+  - evidence_id: vllm_deepseek_v4_supported_model_doc
+    target_id: vllm
+    path: docs/models/supported_models.md
+    contains: DeepseekV4ForCausalLM
+    matched: true
+    blob_oid: 7c87359afb27b0d787b832e8a85e9702345c967a
+    matched_lines:
+    - 387
+    error: null
+- capability_id: deepseek_v4_mtp
+  runtime_scope:
+  - vllm
+  - vllm_ascend
+  status: available_uninstrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: vllm_deepseek_v4_mtp_config
+    target_id: vllm
+    path: vllm/config/speculative.py
+    contains: '"architectures": ["DeepSeekV4MTPModel"]'
+    matched: true
+    blob_oid: 612cc3a1f281af8fc864d2884830a48e87fdaebd
+    matched_lines:
+    - 305
+    error: null
+  - evidence_id: ascend_deepseek_v4_mtp_registry
+    target_id: vllm_ascend
+    path: vllm_ascend/models/__init__.py
+    contains: ModelRegistry.register_model("DeepSeekV4MTPModel"
+    matched: true
+    blob_oid: f6bc5e70796ff099e02a5b06331dbe7bf80db5b2
+    matched_lines:
+    - 7
+    error: null
+  - evidence_id: ascend_deepseek_v4_mtp_model
+    target_id: vllm_ascend
+    path: vllm_ascend/models/deepseek_v4_mtp.py
+    contains: class DeepSeekV4MTP(
+    matched: true
+    blob_oid: 4cb37826cf27569a9dea941f3034e287640eb068
+    matched_lines:
+    - 196
+    error: null
+  instrumentation_evidence: []
+  documentation_evidence: []
+- capability_id: deepseek_v4_tool_reasoning_parser
+  runtime_scope:
+  - vllm
+  status: available_uninstrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: vllm_deepseek_v4_tool_parser
+    target_id: vllm
+    path: vllm/tool_parsers/deepseekv4_tool_parser.py
+    contains: class DeepSeekV4ToolParser(
+    matched: true
+    blob_oid: 45a9c13025788b1b373a1ea4e8a8e1e8186e7039
+    matched_lines:
+    - 7
+    error: null
+  - evidence_id: vllm_deepseek_v4_reasoning_alias
+    target_id: vllm
+    path: vllm/reasoning/__init__.py
+    contains: '"deepseek_v4": ('
+    matched: true
+    blob_oid: 755fa56d294c6b580943adcff3177c090eb6bcfb
+    matched_lines:
+    - 31
+    error: null
+  instrumentation_evidence: []
+  documentation_evidence: []
+- capability_id: dsa_context_parallel
+  runtime_scope:
+  - vllm_ascend
+  status: available_uninstrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: ascend_dsa_cp_config_reader
+    target_id: vllm_ascend
+    path: vllm_ascend/utils.py
+    contains: 'def enable_dsa_cp() -> bool:'
+    matched: true
+    blob_oid: f4b97ab64bb784dfd21a4edf74667d9e25b26507
+    matched_lines:
+    - 1389
+    error: null
+  - evidence_id: ascend_dsa_cp_metadata_builder
+    target_id: vllm_ascend
+    path: vllm_ascend/attention/context_parallel/dsa_cp.py
+    contains: class AscendDSACPMetadataBuilder(
+    matched: true
+    blob_oid: 93917a2f4d1013a8cc7fe262060e97c7a8645d08
+    matched_lines:
+    - 145
+    error: null
+  - evidence_id: ascend_deepseek_v4_dsa_cp_use
+    target_id: vllm_ascend
+    path: vllm_ascend/models/deepseek_v4.py
+    contains: self.enable_dsa_cp = enable_dsa_cp()
+    matched: true
+    blob_oid: ba341b4c058b5f3dc7c327144b74e150b93a16bf
+    matched_lines:
+    - 611
+    error: null
+  instrumentation_evidence: []
+  documentation_evidence:
+  - evidence_id: ascend_dsa_cp_config_doc
+    target_id: vllm_ascend
+    path: docs/source/user_guide/configuration/additional_config.md
+    contains: '`enable_dsa_cp`'
+    matched: true
+    blob_oid: 9d57cf9c3336666c56f34f572a52fea875ada799
+    matched_lines:
+    - 101
+    error: null
+- capability_id: flashcomm1_config_path
+  runtime_scope:
+  - vllm_ascend
+  status: available_uninstrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: ascend_flashcomm1_additional_config
+    target_id: vllm_ascend
+    path: vllm_ascend/ascend_config.py
+    contains: self.enable_flashcomm1 = self._get_config_value(
+    matched: true
+    blob_oid: 330520c58e40c7f024f91a0b5213d449f031d14c
+    matched_lines:
+    - 83
+    error: null
+  - evidence_id: ascend_flashcomm1_runtime_gate
+    target_id: vllm_ascend
+    path: vllm_ascend/utils.py
+    contains: 'if not ascend_config.enable_flashcomm1:'
+    matched: true
+    blob_oid: f4b97ab64bb784dfd21a4edf74667d9e25b26507
+    matched_lines:
+    - 1254
+    error: null
+  instrumentation_evidence: []
+  documentation_evidence:
+  - evidence_id: ascend_flashcomm1_config_doc
+    target_id: vllm_ascend
+    path: docs/source/user_guide/configuration/additional_config.md
+    contains: '`enable_flashcomm1`'
+    matched: true
+    blob_oid: 9d57cf9c3336666c56f34f572a52fea875ada799
+    matched_lines:
+    - 20
+    - 92
+    error: null
+- capability_id: prefix_cache
+  runtime_scope:
+  - vllm
+  status: instrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: vllm_prefix_cache_block_pool
+    target_id: vllm
+    path: vllm/v1/core/block_pool.py
+    contains: self.enable_caching = enable_caching
+    matched: true
+    blob_oid: 9097079ef33a88f9fccb89651fa45bb30c9c0fd8
+    matched_lines:
+    - 159
+    error: null
+  - evidence_id: vllm_prefix_cache_store_event
+    target_id: vllm
+    path: vllm/v1/core/block_pool.py
+    contains: BlockStored(
+    matched: true
+    blob_oid: 9097079ef33a88f9fccb89651fa45bb30c9c0fd8
+    matched_lines:
+    - 305
+    error: null
+  instrumentation_evidence:
+  - evidence_id: vllm_prefix_cache_event_queue
+    target_id: vllm
+    path: vllm/v1/core/block_pool.py
+    contains: self.kv_event_queue.append(
+    matched: true
+    blob_oid: 9097079ef33a88f9fccb89651fa45bb30c9c0fd8
+    matched_lines:
+    - 304
+    - 382
+    - 474
+    error: null
+  - evidence_id: vllm_prefix_cache_event_publish
+    target_id: vllm
+    path: vllm/v1/core/sched/scheduler.py
+    contains: self.kv_event_publisher.publish(batch)
+    matched: true
+    blob_oid: 395fa80bfe537821d961724ca0f1b8d791fa3c75
+    matched_lines:
+    - 1529
+    error: null
+  documentation_evidence: []
+- capability_id: kv_cache_events
+  runtime_scope:
+  - vllm
+  status: instrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: vllm_kv_events_config
+    target_id: vllm
+    path: vllm/config/kv_events.py
+    contains: 'class KVEventsConfig:'
+    matched: true
+    blob_oid: d618bc9a73f3ba8b8d0c952a00f0766d2a3f2f4f
+    matched_lines:
+    - 11
+    error: null
+  - evidence_id: vllm_kv_event_batch
+    target_id: vllm
+    path: vllm/distributed/kv_events.py
+    contains: class KVEventBatch(
+    matched: true
+    blob_oid: d3e304f8b6036f9993bfb35b589c72133c0926ec
+    matched_lines:
+    - 106
+    error: null
+  instrumentation_evidence:
+  - evidence_id: vllm_kv_event_batch_build
+    target_id: vllm
+    path: vllm/v1/core/sched/scheduler.py
+    contains: batch = KVEventBatch(
+    matched: true
+    blob_oid: 395fa80bfe537821d961724ca0f1b8d791fa3c75
+    matched_lines:
+    - 1528
+    error: null
+  - evidence_id: vllm_kv_event_publisher
+    target_id: vllm
+    path: vllm/v1/core/sched/scheduler.py
+    contains: self.kv_event_publisher.publish(batch)
+    matched: true
+    blob_oid: 395fa80bfe537821d961724ca0f1b8d791fa3c75
+    matched_lines:
+    - 1529
+    error: null
+  documentation_evidence: []
+- capability_id: kv_cache_cpu_offload
+  runtime_scope:
+  - vllm
+  - vllm_ascend
+  status: instrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: vllm_offloading_connector
+    target_id: vllm
+    path: vllm/distributed/kv_transfer/kv_connector/v1/offloading_connector.py
+    contains: class OffloadingConnector(
+    matched: true
+    blob_oid: f11281dcf14e52b5038656b3b396037e8a2320ea
+    matched_lines:
+    - 44
+    error: null
+  - evidence_id: ascend_npu_offloading_spec
+    target_id: vllm_ascend
+    path: vllm_ascend/kv_offload/npu.py
+    contains: class NPUOffloadingSpec(
+    matched: true
+    blob_oid: 90816ce3abbc4143e8eb2ab1a081cab8d07c0b86
+    matched_lines:
+    - 16
+    error: null
+  instrumentation_evidence:
+  - evidence_id: vllm_offload_byte_metric
+    target_id: vllm
+    path: vllm/distributed/kv_transfer/kv_connector/v1/offloading/metrics.py
+    contains: name="vllm:kv_offload_total_bytes"
+    matched: true
+    blob_oid: 0839b2727ccc01b4b3cea9e1b69e08093fca81d2
+    matched_lines:
+    - 106
+    error: null
+  - evidence_id: vllm_offload_event_export
+    target_id: vllm
+    path: vllm/distributed/kv_transfer/kv_connector/v1/offloading_connector.py
+    contains: 'def take_events(self) -> Iterable[KVCacheEvent]:'
+    matched: true
+    blob_oid: f11281dcf14e52b5038656b3b396037e8a2320ea
+    matched_lines:
+    - 148
+    error: null
+  documentation_evidence:
+  - evidence_id: ascend_cpu_offload_doc
+    target_id: vllm_ascend
+    path: docs/source/user_guide/feature_guide/kv_cache_cpu_offload.md
+    contains: NPUOffloadingSpec
+    matched: true
+    blob_oid: 974897e6f3e1ad57bd88a211993e5f859caa2d4a
+    matched_lines:
+    - 7
+    - 29
+    - 58
+    - 70
+    error: null
+- capability_id: ucm_store_connector
+  runtime_scope:
+  - vllm_ascend
+  status: available_uninstrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: ascend_ucm_connector
+    target_id: vllm_ascend
+    path: vllm_ascend/distributed/kv_transfer/kv_pool/ucm_connector.py
+    contains: class UCMConnectorV1(
+    matched: true
+    blob_oid: de25ae934e89613994033c3ee495af3bd9828b60
+    matched_lines:
+    - 37
+    error: null
+  - evidence_id: ascend_ucm_connector_registration
+    target_id: vllm_ascend
+    path: vllm_ascend/distributed/kv_transfer/__init__.py
+    contains: '"UCMConnector", "vllm_ascend.distributed.kv_transfer.kv_pool.ucm_connector"'
+    matched: true
+    blob_oid: befd8c402c87744de6409fb034c26cf708f35acf
+    matched_lines:
+    - 58
+    error: null
+  instrumentation_evidence: []
+  documentation_evidence:
+  - evidence_id: ascend_ucm_deployment_doc
+    target_id: vllm_ascend
+    path: docs/source/user_guide/feature_guide/ucm_deployment.md
+    contains: '# UCM Store Deployment Guide'
+    matched: true
+    blob_oid: fb91b28f6dcbaa329b58ac935c5e3f2e4d3eb6a6
+    matched_lines:
+    - 1
+    error: null
+- capability_id: kv_cache_pool
+  runtime_scope:
+  - vllm_ascend
+  status: instrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: ascend_store_connector
+    target_id: vllm_ascend
+    path: vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py
+    contains: class AscendStoreConnector(
+    matched: true
+    blob_oid: 74181914ef1140bcb8ecffe810b4fdfb81010318
+    matched_lines:
+    - 71
+    error: null
+  - evidence_id: ascend_store_mooncake_backend
+    target_id: vllm_ascend
+    path: vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/backend/mooncake_backend.py
+    contains: class MooncakeBackend(
+    matched: true
+    blob_oid: 4476b32ecc44ac2153aca868f8925d09da35818e
+    matched_lines:
+    - 25
+    error: null
+  instrumentation_evidence:
+  - evidence_id: ascend_store_kv_events
+    target_id: vllm_ascend
+    path: vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py
+    contains: class AscendStoreKVEvents(
+    matched: true
+    blob_oid: 74181914ef1140bcb8ecffe810b4fdfb81010318
+    matched_lines:
+    - 37
+    error: null
+  - evidence_id: ascend_store_take_events
+    target_id: vllm_ascend
+    path: vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py
+    contains: 'def take_events(self) -> Iterable["KVCacheEvent"]:'
+    matched: true
+    blob_oid: 74181914ef1140bcb8ecffe810b4fdfb81010318
+    matched_lines:
+    - 168
+    error: null
+  documentation_evidence:
+  - evidence_id: ascend_kv_pool_doc
+    target_id: vllm_ascend
+    path: docs/source/user_guide/feature_guide/kv_pool.md
+    contains: AscendStoreConnector
+    matched: true
+    blob_oid: 41127c452a13c997fafb03898cdad7b08ba91895
+    matched_lines:
+    - 140
+    - 208
+    - 276
+    - 288
+    - 292
+    - 371
+    - 458
+    - 541
+    - 629
+    - 813
+    - 815
+    - 831
+    error: null
+- capability_id: eplb_recording_static_map
+  runtime_scope:
+  - vllm_ascend
+  status: instrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: ascend_eplb_static_map_load
+    target_id: vllm_ascend
+    path: vllm_ascend/eplb/core/eplb_utils.py
+    contains: def expert_file_to_tensor(
+    matched: true
+    blob_oid: 226a02d9a8abd35e36de798e7c07fa0ffdfa04dc
+    matched_lines:
+    - 33
+    error: null
+  - evidence_id: ascend_eplb_map_update
+    target_id: vllm_ascend
+    path: vllm_ascend/eplb/adaptor/vllm_adaptor.py
+    contains: def do_update_expert_map(
+    matched: true
+    blob_oid: e625302f3c5b4e77d1ed18acb297e309853ca0b8
+    matched_lines:
+    - 148
+    error: null
+  instrumentation_evidence:
+  - evidence_id: ascend_eplb_map_export
+    target_id: vllm_ascend
+    path: vllm_ascend/eplb/adaptor/vllm_adaptor.py
+    contains: def _export_tensor_to_file(
+    matched: true
+    blob_oid: e625302f3c5b4e77d1ed18acb297e309853ca0b8
+    matched_lines:
+    - 124
+    error: null
+  - evidence_id: ascend_eplb_record_path
+    target_id: vllm_ascend
+    path: vllm_ascend/eplb/eplb_updator.py
+    contains: self.expert_map_record_path = self.eplb_config.expert_map_record_path
+    matched: true
+    blob_oid: 146d6ea25c8e9388530d251de0c731028809f1fc
+    matched_lines:
+    - 54
+    error: null
+  documentation_evidence:
+  - evidence_id: ascend_eplb_static_map_doc
+    target_id: vllm_ascend
+    path: docs/source/user_guide/feature_guide/eplb_swift_balancer.md
+    contains: '"expert_map_path"'
+    matched: true
+    blob_oid: 04878d5e4ad23a6d750e5d2e36b1a9ebdd2b9fc9
+    matched_lines:
+    - 72
+    error: null
+- capability_id: expert_hotness_metrics
+  runtime_scope:
+  - vllm
+  - vllm_ascend
+  status: instrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: vllm_expert_load_window
+    target_id: vllm
+    path: vllm/distributed/eplb/eplb_state.py
+    contains: expert_load_window
+    matched: true
+    blob_oid: 1da39caccd806d48c381f614ebb38460908a7015
+    matched_lines:
+    - 67
+    - 157
+    - 223
+    - 228
+    - 230
+    - 420
+    - 421
+    - 423
+    - 461
+    - 562
+    - 563
+    - 568
+    - 569
+    - 570
+    - 617
+    - 626
+    - 691
+    - 693
+    - 696
+    - 697
+    - 700
+    - 701
+    - 703
+    - 709
+    - 711
+    - 714
+    - 715
+    - 717
+    - 750
+    - 751
+    - 756
+    - 794
+    - 797
+    error: null
+  - evidence_id: ascend_expert_heat_interval
+    target_id: vllm_ascend
+    path: vllm_ascend/eplb/eplb_updator.py
+    contains: self.expert_heat_collection_interval
+    matched: true
+    blob_oid: 146d6ea25c8e9388530d251de0c731028809f1fc
+    matched_lines:
+    - 52
+    - 58
+    - 61
+    - 78
+    - 87
+    - 90
+    - 94
+    error: null
+  instrumentation_evidence:
+  - evidence_id: vllm_expert_load_record
+    target_id: vllm
+    path: vllm/model_executor/layers/fused_moe/layer.py
+    contains: record the load metrics in `expert_load_view`
+    matched: true
+    blob_oid: 7174cdd88f258a6418e20653341736bad1a6811f
+    matched_lines:
+    - 1526
+    error: null
+  - evidence_id: vllm_expert_load_window_copy
+    target_id: vllm
+    path: vllm/distributed/eplb/eplb_state.py
+    contains: '].copy_(eplb_model_state.expert_load_pass)'
+    matched: true
+    blob_oid: 1da39caccd806d48c381f614ebb38460908a7015
+    matched_lines:
+    - 564
+    error: null
+  documentation_evidence:
+  - evidence_id: ascend_expert_load_metric_doc
+    target_id: vllm_ascend
+    path: docs/source/user_guide/feature_guide/eplb_swift_balancer.md
+    contains: expert_load_balance_ratio
+    matched: true
+    blob_oid: 04878d5e4ad23a6d750e5d2e36b1a9ebdd2b9fc9
+    matched_lines:
+    - 92
+    error: null
+- capability_id: weight_prefetch
+  runtime_scope:
+  - vllm_ascend
+  status: available_uninstrumented
+  selected_workload_validated: false
+  runtime_gate: waiting_selected_workload_runtime_gate
+  source_evidence:
+  - evidence_id: ascend_weight_prefetch_config
+    target_id: vllm_ascend
+    path: vllm_ascend/ascend_config.py
+    contains: 'class WeightPrefetchConfig:'
+    matched: true
+    blob_oid: 330520c58e40c7f024f91a0b5213d449f031d14c
+    matched_lines:
+    - 573
+    error: null
+  - evidence_id: ascend_weight_prefetch_method
+    target_id: vllm_ascend
+    path: vllm_ascend/ops/weight_prefetch.py
+    contains: 'class WeightPrefetchMethod:'
+    matched: true
+    blob_oid: 09a052cdc81e68a8d403164f9fe23b33be4b9f5a
+    matched_lines:
+    - 37
+    error: null
+  - evidence_id: ascend_weight_prefetch_op
+    target_id: vllm_ascend
+    path: vllm_ascend/ops/weight_prefetch.py
+    contains: torch.ops.vllm.prefetch_preprocess(
+    matched: true
+    blob_oid: 09a052cdc81e68a8d403164f9fe23b33be4b9f5a
+    matched_lines:
+    - 80
+    - 101
+    - 150
+    - 160
+    - 203
+    error: null
+  instrumentation_evidence: []
+  documentation_evidence:
+  - evidence_id: ascend_weight_prefetch_doc
+    target_id: vllm_ascend
+    path: docs/source/user_guide/feature_guide/weight_prefetch.md
+    contains: '# Weight Prefetch'
+    matched: true
+    blob_oid: 4a20476ea259f6b506962051d73a5b354e427cc1
+    matched_lines:
+    - 1
+    error: null

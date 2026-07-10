@@ -2,7 +2,7 @@
 
 日期：2026-07-10
 
-状态：`planning_ready / implementation_not_started`
+状态：`implementation_in_progress / source_probe_complete / runtime_adapter_gated`
 
 ## 1. P8 的工程定义
 
@@ -63,6 +63,16 @@ validated_for_selected_workload
 ```
 
 任何 `documented_unverified` 项都不能进入性能收益结论。
+
+2026-07-10 已完成目标 tag 的只读 source probe：固定检查 vLLM
+`v0.20.2@bc150f5` 与 vLLM-Ascend `v0.20.2rc1@367b8e6`，13 项能力中
+7 项为 `available_uninstrumented`、6 项为 `instrumented`，没有
+`unsupported`、`documented_unverified` 或 `validated_for_selected_workload`。
+这里的 `instrumented` 只表示目标源码同时存在实现入口和可导出事件/指标符号，
+不是服务器路径已经运行；完整证据见
+`benchmarks/deepseek_v4_flash/p8/runtime_capability_matrix.yaml` 和
+`p8_0_source_capability_probe_report.md`。真实 `VllmAscendAdapter` 继续受
+`waiting_selected_workload_runtime_gate` 约束。
 
 ## 3. 总体架构
 
@@ -247,6 +257,11 @@ p8_0_capability_probe_report.md
 ```
 
 退出门：选中的 P8.1/P8.2 路径不能仍是 `documented_unverified`。
+
+当前 source pre-gate 已关闭，但 P8.0 runtime gate 尚未关闭：目标 tag 的注册、
+配置、connector、EPLB、事件和指标符号已经逐 blob 固定；仍需 selected workload
+在服务器上形成至少一个成功请求和固定 baseline，才能把相应能力提升为
+`validated_for_selected_workload`。
 
 ### P8.1：Observe-only StateObject Trace
 
@@ -460,31 +475,40 @@ P9 才负责 sensitivity sweep、bottleneck attribution 和 hardware ask ranking
 
 不得从低等级跨级输出高等级结论。
 
-## 9. 计划中的代码与产物边界
+## 9. 当前代码与产物边界
 
-本轮只定义，不创建以下代码骨架：
+截至 2026-07-10，已创建的独立工具链边界为：
 
 ```text
 tools/ak_state_runtime/
   schema/
-  adapters/
-    vllm_ascend/
-    mindie/
-  collectors/
-  registry/
+  adapters/p1_fixture.py
+  capabilities/
+    models.py
+    source.py
+    report.py
+  registry.py
   policies/
-  replay/
+  replay.py
+  bundle.py
+  cli.py
 
 tests/ak_state_runtime/
 
 benchmarks/deepseek_v4_flash/p8/
+  source_capability_probe.yaml
   runtime_capability_matrix.yaml
-  baseline_contract.yaml
-  experiment_cards/
-  policies/
+  p8_0_source_capability_probe_report.md
+  offline_tracer_bullet/
 ```
 
-未来实现时，每个 vertical slice 必须同时提供：
+`capabilities/source.py` 只通过 Git plumbing 读取固定 commit 的文本 blob，
+不 import、不 checkout、不修改第三方参考仓；`capabilities/report.py` 只负责小型
+确定性证据输出；只有 `cli.py` 组合具体 scanner 和输出器。当前明确未创建
+`adapters/vllm_ascend/`、`adapters/mindie/`、payload mover、server collector 或
+baseline contract，这些仍由 runtime/selected-workload gate 控制。
+
+后续每个 vertical slice 必须同时提供：
 
 - adapter contract/unit test。
 - trace schema fixture/validator。
