@@ -3,7 +3,7 @@ date: "2026-07-11"
 git_commit: server_fills_after_pull
 operator: external_development_machine
 server: atlas800t_a2_ascend_server
-scenario: four_card_allocator_patch_delivery_then_eight_card_context_smoke
+scenario: four_card_plugin_activation_then_eight_card_context_smoke
 is_smoke: true
 is_benchmark: false
 model_objects:
@@ -13,7 +13,7 @@ model_objects:
     model_source: huggingface
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
     model_role: project_primary_runtime_and_future_p6_baseline_candidate
-    readiness_status: v0221rc1_worker_allocator_patch_delivery_probe_pending
+    readiness_status: v0221rc1_ascend_general_plugin_activation_probe_pending
   - model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
     model: DeepSeek-V4-Flash-w8a8-mtp
     model_variant: w8a8_mtp
@@ -37,12 +37,14 @@ latest_environment_result:
   runtime_attempted: false
   project_interpretation: core_stack_ready_full_pip_check_gate_was_overbroad
 latest_runtime_result:
-  task_id: p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
-  probe_grade: diagnostic_red_runtime
-  first_failure_stage: worker_init_memory_snapshot_allocator
+  task_id: p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
+  probe_grade: diagnostic_yellow_allocator_bypass
+  first_failure_stage: deepseek_v4_model_construction_platform_route
   identical_worker_failures: 4
   failure_before_weight_load_server_ready_or_request: true
-  project_interpretation: official_npu_memory_api_redirect_not_effective_in_spawned_workers
+  allocator_failure_removed_by_session_overlay: true
+  selected_model_module: vllm.models.deepseek_v4.nvidia.model
+  project_interpretation: restrictive_VLLM_PLUGINS_value_likely_filtered_ascend_model_registration_and_global_patch_plugins
 target_runtime:
   container_or_conda: host_conda
   conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
@@ -56,10 +58,10 @@ target_runtime:
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
   triton_ascend_version: "3.2.1"
   transformers_version: "5.5.4"
-  runtime_status: core_and_quantization_preflight_passed_worker_init_blocked_by_allocator_patch_delivery
+  runtime_status: core_and_quantization_preflight_passed_allocator_bypassed_then_blocked_by_upstream_nvidia_model_route
 authorized_runtime_gate:
-  workload: workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml
-  task_id: p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
+  workload: workloads/p5_4card_fp8_plugin_activation_probe.yaml
+  task_id: p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
   model_object_id: deepseek_v4_flash_official_hf
   visible_devices: "4,5,6,7"
   tp: 4
@@ -68,8 +70,8 @@ authorized_runtime_gate:
   max_num_seqs: 1
   quantization_argument: omitted_use_checkpoint_config
   profile_order:
-    - single_card_allocator_matrix
-    - base_no_mtp_after_allocator_overlay_passes
+    - single_card_fresh_process_plugin_matrix
+    - base_no_mtp_without_sitecustomize_after_plugin_gate_passes
   developer_to_server_ready: true
 future_eight_card_smoke:
   workload: workloads/p5_8card_context_ladder.yaml
@@ -88,15 +90,18 @@ features:
   checkpoint_quantization: auto_detect_deepseek_v4_fp8_with_fp4_experts
   explicit_quantization_argument: forbidden
   prefix_cache: disabled_for_four_card_startup_then_enabled_for_future_context_ladder
-  mtp: disabled_for_allocator_patch_delivery_probe
+  mtp: disabled_for_plugin_activation_probe
   cpu_binding: enabled
   flashcomm1: additional_config_enabled
   dsa_cp: explicitly_enabled_with_flashcomm1
   kv_cpu_offload: planned_p8_not_p5
 metrics:
   required_for_current_gate:
-    - prior_six_file_upload_api_receipts
-    - allocator_api_and_patch_identity_matrix
+    - installed_vllm_and_vllm_ascend_import_roots_and_target_file_sha256
+    - installed_plugin_entry_points
+    - fresh_process_plugin_activation_matrix
+    - deepseek_v4_model_registry_module_and_class
+    - allocator_api_patch_identity_and_MemorySnapshot
     - reused_environment_core_preflight_and_pip_check_classification
     - runtime_versions_and_source_commits
     - supported_quantization_methods
@@ -114,17 +119,20 @@ artifacts:
   model_registry: deepseek_v4_flash_model_objects.yaml
   prior_environment_workload: workloads/p5_4card_fp8_stack_upgrade_probe.yaml
   prior_runtime_workload: workloads/p5_4card_fp8_runtime_resume_probe.yaml
-  current_workload: workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml
+  prior_allocator_workload: workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml
+  current_workload: workloads/p5_4card_fp8_plugin_activation_probe.yaml
   future_workload: workloads/p5_8card_context_ladder.yaml
   server_handoff: 通信模块/docs/developer-to-server.md
 status_grading:
-  green: base_no_mtp_and_mtp_on_each_complete_one_fixed_request
-  yellow: base_no_mtp_succeeds_but_mtp_on_fails
-  red: no_successful_base_request
+  green: native_ascend_plugin_route_completes_one_base_no_mtp_fixed_request
+  yellow: native_ascend_model_and_allocator_routes_pass_but_base_fails_later
+  red: plugin_matrix_fails_or_no_successful_base_request
 boundaries:
   - The project has retired the W8A8 checkpoint from future execution, but retains its inventory as historical evidence.
   - The official DeepSeek checkpoint is mixed FP8 plus FP4 experts, not pure FP8.
-  - The v0.22.1rc1 worker failed in MemorySnapshot before weight load; the next task tests patch delivery, not model operators.
+  - The allocator overlay removed the first failure, then the process selected the upstream NVIDIA DeepSeekV4 model path before weight load.
+  - The server reports an exact clean editable vLLM commit, but the prebuilt vLLM-Ascend wheel still requires installed-file provenance checks before the plugin hypothesis is tested.
+  - The next task tests whether VLLM_PLUGINS=ascend filtered the target tag's Ascend model-registration and global-patch plugins.
   - Four-card success does not authorize the future eight-card context ladder or P6 benchmark.
   - Raw logs and large artifacts remain on the server.
 acceptance:

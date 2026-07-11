@@ -41,7 +41,7 @@ transformers 5.5.4
 new isolated host conda environment built; core versions and deepseek_v4_fp8 registration verified; model runtime pending
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但官方 checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成并通过核心版本、量化注册、依赖分类和模型 metadata 门；随后四个 worker 在 `MemorySnapshot` 的通用 accelerator allocator 路径同样失败，早于权重加载。当前只读复用该环境诊断官方 NPU memory redirect 的 worker 传播；真实 DeepSeek DSA/MoE/MTP/EP/weight-load 路径仍未验证。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但官方 checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成并通过核心版本、量化注册、依赖分类和模型 metadata 门；session overlay 消除 `MemorySnapshot` allocator 首错后，四个 worker 又进入 upstream NVIDIA DeepSeekV4 model path，仍早于权重加载。当前只读复用该环境验证完整 Ascend general plugin 激活；真实 DeepSeek DSA/MoE/MTP/EP/weight-load 路径仍未验证。
 
 ### 3.2 对照路：MindIE
 
@@ -52,12 +52,12 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 当前先执行的前置诊断为：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
+p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
 ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
 TP=4, EP=enabled, max_model_len=8192, max_num_seqs=1
 ```
 
-上一轮 `0.20.2rc1` 已得到 `diagnostic_red_quant_format`。`0.22.1/0.22.1rc1` 独立栈已通过量化注册与模型预检，但在 spawned worker 的 `MemorySnapshot` 命中 allocator 断言。当前诊断先用 NPU 4 做 native/generic/official-patch 矩阵，仅在证明是 patch delivery 失效后，使用 session-scoped worker startup redirect 复跑四卡 `base_no_mtp`；不修包或改源码，不显式传 `--quantization`，不使用 offload，不跑 MTP/128K ladder。W8A8 已退出项目执行。
+上一轮 `0.20.2rc1` 已得到 `diagnostic_red_quant_format`。`0.22.1/0.22.1rc1` 独立栈已通过量化注册与模型预检；allocator overlay 消除首错后暴露 upstream NVIDIA model route。当前诊断先核对服务器实际 import roots 与目标 tag 的 6 个关键文件 SHA-256，再用 NPU 4 比较 `VLLM_PLUGINS=ascend` 与完整五插件白名单；仅在 provenance、Ascend model registry、memory redirect 和 `MemorySnapshot` 同时通过后，无 `sitecustomize` / `PYTHONPATH` overlay 复跑四卡 `base_no_mtp`。任何文件不一致都写 `blocked_provenance` 并停止，不自动修包或覆盖源码；W8A8、MTP、offload 和 128K ladder继续关闭。
 
 当前任务：
 
@@ -257,7 +257,7 @@ boundaries:
 
 ## 10. 当前下一步
 
-1. 执行 allocator patch-delivery 诊断，先回传用户已批准的 6 个旧诊断文件。
-2. 仅在 NPU native API 成功、generic API 复现且官方 redirect 能修复 `MemorySnapshot` 时，用 session-scoped overlay 复跑四卡 `base_no_mtp`。
-3. base 成功后仍不直接运行 MTP 或八卡；先归档新的第一失败点/成功 command。
+1. 执行 fresh-process Ascend plugin 激活矩阵，比较限制值与完整五插件白名单。
+2. 仅在 Ascend model registry、三项 memory redirect 与 `MemorySnapshot` 同时通过时，无 overlay 复跑四卡 `base_no_mtp`。
+3. base 成功后仍不直接运行 MTP 或八卡；先归档新的第一失败点/成功 command，并报告新文件清单等待传输方式选择。
 4. P6 baseline 与性能矩阵继续关闭。

@@ -18,7 +18,7 @@ def test_p5_readiness_card_targets_official_fp8_runtime_gate():
     card = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
 
     assert card["experiment_id"] == "p5_deepseek_v4_flash_official_fp8_runtime_gate"
-    assert card["scenario"] == "four_card_allocator_patch_delivery_then_eight_card_context_smoke"
+    assert card["scenario"] == "four_card_plugin_activation_then_eight_card_context_smoke"
     assert card["target_runtime"]["container_or_conda"] == "host_conda"
     assert card["target_runtime"]["vllm_version"] == "0.22.1+empty"
     assert card["target_runtime"]["vllm_ascend_version"] == "0.22.1rc1"
@@ -27,11 +27,11 @@ def test_p5_readiness_card_targets_official_fp8_runtime_gate():
     assert card["latest_environment_result"]["reported_probe_grade"] == "blocked_environment"
     assert card["latest_environment_result"]["environment_functionally_built"] is True
     assert card["latest_environment_result"]["runtime_attempted"] is False
-    assert "allocator_patch_delivery" in card["target_runtime"]["runtime_status"]
-    assert card["latest_runtime_result"]["probe_grade"] == "diagnostic_red_runtime"
-    assert card["latest_runtime_result"]["first_failure_stage"] == "worker_init_memory_snapshot_allocator"
-    assert card["authorized_runtime_gate"]["workload"] == "workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml"
-    assert card["authorized_runtime_gate"]["task_id"] == "p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711"
+    assert "upstream_nvidia_model_route" in card["target_runtime"]["runtime_status"]
+    assert card["latest_runtime_result"]["probe_grade"] == "diagnostic_yellow_allocator_bypass"
+    assert card["latest_runtime_result"]["first_failure_stage"] == "deepseek_v4_model_construction_platform_route"
+    assert card["authorized_runtime_gate"]["workload"] == "workloads/p5_4card_fp8_plugin_activation_probe.yaml"
+    assert card["authorized_runtime_gate"]["task_id"] == "p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711"
     assert card["authorized_runtime_gate"]["visible_devices"] == "4,5,6,7"
     assert card["authorized_runtime_gate"]["tp"] == 4
     assert card["authorized_runtime_gate"]["model_object_id"] == "deepseek_v4_flash_official_hf"
@@ -65,9 +65,10 @@ def test_model_registry_retires_w8a8_and_promotes_official_mixed_checkpoint():
     assert smaller["model_role"] == "project_primary_runtime_object"
     assert smaller["intended_runtime"]["runtime"] == "vllm_0_22_1_plus_vllm_ascend_0_22_1rc1"
     assert smaller["intended_runtime"]["reference_role"] == "project_primary_p5_runtime_and_future_p6_baseline_candidate"
-    assert "allocator_patch_delivery_pending" in smaller["server_inventory"]["inventory_status"]
+    assert "ascend_plugin_activation_pending" in smaller["server_inventory"]["inventory_status"]
     assert "p5_4card_fp8_runtime_resume_probe" in smaller["expected_scenarios"]
     assert "p5_4card_fp8_allocator_patch_delivery_probe" in smaller["expected_scenarios"]
+    assert "p5_4card_fp8_plugin_activation_probe" in smaller["expected_scenarios"]
 
     assert "The W8A8-MTP object is retired from future project execution and remains inventory-only." in registry["global_boundaries"]
 
@@ -216,15 +217,53 @@ def test_p5_allocator_patch_delivery_probe_is_conditional_and_bounded():
     assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
 
 
-def test_server_handoff_probes_allocator_patch_delivery_then_runs_bounded_base():
+def test_p5_plugin_activation_probe_is_fresh_process_bounded_and_overlay_free():
+    probe = load_yaml(BENCHMARK_DIR / "workloads" / "p5_4card_fp8_plugin_activation_probe.yaml")
+
+    assert probe["workload_id"] == "p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1"
+    assert probe["prior_probe_result"]["probe_grade"] == "diagnostic_yellow_allocator_bypass"
+    assert probe["prior_probe_result"]["selected_model_module"] == "vllm.models.deepseek_v4.nvidia.model"
+    assert probe["source_evidence"]["current_restrictive_value"] == "ascend"
+    assert probe["source_evidence"]["deepseek_v4_registry_target"] == (
+        "vllm_ascend.models.deepseek_v4:AscendDeepseekV4ForCausalLM"
+    )
+    hashes = probe["source_evidence"]["target_file_sha256"]
+    assert len(hashes) == 6
+    assert hashes["vllm/plugins/__init__.py"] == (
+        "4be66190ceaee9d0465f62ade801a8e94a907d7ab9fdb0a67fa14ce87448ae9f"
+    )
+    assert hashes["vllm_ascend/models/deepseek_v4.py"] == (
+        "9398e49d7206ba5a62629409405be057318e0657e40a25cf15c43304f78d01a4"
+    )
+    assert hashes["vllm_ascend/patch/platform/patch_torch_accelerator.py"] == (
+        "76ca48d51c8af6552828076797ad20b7eed044a8e53be918bd12719152fdc026"
+    )
+    provenance = probe["installed_content_provenance_gate"]
+    assert provenance["run_before_plugin_probe"] is True
+    assert provenance["mismatch_policy"] == (
+        "blocked_provenance_stop_before_npu_plugin_matrix_or_model_start"
+    )
+    modes = {item["name"]: item for item in probe["plugin_probe"]["modes"]}
+    assert modes["restrictive_current"]["vllm_plugins"] == "ascend"
+    assert modes["explicit_official_ascend_plugins"]["expected_registry_module"] == (
+        "vllm_ascend.models.deepseek_v4"
+    )
+    assert probe["plugin_probe"]["result_transport"] == "write_json_to_dedicated_file_not_stdout"
+    assert probe["four_card_retry"]["authorized_visible_devices"] == "4,5,6,7"
+    assert probe["four_card_retry"]["session_sitecustomize_or_pythonpath_overlay"] == "forbidden"
+    assert probe["four_card_retry"]["profile"] == "base_no_mtp_only"
+    assert probe["four_card_retry"]["explicit_quantization_argument"] == "forbidden"
+    assert probe["stop_policy"]["mtp_on_forbidden"] is True
+    assert probe["stop_policy"]["no_sitecustomize_or_pythonpath_overlay"] is True
+
+
+def test_server_handoff_probes_plugin_activation_then_runs_overlay_free_base():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711" in handoff
+    assert "p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711" in handoff
     assert "当前任务" in handoff
     assert "vLLM-Ascend" in handoff
-    assert "vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1" in handoff
     assert "ak-infer-lab-vllm-ascend0.22.1rc1" in handoff
-    assert "ak-infer-lab-vllm-ascend0.20.2rc1" in handoff
     assert "0decac0d96c42b49572498019f0a0e3600f50398" in handoff
     assert "5f6faa0cb8830f667266f3b8121cd1383606f2a1" in handoff
     assert "ASCEND_RT_VISIBLE_DEVICES=4,5,6,7" in handoff
@@ -248,25 +287,34 @@ def test_server_handoff_probes_allocator_patch_delivery_then_runs_bounded_base()
     assert "131072" not in handoff
     assert "no_new_server_task_waiting_8card_scope_for_p5_retry_2026_0710" not in handoff
     assert "base_failed_stop_no_fallback" in handoff
-    assert "diagnostic_red_quant_format" in handoff
-    assert "diagnostic_red_weight_load" in handoff
-    assert "run_preflight() (" in handoff
-    assert "full_pip_check_is_diagnostic_known_non_core_conflicts_are_allowed" in handoff
-    assert "allowed_requirements" in handoff
     assert "blocked_preflight" in handoff
     assert "禁止 `conda create`、`pip install`" in handoff
     assert '"${PYTHON_BIN}" -m pip install' not in handoff
     assert "base_no_mtp" in handoff
-    assert "mtp_on 禁止" in handoff
-    assert "patch_torch_accelerator.py" in handoff
     assert "sitecustomize.py" in handoff
     assert "torch.accelerator.memory_stats" in handoff
     assert "torch.npu.memory_stats" in handoff
-    assert "--confirmed-method upload-api" in handoff
-    assert "first_failure_excerpt.txt:9555" in handoff
-    assert "probe_result.json:1177" in handoff
-    assert "base_no_mtp/server_command.txt:756" in handoff
-    assert "HTTP `201`" in handoff
+    assert "ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model" in handoff
+    assert "vllm_ascend.models.deepseek_v4:AscendDeepseekV4ForCausalLM" in handoff
+    assert "vllm.models.deepseek_v4" in handoff
+    assert "fresh_plugin_probe.py" in handoff
+    assert "plugin_matrix_summary.json" in handoff
+    assert "installed_content_provenance.json" in handoff
+    assert "blocked_provenance" in handoff
+    assert "vllm_ascend/models/deepseek_v4.py" in handoff
+    assert "9398e49d7206ba5a62629409405be057318e0657e40a25cf15c43304f78d01a4" in handoff
+    assert "4be66190ceaee9d0465f62ade801a8e94a907d7ab9fdb0a67fa14ce87448ae9f" in handoff
+    assert "stdout/stderr 只进入 `.log`" in handoff
+    assert "unset PYTHONPATH" in handoff
+    assert "diagnostic_red_plugin_filter_hypothesis_mismatch" in handoff
+    assert "diagnostic_red_ascend_model_registration" in handoff
+    assert "diagnostic_red_global_patch" in handoff
+    assert "diagnostic_yellow_plugin_route_fixed" in handoff
+    assert "diagnostic_green_base_runtime" in handoff
+    assert "不得自动添加附件或执行 upload-api" in handoff
+    assert "email" in handoff
+    assert "upload-api" in handoff
+    assert "server-local" in handoff
     assert "SHA-256" in handoff
     assert "不添加附件" not in handoff
     assert "不执行 upload-api" not in handoff

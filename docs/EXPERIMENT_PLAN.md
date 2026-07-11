@@ -16,10 +16,10 @@ P0-P4 已建立两类可复用资产：
 当前服务器任务为 P5 官方 checkpoint runtime gate：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
+p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
 ```
 
-上一轮 `0.20.2/0.20.2rc1` 四卡探针已在 NPU 量化平台门得到 `diagnostic_red_quant_format`。项目现已停止使用 W8A8，主对象改为官方 mixed FP8+FP4 checkpoint。独立 `0.22.1/0.22.1rc1` 栈已通过核心版本、依赖分类、量化注册和模型 metadata 门，但四个 spawned worker 在权重加载前的 `MemorySnapshot` 同样命中 `Allocator for npu is not a DeviceAllocator`。当前先用 NPU 4 证明官方 NPU memory redirect 的 worker 传播状态；只有假设成立且 session-scoped overlay 验证成功，才用 NPU 4-7 复跑 base-no-MTP `4096+64` runtime gate。
+上一轮 `0.20.2/0.20.2rc1` 四卡探针已在 NPU 量化平台门得到 `diagnostic_red_quant_format`。项目现已停止使用 W8A8，主对象改为官方 mixed FP8+FP4 checkpoint。独立 `0.22.1/0.22.1rc1` 栈已通过核心版本、依赖分类、量化注册和模型 metadata 门；session overlay 消除 allocator 首错后，四个 worker 进入 upstream NVIDIA DeepSeekV4 model path。当前先核对服务器实际 import roots 和目标 tag 的 6 个关键文件 SHA-256，再用 NPU 4 比较限制值与完整 Ascend 插件白名单；只有 provenance、Ascend model registry、memory redirect 和 `MemorySnapshot` 全部通过，才无 overlay 用 NPU 4-7 复跑 base-no-MTP `4096+64` runtime gate。
 
 ## 2. 阶段依赖
 

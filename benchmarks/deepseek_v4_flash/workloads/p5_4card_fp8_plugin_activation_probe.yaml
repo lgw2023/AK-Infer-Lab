@@ -1,0 +1,151 @@
+schema_version: 1
+workload_id: p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1
+date: "2026-07-11"
+purpose: verify_ascend_general_plugin_activation_then_retry_the_native_deepseek_v4_route
+model_object_id: deepseek_v4_flash_official_hf
+scenario: single_card_fresh_process_plugin_matrix_then_conditional_four_card_base_runtime_retry
+is_smoke: true
+is_benchmark: false
+is_canonical_p5_runtime_gate: true
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+prior_probe_result:
+  workload: p5_4card_fp8_allocator_patch_delivery_probe.yaml
+  probe_grade: diagnostic_yellow_allocator_bypass
+  allocator_patch_delivery_hypothesis_supported: true
+  session_overlay_removed_allocator_failure: true
+  first_failure_stage: deepseek_v4_model_construction_platform_route
+  first_failure: DeepseekV4_attention_requires_a_CUDA_device
+  selected_model_module: vllm.models.deepseek_v4.nvidia.model
+  weight_load_started: false
+source_evidence:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  plugin_filter_semantics: VLLM_PLUGINS_is_one_name_whitelist_shared_by_platform_and_general_plugin_groups
+  current_restrictive_value: ascend
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  platform_entry_point: ascend
+  general_entry_points:
+    - ascend_kv_connector
+    - ascend_model_loader
+    - ascend_service_profiling
+    - ascend_model
+  deepseek_v4_registry_target: vllm_ascend.models.deepseek_v4:AscendDeepseekV4ForCausalLM
+  global_patch_entry_points:
+    - ascend_kv_connector
+    - ascend_model_loader
+    - ascend_service_profiling
+  hypothesis: restrictive_VLLM_PLUGINS_ascend_filters_out_the_model_registration_and_global_patch_plugins
+  hypothesis_status: must_be_proven_by_fresh_process_runtime_matrix
+  target_file_sha256:
+    vllm/plugins/__init__.py: 4be66190ceaee9d0465f62ade801a8e94a907d7ab9fdb0a67fa14ce87448ae9f
+    vllm/envs.py: 620a7a75d056f9d405d8030886c97d843209e6996d1c3fe4cbadd2f9efd43e7e
+    vllm_ascend/__init__.py: 1ee8497d375fb292918f729324d5207d653fffcf70572681b33b3969f54b9ae5
+    vllm_ascend/models/__init__.py: d823f38dcb6a5b06b81f926b908cf81fab849d538745b3d4bbc4f81892f80e9d
+    vllm_ascend/models/deepseek_v4.py: 9398e49d7206ba5a62629409405be057318e0657e40a25cf15c43304f78d01a4
+    vllm_ascend/patch/platform/patch_torch_accelerator.py: 76ca48d51c8af6552828076797ad20b7eed044a8e53be918bd12719152fdc026
+target_runtime:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  lifecycle: reuse_without_conda_pip_cann_driver_sitecustomize_or_source_changes
+  vllm_source_path: /data/node0_disk1/vllm-0.22.1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  torch: "2.10.0"
+  torch_npu: "2.10.0"
+installed_content_provenance_gate:
+  run_before_plugin_probe: true
+  vllm_expected_import_root: /data/node0_disk1/vllm-0.22.1/vllm
+  vllm_ascend_expected_import_root: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/lib/python3.11/site-packages/vllm_ascend
+  checks:
+    - imported_package_versions_match_target_stack
+    - editable_vllm_source_commit_is_exact_and_clean
+    - imported_vllm_root_is_the_expected_editable_source
+    - imported_vllm_ascend_root_is_inside_the_expected_conda_environment
+    - six_installed_python_files_match_target_tag_sha256
+    - installed_platform_and_general_entry_points_match_target_tag
+  mismatch_policy: blocked_provenance_stop_before_npu_plugin_matrix_or_model_start
+plugin_probe:
+  visible_device: "4"
+  logical_device: "npu:0"
+  process_isolation: separate_fresh_python_interpreter_per_mode
+  result_transport: write_json_to_dedicated_file_not_stdout
+  modes:
+    - name: restrictive_current
+      vllm_plugins: ascend
+      expected_platform: ascend
+      expected_registry_module: vllm.models.deepseek_v4
+      expected_memory_snapshot: allocator_failure
+    - name: explicit_official_ascend_plugins
+      vllm_plugins: ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
+      expected_platform: ascend
+      expected_registry_module: vllm_ascend.models.deepseek_v4
+      expected_registry_class: AscendDeepseekV4ForCausalLM
+      expected_memory_snapshot: success
+  required_checks:
+    - installed_entry_point_names_and_values
+    - platform_device_type_and_name
+    - model_registry_module_and_class
+    - torch_accelerator_to_torch_npu_memory_function_identity
+    - vllm_MemorySnapshot_on_npu_0
+  gate_requires:
+    - restrictive_mode_keeps_the_upstream_model_registry_entry
+    - explicit_official_mode_selects_the_ascend_model_registry_entry
+    - explicit_official_mode_applies_all_three_memory_api_redirects
+    - explicit_official_mode_MemorySnapshot_succeeds
+four_card_retry:
+  run_only_if: plugin_probe_gate_passes
+  authorized_visible_devices: "4,5,6,7"
+  vllm_plugins: ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
+  session_sitecustomize_or_pythonpath_overlay: forbidden
+  tensor_parallel_size: 4
+  enable_expert_parallel: true
+  data_parallel_size: 1
+  profile: base_no_mtp_only
+  max_model_len: 8192
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  gpu_memory_utilization: 0.92
+  explicit_quantization_argument: forbidden
+  enforce_eager: true
+  prefix_cache: disabled
+  additional_config:
+    enable_flashcomm1: true
+    enable_dsa_cp: true
+    enable_cpu_binding: true
+    multistream_overlap_shared_expert: false
+  request:
+    input_tokens: 4096
+    output_tokens: 64
+    temperature: 0.0
+    min_tokens: 64
+    max_tokens: 64
+    ignore_eos: true
+stop_policy:
+  stop_if_plugin_matrix_does_not_support_the_hypothesis: true
+  stop_if_explicit_official_mode_does_not_select_ascend_model: true
+  stop_if_explicit_official_mode_does_not_fix_MemorySnapshot: true
+  stop_after_base_startup_or_request_failure: true
+  mtp_on_forbidden: true
+  no_w8a8_checkpoint_attempt: true
+  no_context_ladder: true
+  no_cpu_disk_or_kv_offload: true
+  no_profiler: true
+  no_sitecustomize_or_pythonpath_overlay: true
+  no_package_source_or_system_changes: true
+grading:
+  diagnostic_green_base_runtime: native_ascend_plugin_route_reaches_server_ready_and_one_4096_plus_64_request_succeeds
+  diagnostic_yellow_plugin_route_fixed: native_ascend_model_and_allocator_routes_pass_but_base_fails_at_a_later_first_failure
+  diagnostic_red_plugin_filter_hypothesis_mismatch: fresh_process_matrix_does_not_match_the_expected_plugin_filter_effect
+  diagnostic_red_ascend_model_registration: explicit_official_plugin_list_does_not_select_AscendDeepseekV4ForCausalLM
+  diagnostic_red_global_patch: explicit_official_plugin_list_does_not_fix_MemorySnapshot
+  blocked_provenance: installed_import_root_file_hash_or_entry_point_does_not_match_the_target_release
+  blocked_preflight: core_version_source_entry_point_or_dependency_gate_fails
+  blocked_resource: npu_4_or_npu_4_7_not_healthy_idle_and_available
+reporting:
+  status_body_max_bytes: 71680
+  new_artifact_transfer_authorized: false
+  new_artifacts: report_exact_paths_sizes_sensitivity_available_methods_and_recommended_method_for_new_confirmation
+  raw_logs_and_large_artifacts: server-local
+boundaries:
+  - This task changes only the process environment plugin whitelist; it does not patch packages or source files.
+  - The explicit list contains only the five entry-point names shipped by the target vLLM-Ascend tag.
+  - A plugin-matrix pass is architecture-routing evidence, not a successful model load or request.
+  - Base success does not authorize MTP, eight cards, the 128K ladder, P6 or performance claims.

@@ -13,7 +13,7 @@ Boundaries:
 
 - Downloaded model files do not prove Ascend runtime compatibility.
 - The official checkpoint is mixed FP8 plus FP4 experts, not pure FP8 and not a `--quantization ascend` object.
-- The completed v0.20.2/v0.20.2rc1 probe failed at the NPU quantization gate before weight load. The isolated v0.22.1/v0.22.1rc1 stack now passes core, dependency-classification, quantization and model-metadata preflight, but all four workers fail in `MemorySnapshot` because the generic accelerator allocator path is still reached. The current task first proves how the official NPU redirect is delivered to spawned workers, then conditionally retries only `base_no_mtp`.
+- The completed v0.20.2/v0.20.2rc1 probe failed at the NPU quantization gate before weight load. The isolated v0.22.1/v0.22.1rc1 stack passes core, dependency-classification, quantization and model-metadata preflight. A session overlay then removed the allocator failure, but all four workers selected the upstream NVIDIA DeepSeekV4 model path. The current task verifies the complete Ascend plugin whitelist in fresh processes, then conditionally retries only `base_no_mtp` without an overlay.
 - W8A8 is retired from future project execution; its inventory remains historical evidence only.
 - P5 is a startup and long-context smoke, not a benchmark or bottleneck attribution run.
 - Any server task must be written by clearing and rewriting `通信模块/docs/developer-to-server.md`, with body and returned attachments kept within the 70KB communication limit.
@@ -25,7 +25,8 @@ P5 deliverables:
 - `workloads/p5_4card_startup_probe.yaml`: completed v0.20.2/v0.20.2rc1 probe with `diagnostic_red_quant_format` result.
 - `workloads/p5_4card_fp8_stack_upgrade_probe.yaml`: completed isolated-stack build attempt; core stack passed, but runtime was not attempted because of an overbroad full-environment `pip check` gate.
 - `workloads/p5_4card_fp8_runtime_resume_probe.yaml`: completed NPU 4-7 retry; it reached worker initialization but failed before weight loading at the generic accelerator allocator assertion.
-- `workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml`: current task; uploads the six already approved prior diagnostics, runs a single-card allocator/patch matrix, then conditionally retries only TP4 `base_no_mtp` with a session-scoped worker-startup redirect.
+- `workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml`: completed diagnostic; the session overlay removed the allocator error and exposed the later upstream NVIDIA model-route failure.
+- `workloads/p5_4card_fp8_plugin_activation_probe.yaml`: current task; first checks the server's actual import roots and six target-tag file hashes, then compares the restrictive and complete Ascend plugin whitelists in fresh processes, and conditionally retries only TP4 `base_no_mtp` without `sitecustomize` or `PYTHONPATH` overlays.
 - `workloads/p5_8card_context_ladder.yaml`: future fixed-output context ladder, blocked until the four-card gate succeeds and eight-card scope is separately authorized.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 

@@ -44,12 +44,13 @@ model_objects:
       shard_count: 46
       weight_bytes: 159617149040
       weight_gib: 148.66
-      inventory_status: continuous_shards_metadata_verified_v0221rc1_worker_allocator_patch_delivery_pending
+      inventory_status: continuous_shards_metadata_verified_v0221rc1_ascend_plugin_activation_pending
     expected_scenarios:
       - p5_readiness
       - p5_4card_fp8_stack_upgrade_probe
       - p5_4card_fp8_runtime_resume_probe
       - p5_4card_fp8_allocator_patch_delivery_probe
+      - p5_4card_fp8_plugin_activation_probe
       - p5_8card_context_ladder_smoke_after_separate_authorization
       - p6_eight_card_baseline_after_p5_success
       - p7_single_dual_extreme
@@ -58,7 +59,8 @@ model_objects:
     boundaries:
       - This is a mixed FP8 plus FP4-expert checkpoint, not pure FP8.
       - vLLM-Ascend 0.20.2rc1 rejected deepseek_v4_fp8 before weight load; that runtime is not retried.
-      - vLLM-Ascend 0.22.1rc1 passed core and quantization preflight, then failed in worker MemorySnapshot before weight loading because the NPU allocator redirect was not effective in workers.
+      - vLLM-Ascend 0.22.1rc1 passed core and quantization preflight; a session overlay removed the allocator failure, then the process selected the upstream NVIDIA DeepSeekV4 model path before weight loading.
+      - The current gate verifies whether the restrictive VLLM_PLUGINS value filtered the target tag's Ascend model-registration and global-patch plugins.
       - Do not pass --quantization ascend or rewrite checkpoint quantization metadata for this object.
 global_boundaries:
   - This registry does not copy, modify or validate model payloads.

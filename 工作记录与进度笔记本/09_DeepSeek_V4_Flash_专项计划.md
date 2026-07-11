@@ -4,7 +4,7 @@
 
 ## 1. 当前专项判断
 
-DeepSeek-V4-Flash 专项当前处于 P5 官方 checkpoint runtime remediation。`0.20.2/0.20.2rc1` 四卡探针已回传 `diagnostic_red_quant_format`；`0.22.1/0.22.1rc1` 独立栈则已通过核心版本、依赖分类、量化注册和模型 metadata 预检，但 TP4 四个 worker 在权重加载前的 `MemorySnapshot` 同样命中 generic accelerator allocator 断言。用户继续停止使用 W8A8；项目以官方 mixed FP8+FP4 checkpoint 为唯一主对象，并授权 NPU `4,5,6,7` 执行 allocator patch-delivery 诊断与有条件的 base 复跑：
+DeepSeek-V4-Flash 专项当前处于 P5 官方 checkpoint runtime remediation。`0.20.2/0.20.2rc1` 四卡探针已回传 `diagnostic_red_quant_format`；`0.22.1/0.22.1rc1` 独立栈已通过核心版本、依赖分类、量化注册和模型 metadata 预检。allocator 矩阵与 session overlay 随后消除了首错，但四个 worker 又进入 upstream NVIDIA DeepSeekV4 model path。用户继续停止使用 W8A8；项目以官方 mixed FP8+FP4 checkpoint 为唯一主对象，并授权先验证服务器 installed content 与目标 tag 一致，再用 NPU `4,5,6,7` 验证完整 Ascend plugin 激活及有条件的无 overlay base 复跑：
 
 ```text
 Project primary official mixed FP8+FP4 runtime object (46 shards / 148.66 GiB):
@@ -17,7 +17,7 @@ Retired inventory only (do not start or convert):
 当前服务器任务：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
+p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
 ```
 
 首轮在仅 NPU 6、7 空闲的条件下以 TP2 做启动诊断，所有请求均未进入推理阶段。`vLLM 0.18.0 / vLLM-Ascend 0.18.0` 先后暴露 `mtp` 不受支持，以及 `DeepseekV4Config` 缺少 `kv_lora_rank` 的架构错配；最终最高成功输入为 `0`，不能形成容量、性能或瓶颈结论。
