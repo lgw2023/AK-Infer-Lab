@@ -291,10 +291,13 @@ def http_error_message(status: int) -> str:
     elif status in {502, 530}:
         detail = "上传服务或 Tunnel 暂不可用"
     elif 300 <= status < 400:
-        detail = "出现非预期重定向或代理告警，先做小文件预检"
+        detail = "出现非预期重定向或代理告警"
     else:
         detail = "上传服务返回非成功状态"
-    return f"HTTP {status}: {detail}；不会自动切换通道，请报告用户并重新选择"
+    return (
+        f"HTTP {status}: {detail}；不会自动切换通道，"
+        "请在当前任务会话报告并重新等待用户选择"
+    )
 
 
 def _read_response_json(response_path: Path, token: str) -> dict[str, Any]:

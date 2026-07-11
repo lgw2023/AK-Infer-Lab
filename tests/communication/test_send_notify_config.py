@@ -1,5 +1,9 @@
 import importlib.util
+import json
+import sys
 from pathlib import Path
+
+import pytest
 
 
 MODULE_PATH = Path("通信模块/send_notify.py")
@@ -78,6 +82,11 @@ def test_build_config_report_uses_booleans_and_redacted_proxy_urls(monkeypatch):
     assert "password" not in report["smtp"]
     assert report["mail"]["recipients"] == ["yilili1023@gmail.com"]
     assert report["proxychains"]["config"] == "/etc/proxychains4.conf"
+    assert report["confirmation"] == {
+        "required": True,
+        "exact_method": "email",
+        "source": "command-line-only",
+    }
     assert report["shell_proxy"]["AK_HTTP_PROXY"] == (
         "http://<credentials>@proxysg.huawei.com:8080/"
     )
@@ -105,3 +114,102 @@ def test_proxychains_command_includes_optional_config_file(monkeypatch):
         "--send-mail-internal",
         "/tmp/payload.json",
     ]
+
+
+def test_mail_requires_exact_user_confirmed_method_before_network(monkeypatch):
+    send_notify = load_send_notify(monkeypatch)
+    called = False
+
+    def fail_if_called(*args, **kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("network must stay closed")
+
+    monkeypatch.setattr(send_notify, "_send_mail_via_proxychains", fail_if_called)
+    monkeypatch.setattr(send_notify, "_send_mail_direct", fail_if_called)
+
+    with pytest.raises(send_notify.ConfirmationError, match="用户明确选择 email"):
+        send_notify.send_mail("subject", "body", confirmed_method=None)
+    with pytest.raises(send_notify.ConfirmationError, match="用户明确选择 email"):
+        send_notify.send_mail("subject", "body", confirmed_method="upload-api")
+
+    assert called is False
+
+
+def test_proxy_internal_payload_cannot_bypass_confirmation(monkeypatch, tmp_path):
+    send_notify = load_send_notify(monkeypatch)
+    payload_path = tmp_path / "payload.json"
+    payload_path.write_text(
+        json.dumps(
+            {
+                "subject": "subject",
+                "body": "body",
+                "mail_to": "yilili1023@gmail.com",
+                "attachments": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    called = False
+
+    def fail_if_called(*args, **kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("SMTP must stay closed")
+
+    monkeypatch.setattr(send_notify, "_send_mail_direct", fail_if_called)
+
+    with pytest.raises(send_notify.ConfirmationError, match="用户明确选择 email"):
+        send_notify.run_send_mail_internal(str(payload_path))
+
+    assert called is False
+    assert not payload_path.exists()
+
+
+def test_cli_rejects_unconfirmed_mail_before_body_or_network(monkeypatch):
+    send_notify = load_send_notify(monkeypatch)
+    called = False
+
+    def fail_if_called(*args, **kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("body and network must stay untouched")
+
+    monkeypatch.setattr(send_notify, "read_body", fail_if_called)
+    monkeypatch.setattr(send_notify, "send_mail", fail_if_called)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["send_notify.py", "--subject", "result", "--body", "summary"],
+    )
+
+    assert send_notify.main() == 2
+    assert called is False
+
+
+def test_confirmed_email_reaches_selected_transport(monkeypatch):
+    send_notify = load_send_notify(monkeypatch)
+    observed = {}
+
+    def fake_send(subject, body, mail_to, attachment_paths):
+        observed.update(
+            subject=subject,
+            body=body,
+            mail_to=mail_to,
+            attachment_paths=attachment_paths,
+        )
+
+    monkeypatch.setattr(send_notify, "_send_mail_via_proxychains", fake_send)
+
+    send_notify.send_mail(
+        "subject",
+        "body",
+        confirmed_method="email",
+    )
+
+    assert observed == {
+        "subject": "subject",
+        "body": "body",
+        "mail_to": "yilili1023@gmail.com",
+        "attachment_paths": None,
+    }

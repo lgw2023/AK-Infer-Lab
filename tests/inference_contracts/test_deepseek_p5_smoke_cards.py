@@ -311,7 +311,12 @@ def test_server_handoff_probes_plugin_activation_then_runs_overlay_free_base():
     assert "diagnostic_red_global_patch" in handoff
     assert "diagnostic_yellow_plugin_route_fixed" in handoff
     assert "diagnostic_green_base_runtime" in handoff
-    assert "不得自动添加附件或执行 upload-api" in handoff
+    assert "result_summary.md" in handoff
+    assert "delivery_candidates.tsv" in handoff
+    assert "确认前禁止调用 `send_notify.py` 的发送/测试模式" in handoff
+    assert "也禁止先发一封状态邮件" in handoff
+    assert "--confirmed-method email" in handoff
+    assert "--confirmed-method upload-api" in handoff
     assert "email" in handoff
     assert "upload-api" in handoff
     assert "server-local" in handoff

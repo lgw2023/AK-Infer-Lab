@@ -617,7 +617,7 @@ PY
 
 无论成败，都必须确认 NPU 4-7 没有本轮残留进程；不得 kill NPU 0-3 进程。`base_failed_stop_no_fallback`：任何 base 启动/请求失败都停止，不运行 MTP、overlay、插件子集枚举或其他 fallback。
 
-## 6. 结果分级与回传
+## 6. 结果分级与交付等待门
 
 - `blocked_provenance`：服务器实际 import root 或 6 个关键文件的 SHA-256 与目标 tag 不一致；不运行插件矩阵或模型。
 - `blocked_preflight` / `blocked_resource`：核心版本、source、entry point、测试或资源门未过。
@@ -627,12 +627,19 @@ PY
 - `diagnostic_yellow_plugin_route_fixed`：Ascend model route 与 allocator route 均已修复，但 base 在更后首错停止。
 - `diagnostic_green_base_runtime`：无 overlay 条件下 server ready 且一个 `4096+64` 请求成功；仍不授权 MTP、八卡、128K 或 P6。
 
-发送一封不超过 70KB 的状态邮件，主题：
+完成实验后先在服务器本地生成 `${ARTIFACT_DIR}/result_summary.md`，建议的最终主题写入其中：
 
 ```text
 [P5-FP8-v0221rc1-plugins] <probe_grade> | <first_failure_or_base_success> | 2026-07-11
 ```
 
-正文必须包含 task/Git、服务器实际 import roots、6 文件 expected/observed SHA-256 与 provenance 总门、两种 `VLLM_PLUGINS` 精确值、发现的 entry points、逐项 7-check matrix、两种模式的 platform/registry/三项 memory identity/`MemorySnapshot`、四卡 ready/request/Ascend 与 NVIDIA path/更后首错、NPU 4-7 健康和残留，以及新 artifact 的精确服务器路径、逐文件 bytes、SHA-256、敏感性、`email` / `upload-api` / `server-local` 候选和一个推荐方式。
+`${ARTIFACT_DIR}/result_summary.md` 必须包含 task/Git、服务器实际 import roots、6 文件 expected/observed SHA-256 与 provenance 总门、两种 `VLLM_PLUGINS` 精确值、发现的 entry points、逐项 7-check matrix、两种模式的 platform/registry/三项 memory identity/`MemorySnapshot`、四卡 ready/request/Ascend 与 NVIDIA path/更后首错、NPU 4-7 健康和残留。另生成 `${ARTIFACT_DIR}/delivery_candidates.tsv`，逐项列出摘要与候选附件的精确服务器路径、bytes、SHA-256、敏感性、`email` / `upload-api` 可行性和一个推荐方式。
 
-本轮尚未批准任何新文件传输。状态邮件正文可以发送，但不得自动添加附件或执行 upload-api；这不是“永久不返回附件”，而是等待用户看到精确新文件清单后，针对该范围重新选择 `email` 或 `upload-api`。raw log、完整 NPU SMI、模型和大 artifact 保持 server-local。不得显示 token、`.env` 值、其他用户 PID/命令或未脱敏敏感信息。
+本轮尚未批准任何结果传输。生成上述两个本地文件后立即暂停，只在当前任务会话向用户展示候选清单并询问：选择 `email` 统一发送正文+批准附件，还是选择 `upload-api` 统一上传 `result_summary.md`+批准附件。确认前禁止调用 `send_notify.py` 的发送/测试模式，禁止 upload-api 预检或上传，也禁止先发一封状态邮件。raw log、完整 NPU SMI、模型和大 artifact 保持 server-local。不得显示 token、`.env` 值、其他用户 PID/命令或未脱敏敏感信息。
+
+用户确认后只执行已选渠道和精确范围：
+
+- 选择 `email`：使用 `python3 通信模块/send_notify.py --subject "<上述主题>" --body-file <result_summary.md> --attach <每个已批准附件> --confirmed-method email`，正文和每个附件均不得超过 70KB，一封邮件完成交付。
+- 选择 `upload-api`：不发送任何邮件；将 `result_summary.md` 与每个已批准附件分别用 `python3 通信模块/upload_file.py --upload <文件> --confirmed-method upload-api` 上传。
+
+任一渠道失败后只在当前任务会话报告脱敏错误并重新等待用户决定；不得自动重试、改名、补发状态邮件、扩展范围或切换渠道。

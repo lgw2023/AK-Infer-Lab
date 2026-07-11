@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-通过 163 邮箱从服务器向外部发送通知邮件。
+经用户明确选择 email 后，通过 163 邮箱从服务器向外部交付结果。
 
 本脚本用于本项目“开发机 <-> 服务器”通信链路：
-- 服务器只能通过 SMTP 邮件向外发送状态、日志、告警等消息；
-- 开发人员在开发机上通过收件箱获取服务器消息；
+- 服务器完成任务后先在当前任务会话等待用户选择交付渠道；
+- 只有用户选择 email，才通过 SMTP 一次性交付正文和已批准附件；
 - 开发机写入本目录内的 Markdown/文本指令，服务器通过 git pull 获取。
 
 安全说明：SMTP 账号、授权码通过环境变量配置，避免将密钥写入仓库。
 默认收件人可通过环境变量覆盖；仓库默认只发给当前 Codex 可读邮箱。
+任务结果正文和附件必须作为同一份已确认交付一起发送，禁止先发状态正文。
 """
 
 from __future__ import annotations
@@ -78,6 +79,11 @@ PROXYCHAINS_CONFIG = os.getenv("AK_COMM_PROXYCHAINS_CONFIG", "")
 PAYLOAD_DIR = os.getenv("AK_COMM_PAYLOAD_DIR", "/tmp")
 SCRIPT_PATH = os.path.abspath(__file__)
 SHELL_PROXY_KEYS = ("AK_HTTP_PROXY", "AK_HTTPS_PROXY", "AK_FTP_PROXY", "AK_NO_PROXY")
+CONFIRMED_METHOD = "email"
+
+
+class ConfirmationError(RuntimeError):
+    """The user has not selected email for this exact result bundle."""
 
 
 logging.basicConfig(
@@ -91,6 +97,14 @@ def parse_mail_recipients(mail_to: str) -> list[str]:
     if not recipients:
         raise ValueError("收件人不能为空；请设置 AK_COMM_MAIL_TO 或使用 -t/--to")
     return recipients
+
+
+def require_confirmation(confirmed_method: str | None) -> None:
+    if confirmed_method != CONFIRMED_METHOD:
+        raise ConfirmationError(
+            "未记录用户明确选择 email；任务结束后应先在当前任务会话等待确认，"
+            "不得先发状态正文或自动切换传输方式"
+        )
 
 
 def redact_url_credentials(value: str) -> str:
@@ -140,6 +154,11 @@ def build_config_report(env: Mapping[str, str] | None = None) -> dict[str, objec
         "mail": {
             "recipients": recipients,
             "raw": mail_to,
+        },
+        "confirmation": {
+            "required": True,
+            "exact_method": CONFIRMED_METHOD,
+            "source": "command-line-only",
         },
         "proxychains": {
             "enabled": env.get("AK_COMM_USE_PROXYCHAINS", "1")
@@ -269,6 +288,7 @@ def _send_mail_via_proxychains(
         "body": body,
         "mail_to": mail_to,
         "attachments": [str(p) for p in (attachment_paths or [])],
+        "confirmed_method": CONFIRMED_METHOD,
     }
     payload_path = os.path.join(
         PAYLOAD_DIR,
@@ -304,7 +324,9 @@ def send_mail(
     mail_to: str | None = None,
     attachment_paths: list[Path] | None = None,
     use_proxy: bool | None = None,
+    confirmed_method: str | None = None,
 ) -> None:
+    require_confirmation(confirmed_method)
     if mail_to is None:
         mail_to = DEFAULT_MAIL_TO
     if use_proxy is None:
@@ -321,6 +343,7 @@ def run_send_mail_internal(payload_path: str) -> None:
     try:
         with open(payload_path, "r", encoding="utf-8") as f:
             payload = json.load(f)
+        require_confirmation(payload.get("confirmed_method"))
         attachments = [Path(p) for p in payload.get("attachments", [])]
         _send_mail_direct(
             payload["subject"],
@@ -335,7 +358,11 @@ def run_send_mail_internal(payload_path: str) -> None:
             pass
 
 
-def send_test_mail(mail_to: str, use_proxy: bool) -> None:
+def send_test_mail(
+    mail_to: str,
+    use_proxy: bool,
+    confirmed_method: str | None,
+) -> None:
     hostname = socket.gethostname()
     host_ip = get_host_ip()
     now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -358,7 +385,13 @@ def send_test_mail(mail_to: str, use_proxy: bool) -> None:
 
     via = PROXYCHAINS_BIN if use_proxy else "direct"
     logging.info("Sending test mail to %s via %s ...", ", ".join(recipients), via)
-    send_mail(subject, body, mail_to=mail_to, use_proxy=use_proxy)
+    send_mail(
+        subject,
+        body,
+        mail_to=mail_to,
+        use_proxy=use_proxy,
+        confirmed_method=confirmed_method,
+    )
     logging.info("Test mail sent successfully")
 
 
@@ -377,7 +410,7 @@ def read_body(args: argparse.Namespace) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="通过 163 邮箱从服务器向外部发送通知邮件",
+        description="经用户明确选择后，通过 163 邮箱交付任务正文和附件",
     )
     parser.add_argument("-s", "--subject", help="邮件主题")
     parser.add_argument("-b", "--body", help="邮件正文（纯文本）")
@@ -398,6 +431,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--test", action="store_true", help="发送测试邮件并退出")
     parser.add_argument("--no-proxy", action="store_true", help="不经 proxychains，直连 SMTP")
     parser.add_argument("--show-config", action="store_true", help="脱敏打印当前通信配置并退出")
+    parser.add_argument(
+        "--confirmed-method",
+        choices=[CONFIRMED_METHOD],
+        help="必须精确填写 email，表示用户已针对本轮正文和附件选择邮件交付",
+    )
     parser.add_argument("--send-mail-internal", metavar="PAYLOAD_FILE", help=argparse.SUPPRESS)
     return parser.parse_args()
 
@@ -420,8 +458,16 @@ def main() -> int:
 
     if args.test:
         try:
-            send_test_mail(args.to, use_proxy=use_proxy)
+            require_confirmation(args.confirmed_method)
+            send_test_mail(
+                args.to,
+                use_proxy=use_proxy,
+                confirmed_method=args.confirmed_method,
+            )
             print("测试邮件已发送，请查收收件箱（含垃圾邮件文件夹）。")
+        except ConfirmationError as e:
+            print(f"错误：{e}", file=sys.stderr)
+            return 2
         except Exception as e:
             logging.exception("Test mail failed: %s", e)
             print(f"测试邮件发送失败：{e}", file=sys.stderr)
@@ -430,6 +476,12 @@ def main() -> int:
 
     if not args.subject:
         print("错误：除 --test 外必须指定 -s/--subject", file=sys.stderr)
+        return 2
+
+    try:
+        require_confirmation(args.confirmed_method)
+    except ConfirmationError as e:
+        print(f"错误：{e}", file=sys.stderr)
         return 2
 
     try:
@@ -446,6 +498,7 @@ def main() -> int:
             mail_to=args.to,
             attachment_paths=attachments or None,
             use_proxy=use_proxy,
+            confirmed_method=args.confirmed_method,
         )
     except Exception as e:
         logging.exception("Send mail failed: %s", e)
