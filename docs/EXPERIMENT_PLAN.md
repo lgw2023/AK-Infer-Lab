@@ -1,6 +1,6 @@
 # P5-P9 实验计划
 
-日期：2026-07-11
+日期：2026-07-12
 
 本文档是 P5-P9 的稳定阶段契约。P8 的工程细节见 `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`；每轮实时状态、服务器回传和下一动作写入 `工作记录与进度笔记本/`。
 
@@ -13,13 +13,13 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-当前服务器任务为 P5 官方 checkpoint runtime gate：
+NPU 0-7 已获明确授权，当前活动服务器任务为 W8A8-MTP 八卡 P5：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
+p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
 ```
 
-上一轮 `0.20.2/0.20.2rc1` 四卡探针已在 NPU 量化平台门得到 `diagnostic_red_quant_format`。项目现已停止使用 W8A8，主对象改为官方 mixed FP8+FP4 checkpoint。独立 `0.22.1/0.22.1rc1` 栈已通过核心版本、依赖分类、量化注册和模型 metadata 门；session overlay 消除 allocator 首错后，四个 worker 进入 upstream NVIDIA DeepSeekV4 model path。当前先核对服务器实际 import roots 和目标 tag 的 6 个关键文件 SHA-256，再用 NPU 4 比较限制值与完整 Ascend 插件白名单；只有 provenance、Ascend model registry、memory redirect 和 `MemorySnapshot` 全部通过，才无 overlay 用 NPU 4-7 复跑 base-no-MTP `4096+64` runtime gate。
+mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 的 279.41 GiB 权重超过四卡聚合 HBM；本轮在已授权的 NPU 0-7 上执行 TP8/EP P5 startup 与 context ladder，实际启动仍受八卡健康空闲门约束。
 
 ## 2. 阶段依赖
 
@@ -87,13 +87,13 @@ Scope / Not Claim
 ### 4.1 目标与对象
 
 ```text
-runtime object: /data/node0_disk1/Public/DeepSeek-V4-Flash
+runtime object: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
 runtime:        server host conda
 parallelism:    TP=8, EP=enabled
-quantization:   auto from checkpoint deepseek_v4_fp8 config
+quantization:   ascend
 ```
 
-W8A8 对象已退出项目执行。未来八卡 smoke 继续使用同一官方 checkpoint，但必须等待四卡新栈 gate 成功和独立八卡授权。
+W8A8-MTP 是唯一执行对象。NPU 0-7 已为本轮八卡 smoke 独立授权；mixed checkpoint 仅保留历史诊断与来源 inventory。
 
 ### 4.2 Smoke 契约
 
@@ -123,21 +123,18 @@ max_num_seqs 16 -> 4 -> 1 -> disable MTP
 | `yellow` | 八卡至少一个请求成功，但发生降级或未达 131072 | 只进入 P6.0 stabilization；修复前不称 official baseline |
 | `red` | 八卡不能 ready 或无请求成功 | 留在 P5 remediation；P7 工具链预研可继续 |
 
-### 4.4 当前四卡新栈 runtime gate
+### 4.4 当前资源门
 
-- 授权范围：`ASCEND_RT_VISIBLE_DEVICES=4,5,6,7`；不得扩大到其他 NPU。
-- 配置：TP4/EP、`max_model_len=8192`、`max_num_seqs=1`、eager mode、无 CPU/NVMe/KV offload。
-- 环境：只读复用已建成且核心版本/量化注册通过的隔离 `vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1` 栈；全量 `pip check` 只作诊断，已知非核心冲突不再一票否决，任何新冲突仍阻塞。
-- 对象与容量：46 分片 / `148.66 GiB` mixed FP8+FP4 checkpoint，静态余量约 `107.34 GiB`；W8A8 禁止启动或转换。
-- 格式边界：不显式传 `--quantization`、不改 checkpoint config；量化格式拒绝、容量失败或其他首错均立即停止。
-- profile：先用 NPU 4 跑 allocator/patch-delivery matrix；仅 gate 通过后用 NPU 4-7 运行 `base_no_mtp` 和一个 `4096+64`。本轮 `mtp_on` 禁止，不跑 context ladder。
-- 证据上限：四卡成功关闭当前 runtime gate，但不授权八卡或 P6；失败只适用于固定新栈和当前 checkpoint。
+- mixed-checkpoint 四卡诊断已结束：46/46 分片加载后在 FP4 expert 后处理命中当前 SoC 不支持错误，不再继续 adapter 或 runtime probe。
+- W8A8-MTP 权重为 `279.41 GiB`，超过四卡约 256GiB 聚合 HBM，当前四卡授权不具备 full-model 容量。
+- 当前活动任务已固定 `ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7`；执行前仍必须确认八卡健康空闲，发现冲突时不得清理他人进程，只能标记 `blocked_resource`。
+- 路线选择只关闭模型对象决策，不关闭 W8A8 weight-load、server-ready、请求或性能门。
 
 P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化收益。
 
 ## 5. P6：单机八卡 Controlled Baseline
 
-目标：在 Atlas 800T A2 8×64GB 上建立可复现的 DeepSeek-V4-Flash 官方 mixed FP8+FP4 checkpoint reference point。
+目标：在 Atlas 800T A2 8×64GB 上建立可复现的 DeepSeek-V4-Flash W8A8-MTP reference point。
 
 ### P6.0：Baseline Freeze / Stabilization
 

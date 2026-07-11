@@ -14,42 +14,44 @@ def load_yaml(path: Path) -> dict:
     return data
 
 
-def test_p5_readiness_card_targets_official_fp8_runtime_gate():
+def test_p5_readiness_card_records_w8a8_route_and_authorized_eight_card_task():
     card = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
 
-    assert card["experiment_id"] == "p5_deepseek_v4_flash_official_fp8_runtime_gate"
-    assert card["scenario"] == "four_card_acl_path_restore_then_eight_card_context_smoke"
+    assert card["experiment_id"] == "p5_deepseek_v4_flash_w8a8_8card_context_smoke"
+    assert card["scenario"] == "w8a8_eight_card_startup_and_context_ladder_authorized"
     assert card["target_runtime"]["container_or_conda"] == "host_conda"
     assert card["target_runtime"]["vllm_version"] == "0.22.1+empty"
     assert card["target_runtime"]["vllm_ascend_version"] == "0.22.1rc1"
     assert card["target_runtime"]["torch_npu_version"] == "2.10.0"
-    assert card["prior_runtime_result"]["probe_grade"] == "diagnostic_red_quant_format"
-    assert card["latest_environment_result"]["reported_probe_grade"] == "blocked_environment"
-    assert card["latest_environment_result"]["environment_functionally_built"] is True
-    assert card["latest_environment_result"]["runtime_attempted"] is False
-    assert "blocked_by_acl_import" in card["target_runtime"]["runtime_status"]
-    assert card["latest_runtime_result"]["probe_grade"] == "diagnostic_yellow_plugin_route_fixed"
-    assert card["latest_runtime_result"]["first_failure_stage"] == "spawned_worker_import"
-    assert card["latest_runtime_result"]["first_failure"] == "ModuleNotFoundError_No_module_named_acl"
-    assert card["latest_runtime_result"]["independent_attempts_observed"] == 2
-    assert card["authorized_runtime_gate"]["workload"] == "workloads/p5_4card_fp8_acl_path_probe.yaml"
-    assert card["authorized_runtime_gate"]["task_id"] == "p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1_2026_0711"
-    assert card["authorized_runtime_gate"]["visible_devices"] == "4,5,6,7"
-    assert card["authorized_runtime_gate"]["tp"] == 4
-    assert card["authorized_runtime_gate"]["model_object_id"] == "deepseek_v4_flash_official_hf"
-    assert card["authorized_runtime_gate"]["quantization_argument"] == "omitted_use_checkpoint_config"
+    assert card["mixed_checkpoint_final_result"]["probe_grade"] == "diagnostic_yellow_acl_path_fixed"
+    assert card["mixed_checkpoint_final_result"]["acl_path_gate"] == "diagnostic_green_acl_path_gate"
+    assert card["mixed_checkpoint_final_result"]["shards_loaded"] == 46
+    assert card["mixed_checkpoint_final_result"]["first_failure_stage"] == "process_weights_after_loading"
+    assert card["mixed_checkpoint_final_result"]["first_failure"] == "customize_dtype_is_not_supported_by_the_current_soc_version"
+    assert card["route_decision"]["decision"] == "stop_mixed_fp8_fp4_and_use_w8a8_only"
+    assert card["route_decision"]["build_mixed_checkpoint_adapter"] is False
+    assert card["route_decision"]["selected_model_object_id"] == "deepseek_v4_flash_w8a8_mtp_modelscope"
+    assert card["authorized_runtime_gate"]["task_id"] == (
+        "p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712"
+    )
+    assert card["authorized_runtime_gate"]["visible_devices"] == "0,1,2,3,4,5,6,7"
+    assert card["authorized_runtime_gate"]["authorization_date"] == "2026-07-12"
     assert card["authorized_runtime_gate"]["developer_to_server_ready"] is True
-    assert card["future_eight_card_smoke"]["visible_devices"] == "0,1,2,3,4,5,6,7"
-    assert card["future_eight_card_smoke"]["resource_gate"] == "waiting_separate_user_authorization_after_four_card_success"
-    assert card["future_eight_card_smoke"]["context_ladder_tokens"] == [4096, 32768, 65536, 98304, 131072]
-    assert card["future_eight_card_smoke"]["output_tokens"] == 64
+    assert card["active_eight_card_smoke"]["visible_devices"] == "0,1,2,3,4,5,6,7"
+    assert card["active_eight_card_smoke"]["model_object_id"] == "deepseek_v4_flash_w8a8_mtp_modelscope"
+    assert card["active_eight_card_smoke"]["quantization_argument"] == "ascend"
+    assert card["active_eight_card_smoke"]["resource_gate"] == (
+        "authorized_but_execute_only_if_all_eight_devices_healthy_idle_and_conflict_free"
+    )
+    assert card["active_eight_card_smoke"]["context_ladder_tokens"] == [4096, 32768, 65536, 98304, 131072]
+    assert card["active_eight_card_smoke"]["output_tokens"] == 64
 
     paths = {item["model_object_id"]: item["server_model_path"] for item in card["model_objects"]}
     assert paths["deepseek_v4_flash_w8a8_mtp_modelscope"] == "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp"
     assert paths["deepseek_v4_flash_official_hf"] == "/data/node0_disk1/Public/DeepSeek-V4-Flash"
 
 
-def test_model_registry_retires_w8a8_and_promotes_official_mixed_checkpoint():
+def test_model_registry_promotes_w8a8_and_retires_mixed_checkpoint_on_910b1():
     registry = load_yaml(BENCHMARK_DIR / "deepseek_v4_flash_model_objects.yaml")
     objects = {item["model_object_id"]: item for item in registry["model_objects"]}
 
@@ -57,42 +59,41 @@ def test_model_registry_retires_w8a8_and_promotes_official_mixed_checkpoint():
     assert w8a8["server_inventory"]["shard_count"] == 70
     assert w8a8["server_inventory"]["weight_bytes"] == 300013759966
     assert w8a8["server_inventory"]["weight_gib"] == 279.41
-    assert w8a8["model_role"] == "retired_by_project_decision"
-    assert w8a8["expected_scenarios"] == []
+    assert w8a8["model_role"] == "project_primary_runtime_object"
+    assert w8a8["intended_runtime"]["quantization"] == "ascend"
+    assert "p5_8card_context_ladder_smoke_authorized" in w8a8["expected_scenarios"]
 
     smaller = objects["deepseek_v4_flash_official_hf"]
     assert smaller["server_inventory"]["shard_count"] == 46
     assert smaller["server_inventory"]["weight_bytes"] == 159617149040
     assert smaller["server_inventory"]["weight_gib"] == 148.66
-    assert smaller["model_role"] == "project_primary_runtime_object"
-    assert smaller["intended_runtime"]["runtime"] == "vllm_0_22_1_plus_vllm_ascend_0_22_1rc1"
-    assert smaller["intended_runtime"]["reference_role"] == "project_primary_p5_runtime_and_future_p6_baseline_candidate"
-    assert "acl_path_probe_pending" in smaller["server_inventory"]["inventory_status"]
-    assert "p5_4card_fp8_runtime_resume_probe" in smaller["expected_scenarios"]
-    assert "p5_4card_fp8_allocator_patch_delivery_probe" in smaller["expected_scenarios"]
-    assert "p5_4card_fp8_plugin_activation_probe" in smaller["expected_scenarios"]
-    assert "p5_4card_fp8_acl_path_probe" in smaller["expected_scenarios"]
+    assert smaller["model_role"] == "retired_for_current_910b1_execution_by_project_decision"
+    assert smaller["intended_runtime"]["runtime"] == "none_on_current_910b1_route"
+    assert "loaded_46_of_46" in smaller["server_inventory"]["inventory_status"]
+    assert all(scenario.startswith("historical_") for scenario in smaller["expected_scenarios"])
 
-    assert "The W8A8-MTP object is retired from future project execution and remains inventory-only." in registry["global_boundaries"]
+    assert "The project primary runtime object is now the W8A8-MTP checkpoint." in registry["global_boundaries"]
 
 
 def test_p5_context_ladder_workload_preserves_official_startup_flags_and_degrade_order():
     workload = load_yaml(BENCHMARK_DIR / "workloads" / "p5_8card_context_ladder.yaml")
 
     assert workload["workload_id"] == "p5_8card_context_ladder_smoke"
-    assert workload["model_object_id"] == "deepseek_v4_flash_official_hf"
-    assert workload["server_model_path"] == "/data/node0_disk1/Public/DeepSeek-V4-Flash"
+    assert workload["model_object_id"] == "deepseek_v4_flash_w8a8_mtp_modelscope"
+    assert workload["server_model_path"] == "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp"
     assert workload["runtime_reference"]["max_model_len"] == 135168
     assert workload["runtime_reference"]["tensor_parallel_size"] == 8
     assert workload["runtime_reference"]["enable_expert_parallel"] is True
-    assert workload["runtime_reference"]["quantization"] == "auto_from_checkpoint_config"
-    assert workload["runtime_reference"]["explicit_quantization_argument"] == "forbidden"
+    assert workload["runtime_reference"]["quantization"] == "ascend"
+    assert workload["runtime_reference"]["explicit_quantization_argument"] == "required"
     assert workload["runtime_reference"]["enable_prefix_caching"] is True
     assert workload["runtime_reference"]["enable_chunked_prefill"] is True
     assert workload["runtime_reference"]["additional_config"]["enable_flashcomm1"] is True
     assert workload["runtime_reference"]["additional_config"]["enable_dsa_cp"] is True
     assert workload["runtime_reference"]["speculative_mtp"]["method"] == "mtp"
     assert workload["resource_gate"]["required_visible_devices"] == "0,1,2,3,4,5,6,7"
+    assert workload["resource_gate"]["user_confirmed_scope"] is True
+    assert workload["resource_gate"]["authorization_date"] == "2026-07-12"
     assert workload["runtime_environment"]["vllm_ascend"] == "0.22.1rc1"
     assert workload["request_plan"]["context_ladder_tokens"] == [4096, 32768, 65536, 98304, 131072]
     assert workload["request_plan"]["output_len_tokens"] == 64
@@ -295,64 +296,19 @@ def test_p5_acl_path_probe_preserves_only_official_cann_path_and_bounds_retry():
     assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
 
 
-def test_server_handoff_probes_acl_path_ordering_then_runs_four_card_base():
+def test_server_handoff_contains_only_authorized_w8a8_eight_card_p5_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1_2026_0711" in handoff
-    assert "当前任务" in handoff
-    assert "vLLM-Ascend" in handoff
-    assert "ak-infer-lab-vllm-ascend0.22.1rc1" in handoff
-    assert "0decac0d96c42b49572498019f0a0e3600f50398" in handoff
-    assert "5f6faa0cb8830f667266f3b8121cd1383606f2a1" in handoff
-    assert "ASCEND_RT_VISIBLE_DEVICES=4,5,6,7" in handoff
-    assert "server_local/git_pull_remote_wins.sh" in handoff
-    assert "git merge --ff-only origin/main" in handoff
-    assert "禁止 `cherry-pick`" in handoff
-    assert "blocked_resource" in handoff
-    assert "--tensor-parallel-size 4" in handoff
-    assert "--max-model-len 8192" in handoff
-    assert "--max-num-seqs 1" in handoff
-    assert "/data/node0_disk1/Public/DeepSeek-V4-Flash" in handoff
+    assert "p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712" in handoff
+    assert "W8A8-MTP 八卡启动与 Context Ladder" in handoff
     assert "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp" in handoff
-    assert '"enable_flashcomm1":true' in handoff
-    assert '"enable_dsa_cp":true' in handoff
-    assert '"enable_mlapo":false' not in handoff
-    assert "VLLM_ASCEND_APPLY_DSV4_PATCH=1" not in handoff
-    assert "VLLM_ASCEND_ENABLE_MLAPO=0" not in handoff
-    assert "    --cpu-offload-gb" not in handoff
-    assert "    --quantization" not in handoff
-    assert "    --tensor-parallel-size 8" not in handoff
-    assert "131072" not in handoff
-    assert "no_new_server_task_waiting_8card_scope_for_p5_retry_2026_0710" not in handoff
-    assert "blocked_preflight" in handoff
-    assert "禁止 `conda create`、`pip install`" in handoff
-    assert '"${PYTHON_BIN}" -m pip install' not in handoff
-    assert "base_no_mtp" in handoff
-    assert "sitecustomize.py" in handoff
-    assert "pip 安装任意名为 `acl` 的包" in handoff
+    assert "279.41 GiB" in handoff
+    assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
+    assert "--tensor-parallel-size 8" in handoff
+    assert "--quantization ascend" in handoff
+    assert "vllm serve" in handoff
     assert "ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model" in handoff
-    assert "vllm_ascend.models.deepseek_v4:AscendDeepseekV4ForCausalLM" in handoff
-    assert "acl_spawn_probe.py" in handoff
-    assert "mode_a_clean_no_source" in handoff
-    assert "mode_b_source_preserved" in handoff
-    assert "mode_c_post_source_unset" in handoff
-    assert "CANN_GENERATED_PYTHONPATH" in handoff
-    assert "acl_origin_under_usr_local_Ascend" in handoff
-    assert "unset PYTHONPATH" in handoff
-    assert "blocked_acl_origin" in handoff
-    assert "blocked_environment_acl_binding" in handoff
-    assert "diagnostic_red_acl_path_hypothesis_mismatch" in handoff
-    assert "diagnostic_yellow_acl_path_fixed" in handoff
-    assert "diagnostic_green_base_runtime" in handoff
-    assert "result_summary.md" in handoff
-    assert "delivery_candidates.tsv" in handoff
-    assert "确认前禁止发送状态邮件" in handoff
-    assert "--confirmed-method email" in handoff
-    assert "--confirmed-method upload-api" in handoff
-    assert "email" in handoff
-    assert "upload-api" in handoff
-    assert "server-local" in handoff
-    assert "SHA-256" in handoff
-    assert "不添加附件" not in handoff
-    assert "不执行 upload-api" not in handoff
-    assert "runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031" not in handoff
+    assert "MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp" in handoff
+    assert "RESOURCE_GATE=not_confirmed" in handoff
+    assert "确认前禁止发送邮件、附件、upload-api 预检或上传" in handoff
+    assert "禁止主动终止、暂停或影响任何非本任务进程" in handoff

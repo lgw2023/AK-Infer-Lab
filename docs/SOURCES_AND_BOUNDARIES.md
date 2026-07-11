@@ -1,6 +1,6 @@
 # Sources and Boundaries
 
-本文档记录 AK-Infer-Lab DeepSeek-V4-Flash 专项的事实来源、项目内证据和边界。`0.20.2/0.20.2rc1` 隔离栈已通过 Qwen2.5 纯注意力 smoke，但服务器随后证实官方 FP8+FP4 checkpoint 在 NPU `ModelConfig` 量化平台门被拒绝，早于权重加载、HBM 和 MTP。项目已停止使用 W8A8 对象，当前改用固定 tag `vLLM 0.22.1 / vLLM-Ascend 0.22.1rc1` 新建独立环境；该 tag 的源码支持是实验依据，不代替服务器 runtime 结果。
+本文档记录 AK-Infer-Lab DeepSeek-V4-Flash 专项的事实来源、项目内证据和边界。服务器已在固定 `vLLM 0.22.1 / vLLM-Ascend 0.22.1rc1` 独立环境中修复 mixed-checkpoint 路线此前的插件、allocator 与 ACL 路径问题，并加载全部 46 个分片；随后在 FP4 expert 权重后处理阶段得到当前 SoC 不支持 `customize_dtype` 的明确错误。结合官方将 MXFP4/MXFP8 MoE 路径限定在 Ascend 950、A2/A3 教程使用 W8A8-MTP 的边界，本项目停止 mixed checkpoint 适配，后续只以 W8A8-MTP 为执行主对象。该路线选择不等于 W8A8 已在本服务器验证成功。
 
 术语与字段命名优先级为：`AK 协同/` 内的官方文档 / 框架资料 / benchmark 输出字段 > 本地系统论文中的通用表达 > 项目内中文解释。项目内可使用“状态底座”或“热/温/冷层”帮助阅读，但首次出现时必须对齐 External KV Cache / state-object management 以及 HBM / DRAM / SSD-NVMe tier 等可检索术语，并注明来源类型和适用边界。若 `AK 协同/` 内找不到对应来源，只能标记为“项目内解释”或“待来源对齐”，不能包装成领域标准名词。
 
@@ -55,16 +55,16 @@
 
 | 对象 | 本地路径 | 当前状态 | 用途 | 边界 |
 | --- | --- | --- | --- | --- |
-| `deepseek-ai/DeepSeek-V4-Flash` | `/Volumes/Elements/DeepSeek-V4-Flash` | 服务器盘点 46 连续分片 / `159,617,149,040 B ≈ 148.66 GiB`；0.20.2rc1 量化门失败 | 项目主 runtime 对象、当前 NPU 4-7 新栈探针及未来八卡/P6 候选 | mixed FP8+FP4 experts；0.22.1rc1 源码支持不等于服务器已 ready；不得显式传 `--quantization ascend` |
-| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | 服务器盘点 70 连续分片 / `300,013,759,966 B ≈ 279.41 GiB` | 历史 inventory only | 项目已停止使用；禁止启动、转换或作为 P5/P6 fallback，除非用户明确反转决策 |
+| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | 服务器盘点 70 连续分片 / `300,013,759,966 B ≈ 279.41 GiB` | 项目主 runtime、当前八卡 P5 对象 | 使用 `--quantization ascend`；NPU 0-7 已授权，但尚无本服务器 runtime 成功证据 |
+| `deepseek-ai/DeepSeek-V4-Flash` | `/Volumes/Elements/DeepSeek-V4-Flash` | 服务器盘点 46 连续分片 / `159,617,149,040 B ≈ 148.66 GiB`；0.22.1rc1 加载 46/46 后命中 SoC 不支持 MXFP4 format cast | 历史诊断与来源 inventory | 不开发 adapter、不转换、不作为 P5/P6 fallback |
 
 用户会自行把模型目录拷贝到 Ascend 服务器。本仓库只登记对象、来源、实验用途和边界，不复制模型 payload，不推断服务器路径。
 
 ## 3. 不确定性与边界
 
-- 项目主对象是官方 mixed FP8+FP4 checkpoint；W8A8 只保留历史 inventory，不进入新实验。
+- 项目主对象是 W8A8-MTP；mixed FP8+FP4 checkpoint 只保留历史诊断与来源 inventory。
 - vLLM/vLLM-Ascend `main` 只用于跟踪最新代码；当前 P5 服务器探针固定 `v0.22.1@0decac0` 与 `v0.22.1rc1@5f6faa0`，不能照抄 `main` 参数或改用 nightly。
-- vLLM-Ascend 官方 DeepSeek-V4 教程仍展示 W8A8；`deepseek_v4_fp8` 源码注册只能支持“值得实测”的判断，不能把项目 FP8 路线写成官方 Ascend 部署承诺。
+- vLLM-Ascend 官方 DeepSeek-V4 教程展示 W8A8；MXFP4/MXFP8 MoE hardware boundary 与本服务器 SoC 首错共同支持停止 mixed 路线，但不能替代 W8A8 实跑。
 - 官方教程列出 Atlas 800 A2/A3；本项目服务器是 Atlas 800T A2，必须用服务器 smoke 证明实际兼容性。
 - 单卡/双卡极限实验不等同于官方模型可部署。
 - KV CPU Offload、UCM、Mooncake、LMCache 的思想可以迁移，但具体收益必须由本机 trace 证明。

@@ -22,7 +22,7 @@ P8 的目标是建立一个**分层工程原型**：
 | --- | --- | --- |
 | vLLM-Ascend | `0.20.2rc1` 通过 Qwen2.5 smoke，但官方 checkpoint 被 `deepseek_v4_fp8` 平台门拒绝；`0.22.1rc1` tag 已注册该格式 | 当前 P5 新建 `0.22.1rc1` 独立栈；结果回来前 P8 runtime adapter 仍受 gate 约束 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
-| DeepSeek-V4-Flash | 官方 148.66GiB mixed checkpoint 是项目主对象；W8A8 已退出执行；当前授权 NPU 4-7 做新栈 TP4 runtime gate | P8 不绕过 P5/P6 修改模型路径；四卡任务不启用 offload、转换或 profiler |
+| DeepSeek-V4-Flash | W8A8-MTP 是项目主对象；279.41GiB 权重的八卡 P5 已获授权、等待执行结果；mixed checkpoint 因 910B1 MXFP4 SoC 门退出执行 | P8 不绕过 P5/P6 修改模型路径，也不实现 mixed checkpoint adapter |
 | KV/Prefix object trace | 当前有 server stats proxy、phase memory、H2D/D2H microbench 和统一事件契约 | 尚无 object bytes、真实 hit/miss、restore/recompute 闭环 |
 | Expert trace | 当前无 DeepSeek-V4-Flash router top-k / per-expert trace 闭环 | P8.3 必须先观测，再谈分层 |
 | SSD cold tier | 已有 fio envelope | 只能校准冷层；不能证明逐 token restore 可用 |

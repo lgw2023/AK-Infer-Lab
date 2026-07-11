@@ -1,10 +1,10 @@
 schema_version: 1
 workload_id: p5_8card_context_ladder_smoke
-date: "2026-07-10"
+date: "2026-07-12"
 purpose: p5_deepseek_v4_flash_8card_startup_and_near_128k_context_smoke
-model_object_id: deepseek_v4_flash_official_hf
+model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
 scenario: p5_eight_card_vllm_startup_and_context_ladder_smoke
-server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
 request_plan:
   request_count_per_context: 1
   context_ladder_tokens:
@@ -27,7 +27,8 @@ controls:
   raw_generated_text_not_returned_by_mail: true
 resource_gate:
   required_visible_devices: "0,1,2,3,4,5,6,7"
-  execute_only_after_user_confirmed_scope: true
+  user_confirmed_scope: true
+  authorization_date: "2026-07-12"
   all_eight_devices_must_be_healthy_and_idle: true
 runtime_environment:
   conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
@@ -49,8 +50,8 @@ runtime_reference:
   data_parallel_size: 1
   tensor_parallel_size: 8
   enable_expert_parallel: true
-  quantization: auto_from_checkpoint_config
-  explicit_quantization_argument: forbidden
+  quantization: ascend
+  explicit_quantization_argument: required
   port: 7000
   block_size: 128
   enable_chunked_prefill: true
@@ -110,7 +111,7 @@ degrade_policy:
     - max_model_len=135168
     - tensor_parallel_size=8
     - enable_expert_parallel=true
-    - quantization=auto_from_checkpoint_config
+    - quantization=ascend
     - enable_prefix_caching=true
     - enable_chunked_prefill=true
   degraded_smoke_labels:
@@ -136,6 +137,6 @@ boundaries:
   - This workload is a P5 smoke and not a benchmark.
   - It must not be interpreted as P6 controlled baseline.
   - Any fallback from reference startup flags makes the result degraded_smoke.
-  - The checkpoint is the official mixed FP8 plus FP4-expert object; the W8A8 object is retired from project execution.
-  - This workload remains blocked until the four-card v0.22.1/v0.22.1rc1 runtime gate succeeds and eight-card scope is separately authorized.
+  - The checkpoint is the project-selected W8A8-MTP object; the mixed FP8 plus FP4-expert object is historical inventory only on the current 910B1 route.
+  - The user authorized all eight devices on 2026-07-12; execution still stops if any device is unhealthy, busy or conflicting.
   - Do not mail raw generated text, raw server logs, raw memory samples, profiler output or large artifact directories.

@@ -1,5 +1,5 @@
 schema_version: 1
-date: "2026-07-11"
+date: "2026-07-12"
 scope: p5_model_object_registry
 model_objects:
   - model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
@@ -11,21 +11,27 @@ model_objects:
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
     quantization_or_format: w8a8_mtp
     intended_runtime:
-      runtime: none_project_retired
+      runtime: vllm_0_22_1_plus_vllm_ascend_0_22_1rc1
       quantization: ascend
-      reference_role: historical_inventory_only
-    model_role: retired_by_project_decision
+      reference_role: project_primary_p5_runtime_and_future_p6_baseline_candidate
+    model_role: project_primary_runtime_object
     server_inventory:
       evidence_date: "2026-07-10"
       shard_count: 70
       weight_bytes: 300013759966
       weight_gib: 279.41
-      inventory_status: continuous_shards_metadata_verified_runtime_not_loaded
-    expected_scenarios: []
+      inventory_status: continuous_shards_metadata_verified_runtime_not_yet_loaded_in_current_stack
+    expected_scenarios:
+      - p5_8card_context_ladder_smoke_authorized
+      - p6_eight_card_baseline_after_p5_success
+      - p7_single_dual_extreme_as_capacity_boundary_not_full_model_runtime
+      - p8_expert_tiering
+      - p9_hardware_sensitivity
     boundaries:
       - Local path is not a server path.
-      - The server inventory is retained as historical evidence only.
-      - Do not start, convert, benchmark or use this object for future P5/P6 work unless the user explicitly reverses the project decision.
+      - The 279.41 GiB checkpoint cannot fit in the retired four-card 256 GiB aggregate HBM scope.
+      - All eight 64 GiB NPUs are explicitly authorized for the current P5 task, but startup still requires them to be healthy, idle and conflict-free.
+      - Inventory and official A2/A3 support do not constitute a successful runtime result on this server.
   - model_object_id: deepseek_v4_flash_official_hf
     display_name: deepseek-ai/DeepSeek-V4-Flash
     source_family: huggingface
@@ -35,37 +41,30 @@ model_objects:
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
     quantization_or_format: fp8_non_expert_plus_fp4_experts_official_checkpoint
     intended_runtime:
-      runtime: vllm_0_22_1_plus_vllm_ascend_0_22_1rc1
-      quantization: checkpoint_config_deepseek_v4_fp8_with_fp4_experts_no_explicit_override
-      reference_role: project_primary_p5_runtime_and_future_p6_baseline_candidate
-    model_role: project_primary_runtime_object
+      runtime: none_on_current_910b1_route
+      quantization: checkpoint_config_deepseek_v4_fp8_with_fp4_experts
+      reference_role: historical_diagnostic_and_source_inventory_only
+    model_role: retired_for_current_910b1_execution_by_project_decision
     server_inventory:
       evidence_date: "2026-07-11"
       shard_count: 46
       weight_bytes: 159617149040
       weight_gib: 148.66
-      inventory_status: continuous_shards_metadata_verified_v0221rc1_ascend_plugin_route_fixed_acl_path_probe_pending
+      inventory_status: continuous_shards_loaded_46_of_46_then_blocked_by_soc_unsupported_mxfp4_format_cast
     expected_scenarios:
-      - p5_readiness
-      - p5_4card_fp8_stack_upgrade_probe
-      - p5_4card_fp8_runtime_resume_probe
-      - p5_4card_fp8_allocator_patch_delivery_probe
-      - p5_4card_fp8_plugin_activation_probe
-      - p5_4card_fp8_acl_path_probe
-      - p5_8card_context_ladder_smoke_after_separate_authorization
-      - p6_eight_card_baseline_after_p5_success
-      - p7_single_dual_extreme
-      - p8_expert_tiering
-      - p9_hardware_sensitivity
+      - historical_p5_4card_fp8_stack_upgrade_probe
+      - historical_p5_4card_fp8_runtime_resume_probe
+      - historical_p5_4card_fp8_allocator_patch_delivery_probe
+      - historical_p5_4card_fp8_plugin_activation_probe
+      - historical_p5_4card_fp8_acl_path_probe
     boundaries:
       - This is a mixed FP8 plus FP4-expert checkpoint, not pure FP8.
-      - vLLM-Ascend 0.20.2rc1 rejected deepseek_v4_fp8 before weight load; that runtime is not retried.
-      - vLLM-Ascend 0.22.1rc1 passed core, quantization and installed-content provenance gates; the complete official plugin list selected the Ascend DeepSeekV4 model and fixed MemorySnapshot without an overlay.
-      - The current gate verifies that a clean CANN-generated PYTHONPATH exposes acl to spawned workers after the previous handoff unset PYTHONPATH after set_env.
-      - Do not pass --quantization ascend or rewrite checkpoint quantization metadata for this object.
+      - The v0.22.1rc1 four-card run fixed the ACL path, loaded all 46 shards and then failed in process_weights_after_loading because customize_dtype is unsupported by the current SoC.
+      - Official vLLM-Ascend guidance assigns MXFP4 and MXFP8 MoE execution to Ascend 950 rather than the current 910B1 route.
+      - Do not build a mixed-checkpoint compatibility adapter, rewrite its config, convert it or use it as a P5/P6 fallback unless the user explicitly reverses this decision.
 global_boundaries:
   - This registry does not copy, modify or validate model payloads.
-  - The model directories are now provided as server paths for P5.
-  - The project primary object is now the official mixed FP8 plus FP4-expert checkpoint.
-  - The W8A8-MTP object is retired from future project execution and remains inventory-only.
-  - The current authorized task is a four-card isolated-runtime gate; success does not authorize the future eight-card context ladder.
+  - The project primary runtime object is now the W8A8-MTP checkpoint.
+  - The mixed FP8 plus FP4-expert object remains historical diagnostic and source inventory only on the current 910B1 server.
+  - The active server task is the bounded W8A8 P5 startup/context ladder on ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7.
+  - This device authorization does not authorize P6, profiler, offload or result transfer; returned files require a fresh transfer-method choice.

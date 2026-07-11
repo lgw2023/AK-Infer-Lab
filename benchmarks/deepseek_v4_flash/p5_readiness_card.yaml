@@ -1,55 +1,48 @@
-experiment_id: p5_deepseek_v4_flash_official_fp8_runtime_gate
-date: "2026-07-11"
+experiment_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke
+date: "2026-07-12"
 git_commit: server_fills_after_pull
 operator: external_development_machine
 server: atlas800t_a2_ascend_server
-scenario: four_card_acl_path_restore_then_eight_card_context_smoke
+scenario: w8a8_eight_card_startup_and_context_ladder_authorized
 is_smoke: true
 is_benchmark: false
 model_objects:
-  - model_object_id: deepseek_v4_flash_official_hf
-    model: deepseek-ai/DeepSeek-V4-Flash
-    model_variant: fp8_non_expert_plus_fp4_experts
-    model_source: huggingface
-    server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
-    model_role: project_primary_runtime_and_future_p6_baseline_candidate
-    readiness_status: v0221rc1_acl_path_probe_pending_after_ascend_plugin_route_fixed
   - model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
     model: DeepSeek-V4-Flash-w8a8-mtp
     model_variant: w8a8_mtp
     model_source: modelscope
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-    model_role: retired_inventory_only
-    readiness_status: project_abandoned_do_not_start_or_convert
-prior_runtime_result:
-  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
-  vllm_version: 0.20.2+empty
-  vllm_ascend_version: 0.20.2rc1
-  probe_grade: diagnostic_red_quant_format
-  first_failure: deepseek_v4_fp8_quantization_is_currently_not_supported_in_npu
-  first_failure_before_weight_load_hbm_or_mtp: true
-latest_environment_result:
-  task_id: p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710
-  reported_probe_grade: blocked_environment
-  first_failure_stage: pip_check_non_core_conflicts
-  environment_functionally_built: true
-  supported_quantization_registered: true
-  runtime_attempted: false
-  project_interpretation: core_stack_ready_full_pip_check_gate_was_overbroad
-latest_runtime_result:
-  task_id: p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
-  probe_grade: diagnostic_yellow_plugin_route_fixed
-  first_failure_stage: spawned_worker_import
+    model_role: project_primary_runtime_and_future_p6_baseline_candidate
+    readiness_status: metadata_verified_eight_card_runtime_authorized_not_yet_executed
+  - model_object_id: deepseek_v4_flash_official_hf
+    model: deepseek-ai/DeepSeek-V4-Flash
+    model_variant: fp8_non_expert_plus_fp4_experts
+    model_source: huggingface
+    server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+    model_role: historical_diagnostic_and_source_inventory_only
+    readiness_status: retired_on_current_910b1_after_soc_unsupported_mxfp4_format_cast
+mixed_checkpoint_final_result:
+  task_id: p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1_2026_0711
+  probe_grade: diagnostic_yellow_acl_path_fixed
+  acl_path_gate: diagnostic_green_acl_path_gate
+  shards_loaded: 46
+  shards_total: 46
+  first_failure_stage: process_weights_after_loading
   identical_worker_failures: 4
-  failure_before_weight_load_server_ready_or_request: true
-  installed_content_provenance_all_match: true
+  first_failure: customize_dtype_is_not_supported_by_the_current_soc_version
+  failure_location: vllm_ascend_quantization_methods_fp8_py_line_109
+  allocator_failure_count: 0
+  cuda_attention_assertion_count: 0
   ascend_model_route_selected: true
-  allocator_failure_removed_without_overlay: true
-  selected_model_module: vllm_ascend.models.deepseek_v4
-  first_failure: ModuleNotFoundError_No_module_named_acl
-  independent_attempts_observed: 2
-  repeated_result: same_provenance_plugin_matrix_probe_result_and_acl_import_call_chain
-  project_interpretation: task_unset_PYTHONPATH_after_CANN_set_env_and_likely_removed_the_acl_binding_path
+  project_interpretation: current_910b1_stack_cannot_execute_the_official_mixed_mxfp4_route
+route_decision:
+  decision: stop_mixed_fp8_fp4_and_use_w8a8_only
+  decision_date: "2026-07-11"
+  build_mixed_checkpoint_adapter: false
+  rewrite_or_convert_mixed_checkpoint: false
+  selected_model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  selected_server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  evidence_boundary: official_support_plus_server_failure_selects_route_but_does_not_validate_w8a8_runtime
 target_runtime:
   container_or_conda: host_conda
   conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
@@ -61,29 +54,22 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  triton_ascend_version: "3.2.1"
-  transformers_version: "5.5.4"
-  runtime_status: core_quantization_provenance_plugin_model_and_allocator_routes_passed_then_blocked_by_acl_import_after_pythonpath_was_unset
+  runtime_status: environment_built_eight_card_p5_authorized_w8a8_model_runtime_not_yet_attempted
 authorized_runtime_gate:
-  workload: workloads/p5_4card_fp8_acl_path_probe.yaml
-  task_id: p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1_2026_0711
-  model_object_id: deepseek_v4_flash_official_hf
-  visible_devices: "4,5,6,7"
-  tp: 4
-  ep: enabled
-  max_model_len: 8192
-  max_num_seqs: 1
-  quantization_argument: omitted_use_checkpoint_config
-  profile_order:
-    - single_card_clean_CANN_acl_path_and_spawn_matrix
-    - base_no_mtp_with_exact_CANN_generated_pythonpath_after_acl_gate_passes
+  task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  visible_devices: "0,1,2,3,4,5,6,7"
+  authorization_date: "2026-07-12"
   developer_to_server_ready: true
-future_eight_card_smoke:
+active_eight_card_smoke:
   workload: workloads/p5_8card_context_ladder.yaml
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
   visible_devices: "0,1,2,3,4,5,6,7"
   tp: 8
   ep: enabled
-  resource_gate: waiting_separate_user_authorization_after_four_card_success
+  quantization_argument: ascend
+  resource_gate: authorized_but_execute_only_if_all_eight_devices_healthy_idle_and_conflict_free
   context_ladder_tokens:
     - 4096
     - 32768
@@ -92,59 +78,42 @@ future_eight_card_smoke:
     - 131072
   output_tokens: 64
 features:
-  checkpoint_quantization: auto_detect_deepseek_v4_fp8_with_fp4_experts
-  explicit_quantization_argument: forbidden
-  prefix_cache: disabled_for_four_card_startup_then_enabled_for_future_context_ladder
-  mtp: disabled_for_plugin_activation_probe
+  checkpoint_quantization: w8a8_modelslim
+  explicit_quantization_argument: ascend
+  prefix_cache: enabled_for_active_context_ladder
+  mtp: enabled_then_degraded_only_after_max_num_seqs_reductions
   cpu_binding: enabled
   flashcomm1: additional_config_enabled
   dsa_cp: explicitly_enabled_with_flashcomm1
   kv_cpu_offload: planned_p8_not_p5
 metrics:
-  required_for_current_gate:
-    - installed_vllm_and_vllm_ascend_import_roots_and_target_file_sha256
-    - installed_plugin_entry_points
-    - clean_CANN_generated_pythonpath_and_acl_module_origin
-    - fresh_spawn_acl_and_camem_import_matrix
-    - deepseek_v4_model_registry_module_and_class
-    - allocator_api_patch_identity_and_MemorySnapshot
-    - reused_environment_core_preflight_and_pip_check_classification
+  required_for_active_smoke:
     - runtime_versions_and_source_commits
-    - supported_quantization_methods
-    - server_startup_status_per_profile
+    - eight_device_health_and_idle_gate
+    - server_startup_status
     - health_endpoint_ready
-    - single_request_status_and_fixed_generated_tokens
+    - per_context_request_status_and_fixed_generated_tokens
     - first_failure_stage
     - npu_hbm_snapshots
   deferred_until_future_stages:
-    - context_ladder
     - msprof
     - request_device_aggregate
     - controlled_concurrency_baseline
 artifacts:
   model_registry: deepseek_v4_flash_model_objects.yaml
-  prior_environment_workload: workloads/p5_4card_fp8_stack_upgrade_probe.yaml
-  prior_runtime_workload: workloads/p5_4card_fp8_runtime_resume_probe.yaml
-  prior_allocator_workload: workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml
-  prior_plugin_workload: workloads/p5_4card_fp8_plugin_activation_probe.yaml
-  current_workload: workloads/p5_4card_fp8_acl_path_probe.yaml
-  future_workload: workloads/p5_8card_context_ladder.yaml
+  historical_mixed_checkpoint_workload: workloads/p5_4card_fp8_acl_path_probe.yaml
+  active_workload: workloads/p5_8card_context_ladder.yaml
   server_handoff: 通信模块/docs/developer-to-server.md
-status_grading:
-  green: native_ascend_plugin_route_completes_one_base_no_mtp_fixed_request
-  yellow: native_ascend_model_and_allocator_routes_pass_but_base_fails_later
-  red: plugin_matrix_fails_or_no_successful_base_request
 boundaries:
-  - The project has retired the W8A8 checkpoint from future execution, but retains its inventory as historical evidence.
-  - The official DeepSeek checkpoint is mixed FP8 plus FP4 experts, not pure FP8.
-  - Installed-content provenance matched the target tags and the complete official plugin list selected the Ascend DeepSeekV4 model plus memory redirects without an overlay.
-  - The latest task then unset PYTHONPATH after sourcing CANN and ATB, and all workers failed importing acl before weight load.
-  - The next task rebuilds PYTHONPATH from a clean shell using only the official CANN and ATB set_env scripts, verifies acl origin and spawn inheritance, then conditionally retries the same four-card base.
-  - Four-card success does not authorize the future eight-card context ladder or P6 benchmark.
-  - Raw logs and large artifacts remain on the server.
+  - W8A8 is the only selected DeepSeek-V4-Flash runtime object for the current P5 and future P6 execution.
+  - The 279.41 GiB W8A8 checkpoint cannot be tested as a full model in the retired four-card scope; the current task uses all eight authorized devices.
+  - The mixed checkpoint remains historical evidence and will not receive an adapter or conversion effort.
+  - The eight-card P5 startup and context ladder are authorized; P6 benchmark, profiler and offload remain unauthorized.
+  - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
   source_versions_recorded: true
   server_model_path_filled: true
-  current_four_card_scope_authorized: true
+  route_decision_recorded: true
+  current_four_card_scope_retired: true
   developer_to_server_ready: true
-  blocked_by: server_execution
+  blocked_by: server_execution_and_eight_device_health_idle_gate
