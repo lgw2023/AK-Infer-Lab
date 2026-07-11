@@ -149,3 +149,41 @@ boundaries:
   - The explicit list contains only the five entry-point names shipped by the target vLLM-Ascend tag.
   - A plugin-matrix pass is architecture-routing evidence, not a successful model load or request.
   - Base success does not authorize MTP, eight cards, the 128K ladder, P6 or performance claims.
+execution_result:
+  feedback_date: "2026-07-11"
+  probe_grade: diagnostic_yellow_plugin_route_fixed
+  installed_content_provenance_all_match: true
+  plugin_activation_hypothesis_supported: true
+  approved_vllm_plugins: ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
+  explicit_official_mode:
+    registry_module: vllm_ascend.models.deepseek_v4
+    registry_class: AscendDeepseekV4ForCausalLM
+    memory_snapshot_ok: true
+  base_no_mtp:
+    server_ready: false
+    request_sent: false
+    weight_load_started: false
+    allocator_error_count: 0
+    cuda_attention_assertion_count: 0
+    first_failure_stage: spawned_worker_import
+    first_failure: ModuleNotFoundError_No_module_named_acl
+    import_chain:
+      - vllm_ascend.worker.worker
+      - vllm_ascend.device_allocator.camem
+      - acl.rt.memcpy
+  task_environment_detail:
+    cann_and_atb_set_env_sourced: true
+    pythonpath_unset_after_sourcing: true
+    import_acl_with_pythonpath_unset: failed
+  project_interpretation: handoff_over_sanitized_PYTHONPATH_and_removed_the_CANN_acl_binding_path
+  mtp_on_run: false
+  npu_4_7_released: true
+  repeat_confirmation:
+    attempts_observed: 2
+    second_attempt_git_head: 334e0a8e65876510ea5c050fd81047aef2854536
+    plugin_matrix_summary_byte_identical: true
+    installed_content_provenance_byte_identical: true
+    probe_result_semantically_identical: true
+    first_failure_call_chain_identical: true
+    causal_limit: repeat_confirms_determinism_but_does_not_prove_missing_CANN_installation_or_post_source_unset_causality
+  superseded_by: p5_4card_fp8_acl_path_probe.yaml

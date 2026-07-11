@@ -121,18 +121,17 @@ python3 通信模块/upload_file.py --show-config
 python3 通信模块/upload_file.py --preflight --confirmed-method upload-api
 ```
 
-用户选择 `upload-api` 后，先上传正文文件，再逐个上传已批准附件；不要补发状态邮件：
+用户选择 `upload-api` 后，把正文文件和已批准附件作为一个具名结果会话、通过一次请求共同上传；不要补发状态邮件。`--session-name` 在接收端当天必须唯一：
 
 ```bash
 python3 通信模块/upload_file.py \
   --upload /path/to/result_summary.md \
-  --confirmed-method upload-api
-python3 通信模块/upload_file.py \
   --upload /path/to/approved_attachment.txt \
+  --session-name <task-name-YYYYMMDD-run-id> \
   --confirmed-method upload-api
 ```
 
-普通公网机器确认可直连时可加 `--no-proxy`。超过 100MB 默认拒绝；只有用户明确接受可能的 `413` 风险后才可加 `--allow-over-100mb`，该参数不保证服务端接受。
+普通公网机器确认可直连时可加 `--no-proxy`。单个文件或结果包总大小超过 100MB 默认拒绝；只有用户明确接受可能的 `413` 风险后才可加 `--allow-over-100mb`，该参数不保证服务端接受。
 
 从文件读取正文并附加已批准的小文件（正文和每个附件均需不超过 70KB）：
 
@@ -156,7 +155,7 @@ python3 通信模块/send_notify.py --test --no-proxy --confirmed-method email
 2. 开发人员提交并推送仓库。
 3. 服务器执行本地 alias `git pull-remote` 后读取本目录文档；该 alias 指向服务器本地 `server_local/git_pull_remote_wins.sh`，执行 `fetch + reset --hard origin/main`，让已跟踪文件以远端为准，同时保留未跟踪实验产物、conda 环境和服务器本地脚本。
 4. 服务器完成任务后只在服务器本地生成 `result_summary.md`、候选附件和清单；通过当前任务会话请求用户在 `email` 与 `upload-api` 中选择，不调用任何外发命令。
-5. 用户选择后，服务器只按该方式交付已列明的正文与附件：`email` 把摘要作为正文并附上批准文件；`upload-api` 把摘要文件与批准附件全部上传。不得先发状态邮件、扩展范围或切换通道。
+5. 用户选择后，服务器只按该方式交付已列明的正文与附件：`email` 把摘要作为正文并附上批准文件；`upload-api` 用一个 `session_name` 和一次多文件请求提交摘要与全部批准附件。不得先发状态邮件、扩展范围或切换通道。
 
 ## 双向协作约束
 

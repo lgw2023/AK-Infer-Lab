@@ -18,7 +18,7 @@ def test_p5_readiness_card_targets_official_fp8_runtime_gate():
     card = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
 
     assert card["experiment_id"] == "p5_deepseek_v4_flash_official_fp8_runtime_gate"
-    assert card["scenario"] == "four_card_plugin_activation_then_eight_card_context_smoke"
+    assert card["scenario"] == "four_card_acl_path_restore_then_eight_card_context_smoke"
     assert card["target_runtime"]["container_or_conda"] == "host_conda"
     assert card["target_runtime"]["vllm_version"] == "0.22.1+empty"
     assert card["target_runtime"]["vllm_ascend_version"] == "0.22.1rc1"
@@ -27,11 +27,13 @@ def test_p5_readiness_card_targets_official_fp8_runtime_gate():
     assert card["latest_environment_result"]["reported_probe_grade"] == "blocked_environment"
     assert card["latest_environment_result"]["environment_functionally_built"] is True
     assert card["latest_environment_result"]["runtime_attempted"] is False
-    assert "upstream_nvidia_model_route" in card["target_runtime"]["runtime_status"]
-    assert card["latest_runtime_result"]["probe_grade"] == "diagnostic_yellow_allocator_bypass"
-    assert card["latest_runtime_result"]["first_failure_stage"] == "deepseek_v4_model_construction_platform_route"
-    assert card["authorized_runtime_gate"]["workload"] == "workloads/p5_4card_fp8_plugin_activation_probe.yaml"
-    assert card["authorized_runtime_gate"]["task_id"] == "p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711"
+    assert "blocked_by_acl_import" in card["target_runtime"]["runtime_status"]
+    assert card["latest_runtime_result"]["probe_grade"] == "diagnostic_yellow_plugin_route_fixed"
+    assert card["latest_runtime_result"]["first_failure_stage"] == "spawned_worker_import"
+    assert card["latest_runtime_result"]["first_failure"] == "ModuleNotFoundError_No_module_named_acl"
+    assert card["latest_runtime_result"]["independent_attempts_observed"] == 2
+    assert card["authorized_runtime_gate"]["workload"] == "workloads/p5_4card_fp8_acl_path_probe.yaml"
+    assert card["authorized_runtime_gate"]["task_id"] == "p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1_2026_0711"
     assert card["authorized_runtime_gate"]["visible_devices"] == "4,5,6,7"
     assert card["authorized_runtime_gate"]["tp"] == 4
     assert card["authorized_runtime_gate"]["model_object_id"] == "deepseek_v4_flash_official_hf"
@@ -65,10 +67,11 @@ def test_model_registry_retires_w8a8_and_promotes_official_mixed_checkpoint():
     assert smaller["model_role"] == "project_primary_runtime_object"
     assert smaller["intended_runtime"]["runtime"] == "vllm_0_22_1_plus_vllm_ascend_0_22_1rc1"
     assert smaller["intended_runtime"]["reference_role"] == "project_primary_p5_runtime_and_future_p6_baseline_candidate"
-    assert "ascend_plugin_activation_pending" in smaller["server_inventory"]["inventory_status"]
+    assert "acl_path_probe_pending" in smaller["server_inventory"]["inventory_status"]
     assert "p5_4card_fp8_runtime_resume_probe" in smaller["expected_scenarios"]
     assert "p5_4card_fp8_allocator_patch_delivery_probe" in smaller["expected_scenarios"]
     assert "p5_4card_fp8_plugin_activation_probe" in smaller["expected_scenarios"]
+    assert "p5_4card_fp8_acl_path_probe" in smaller["expected_scenarios"]
 
     assert "The W8A8-MTP object is retired from future project execution and remains inventory-only." in registry["global_boundaries"]
 
@@ -255,12 +258,47 @@ def test_p5_plugin_activation_probe_is_fresh_process_bounded_and_overlay_free():
     assert probe["four_card_retry"]["explicit_quantization_argument"] == "forbidden"
     assert probe["stop_policy"]["mtp_on_forbidden"] is True
     assert probe["stop_policy"]["no_sitecustomize_or_pythonpath_overlay"] is True
+    assert probe["execution_result"]["probe_grade"] == "diagnostic_yellow_plugin_route_fixed"
+    assert probe["execution_result"]["installed_content_provenance_all_match"] is True
+    assert probe["execution_result"]["plugin_activation_hypothesis_supported"] is True
+    assert probe["execution_result"]["base_no_mtp"]["first_failure"] == "ModuleNotFoundError_No_module_named_acl"
+    assert probe["execution_result"]["task_environment_detail"]["pythonpath_unset_after_sourcing"] is True
+    assert probe["execution_result"]["repeat_confirmation"]["attempts_observed"] == 2
+    assert probe["execution_result"]["repeat_confirmation"]["plugin_matrix_summary_byte_identical"] is True
+    assert probe["execution_result"]["repeat_confirmation"]["installed_content_provenance_byte_identical"] is True
+    assert probe["execution_result"]["repeat_confirmation"]["first_failure_call_chain_identical"] is True
+    assert probe["execution_result"]["superseded_by"] == "p5_4card_fp8_acl_path_probe.yaml"
 
 
-def test_server_handoff_probes_plugin_activation_then_runs_overlay_free_base():
+def test_p5_acl_path_probe_preserves_only_official_cann_path_and_bounds_retry():
+    probe = load_yaml(BENCHMARK_DIR / "workloads" / "p5_4card_fp8_acl_path_probe.yaml")
+
+    assert probe["workload_id"] == "p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1"
+    assert probe["prior_probe_result"]["probe_grade"] == "diagnostic_yellow_plugin_route_fixed"
+    assert probe["prior_probe_result"]["first_failure"] == "ModuleNotFoundError_No_module_named_acl"
+    assert probe["prior_probe_result"]["pythonpath_unset_after_sourcing"] is True
+    assert probe["hypothesis"]["pip_install_acl"] == "forbidden"
+    assert probe["acl_path_probe"]["visible_device"] == "4"
+    assert probe["acl_path_probe"]["clean_shell_rule"] == "unset_PYTHONPATH_before_sourcing_CANN_and_ATB"
+    modes = {item["name"]: item for item in probe["acl_path_probe"]["modes"]}
+    assert set(modes) == {
+        "stripped_after_source_control",
+        "clean_CANN_generated_path",
+        "spawned_worker_inheritance",
+    }
+    assert modes["clean_CANN_generated_path"]["expected_acl_origin_prefix"] == "/usr/local/Ascend"
+    assert probe["four_card_retry"]["authorized_visible_devices"] == "4,5,6,7"
+    assert probe["four_card_retry"]["pythonpath"] == "exact_clean_CANN_and_ATB_generated_value_from_probe"
+    assert probe["four_card_retry"]["profile"] == "base_no_mtp_only"
+    assert probe["four_card_retry"]["explicit_quantization_argument"] == "forbidden"
+    assert probe["stop_policy"]["mtp_on_forbidden"] is True
+    assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
+
+
+def test_server_handoff_probes_acl_path_ordering_then_runs_four_card_base():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711" in handoff
+    assert "p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1_2026_0711" in handoff
     assert "当前任务" in handoff
     assert "vLLM-Ascend" in handoff
     assert "ak-infer-lab-vllm-ascend0.22.1rc1" in handoff
@@ -275,7 +313,7 @@ def test_server_handoff_probes_plugin_activation_then_runs_overlay_free_base():
     assert "--max-model-len 8192" in handoff
     assert "--max-num-seqs 1" in handoff
     assert "/data/node0_disk1/Public/DeepSeek-V4-Flash" in handoff
-    assert "RETIRED_W8A8_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp" in handoff
+    assert "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp" in handoff
     assert '"enable_flashcomm1":true' in handoff
     assert '"enable_dsa_cp":true' in handoff
     assert '"enable_mlapo":false' not in handoff
@@ -286,35 +324,29 @@ def test_server_handoff_probes_plugin_activation_then_runs_overlay_free_base():
     assert "    --tensor-parallel-size 8" not in handoff
     assert "131072" not in handoff
     assert "no_new_server_task_waiting_8card_scope_for_p5_retry_2026_0710" not in handoff
-    assert "base_failed_stop_no_fallback" in handoff
     assert "blocked_preflight" in handoff
     assert "禁止 `conda create`、`pip install`" in handoff
     assert '"${PYTHON_BIN}" -m pip install' not in handoff
     assert "base_no_mtp" in handoff
     assert "sitecustomize.py" in handoff
-    assert "torch.accelerator.memory_stats" in handoff
-    assert "torch.npu.memory_stats" in handoff
+    assert "pip 安装任意名为 `acl` 的包" in handoff
     assert "ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model" in handoff
     assert "vllm_ascend.models.deepseek_v4:AscendDeepseekV4ForCausalLM" in handoff
-    assert "vllm.models.deepseek_v4" in handoff
-    assert "fresh_plugin_probe.py" in handoff
-    assert "plugin_matrix_summary.json" in handoff
-    assert "installed_content_provenance.json" in handoff
-    assert "blocked_provenance" in handoff
-    assert "vllm_ascend/models/deepseek_v4.py" in handoff
-    assert "9398e49d7206ba5a62629409405be057318e0657e40a25cf15c43304f78d01a4" in handoff
-    assert "4be66190ceaee9d0465f62ade801a8e94a907d7ab9fdb0a67fa14ce87448ae9f" in handoff
-    assert "stdout/stderr 只进入 `.log`" in handoff
+    assert "acl_spawn_probe.py" in handoff
+    assert "mode_a_clean_no_source" in handoff
+    assert "mode_b_source_preserved" in handoff
+    assert "mode_c_post_source_unset" in handoff
+    assert "CANN_GENERATED_PYTHONPATH" in handoff
+    assert "acl_origin_under_usr_local_Ascend" in handoff
     assert "unset PYTHONPATH" in handoff
-    assert "diagnostic_red_plugin_filter_hypothesis_mismatch" in handoff
-    assert "diagnostic_red_ascend_model_registration" in handoff
-    assert "diagnostic_red_global_patch" in handoff
-    assert "diagnostic_yellow_plugin_route_fixed" in handoff
+    assert "blocked_acl_origin" in handoff
+    assert "blocked_environment_acl_binding" in handoff
+    assert "diagnostic_red_acl_path_hypothesis_mismatch" in handoff
+    assert "diagnostic_yellow_acl_path_fixed" in handoff
     assert "diagnostic_green_base_runtime" in handoff
     assert "result_summary.md" in handoff
     assert "delivery_candidates.tsv" in handoff
-    assert "确认前禁止调用 `send_notify.py` 的发送/测试模式" in handoff
-    assert "也禁止先发一封状态邮件" in handoff
+    assert "确认前禁止发送状态邮件" in handoff
     assert "--confirmed-method email" in handoff
     assert "--confirmed-method upload-api" in handoff
     assert "email" in handoff

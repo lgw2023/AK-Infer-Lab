@@ -9,6 +9,7 @@ import pytest
 
 
 MODULE_PATH = Path("通信模块/upload_file.py")
+SESSION_NAME = "task-20260711-01"
 
 
 def load_upload_file():
@@ -109,32 +110,199 @@ def test_upload_requires_exact_user_confirmed_method(upload_file_module, config,
     monkeypatch.setattr(upload_file_module.subprocess, "run", fail_if_called)
 
     with pytest.raises(upload_file_module.UploadError, match="用户明确选择 upload-api"):
-        upload_file_module.upload_file(path, config, confirmed_method=None)
+        upload_file_module.upload_file(
+            path,
+            config,
+            session_name=SESSION_NAME,
+            confirmed_method=None,
+        )
     with pytest.raises(upload_file_module.UploadError, match="用户明确选择 upload-api"):
-        upload_file_module.upload_file(path, config, confirmed_method="email")
+        upload_file_module.upload_file(
+            path,
+            config,
+            session_name=SESSION_NAME,
+            confirmed_method="email",
+        )
 
     assert called is False
 
 
 def test_proxy_and_direct_commands_are_lists_without_token(upload_file_module, config, tmp_path):
-    file_path = tmp_path / "result file.txt"
+    body_path = tmp_path / "result summary.md"
+    attachment_path = tmp_path / "metrics.tsv"
     header_path = tmp_path / "header"
     response_path = tmp_path / "response"
 
     proxied = upload_file_module.build_upload_command(
-        file_path, header_path, response_path, config, use_proxy=True
+        [body_path, attachment_path],
+        "task-20260711-01",
+        header_path,
+        response_path,
+        config,
+        use_proxy=True,
     )
     direct = upload_file_module.build_upload_command(
-        file_path, header_path, response_path, config, use_proxy=False
+        [body_path, attachment_path],
+        "task-20260711-01",
+        header_path,
+        response_path,
+        config,
+        use_proxy=False,
     )
 
     assert proxied[:3] == ["proxychains4", "-f", "/etc/proxychains4.conf"]
     assert direct[0] == "curl"
     assert "--header" in direct
     assert f"@{header_path}" in direct
-    assert f"file=@{file_path}" in direct
+    assert "session_name=task-20260711-01" in direct
+    assert f"file=@{body_path}" in direct
+    assert f"file=@{attachment_path}" in direct
     assert "FAKE_UPLOAD_TOKEN_SENTINEL" not in " ".join(proxied)
     assert "FAKE_UPLOAD_TOKEN_SENTINEL" not in " ".join(direct)
+
+
+def test_upload_bundle_requires_confirmation_before_network(
+    upload_file_module, config, tmp_path, monkeypatch
+):
+    body_path = tmp_path / "result_summary.md"
+    attachment_path = tmp_path / "metrics.tsv"
+    body_path.write_text("summary", encoding="utf-8")
+    attachment_path.write_text("metric\tvalue\n", encoding="utf-8")
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("network must stay closed")
+
+    monkeypatch.setattr(upload_file_module.subprocess, "run", fail_if_called)
+
+    with pytest.raises(upload_file_module.ConfirmationError):
+        upload_file_module.upload_files(
+            [body_path, attachment_path],
+            "task-20260711-01",
+            config,
+            confirmed_method=None,
+        )
+
+
+def test_upload_bundle_verifies_all_files_in_session_response(
+    upload_file_module, config, tmp_path, monkeypatch
+):
+    body_path = tmp_path / "result_summary.md"
+    attachment_path = tmp_path / "metrics.tsv"
+    body_path.write_text("summary", encoding="utf-8")
+    attachment_path.write_text("metric\tvalue\n", encoding="utf-8")
+    paths = [body_path, attachment_path]
+    observed = {}
+    monkeypatch.setattr(
+        upload_file_module,
+        "require_executable",
+        lambda name: f"/usr/bin/{name}",
+    )
+
+    def fake_run(command, **kwargs):
+        observed["command"] = command
+        response_path = Path(command[command.index("--output") + 1])
+        response_path.write_text(
+            json.dumps(
+                {
+                    "session_name": "task-20260711-01",
+                    "relative_directory": "2026-07-11/task-20260711-01",
+                    "saved_directory": "/Volumes/SSD1/Inbox/2026-07-11/task-20260711-01",
+                    "files": [
+                        {
+                            "original_filename": path.name,
+                            "stored_filename": path.name,
+                            "saved_path": f"/Volumes/SSD1/Inbox/2026-07-11/task-20260711-01/{path.name}",
+                            "size": path.stat().st_size,
+                            "sha256": upload_file_module.sha256_file(path),
+                        }
+                        for path in paths
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return subprocess.CompletedProcess(command, 0, stdout="201\t0.125", stderr="")
+
+    result = upload_file_module.upload_files(
+        paths,
+        "task-20260711-01",
+        config,
+        confirmed_method="upload-api",
+        runner=fake_run,
+    )
+
+    assert result["status"] == "success"
+    assert result["session_name"] == "task-20260711-01"
+    assert len(result["files"]) == 2
+    assert all(item["local_sha256"] == item["remote_sha256"] for item in result["files"])
+    assert observed["command"].count("--form") == 3
+
+
+@pytest.mark.parametrize(
+    "session_name",
+    ["", ".", "..", "../escape", "nested/path", "bad\nname"],
+)
+def test_upload_bundle_rejects_invalid_session_name_before_network(
+    upload_file_module, config, tmp_path, monkeypatch, session_name
+):
+    path = tmp_path / "result_summary.md"
+    path.write_text("summary", encoding="utf-8")
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("network must stay closed")
+
+    monkeypatch.setattr(upload_file_module.subprocess, "run", fail_if_called)
+
+    with pytest.raises(upload_file_module.UploadError, match="session_name"):
+        upload_file_module.upload_files(
+            [path],
+            session_name,
+            config,
+            confirmed_method="upload-api",
+        )
+
+
+def test_upload_bundle_rejects_aggregate_oversize_before_hash_or_network(
+    upload_file_module, config, tmp_path, monkeypatch
+):
+    first = tmp_path / "first.bin"
+    second = tmp_path / "second.bin"
+    with first.open("wb") as handle:
+        handle.truncate(60_000_000)
+    with second.open("wb") as handle:
+        handle.truncate(40_000_001)
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("hash and network must stay closed")
+
+    monkeypatch.setattr(upload_file_module, "sha256_file", fail_if_called)
+    monkeypatch.setattr(upload_file_module.subprocess, "run", fail_if_called)
+
+    with pytest.raises(upload_file_module.UploadError, match="结果包总大小"):
+        upload_file_module.upload_files(
+            [first, second],
+            SESSION_NAME,
+            config,
+            confirmed_method="upload-api",
+        )
+
+
+def test_cli_accepts_repeated_uploads_with_one_session(upload_file_module):
+    args = upload_file_module.parse_args(
+        [
+            "--upload",
+            "result_summary.md",
+            "--upload",
+            "metrics.tsv",
+            "--session-name",
+            SESSION_NAME,
+            "--confirmed-method",
+            "upload-api",
+        ]
+    )
+
+    assert args.upload == ["result_summary.md", "metrics.tsv"]
+    assert args.session_name == SESSION_NAME
 
 
 @pytest.mark.parametrize(
@@ -156,6 +324,7 @@ def test_upload_config_rejects_insecure_or_missing_credentials(
         upload_file_module.upload_file(
             path,
             replace(config, **config_change),
+            session_name=SESSION_NAME,
             confirmed_method="upload-api",
         )
 
@@ -178,6 +347,7 @@ def test_oversize_upload_is_rejected_before_network(upload_file_module, config, 
         upload_file_module.upload_file(
             path,
             config,
+            session_name=SESSION_NAME,
             confirmed_method="upload-api",
             allow_over_100mb=False,
         )
@@ -208,12 +378,18 @@ def test_success_requires_201_and_matching_sha_and_cleans_temp_files(
         )
         response_path.write_text(
             json.dumps(
-                {
-                    "original_filename": "result.txt",
-                    "stored_filename": "result.txt",
-                    "saved_path": "/Volumes/SSD1/Inbox/2026-07-10/result.txt",
-                    "sha256": expected_sha,
-                }
+                    {
+                        "session_name": SESSION_NAME,
+                        "saved_directory": f"/Volumes/SSD1/Inbox/2026-07-11/{SESSION_NAME}",
+                        "files": [
+                            {
+                                "original_filename": "result.txt",
+                                "stored_filename": "result.txt",
+                                "saved_path": f"/Volumes/SSD1/Inbox/2026-07-11/{SESSION_NAME}/result.txt",
+                                "sha256": expected_sha,
+                            }
+                        ],
+                    }
             ),
             encoding="utf-8",
         )
@@ -222,14 +398,15 @@ def test_success_requires_201_and_matching_sha_and_cleans_temp_files(
     result = upload_file_module.upload_file(
         path,
         config,
+        session_name=SESSION_NAME,
         confirmed_method="upload-api",
         runner=fake_run,
     )
 
     assert result["status"] == "success"
     assert result["http_status"] == 201
-    assert result["local_sha256"] == expected_sha
-    assert result["remote_sha256"] == expected_sha
+    assert result["files"][0]["local_sha256"] == expected_sha
+    assert result["files"][0]["remote_sha256"] == expected_sha
     assert result["elapsed_seconds"] == 0.125
     assert observed["header_mode"] == 0o600
     assert observed["response_mode"] == 0o600
@@ -242,7 +419,7 @@ def test_success_requires_201_and_matching_sha_and_cleans_temp_files(
     ("status", "message"),
     [
         (401, "上传凭据无效"),
-        (409, "当天同名文件已存在"),
+        (409, "当天同名结果会话已存在"),
         (413, "大小限制"),
         (502, "上传服务或 Tunnel 暂不可用"),
         (530, "上传服务或 Tunnel 暂不可用"),
@@ -265,6 +442,7 @@ def test_http_errors_are_actionable_without_fallback(
         upload_file_module.upload_file(
             path,
             config,
+            session_name=SESSION_NAME,
             confirmed_method="upload-api",
             runner=fake_run,
         )
@@ -289,10 +467,16 @@ def test_201_with_invalid_response_is_not_success(
             response_path.write_text(
                 json.dumps(
                     {
-                        "original_filename": "result.txt",
-                        "stored_filename": "result.txt",
-                        "saved_path": "/tmp/result.txt",
-                        "sha256": "0" * 64,
+                        "session_name": SESSION_NAME,
+                        "saved_directory": f"/tmp/{SESSION_NAME}",
+                        "files": [
+                            {
+                                "original_filename": "result.txt",
+                                "stored_filename": "result.txt",
+                                "saved_path": f"/tmp/{SESSION_NAME}/result.txt",
+                                "sha256": "0" * 64,
+                            }
+                        ],
                     }
                 ),
                 encoding="utf-8",
@@ -304,6 +488,7 @@ def test_201_with_invalid_response_is_not_success(
         upload_file_module.upload_file(
             path,
             config,
+            session_name=SESSION_NAME,
             confirmed_method="upload-api",
             runner=fake_run,
         )
@@ -324,6 +509,7 @@ def test_timeout_is_redacted_and_not_retried(upload_file_module, config, tmp_pat
         upload_file_module.upload_file(
             path,
             config,
+            session_name=SESSION_NAME,
             confirmed_method="upload-api",
             runner=fake_run,
         )
@@ -335,19 +521,28 @@ def test_timeout_is_redacted_and_not_retried(upload_file_module, config, tmp_pat
 def test_preflight_uses_unique_local_file_and_cleans_it(upload_file_module, config, monkeypatch):
     observed_paths = []
 
-    def fake_upload(path, passed_config, **kwargs):
+    observed_sessions = []
+
+    def fake_upload(paths, session_name, passed_config, **kwargs):
+        [path] = paths
         observed_paths.append(Path(path))
+        observed_sessions.append(session_name)
         assert Path(path).is_file()
         assert Path(path).name.startswith("ak_upload_preflight_")
         assert passed_config == config
         assert kwargs["confirmed_method"] == "upload-api"
-        return {"status": "success", "original_filename": Path(path).name}
+        return {
+            "status": "success",
+            "session_name": session_name,
+            "original_filename": Path(path).name,
+        }
 
-    monkeypatch.setattr(upload_file_module, "upload_file", fake_upload)
+    monkeypatch.setattr(upload_file_module, "upload_files", fake_upload)
 
     first = upload_file_module.run_preflight(config, confirmed_method="upload-api")
     second = upload_file_module.run_preflight(config, confirmed_method="upload-api")
 
     assert first["original_filename"] != second["original_filename"]
+    assert observed_sessions[0] != observed_sessions[1]
     assert len(observed_paths) == 2
     assert all(not path.exists() for path in observed_paths)

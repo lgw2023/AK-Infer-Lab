@@ -2,7 +2,7 @@
 
 服务器完成任务后先在本地写 `result_summary.md` 并整理附件清单，在当前任务会话里等待用户为整个结果包选择 `email` 或 `upload-api`。确认前不得发送状态邮件正文、邮件测试、附件、upload-api 预检或文件。当前默认邮件收件人只使用 `yilili1023@gmail.com`，不再发送到 `gwlee1995@gmail.com`。`server-local` 只表示原始数据留存，不表示结果已交付。
 
-选择 `email` 后，服务器使用 `../send_notify.py --confirmed-method email`，把 `result_summary.md` 作为邮件正文并在同一封邮件中附上已批准文件；正文和每个附件均不得超过 70KB。选择 `upload-api` 后，服务器不得补发状态邮件，而是把 `result_summary.md` 与已批准附件都作为文件上传。下面模板用于本地准备结果；未确认渠道时不得发送。
+选择 `email` 后，服务器使用 `../send_notify.py --confirmed-method email`，把 `result_summary.md` 作为邮件正文并在同一封邮件中附上已批准文件；正文和每个附件均不得超过 70KB。选择 `upload-api` 后，服务器不得补发状态邮件，而是用一个当天唯一的 `session_name` 和一次多文件请求提交 `result_summary.md` 与全部已批准附件。下面模板用于本地准备结果；未确认渠道时不得发送。
 
 ## 等待渠道确认（只在当前任务会话展示，不发送邮件）
 

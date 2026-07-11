@@ -1,41 +1,41 @@
 # Developer to Server
 
-## 当前任务：验证安装内容与目标 tag 一致，再验证完整 Ascend 插件激活并有条件复跑四卡 base
+## 当前任务：恢复 CANN 生成的 ACL Python 路径，并有条件复跑四卡 base
 
 任务 ID：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
+p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1_2026_0711
 ```
 
 设备授权：
 
 ```text
-单卡 fresh-process 插件矩阵：ASCEND_RT_VISIBLE_DEVICES=4
-有条件的 base runtime 复跑：ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
-NPU 0-3 禁止使用或影响
+ACL 路径矩阵：ASCEND_RT_VISIBLE_DEVICES=4
+有条件的四卡复跑：ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
+NPU 0-3 禁止使用、停止或影响
 ```
 
-本轮目标只有三项，必须按顺序执行：
+本轮只做两件事：
 
-1. 先核对服务器实际 import 的 vLLM / vLLM-Ascend 根目录、版本、entry points，以及 6 个关键 Python 文件的 SHA-256；必须与指定 tag/commit 完全一致。
-2. provenance gate 通过后，才在两个独立的新 Python 进程中比较 `VLLM_PLUGINS=ascend` 与目标 tag 的完整 Ascend 插件白名单，验证 platform、DeepSeekV4 model registry、`torch.accelerator -> torch.npu` memory redirect 和 `MemorySnapshot`。
-3. 只有完整插件白名单同时选中 `AscendDeepseekV4ForCausalLM` 且修复 `MemorySnapshot` 时，才在 NPU 4-7 无 `sitecustomize` / `PYTHONPATH` overlay 复跑一次 TP4/EP `base_no_mtp` 和一个 `4096+64` 请求。
+1. 用三个独立的新进程证明：ACL binding 由官方 CANN/ATB `set_env.sh` 生成的 Python 路径提供；source 后再清空该路径会复现上轮失败。
+2. 路径门通过后，保留同一份 CANN/ATB 生成的 `PYTHONPATH`，复跑一次 TP4/EP `base_no_mtp` 与一个 `4096+64` 请求。
 
-## 0. 上轮证据与本轮假设
+## 0. 上轮结论与本轮假设
 
-上一轮 `p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711` 已确认：
+上一轮 `p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711` 已确认：
 
-- allocator 矩阵支持 patch-delivery 假设；session-scoped `sitecustomize.py` 使 `MemorySnapshot` 成功。
-- 四卡复跑时旧 allocator 错误计数为 0，但四个 worker 随后进入 `vllm/models/deepseek_v4/nvidia/model.py`，在 `attention.py:198` 报 `DeepseekV4 attention requires a CUDA device`。
-- 失败仍早于权重加载、server ready 和请求；不是量化格式、容量、collective 或请求结论。
-- 目标 vLLM `0decac0d...` 把 `VLLM_PLUGINS` 作为 platform/general 等所有插件组共享的名称白名单。
-- 目标 vLLM-Ascend `5f6faa0c...` 提供 platform 插件 `ascend`，以及 general 插件 `ascend_kv_connector`、`ascend_model_loader`、`ascend_service_profiling`、`ascend_model`。其中 `ascend_model` 把 `DeepseekV4ForCausalLM` 注册到 `vllm_ascend.models.deepseek_v4:AscendDeepseekV4ForCausalLM`，前三个 general 插件会触发 global patch。
-- 上轮命令只设置 `VLLM_PLUGINS=ascend`。当前高置信假设是：该限制值只放行 platform 插件，同时过滤了 Ascend model registration 和 global patch general plugins。
+- vLLM / vLLM-Ascend import root、目标 commit 与 6 个关键文件 SHA-256 全匹配。
+- 完整官方插件白名单
+  `ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model`
+  选择了 `vllm_ascend.models.deepseek_v4:AscendDeepseekV4ForCausalLM`，并使 NPU memory redirect 生效。
+- allocator 断言计数为 0，CUDA attention assertion 计数为 0，Ascend model path 计数为 12，NVIDIA path 计数为 0。
+- 四卡随后在 worker import 阶段失败：`vllm_ascend.device_allocator.camem` 顶层导入 `acl.rt.memcpy` 时出现 `ModuleNotFoundError: No module named 'acl'`；尚未开始权重加载、server ready 或请求。
+- 上轮脚本在 source CANN/ATB 后执行了 `unset PYTHONPATH`；“acl 缺失”的确认命令也使用了 `env -u PYTHONPATH`。
 
-服务器已精确报告 editable vLLM `0decac0d...` clean，但 vLLM-Ascend 是预编译 wheel，版本号本身不能完全排除同版本内容漂移或本地修改。这个差异必须先由 installed-content provenance gate 关闭；插件假设随后再由 fresh-process 矩阵验证，不得直接写成既定根因。
+高置信假设：不是 CANN/ACL 未安装，而是 handoff 为排除项目 overlay 时清除了 CANN 刚加入的 ACL Python binding 路径。vLLM-Ascend 的依赖表不把 `acl` 当普通 pip 包；本轮禁止安装它。
 
-## 1. 完整同步远程 `main`
+## 1. 完整同步远程 main
 
 ```bash
 set -euo pipefail
@@ -54,15 +54,15 @@ printf 'origin_main=%s\n' "$(git rev-parse origin/main)"
 printf 'ahead_behind=%s\n' "$(git rev-list --left-right --count HEAD...origin/main)"
 ```
 
-必须完整 fast-forward 同步全部缺失提交，满足 `HEAD == origin/main`、ahead/behind=`0 0`，再重新打开本文档。禁止 `cherry-pick`、detached checkout 或单文件覆盖。
+必须完整 fast-forward，满足 `HEAD == origin/main`、ahead/behind=`0 0`，再重新打开本文档。禁止 `cherry-pick`、detached checkout 或单文件覆盖。
 
 ## 2. 固定环境、对象与禁止项
 
 ```text
-复用环境：
+环境：
 /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 
-vLLM source：
+vLLM：
 /data/node0_disk1/vllm-0.22.1
 v0.22.1@0decac0d96c42b49572498019f0a0e3600f50398
 
@@ -76,42 +76,35 @@ v0.22.1rc1@5f6faa0cb8830f667266f3b8121cd1383606f2a1
 /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
 ```
 
-禁止项：
+禁止：
 
-- 禁止 `conda create`、`pip install`、`pip uninstall`、包升降级或重建环境。
-- 禁止修改 vLLM/vLLM-Ascend source、site-packages、CANN、driver、firmware、apt 或系统 Python。
-- 禁止沿用、复制或新建上轮 `sitecustomize.py`；禁止通过 `PYTHONPATH` 注入 overlay。
-- 禁止使用 NPU 0-3；禁止 kill、停止或影响 NPU 0-3 上其他任务。
-- 禁止显式 `--quantization`、config 改写、W8A8、CPU/NVMe/KV offload、MTP、八卡、128K、并发矩阵、msprof、P6 和 A/B。
-- 本轮唯一允许的行为变化是进程环境中的 `VLLM_PLUGINS` 白名单。
+- 禁止 `conda create`、`pip install`、`pip uninstall`、升级、降级或重建；尤其禁止 pip 安装任意名为 `acl` 的包。
+- 禁止修改 vLLM、vLLM-Ascend、site-packages、CANN、ATB、driver、firmware、apt 或系统 Python。
+- 禁止 `sitecustomize.py`、项目 `PYTHONPATH`、user-site 或硬编码 ACL 路径注入。
+- 禁止 `python -I`、`env -i`；它们会破坏本轮要验证的官方环境传播。
+- 禁止在 CANN/ATB source 完成后再次清空 `PYTHONPATH`；四卡进程必须继承矩阵验证过的精确值。
+- 禁止 NPU 0-3、W8A8、显式 `--quantization`、config 改写、offload、MTP、八卡、128K、msprof、P6 或其他 fallback。
 
-## 3. 核心预检、installed-content provenance 与 artifact 初始化
+## 3. 初始化、核心预检与资源门
 
 ```bash
 set +e
 set -uo pipefail
 cd /data/node0_disk1/liguowei/AK-Infer-Lab
 
-RUN_ID=p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
+RUN_ID=p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1_2026_0711
 ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
 ENV_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 PYTHON_BIN="${ENV_DIR}/bin/python"
 VLLM_BIN="${ENV_DIR}/bin/vllm"
 VLLM_SRC=/data/node0_disk1/vllm-0.22.1
 MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash
-RETIRED_W8A8_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-PLUGIN_DIR="${ARTIFACT_DIR}/plugin_probe"
+ACL_DIR="${ARTIFACT_DIR}/acl_path_probe"
 OFFICIAL_ASCEND_PLUGINS=ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
 
-mkdir -p "${PLUGIN_DIR}" "${ARTIFACT_DIR}/base_no_mtp"
+mkdir -p "${ACL_DIR}" "${ARTIFACT_DIR}/base_no_mtp"
 printf '%s\n' "$(git rev-parse HEAD)" > "${ARTIFACT_DIR}/git_head.txt"
 npu-smi info > "${ARTIFACT_DIR}/npu_smi_before.txt" 2>&1 || true
-
-set +u
-source /usr/local/Ascend/ascend-toolkit/set_env.sh
-source /usr/local/Ascend/nnal/atb/set_env.sh
-set -u
-export PATH="${ENV_DIR}/bin:${PATH}"
 
 PRECHECK_EXIT=0
 [ -x "${PYTHON_BIN}" ] || PRECHECK_EXIT=10
@@ -120,12 +113,26 @@ PRECHECK_EXIT=0
 [ "$(git -C "${VLLM_SRC}" rev-parse HEAD 2>/dev/null)" = "0decac0d96c42b49572498019f0a0e3600f50398" ] || PRECHECK_EXIT=13
 [ -z "$(git -C "${VLLM_SRC}" status --short 2>/dev/null)" ] || PRECHECK_EXIT=14
 
-env -u PYTHONPATH ASCEND_RT_VISIBLE_DEVICES=4,5,6,7 PYTHONNOUSERSITE=1 \
+unset PYTHONPATH
+set +u
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+source /usr/local/Ascend/nnal/atb/set_env.sh
+set -u
+export PATH="${ENV_DIR}/bin:${PATH}"
+export PYTHONNOUSERSITE=1
+CANN_GENERATED_PYTHONPATH="${PYTHONPATH:-}"
+export CANN_GENERATED_PYTHONPATH
+printf '%s\n' "${CANN_GENERATED_PYTHONPATH}" > "${ACL_DIR}/cann_generated_pythonpath.txt"
+
+case ":${CANN_GENERATED_PYTHONPATH}:" in
+  *:/data/node0_disk1/liguowei/AK-Infer-Lab:*|*sitecustomize*) PRECHECK_EXIT=15 ;;
+esac
+
+ASCEND_RT_VISIBLE_DEVICES=4,5,6,7 VLLM_PLUGINS="${OFFICIAL_ASCEND_PLUGINS}" \
   "${PYTHON_BIN}" - "${ARTIFACT_DIR}/preflight.json" <<'PY'
-import hashlib
 import json
 import sys
-from importlib.metadata import entry_points, version
+from importlib.metadata import version
 from pathlib import Path
 
 import torch
@@ -133,311 +140,181 @@ import torch_npu
 import vllm
 import vllm_ascend
 
-vllm_root = Path(vllm.__file__).resolve().parent
-ascend_root = Path(vllm_ascend.__file__).resolve().parent
-installed_paths = {
-    "vllm/plugins/__init__.py": vllm_root / "plugins" / "__init__.py",
-    "vllm/envs.py": vllm_root / "envs.py",
-    "vllm_ascend/__init__.py": ascend_root / "__init__.py",
-    "vllm_ascend/models/__init__.py": ascend_root / "models" / "__init__.py",
-    "vllm_ascend/models/deepseek_v4.py": ascend_root / "models" / "deepseek_v4.py",
-    "vllm_ascend/patch/platform/patch_torch_accelerator.py": (
-        ascend_root / "patch" / "platform" / "patch_torch_accelerator.py"
-    ),
-}
-
-def file_record(path):
-    payload = path.read_bytes()
-    return {
-        "path": str(path),
-        "bytes": len(payload),
-        "sha256": hashlib.sha256(payload).hexdigest(),
-    }
-
 result = {
     "python": sys.version.split()[0],
     "torch": torch.__version__,
     "torch_npu": version("torch-npu"),
     "vllm": vllm.__version__,
     "vllm_ascend": version("vllm-ascend"),
+    "vllm_root": str(Path(vllm.__file__).resolve().parent),
+    "vllm_ascend_root": str(Path(vllm_ascend.__file__).resolve().parent),
     "npu_available": bool(torch.npu.is_available()),
     "visible_device_count": int(torch.npu.device_count()),
-    "import_roots": {
-        "vllm": str(vllm_root),
-        "vllm_ascend": str(ascend_root),
-    },
-    "installed_files": {
-        name: file_record(path) for name, path in installed_paths.items()
-    },
-    "platform_entry_points": {
-        ep.name: ep.value for ep in entry_points(group="vllm.platform_plugins")
-    },
-    "general_entry_points": {
-        ep.name: ep.value for ep in entry_points(group="vllm.general_plugins")
-    },
 }
 Path(sys.argv[1]).write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-PY
-PY_PREFLIGHT_EXIT=$?
-if [ "${PY_PREFLIGHT_EXIT}" -ne 0 ] && [ "${PRECHECK_EXIT}" -eq 0 ]; then PRECHECK_EXIT=15; fi
-
-"${PYTHON_BIN}" - "${ARTIFACT_DIR}/preflight.json" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-d = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-expected_general = {
-    "ascend_kv_connector": "vllm_ascend:register_connector",
-    "ascend_model_loader": "vllm_ascend:register_model_loader",
-    "ascend_service_profiling": "vllm_ascend:register_service_profiling",
-    "ascend_model": "vllm_ascend:register_model",
-}
 ok = (
-    d["torch"].startswith("2.10.0")
-    and d["torch_npu"] == "2.10.0"
-    and d["vllm"].startswith("0.22.1")
-    and d["vllm_ascend"] == "0.22.1rc1"
-    and d["npu_available"] is True
-    and d["visible_device_count"] == 4
-    and d["platform_entry_points"].get("ascend") == "vllm_ascend:register"
-    and all(d["general_entry_points"].get(k) == v for k, v in expected_general.items())
+    result["torch"].startswith("2.10.0")
+    and result["torch_npu"] == "2.10.0"
+    and result["vllm"].startswith("0.22.1")
+    and result["vllm_ascend"] == "0.22.1rc1"
+    and result["vllm_root"] == "/data/node0_disk1/vllm-0.22.1/vllm"
+    and result["npu_available"] is True
+    and result["visible_device_count"] == 4
 )
 sys.exit(0 if ok else 3)
 PY
-ENTRYPOINT_GATE_EXIT=$?
-if [ "${ENTRYPOINT_GATE_EXIT}" -ne 0 ] && [ "${PRECHECK_EXIT}" -eq 0 ]; then PRECHECK_EXIT=16; fi
-
-"${PYTHON_BIN}" - "${ARTIFACT_DIR}/preflight.json" "${ARTIFACT_DIR}/installed_content_provenance.json" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-preflight_path = Path(sys.argv[1])
-output_path = Path(sys.argv[2])
-d = json.loads(preflight_path.read_text(encoding="utf-8"))
-expected_roots = {
-    "vllm": "/data/node0_disk1/vllm-0.22.1/vllm",
-    "vllm_ascend": "/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/lib/python3.11/site-packages/vllm_ascend",
-}
-expected_sha256 = {
-    "vllm/plugins/__init__.py": "4be66190ceaee9d0465f62ade801a8e94a907d7ab9fdb0a67fa14ce87448ae9f",
-    "vllm/envs.py": "620a7a75d056f9d405d8030886c97d843209e6996d1c3fe4cbadd2f9efd43e7e",
-    "vllm_ascend/__init__.py": "1ee8497d375fb292918f729324d5207d653fffcf70572681b33b3969f54b9ae5",
-    "vllm_ascend/models/__init__.py": "d823f38dcb6a5b06b81f926b908cf81fab849d538745b3d4bbc4f81892f80e9d",
-    "vllm_ascend/models/deepseek_v4.py": "9398e49d7206ba5a62629409405be057318e0657e40a25cf15c43304f78d01a4",
-    "vllm_ascend/patch/platform/patch_torch_accelerator.py": "76ca48d51c8af6552828076797ad20b7eed044a8e53be918bd12719152fdc026",
-}
-root_checks = {
-    name: d["import_roots"].get(name) == expected
-    for name, expected in expected_roots.items()
-}
-file_checks = {
-    name: d["installed_files"].get(name, {}).get("sha256") == expected
-    for name, expected in expected_sha256.items()
-}
-summary = {
-    "target_commits": {
-        "vllm": "0decac0d96c42b49572498019f0a0e3600f50398",
-        "vllm_ascend": "5f6faa0cb8830f667266f3b8121cd1383606f2a1",
-    },
-    "expected_import_roots": expected_roots,
-    "observed_import_roots": d["import_roots"],
-    "root_checks": root_checks,
-    "expected_sha256": expected_sha256,
-    "observed_files": d["installed_files"],
-    "file_checks": file_checks,
-    "all_match": all(root_checks.values()) and all(file_checks.values()),
-}
-output_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-sys.exit(0 if summary["all_match"] else 3)
-PY
-PROVENANCE_GATE_EXIT=$?
-if [ "${PROVENANCE_GATE_EXIT}" -ne 0 ] && [ "${PRECHECK_EXIT}" -eq 0 ]; then PRECHECK_EXIT=17; fi
+PY_PREFLIGHT_EXIT=$?
+if [ "${PY_PREFLIGHT_EXIT}" -ne 0 ] && [ "${PRECHECK_EXIT}" -eq 0 ]; then PRECHECK_EXIT=16; fi
 
 "${PYTHON_BIN}" -m pytest tests/inference_contracts -q > "${ARTIFACT_DIR}/pytest.log" 2>&1
 PYTEST_EXIT=$?
-if [ "${PYTEST_EXIT}" -ne 0 ] && [ "${PRECHECK_EXIT}" -eq 0 ]; then PRECHECK_EXIT=18; fi
+if [ "${PYTEST_EXIT}" -ne 0 ] && [ "${PRECHECK_EXIT}" -eq 0 ]; then PRECHECK_EXIT=17; fi
 
 printf '%s\n' "${PRECHECK_EXIT}" > "${ARTIFACT_DIR}/precheck_exit_code.txt"
 if [ "${PRECHECK_EXIT}" -ne 0 ]; then
-  if [ "${PRECHECK_EXIT}" -eq 17 ]; then
-    printf '%s\n' blocked_provenance > "${ARTIFACT_DIR}/probe_status.txt"
-  else
-    printf '%s\n' blocked_preflight > "${ARTIFACT_DIR}/probe_status.txt"
-  fi
+  printf '%s\n' blocked_preflight > "${ARTIFACT_DIR}/probe_status.txt"
   exit "${PRECHECK_EXIT}"
 fi
 ```
 
-只有 `installed_content_provenance.json` 的两个 root checks、六个 file checks 和 `all_match` 全部为 `true` 才可进入插件矩阵。任何 mismatch 都保持文件不变，写 `blocked_provenance`，报告 expected/observed path 与 SHA-256 后停止；不得自动重装、覆盖或修补。provenance 通过后再人工核对 `npu_smi_before.txt`：NPU 4-7 必须健康、空闲且无其他用户进程；否则写 `blocked_resource` 并停止。NPU 0-3 只观察，不干预。
+人工核对：
 
-## 4. NPU 4 fresh-process 插件矩阵
+- NPU 4-7 健康、空闲且无其他用户进程；否则 `blocked_resource`。
+- `cann_generated_pythonpath.txt` 中用于 ACL 的条目必须来自 `/usr/local/Ascend/...`，不得出现项目目录、上轮 artifact/overlay、`sitecustomize` 或用户目录。
+- NPU 0-3 只观察，不干预。
 
-结果 JSON 必须由子进程直接写入指定文件；stdout/stderr 只进入 `.log`，禁止再用混合 stdout 作为 JSON transport。
+## 4. NPU 4 三模式 fresh-process ACL 路径矩阵
+
+每种 mode 必须使用独立 shell 与独立 Python，避免 import cache。JSON 只记录路径组件、module origin、import root 和结果，不 dump 全环境。
+
+### Mode A：未 source 的干净对照
 
 ```bash
-set +e
-set -uo pipefail
-cd /data/node0_disk1/liguowei/AK-Infer-Lab
-
-RUN_ID=p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
-ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
-ENV_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
-PYTHON_BIN="${ENV_DIR}/bin/python"
-PLUGIN_DIR="${ARTIFACT_DIR}/plugin_probe"
-OFFICIAL_ASCEND_PLUGINS=ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
-mkdir -p "${PLUGIN_DIR}"
-
-set +u
-source /usr/local/Ascend/ascend-toolkit/set_env.sh
-source /usr/local/Ascend/nnal/atb/set_env.sh
-set -u
-export PATH="${ENV_DIR}/bin:${PATH}"
-
-cat > "${PLUGIN_DIR}/fresh_plugin_probe.py" <<'PY'
-import json
-import os
-import sys
-import traceback
-from importlib.metadata import entry_points
-from pathlib import Path
-
-output = Path(sys.argv[1])
-result = {
-    "vllm_plugins": os.environ.get("VLLM_PLUGINS"),
-    "platform_entry_points": {
-        ep.name: ep.value for ep in entry_points(group="vllm.platform_plugins")
-    },
-    "general_entry_points": {
-        ep.name: ep.value for ep in entry_points(group="vllm.general_plugins")
-    },
-}
-try:
-    import torch
-    import torch_npu
-    from vllm import ModelRegistry
-    from vllm.plugins import load_general_plugins
-
-    load_general_plugins()
-    from vllm.platforms import current_platform
-
-    result["platform_class"] = type(current_platform).__module__ + "." + type(current_platform).__name__
-    result["platform_device_type"] = str(current_platform.device_type)
-    registered = ModelRegistry.models["DeepseekV4ForCausalLM"]
-    result["registry_module"] = getattr(registered, "module_name", None)
-    result["registry_class"] = getattr(registered, "class_name", None)
-
-    torch.npu.set_device(0)
-    torch.npu.synchronize()
-    result["memory_stats_identity"] = torch.accelerator.memory_stats is torch.npu.memory_stats
-    result["memory_reserved_identity"] = torch.accelerator.memory_reserved is torch.npu.memory_reserved
-    result["reset_peak_identity"] = (
-        torch.accelerator.reset_peak_memory_stats is torch.npu.reset_peak_memory_stats
-    )
-    try:
-        from vllm.utils.mem_utils import MemorySnapshot
-        snapshot = MemorySnapshot()
-        result["memory_snapshot_ok"] = True
-        result["memory_snapshot_repr"] = repr(snapshot)
-    except Exception as exc:
-        result["memory_snapshot_ok"] = False
-        result["memory_snapshot_error"] = f"{type(exc).__name__}: {exc}"
-except Exception as exc:
-    result["probe_error"] = f"{type(exc).__name__}: {exc}"
-    result["traceback_tail"] = traceback.format_exc().splitlines()[-20:]
-
-output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-PY
-
-run_mode() {
-  local name="$1"
-  local plugins="$2"
-  env -u PYTHONPATH ASCEND_RT_VISIBLE_DEVICES=4 PYTHONNOUSERSITE=1 \
-    VLLM_PLUGINS="${plugins}" \
-    "${PYTHON_BIN}" "${PLUGIN_DIR}/fresh_plugin_probe.py" "${PLUGIN_DIR}/${name}.json" \
-    > "${PLUGIN_DIR}/${name}.log" 2>&1
-  printf '%s\n' "$?" > "${PLUGIN_DIR}/${name}.exit_code.txt"
-}
-
-run_mode restrictive_current ascend
-run_mode explicit_official_ascend_plugins "${OFFICIAL_ASCEND_PLUGINS}"
-
-"${PYTHON_BIN}" - "${PLUGIN_DIR}" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-root = Path(sys.argv[1])
-current = json.loads((root / "restrictive_current.json").read_text(encoding="utf-8"))
-official = json.loads((root / "explicit_official_ascend_plugins.json").read_text(encoding="utf-8"))
-checks = {
-    "restrictive_platform_is_ascend": current.get("platform_device_type") == "npu",
-    "restrictive_registry_is_upstream": current.get("registry_module") == "vllm.models.deepseek_v4",
-    "restrictive_memory_snapshot_reproduces_allocator_failure": (
-        current.get("memory_snapshot_ok") is False
-        and "Allocator for npu is not a DeviceAllocator" in current.get("memory_snapshot_error", "")
-    ),
-    "official_platform_is_ascend": official.get("platform_device_type") == "npu",
-    "official_registry_is_ascend": (
-        official.get("registry_module") == "vllm_ascend.models.deepseek_v4"
-        and official.get("registry_class") == "AscendDeepseekV4ForCausalLM"
-    ),
-    "official_memory_redirects_active": all(
-        official.get(key) is True
-        for key in ("memory_stats_identity", "memory_reserved_identity", "reset_peak_identity")
-    ),
-    "official_memory_snapshot_ok": official.get("memory_snapshot_ok") is True,
-}
-summary = {
-    "checks": checks,
-    "hypothesis_supported": all(checks.values()),
-    "approved_runtime_vllm_plugins": (
-        "ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model"
-    ),
-    "sitecustomize_used": False,
-    "pythonpath_overlay_used": False,
-}
-(root / "plugin_matrix_summary.json").write_text(
-    json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-)
-sys.exit(0 if summary["hypothesis_supported"] else 3)
-PY
-PLUGIN_GATE_EXIT=$?
-printf '%s\n' "${PLUGIN_GATE_EXIT}" > "${PLUGIN_DIR}/plugin_gate_exit_code.txt"
-
-if [ "${PLUGIN_GATE_EXIT}" -ne 0 ]; then
-  printf '%s\n' diagnostic_red_plugin_filter_hypothesis_mismatch > "${ARTIFACT_DIR}/probe_status.txt"
-  exit "${PLUGIN_GATE_EXIT}"
-fi
-printf '%s\n' plugin_activation_gate_passed > "${ARTIFACT_DIR}/plugin_status.txt"
+env -u PYTHONPATH ASCEND_RT_VISIBLE_DEVICES=4 PYTHONNOUSERSITE=1 \
+  "${PYTHON_BIN}" -c 'import acl; from acl.rt import memcpy' \
+  > "${ACL_DIR}/mode_a_clean_no_source.log" 2>&1
+MODE_A_EXIT=$?
+printf '%s\n' "${MODE_A_EXIT}" > "${ACL_DIR}/mode_a_clean_no_source.exit_code.txt"
 ```
 
-只有 `plugin_matrix_summary.json` 中全部 7 个 checks 与 `hypothesis_supported` 都为 `true` 才可继续。不得只因 `platform_device_type=npu` 就启动模型。
+预期失败；它只证明 conda 自身不提供 ACL，不用于证明 CANN 缺装。
 
-## 5. 条件式 NPU 4-7 `base_no_mtp`
-
-本节必须使用完整 Ascend 插件白名单，并明确 `unset PYTHONPATH`；不允许使用上轮 overlay。
+### Mode B：先清理，再 source，保留官方生成路径
 
 ```bash
-set +e
-set -uo pipefail
-cd /data/node0_disk1/liguowei/AK-Infer-Lab
+cat > "${ACL_DIR}/acl_spawn_probe.py" <<'PY'
+import importlib.util
+import json
+import multiprocessing as mp
+import os
+import sys
+from pathlib import Path
 
-RUN_ID=p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
-ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
-ENV_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
-MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash
-PYTHON_BIN="${ENV_DIR}/bin/python"
-VLLM_BIN="${ENV_DIR}/bin/vllm"
-PROFILE_DIR="${ARTIFACT_DIR}/base_no_mtp"
-OFFICIAL_ASCEND_PLUGINS=ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
+def inspect_imports():
+    spec = importlib.util.find_spec("acl")
+    if spec is None:
+        raise ModuleNotFoundError("No module named 'acl'")
+    import acl
+    from acl.rt import memcpy
+    import vllm
+    import vllm_ascend
+    import vllm_ascend.device_allocator.camem as camem
+    import vllm_ascend.worker.worker as worker
+    origin = spec.origin or getattr(acl, "__file__", "") or ""
+    resolved = str(Path(origin).resolve()) if origin else ""
+    return {
+        "pythonpath_components": os.environ.get("PYTHONPATH", "").split(":"),
+        "acl_origin": origin,
+        "acl_origin_resolved": resolved,
+        "acl_origin_under_usr_local_Ascend": resolved.startswith("/usr/local/Ascend/"),
+        "acl_rt_memcpy_imported": memcpy is not None,
+        "camem_module": camem.__name__,
+        "worker_module": worker.__name__,
+        "vllm_root": str(Path(vllm.__file__).resolve().parent),
+        "vllm_ascend_root": str(Path(vllm_ascend.__file__).resolve().parent),
+    }
 
+def child(output_path):
+    result = inspect_imports()
+    Path(output_path).write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+if __name__ == "__main__":
+    root = Path(sys.argv[1])
+    parent = inspect_imports()
+    child_path = root / "mode_b_spawn_child.json"
+    ctx = mp.get_context("spawn")
+    proc = ctx.Process(target=child, args=(str(child_path),))
+    proc.start()
+    proc.join(120)
+    result = {
+        "parent": parent,
+        "spawn_exit_code": proc.exitcode,
+        "child": json.loads(child_path.read_text(encoding="utf-8")) if child_path.is_file() else None,
+    }
+    (root / "mode_b_source_preserved.json").write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    sys.exit(0 if proc.exitcode == 0 else 3)
+PY
+
+ASCEND_RT_VISIBLE_DEVICES=4 PYTHONNOUSERSITE=1 \
+  PYTHONPATH="${CANN_GENERATED_PYTHONPATH}" \
+  VLLM_PLUGINS="${OFFICIAL_ASCEND_PLUGINS}" \
+  "${PYTHON_BIN}" "${ACL_DIR}/acl_spawn_probe.py" "${ACL_DIR}" \
+  > "${ACL_DIR}/mode_b_source_preserved.log" 2>&1
+MODE_B_EXIT=$?
+printf '%s\n' "${MODE_B_EXIT}" > "${ACL_DIR}/mode_b_source_preserved.exit_code.txt"
+```
+
+Mode B 必须满足 parent 和 spawn child：
+
+- `acl` origin realpath 位于 `/usr/local/Ascend/...`。
+- `acl.rt.memcpy`、`vllm_ascend.device_allocator.camem`、`vllm_ascend.worker.worker` 均可导入。
+- `vllm_root == /data/node0_disk1/vllm-0.22.1/vllm`。
+- `vllm_ascend_root` 仍位于指定 0.22.1rc1 conda 环境。
+- parent/child 的路径组件完全一致，且没有项目、overlay、`sitecustomize` 或用户目录。
+
+### Mode C：source 后再次清空，精确复现上轮顺序
+
+```bash
+env -u PYTHONPATH ASCEND_RT_VISIBLE_DEVICES=4 PYTHONNOUSERSITE=1 \
+  VLLM_PLUGINS="${OFFICIAL_ASCEND_PLUGINS}" \
+  "${PYTHON_BIN}" -c 'import acl; from acl.rt import memcpy; import vllm_ascend.device_allocator.camem' \
+  > "${ACL_DIR}/mode_c_post_source_unset.log" 2>&1
+MODE_C_EXIT=$?
+printf '%s\n' "${MODE_C_EXIT}" > "${ACL_DIR}/mode_c_post_source_unset.exit_code.txt"
+```
+
+最后生成 `acl_path_summary.json`，至少逐项记录：
+
+```text
+mode_a_clean_no_source_fails_acl
+mode_b_parent_acl_origin_is_CANN
+mode_b_child_acl_origin_is_CANN
+mode_b_parent_acl_rt_camem_worker_imports
+mode_b_child_acl_rt_camem_worker_imports
+mode_b_vllm_import_roots_unchanged
+mode_b_spawn_inherits_exact_path_components
+mode_b_has_no_project_sitecustomize_or_user_overlay
+mode_c_post_source_unset_reproduces_missing_acl
+hypothesis_supported
+```
+
+只有 9 项 checks 和总门全部为 true，才写 `diagnostic_green_acl_path_gate` 并进入四卡。Mode B 也失败时，写 `blocked_environment_acl_binding`，只读记录两个 `set_env.sh` 是否存在、source 前/后路径组件、`find_spec("acl")` 结果；可以只读查找 `/usr/local/Ascend/**/python/site-packages/acl*`，但禁止安装、复制、软链、硬编码路径或继续模型。
+
+## 5. 条件式 NPU 4-7 base_no_mtp
+
+仅在 ACL path gate 通过且 NPU 4-7 仍健康空闲时执行。环境顺序固定：
+
+```bash
+unset PYTHONPATH
 set +u
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
 source /usr/local/Ascend/nnal/atb/set_env.sh
 set -u
+
 export PATH="${ENV_DIR}/bin:${PATH}"
+export PYTHONNOUSERSITE=1
 export VLLM_PLUGINS="${OFFICIAL_ASCEND_PLUGINS}"
 export VLLM_USE_V1=1
 export VLLM_WORKER_MULTIPROC_METHOD=spawn
@@ -448,34 +325,18 @@ export LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libjemalloc.so.2${LD_PRELOAD:+:${L
 export HCCL_BUFFSIZE=1024
 export TASK_QUEUE_ENABLE=1
 export HCCL_OP_EXPANSION_MODE=AIV
-export PYTHONNOUSERSITE=1
 export ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
-unset PYTHONPATH
+```
 
+此后绝对不得再 unset `PYTHONPATH`。先确认当前值与 `acl_path_probe/cann_generated_pythonpath.txt` 逐字相同，然后使用原命令：
+
+```bash
 HOST=127.0.0.1
 PORT=7000
 SERVED_MODEL_NAME=dsv4-official-fp8-four-card
-STARTUP_TIMEOUT_SEC=3600
+PROFILE_DIR="${ARTIFACT_DIR}/base_no_mtp"
 mkdir -p "${PROFILE_DIR}"
 npu-smi info > "${PROFILE_DIR}/npu_smi_before.txt" 2>&1 || true
-
-wait_health_or_exit() {
-  local pid="$1"
-  local deadline=$((SECONDS + STARTUP_TIMEOUT_SEC))
-  while [ "${SECONDS}" -lt "${deadline}" ]; do
-    if ! kill -0 "${pid}" 2>/dev/null; then return 2; fi
-    if curl -fsS --max-time 5 "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then return 0; fi
-    sleep 5
-  done
-  return 1
-}
-
-stop_server() {
-  local pid="$1"
-  kill -- "-${pid}" >/dev/null 2>&1 || kill "${pid}" >/dev/null 2>&1 || true
-  wait "${pid}" >/dev/null 2>&1 || true
-  sleep 5
-}
 
 CMD=(
   "${VLLM_BIN}" serve "${MODEL_PATH}"
@@ -498,148 +359,50 @@ CMD=(
   --enforce-eager
   --additional-config '{"enable_flashcomm1":true,"enable_dsa_cp":true,"enable_cpu_binding":true,"multistream_overlap_shared_expert":false}'
 )
-
-printf '%q ' "${CMD[@]}" > "${PROFILE_DIR}/server_command.txt"
-printf '\n' >> "${PROFILE_DIR}/server_command.txt"
-setsid "${CMD[@]}" > "${PROFILE_DIR}/vllm_server.log" 2>&1 &
-SERVER_PID=$!
-printf '%s\n' "${SERVER_PID}" > "${PROFILE_DIR}/server_pid.txt"
-
-wait_health_or_exit "${SERVER_PID}"
-READY_EXIT=$?
-printf '%s\n' "${READY_EXIT}" > "${PROFILE_DIR}/server_ready_exit_code.txt"
-
-if [ "${READY_EXIT}" -eq 0 ]; then
-  "${PYTHON_BIN}" - "${MODEL_PATH}" "http://${HOST}:${PORT}" "${SERVED_MODEL_NAME}" "${PROFILE_DIR}" <<'PY'
-import json
-import sys
-import time
-import urllib.request
-from pathlib import Path
-from transformers import AutoTokenizer
-
-model_path, base_url, served_model, profile_dir = sys.argv[1:]
-profile_dir = Path(profile_dir)
-tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-ids = []
-index = 0
-while len(ids) < 4096:
-    index += 1
-    ids.extend(tokenizer(
-        f"DeepSeek Ascend plugin activation probe block {index:06d}. ",
-        add_special_tokens=False,
-    ).input_ids)
-payload = {
-    "model": served_model,
-    "prompt": ids[:4096],
-    "max_tokens": 64,
-    "min_tokens": 64,
-    "ignore_eos": True,
-    "temperature": 0.0,
-    "stream": False,
-}
-request = urllib.request.Request(
-    base_url + "/v1/completions",
-    data=json.dumps(payload).encode(),
-    headers={"Content-Type": "application/json"},
-    method="POST",
-)
-started = time.perf_counter()
-result = {"status": "failed", "input_tokens": 4096, "requested_output_tokens": 64}
-try:
-    with urllib.request.urlopen(request, timeout=7200) as response:
-        body = json.loads(response.read().decode())
-        usage = body.get("usage") or {}
-        result.update({
-            "http_status": response.status,
-            "prompt_tokens": int(usage.get("prompt_tokens") or 0),
-            "completion_tokens": int(usage.get("completion_tokens") or 0),
-        })
-        if response.status == 200 and result["prompt_tokens"] == 4096 and result["completion_tokens"] == 64:
-            result["status"] = "success"
-except Exception as exc:
-    result["error"] = f"{type(exc).__name__}: {exc}"
-result["client_wall_s"] = round(time.perf_counter() - started, 6)
-(profile_dir / "request_result.json").write_text(
-    json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-)
-PY
-  REQUEST_EXIT=$?
-  printf '%s\n' "${REQUEST_EXIT}" > "${PROFILE_DIR}/request_client_exit_code.txt"
-else
-  REQUEST_EXIT=99
-fi
-
-npu-smi info > "${PROFILE_DIR}/npu_smi_after.txt" 2>&1 || true
-stop_server "${SERVER_PID}"
-sleep 5
-npu-smi info > "${ARTIFACT_DIR}/npu_smi_final.txt" 2>&1 || true
-tail -n 200 "${PROFILE_DIR}/vllm_server.log" > "${ARTIFACT_DIR}/first_failure_excerpt.txt"
-
-"${PYTHON_BIN}" - "${ARTIFACT_DIR}" "${READY_EXIT}" "${REQUEST_EXIT}" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-root = Path(sys.argv[1])
-ready = int(sys.argv[2])
-request_exit = int(sys.argv[3])
-request_path = root / "base_no_mtp" / "request_result.json"
-request = json.loads(request_path.read_text(encoding="utf-8")) if request_path.is_file() else None
-log = (root / "base_no_mtp" / "vllm_server.log").read_text(encoding="utf-8", errors="replace")
-if ready == 0 and request_exit == 0 and request and request.get("status") == "success":
-    grade = "diagnostic_green_base_runtime"
-elif "Allocator for npu is not a DeviceAllocator" in log:
-    grade = "diagnostic_red_global_patch"
-elif "DeepseekV4 attention requires a CUDA device" in log or "vllm/models/deepseek_v4/nvidia/model.py" in log:
-    grade = "diagnostic_red_ascend_model_registration"
-else:
-    grade = "diagnostic_yellow_plugin_route_fixed"
-result = {
-    "probe_grade": grade,
-    "plugin_activation_hypothesis_supported": True,
-    "vllm_plugins": "ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model",
-    "sitecustomize_used": False,
-    "pythonpath_overlay_used": False,
-    "server_ready_exit_code": ready,
-    "request_client_exit_code": request_exit,
-    "request_result": request,
-    "allocator_error_count": log.count("Allocator for npu is not a DeviceAllocator"),
-    "cuda_attention_assertion_count": log.count("DeepseekV4 attention requires a CUDA device"),
-    "ascend_model_path_count": log.count("vllm_ascend.models.deepseek_v4"),
-    "nvidia_model_path_count": log.count("vllm/models/deepseek_v4/nvidia/model.py"),
-    "mtp_on_run": False,
-}
-(root / "probe_result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-(root / "probe_status.txt").write_text(grade + "\n", encoding="utf-8")
-PY
 ```
 
-无论成败，都必须确认 NPU 4-7 没有本轮残留进程；不得 kill NPU 0-3 进程。`base_failed_stop_no_fallback`：任何 base 启动/请求失败都停止，不运行 MTP、overlay、插件子集枚举或其他 fallback。
+执行要求：
 
-## 6. 结果分级与交付等待门
+1. 保存 shell-escaped `server_command.txt`、`vllm_server.log`、PID 与 ready exit code。
+2. 启动最长等待 3600 秒；进程死亡记 2，超时记 1，health ready 记 0。
+3. 仅 ready 后发送一个固定 `4096 input + 64 output` 的 `/v1/completions` 请求，`min_tokens=max_tokens=64`、`ignore_eos=true`、`temperature=0`。
+4. 任一失败立即按首错停止；不运行 MTP 或 fallback。
+5. 无论成败都停止本轮进程，确认 NPU 4-7 无残留；禁止 kill NPU 0-3。
+6. 输出 `probe_result.json`、`probe_status.txt`、`first_failure_excerpt.txt`、前后 NPU 快照。至少统计 `acl` missing、allocator assert、CUDA attention assert、Ascend/NVIDIA model path 次数。
 
-- `blocked_provenance`：服务器实际 import root 或 6 个关键文件的 SHA-256 与目标 tag 不一致；不运行插件矩阵或模型。
-- `blocked_preflight` / `blocked_resource`：核心版本、source、entry point、测试或资源门未过。
-- `diagnostic_red_plugin_filter_hypothesis_mismatch`：fresh-process 矩阵不支持当前假设，禁止启动模型。
-- `diagnostic_red_ascend_model_registration`：完整官方插件白名单仍未选择 `AscendDeepseekV4ForCausalLM`，或四卡仍进入 NVIDIA model path。
-- `diagnostic_red_global_patch`：完整官方插件白名单仍未让 memory redirect / `MemorySnapshot` 生效。
-- `diagnostic_yellow_plugin_route_fixed`：Ascend model route 与 allocator route 均已修复，但 base 在更后首错停止。
-- `diagnostic_green_base_runtime`：无 overlay 条件下 server ready 且一个 `4096+64` 请求成功；仍不授权 MTP、八卡、128K 或 P6。
+分级：
 
-完成实验后先在服务器本地生成 `${ARTIFACT_DIR}/result_summary.md`，建议的最终主题写入其中：
+- `blocked_preflight` / `blocked_resource`：核心或资源门失败。
+- `blocked_acl_origin`：ACL/path 来源不满足官方安装约束。
+- `blocked_environment_acl_binding`：正确 source 顺序仍不能导入 ACL。
+- `diagnostic_red_acl_path_hypothesis_mismatch`：三模式矩阵不支持假设。
+- `diagnostic_yellow_acl_path_fixed`：ACL parent/spawn 门通过，四卡越过该首错后在更后阶段失败。
+- `diagnostic_green_base_runtime`：server ready 且一个 `4096+64` 请求成功。
+
+单卡 path gate 通过不能写成 P5 runtime green；四卡成功也不授权 MTP、八卡、128K 或 P6。
+
+## 6. 交付等待门
+
+先在服务器本地生成：
 
 ```text
-[P5-FP8-v0221rc1-plugins] <probe_grade> | <first_failure_or_base_success> | 2026-07-11
+${ARTIFACT_DIR}/result_summary.md
+${ARTIFACT_DIR}/delivery_candidates.tsv
 ```
 
-`${ARTIFACT_DIR}/result_summary.md` 必须包含 task/Git、服务器实际 import roots、6 文件 expected/observed SHA-256 与 provenance 总门、两种 `VLLM_PLUGINS` 精确值、发现的 entry points、逐项 7-check matrix、两种模式的 platform/registry/三项 memory identity/`MemorySnapshot`、四卡 ready/request/Ascend 与 NVIDIA path/更后首错、NPU 4-7 健康和残留。另生成 `${ARTIFACT_DIR}/delivery_candidates.tsv`，逐项列出摘要与候选附件的精确服务器路径、bytes、SHA-256、敏感性、`email` / `upload-api` 可行性和一个推荐方式。
+建议主题：
 
-本轮尚未批准任何结果传输。生成上述两个本地文件后立即暂停，只在当前任务会话向用户展示候选清单并询问：选择 `email` 统一发送正文+批准附件，还是选择 `upload-api` 统一上传 `result_summary.md`+批准附件。确认前禁止调用 `send_notify.py` 的发送/测试模式，禁止 upload-api 预检或上传，也禁止先发一封状态邮件。raw log、完整 NPU SMI、模型和大 artifact 保持 server-local。不得显示 token、`.env` 值、其他用户 PID/命令或未脱敏敏感信息。
+```text
+[P5-FP8-v0221rc1-acl-path] <probe_grade> | <first_failure_or_base_success> | 2026-07-11
+```
 
-用户确认后只执行已选渠道和精确范围：
+`result_summary.md` 必须包含 task/Git、三模式 exit、CANN 路径组件的脱敏清单、parent/child ACL origin、9-check gate、vLLM import roots、四卡 ready/request/首错、NPU 4-7 健康和残留。`delivery_candidates.tsv` 必须列出每个候选文件的精确路径、bytes、SHA-256、敏感性、email/upload-api 可行性和推荐方式。
 
-- 选择 `email`：使用 `python3 通信模块/send_notify.py --subject "<上述主题>" --body-file <result_summary.md> --attach <每个已批准附件> --confirmed-method email`，正文和每个附件均不得超过 70KB，一封邮件完成交付。
-- 选择 `upload-api`：不发送任何邮件；将 `result_summary.md` 与每个已批准附件分别用 `python3 通信模块/upload_file.py --upload <文件> --confirmed-method upload-api` 上传。
+本轮尚未批准新产物传输。生成候选清单后暂停，在当前任务会话询问用户选择 `email` 或 `upload-api`。确认前禁止发送状态邮件、附件、upload-api 预检或上传。raw log、完整 NPU SMI、模型和大 artifact 保持 server-local；不得显示 token、`.env` 值、其他用户 PID/命令或未脱敏内容。
 
-任一渠道失败后只在当前任务会话报告脱敏错误并重新等待用户决定；不得自动重试、改名、补发状态邮件、扩展范围或切换渠道。
+确认后只传已批准的精确范围：
+
+- `email`：`python3 通信模块/send_notify.py --subject "<主题>" --body-file <result_summary.md> --attach <已批准附件> --confirmed-method email`
+- `upload-api`：不发邮件；一次执行 `python3 通信模块/upload_file.py --upload <result_summary.md> --upload <已批准附件> --session-name <p5-fp8-v0221rc1-acl-path-YYYYMMDD-run-id> --confirmed-method upload-api`
+
+失败后不得自动重试、改名、扩展范围、补发邮件或切换渠道。

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Upload one server file only after the user has selected upload-api."""
+"""Upload one complete result bundle after the user selects upload-api."""
 
 from __future__ import annotations
 
@@ -11,6 +11,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import unicodedata
+import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -228,8 +230,23 @@ def build_file_report(path: Path, size_bytes: int) -> dict[str, object]:
     }
 
 
+def validate_session_name(session_name: str) -> str:
+    normalized = unicodedata.normalize("NFC", session_name).strip()
+    if (
+        not normalized
+        or normalized in {".", ".."}
+        or "/" in normalized
+        or "\\" in normalized
+        or any(unicodedata.category(char) == "Cc" for char in normalized)
+        or len(normalized.encode("utf-8")) > 200
+    ):
+        raise UploadError("session_name 无效")
+    return normalized
+
+
 def build_upload_command(
-    file_path: Path,
+    file_paths: Sequence[Path],
+    session_name: str,
     header_path: Path,
     response_path: Path,
     config: UploadConfig,
@@ -259,9 +276,11 @@ def build_upload_command(
             "--header",
             f"@{header_path}",
             "--form",
-            f"file=@{file_path}",
+            f"session_name={session_name}",
         ]
     )
+    for file_path in file_paths:
+        command.extend(["--form", f"file=@{file_path}"])
     return command
 
 
@@ -285,7 +304,7 @@ def http_error_message(status: int) -> str:
     if status == 401:
         detail = "上传凭据无效或服务器本地配置未同步"
     elif status == 409:
-        detail = "当天同名文件已存在；是否改名后重传必须由用户决定"
+        detail = "当天同名结果会话已存在或结果包内文件名冲突；是否改名后重传必须由用户决定"
     elif status == 413:
         detail = "触发上传服务或 Cloudflare 大小限制"
     elif status in {502, 530}:
@@ -313,22 +332,34 @@ def _read_response_json(response_path: Path, token: str) -> dict[str, Any]:
 
 
 def _execute_upload(
-    file_path: str | Path,
+    file_paths: Sequence[str | Path],
+    session_name: str,
     config: UploadConfig,
     *,
     use_proxy: bool | None,
     allow_over_100mb: bool,
     runner: Callable[..., subprocess.CompletedProcess[str]] | None,
 ) -> dict[str, object]:
-    path = resolve_file(file_path)
-    size_bytes = path.stat().st_size
-    size_class = classify_size(size_bytes)
-    if size_class == "oversize" and not allow_over_100mb:
+    if not file_paths:
+        raise UploadError("结果包至少需要一个正文或附件文件")
+    normalized_session_name = validate_session_name(session_name)
+    paths = [resolve_file(path) for path in file_paths]
+    sizes = [path.stat().st_size for path in paths]
+    total_size_bytes = sum(sizes)
+    oversize_paths = [
+        str(path)
+        for path, size_bytes in zip(paths, sizes, strict=True)
+        if classify_size(size_bytes) == "oversize"
+    ]
+    if (oversize_paths or total_size_bytes > DEFAULT_MAX_BYTES) and not allow_over_100mb:
         raise UploadError(
-            "文件超过默认 100MB 上传保护；请让用户重新选择 server-local，"
+            "单文件或结果包总大小超过默认 100MB 上传保护；请让用户重新选择 server-local，"
             "或明确接受 413 风险后使用 --allow-over-100mb"
         )
-    report = build_file_report(path, size_bytes)
+    reports = [
+        build_file_report(path, size_bytes)
+        for path, size_bytes in zip(paths, sizes, strict=True)
+    ]
 
     actual_use_proxy = config.use_proxychains if use_proxy is None else use_proxy
     require_upload_config(config, actual_use_proxy)
@@ -358,7 +389,8 @@ def _execute_upload(
             response_path = Path(handle.name)
 
         command = build_upload_command(
-            path,
+            paths,
+            normalized_session_name,
             header_path,
             response_path,
             config,
@@ -393,35 +425,73 @@ def _execute_upload(
             raise UploadError(http_error_message(http_status))
 
         response = _read_response_json(response_path, config.token)
-        required_fields = {
-            "original_filename",
-            "stored_filename",
-            "saved_path",
-            "sha256",
-        }
+        required_fields = {"session_name", "saved_directory", "files"}
         missing_fields = sorted(required_fields - response.keys())
         if missing_fields:
             raise UploadError(
                 "HTTP 201 响应缺少字段: " + ", ".join(missing_fields)
             )
-
-        remote_sha = str(response["sha256"]).lower()
-        local_sha = str(report["sha256"]).lower()
-        if remote_sha != local_sha:
+        if response["session_name"] != normalized_session_name:
             raise UploadError(
-                f"HTTP 201 但 SHA-256 不一致: local={local_sha}, remote={remote_sha}"
+                "HTTP 201 但 session_name 不一致: "
+                f"local={normalized_session_name}, remote={response['session_name']}"
+            )
+        remote_files = response["files"]
+        if not isinstance(remote_files, list) or len(remote_files) != len(reports):
+            raise UploadError(
+                "HTTP 201 但 files 数量与本地结果包不一致: "
+                f"local={len(reports)}, remote="
+                f"{len(remote_files) if isinstance(remote_files, list) else 'invalid'}"
+            )
+
+        verified_files = []
+        for path, report, remote_file in zip(paths, reports, remote_files, strict=True):
+            if not isinstance(remote_file, dict):
+                raise UploadError("HTTP 201 但 files 项不是对象")
+            file_fields = {
+                "original_filename",
+                "stored_filename",
+                "saved_path",
+                "sha256",
+            }
+            missing_file_fields = sorted(file_fields - remote_file.keys())
+            if missing_file_fields:
+                raise UploadError(
+                    "HTTP 201 的 files 项缺少字段: "
+                    + ", ".join(missing_file_fields)
+                )
+            if remote_file["original_filename"] != path.name:
+                raise UploadError(
+                    "HTTP 201 但原始文件名不一致: "
+                    f"local={path.name}, remote={remote_file['original_filename']}"
+                )
+            remote_sha = str(remote_file["sha256"]).lower()
+            local_sha = str(report["sha256"]).lower()
+            if remote_sha != local_sha:
+                raise UploadError(
+                    f"HTTP 201 但 SHA-256 不一致: file={path.name}, "
+                    f"local={local_sha}, remote={remote_sha}"
+                )
+            verified_files.append(
+                {
+                    "original_filename": remote_file["original_filename"],
+                    "stored_filename": remote_file["stored_filename"],
+                    "saved_path": remote_file["saved_path"],
+                    "size_bytes": report["size_bytes"],
+                    "size_class": report["size_class"],
+                    "local_sha256": local_sha,
+                    "remote_sha256": remote_sha,
+                }
             )
 
         return {
             "status": "success",
             "http_status": http_status,
-            "original_filename": response["original_filename"],
-            "stored_filename": response["stored_filename"],
-            "saved_path": response["saved_path"],
-            "size_bytes": report["size_bytes"],
-            "size_class": report["size_class"],
-            "local_sha256": local_sha,
-            "remote_sha256": remote_sha,
+            "session_name": normalized_session_name,
+            "saved_directory": response["saved_directory"],
+            "file_count": len(verified_files),
+            "total_size_bytes": total_size_bytes,
+            "files": verified_files,
             "elapsed_seconds": elapsed_seconds,
             "method": CONFIRMED_METHOD,
             "used_proxychains": actual_use_proxy,
@@ -436,8 +506,9 @@ def _execute_upload(
                 pass
 
 
-def upload_file(
-    file_path: str | Path,
+def upload_files(
+    file_paths: Sequence[str | Path],
+    session_name: str,
     config: UploadConfig,
     *,
     confirmed_method: str | None,
@@ -447,8 +518,30 @@ def upload_file(
 ) -> dict[str, object]:
     require_confirmation(confirmed_method)
     return _execute_upload(
-        file_path,
+        file_paths,
+        session_name,
         config,
+        use_proxy=use_proxy,
+        allow_over_100mb=allow_over_100mb,
+        runner=runner,
+    )
+
+
+def upload_file(
+    file_path: str | Path,
+    config: UploadConfig,
+    *,
+    session_name: str,
+    confirmed_method: str | None,
+    use_proxy: bool | None = None,
+    allow_over_100mb: bool = False,
+    runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
+) -> dict[str, object]:
+    return upload_files(
+        [file_path],
+        session_name,
+        config,
+        confirmed_method=confirmed_method,
         use_proxy=use_proxy,
         allow_over_100mb=allow_over_100mb,
         runner=runner,
@@ -472,8 +565,10 @@ def run_preflight(
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
             handle.write("AK-Infer-Lab upload preflight\n")
-        return upload_file(
-            path,
+        session_name = f"ak-upload-preflight-{uuid.uuid4().hex}"
+        return upload_files(
+            [path],
+            session_name,
             config,
             confirmed_method=confirmed_method,
             use_proxy=use_proxy,
@@ -488,16 +583,25 @@ def run_preflight(
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="经用户明确选择后，通过上传 API 回传一个服务器文件",
+        description="经用户明确选择后，通过上传 API 一次性交付完整结果包",
     )
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--inspect", metavar="FILE", help="只读检查文件，不访问网络")
-    mode.add_argument("--upload", metavar="FILE", help="上传一个文件")
+    mode.add_argument(
+        "--upload",
+        action="append",
+        metavar="FILE",
+        help="结果包文件，可重复指定；第一个应为 result_summary.md",
+    )
     mode.add_argument("--preflight", action="store_true", help="上传唯一命名的小文件预检")
     mode.add_argument("--show-config", action="store_true", help="脱敏显示配置")
     parser.add_argument(
         "--confirmed-method",
-        help="必须精确填写 upload-api，表示用户已针对当前文件选择该方式",
+        help="必须精确填写 upload-api，表示用户已针对当前完整结果包选择该方式",
+    )
+    parser.add_argument(
+        "--session-name",
+        help="upload API 会话目录名；上传结果包时必填且当天唯一",
     )
     parser.add_argument("--no-proxy", action="store_true", help="绕过 proxychains 直连")
     parser.add_argument(
@@ -512,6 +616,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     try:
         transfer_requested = bool(args.upload or args.preflight)
+        if args.upload and not args.session_name:
+            raise UploadError("--upload 必须同时提供 --session-name")
+        if args.session_name and not args.upload:
+            raise UploadError("--session-name 只能与 --upload 同时使用")
         if args.allow_over_100mb and not args.upload:
             raise UploadError("--allow-over-100mb 只能与 --upload 同时使用")
         if args.no_proxy and not transfer_requested:
@@ -535,8 +643,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     use_proxy=use_proxy,
                 )
             else:
-                result = upload_file(
+                result = upload_files(
                     args.upload,
+                    args.session_name,
                     config,
                     confirmed_method=args.confirmed_method,
                     use_proxy=use_proxy,

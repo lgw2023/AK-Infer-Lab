@@ -1,0 +1,124 @@
+schema_version: 1
+workload_id: p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1
+date: "2026-07-11"
+purpose: restore_only_the_CANN_generated_acl_python_path_then_retry_the_four_card_native_ascend_route
+model_object_id: deepseek_v4_flash_official_hf
+scenario: single_card_acl_path_provenance_and_spawn_matrix_then_conditional_four_card_base_runtime_retry
+is_smoke: true
+is_benchmark: false
+is_canonical_p5_runtime_gate: true
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+prior_probe_result:
+  workload: p5_4card_fp8_plugin_activation_probe.yaml
+  probe_grade: diagnostic_yellow_plugin_route_fixed
+  installed_content_provenance_all_match: true
+  plugin_activation_hypothesis_supported: true
+  ascend_model_route_selected: true
+  allocator_error_count: 0
+  first_failure_stage: spawned_worker_import
+  first_failure: ModuleNotFoundError_No_module_named_acl
+  cann_and_atb_set_env_sourced: true
+  pythonpath_unset_after_sourcing: true
+  weight_load_started: false
+hypothesis:
+  statement: unsetting_PYTHONPATH_after_CANN_set_env_removed_the_acl_binding_path
+  status: must_be_proven_by_clean_shell_path_and_spawn_inheritance_matrix
+  corrective_scope: preserve_only_paths_generated_by_CANN_and_ATB_set_env
+  pip_install_acl: forbidden
+  source_or_package_patch: forbidden
+target_runtime:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  lifecycle: reuse_without_conda_pip_cann_driver_sitecustomize_or_source_changes
+  vllm_source_path: /data/node0_disk1/vllm-0.22.1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  torch: "2.10.0"
+  torch_npu: "2.10.0"
+  approved_vllm_plugins: ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
+acl_path_probe:
+  visible_device: "4"
+  logical_device: "npu:0"
+  clean_shell_rule: unset_PYTHONPATH_before_sourcing_CANN_and_ATB
+  allowed_path_origin_prefix: /usr/local/Ascend
+  forbidden_path_origins:
+    - project_repository
+    - prior_sitecustomize_overlay
+    - arbitrary_user_site
+  modes:
+    - name: stripped_after_source_control
+      action: source_CANN_and_ATB_then_unset_PYTHONPATH
+      expected_acl_import: failure
+    - name: clean_CANN_generated_path
+      action: unset_PYTHONPATH_then_source_CANN_and_ATB_and_preserve_generated_value
+      expected_acl_import: success
+      expected_acl_origin_prefix: /usr/local/Ascend
+    - name: spawned_worker_inheritance
+      action: multiprocessing_spawn_child_with_exact_clean_CANN_generated_path
+      expected_imports:
+        - acl
+        - acl.rt.memcpy
+        - vllm_ascend.device_allocator.camem
+  gate_requires:
+    - control_reproduces_ModuleNotFoundError_acl
+    - clean_CANN_generated_path_imports_acl_and_acl_rt_memcpy
+    - acl_module_origin_is_under_usr_local_Ascend
+    - generated_PYTHONPATH_contains_no_project_or_sitecustomize_overlay
+    - spawn_child_inherits_the_exact_generated_PYTHONPATH
+    - spawn_child_imports_vllm_ascend_device_allocator_camem
+four_card_retry:
+  run_only_if: acl_path_probe_gate_passes
+  authorized_visible_devices: "4,5,6,7"
+  pythonpath: exact_clean_CANN_and_ATB_generated_value_from_probe
+  vllm_plugins: ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
+  sitecustomize_or_project_pythonpath_overlay: forbidden
+  tensor_parallel_size: 4
+  enable_expert_parallel: true
+  data_parallel_size: 1
+  profile: base_no_mtp_only
+  max_model_len: 8192
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  gpu_memory_utilization: 0.92
+  explicit_quantization_argument: forbidden
+  enforce_eager: true
+  prefix_cache: disabled
+  additional_config:
+    enable_flashcomm1: true
+    enable_dsa_cp: true
+    enable_cpu_binding: true
+    multistream_overlap_shared_expert: false
+  request:
+    input_tokens: 4096
+    output_tokens: 64
+    temperature: 0.0
+    min_tokens: 64
+    max_tokens: 64
+    ignore_eos: true
+stop_policy:
+  stop_if_acl_path_hypothesis_is_not_supported: true
+  stop_if_acl_origin_is_outside_usr_local_Ascend: true
+  stop_if_project_or_sitecustomize_path_is_present: true
+  stop_if_spawn_child_import_fails: true
+  stop_after_base_startup_or_request_failure: true
+  mtp_on_forbidden: true
+  no_w8a8_checkpoint_attempt: true
+  no_context_ladder: true
+  no_cpu_disk_or_kv_offload: true
+  no_profiler: true
+  no_package_source_or_system_changes: true
+grading:
+  diagnostic_green_base_runtime: clean_CANN_path_reaches_server_ready_and_one_4096_plus_64_request_succeeds
+  diagnostic_yellow_acl_path_fixed: acl_and_spawn_gates_pass_but_base_fails_at_a_later_first_failure
+  diagnostic_red_acl_path_hypothesis_mismatch: clean_CANN_generated_path_does_not_explain_or_fix_the_acl_import
+  blocked_acl_origin: acl_resolves_outside_the_approved_CANN_installation
+  blocked_preflight: core_version_source_plugin_or_contract_gate_fails
+  blocked_resource: npu_4_or_npu_4_7_not_healthy_idle_and_available
+reporting:
+  status_body_max_bytes: 71680
+  new_artifact_transfer_authorized: false
+  new_artifacts: report_exact_paths_sizes_sha256_sensitivity_and_recommended_method_for_confirmation
+  raw_logs_and_npu_process_snapshots: server-local
+boundaries:
+  - PYTHONPATH is rebuilt from a clean shell by official CANN and ATB set_env scripts; no project overlay is allowed.
+  - A successful acl import and spawn gate proves environment propagation only, not model load or request success.
+  - Base success does not authorize MTP, eight cards, the 128K ladder, P6 or performance claims.
