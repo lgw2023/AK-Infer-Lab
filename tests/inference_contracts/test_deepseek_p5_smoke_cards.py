@@ -18,7 +18,7 @@ def test_p5_readiness_card_targets_official_fp8_runtime_gate():
     card = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
 
     assert card["experiment_id"] == "p5_deepseek_v4_flash_official_fp8_runtime_gate"
-    assert card["scenario"] == "four_card_runtime_resume_then_eight_card_context_smoke"
+    assert card["scenario"] == "four_card_allocator_patch_delivery_then_eight_card_context_smoke"
     assert card["target_runtime"]["container_or_conda"] == "host_conda"
     assert card["target_runtime"]["vllm_version"] == "0.22.1+empty"
     assert card["target_runtime"]["vllm_ascend_version"] == "0.22.1rc1"
@@ -27,9 +27,11 @@ def test_p5_readiness_card_targets_official_fp8_runtime_gate():
     assert card["latest_environment_result"]["reported_probe_grade"] == "blocked_environment"
     assert card["latest_environment_result"]["environment_functionally_built"] is True
     assert card["latest_environment_result"]["runtime_attempted"] is False
-    assert "built_core_versions" in card["target_runtime"]["runtime_status"]
-    assert card["authorized_runtime_gate"]["workload"] == "workloads/p5_4card_fp8_runtime_resume_probe.yaml"
-    assert card["authorized_runtime_gate"]["task_id"] == "p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711"
+    assert "allocator_patch_delivery" in card["target_runtime"]["runtime_status"]
+    assert card["latest_runtime_result"]["probe_grade"] == "diagnostic_red_runtime"
+    assert card["latest_runtime_result"]["first_failure_stage"] == "worker_init_memory_snapshot_allocator"
+    assert card["authorized_runtime_gate"]["workload"] == "workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml"
+    assert card["authorized_runtime_gate"]["task_id"] == "p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711"
     assert card["authorized_runtime_gate"]["visible_devices"] == "4,5,6,7"
     assert card["authorized_runtime_gate"]["tp"] == 4
     assert card["authorized_runtime_gate"]["model_object_id"] == "deepseek_v4_flash_official_hf"
@@ -63,8 +65,9 @@ def test_model_registry_retires_w8a8_and_promotes_official_mixed_checkpoint():
     assert smaller["model_role"] == "project_primary_runtime_object"
     assert smaller["intended_runtime"]["runtime"] == "vllm_0_22_1_plus_vllm_ascend_0_22_1rc1"
     assert smaller["intended_runtime"]["reference_role"] == "project_primary_p5_runtime_and_future_p6_baseline_candidate"
-    assert "registration_passed_runtime_probe_pending" in smaller["server_inventory"]["inventory_status"]
+    assert "allocator_patch_delivery_pending" in smaller["server_inventory"]["inventory_status"]
     assert "p5_4card_fp8_runtime_resume_probe" in smaller["expected_scenarios"]
+    assert "p5_4card_fp8_allocator_patch_delivery_probe" in smaller["expected_scenarios"]
 
     assert "The W8A8-MTP object is retired from future project execution and remains inventory-only." in registry["global_boundaries"]
 
@@ -185,12 +188,38 @@ def test_p5_four_card_fp8_runtime_resume_probe_reuses_core_stack_and_bounds_depe
     assert [profile["name"] for profile in probe["profiles"]] == ["base_no_mtp", "mtp_on"]
     assert probe["profiles"][1]["run_only_if"] == "base_no_mtp_request_succeeds"
     assert probe["stop_policy"]["no_w8a8_checkpoint_attempt"] is True
+    assert probe["execution_result"]["probe_grade"] == "diagnostic_red_runtime"
+    assert probe["execution_result"]["first_failure_stage"] == "worker_init_memory_snapshot_allocator"
+    assert probe["execution_result"]["base_no_mtp"]["weight_load_started"] is False
+    assert probe["execution_result"]["approved_prior_artifact_transfer"]["method"] == "upload-api"
 
 
-def test_server_handoff_reuses_fp8_capable_stack_then_runs_only_four_cards():
+def test_p5_allocator_patch_delivery_probe_is_conditional_and_bounded():
+    probe = load_yaml(BENCHMARK_DIR / "workloads" / "p5_4card_fp8_allocator_patch_delivery_probe.yaml")
+
+    assert probe["workload_id"] == "p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_probe_v0221rc1"
+    assert probe["prior_runtime_result"]["first_failure_stage"] == "worker_init_memory_snapshot_allocator"
+    assert probe["source_evidence"]["official_patch_module"] == "vllm_ascend.patch.platform.patch_torch_accelerator"
+    redirects = probe["source_evidence"]["official_redirects"]
+    assert redirects["torch.accelerator.memory_stats"] == "torch.npu.memory_stats"
+    assert redirects["torch.accelerator.memory_reserved"] == "torch.npu.memory_reserved"
+    assert probe["prior_artifact_transfer"]["confirmed_method"] == "upload-api"
+    assert probe["prior_artifact_transfer"]["total_bytes"] == 12728
+    assert len(probe["prior_artifact_transfer"]["files"]) == 6
+    assert probe["allocator_probe"]["visible_device"] == "4"
+    assert probe["allocator_probe"]["multiprocessing_method"] == "spawn"
+    assert probe["allocator_probe"]["conditional_workaround"]["type"] == "session_scoped_sitecustomize"
+    assert probe["four_card_retry"]["authorized_visible_devices"] == "4,5,6,7"
+    assert probe["four_card_retry"]["profile"] == "base_no_mtp_only"
+    assert probe["four_card_retry"]["explicit_quantization_argument"] == "forbidden"
+    assert probe["stop_policy"]["mtp_on_forbidden"] is True
+    assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
+
+
+def test_server_handoff_probes_allocator_patch_delivery_then_runs_bounded_base():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711" in handoff
+    assert "p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711" in handoff
     assert "当前任务" in handoff
     assert "vLLM-Ascend" in handoff
     assert "vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1" in handoff
@@ -228,7 +257,17 @@ def test_server_handoff_reuses_fp8_capable_stack_then_runs_only_four_cards():
     assert "禁止 `conda create`、`pip install`" in handoff
     assert '"${PYTHON_BIN}" -m pip install' not in handoff
     assert "base_no_mtp" in handoff
-    assert "mtp_on" in handoff
-    assert "不添加附件" in handoff
-    assert "不执行 upload-api" in handoff
+    assert "mtp_on 禁止" in handoff
+    assert "patch_torch_accelerator.py" in handoff
+    assert "sitecustomize.py" in handoff
+    assert "torch.accelerator.memory_stats" in handoff
+    assert "torch.npu.memory_stats" in handoff
+    assert "--confirmed-method upload-api" in handoff
+    assert "first_failure_excerpt.txt:9555" in handoff
+    assert "probe_result.json:1177" in handoff
+    assert "base_no_mtp/server_command.txt:756" in handoff
+    assert "HTTP `201`" in handoff
+    assert "SHA-256" in handoff
+    assert "不添加附件" not in handoff
+    assert "不执行 upload-api" not in handoff
     assert "runtime_vllm_api_prefix_ratio_long_context_matrix_2026_0709_p1_031" not in handoff

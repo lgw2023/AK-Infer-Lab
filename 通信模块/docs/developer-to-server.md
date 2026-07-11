@@ -1,43 +1,39 @@
 # Developer to Server
 
-## 当前任务：复用已建成的 v0.22.1rc1 栈，继续官方 FP8/FP4 checkpoint 四卡 runtime probe
+## 当前任务：回传已批准诊断文件，验证 spawned worker allocator patch delivery
 
 任务 ID：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
+p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
 ```
 
-本轮唯一授权设备范围：
+设备授权：
 
 ```text
-ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
+单卡 allocator 诊断：ASCEND_RT_VISIBLE_DEVICES=4
+有条件的 base runtime 复跑：ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
 ```
 
-目标：完整同步远端 `main` 后，**不重建、不修包、不修改**上一轮已经建成的独立
-`vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1` 环境。先用精确版本、核心 import、
-`supported_quantization`、模型 metadata 和项目合同验收该环境；全量 `pip check` 只作为
-诊断记录，只有出现白名单以外的新冲突才阻塞。预检通过后，继续上一轮尚未执行的
-TP4/EP `base_no_mtp -> mtp_on` runtime probe。
+本轮目标有且只有三个：
 
-上一轮服务器事实：
+1. 按用户已明确选择的 `upload-api`，回传上一轮 artifact 目录中 6 个精确文件，合计 `12728 bytes`。
+2. 只用 NPU 4 定位官方 `torch.accelerator -> torch.npu` memory API patch 在 fresh/spawned process 中的生效状态。
+3. 仅在 allocator 矩阵完整证明 patch-delivery 假设时，使用任务目录内的 session-scoped `sitecustomize.py` 复跑 NPU 4-7 `base_no_mtp`，最多发送一个 `4096+64` 请求。
 
-- 旧任务 `p5_deepseek_v4_flash_4card_fp8_stack_upgrade_probe_v0221rc1_2026_0710`
-  已完整同步到 `c5108614b54240e5f04446ac821c02cf095275e9`。
-- 新环境和新源码已功能性构建完成：vLLM `0.22.1+empty`、vLLM-Ascend
-  `0.22.1rc1`、torch/torch-npu `2.10.0`、transformers `5.5.4`、
-  triton-ascend `3.2.1`；vLLM source 为干净的
-  `v0.22.1@0decac0d96c42b49572498019f0a0e3600f50398`。
-- NPU 平台已返回 `['ascend', 'compressed-tensors', 'fp8', 'deepseek_v4_fp8']`，
-  因而 `0.20.2rc1` 的量化注册阻塞已经在静态/注册层关闭。
-- 全量 `pip check` 的 11 行冲突全部来自旧环境同样存在的 profiling/辅助包；它们不涉及
-  vLLM、vLLM-Ascend、torch、torch-npu、transformers 或 triton-ascend。上一轮错误地
-  把该全量诊断设为硬门，所以没有执行模型 preflight、权重加载、server ready 或请求。
-- 旧脚本在函数内部启用 `set -e` 后泄漏到 caller，导致状态文件未按设计写出。本轮所有
-  可能失败的 gate 均在 subshell 内执行并由 caller 显式捕获退出码。
-- NPU 4-7 当时健康、空闲、每卡约 62.1 GiB 可用；NPU 0-3 有其他任务，禁止触碰。
+## 0. 上轮结果与本轮判断边界
 
-## 1. 仓库同步：完整拉取 `main`
+上轮 `p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711` 已确认：
+
+- Git、精确核心版本、已知非核心 `pip check` 分类、`fp8/deepseek_v4_fp8` 注册、模型 metadata 和 NPU 4-7 资源门均通过。
+- `base_no_mtp` 启动后，四个 worker 在 `NPUWorker._init_device -> MemorySnapshot -> torch.accelerator.memory_stats -> torch._C._accelerator_isAllocatorInitialized` 触发相同断言：`Allocator for npu is not a DeviceAllocator`。
+- 失败早于权重加载、server ready、HCCL 集合通信和请求；上轮邮件的 `architecture_operator_collective_or_request` 是过宽阶段名，本项目将首错收窄为 `worker_init_memory_snapshot_allocator`。
+- 目标 vLLM `0decac0d...` 的 `MemorySnapshot` 使用 `torch.accelerator.memory_stats/memory_reserved/reset_peak_memory_stats`。目标 vLLM-Ascend `5f6faa0c...` 的 `vllm_ascend/patch/platform/patch_torch_accelerator.py` 已把这三个 API 指向 `torch.npu.*`。
+- 因此“官方 patch 存在，但未在实际 spawned worker 生效”是待验证假设，不是已证实结论。
+
+上轮结果仍为 `diagnostic_red_runtime`，不是 `diagnostic_red_quant_format`、`diagnostic_red_weight_load`、容量结论、DeepSeek operator 结论或 collective 结论。
+
+## 1. 完整同步远程 `main`
 
 ```bash
 set -euo pipefail
@@ -56,70 +52,79 @@ printf 'origin_main=%s\n' "$(git rev-parse origin/main)"
 printf 'ahead_behind=%s\n' "$(git rev-list --left-right --count HEAD...origin/main)"
 ```
 
-同步要求：
+要求：
 
-1. 必须拉取远端 `main` 的全部缺失提交；禁止 `cherry-pick` 单提交、detached checkout
-   或单文件覆盖。
+1. 必须同步远程 `main` 的全部缺失提交；禁止 `cherry-pick`、detached checkout 或单文件覆盖。
 2. 必须满足 `HEAD == origin/main` 且 ahead/behind=`0 0`。
-3. 同步后重新打开本文档。只有任务 ID 仍为
-   `p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711` 才继续。
-4. 同步整个仓库不等于执行全部任务。本轮不运行历史 handoff、八卡任务、P6、P8、
-   msprof 或其他 workload。
+3. 同步后重新打开本文档；只有任务 ID 仍精确匹配才继续。
 
-## 2. 固定对象与禁止项
+## 2. 固定环境、对象与禁止项
 
 ```text
-已建成的新环境（本轮只读复用）:
+核心版本基线：
+vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1
+
+本轮复用环境：
 /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 
-已建成的新源码（本轮只读复用）:
+vLLM editable source：
 /data/node0_disk1/vllm-0.22.1
 v0.22.1@0decac0d96c42b49572498019f0a0e3600f50398
 
-已安装的 vLLM-Ascend:
+vLLM-Ascend：
 v0.22.1rc1@5f6faa0cb8830f667266f3b8121cd1383606f2a1
 
-旧环境（只读保留）:
+旧环境（只读保留）：
 /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
 
-运行对象:
+模型：
 /data/node0_disk1/Public/DeepSeek-V4-Flash
 
-退役 inventory（禁止启动、转换或 fallback）:
+退役 inventory（禁止启动）：
 /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
 ```
 
 禁止项：
 
-- 禁止 `conda create`、`pip install`、`pip uninstall`、删除或覆盖新旧环境。
-- 禁止修改 vLLM/vLLM-Ascend 源码、CANN、driver、firmware、apt、系统 Python。
-- 禁止为了让全量 `pip check` 变绿而安装、降级或升级 profiling/辅助包。
-- 禁止显式 `--quantization`，禁止改 checkpoint config。
-- 禁止使用 NPU 0-3；禁止扩成八卡。
-- 禁止 W8A8、CPU/NVMe/KV offload、128K ladder、并发矩阵、msprof、P6、A/B。
+- 禁止 `conda create`、`pip install`、`pip uninstall`、包升降级或重建环境。
+- 禁止修改 vLLM/vLLM-Ascend source、site-packages、CANN、driver、firmware、apt 或系统 Python。
+- 禁止使用 NPU 0-3；禁止 kill、停止或影响 NPU 0-3 上的其他任务。
+- 禁止显式 `--quantization`、checkpoint config 改写、W8A8、CPU/NVMe/KV offload、128K、并发矩阵、msprof、P6 和 A/B。
+- `mtp_on 禁止`；即使 base 请求成功也不在本轮启用 MTP。
+- 不得把 session-scoped `sitecustomize.py` 写成上游修复、生产验证或对其他模型的通用修复。
 
-## 3. 资源门
+## 3. 先通过 upload-api 回传已批准的 6 个旧文件
 
-开始前人工检查 `npu-smi info`：
+用户已针对以下精确范围选择 `upload-api`：
 
-1. 物理 NPU 4-7 必须全部 `Health=OK`、空闲且无进程；否则写
-   `blocked_resource` 后停止。
-2. NPU 0-3 上的其他任务不得停止、kill、重启或纳入本轮进程。
-3. 记录启动前、每个 profile ready/失败后和最终释放后的 NPU 4-7 HBM 摘要；raw
-   `npu-smi` 留在服务器。
+```text
+first_failure_excerpt.txt:9555
+probe_result.json:1177
+pip_check_classification.json:634
+model_preflight.json:360
+runtime_versions.tsv:246
+base_no_mtp/server_command.txt:756
+total_bytes:12728
+```
 
-## 4. 复用环境预检
+根目录：
 
-以下 gate 使用 subshell；即使失败也必须由 caller 写出状态文件，禁止再次出现
-`set -e` 泄漏。
+```text
+/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
+```
+
+这 6 个文件是普通技术诊断，可能包含服务器绝对路径、模型名、PID 和堆栈；不应包含 token、密码、私钥、Cookie 或 `.env` 内容。上传前必须只输出扫描计数，不在终端打印可疑秘密原文。
 
 ```bash
 set +e
 set -uo pipefail
 cd /data/node0_disk1/liguowei/AK-Infer-Lab
 
-RUN_ID=p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
+RUN_ID=p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
+OLD_RUN_ID=p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
 ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
+OLD_ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${OLD_RUN_ID}"
+TRANSFER_DIR="${ARTIFACT_DIR}/prior_six_file_upload"
 NEW_ENV=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 BASE_ENV=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
 VLLM_SRC=/data/node0_disk1/vllm-0.22.1
@@ -128,30 +133,130 @@ MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash
 RETIRED_W8A8_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
 PYTHON_BIN="${NEW_ENV}/bin/python"
 VLLM_BIN="${NEW_ENV}/bin/vllm"
+mkdir -p "${TRANSFER_DIR}"
 
+APPROVED_FILES=(
+  "first_failure_excerpt.txt:9555"
+  "probe_result.json:1177"
+  "pip_check_classification.json:634"
+  "model_preflight.json:360"
+  "runtime_versions.tsv:246"
+  "base_no_mtp/server_command.txt:756"
+)
+
+TRANSFER_OK=1
+TOTAL_BYTES=0
+for item in "${APPROVED_FILES[@]}"; do
+  rel="${item%:*}"
+  expected="${item##*:}"
+  path="${OLD_ARTIFACT_DIR}/${rel}"
+  if [ ! -f "${path}" ]; then
+    printf 'missing\t%s\n' "${rel}" >> "${TRANSFER_DIR}/validation.tsv"
+    TRANSFER_OK=0
+    continue
+  fi
+  actual="$(stat -c '%s' "${path}")"
+  printf '%s\t%s\t%s\n' "${rel}" "${expected}" "${actual}" >> "${TRANSFER_DIR}/validation.tsv"
+  if [ "${actual}" != "${expected}" ]; then TRANSFER_OK=0; fi
+  TOTAL_BYTES=$((TOTAL_BYTES + actual))
+done
+printf 'total_bytes=%s\n' "${TOTAL_BYTES}" >> "${TRANSFER_DIR}/validation.tsv"
+if [ "${TOTAL_BYTES}" -ne 12728 ]; then TRANSFER_OK=0; fi
+
+"${PYTHON_BIN}" - "${OLD_ARTIFACT_DIR}" "${TRANSFER_DIR}/secret_scan.json" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+out = Path(sys.argv[2])
+files = [
+    "first_failure_excerpt.txt",
+    "probe_result.json",
+    "pip_check_classification.json",
+    "model_preflight.json",
+    "runtime_versions.tsv",
+    "base_no_mtp/server_command.txt",
+]
+patterns = {
+    "private_key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
+    "github_token": re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b"),
+    "credential_assignment": re.compile(
+        r"(?i)\b(?:AK_COMM_UPLOAD_TOKEN|AK_COMM_SMTP_PASSWORD|password|secret|access[_-]?token)\s*[:=]\s*\S+"
+    ),
+}
+counts = {name: 0 for name in patterns}
+for rel in files:
+    text = (root / rel).read_text(encoding="utf-8", errors="replace")
+    for name, pattern in patterns.items():
+        counts[name] += len(pattern.findall(text))
+result = {"files": files, "match_counts": counts, "safe_to_upload": not any(counts.values())}
+out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+if not result["safe_to_upload"]:
+    raise SystemExit(1)
+PY
+SECRET_SCAN_EXIT=$?
+if [ "${SECRET_SCAN_EXIT}" -ne 0 ]; then TRANSFER_OK=0; fi
+
+if [ "${TRANSFER_OK}" -ne 1 ]; then
+  echo blocked_transfer_validation > "${ARTIFACT_DIR}/probe_status.txt"
+  exit 0
+fi
+
+python3 通信模块/upload_file.py --show-config > "${TRANSFER_DIR}/upload_config_redacted.json" 2>&1
+python3 通信模块/upload_file.py \
+  --preflight \
+  --confirmed-method upload-api \
+  > "${TRANSFER_DIR}/preflight_receipt.json" 2>&1
+if [ "$?" -ne 0 ]; then
+  echo blocked_transfer_preflight > "${ARTIFACT_DIR}/probe_status.txt"
+  exit 0
+fi
+
+for item in "${APPROVED_FILES[@]}"; do
+  rel="${item%:*}"
+  path="${OLD_ARTIFACT_DIR}/${rel}"
+  receipt_name="$(printf '%s' "${rel}" | tr '/ ' '__')"
+  python3 通信模块/upload_file.py --inspect "${path}" \
+    > "${TRANSFER_DIR}/${receipt_name}.inspect.json" 2>&1
+  if [ "$?" -ne 0 ]; then
+    echo blocked_transfer_inspect > "${ARTIFACT_DIR}/probe_status.txt"
+    exit 0
+  fi
+  python3 通信模块/upload_file.py \
+    --upload "${path}" \
+    --confirmed-method upload-api \
+    > "${TRANSFER_DIR}/${receipt_name}.upload.json" 2>&1
+  if [ "$?" -ne 0 ]; then
+    echo blocked_transfer_upload > "${ARTIFACT_DIR}/probe_status.txt"
+    exit 0
+  fi
+done
+echo prior_six_files_uploaded > "${TRANSFER_DIR}/status.txt"
+```
+
+`upload_file.py` 只有在 curl 成功、HTTP `201`、返回 JSON 有效且远程/本地 `SHA-256` 一致时才返回成功。任一 `401/409/413/3xx/5xx`、超时、代理异常、非 JSON 或 hash 不一致都立即停止整个任务；禁止自动改名、重试、换邮件或扩大文件范围。
+
+## 4. 核心 preflight 与资源门
+
+上传成功后才继续。所有可失败 gate 仍在 subshell 内运行，caller 无条件写退出码。
+
+```bash
+set +e
+set -uo pipefail
+cd /data/node0_disk1/liguowei/AK-Infer-Lab
+
+RUN_ID=p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
+ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
+NEW_ENV=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+BASE_ENV=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.20.2rc1
+VLLM_SRC=/data/node0_disk1/vllm-0.22.1
+VLLM_COMMIT=0decac0d96c42b49572498019f0a0e3600f50398
+MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash
+PYTHON_BIN="${NEW_ENV}/bin/python"
+VLLM_BIN="${NEW_ENV}/bin/vllm"
 mkdir -p "${ARTIFACT_DIR}"
-
-if ! git fetch origin main > "${ARTIFACT_DIR}/git_fetch_verify.log" 2>&1; then
-  echo blocked_git_fetch > "${ARTIFACT_DIR}/probe_status.txt"
-  exit 0
-fi
-LOCAL_HEAD="$(git rev-parse HEAD)"
-REMOTE_MAIN="$(git rev-parse origin/main)"
-{
-  printf 'local_head=%s\n' "${LOCAL_HEAD}"
-  printf 'origin_main=%s\n' "${REMOTE_MAIN}"
-  printf 'ahead_behind='
-  git rev-list --left-right --count HEAD...origin/main
-} > "${ARTIFACT_DIR}/git_sync_state.txt"
-
-if [ "${LOCAL_HEAD}" != "${REMOTE_MAIN}" ]; then
-  echo blocked_git_not_fully_synced > "${ARTIFACT_DIR}/probe_status.txt"
-  exit 0
-fi
-if ! grep -q 'p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711' 通信模块/docs/developer-to-server.md; then
-  echo blocked_handoff_task_id_changed > "${ARTIFACT_DIR}/probe_status.txt"
-  exit 0
-fi
 
 set +u
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
@@ -159,7 +264,6 @@ source /usr/local/Ascend/nnal/atb/set_env.sh
 set -u
 
 export PATH="${NEW_ENV}/bin:${PATH}"
-export ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
 export VLLM_PLUGINS=ascend
 export VLLM_USE_V1=1
 export VLLM_WORKER_MULTIPROC_METHOD=spawn
@@ -173,13 +277,14 @@ export HCCL_OP_EXPANSION_MODE=AIV
 
 run_preflight() (
   set -euo pipefail
-
   test -x "${PYTHON_BIN}"
   test -x "${VLLM_BIN}"
   test -d "${BASE_ENV}"
   test -d "${VLLM_SRC}/.git"
   test -z "$(git -C "${VLLM_SRC}" status --porcelain)"
   test "$(git -C "${VLLM_SRC}" rev-parse HEAD)" = "${VLLM_COMMIT}"
+  test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+  grep -q "${RUN_ID}" 通信模块/docs/developer-to-server.md
 
   set +e
   "${PYTHON_BIN}" -m pip check > "${ARTIFACT_DIR}/pip_check_full.txt" 2>&1
@@ -200,20 +305,17 @@ lines = [line.strip() for line in (artifact_dir / "pip_check_full.txt").read_tex
 allowed_requirements = {
     "mindstudio-kpp": {"plotly"},
     "ms-service-profiler": {
-        "matplotlib",
-        "msguard",
-        "openpyxl",
+        "matplotlib", "msguard", "openpyxl",
         "opentelemetry-exporter-otlp-proto-grpc",
-        "opentelemetry-exporter-otlp-proto-http",
-        "pandas",
+        "opentelemetry-exporter-otlp-proto-http", "pandas",
     },
     "te": {"ml-dtypes", "tornado"},
     "pyvers": {"packaging"},
     "opencv-python-headless": {"numpy"},
 }
 
-def normalize(name):
-    return re.sub(r"[-_.]+", "-", name).lower()
+def normalize(value):
+    return re.sub(r"[-_.]+", "-", value).lower()
 
 unexpected = []
 if exit_code not in (0, 1):
@@ -224,28 +326,15 @@ elif exit_code == 1:
     for line in lines:
         match = re.match(r"^([A-Za-z0-9_.-]+)\s", line)
         dependent = normalize(match.group(1)) if match else ""
-        normalized_line = normalize(line)
-        allowed_targets = allowed_requirements.get(dependent, set())
-        if not allowed_targets or not any(target in normalized_line for target in allowed_targets):
+        targets = allowed_requirements.get(dependent, set())
+        normalized = normalize(line)
+        if not targets or not any(target in normalized for target in targets):
             unexpected.append(line)
-
-if unexpected:
-    status = "blocked_unexpected_dependency_conflict"
-elif exit_code == 0:
-    status = "clean"
-else:
-    status = "known_non_core_conflicts_only"
-
 result = {
     "policy": "full_pip_check_is_diagnostic_known_non_core_conflicts_are_allowed",
     "exit_code": exit_code,
-    "conflict_line_count": len(lines),
-    "allowed_requirements": {
-        dependent: sorted(requirements)
-        for dependent, requirements in sorted(allowed_requirements.items())
-    },
+    "allowed_requirements": {k: sorted(v) for k, v in allowed_requirements.items()},
     "unexpected_conflicts": unexpected,
-    "status": status,
 }
 (artifact_dir / "pip_check_classification.json").write_text(
     json.dumps(result, indent=2) + "\n", encoding="utf-8")
@@ -253,24 +342,23 @@ if unexpected:
     raise SystemExit(1)
 PY
 
-  set +e
   "${PYTHON_BIN}" -m pytest tests/inference_contracts -q \
     > "${ARTIFACT_DIR}/pytest.log" 2>&1
-  PYTEST_EXIT_CODE=$?
-  set -e
-  echo "${PYTEST_EXIT_CODE}" > "${ARTIFACT_DIR}/pytest_exit_code.txt"
-  test "${PYTEST_EXIT_CODE}" -eq 0
 
-  "${PYTHON_BIN}" - "${MODEL_PATH}" "${ARTIFACT_DIR}" <<'PY'
-import csv
+  ASCEND_RT_VISIBLE_DEVICES=4,5,6,7 "${PYTHON_BIN}" - "${MODEL_PATH}" "${ARTIFACT_DIR}" <<'PY'
 import importlib.metadata as metadata
 import json
 import platform
 import sys
 from pathlib import Path
 
-model_path = Path(sys.argv[1])
-artifact_dir = Path(sys.argv[2])
+model = Path(sys.argv[1])
+out = Path(sys.argv[2])
+import torch
+import torch_npu  # noqa: F401
+import vllm
+import vllm_ascend
+from vllm.platforms import current_platform
 
 def version(name):
     try:
@@ -278,118 +366,307 @@ def version(name):
     except metadata.PackageNotFoundError:
         return "missing"
 
-import torch
-import torch_npu  # noqa: F401
-import vllm
-import vllm_ascend
-from vllm.platforms import current_platform
-
-supported = list(current_platform.supported_quantization)
-config = json.loads((model_path / "config.json").read_text(encoding="utf-8"))
+config = json.loads((model / "config.json").read_text(encoding="utf-8"))
 quant = config.get("quantization_config") or {}
-shards = sorted(p for p in model_path.glob("model-*.safetensors") if not p.name.startswith("._"))
-weight_bytes = sum(p.stat().st_size for p in shards)
-
-rows = [
-    ("python", platform.python_version()),
-    ("torch", version("torch")),
-    ("torch_npu", version("torch-npu")),
-    ("vllm", version("vllm")),
-    ("vllm_ascend", version("vllm-ascend")),
-    ("triton_ascend", version("triton-ascend")),
-    ("transformers", version("transformers")),
-    ("npu_available", str(torch.npu.is_available()).lower()),
-    ("visible_device_count", str(torch.npu.device_count())),
-    ("supported_quantization", ",".join(supported)),
-]
-with (artifact_dir / "runtime_versions.tsv").open("w", encoding="utf-8", newline="") as handle:
-    writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
-    writer.writerow(["name", "value"])
-    writer.writerows(rows)
-
-preflight = {
-    "model_path": str(model_path),
+shards = sorted(p for p in model.glob("model-*.safetensors") if not p.name.startswith("._"))
+supported = list(current_platform.supported_quantization)
+result = {
+    "python": platform.python_version(),
+    "torch": version("torch"),
+    "torch_npu": version("torch-npu"),
+    "vllm": version("vllm"),
+    "vllm_ascend": version("vllm-ascend"),
+    "triton_ascend": version("triton-ascend"),
+    "transformers": version("transformers"),
+    "npu_available": torch.npu.is_available(),
+    "visible_device_count": torch.npu.device_count(),
+    "supported_quantization": supported,
     "shard_count": len(shards),
-    "weight_bytes": weight_bytes,
+    "weight_bytes": sum(p.stat().st_size for p in shards),
     "architecture": config.get("architectures"),
     "model_type": config.get("model_type"),
     "quant_method": quant.get("quant_method"),
     "expert_dtype": config.get("expert_dtype"),
-    "supported_quantization": supported,
 }
-(artifact_dir / "model_preflight.json").write_text(
-    json.dumps(preflight, indent=2) + "\n", encoding="utf-8")
-
-ok = (
-    platform.python_version() == "3.11.15"
-    and version("vllm") == "0.22.1+empty"
-    and version("vllm-ascend") == "0.22.1rc1"
-    and version("torch") == "2.10.0"
-    and version("torch-npu") == "2.10.0"
-    and version("transformers") == "5.5.4"
-    and version("triton-ascend") == "3.2.1"
-    and torch.npu.is_available()
-    and torch.npu.device_count() == 4
-    and "fp8" in supported
-    and "deepseek_v4_fp8" in supported
-    and len(shards) == 46
-    and weight_bytes == 159617149040
-    and config.get("architectures") == ["DeepseekV4ForCausalLM"]
-    and config.get("model_type") == "deepseek_v4"
-    and quant.get("quant_method") == "fp8"
-    and config.get("expert_dtype") == "fp4"
-)
-(artifact_dir / "preflight_status.txt").write_text(
-    "ready\n" if ok else "blocked_preflight\n", encoding="utf-8")
+(out / "preflight.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+expected = {
+    "python": "3.11.15", "torch": "2.10.0", "torch_npu": "2.10.0",
+    "vllm": "0.22.1+empty", "vllm_ascend": "0.22.1rc1",
+    "triton_ascend": "3.2.1", "transformers": "5.5.4",
+    "visible_device_count": 4, "shard_count": 46,
+    "weight_bytes": 159617149040, "architecture": ["DeepseekV4ForCausalLM"],
+    "model_type": "deepseek_v4", "quant_method": "fp8", "expert_dtype": "fp4",
+}
+ok = all(result.get(key) == value for key, value in expected.items())
+ok = ok and result["npu_available"] and "fp8" in supported and "deepseek_v4_fp8" in supported
 if not ok:
     raise SystemExit(1)
 PY
 )
 
-set +e
 run_preflight > "${ARTIFACT_DIR}/preflight.log" 2>&1
 PREFLIGHT_EXIT_CODE=$?
 echo "${PREFLIGHT_EXIT_CODE}" > "${ARTIFACT_DIR}/preflight_exit_code.txt"
-
 if [ "${PREFLIGHT_EXIT_CODE}" -ne 0 ]; then
   echo blocked_preflight > "${ARTIFACT_DIR}/probe_status.txt"
   tail -n 120 "${ARTIFACT_DIR}/preflight.log" > "${ARTIFACT_DIR}/first_failure_excerpt.txt"
   exit 0
 fi
-
-echo reused_verified_existing > "${ARTIFACT_DIR}/environment_status.txt"
-npu-smi info > "${ARTIFACT_DIR}/npu_smi_before.txt" 2>&1 || true
+npu-smi info > "${ARTIFACT_DIR}/npu_smi_before_allocator.txt" 2>&1 || true
 ```
 
-全量 `pip check` 的判定规则：
+人工确认物理 NPU 4 `Health=OK`、空闲且无进程；不满足则写 `blocked_resource` 并停止。
 
-- `exit 0`：通过。
-- `exit 1` 且每行同时匹配已报告的 dependent/requirement 组合：`mindstudio-kpp→plotly`；
-  `ms-service-profiler→matplotlib/msguard/openpyxl/opentelemetry exporter/pandas`；
-  `te→ml-dtypes/tornado`；`pyvers→packaging`；`opencv-python-headless→numpy`。记录为
-  `known_non_core_conflicts_only`，继续。
-- 出现其他 dependent、同一 dependent 的新 requirement、无法解析的新行或其他退出码：
-  `blocked_preflight`，停止。
-- 即使只出现已知冲突，也禁止修包；这不是生产环境健康背书，只是把与当前推理核心无关、
-  且已证明为克隆前遗留的问题从本轮 runtime gate 中隔离。
+## 5. NPU 4 allocator / patch-delivery 矩阵
 
-预检脚本完成后，人工再次确认物理 NPU 4-7 健康、空闲且无进程；不满足则写
-`blocked_resource` 并停止。
+先只读定位已安装的 `patch_torch_accelerator.py`，记录路径、SHA-256 和三行映射；不修改该文件。然后在 `spawn` 子进程中分别运行：
 
-## 5. 两个有序 profile
-
-只允许以下顺序：
-
-1. `base_no_mtp`：验证格式门、权重加载、server ready 和一个 `4096+64` 请求。
-2. 只有 `base_no_mtp` 请求成功，才运行 `mtp_on`；除此之外立即停止，不做 fallback。
-
-两个 profile 都不传 `--quantization`，不改 checkpoint config。
+1. 未显式导入官方 patch。
+2. 显式导入官方 `vllm_ascend.patch.platform.patch_torch_accelerator`。
+3. 通过 fresh interpreter 启动时加载、仅位于本任务 artifact 目录的 `sitecustomize.py`。
 
 ```bash
+set +e
+set -uo pipefail
+cd /data/node0_disk1/liguowei/AK-Infer-Lab
+RUN_ID=p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
+ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
+NEW_ENV=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+PYTHON_BIN="${NEW_ENV}/bin/python"
+ALLOC_DIR="${ARTIFACT_DIR}/allocator_probe"
+PATCH_DIR="${ALLOC_DIR}/worker_startup_patch"
+mkdir -p "${PATCH_DIR}"
+
+ASCEND_RT_VISIBLE_DEVICES=4 "${PYTHON_BIN}" - "${ALLOC_DIR}" <<'PY'
+import hashlib
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+out = Path(sys.argv[1])
+spec = importlib.util.find_spec("vllm_ascend.patch.platform.patch_torch_accelerator")
+if spec is None or spec.origin is None:
+    raise SystemExit("official patch module not found")
+path = Path(spec.origin)
+text = path.read_text(encoding="utf-8")
+required = [
+    "torch.accelerator.memory_stats = torch.npu.memory_stats",
+    "torch.accelerator.memory_reserved = torch.npu.memory_reserved",
+    "torch.accelerator.reset_peak_memory_stats = torch.npu.reset_peak_memory_stats",
+]
+result = {
+    "path": str(path),
+    "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    "required_redirects_present": {line: line in text for line in required},
+}
+(out / "installed_official_patch.json").write_text(
+    json.dumps(result, indent=2) + "\n", encoding="utf-8")
+if not all(result["required_redirects_present"].values()):
+    raise SystemExit(1)
+PY
+if [ "$?" -ne 0 ]; then
+  echo diagnostic_red_hypothesis_mismatch > "${ARTIFACT_DIR}/probe_status.txt"
+  exit 0
+fi
+
+"${PYTHON_BIN}" - "${ALLOC_DIR}/spawn_probe.py" <<'PY'
+import sys
+from pathlib import Path
+
+script = '''import json
+import multiprocessing as mp
+import sys
+import traceback
+
+def call(fn):
+    try:
+        value = fn()
+        if hasattr(value, "get"):
+            value = {"allocated_peak": value.get("allocated_bytes.all.peak", 0)}
+        return {"ok": True, "value": value}
+    except Exception as exc:
+        return {
+            "ok": False,
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+            "traceback": traceback.format_exc(limit=8),
+        }
+
+def collect(mode):
+    import torch
+    import torch_npu  # noqa: F401
+    torch.npu.set_device("npu:0")
+    if mode == "official_patch":
+        import vllm_ascend.patch.platform.patch_torch_accelerator  # noqa: F401
+    from vllm.utils.mem_utils import MemorySnapshot
+    return {
+        "mode": mode,
+        "memory_stats_identity": torch.accelerator.memory_stats is torch.npu.memory_stats,
+        "memory_reserved_identity": torch.accelerator.memory_reserved is torch.npu.memory_reserved,
+        "native_memory_stats": call(lambda: torch.npu.memory_stats("npu:0")),
+        "generic_memory_stats": call(lambda: torch.accelerator.memory_stats("npu:0")),
+        "native_memory_reserved": call(lambda: torch.npu.memory_reserved("npu:0")),
+        "generic_memory_reserved": call(lambda: torch.accelerator.memory_reserved("npu:0")),
+        "memory_snapshot": call(lambda: repr(MemorySnapshot(device="npu:0"))),
+    }
+
+def child(mode, queue):
+    queue.put(collect(mode))
+
+if __name__ == "__main__":
+    mode = sys.argv[1]
+    ctx = mp.get_context("spawn")
+    queue = ctx.Queue()
+    proc = ctx.Process(target=child, args=(mode, queue))
+    proc.start()
+    proc.join(120)
+    if proc.is_alive():
+        proc.terminate()
+        proc.join()
+        raise SystemExit("spawn child timeout")
+    if proc.exitcode != 0:
+        raise SystemExit(f"spawn child exit={proc.exitcode}")
+    print(json.dumps(queue.get(timeout=10), indent=2))
+'''
+Path(sys.argv[1]).write_text(script, encoding="utf-8")
+PY
+
+ASCEND_RT_VISIBLE_DEVICES=4 "${PYTHON_BIN}" "${ALLOC_DIR}/spawn_probe.py" unpatched \
+  > "${ALLOC_DIR}/spawn_unpatched.json" 2> "${ALLOC_DIR}/spawn_unpatched.stderr"
+UNPATCHED_EXIT=$?
+ASCEND_RT_VISIBLE_DEVICES=4 "${PYTHON_BIN}" "${ALLOC_DIR}/spawn_probe.py" official_patch \
+  > "${ALLOC_DIR}/spawn_official_patch.json" 2> "${ALLOC_DIR}/spawn_official_patch.stderr"
+OFFICIAL_EXIT=$?
+
+"${PYTHON_BIN}" - "${PATCH_DIR}/sitecustomize.py" <<'PY'
+import sys
+from pathlib import Path
+
+Path(sys.argv[1]).write_text(
+    "import torch\n"
+    "import torch_npu  # noqa: F401\n"
+    "torch.accelerator.memory_stats = torch.npu.memory_stats\n"
+    "torch.accelerator.memory_reserved = torch.npu.memory_reserved\n"
+    "torch.accelerator.reset_peak_memory_stats = torch.npu.reset_peak_memory_stats\n",
+    encoding="utf-8",
+)
+PY
+
+PYTHONPATH="${PATCH_DIR}${PYTHONPATH:+:${PYTHONPATH}}" \
+  ASCEND_RT_VISIBLE_DEVICES=4 \
+  "${PYTHON_BIN}" "${ALLOC_DIR}/spawn_probe.py" sitecustomize \
+  > "${ALLOC_DIR}/spawn_sitecustomize.json" 2> "${ALLOC_DIR}/spawn_sitecustomize.stderr"
+SITECUSTOMIZE_EXIT=$?
+
+printf 'unpatched_exit=%s\nofficial_exit=%s\nsitecustomize_exit=%s\n' \
+  "${UNPATCHED_EXIT}" "${OFFICIAL_EXIT}" "${SITECUSTOMIZE_EXIT}" \
+  > "${ALLOC_DIR}/process_exit_codes.txt"
+
+"${PYTHON_BIN}" - "${ALLOC_DIR}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+results = {}
+for name in ("spawn_unpatched", "spawn_official_patch", "spawn_sitecustomize"):
+    path = root / f"{name}.json"
+    if not path.is_file():
+        raise SystemExit(f"missing {path}")
+    results[name] = json.loads(path.read_text(encoding="utf-8"))
+
+unpatched = results["spawn_unpatched"]
+official = results["spawn_official_patch"]
+site = results["spawn_sitecustomize"]
+allocator_text = " ".join([
+    unpatched["generic_memory_stats"].get("error", ""),
+    unpatched["memory_snapshot"].get("error", ""),
+])
+native_ok = unpatched["native_memory_stats"]["ok"] and unpatched["native_memory_reserved"]["ok"]
+generic_reproduced = (
+    not unpatched["generic_memory_stats"]["ok"]
+    and "Allocator for npu is not a DeviceAllocator" in allocator_text
+)
+official_ok = (
+    official["memory_stats_identity"]
+    and official["memory_reserved_identity"]
+    and official["generic_memory_stats"]["ok"]
+    and official["generic_memory_reserved"]["ok"]
+    and official["memory_snapshot"]["ok"]
+)
+site_ok = (
+    site["memory_stats_identity"]
+    and site["memory_reserved_identity"]
+    and site["generic_memory_stats"]["ok"]
+    and site["generic_memory_reserved"]["ok"]
+    and site["memory_snapshot"]["ok"]
+)
+summary = {
+    "native_ok": native_ok,
+    "unpatched_generic_allocator_failure_reproduced": generic_reproduced,
+    "explicit_official_patch_ok": official_ok,
+    "session_sitecustomize_ok": site_ok,
+    "hypothesis_supported": native_ok and generic_reproduced and official_ok and site_ok,
+}
+(root / "allocator_matrix_summary.json").write_text(
+    json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+if not summary["hypothesis_supported"]:
+    raise SystemExit(1)
+PY
+ALLOCATOR_GATE_EXIT=$?
+echo "${ALLOCATOR_GATE_EXIT}" > "${ALLOC_DIR}/allocator_gate_exit_code.txt"
+if [ "${ALLOCATOR_GATE_EXIT}" -ne 0 ]; then
+  echo diagnostic_red_hypothesis_mismatch > "${ARTIFACT_DIR}/probe_status.txt"
+  exit 0
+fi
+echo allocator_patch_delivery_hypothesis_supported > "${ARTIFACT_DIR}/allocator_status.txt"
+```
+
+只有 `allocator_matrix_summary.json` 中四个条件字段都为 `true`才可继续。任一不成立都写 `diagnostic_red_hypothesis_mismatch`，禁止启动模型。
+
+## 6. 有条件的 NPU 4-7 `base_no_mtp` 复跑
+
+先人工确认物理 NPU 4-7 均 `Health=OK`、空闲且无进程。不满足写 `blocked_resource` 并停止。
+
+```bash
+set +e
+set -uo pipefail
+cd /data/node0_disk1/liguowei/AK-Infer-Lab
+
+RUN_ID=p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
+ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
+NEW_ENV=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash
+PYTHON_BIN="${NEW_ENV}/bin/python"
+VLLM_BIN="${NEW_ENV}/bin/vllm"
+PATCH_DIR="${ARTIFACT_DIR}/allocator_probe/worker_startup_patch"
+
+set +u
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+source /usr/local/Ascend/nnal/atb/set_env.sh
+set -u
+export PATH="${NEW_ENV}/bin:${PATH}"
+export VLLM_PLUGINS=ascend
+export VLLM_USE_V1=1
+export VLLM_WORKER_MULTIPROC_METHOD=spawn
+export OMP_PROC_BIND=false
+export OMP_NUM_THREADS=8
+export PYTORCH_NPU_ALLOC_CONF=expandable_segments:True
+export LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libjemalloc.so.2${LD_PRELOAD:+:${LD_PRELOAD}}"
+export HCCL_BUFFSIZE=1024
+export TASK_QUEUE_ENABLE=1
+export HCCL_OP_EXPANSION_MODE=AIV
+
+export ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
+export PYTHONPATH="${PATCH_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 HOST=127.0.0.1
 PORT=7000
 SERVED_MODEL_NAME=dsv4-official-fp8-four-card
+PROFILE_DIR="${ARTIFACT_DIR}/base_no_mtp"
 STARTUP_TIMEOUT_SEC=3600
+mkdir -p "${PROFILE_DIR}"
+npu-smi info > "${PROFILE_DIR}/npu_smi_before.txt" 2>&1 || true
 
 wait_health_or_exit() {
   local pid="$1"
@@ -402,16 +679,47 @@ wait_health_or_exit() {
   return 1
 }
 
-stop_profile() {
+stop_server() {
   local pid="$1"
   kill -- "-${pid}" >/dev/null 2>&1 || kill "${pid}" >/dev/null 2>&1 || true
   wait "${pid}" >/dev/null 2>&1 || true
   sleep 5
 }
 
-run_single_request() {
-  local profile_dir="$1"
-  "${PYTHON_BIN}" - "${MODEL_PATH}" "http://${HOST}:${PORT}" "${SERVED_MODEL_NAME}" "${profile_dir}" <<'PY'
+CMD=(
+  "${VLLM_BIN}" serve "${MODEL_PATH}"
+  --safetensors-load-strategy prefetch
+  --max-model-len 8192
+  --max-num-batched-tokens 4096
+  --served-model-name "${SERVED_MODEL_NAME}"
+  --gpu-memory-utilization 0.92
+  --max-num-seqs 1
+  --data-parallel-size 1
+  --tensor-parallel-size 4
+  --enable-expert-parallel
+  --host "${HOST}" --port "${PORT}"
+  --block-size 128
+  --tokenizer-mode deepseek_v4
+  --tool-call-parser deepseek_v4
+  --enable-auto-tool-choice
+  --reasoning-parser deepseek_v4
+  --no-enable-prefix-caching
+  --enforce-eager
+  --additional-config '{"enable_flashcomm1":true,"enable_dsa_cp":true,"enable_cpu_binding":true,"multistream_overlap_shared_expert":false}'
+)
+
+printf '%q ' "${CMD[@]}" > "${PROFILE_DIR}/server_command.txt"
+printf '\n' >> "${PROFILE_DIR}/server_command.txt"
+setsid "${CMD[@]}" > "${PROFILE_DIR}/vllm_server.log" 2>&1 &
+SERVER_PID=$!
+echo "${SERVER_PID}" > "${PROFILE_DIR}/server_pid.txt"
+
+wait_health_or_exit "${SERVER_PID}"
+READY_EXIT=$?
+echo "${READY_EXIT}" > "${PROFILE_DIR}/server_ready_exit_code.txt"
+
+if [ "${READY_EXIT}" -eq 0 ]; then
+  "${PYTHON_BIN}" - "${MODEL_PATH}" "http://${HOST}:${PORT}" "${SERVED_MODEL_NAME}" "${PROFILE_DIR}" <<'PY'
 import json
 import sys
 import time
@@ -423,11 +731,11 @@ model_path, base_url, served_model, profile_dir = sys.argv[1:]
 profile_dir = Path(profile_dir)
 tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 ids = []
-i = 0
+index = 0
 while len(ids) < 4096:
-    i += 1
+    index += 1
     ids.extend(tokenizer(
-        f"DeepSeek official FP8 four-card runtime probe block {i:06d}. ",
+        f"DeepSeek allocator patch delivery probe block {index:06d}. ",
         add_special_tokens=False,
     ).input_ids)
 payload = {
@@ -446,248 +754,89 @@ request = urllib.request.Request(
     method="POST",
 )
 started = time.perf_counter()
-result = {
-    "status": "failed",
-    "input_tokens": 4096,
-    "requested_output_tokens": 64,
-    "completion_tokens": 0,
-    "error": "",
-}
+result = {"status": "failed", "input_tokens": 4096, "requested_output_tokens": 64}
 try:
     with urllib.request.urlopen(request, timeout=7200) as response:
         body = json.loads(response.read().decode())
         usage = body.get("usage") or {}
-        result["http_status"] = response.status
-        result["prompt_tokens"] = int(usage.get("prompt_tokens") or 0)
-        result["completion_tokens"] = int(usage.get("completion_tokens") or 0)
-        result["status"] = (
-            "success"
-            if response.status == 200
-            and result["prompt_tokens"] == 4096
-            and result["completion_tokens"] == 64
-            else "failed"
-        )
+        result.update({
+            "http_status": response.status,
+            "prompt_tokens": int(usage.get("prompt_tokens") or 0),
+            "completion_tokens": int(usage.get("completion_tokens") or 0),
+        })
+        if response.status == 200 and result["prompt_tokens"] == 4096 and result["completion_tokens"] == 64:
+            result["status"] = "success"
 except Exception as exc:
     result["error"] = f"{type(exc).__name__}: {exc}"
 result["client_wall_s"] = round(time.perf_counter() - started, 6)
 (profile_dir / "request_result.json").write_text(
     json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
-}
-
-run_profile() {
-  local profile_name="$1"
-  local mtp_mode="$2"
-  local profile_dir="${ARTIFACT_DIR}/${profile_name}"
-  mkdir -p "${profile_dir}"
-  local cmd=(
-    "${VLLM_BIN}" serve "${MODEL_PATH}"
-    --safetensors-load-strategy prefetch
-    --max-model-len 8192
-    --max-num-batched-tokens 4096
-    --served-model-name "${SERVED_MODEL_NAME}"
-    --gpu-memory-utilization 0.92
-    --max-num-seqs 1
-    --data-parallel-size 1
-    --tensor-parallel-size 4
-    --enable-expert-parallel
-    --host "${HOST}" --port "${PORT}"
-    --block-size 128
-    --tokenizer-mode deepseek_v4
-    --tool-call-parser deepseek_v4
-    --enable-auto-tool-choice
-    --reasoning-parser deepseek_v4
-    --no-enable-prefix-caching
-    --enforce-eager
-    --additional-config '{"enable_flashcomm1":true,"enable_dsa_cp":true,"enable_cpu_binding":true,"multistream_overlap_shared_expert":false}'
-  )
-  if [ "${mtp_mode}" = mtp_on ]; then
-    cmd+=(--speculative-config '{"num_speculative_tokens":1,"method":"mtp","enforce_eager":true}')
-  fi
-
-  printf '%q ' "${cmd[@]}" > "${profile_dir}/server_command.txt"
-  printf '\n' >> "${profile_dir}/server_command.txt"
-  npu-smi info > "${profile_dir}/npu_smi_before.txt" 2>&1 || true
-
-  setsid "${cmd[@]}" > "${profile_dir}/vllm_server.log" 2>&1 &
-  local server_pid=$!
-  echo "${server_pid}" > "${profile_dir}/server_pid.txt"
-  wait_health_or_exit "${server_pid}"
-  local ready_exit_code=$?
-  echo "${ready_exit_code}" > "${profile_dir}/server_ready_exit_code.txt"
-  if [ "${ready_exit_code}" -eq 0 ]; then
-    run_single_request "${profile_dir}" > "${profile_dir}/request_client.log" 2>&1
-    echo "$?" > "${profile_dir}/request_client_exit_code.txt"
-  else
-    echo not_run_server_not_ready > "${profile_dir}/request_client_exit_code.txt"
-  fi
-  npu-smi info > "${profile_dir}/npu_smi_after.txt" 2>&1 || true
-  stop_profile "${server_pid}"
-}
-
-run_profile base_no_mtp mtp_off
-BASE_STATUS="$("${PYTHON_BIN}" -c 'import json, pathlib; p=pathlib.Path("'"${ARTIFACT_DIR}"'/base_no_mtp/request_result.json"); print(json.loads(p.read_text()).get("status", "not_run") if p.exists() else "not_run")')"
-
-if [ "${BASE_STATUS}" = success ]; then
-  echo base_success_run_mtp > "${ARTIFACT_DIR}/profile_decision.txt"
-  run_profile mtp_on mtp_on
+  REQUEST_EXIT=$?
+  echo "${REQUEST_EXIT}" > "${PROFILE_DIR}/request_client_exit_code.txt"
 else
-  echo base_failed_stop_no_fallback > "${ARTIFACT_DIR}/profile_decision.txt"
+  REQUEST_EXIT=99
 fi
 
+npu-smi info > "${PROFILE_DIR}/npu_smi_after.txt" 2>&1 || true
+stop_server "${SERVER_PID}"
+unset PYTHONPATH
+sleep 5
 npu-smi info > "${ARTIFACT_DIR}/npu_smi_final.txt" 2>&1 || true
+tail -n 160 "${PROFILE_DIR}/vllm_server.log" > "${ARTIFACT_DIR}/first_failure_excerpt.txt"
 
-"${PYTHON_BIN}" - "${ARTIFACT_DIR}" <<'PY'
+"${PYTHON_BIN}" - "${ARTIFACT_DIR}" "${READY_EXIT}" "${REQUEST_EXIT}" <<'PY'
 import json
-import re
 import sys
 from pathlib import Path
 
-artifact_dir = Path(sys.argv[1])
-
-def request_result(name):
-    path = artifact_dir / name / "request_result.json"
-    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"status": "not_run"}
-
-def log_text(name):
-    path = artifact_dir / name / "vllm_server.log"
-    return path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
-
-def ready_code(name):
-    path = artifact_dir / name / "server_ready_exit_code.txt"
-    return path.read_text(encoding="utf-8").strip() if path.exists() else "not_run"
-
-base = request_result("base_no_mtp")
-mtp = request_result("mtp_on")
-base_log = log_text("base_no_mtp")
-all_logs = base_log + "\n" + log_text("mtp_on")
-
-quant_re = re.compile(r"deepseek_v4_fp8.*(not supported|unsupported)|unsupported.*(fp4|mxfp4)|quantization.*(not supported|unsupported)", re.I)
-weight_re = re.compile(r"(weight|safetensor|checkpoint).*(shape|dtype|scale|name|loader|load).*(error|fail|mismatch|missing)|KeyError.*weight", re.I)
-capacity_re = re.compile(r"out of memory|npu.*oom|failed to allocate|not enough memory|insufficient memory", re.I)
-
-if base.get("status") == "success" and mtp.get("status") == "success":
-    grade = "diagnostic_green"
-    first_failure_stage = "none"
-elif base.get("status") == "success":
-    grade = "diagnostic_yellow_mtp"
-    first_failure_stage = "mtp_startup_or_request"
-elif quant_re.search(base_log):
+root = Path(sys.argv[1])
+ready = int(sys.argv[2])
+request_exit = int(sys.argv[3])
+request_path = root / "base_no_mtp" / "request_result.json"
+request = json.loads(request_path.read_text(encoding="utf-8")) if request_path.is_file() else None
+log = (root / "base_no_mtp" / "vllm_server.log").read_text(encoding="utf-8", errors="replace")
+if ready == 0 and request_exit == 0 and request and request.get("status") == "success":
+    grade = "diagnostic_green_base_runtime"
+elif "Allocator for npu is not a DeviceAllocator" in log:
+    grade = "diagnostic_red_allocator_patch_delivery"
+elif "deepseek_v4_fp8" in log and "not supported" in log:
     grade = "diagnostic_red_quant_format"
-    first_failure_stage = "model_config_or_quantization_scheme"
-elif weight_re.search(base_log):
-    grade = "diagnostic_red_weight_load"
-    first_failure_stage = "weight_load"
-elif capacity_re.search(base_log):
+elif "out of memory" in log.lower() or "OOM" in log:
     grade = "diagnostic_red_capacity"
-    first_failure_stage = "hbm_or_weight_allocation"
 else:
-    grade = "diagnostic_red_runtime"
-    first_failure_stage = "architecture_operator_collective_or_request"
-
-profiles = []
-for name in ("base_no_mtp", "mtp_on"):
-    root = artifact_dir / name
-    if root.exists():
-        request = request_result(name)
-        profiles.append({
-            "profile": name,
-            "server_ready_exit_code": ready_code(name),
-            "request_status": request.get("status", "not_run"),
-            "prompt_tokens": request.get("prompt_tokens", 0),
-            "completion_tokens": request.get("completion_tokens", 0),
-            "server_command_path": str(root / "server_command.txt"),
-            "server_log_path": str(root / "vllm_server.log"),
-        })
-
+    grade = "diagnostic_yellow_allocator_bypass"
 result = {
-    "run_id": artifact_dir.name,
     "probe_grade": grade,
-    "first_failure_stage": first_failure_stage,
-    "environment_status": "reused_verified_existing",
-    "pip_check_policy": "known_non_core_conflicts_are_diagnostic_only",
-    "authorized_visible_devices": "4,5,6,7",
-    "model_path": "/data/node0_disk1/Public/DeepSeek-V4-Flash",
-    "checkpoint_format": "fp8_non_expert_plus_fp4_experts",
-    "retired_w8a8_started": False,
-    "explicit_quantization_argument_used": False,
-    "profiles": profiles,
-    "residual_process_check": "operator_confirms_from_npu_smi_final",
+    "allocator_patch_delivery_hypothesis_supported": True,
+    "session_overlay_used": True,
+    "server_ready_exit_code": ready,
+    "request_client_exit_code": request_exit,
+    "request_result": request,
+    "mtp_on_run": False,
 }
-(artifact_dir / "probe_result.json").write_text(
-    json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-(artifact_dir / "probe_status.txt").write_text(grade + "\n", encoding="utf-8")
-
-excerpts = []
-for name in ("base_no_mtp", "mtp_on"):
-    text = log_text(name)
-    if text:
-        excerpts.append(f"## {name} last 100 lines")
-        excerpts.extend(text.splitlines()[-100:])
-(artifact_dir / "first_failure_excerpt.txt").write_text(
-    "\n".join(excerpts)[:30000] + "\n", encoding="utf-8")
+(root / "probe_result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+(root / "probe_status.txt").write_text(grade + "\n", encoding="utf-8")
 PY
 ```
 
-## 6. 分级与停止规则
+无论成败，都必须确认 NPU 4-7 没有本轮残留进程；不得 kill NPU 0-3 进程。`base_failed_stop_no_fallback`：任何 base 启动/请求失败都立即停止，不运行 MTP 或其他 fallback。
 
-| 状态 | 条件 |
-| --- | --- |
-| `diagnostic_green` | `base_no_mtp` 和 `mtp_on` 均 ready，且各完成一个 `4096+64` 请求 |
-| `diagnostic_yellow_mtp` | base 请求成功，但 MTP profile 未 ready 或请求失败 |
-| `diagnostic_red_quant_format` | 新栈仍拒绝 `deepseek_v4_fp8` / FP4 / quantization format |
-| `diagnostic_red_weight_load` | 已通过量化注册门，但 checkpoint 权重名称、shape、scale、dtype 或 loader 失败 |
-| `diagnostic_red_capacity` | HBM/权重分配 OOM 或容量不足 |
-| `diagnostic_red_runtime` | architecture/parser/DSA/operator/collective/request 等其他真实首错 |
-| `blocked_preflight` | 精确版本、核心 import、源码、模型 metadata、合同或依赖冲突白名单不满足 |
-| `blocked_resource` | NPU 4-7 不健康、不空闲或不可见 |
+## 7. 结果分级与回传
 
-停止规则：
+- `blocked_transfer`：已批准 6 文件的预检/上传任一失败。
+- `blocked_preflight` / `blocked_resource`：核心环境/资源门未过。
+- `diagnostic_red_hypothesis_mismatch`：allocator 矩阵不支持当前 patch-delivery 假设，未启动模型。
+- `diagnostic_red_allocator_patch_delivery`：显式官方映射或 session overlay 仍无法修复 `MemorySnapshot`。
+- `diagnostic_yellow_allocator_bypass`：overlay 已越过 allocator 门，但 base 在更后的首错停止。
+- `diagnostic_green_base_runtime`：overlay 条件下 server ready 且一个 `4096+64` 请求成功。这仍不授权 MTP、八卡、128K 或 P6。
 
-- base 失败后立即停止；禁止用 W8A8、其他模型格式、offload、context 降级或源码 patch
-  继续试错。
-- 禁止任何显式 `--quantization`。
-- 即使四卡 green，也不自动使用 NPU 0-3，不执行未来八卡任务；等待新的明确授权。
-- 最终人工确认 NPU 4-7 已释放、无本轮残留；不得 kill NPU 0-3 上的其他任务。
-
-## 7. 回传要求
-
-只发送不超过 70KB 的状态邮件正文；不添加附件，不执行 upload-api。邮件标题建议：
+发送一封不超过 70KB 的状态邮件，主题使用：
 
 ```text
-[P5-FP8-v0221rc1-resume] <probe_grade> | <first_failure_or_success> | 2026-07-11
+[P5-FP8-v0221rc1-allocator] <probe_grade> | <first_failure_or_base_success> | 2026-07-11
 ```
 
-正文必须包含：
+正文必须包含 task/Git、6 文件 upload receipts、官方 patch 路径与 SHA-256、三组 allocator 矩阵、是否启动 base、ready/request/新首错、NPU 4-7 健康与残留，以及新产物的精确服务器路径、逐文件 bytes、敏感性、`email` / `upload-api` 候选和建议方式。不得显示 token 或 `.env`。
 
-1. `local_head`、`origin_main`、ahead/behind，明确完整同步而非单提交。
-2. 明确复用了既有新环境，未运行 conda/pip 修改；旧环境和源码均未改。
-3. 精确版本、source commit/clean 状态、核心 import、`supported_quantization`。
-4. 全量 `pip check` 退出码、冲突行数、dependent/requirement 集合、白名单分类；明确是否出现新冲突。
-5. 项目 inference contracts、模型 46 分片/字节数、FP8+FP4 metadata。
-6. NPU 4-7 健康/空闲、启动前与最终 HBM、残留进程；明确 NPU 0-3 未触碰。
-7. 每个实际 profile 的完整命令、ready、请求 token 数、第一失败点和精简错误；明确没有
-   `--quantization`。
-8. `probe_grade`、artifact 目录，以及下列小文件的精确路径和字节数：
-
-```text
-git_sync_state.txt
-environment_status.txt
-pip_check_exit_code.txt
-pip_check_classification.json
-runtime_versions.tsv
-model_preflight.json
-preflight_status.txt
-preflight_exit_code.txt
-pytest_exit_code.txt
-profile_decision.txt
-probe_result.json
-first_failure_excerpt.txt
-*/server_command.txt
-*/server_ready_exit_code.txt
-*/request_result.json
-```
-
-raw `preflight.log`、`pip_check_full.txt`、`vllm_server.log`、raw `npu-smi`、模型、conda
-环境、源码目录和完整 artifact 目录全部留在服务器。后续如需传某个小文件，仍必须先报告
-精确路径、字节数、敏感性与候选传输方式，由用户逐文件选择后再执行。
+本次 `upload-api` 授权只覆盖第 3 节的 6 个旧文件。新产生的 allocator/runtime 文件不得自动上传；先报告精确清单、大小和敏感性，等待新的用户选择。raw logs、完整环境、模型和大 artifact 留在服务器。

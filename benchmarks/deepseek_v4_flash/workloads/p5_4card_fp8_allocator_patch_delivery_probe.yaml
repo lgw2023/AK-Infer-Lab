@@ -1,0 +1,136 @@
+schema_version: 1
+workload_id: p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_probe_v0221rc1
+date: "2026-07-11"
+purpose: diagnose_and_conditionally_restore_the_official_npu_memory_api_redirect_in_spawned_workers
+model_object_id: deepseek_v4_flash_official_hf
+scenario: single_card_allocator_matrix_then_conditional_four_card_base_runtime_retry
+is_smoke: true
+is_benchmark: false
+is_canonical_p5_runtime_gate: true
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash
+prior_runtime_result:
+  workload: p5_4card_fp8_runtime_resume_probe.yaml
+  probe_grade: diagnostic_red_runtime
+  first_failure_stage: worker_init_memory_snapshot_allocator
+  failure_before_weight_load_server_ready_or_request: true
+  identical_worker_failures: 4
+  failing_api: torch.accelerator.memory_stats
+  native_npu_api_available_in_stack: torch.npu.memory_stats
+source_evidence:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_memory_snapshot_uses:
+    - torch.accelerator.memory_stats
+    - torch.accelerator.memory_reserved
+    - torch.accelerator.reset_peak_memory_stats
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  official_patch_module: vllm_ascend.patch.platform.patch_torch_accelerator
+  official_redirects:
+    torch.accelerator.memory_stats: torch.npu.memory_stats
+    torch.accelerator.memory_reserved: torch.npu.memory_reserved
+    torch.accelerator.reset_peak_memory_stats: torch.npu.reset_peak_memory_stats
+  hypothesis: official_platform_patch_exists_but_is_not_effective_in_spawned_worker_processes
+  hypothesis_status: must_be_proven_by_runtime_matrix
+target_runtime:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  lifecycle: reuse_without_conda_pip_cann_driver_or_source_changes
+  vllm_source_path: /data/node0_disk1/vllm-0.22.1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  torch: "2.10.0"
+  torch_npu: "2.10.0"
+prior_artifact_transfer:
+  confirmed_method: upload-api
+  confirmation_scope: exact_six_existing_files_only
+  artifact_dir: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
+  files:
+    - path: first_failure_excerpt.txt
+      bytes: 9555
+    - path: probe_result.json
+      bytes: 1177
+    - path: pip_check_classification.json
+      bytes: 634
+    - path: model_preflight.json
+      bytes: 360
+    - path: runtime_versions.tsv
+      bytes: 246
+    - path: base_no_mtp/server_command.txt
+      bytes: 756
+  total_bytes: 12728
+  sensitivity: routine_technical_diagnostics_with_server_paths_model_names_and_process_context
+  secret_scan_required_before_upload: true
+  preflight_required: true
+  success_requires_http_201_and_matching_sha256: true
+  failure_policy: stop_without_retry_rename_or_channel_switch
+allocator_probe:
+  visible_device: "4"
+  logical_device: "npu:0"
+  multiprocessing_method: spawn
+  required_checks:
+    - installed_official_patch_file_path_hash_and_expected_redirect_lines
+    - torch_npu_native_memory_api_calls
+    - torch_accelerator_memory_api_calls_before_explicit_patch
+    - function_identity_before_and_after_explicit_official_patch_import
+    - vllm_MemorySnapshot_before_and_after_explicit_patch
+    - fresh_interpreter_with_session_scoped_sitecustomize
+  conditional_workaround:
+    type: session_scoped_sitecustomize
+    allowed_only_if:
+      - native_torch_npu_memory_apis_succeed
+      - unpatched_torch_accelerator_path_reproduces_the_reported_allocator_failure
+      - official_redirect_or_equivalent_exact_mapping_makes_MemorySnapshot_succeed
+    mapping_source: exact_redirects_from_target_vllm_ascend_tag
+    package_or_source_edit: forbidden
+    persistence_outside_this_task: forbidden
+four_card_retry:
+  run_only_if: allocator_probe_proves_patch_delivery_failure_and_session_overlay_passes
+  authorized_visible_devices: "4,5,6,7"
+  tensor_parallel_size: 4
+  enable_expert_parallel: true
+  data_parallel_size: 1
+  profile: base_no_mtp_only
+  max_model_len: 8192
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  gpu_memory_utilization: 0.92
+  explicit_quantization_argument: forbidden
+  enforce_eager: true
+  prefix_cache: disabled
+  additional_config:
+    enable_flashcomm1: true
+    enable_dsa_cp: true
+    enable_cpu_binding: true
+    multistream_overlap_shared_expert: false
+  request:
+    input_tokens: 4096
+    output_tokens: 64
+    temperature: 0.0
+    min_tokens: 64
+    max_tokens: 64
+    ignore_eos: true
+stop_policy:
+  stop_if_prior_six_file_upload_fails: true
+  stop_if_allocator_failure_does_not_match_hypothesis: true
+  stop_if_session_overlay_does_not_fix_MemorySnapshot: true
+  stop_after_base_startup_or_request_failure: true
+  mtp_on_forbidden: true
+  no_w8a8_checkpoint_attempt: true
+  no_context_ladder: true
+  no_cpu_disk_or_kv_offload: true
+  no_profiler: true
+  no_package_source_or_system_changes: true
+grading:
+  diagnostic_green_base_runtime: session_overlay_reaches_server_ready_and_one_4096_plus_64_request_succeeds
+  diagnostic_yellow_allocator_bypass: session_overlay_fixes_MemorySnapshot_but_base_fails_at_a_later_first_failure
+  diagnostic_red_allocator_patch_delivery: native_npu_api_works_but_official_or_session_redirect_cannot_fix_MemorySnapshot
+  diagnostic_red_hypothesis_mismatch: observed_allocator_matrix_does_not_match_the_expected_patch_delivery_failure
+  blocked_transfer: approved_prior_six_file_upload_does_not_complete
+  blocked_resource: npu_4_or_npu_4_7_not_healthy_idle_and_available
+reporting:
+  status_body_max_bytes: 71680
+  upload_scope_for_this_task: prior_exact_six_files_only
+  new_artifacts: report_exact_paths_sizes_sensitivity_and_recommended_method_for_new_confirmation
+  raw_logs_and_large_artifacts: server-local
+boundaries:
+  - This task diagnoses patch delivery and does not claim a model architecture or operator failure before weight loading begins.
+  - A session-scoped redirect is a bounded compatibility workaround, not an upstream fix or production certification.
+  - Base success does not authorize MTP, eight cards, the 128K ladder, P6 or performance claims.

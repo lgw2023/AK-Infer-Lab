@@ -41,7 +41,7 @@ transformers 5.5.4
 new isolated host conda environment built; core versions and deepseek_v4_fp8 registration verified; model runtime pending
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但官方 checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境现已建成，核心版本和 `deepseek_v4_fp8` 注册通过；首次任务因克隆前已存在的非核心辅助包 `pip check` 冲突被过宽硬门停止。当前只读复用该环境继续 runtime probe；真实 DeepSeek DSA/MoE/MTP/EP/weight-load 路径仍未验证。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但官方 checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成并通过核心版本、量化注册、依赖分类和模型 metadata 门；随后四个 worker 在 `MemorySnapshot` 的通用 accelerator allocator 路径同样失败，早于权重加载。当前只读复用该环境诊断官方 NPU memory redirect 的 worker 传播；真实 DeepSeek DSA/MoE/MTP/EP/weight-load 路径仍未验证。
 
 ### 3.2 对照路：MindIE
 
@@ -52,12 +52,12 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 当前先执行的前置诊断为：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
+p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
 ASCEND_RT_VISIBLE_DEVICES=4,5,6,7
 TP=4, EP=enabled, max_model_len=8192, max_num_seqs=1
 ```
 
-上一轮 `0.20.2rc1` 已得到 `diagnostic_red_quant_format`，且失败早于权重加载。`0.22.1/0.22.1rc1` 独立栈现已构建并通过量化注册门；当前诊断不再重建或修包，而是以核心 preflight 和已知辅助冲突白名单验收后，按 `base_no_mtp -> mtp_on after base success` 顺序继续运行；不显式传 `--quantization`，不使用 offload，不跑 128K ladder。W8A8 已退出项目执行。
+上一轮 `0.20.2rc1` 已得到 `diagnostic_red_quant_format`。`0.22.1/0.22.1rc1` 独立栈已通过量化注册与模型预检，但在 spawned worker 的 `MemorySnapshot` 命中 allocator 断言。当前诊断先用 NPU 4 做 native/generic/official-patch 矩阵，仅在证明是 patch delivery 失效后，使用 session-scoped worker startup redirect 复跑四卡 `base_no_mtp`；不修包或改源码，不显式传 `--quantization`，不使用 offload，不跑 MTP/128K ladder。W8A8 已退出项目执行。
 
 当前任务：
 
@@ -257,7 +257,7 @@ boundaries:
 
 ## 10. 当前下一步
 
-1. 等待 P5 服务器真实回传并判定 green/yellow/red。
-2. 不因本轮文档刷新改写当前 `developer-to-server.md`。
-3. P5 回传后先生成 P6 baseline contract，不直接下发大矩阵。
-4. P8 本地第一实现任务将是 capability matrix + observe-only schema/fixture，不是 expert payload move。
+1. 执行 allocator patch-delivery 诊断，先回传用户已批准的 6 个旧诊断文件。
+2. 仅在 NPU native API 成功、generic API 复现且官方 redirect 能修复 `MemorySnapshot` 时，用 session-scoped overlay 复跑四卡 `base_no_mtp`。
+3. base 成功后仍不直接运行 MTP 或八卡；先归档新的第一失败点/成功 command。
+4. P6 baseline 与性能矩阵继续关闭。

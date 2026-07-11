@@ -16,10 +16,10 @@ P0-P4 已建立两类可复用资产：
 当前服务器任务为 P5 官方 checkpoint runtime gate：
 
 ```text
-p5_deepseek_v4_flash_4card_fp8_runtime_resume_v0221rc1_2026_0711
+p5_deepseek_v4_flash_4card_fp8_allocator_patch_delivery_v0221rc1_2026_0711
 ```
 
-上一轮 `0.20.2/0.20.2rc1` 四卡探针已在 NPU 量化平台门得到 `diagnostic_red_quant_format`。项目现已停止使用 W8A8，主对象改为官方 mixed FP8+FP4 checkpoint。独立 `0.22.1/0.22.1rc1` 栈已在服务器构建完成，精确核心版本和 `deepseek_v4_fp8` 注册通过；首次任务因旧环境同样存在的非核心辅助包冲突被全量 `pip check` 硬门停止，未执行 runtime。当前只读复用该栈，用 NPU 4-7 按 base-no-MTP、base 成功后 MTP-on 的顺序继续 4K+64 runtime gate。
+上一轮 `0.20.2/0.20.2rc1` 四卡探针已在 NPU 量化平台门得到 `diagnostic_red_quant_format`。项目现已停止使用 W8A8，主对象改为官方 mixed FP8+FP4 checkpoint。独立 `0.22.1/0.22.1rc1` 栈已通过核心版本、依赖分类、量化注册和模型 metadata 门，但四个 spawned worker 在权重加载前的 `MemorySnapshot` 同样命中 `Allocator for npu is not a DeviceAllocator`。当前先用 NPU 4 证明官方 NPU memory redirect 的 worker 传播状态；只有假设成立且 session-scoped overlay 验证成功，才用 NPU 4-7 复跑 base-no-MTP `4096+64` runtime gate。
 
 ## 2. 阶段依赖
 
@@ -130,7 +130,7 @@ max_num_seqs 16 -> 4 -> 1 -> disable MTP
 - 环境：只读复用已建成且核心版本/量化注册通过的隔离 `vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1` 栈；全量 `pip check` 只作诊断，已知非核心冲突不再一票否决，任何新冲突仍阻塞。
 - 对象与容量：46 分片 / `148.66 GiB` mixed FP8+FP4 checkpoint，静态余量约 `107.34 GiB`；W8A8 禁止启动或转换。
 - 格式边界：不显式传 `--quantization`、不改 checkpoint config；量化格式拒绝、容量失败或其他首错均立即停止。
-- profile：先 `base_no_mtp`，只在 base 请求成功后运行 `mtp_on`；每个 profile 最多一个 `4096+64`，不跑 context ladder。
+- profile：先用 NPU 4 跑 allocator/patch-delivery matrix；仅 gate 通过后用 NPU 4-7 运行 `base_no_mtp` 和一个 `4096+64`。本轮 `mtp_on` 禁止，不跑 context ladder。
 - 证据上限：四卡成功关闭当前 runtime gate，但不授权八卡或 P6；失败只适用于固定新栈和当前 checkpoint。
 
 P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化收益。
@@ -297,8 +297,8 @@ simulator_validation_report.md
 
 ## 9. 当前执行顺序
 
-1. 等待并复核 P5 服务器回传；不在本地假定 green/yellow/red。
-2. 根据 P5 状态冻结 P6.0，分开设计 unprofiled 与 profiled run。
+1. 执行 allocator patch-delivery 诊断与有条件的四卡 base 复跑；不把 session overlay 写成上游修复。
+2. 根据 base 的新第一失败点继续 P5 remediation；MTP、八卡和 P6 仍需新授权。
 3. 同步准备 P7 小模型/中型 MoE boundary harness，不承诺 full-model fit。
 4. 先完成 P8.0 capability matrix 和 P8.1 observe-only trace，再下发任何 P8 real-move 任务。
 5. P8.2 先做 KV CPU Offload/UCM DRAM 路径；P8.3/P8.4 再做 expert trace/static placement/simulation。

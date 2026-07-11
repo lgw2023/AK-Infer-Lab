@@ -121,3 +121,33 @@ boundaries:
   - A clean core preflight permits this probe but does not certify the cloned environment for unrelated profiling tools.
   - Four-card success closes only the current runtime gate and does not authorize the eight-card context ladder or P6.
   - Raw logs and large artifacts remain server-local.
+execution_result:
+  feedback_date: "2026-07-11"
+  probe_grade: diagnostic_red_runtime
+  first_failure_stage: worker_init_memory_snapshot_allocator
+  environment_preflight_passed: true
+  known_non_core_pip_conflicts_only: true
+  quantization_registration_passed: true
+  model_metadata_preflight_passed: true
+  base_no_mtp:
+    server_ready: false
+    request_sent: false
+    weight_load_started: false
+    failure:
+      exception: RuntimeError
+      message: device_allocator_INTERNAL_ASSERT_FAILED_allocator_for_npu_is_not_a_DeviceAllocator
+      call_path:
+        - vllm_ascend.worker.worker.NPUWorker._init_device
+        - vllm.utils.mem_utils.MemorySnapshot.measure
+        - torch.accelerator.memory_stats
+        - torch._C._accelerator_isAllocatorInitialized
+      identical_worker_failures: 4
+  mtp_on_run: false
+  npu_4_7_released: true
+  project_interpretation: runtime_reached_spawned_worker_initialization_but_official_npu_memory_api_redirect_was_not_effective_in_workers
+  approved_prior_artifact_transfer:
+    method: upload-api
+    user_confirmation_date: "2026-07-11"
+    file_count: 6
+    total_bytes: 12728
+  superseded_by: p5_4card_fp8_allocator_patch_delivery_probe.yaml

@@ -68,6 +68,6 @@ DeepSeek-V4-Flash on Ascend
 3. 新结果写入 `04_结果与问题点.md`，必须注明 run id、commit、服务器路径和边界。
 4. 下一步只写可执行动作，避免泛泛讨论。
 5. 服务器任务必须通过 `通信模块/docs/developer-to-server.md` 交接，且每次只保留当前任务。
-6. 服务器邮件和附件受 70KB 限制，大 artifact 留在服务器，只回传摘要、路径和小表。
+6. 服务器邮件正文和每个附件受 70KB 限制；小结果在用户选择后用 `email + 附件` 或 `upload-api + 文本总结/文件` 交付，大 artifact 留在服务器就地分析。
 7. 本地 dry-run 不能作为 Atlas 服务器证据。
 8. 所有性能结论必须经过 controlled replay；smoke、stats、profile collected、request-device join 分别有不同证明力。

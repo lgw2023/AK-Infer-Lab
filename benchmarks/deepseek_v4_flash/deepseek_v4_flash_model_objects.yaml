@@ -44,11 +44,12 @@ model_objects:
       shard_count: 46
       weight_bytes: 159617149040
       weight_gib: 148.66
-      inventory_status: continuous_shards_metadata_verified_v0221rc1_core_registration_passed_runtime_probe_pending
+      inventory_status: continuous_shards_metadata_verified_v0221rc1_worker_allocator_patch_delivery_pending
     expected_scenarios:
       - p5_readiness
       - p5_4card_fp8_stack_upgrade_probe
       - p5_4card_fp8_runtime_resume_probe
+      - p5_4card_fp8_allocator_patch_delivery_probe
       - p5_8card_context_ladder_smoke_after_separate_authorization
       - p6_eight_card_baseline_after_p5_success
       - p7_single_dual_extreme
@@ -57,7 +58,7 @@ model_objects:
     boundaries:
       - This is a mixed FP8 plus FP4-expert checkpoint, not pure FP8.
       - vLLM-Ascend 0.20.2rc1 rejected deepseek_v4_fp8 before weight load; that runtime is not retried.
-      - vLLM-Ascend 0.22.1rc1 is now built on the server and registers fp8 plus deepseek_v4_fp8, but model load and request validation are still required.
+      - vLLM-Ascend 0.22.1rc1 passed core and quantization preflight, then failed in worker MemorySnapshot before weight loading because the NPU allocator redirect was not effective in workers.
       - Do not pass --quantization ascend or rewrite checkpoint quantization metadata for this object.
 global_boundaries:
   - This registry does not copy, modify or validate model payloads.
