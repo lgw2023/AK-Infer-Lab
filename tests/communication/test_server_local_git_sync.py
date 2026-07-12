@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -119,6 +120,8 @@ def test_init_creates_a_local_only_branch_and_separate_worktree(tmp_path: Path) 
         encoding="utf-8"
     )
     assert "status\tclean" in summary
+    assert "merge_tree_mode\twrite-tree" in summary
+    assert "merge_tree_exit_code\t0" in summary
 
 
 def test_sync_merges_non_conflicting_upstream_into_local_branch_only(tmp_path: Path) -> None:
@@ -175,7 +178,97 @@ def test_sync_reports_real_conflict_without_changing_local_head(tmp_path: Path) 
     assert "status\tconflict" in (report_dir / "summary.tsv").read_text(
         encoding="utf-8"
     )
+    assert "merge_tree_mode\twrite-tree" in (
+        report_dir / "summary.tsv"
+    ).read_text(encoding="utf-8")
+    assert "merge_tree_exit_code\t1" in (
+        report_dir / "summary.tsv"
+    ).read_text(encoding="utf-8")
     assert "no merge was attempted" in completed.stderr
+
+
+def test_sync_reports_delete_modify_conflict_with_write_tree(
+    tmp_path: Path,
+) -> None:
+    fixture = _fixture(tmp_path)
+    assert _run("init", fixture["env"]).returncode == 0
+    local_worktree = fixture["local_worktree"]
+    _configure_identity(local_worktree)
+    (local_worktree / "base.txt").unlink()
+    _git(local_worktree, "add", "-A")
+    _git(local_worktree, "commit", "-m", "server deletes base")
+    _commit_file(
+        fixture["seed"],
+        "base.txt",
+        "external version\n",
+        "external modifies base",
+    )
+    _git(fixture["seed"], "push", "origin", "main")
+
+    completed = _run("check", fixture["env"])
+
+    assert completed.returncode == 2
+    report_dir = _report_dir(completed.stdout)
+    assert (report_dir / "conflict_paths.txt").read_text(encoding="utf-8") == (
+        "base.txt\n"
+    )
+
+
+def test_sync_reports_binary_conflict_with_write_tree(tmp_path: Path) -> None:
+    fixture = _fixture(tmp_path)
+    assert _run("init", fixture["env"]).returncode == 0
+    local_worktree = fixture["local_worktree"]
+    _configure_identity(local_worktree)
+    (local_worktree / "base.txt").write_bytes(b"\x00server")
+    _git(local_worktree, "add", "base.txt")
+    _git(local_worktree, "commit", "-m", "server binary change")
+    (fixture["seed"] / "base.txt").write_bytes(b"\x00external")
+    _git(fixture["seed"], "add", "base.txt")
+    _git(fixture["seed"], "commit", "-m", "external binary change")
+    _git(fixture["seed"], "push", "origin", "main")
+
+    completed = _run("check", fixture["env"])
+
+    assert completed.returncode == 2
+    report_dir = _report_dir(completed.stdout)
+    assert (report_dir / "conflict_paths.txt").read_text(encoding="utf-8") == (
+        "base.txt\n"
+    )
+
+
+def test_check_reports_merge_tree_tool_failure_separately(tmp_path: Path) -> None:
+    fixture = _fixture(tmp_path)
+    assert _run("init", fixture["env"]).returncode == 0
+    real_git = shutil.which("git")
+    assert real_git is not None
+    wrapper_dir = tmp_path / "bin"
+    wrapper_dir.mkdir()
+    wrapper = wrapper_dir / "git"
+    wrapper.write_text(
+        "#!/usr/bin/env bash\n"
+        "for arg in \"$@\"; do\n"
+        "  if [ \"${arg}\" = merge-tree ]; then\n"
+        "    echo simulated-merge-tree-failure >&2\n"
+        "    exit 129\n"
+        "  fi\n"
+        "done\n"
+        f'exec "{real_git}" "$@"\n',
+        encoding="utf-8",
+    )
+    wrapper.chmod(0o755)
+    env = {
+        **fixture["env"],
+        "PATH": f"{wrapper_dir}{os.pathsep}{fixture['env']['PATH']}",
+    }
+
+    completed = _run("check", env)
+
+    assert completed.returncode == 5
+    report_dir = _report_dir(completed.stdout)
+    summary = (report_dir / "summary.tsv").read_text(encoding="utf-8")
+    assert "status\tcheck_error" in summary
+    assert "merge_tree_exit_code\t129" in summary
+    assert (report_dir / "conflict_paths.txt").read_text(encoding="utf-8") == ""
 
 
 def test_sync_requires_review_for_clean_same_path_overlap(tmp_path: Path) -> None:

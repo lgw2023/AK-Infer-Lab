@@ -162,7 +162,7 @@ python3 通信模块/send_notify.py --test --no-proxy --confirmed-method email
 - 昇腾服务器只从远端同步，任何分支都禁止从服务器 push；日常同步使用服务器本地 `git pull-remote`。
 - 主镜像 `/data/node0_disk1/liguowei/AK-Infer-Lab` 不承载服务器代码开发。服务器代码只在 `/data/node0_disk1/liguowei/AK-Infer-Lab-server-local` 的本地分支 `server-local/runtime-adaptations` 中 commit 和维护。
 - 用户始终只向主镜像中的 `docs/developer-to-server.md` 派发任务，不需要在两个目录间选择。`execution_codebase` 默认为 `main-readonly`；只有交接文档明确写为 `server-local` 时，服务器才进入独立 worktree 改代码。
-- 服务器本地分支同步前必须运行 `通信模块/server_local_git_sync.sh check`；同路径修改即使能自动 merge 也要停止并告知外部开发者，只能在后续单次授权中显式放行；真实冲突必须停止且禁止自动选择 ours/theirs。完整策略见 `docs/server-local-git-policy.md`。
+- 服务器本地分支同步前必须运行 `通信模块/server_local_git_sync.sh check`；脚本使用服务器 Git 2.54 支持的 `merge-tree --write-tree` 预检。同路径修改即使能自动 merge 也要停止并告知外部开发者，只能在后续单次授权中显式放行；真实冲突必须停止且禁止自动选择 ours/theirs；除真实冲突码 `1` 外的预检失败必须单独报告为 `check_error`，不能冒充代码冲突。完整策略见 `docs/server-local-git-policy.md`。
 - 外部开发机完成代码或文档改动后提交并 push，服务器再 pull 同步。
 - `server_local/`、`.conda/` 和实验产物只属于服务器本地，不提交到仓库。
 - 服务器本地独立脚本 `/data/node0_disk1/Public/send_notify.py` 不属于本仓库；仓库内统一使用 `通信模块/send_notify.py`。

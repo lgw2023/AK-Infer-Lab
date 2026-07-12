@@ -447,24 +447,25 @@ def test_p5_acl_path_probe_preserves_only_official_cann_path_and_bounds_retry():
     assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
 
 
-def test_server_handoff_contains_only_the_server_local_git_recovery_task():
+def test_server_handoff_contains_only_the_git_254_sync_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "server_local_git_worktree_policy_recover_2026_0712" in handoff
+    assert "server_local_git_compat_sync_2026_0712" in handoff
     assert "execution_codebase: main-readonly" in handoff
     assert "/data/node0_disk1/liguowei/AK-Infer-Lab-server-local" in handoff
     assert "server-local/runtime-adaptations" in handoff
-    assert "server_local_git_sync.sh\" init" in handoff
-    assert "git status --porcelain --untracked-files=no" in handoff
-    assert "git restore --worktree --" in handoff
-    assert "21afc388efd88374ac3c78d82551b7f9c74498913fd7dbffee73a9f5278f4110" in handoff
-    assert "服务器不得修改受 Git 跟踪的工作记录" in handoff
+    assert "bash \"${SCRIPT}\" check" in handoff
+    assert "bash \"${SCRIPT}\" sync" in handoff
+    assert "status --porcelain --untracked-files=no" in handoff
+    assert "不要再次 restore 任何 tracked 文件" in handoff
+    assert "2.54.0" in handoff
+    assert "merge_tree_mode\\twrite-tree" in handoff
+    assert "check_error" in handoff
     assert "same_path_overlap.txt" in handoff
     assert "conflict_paths.txt" in handoff
-    assert "merge_tree.txt" in handoff
-    assert "禁止对任何 remote 执行 `git push`" in handoff
+    assert "任何 remote、任何分支和 tag 都禁止 `git push`" in handoff
     assert "ours/theirs" in handoff
-    assert "自动选择" in handoff
     assert "不使用 NPU" in handoff
-    assert "尚未获得 `email`、`upload-api` 或 `server-local` 选择" in handoff
+    assert "尚未获得 `email`、`upload-api` 或 `server-local` 的传输选择" in handoff
+    assert "server_local_git_worktree_policy_recover_2026_0712" not in handoff
     assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff

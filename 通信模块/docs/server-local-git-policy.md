@@ -45,7 +45,7 @@ bash 通信模块/server_local_git_sync.sh sync
 ```
 
 - `init`：只在主镜像无 tracked 修改时创建本地分支与独立 worktree，然后执行首次冲突检查。
-- `check`：fetch 最新 `origin/main`，但不改写任何 worktree；生成双方变更路径、同路径重叠与 `merge-tree` 真实冲突报告。
+- `check`：fetch 最新 `origin/main`，但不改写任何 worktree；使用服务器 Git 2.54 的 `merge-tree --write-tree` 接口，生成双方变更路径、同路径重叠与真实冲突报告。
 - `sync`：只在 `check` 为 clean 时把 `origin/main` merge 到 server-local 分支；不向反方合并，不 push。同路径重叠时默认返回 `4` 并停止；只有外部开发者审核后，才能在当次命令显式设置 `AK_SERVER_ALLOW_SAME_PATH_OVERLAP=1`。
 
 脚本拒绝把 `main`/`master` 当作本地分支，拒绝主镜像和 server-local worktree 共用同一路径，并在 server-local worktree 存在未提交改动时停止同步。
@@ -67,9 +67,10 @@ server_local/git_sync_reports/<timestamp>_<pid>/
 处理规则：
 
 1. `same_path_overlap.txt` 非空代表双方修改了同一路径，检查状态为 `overlap_review_required`，必须作为 YELLOW 风险告知外部开发者，即使 Git 可自动合并。未获得外部开发者当次授权时，`sync` 必须返回 `4` 且不 merge。
-2. `merge_tree_exit_code != 0` 或 `conflict_paths.txt` 非空代表真实冲突。脚本必须停止，不得执行 merge，不得自动选择 ours/theirs。
-3. 服务器应向外部开发者报告 `server_local_head`、`upstream_head`、`merge_base`、双方 changed paths、same-path overlap、conflict paths 和 `merge_tree.txt` 的有界摘录，等待决策。
-4. 不允许服务器 AI 自行解决冲突，也不允许为规避冲突而改写、删除或 reset 外部开发者的提交。
+2. `merge_tree_exit_code=1` 且 `conflict_paths.txt` 非空代表真实冲突，返回 `2`；脚本必须停止，不得执行 merge，不得自动选择 ours/theirs。
+3. `merge_tree_exit_code` 为 `1` 以外的非零值代表预检工具本身失败，不得误报为代码冲突；状态为 `check_error`、返回 `5` 并停止。若预检通过但实际 merge 意外失败，脚本必须 abort 并返回 `3`。
+4. 服务器应向外部开发者报告 `server_local_head`、`upstream_head`、`merge_base`、`merge_tree_mode`、双方 changed paths、same-path overlap、conflict paths 和 `merge_tree.txt` 的有界摘录，等待决策。
+5. 不允许服务器 AI 自行解决冲突，也不允许为规避冲突而改写、删除或 reset 外部开发者的提交。
 
 ## 服务器本地提交记录
 

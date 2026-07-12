@@ -91,6 +91,7 @@ run_conflict_check() {
   MERGE_BASE=$(git -C "${MIRROR_ROOT}" merge-base "${LOCAL_HEAD}" "${UPSTREAM_HEAD}")
   write_path_sets
 
+  MERGE_TREE_MODE=write-tree
   set +e
   git -C "${MIRROR_ROOT}" merge-tree --write-tree --name-only --messages \
     "${LOCAL_HEAD}" "${UPSTREAM_HEAD}" \
@@ -99,12 +100,15 @@ run_conflict_check() {
   set -e
 
   SAME_PATH_OVERLAP_COUNT=$(wc -l < "${REPORT_DIR}/same_path_overlap.txt" | tr -d ' ')
-  if [ "${MERGE_TREE_EXIT_CODE}" -ne 0 ]; then
+  if [ "${MERGE_TREE_EXIT_CODE}" -eq 1 ]; then
     STATUS=conflict
     sed -n '2,/^$/p' "${REPORT_DIR}/merge_tree.txt" \
       | sed '/^$/d' \
       | LC_ALL=C sort -u \
       > "${REPORT_DIR}/conflict_paths.txt"
+  elif [ "${MERGE_TREE_EXIT_CODE}" -ne 0 ]; then
+    STATUS=check_error
+    : > "${REPORT_DIR}/conflict_paths.txt"
   elif [ "${SAME_PATH_OVERLAP_COUNT}" -gt 0 ]; then
     STATUS=overlap_review_required
     : > "${REPORT_DIR}/conflict_paths.txt"
@@ -123,6 +127,7 @@ server_local_head	${LOCAL_HEAD}
 upstream_ref	${UPSTREAM_REF}
 upstream_head	${UPSTREAM_HEAD}
 merge_base	${MERGE_BASE}
+merge_tree_mode	${MERGE_TREE_MODE}
 merge_tree_exit_code	${MERGE_TREE_EXIT_CODE}
 same_path_overlap_count	${SAME_PATH_OVERLAP_COUNT}
 same_path_overlap_acknowledged	${ALLOW_SAME_PATH_OVERLAP}
@@ -133,6 +138,10 @@ EOF
 }
 
 sync_local_branch() {
+  if [ "${STATUS}" = check_error ]; then
+    printf 'Conflict precheck failed; no merge was attempted. Report: %s\n' "${REPORT_DIR}" >&2
+    return 5
+  fi
   if [ "${STATUS}" = conflict ]; then
     printf 'Conflict detected; no merge was attempted. Report: %s\n' "${REPORT_DIR}" >&2
     return 2
@@ -174,6 +183,8 @@ run_conflict_check
 
 if [ "${MODE}" = sync ]; then
   sync_local_branch
+elif [ "${STATUS}" = check_error ]; then
+  exit 5
 elif [ "${STATUS}" = conflict ]; then
   exit 2
 elif [ "${STATUS}" = overlap_review_required ]; then
