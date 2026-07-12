@@ -9,6 +9,8 @@
 - 主镜像工作区 `/data/node0_disk1/liguowei/AK-Infer-Lab` 只跟踪 `origin/main`，不承载服务器代码开发。
 - 服务器代码固定放在独立 worktree `/data/node0_disk1/liguowei/AK-Infer-Lab-server-local`，分支固定为 `server-local/runtime-adaptations`。
 - 服务器本地分支可以 commit，但不得合并回主镜像 `main`，不得创建任何远程 `server-local/*` ref。
+- 服务器主镜像的 tracked 文件全部只读；这包括 `工作记录与进度笔记本/`、`通信模块/docs/`、源码、测试和契约。服务器不得向这些文件追加执行记录。
+- 服务器任务的过程证据和结果只写入主镜像中 Git 忽略的 `server_local/<task_id>/`；外部开发机在收到结果后负责更新受跟踪的项目工作记录。
 
 ## 工作区模型
 
@@ -24,6 +26,13 @@ AK-Infer-Lab-server-local       server-local/runtime-adaptations
 ```
 
 主镜像中原有的 `server_local/`、`.conda/` 和实验产物仍是 Git 忽略的服务器资产；它们不是“服务器代码版本”。需要持续维护的项目代码必须在 server-local worktree 中形成本地 commit，不能长期留在 dirty working tree。
+
+对用户和外部开发者而言，任务派发入口始终只有主镜像中的 `通信模块/docs/developer-to-server.md`。服务器同步并重新打开该文档后，再根据文档的 `execution_codebase` 执行：
+
+- `main-readonly`：从主镜像读取代码和任务，不改写任何 tracked 文件；结果写入 `server_local/<task_id>/`。
+- `server-local`：任务明确需要服务器专属代码改动时，才进入 `AK-Infer-Lab-server-local` 修改并本地 commit；任务仍从主镜像交接文档派发。
+
+如果交接文档没有显式声明 `execution_codebase`，按 `main-readonly` 处理。
 
 ## 可执行入口
 

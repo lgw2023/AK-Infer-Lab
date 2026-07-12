@@ -1,37 +1,27 @@
 # Developer to Server
 
-## 当前唯一任务：建立服务器本地代码 worktree 与冲突报告机制
-
-任务 ID：
+## 当前唯一任务：恢复主镜像并完成 server-local worktree 初始化
 
 ```text
-server_local_git_worktree_policy_setup_2026_0712
+task_id: server_local_git_worktree_policy_recover_2026_0712
+execution_codebase: main-readonly
 ```
 
 本任务不使用 NPU，不运行模型，不修改 vLLM/vLLM-Ascend/conda/CANN。
 
-目标是建立两个永久隔离的 Git 真值面：
+上轮已在 tracked dirty gate 正确停止。外部开发者已收到完整 patch，并确认唯一 tracked 改动是服务器追加的 P5 no-MTP YELLOW 工作记录；对应结果已在外部 `main` 的第 133 条固化，不需要保留服务器的重复追加。
 
-```text
-/data/node0_disk1/liguowei/AK-Infer-Lab
-  -> 外部开发者的 origin/main 主镜像，只拉取
+## 永久边界
 
-/data/node0_disk1/liguowei/AK-Infer-Lab-server-local
-  -> 服务器本地代码版本，本地分支 server-local/runtime-adaptations
-```
-
-## 绝对禁止
-
+- 用户和外部开发者始终只通过主镜像 `AK-Infer-Lab` 中的本文档派发任务。
+- 主镜像 tracked 文件全部只读。服务器不得修改受 Git 跟踪的工作记录，也不得向 `工作记录与进度笔记本/` 追加任务结果。
+- 服务器过程证据和结果只写入 Git 忽略的 `server_local/<task_id>/`；收到回传后，受跟踪的项目工作记录由外部开发者更新。
+- 需要服务器专属代码时，只在 `/data/node0_disk1/liguowei/AK-Infer-Lab-server-local` 修改并本地 commit。
 - 禁止对任何 remote 执行 `git push`，包括新分支、tag、force push 或删除 remote ref。
-- 禁止在主镜像 `main` 中编写或保留服务器项目代码。
-- 禁止把 server-local 分支 merge/cherry-pick/rebase 到主镜像 `main`。
-- 禁止在发现冲突时自动选择 ours/theirs，禁止为规避冲突而删除或 reset 外部开发者代码。
-- 禁止修改 Git remote URL、push URL 或全局/系统 Git 配置。
-- 禁止执行任何含有 push 的测试、脚本或演练。
 
-## 1. 保护现有服务器改动
+## 1. 精确验证当前唯一 dirty 改动
 
-先进入主镜像，只检查 tracked 改动：
+在主镜像执行：
 
 ```bash
 set -euo pipefail
@@ -39,26 +29,38 @@ set -euo pipefail
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 LOCAL_WORKTREE=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local
 LOCAL_BRANCH=server-local/runtime-adaptations
-TASK_ID=server_local_git_worktree_policy_setup_2026_0712
+TASK_ID=server_local_git_worktree_policy_recover_2026_0712
 RESULT_DIR="${REPO_ROOT}/server_local/${TASK_ID}"
+NOTE_PATH='工作记录与进度笔记本/01_工作记录.md'
+EXPECTED_DIRTY_SHA=21afc388efd88374ac3c78d82551b7f9c74498913fd7dbffee73a9f5278f4110
 
 mkdir -p "${RESULT_DIR}"
 cd "${REPO_ROOT}"
 
 git status --porcelain --untracked-files=no > "${RESULT_DIR}/mirror_tracked_status_before.txt"
-git status --porcelain --ignored > "${RESULT_DIR}/mirror_full_status_before.txt"
-git rev-parse HEAD > "${RESULT_DIR}/mirror_head_before.txt"
-git rev-parse origin/main > "${RESULT_DIR}/origin_main_before.txt"
+git diff --cached --quiet
+test "$(git -c core.quotePath=false diff --name-only | wc -l | tr -d ' ')" = 1
+test "$(git -c core.quotePath=false diff --name-only)" = "${NOTE_PATH}"
+test "$(git -c core.quotePath=false diff --numstat -- "${NOTE_PATH}" | cut -f1-2)" = $'1\t0'
+test "$(sha256sum "${NOTE_PATH}" | awk '{print $1}')" = "${EXPECTED_DIRTY_SHA}"
+git diff -- "${NOTE_PATH}" > "${RESULT_DIR}/authorized_note_restore.patch"
 ```
 
-判定：
+任何一条校验失败，立即停止：不 restore、不 stash、不 reset、不 pull，只报告实际 tracked 改动。
 
-- `mirror_tracked_status_before.txt` 非空：立即停止。不执行 `git pull-remote`、reset、stash、commit 或迁移；只报告变更路径，等待外部开发者决定如何保留。
-- 只有 ignored/untracked server-local 产物而 tracked 状态为空：允许继续。
+## 2. 仅恢复已审核的单个笔记文件
 
-## 2. 完整同步外部 `main`
+上述全部校验通过后，外部开发者明确授权本次精确恢复：
 
-仅当上一节 tracked 状态为空时：
+```bash
+git restore --worktree -- "${NOTE_PATH}"
+git status --porcelain --untracked-files=no > "${RESULT_DIR}/mirror_tracked_status_after_restore.txt"
+test ! -s "${RESULT_DIR}/mirror_tracked_status_after_restore.txt"
+```
+
+该授权只适用于上述路径、当前 SHA-256 和 `1 insertion / 0 deletion` 的已回传内容，不授权恢复任何其他文件。
+
+## 3. 同步最新外部 `main`
 
 ```bash
 if [ -x "${REPO_ROOT}/server_local/git_pull_remote_wins.sh" ]; then
@@ -67,31 +69,22 @@ else
   git fetch origin main
   git merge --ff-only origin/main
 fi
-```
 
-同步后必须重新打开拉取后的本文档，确认任务 ID 仍为：
-
-```text
-server_local_git_worktree_policy_setup_2026_0712
-```
-
-然后记录：
-
-```bash
 git rev-parse HEAD > "${RESULT_DIR}/mirror_head_after_pull.txt"
 git rev-parse origin/main > "${RESULT_DIR}/origin_main_after_pull.txt"
 git status --porcelain --untracked-files=no > "${RESULT_DIR}/mirror_tracked_status_after_pull.txt"
+cmp -s "${RESULT_DIR}/mirror_head_after_pull.txt" "${RESULT_DIR}/origin_main_after_pull.txt"
+test ! -s "${RESULT_DIR}/mirror_tracked_status_after_pull.txt"
 ```
 
-`mirror_head_after_pull.txt` 必须与 `origin_main_after_pull.txt` 一致，tracked status 必须为空。
+同步后必须重新打开拉取后的 `通信模块/docs/developer-to-server.md`，确认当前任务 ID 仍为 `server_local_git_worktree_policy_recover_2026_0712`，然后才继续。
 
-## 3. 校验并初始化独立 server-local worktree
+## 4. 初始化独立 server-local worktree
 
-先做静态安全检查，不运行仓库中任何含 push 的测试：
+先静态确认同步脚本不包含 push：
 
 ```bash
 bash -n "${REPO_ROOT}/通信模块/server_local_git_sync.sh"
-
 if grep -nE '(^|[[:space:]])git[[:space:]]+push([[:space:]]|$)' \
   "${REPO_ROOT}/通信模块/server_local_git_sync.sh"; then
   echo "forbidden git push command found" >&2
@@ -99,7 +92,7 @@ if grep -nE '(^|[[:space:]])git[[:space:]]+push([[:space:]]|$)' \
 fi
 ```
 
-初始化：
+初始化并保留退出码：
 
 ```bash
 set +e
@@ -114,14 +107,12 @@ set -e
 printf '%s\n' "${INIT_EXIT_CODE}" > "${RESULT_DIR}/init_exit_code.txt"
 ```
 
-- `0`：worktree 已创建或已正确存在，当前与 `origin/main` 无真实冲突。
-- `2`：本地分支已存在且与最新 `origin/main` 有真实冲突；脚本已停止，不得合并。
-- `4`：没有真实 merge conflict，但双方修改了同一路径；必须先报告外部开发者，本轮不得合并。
-- 其他非零：安装或安全门失败，不得手工绕过。
+- `0`：worktree 已创建或已正确存在，与最新 `origin/main` 无真实冲突。
+- `2`：真实冲突；停止，不 merge，不自动选择 ours/theirs。
+- `4`：无真实冲突但有 same-path overlap；停止，本轮不合并，只报告等待外部开发者单次授权。
+- 其他非零：安装或安全门失败，不手工绕过。
 
-## 4. 只读核验
-
-不创建任何测试提交，不做冲突演练：
+## 5. 验收与结果范围
 
 ```bash
 git worktree list --porcelain > "${RESULT_DIR}/worktree_list.txt"
@@ -129,25 +120,21 @@ git -C "${LOCAL_WORKTREE}" branch --show-current > "${RESULT_DIR}/local_branch.t
 git -C "${LOCAL_WORKTREE}" rev-parse HEAD > "${RESULT_DIR}/local_head.txt"
 git -C "${LOCAL_WORKTREE}" status --porcelain > "${RESULT_DIR}/local_status.txt"
 git ls-remote --heads origin 'server-local/*' > "${RESULT_DIR}/remote_server_local_refs.txt"
+sed -n 's/^REPORT_DIR=//p' "${RESULT_DIR}/init_stdout.txt" \
+  > "${RESULT_DIR}/git_sync_report_dir.txt"
 ```
 
 验收条件：
 
 ```text
+main mirror HEAD == origin/main
+main mirror tracked status is empty
 local_branch == server-local/runtime-adaptations
 local_status is empty
 remote_server_local_refs is empty
-main mirror HEAD == origin/main
 ```
 
-从 `init_stdout.txt` 中取得 `REPORT_DIR=...`，将该目录路径写入：
-
-```bash
-sed -n 's/^REPORT_DIR=//p' "${RESULT_DIR}/init_stdout.txt" \
-  > "${RESULT_DIR}/git_sync_report_dir.txt"
-```
-
-检查该 report 中的：
+从 `git_sync_report_dir.txt` 指向的目录核对：
 
 ```text
 summary.tsv
@@ -158,51 +145,8 @@ conflict_paths.txt
 merge_tree.txt
 ```
 
-## 5. 后续永久操作规则
+在 `${RESULT_DIR}/result_summary.md` 中记录各阶段验证、restore 的精确路径、pull 前后 HEAD、init 退出码、worktree 状态、same-path overlap、conflict paths，并明确声明本轮未执行任何 `git push`。
 
-1. 外部开发任务仍从主镜像拉取。
-2. 需要服务器本地代码时，只在 `AK-Infer-Lab-server-local` 中修改并本地 commit。
-3. 每次合入新 `origin/main` 前先运行 `server_local_git_sync.sh check`。
-4. same-path overlap 非空时，即使 `merge-tree` clean，也先向外部开发者报告 YELLOW 风险。
-5. 真实冲突时禁止运行 `sync`，禁止自行解决；报告后等待外部决策。
-6. 只有 no-conflict 且外部开发者审核了 same-path overlap 后，才可在后续任务的单次命令中显式设置 `AK_SERVER_ALLOW_SAME_PATH_OVERLAP=1` 并执行 `server_local_git_sync.sh sync`；不允许把该变量写入持久环境。
-7. 任何时候都不 push。
-
-## 6. 结果摘要与候选文件
-
-在 `${RESULT_DIR}/result_summary.md` 中记录：
-
-- 任务 ID、时间和执行主机；
-- 主镜像 pull 前后 HEAD 和 `origin/main`；
-- tracked dirty gate 是否通过；
-- init exit code；
-- server-local worktree、branch、HEAD 和 clean 状态；
-- merge base、same-path overlap 列表、conflict path 列表和 `merge-tree` 退出码；
-- remote `server-local/*` refs 是否为空；
-- 明确声明“本轮未执行任何 git push”；
-- 若失败，记录首个失败阶段，不绕过。
-
-候选文件限于：
-
-```text
-result_summary.md
-init_exit_code.txt
-init_stdout.txt
-init_stderr.txt
-worktree_list.txt
-local_branch.txt
-local_head.txt
-local_status.txt
-remote_server_local_refs.txt
-git_sync_report_dir.txt
-<git_sync_report_dir>/summary.tsv
-<git_sync_report_dir>/server_local_changed_paths.txt
-<git_sync_report_dir>/upstream_changed_paths.txt
-<git_sync_report_dir>/same_path_overlap.txt
-<git_sync_report_dir>/conflict_paths.txt
-<git_sync_report_dir>/merge_tree.txt
-```
-
-原始 full status 中如果包含不宜外传的服务器路径，只在摘要中报告计数和有界脱敏路径。
+候选回传文件限于 `result_summary.md`、上述小型状态文件和同步报告六个文件；原始 full status 中若有敏感或无关服务器路径，只在摘要中报告计数与有界脱敏路径。
 
 本轮是新结果范围，尚未获得 `email`、`upload-api` 或 `server-local` 选择。文件生成后，只在当前任务会话报告每个候选的精确路径、bytes、SHA-256、敏感性、可用方式和一个推荐方式，然后暂停。禁止在未确认前发邮件、上传或执行任何外发预检。
