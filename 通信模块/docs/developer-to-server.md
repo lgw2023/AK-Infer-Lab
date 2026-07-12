@@ -1,9 +1,9 @@
 # Developer to Server
 
-## 当前唯一任务：验证 Git 2.54 现代预检并同步 server-local 分支
+## 当前唯一任务：完成 server-local 代码库管理最终验收
 
 ```text
-task_id: server_local_git_compat_sync_2026_0712
+task_id: server_local_git_management_closeout_2026_0712
 execution_codebase: main-readonly
 ```
 
@@ -14,9 +14,9 @@ execution_codebase: main-readonly
 - 主镜像：`/data/node0_disk1/liguowei/AK-Infer-Lab`
 - server-local worktree：`/data/node0_disk1/liguowei/AK-Infer-Lab-server-local`
 - server-local 分支：`server-local/runtime-adaptations`
-- 上轮两侧 HEAD 均为 `bc4d412c5c572bf3bdf2c5b5665e441baa6b254f`，两侧工作区干净，远端无 `server-local/*` ref。
-- 上轮 `init=2` 是假冲突：当时服务器 Git 2.34.1 不支持 `merge-tree --write-tree`，命令返回 129 后被旧脚本误分类。
-- 用户现已将服务器 Git 升级为 **2.54.0**。新脚本继续使用现代 `merge-tree --write-tree`，但只把退出码 `1` 认定为真实冲突；其他非零值标记为 `check_error`，same-path overlap 仍单独等待审核。
+- 当前主镜像 HEAD 为 `1e6cedb7b4c9564f66320cb21f1ae09e2d8e5ff8`，server-local HEAD 为其祖先 `bc4d412c5c572bf3bdf2c5b5665e441baa6b254f`；两侧工作区干净，远端无 `server-local/*` ref。
+- Git 2.54.0 与 `merge-tree --write-tree` 已在服务器验证通过。上轮唯一失败是路径集以 `LC_ALL=C sort` 排序后，`comm` 使用默认 `en_US.UTF-8` locale；新脚本已把 `comm` 固定为同一 `LC_ALL=C`。
+- 本轮是代码库管理任务的最终验收。若下述全部条件通过，直接报告 `overall_status=success`，该任务关闭，不再派生新的 Git-policy 轮次。
 
 永久边界不变：主镜像 tracked 文件全部只读；服务器专属代码只能在 server-local worktree 本地 commit；任何 remote、任何分支和 tag 都禁止 `git push`；不得自动选择 ours/theirs。
 
@@ -28,7 +28,7 @@ set -euo pipefail
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 LOCAL_WORKTREE=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local
 LOCAL_BRANCH=server-local/runtime-adaptations
-TASK_ID=server_local_git_compat_sync_2026_0712
+TASK_ID=server_local_git_management_closeout_2026_0712
 RESULT_DIR="${REPO_ROOT}/server_local/${TASK_ID}"
 
 mkdir -p "${RESULT_DIR}"
@@ -58,7 +58,7 @@ cmp -s "${RESULT_DIR}/mirror_head_after_pull.txt" \
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 ```
 
-同步后重新打开拉取后的 `通信模块/docs/developer-to-server.md`。只有任务 ID 仍为 `server_local_git_compat_sync_2026_0712` 才继续。
+同步后重新打开拉取后的 `通信模块/docs/developer-to-server.md`。只有任务 ID 仍为 `server_local_git_management_closeout_2026_0712` 才继续。
 
 ## 3. 静态安全检查
 
@@ -73,6 +73,7 @@ git --version > "${RESULT_DIR}/git_version.txt"
 grep -Fx 'git version 2.54.0' "${RESULT_DIR}/git_version.txt"
 git merge-tree -h > "${RESULT_DIR}/merge_tree_help.txt" 2>&1 || true
 grep -F -- '--write-tree' "${RESULT_DIR}/merge_tree_help.txt"
+grep -F 'LC_ALL=C comm -12' "${SCRIPT}"
 ```
 
 ## 4. 先 check，再单向 sync
@@ -111,7 +112,7 @@ bash "${SCRIPT}" sync \
   2> "${RESULT_DIR}/sync_stderr.txt"
 ```
 
-本轮没有 server-local 独有提交，预期 `check=0/status=clean`，随后 `sync=0` 并把本地分支快进到最新 `origin/main`。若返回 `2`、`3`、`4`、`5` 或其他非零，立即停止，不得手工 merge 或绕过安全门：
+本轮没有 server-local 独有提交，预期 `check=0/status=clean`，随后 `sync=0` 并把本地分支从 `bc4d412c5` 快进到最新 `origin/main`。若返回 `2`、`3`、`4`、`5` 或其他非零，立即停止，不得手工 merge 或绕过安全门：
 
 - `2`：真实冲突；
 - `3`：预检通过但实际 merge 失败且已 abort；
@@ -160,5 +161,7 @@ test ! -s "${RESULT_DIR}/remote_server_local_refs.txt"
 ## 6. 结果与暂停点
 
 在 `${RESULT_DIR}/result_summary.md` 中记录：Git 版本、pull 前后 HEAD、check-before/sync/check-after 退出码和状态、`merge_tree_mode`、双方 changed paths、same-path overlap、conflict paths、两侧最终 HEAD/branch/status、远端 `server-local/*` ref，并明确声明未执行任何 `git push`、未修改任何 tracked 文件、未使用 NPU。
+
+最终成功条件为：两次 check 均为 `status=clean`、`merge_tree_mode=write-tree`、`merge_tree_exit_code=0`，sync 成功，两侧最终 HEAD 均等于最新 `origin/main`，两侧状态为空，远端 `server-local/*` ref 为空。全部满足时在摘要首部写 `overall_status=success` 和 `git_management_task=completed`，本任务立即关闭。
 
 候选回传文件只包含 `result_summary.md`、两份 `summary.tsv`、退出码、最终 HEAD/status/worktree/ref 和必要的有界 stderr；每个文件必须小于 70KB。结果生成后先在当前任务会话报告精确路径、bytes、SHA-256、敏感性、可用方式与推荐方式，然后暂停。本轮尚未获得 `email`、`upload-api` 或 `server-local` 的传输选择，禁止先发邮件、上传或自动切换方式。

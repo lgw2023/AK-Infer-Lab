@@ -75,7 +75,7 @@ write_path_sets() {
     | LC_ALL=C sort -u > "${REPORT_DIR}/server_local_changed_paths.txt"
   git -C "${MIRROR_ROOT}" diff --name-only "${MERGE_BASE}..${UPSTREAM_HEAD}" \
     | LC_ALL=C sort -u > "${REPORT_DIR}/upstream_changed_paths.txt"
-  comm -12 \
+  LC_ALL=C comm -12 \
     "${REPORT_DIR}/server_local_changed_paths.txt" \
     "${REPORT_DIR}/upstream_changed_paths.txt" \
     > "${REPORT_DIR}/same_path_overlap.txt"

@@ -154,6 +154,39 @@ def test_sync_merges_non_conflicting_upstream_into_local_branch_only(tmp_path: P
     assert remote_refs.stdout == ""
 
 
+def test_check_uses_one_locale_for_non_ascii_path_sets(tmp_path: Path) -> None:
+    assert "LC_ALL=C comm -12" in SCRIPT.read_text(encoding="utf-8")
+    fixture = _fixture(tmp_path)
+    assert _run("init", fixture["env"]).returncode == 0
+    _commit_file(
+        fixture["seed"],
+        "通信模块/locale.txt",
+        "non-ascii path\n",
+        "add non-ascii path",
+    )
+    _commit_file(
+        fixture["seed"],
+        "tests/ascii.txt",
+        "ascii path\n",
+        "add ascii path",
+    )
+    _git(fixture["seed"], "push", "origin", "main")
+    env = {
+        **fixture["env"],
+        "LANG": "en_US.UTF-8",
+        "LC_ALL": "en_US.UTF-8",
+    }
+
+    completed = _run("check", env)
+
+    assert completed.returncode == 0, completed.stderr
+    report_dir = _report_dir(completed.stdout)
+    assert (report_dir / "same_path_overlap.txt").read_text(encoding="utf-8") == ""
+    assert "status\tclean" in (report_dir / "summary.tsv").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_sync_reports_real_conflict_without_changing_local_head(tmp_path: Path) -> None:
     fixture = _fixture(tmp_path)
     assert _run("init", fixture["env"]).returncode == 0

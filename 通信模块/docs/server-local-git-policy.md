@@ -52,7 +52,7 @@ bash 通信模块/server_local_git_sync.sh sync
 
 ## 冲突与重叠处理
 
-每次检查都在主镜像的忽略目录下生成：
+双方路径集统一按 `LC_ALL=C` 排序和比较，避免含非 ASCII 路径时因服务器 locale 不同产生伪失败。每次检查都在主镜像的忽略目录下生成：
 
 ```text
 server_local/git_sync_reports/<timestamp>_<pid>/
