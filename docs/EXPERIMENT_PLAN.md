@@ -13,13 +13,13 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离已让主模型 graph server ready，但旧客户端在 HTTP 发送前因 `AutoTokenizer` 不兼容失败。当前活动任务为 tokenizer 预检后的单请求重试：
+NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离已让主模型 graph server ready，但旧客户端在 HTTP 发送前因 `AutoTokenizer` 不兼容失败。第一次原生 tokenizer 重试已生成 4096 个合法 token ID，却因交接脚本错误要求缓存包装类名以 `DSV4` 开头而在 payload 落盘前停止。当前活动任务只修正该 MRO 校验后重试一个请求：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
 ```
 
-mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败；no-MTP 复跑已让主模型 graph server ready，将该错误收窄到 MTP drafter path。当前先用 vLLM 专用 `DeepseekV4Tokenizer` 在 server 启动前生成恰好 4096 个 token ID，然后保持同一 no-MTP graph 配置只发一个 `4096+64`；eager 不再允许。
+mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败；no-MTP 复跑已让主模型 graph server ready，将该错误收窄到 MTP drafter path。原生 tokenizer 已证明可生成恰好 4096 个合法 token ID；当前只把顶层类名首缀断言改为校验 MRO 中的 DSV4 backend，再保持同一 no-MTP graph 配置发送一个 `4096+64`，不允许 eager。
 
 ## 2. 阶段依赖
 
@@ -294,10 +294,8 @@ simulator_validation_report.md
 
 ## 9. 当前执行顺序
 
-1. 执行 allocator patch-delivery 诊断与有条件的四卡 base 复跑；不把 session overlay 写成上游修复。
-2. 根据 base 的新第一失败点继续 P5 remediation；MTP、八卡和 P6 仍需新授权。
-3. 同步准备 P7 小模型/中型 MoE boundary harness，不承诺 full-model fit。
-4. 先完成 P8.0 capability matrix 和 P8.1 observe-only trace，再下发任何 P8 real-move 任务。
-5. P8.2 先做 KV CPU Offload/UCM DRAM 路径；P8.3/P8.4 再做 expert trace/static placement/simulation。
-6. 只有 P8.5 门通过才实现真实 expert warm prefetch。
+1. 在 server 启动前用 `DeepseekV4Tokenizer` 生成 4096 个 token ID，并以 MRO 含 DSV4 backend 作为 runtime identity 门；禁止依赖缓存包装后的顶层类名前缀。
+2. 预检与八卡健康空闲门通过后，原样启动 no-MTP TP8/EP graph server，只发送一个 `4096+64` 请求。
+3. 请求成功只冻结当前 no-MTP graph cell；MTP、128K ladder、P6 benchmark、profiler 和 offload 继续关闭。
+4. P8 baseline/adapter 仍等待至少一个 W8A8 成功请求；P7 工具链预研可继续，但不得外推 full-model runtime。
 7. P9 最后消费统一 trace bundle，输出硬件优先级。

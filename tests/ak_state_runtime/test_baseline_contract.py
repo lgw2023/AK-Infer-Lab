@@ -66,6 +66,7 @@ def test_pending_baseline_contract_records_only_proven_prerequisites() -> None:
         "official_plugin_activation",
         "fresh_process_worker_memory_snapshot",
         "cann_acl_parent_spawn_path",
+        "deepseek_v4_token_ids_4096_validated",
         "w8a8_no_mtp_graph_server_ready",
         "w8a8_successful_request",
     }
@@ -75,6 +76,7 @@ def test_pending_baseline_contract_records_only_proven_prerequisites() -> None:
         "official_plugin_activation",
         "fresh_process_worker_memory_snapshot",
         "cann_acl_parent_spawn_path",
+        "deepseek_v4_token_ids_4096_validated",
         "w8a8_no_mtp_graph_server_ready",
     ):
         assert evidence[evidence_id]["status"] == "passed"
@@ -83,6 +85,18 @@ def test_pending_baseline_contract_records_only_proven_prerequisites() -> None:
     assert evidence["w8a8_successful_request"][
         "selected_workload_validated"
     ] is False
+    assert evidence["deepseek_v4_token_ids_4096_validated"]["result"] == {
+        "tokenizer_loader": "vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer",
+        "tokenizer_runtime_class": "CachedDSV4TokenizersBackend",
+        "tokenizer_runtime_mro_contains_dsv4_backend": True,
+        "generated_token_count": 4096,
+        "tokenizer_size": 129283,
+        "min_token_id": 16,
+        "max_token_id": 90868,
+        "all_token_ids_in_vocab": True,
+        "payload_artifact_written": False,
+        "http_requests_dispatched": 0,
+    }
     assert evidence["w8a8_no_mtp_graph_server_ready"]["result"] == {
         "mtp_enabled": False,
         "server_ready": True,

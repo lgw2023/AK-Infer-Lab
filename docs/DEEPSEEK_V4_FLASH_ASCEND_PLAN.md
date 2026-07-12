@@ -38,10 +38,10 @@ vLLM 0.22.1+empty
 vLLM-Ascend 0.22.1rc1
 triton-ascend 3.2.1
 transformers 5.5.4
-new isolated host conda environment built; W8A8 no-MTP graph server reached ready; first request pending
+new isolated host conda environment built; W8A8 no-MTP graph server reached ready; 4096 tokenizer IDs validated; first request pending
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8 首轮八卡在 MTP graph capture 失败；no-MTP 复跑已让主模型 graph server ready，但旧客户端 tokenizer 在 HTTP 发送前失败。真实 base request、MTP 和长上下文仍未验证。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8 首轮八卡在 MTP graph capture 失败；no-MTP 复跑已让主模型 graph server ready；原生 tokenizer 已生成 4096 个合法 token ID，但交接脚本的缓存包装类名前缀断言阻止了 payload 落盘。真实 base request、MTP 和长上下文仍未验证。
 
 ### 3.2 对照路：MindIE
 
@@ -52,17 +52,17 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 NPU 0-7 已获用户明确授权。首轮 context-ladder 任务在 MTP graph capture 失败，当前活动服务器任务为：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
 ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 TP=8, EP=enabled
 ```
 
-mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门通过，Ascend model route 正确，46/46 分片加载完成，随后四个 worker 在 `process_weights_after_loading` 同样命中当前 SoC 不支持 `customize_dtype`。因此不再继续 mixed 兼容性工作。W8A8 权重为 279.41GiB；首轮八卡在 MTP proposer DSA-CP graph capture 因 `positions_cpu=None` 失败，no-MTP 复跑则已权重加载、graph capture 并 server-ready，但 `AutoTokenizer` 在客户端构造阶段失败，HTTP 请求仍未发出。
+mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门通过，Ascend model route 正确，46/46 分片加载完成，随后四个 worker 在 `process_weights_after_loading` 同样命中当前 SoC 不支持 `customize_dtype`。因此不再继续 mixed 兼容性工作。W8A8 权重为 279.41GiB；首轮八卡在 MTP proposer DSA-CP graph capture 因 `positions_cpu=None` 失败，no-MTP 复跑则已权重加载、graph capture 并 server-ready。原生 tokenizer 后续已生成 4096 个合法 token ID，但错误的顶层类名断言使 payload 与 HTTP 请求仍未产生。
 
 当前任务：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
 ```
 
 参考配置：
@@ -82,7 +82,7 @@ MTP=disabled for isolation
 
 ```text
 4096 input + fixed 64 output
-prevalidate 4096 token IDs with DeepseekV4Tokenizer; then one graph request; no eager
+validate 4096 token IDs and a DSV4 backend in the tokenizer MRO; then one graph request; no eager
 ```
 
 P5 只回答：是否 ready、最高成功上下文、是否保持固定输出、发生了何种降级。P5 不跑 msprof，不做性能基准或瓶颈归因。
@@ -257,7 +257,7 @@ boundaries:
 
 ## 10. 当前下一步
 
-1. 在已授权 NPU 0-7 上复核八卡健康空闲，不清理非本任务进程。
-2. 固定当前 0.22.1/0.22.1rc1、W8A8、TP8/EP 与 `--quantization ascend`，关闭 MTP、`max_num_seqs=1`，保留 graph capture 执行一个 `4096+64`。
-3. 仅当主模型 graph capture 仍失败时再执行 eager；任一请求成功即停止并标 P5 yellow。
-4. MTP patch/backport、context ladder、P6 baseline 与性能矩阵继续关闭；结果先生成 server-local 候选清单并等待新的传输选择。
+1. 在不启动 server 时复用已成功的 `DeepseekV4Tokenizer` 路径，校验 4096 个合法 token ID，并要求 MRO 含 DSV4 backend；不再断言缓存包装后的顶层类名前缀。
+2. 预检通过后在已授权 NPU 0-7 上复核八卡健康空闲，不清理非本任务进程。
+3. 固定当前 0.22.1/0.22.1rc1、W8A8、TP8/EP、`--quantization ascend`、no-MTP、`max_num_seqs=1` 和 graph capture，只执行一个 `4096+64`；不运行 eager。
+4. 任一请求结果后停止；MTP patch/backport、context ladder、P6 baseline 与性能矩阵继续关闭，结果先生成 server-local 候选清单并等待新的传输选择。

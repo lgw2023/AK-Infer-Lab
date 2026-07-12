@@ -1,9 +1,9 @@
-experiment_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry
+experiment_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry
 date: "2026-07-12"
 git_commit: server_fills_after_pull
 operator: external_development_machine
 server: atlas800t_a2_ascend_server
-scenario: w8a8_eight_card_no_mtp_tokenizer_retry_authorized
+scenario: w8a8_eight_card_no_mtp_tokenizer_mro_retry_authorized
 is_smoke: true
 is_benchmark: false
 model_objects:
@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: no_mtp_graph_server_ready_client_tokenizer_failed_before_http_dispatch
+  runtime_status: no_mtp_graph_server_ready_tokenizer_4096_ids_validated_client_assertion_failed_before_payload_write
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -81,14 +81,33 @@ prior_no_mtp_result:
   first_failure: pretrained_config_missing_max_position_embeddings
   eager_profile_executed: false
   evidence_boundary: graph_rank_and_client_traceback_are_summary_reported_but_not_independently_present_in_the_bounded_excerpt
-authorized_runtime_gate:
+prior_tokenizer_retry_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
+  task_status: red_client_tokenizer_class_assertion
+  server_git_head: f3b6c73743acd6020258be4270df5236d9a8c6bc
+  tokenizer_loader_succeeded: true
+  tokenizer_runtime_class: CachedDSV4TokenizersBackend
+  tokenizer_runtime_mro_contains_dsv4_backend: true
+  generated_token_count: 4096
+  tokenizer_size: 129283
+  min_token_id: 16
+  max_token_id: 90868
+  all_token_ids_in_vocab: true
+  payload_artifact_written: false
+  server_started: false
+  http_requests_dispatched: 0
+  successful_requests: 0
+  first_failure_stage: client_tokenizer_runtime_identity_assertion
+  first_failure: cached_wrapper_class_does_not_start_with_dsv4
+  evidence_boundary: tokenizer_diagnostic_is_received_but_no_payload_or_runtime_request_artifact_was_generated
+authorized_runtime_gate:
+  task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
   model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
   visible_devices: "0,1,2,3,4,5,6,7"
   authorization_date: "2026-07-12"
   developer_to_server_ready: true
 active_eight_card_smoke:
-  workload: workloads/p5_8card_no_mtp_tokenizer_retry.yaml
+  workload: workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml
   model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
   server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
   visible_devices: "0,1,2,3,4,5,6,7"
@@ -101,8 +120,9 @@ active_eight_card_smoke:
   max_num_seqs: 1
   client_tokenizer: vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer
   client_tokenizer_preflight_before_npu_server_start: true
+  client_tokenizer_runtime_identity_check: mro_contains_dsv4_backend
   profiles:
-    - base_no_mtp_graph_maxseq1_tokenizer_fixed
+    - base_no_mtp_graph_maxseq1_tokenizer_mro_fixed
 features:
   checkpoint_quantization: w8a8_modelslim
   explicit_quantization_argument: ascend
@@ -129,13 +149,14 @@ artifacts:
   model_registry: deepseek_v4_flash_model_objects.yaml
   historical_mixed_checkpoint_workload: workloads/p5_4card_fp8_acl_path_probe.yaml
   historical_context_ladder_workload: workloads/p5_8card_context_ladder.yaml
-  active_workload: workloads/p5_8card_no_mtp_tokenizer_retry.yaml
+  completed_tokenizer_retry_workload: workloads/p5_8card_no_mtp_tokenizer_retry.yaml
+  active_workload: workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml
   server_handoff: 通信模块/docs/developer-to-server.md
 boundaries:
   - W8A8 is the only selected DeepSeek-V4-Flash runtime object for the current P5 and future P6 execution.
   - The 279.41 GiB W8A8 checkpoint cannot be tested as a full model in the retired four-card scope; the current task uses all eight authorized devices.
   - The mixed checkpoint remains historical evidence and will not receive an adapter or conversion effort.
-  - The active P5 task first prevalidates a 4096-token payload with DeepseekV4Tokenizer, then runs one no-MTP graph request only.
+  - The active P5 task validates DeepseekV4Tokenizer through its DSV4 backend MRO, writes a 4096-token payload, then runs one no-MTP graph request only.
   - AutoTokenizer, eager fallback, MTP and context ladder are forbidden in the active retry.
   - P6 benchmark, profiler, offload, MTP patching and runtime upgrades remain unauthorized.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
@@ -145,4 +166,4 @@ acceptance:
   route_decision_recorded: true
   current_four_card_scope_retired: true
   developer_to_server_ready: true
-  blocked_by: no_successful_w8a8_request_and_client_tokenizer_payload_gate_and_eight_device_health_idle_gate
+  blocked_by: no_successful_w8a8_request_and_client_payload_artifact_and_eight_device_health_idle_gate

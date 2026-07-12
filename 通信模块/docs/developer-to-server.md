@@ -1,11 +1,11 @@
 # Developer to Server
 
-## 当前任务：DeepSeek-V4-Flash W8A8 八卡 no-MTP tokenizer 单请求重试
+## 当前任务：DeepSeek-V4-Flash W8A8 八卡 no-MTP tokenizer MRO 单请求重试
 
 任务 ID：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
 ```
 
 继续使用用户已授权的设备范围：
@@ -14,40 +14,45 @@ p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
 ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 ```
 
-本轮只回答一个问题：修正上轮仅存在于请求客户端的 tokenizer 路径后，已能 ready 的 W8A8、TP8+EP、no-MTP、`FULL_DECODE_ONLY` graph server 能否完成一个 `4096 input + 64 output` 请求。
+本轮只回答一个问题：把上轮过严的 tokenizer 顶层类名断言改为 DSV4 backend MRO 校验后，已能 ready 的 W8A8、TP8+EP、no-MTP、`FULL_DECODE_ONLY` graph server 能否完成一个 `4096 input + 64 output` 请求。
 
 只允许一个 profile：
 
 ```text
-base_no_mtp_graph_maxseq1_tokenizer_fixed
+base_no_mtp_graph_maxseq1_tokenizer_mro_fixed
 ```
 
 禁止 eager fallback、MTP、context ladder、P6、profiler、offload、并发、性能归因、config/checkpoint patch、site-packages patch、环境升级或重建。
 
 ## 1. 上轮结果与本轮唯一变量
 
-上轮任务 `p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712` 结果为：
+上轮任务 `p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712` 结果为：
 
 ```text
-red_graph_ready_request_client_tokenizer_error
+red_client_tokenizer_class_assertion
 ```
 
 已知事实：
 
-- preflight 和八卡资源门通过；
-- W8A8 70 分片、权重约 `279.41 GiB`，在 8 个 worker 完成加载，每 worker 报告 `38.1255 GB`；
-- MTP 关闭，未再进入 MTP drafter `positions_cpu=None` 路径；
-- `server_ready_exit_code=0`，服务器摘要报告主模型 8 rank graph capture 完成且 `/health` 为 200；
-- 旧客户端在 `AutoTokenizer.from_pretrained(...)` 中因 `PreTrainedConfig` 缺 `max_position_embeddings` 崩溃，HTTP 请求未发出；
-- eager 未运行，这是正确行为：服务器 graph 已 ready，客户端错误与 eager 无关。
+- `DeepseekV4Tokenizer.from_pretrained(local_files_only=True)` 成功返回 `CachedDSV4TokenizersBackend`；
+- runtime MRO 含 `DSV4TokenizersBackend`；
+- 已生成恰好 4096 个 token ID，范围 `16..90868`，全部小于 tokenizer size `129283`；
+- handoff 的 `type(tokenizer).__name__.startswith("DSV4")` 与 vLLM `get_cached_tokenizer()` 增加 `Cached` 前缀的固定语义冲突；
+- 断言发生在 `tokenizer_preflight.json` 和 `request_payload.json` 写入之前；
+- 按硬门正确停止，server、形式化 runtime/resource gate、NPU 0-7 和 HTTP 请求均未执行；
+- 前一轮 no-MTP graph server-ready 证据不变，本轮不重新解释为新的 server 结果。
 
-证据边界：上轮小包未包含 `request_client.log`，且有界摘录未包含 graph/startup/health 行；因此完整 client traceback 和全 rank graph 结论目前为服务器摘要证据。本轮必须把 tokenizer preflight、graph-ready 和 request result 的小证据一并留存。
+模型对象仍是同一 W8A8 70 分片、约 `279.41 GiB` checkpoint；本轮不修改、转换或重新选择模型。
 
-本轮唯一变量是客户端 tokenizer：
+证据边界：上轮已收到 tokenizer diagnostic，可直接核对 runtime class、MRO 和 4096-token 范围；但 payload 文件、server 日志和 request 结果均未生成。前一轮全 rank graph-ready 仍是服务器摘要证据。本轮必须把 tokenizer preflight、graph-ready 和 request result 的小证据一并留存。
+
+本轮唯一变量是客户端 tokenizer runtime identity 断言：
 
 ```text
+保留: vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer
+删除: 顶层 runtime class 必须 startswith("DSV4")
+改为: runtime MRO 至少一个 class name startswith("DSV4")
 禁止: transformers.AutoTokenizer
-使用: vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer
 ```
 
 服务器 runtime、模型、设备、TP/EP、graph、`max_num_seqs=1`、`--quantization ascend`、插件与 CANN/ATB 路径全部保持不变。
@@ -66,7 +71,7 @@ red_graph_ready_request_client_tokenizer_error
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-TASK_ID=p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
+TASK_ID=p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
 ARTIFACT_DIR="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/${TASK_ID}"
 ENV_PREFIX=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 PYTHON_BIN="${ENV_PREFIX}/bin/python"
@@ -133,10 +138,15 @@ while len(ids) < 4096:
 
 prompt_ids = ids[:4096]
 tokenizer_size = len(tokenizer)
+tokenizer_runtime_class = type(tokenizer).__name__
+tokenizer_runtime_mro = [cls.__name__ for cls in type(tokenizer).__mro__]
+dsv4_backend_mro = [name for name in tokenizer_runtime_mro if name.startswith("DSV4")]
+tokenizer_module_path = str(Path(inspect.getfile(DeepseekV4Tokenizer)).resolve())
 assert len(prompt_ids) == 4096
 assert all(isinstance(token_id, int) for token_id in prompt_ids)
 assert all(0 <= token_id < tokenizer_size for token_id in prompt_ids)
-assert type(tokenizer).__name__.startswith("DSV4")
+assert dsv4_backend_mro
+assert tokenizer_module_path == "/data/node0_disk1/vllm-0.22.1/vllm/tokenizers/deepseek_v4.py"
 
 payload = {
     "model": "deepseek-v4-flash-w8a8-mtp",
@@ -154,8 +164,10 @@ payload_path.write_bytes(payload_bytes)
 result = {
     "status": "pass",
     "tokenizer_loader": "vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer",
-    "tokenizer_runtime_class": type(tokenizer).__name__,
-    "tokenizer_module_path": str(Path(inspect.getfile(DeepseekV4Tokenizer)).resolve()),
+    "tokenizer_runtime_class": tokenizer_runtime_class,
+    "tokenizer_runtime_mro": tokenizer_runtime_mro,
+    "dsv4_backend_mro": dsv4_backend_mro,
+    "tokenizer_module_path": tokenizer_module_path,
     "transformers_version": importlib.metadata.version("transformers"),
     "local_files_only": True,
     "prompt_token_count": len(prompt_ids),
@@ -179,7 +191,8 @@ printf '%s\n' "${CLIENT_PREFLIGHT_EXIT}" > "${ARTIFACT_DIR}/client_preflight_exi
 - `client_preflight_exit_code.txt` 必须为 `0`；
 - `tokenizer_preflight.json.status` 必须为 `pass`；
 - `prompt_token_count` 必须恰好为 `4096`；
-- runtime class 必须以 `DSV4` 开头；
+- tokenizer module path 必须精确来自固定 vLLM `v0.22.1` 源码；
+- runtime MRO 必须至少包含一个类名以 `DSV4` 开头；顶层 runtime class 允许是 `CachedDSV4TokenizersBackend`，不得再要求其以 `DSV4` 开头；
 - payload SHA-256 和 bytes 必须记录；
 - 本步失败则标记 `red_client_tokenizer_preflight`，立即停止，禁止启动 vLLM server。
 
@@ -314,7 +327,7 @@ printf '%s\n' "${RESOURCE_GATE}" > "${ARTIFACT_DIR}/resource_gate.txt"
 只有第 4、5 节全部通过后才执行。
 
 ```bash
-PROFILE_DIR="${ARTIFACT_DIR}/base_no_mtp_graph_maxseq1_tokenizer_fixed"
+PROFILE_DIR="${ARTIFACT_DIR}/base_no_mtp_graph_maxseq1_tokenizer_mro_fixed"
 mkdir -p "${PROFILE_DIR}"
 
 cmd=(
@@ -503,7 +516,7 @@ ${ARTIFACT_DIR}/task_status.txt
 
 - task ID、Git 三方状态与完整同步方式；
 - 环境/import roots/source commit/clean；
-- tokenizer loader/runtime class/module path、prompt token count、token ID range、payload bytes/SHA-256 和 preflight exit；
+- tokenizer loader/runtime class/runtime MRO/匹配的 DSV4 backend/module path、prompt token count、token ID range、payload bytes/SHA-256 和 preflight exit；
 - 八卡资源门、ACL origin、五插件；
 - 完整 shell-escaped server command、ready/request exit；
 - 8 worker weight-load、graph cache/startup/health 有界证据；
@@ -528,15 +541,17 @@ tokenizer_preflight.json
 git_head.txt
 resource_gate.txt
 task_status.txt
-base_no_mtp_graph_maxseq1_tokenizer_fixed/server_command.txt
-base_no_mtp_graph_maxseq1_tokenizer_fixed/server_ready_exit_code.txt
-base_no_mtp_graph_maxseq1_tokenizer_fixed/request_client_exit_code.txt
-base_no_mtp_graph_maxseq1_tokenizer_fixed/request_result.json
-base_no_mtp_graph_maxseq1_tokenizer_fixed/request_client.log
-base_no_mtp_graph_maxseq1_tokenizer_fixed/graph_ready_and_failure_excerpt.txt
+base_no_mtp_graph_maxseq1_tokenizer_mro_fixed/server_command.txt
+base_no_mtp_graph_maxseq1_tokenizer_mro_fixed/server_ready_exit_code.txt
+base_no_mtp_graph_maxseq1_tokenizer_mro_fixed/request_client_exit_code.txt
+base_no_mtp_graph_maxseq1_tokenizer_mro_fixed/request_result.json
+base_no_mtp_graph_maxseq1_tokenizer_mro_fixed/request_client.log
+base_no_mtp_graph_maxseq1_tokenizer_mro_fixed/graph_ready_and_failure_excerpt.txt
 ```
 
 `request_payload.json`、raw `vllm_server.log`、完整 NPU SMI、模型、生成文本和整个目录保持 server-local，不列为默认传输候选。
+
+`delivery_candidates.tsv` 是控制清单，不得把自身列入自身表格并预填自身最终 size/SHA-256。表格完成后，再在当前任务会话中用 `stat` 和 `sha256sum` 报告该控制文件的最终 bytes/SHA-256；若用户批准传输清单，再把这个会话外报告的最终值纳入确认范围。
 
 本轮是新的结果范围，尚未获得 `email`、`upload-api` 或 `server-local` 选择。生成摘要和候选清单后，只在当前任务会话报告每个候选的精确路径、bytes、SHA-256、敏感性、可用方式和一个推荐方式，然后暂停。
 

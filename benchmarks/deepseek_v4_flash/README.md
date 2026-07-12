@@ -17,7 +17,7 @@ Boundaries:
 - The project will not build an adapter for that mixed route. W8A8-MTP is the only future P5/P6 runtime object.
 - The 279.41 GiB W8A8 checkpoint exceeds four-card aggregate HBM. The first eight-card run loaded all 70 shards but failed before server-ready in the MTP drafter DSA-CP graph-capture path.
 - The completed no-MTP isolation then reached graph-ready, but its client used incompatible `AutoTokenizer` construction and failed before HTTP dispatch; successful request count remains zero.
-- The active retry prevalidates exactly 4096 token IDs with vLLM's `DeepseekV4Tokenizer`, then keeps the proven no-MTP graph server unchanged and sends one 4096+64 request. Eager is no longer authorized.
+- The first native-tokenizer retry generated exactly 4096 valid token IDs but stopped before payload write because the handoff incorrectly required the cached wrapper's top-level class name to start with `DSV4`. The active retry checks the MRO for the DSV4 backend, then keeps the proven no-MTP graph server unchanged and sends one 4096+64 request. Eager remains unauthorized.
 - P5 is a startup and long-context smoke, not a benchmark or bottleneck attribution run.
 - Any server task must be written by clearing and rewriting `通信模块/docs/developer-to-server.md`, with body and returned attachments kept within the 70KB communication limit.
 
@@ -32,7 +32,8 @@ P5 deliverables:
 - `workloads/p5_4card_fp8_plugin_activation_probe.yaml` and `workloads/p5_4card_fp8_acl_path_probe.yaml`: completed historical diagnostics for the retired mixed route.
 - `workloads/p5_8card_context_ladder.yaml`: completed first-attempt contract; the run reached weight load but failed in MTP graph capture before the ladder.
 - `workloads/p5_8card_no_mtp_isolation.yaml`: completed W8A8 no-MTP graph/eager isolation contract; graph server reached ready but the client failed before request dispatch.
-- `workloads/p5_8card_no_mtp_tokenizer_retry.yaml`: active tokenizer-preflight plus one-request no-MTP graph retry.
+- `workloads/p5_8card_no_mtp_tokenizer_retry.yaml`: completed native-tokenizer retry; token generation passed, but an over-strict cached-wrapper class assertion stopped execution.
+- `workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml`: active MRO-validated tokenizer preflight plus one-request no-MTP graph retry.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:

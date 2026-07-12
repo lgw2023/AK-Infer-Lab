@@ -1,21 +1,24 @@
 schema_version: 1
-workload_id: p5_8card_no_mtp_tokenizer_retry
+workload_id: p5_8card_no_mtp_tokenizer_mro_retry
 date: "2026-07-12"
-purpose: obtain_first_w8a8_request_after_fixing_only_the_client_tokenizer_path
+purpose: obtain_first_w8a8_request_after_fixing_only_the_tokenizer_runtime_identity_assertion
 model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
-scenario: p5_eight_card_no_mtp_graph_single_request_with_prevalidated_deepseek_v4_tokenizer
+scenario: p5_eight_card_no_mtp_graph_single_request_with_mro_validated_deepseek_v4_tokenizer
 server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
 prior_result:
-  task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
-  task_status: red_graph_ready_request_client_tokenizer_error
-  model_shards_loaded: 70
-  model_weights_loaded_on_workers: 8
-  server_ready: true
-  main_model_graph_capture: summary_reported_success_all_eight_ranks
+  task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
+  task_status: red_client_tokenizer_class_assertion
+  tokenizer_loader_succeeded: true
+  tokenizer_runtime_class: CachedDSV4TokenizersBackend
+  tokenizer_runtime_mro_contains_dsv4_backend: true
+  generated_token_count: 4096
+  all_token_ids_in_vocab: true
+  payload_artifact_written: false
+  server_started: false
   http_requests_dispatched: 0
   successful_requests: 0
-  first_failure_stage: client_tokenizer_construction_before_http_dispatch
-  first_failure: pretrained_config_missing_max_position_embeddings
+  first_failure_stage: client_tokenizer_runtime_identity_assertion
+  first_failure: cached_wrapper_class_does_not_start_with_dsv4
 client_preflight:
   must_pass_before_npu_server_start: true
   npu_server_must_not_be_running: true
@@ -25,6 +28,9 @@ client_preflight:
   local_files_only: true
   expected_prompt_token_count: 4096
   validate_all_ids_are_in_tokenizer_range: true
+  runtime_identity_check: mro_contains_class_name_starting_with_DSV4
+  top_level_runtime_class_prefix_check: forbidden_because_get_cached_tokenizer_adds_Cached_prefix
+  record_runtime_class_and_mro: true
   write_payload_before_server_start: true
   failure_grade: red_client_tokenizer_preflight
 request_plan:
@@ -64,7 +70,7 @@ runtime_fixed:
   enforce_eager: false
   cudagraph_mode: FULL_DECODE_ONLY
 profiles:
-  - name: base_no_mtp_graph_maxseq1_tokenizer_fixed
+  - name: base_no_mtp_graph_maxseq1_tokenizer_mro_fixed
     run_order: 1
     run_only_if: client_preflight_and_resource_gate_pass
     request_count: 1
@@ -76,31 +82,12 @@ stop_policy:
   no_model_config_or_checkpoint_modification: true
 status_grading:
   yellow_no_mtp_graph_request_success: server_ready_http_200_and_exactly_64_output_tokens
-  red_client_tokenizer_preflight: deepseek_v4_tokenizer_or_4096_token_payload_gate_fails_before_server_start
+  red_client_tokenizer_preflight: deepseek_v4_tokenizer_mro_or_4096_token_payload_gate_fails_before_server_start
   red_server_not_ready: identical_graph_server_does_not_become_ready
   red_request_runtime: server_ready_but_single_request_does_not_complete_exactly_64_output_tokens
-execution_result:
-  task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
-  task_status: red_client_tokenizer_class_assertion
-  server_git_head: f3b6c73743acd6020258be4270df5236d9a8c6bc
-  tokenizer_loader: vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer
-  tokenizer_runtime_class: CachedDSV4TokenizersBackend
-  tokenizer_runtime_mro_contains_dsv4_backend: true
-  generated_token_count: 4096
-  tokenizer_size: 129283
-  min_token_id: 16
-  max_token_id: 90868
-  all_token_ids_in_vocab: true
-  payload_artifact_written: false
-  server_started: false
-  http_requests_dispatched: 0
-  successful_requests: 0
-  first_failure_stage: client_tokenizer_runtime_identity_assertion
-  first_failure: cached_wrapper_class_does_not_start_with_dsv4
-  project_interpretation: tokenizer_content_gate_passed_but_handoff_class_name_assertion_was_too_strict
-  superseded_by: p5_8card_no_mtp_tokenizer_mro_retry.yaml
 boundaries:
   - This is a P5 failure-isolation smoke, not a P6 benchmark.
+  - The only code-path change from the prior task is the tokenizer runtime identity assertion.
   - A successful request validates only this exact no-MTP W8A8 graph cell.
   - MTP and the 128K context ladder remain unvalidated.
   - Do not use AutoTokenizer or patch config, checkpoint, vLLM, vLLM-Ascend or site-packages.

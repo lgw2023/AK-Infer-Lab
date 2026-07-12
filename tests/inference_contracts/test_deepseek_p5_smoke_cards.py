@@ -14,11 +14,11 @@ def load_yaml(path: Path) -> dict:
     return data
 
 
-def test_p5_readiness_card_records_w8a8_route_and_no_mtp_tokenizer_retry_task():
+def test_p5_readiness_card_records_w8a8_route_and_no_mtp_tokenizer_mro_retry_task():
     card = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
 
-    assert card["experiment_id"] == "p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry"
-    assert card["scenario"] == "w8a8_eight_card_no_mtp_tokenizer_retry_authorized"
+    assert card["experiment_id"] == "p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry"
+    assert card["scenario"] == "w8a8_eight_card_no_mtp_tokenizer_mro_retry_authorized"
     assert card["target_runtime"]["container_or_conda"] == "host_conda"
     assert card["target_runtime"]["vllm_version"] == "0.22.1+empty"
     assert card["target_runtime"]["vllm_ascend_version"] == "0.22.1rc1"
@@ -41,8 +41,19 @@ def test_p5_readiness_card_records_w8a8_route_and_no_mtp_tokenizer_retry_task():
     assert card["prior_no_mtp_result"]["main_model_graph_capture"] == "summary_reported_success_all_eight_ranks"
     assert card["prior_no_mtp_result"]["successful_requests"] == 0
     assert card["prior_no_mtp_result"]["http_requests_dispatched"] == 0
+    assert card["prior_tokenizer_retry_result"]["task_status"] == (
+        "red_client_tokenizer_class_assertion"
+    )
+    assert card["prior_tokenizer_retry_result"]["tokenizer_runtime_class"] == (
+        "CachedDSV4TokenizersBackend"
+    )
+    assert card["prior_tokenizer_retry_result"]["tokenizer_runtime_mro_contains_dsv4_backend"] is True
+    assert card["prior_tokenizer_retry_result"]["generated_token_count"] == 4096
+    assert card["prior_tokenizer_retry_result"]["all_token_ids_in_vocab"] is True
+    assert card["prior_tokenizer_retry_result"]["payload_artifact_written"] is False
+    assert card["prior_tokenizer_retry_result"]["successful_requests"] == 0
     assert card["authorized_runtime_gate"]["task_id"] == (
-        "p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712"
+        "p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712"
     )
     assert card["authorized_runtime_gate"]["visible_devices"] == "0,1,2,3,4,5,6,7"
     assert card["authorized_runtime_gate"]["authorization_date"] == "2026-07-12"
@@ -59,8 +70,11 @@ def test_p5_readiness_card_records_w8a8_route_and_no_mtp_tokenizer_retry_task():
     assert card["active_eight_card_smoke"]["client_tokenizer"] == (
         "vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer"
     )
+    assert card["active_eight_card_smoke"]["client_tokenizer_runtime_identity_check"] == (
+        "mro_contains_dsv4_backend"
+    )
     assert card["active_eight_card_smoke"]["profiles"] == [
-        "base_no_mtp_graph_maxseq1_tokenizer_fixed"
+        "base_no_mtp_graph_maxseq1_tokenizer_mro_fixed"
     ]
     assert card["features"]["mtp"] == "disabled_for_failure_isolation"
 
@@ -180,6 +194,50 @@ def test_p5_no_mtp_tokenizer_retry_preflights_payload_before_one_graph_request()
     ]
     assert workload["stop_policy"]["no_eager_fallback"] is True
     assert workload["stop_policy"]["no_context_ladder"] is True
+    assert workload["execution_result"]["task_status"] == (
+        "red_client_tokenizer_class_assertion"
+    )
+    assert workload["execution_result"]["tokenizer_runtime_class"] == (
+        "CachedDSV4TokenizersBackend"
+    )
+    assert workload["execution_result"]["generated_token_count"] == 4096
+    assert workload["execution_result"]["all_token_ids_in_vocab"] is True
+    assert workload["execution_result"]["payload_artifact_written"] is False
+    assert workload["execution_result"]["server_started"] is False
+    assert workload["execution_result"]["successful_requests"] == 0
+    assert workload["execution_result"]["superseded_by"] == (
+        "p5_8card_no_mtp_tokenizer_mro_retry.yaml"
+    )
+
+
+def test_p5_no_mtp_tokenizer_mro_retry_changes_only_runtime_identity_gate():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p5_8card_no_mtp_tokenizer_mro_retry.yaml"
+    )
+
+    assert workload["workload_id"] == "p5_8card_no_mtp_tokenizer_mro_retry"
+    assert workload["prior_result"]["task_status"] == (
+        "red_client_tokenizer_class_assertion"
+    )
+    assert workload["prior_result"]["generated_token_count"] == 4096
+    assert workload["prior_result"]["all_token_ids_in_vocab"] is True
+    assert workload["prior_result"]["payload_artifact_written"] is False
+    assert workload["client_preflight"]["runtime_identity_check"] == (
+        "mro_contains_class_name_starting_with_DSV4"
+    )
+    assert workload["client_preflight"]["top_level_runtime_class_prefix_check"] == (
+        "forbidden_because_get_cached_tokenizer_adds_Cached_prefix"
+    )
+    assert workload["client_preflight"]["expected_prompt_token_count"] == 4096
+    assert workload["request_plan"]["request_count"] == 1
+    assert workload["request_plan"]["input_tokens"] == 4096
+    assert workload["request_plan"]["output_tokens"] == 64
+    assert workload["runtime_fixed"]["speculative_mtp"] == "disabled"
+    assert workload["runtime_fixed"]["enforce_eager"] is False
+    assert [profile["name"] for profile in workload["profiles"]] == [
+        "base_no_mtp_graph_maxseq1_tokenizer_mro_fixed"
+    ]
+    assert workload["stop_policy"]["no_eager_fallback"] is True
 
 
 def test_p5_four_card_startup_probe_is_bounded_capacity_diagnostic():
@@ -377,11 +435,11 @@ def test_p5_acl_path_probe_preserves_only_official_cann_path_and_bounds_retry():
     assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
 
 
-def test_server_handoff_contains_only_authorized_w8a8_no_mtp_tokenizer_retry_task():
+def test_server_handoff_contains_only_authorized_w8a8_no_mtp_tokenizer_mro_retry_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712" in handoff
-    assert "W8A8 八卡 no-MTP tokenizer 单请求重试" in handoff
+    assert "p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712" in handoff
+    assert "W8A8 八卡 no-MTP tokenizer MRO 单请求重试" in handoff
     assert "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp" in handoff
     assert "279.41 GiB" in handoff
     assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
@@ -389,6 +447,10 @@ def test_server_handoff_contains_only_authorized_w8a8_no_mtp_tokenizer_retry_tas
     assert "--quantization ascend" in handoff
     assert "--max-num-seqs 1" in handoff
     assert "DeepseekV4Tokenizer" in handoff
+    assert "tokenizer_runtime_mro = [cls.__name__ for cls in type(tokenizer).__mro__]" in handoff
+    assert 'dsv4_backend_mro = [name for name in tokenizer_runtime_mro if name.startswith("DSV4")]' in handoff
+    assert 'assert type(tokenizer).__name__.startswith("DSV4")' not in handoff
+    assert 'assert dsv4_backend_mro' in handoff
     assert "AutoTokenizer" in handoff
     assert "tokenizer = AutoTokenizer.from_pretrained" not in handoff
     assert "cmd+=(--enforce-eager)" not in handoff
@@ -399,3 +461,4 @@ def test_server_handoff_contains_only_authorized_w8a8_no_mtp_tokenizer_retry_tas
     assert "RESOURCE_GATE=not_confirmed" in handoff
     assert "确认前禁止发送邮件、附件、upload-api 预检或上传" in handoff
     assert "禁止主动终止、暂停或影响任何非本任务进程" in handoff
+    assert "不得把自身列入自身表格" in handoff
