@@ -13,13 +13,13 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-NPU 0-7 已获明确授权，当前活动服务器任务为 W8A8-MTP 八卡 P5：
+NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；当前活动任务为 no-MTP 请求隔离：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
 ```
 
-mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 的 279.41 GiB 权重超过四卡聚合 HBM；本轮在已授权的 NPU 0-7 上执行 TP8/EP P5 startup 与 context ladder，实际启动仍受八卡健康空闲门约束。
+mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡摘要报告 70 分片在 8 个 worker 加载完成，随后因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败。当前固定同一栈关闭 MTP，只做一个 `4096+64`；仅当主模型 graph capture 仍失败才允许 eager。
 
 ## 2. 阶段依赖
 

@@ -14,11 +14,11 @@ def load_yaml(path: Path) -> dict:
     return data
 
 
-def test_p5_readiness_card_records_w8a8_route_and_authorized_eight_card_task():
+def test_p5_readiness_card_records_w8a8_route_and_no_mtp_isolation_task():
     card = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
 
-    assert card["experiment_id"] == "p5_deepseek_v4_flash_w8a8_8card_context_smoke"
-    assert card["scenario"] == "w8a8_eight_card_startup_and_context_ladder_authorized"
+    assert card["experiment_id"] == "p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation"
+    assert card["scenario"] == "w8a8_eight_card_no_mtp_isolation_authorized"
     assert card["target_runtime"]["container_or_conda"] == "host_conda"
     assert card["target_runtime"]["vllm_version"] == "0.22.1+empty"
     assert card["target_runtime"]["vllm_ascend_version"] == "0.22.1rc1"
@@ -31,8 +31,11 @@ def test_p5_readiness_card_records_w8a8_route_and_authorized_eight_card_task():
     assert card["route_decision"]["decision"] == "stop_mixed_fp8_fp4_and_use_w8a8_only"
     assert card["route_decision"]["build_mixed_checkpoint_adapter"] is False
     assert card["route_decision"]["selected_model_object_id"] == "deepseek_v4_flash_w8a8_mtp_modelscope"
+    assert card["prior_eight_card_result"]["task_status"] == "red_deterministic_mtp_dsa_cp_graph_capture"
+    assert card["prior_eight_card_result"]["model_shards_loaded"] == 70
+    assert card["prior_eight_card_result"]["successful_requests"] == 0
     assert card["authorized_runtime_gate"]["task_id"] == (
-        "p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712"
+        "p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712"
     )
     assert card["authorized_runtime_gate"]["visible_devices"] == "0,1,2,3,4,5,6,7"
     assert card["authorized_runtime_gate"]["authorization_date"] == "2026-07-12"
@@ -43,8 +46,10 @@ def test_p5_readiness_card_records_w8a8_route_and_authorized_eight_card_task():
     assert card["active_eight_card_smoke"]["resource_gate"] == (
         "authorized_but_execute_only_if_all_eight_devices_healthy_idle_and_conflict_free"
     )
-    assert card["active_eight_card_smoke"]["context_ladder_tokens"] == [4096, 32768, 65536, 98304, 131072]
+    assert card["active_eight_card_smoke"]["input_tokens"] == 4096
     assert card["active_eight_card_smoke"]["output_tokens"] == 64
+    assert card["active_eight_card_smoke"]["max_num_seqs"] == 1
+    assert card["features"]["mtp"] == "disabled_for_failure_isolation"
 
     paths = {item["model_object_id"]: item["server_model_path"] for item in card["model_objects"]}
     assert paths["deepseek_v4_flash_w8a8_mtp_modelscope"] == "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp"
@@ -99,6 +104,30 @@ def test_p5_context_ladder_workload_preserves_official_startup_flags_and_degrade
     assert workload["request_plan"]["output_len_tokens"] == 64
     assert workload["degrade_policy"]["max_num_seqs_order"] == [16, 4, 1]
     assert workload["degrade_policy"]["disable_mtp_after_max_num_seqs_exhausted"] is True
+
+
+def test_p5_no_mtp_isolation_keeps_one_request_and_conditional_eager_fallback():
+    workload = load_yaml(BENCHMARK_DIR / "workloads" / "p5_8card_no_mtp_isolation.yaml")
+
+    assert workload["workload_id"] == "p5_8card_no_mtp_isolation"
+    assert workload["prior_result"]["grade"] == "red_deterministic_mtp_dsa_cp_graph_capture"
+    assert workload["prior_result"]["model_shards_loaded"] == 70
+    assert workload["request_plan"]["input_tokens"] == 4096
+    assert workload["request_plan"]["output_tokens"] == 64
+    assert workload["runtime_fixed"]["max_num_seqs"] == 1
+    assert workload["runtime_fixed"]["tensor_parallel_size"] == 8
+    assert workload["runtime_fixed"]["enable_expert_parallel"] is True
+    assert workload["runtime_fixed"]["quantization"] == "ascend"
+    assert workload["runtime_fixed"]["speculative_mtp"] == "disabled"
+    assert [profile["name"] for profile in workload["profiles"]] == [
+        "base_no_mtp_graph_maxseq1",
+        "base_no_mtp_eager_maxseq1",
+    ]
+    assert workload["profiles"][1]["run_only_if"] == (
+        "first_profile_fails_in_main_model_graph_capture"
+    )
+    assert workload["stop_policy"]["stop_after_first_successful_request"] is True
+    assert workload["stop_policy"]["no_context_ladder"] is True
 
 
 def test_p5_four_card_startup_probe_is_bounded_capacity_diagnostic():
@@ -296,16 +325,19 @@ def test_p5_acl_path_probe_preserves_only_official_cann_path_and_bounds_retry():
     assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
 
 
-def test_server_handoff_contains_only_authorized_w8a8_eight_card_p5_task():
+def test_server_handoff_contains_only_authorized_w8a8_no_mtp_isolation_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712" in handoff
-    assert "W8A8-MTP 八卡启动与 Context Ladder" in handoff
+    assert "p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712" in handoff
+    assert "W8A8 八卡关闭 MTP 隔离" in handoff
     assert "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp" in handoff
     assert "279.41 GiB" in handoff
     assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
     assert "--tensor-parallel-size 8" in handoff
     assert "--quantization ascend" in handoff
+    assert "--max-num-seqs 1" in handoff
+    assert "--enforce-eager" in handoff
+    assert "cmd+=(--speculative-config" not in handoff
     assert "vllm serve" in handoff
     assert "ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model" in handoff
     assert "MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp" in handoff

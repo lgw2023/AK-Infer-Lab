@@ -38,10 +38,10 @@ vLLM 0.22.1+empty
 vLLM-Ascend 0.22.1rc1
 triton-ascend 3.2.1
 transformers 5.5.4
-new isolated host conda environment built; mixed-checkpoint diagnostic completed; W8A8 runtime pending
+new isolated host conda environment built; W8A8 weight load reached; first request pending
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题、加载 46/46 分片；最终在 FP4 expert 后处理的 `npu_format_cast(customize_dtype=...)` 得到当前 SoC 不支持错误。该路径现已停止，真实 W8A8 DSA/MoE/MTP/TP8/EP/请求路径仍未验证。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8 首轮八卡已到达权重加载后的 MTP graph capture，但没有 server-ready 或成功请求，真实 base request、MTP 和长上下文仍未验证。
 
 ### 3.2 对照路：MindIE
 
@@ -49,20 +49,20 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 
 ## 4. P5：八卡拉起与 128K Context Ladder
 
-NPU 0-7 已获用户明确授权，当前活动服务器任务为：
+NPU 0-7 已获用户明确授权。首轮 context-ladder 任务在 MTP graph capture 失败，当前活动服务器任务为：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
 ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 TP=8, EP=enabled
 ```
 
-mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门通过，Ascend model route 正确，46/46 分片加载完成，随后四个 worker 在 `process_weights_after_loading` 同样命中当前 SoC 不支持 `customize_dtype`。因此不再继续 mixed 兼容性工作。W8A8 权重为 279.41GiB，四卡静态容量不足；八卡范围现已获批，但执行前仍必须确认全部设备健康、空闲且无冲突进程。
+mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门通过，Ascend model route 正确，46/46 分片加载完成，随后四个 worker 在 `process_weights_after_loading` 同样命中当前 SoC 不支持 `customize_dtype`。因此不再继续 mixed 兼容性工作。W8A8 权重为 279.41GiB；首轮八卡摘要报告 70 分片和 MTP draft model 加载完成，随后在 MTP proposer DSA-CP graph capture 因 `positions_cpu=None` 失败，未 server-ready、未发请求。
 
 当前任务：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
 ```
 
 参考配置：
@@ -72,17 +72,17 @@ tensor_parallel_size=8
 expert_parallel=enabled
 quantization=ascend
 max_model_len=135168
-max_num_seqs=16 first
+max_num_seqs=1
 prefix_cache=enabled
 chunked_prefill=enabled
-MTP=enabled first
+MTP=disabled for isolation
 ```
 
-请求阶梯：
+当前请求：
 
 ```text
-4096 -> 32768 -> 65536 -> 98304 -> 131072
-fixed output = 64 tokens
+4096 input + fixed 64 output
+graph first; eager only after a main-model graph-capture failure
 ```
 
 P5 只回答：是否 ready、最高成功上下文、是否保持固定输出、发生了何种降级。P5 不跑 msprof，不做性能基准或瓶颈归因。
@@ -257,7 +257,7 @@ boundaries:
 
 ## 10. 当前下一步
 
-1. 执行 fresh-process Ascend plugin 激活矩阵，比较限制值与完整五插件白名单。
-2. 仅在 Ascend model registry、三项 memory redirect 与 `MemorySnapshot` 同时通过时，无 overlay 复跑四卡 `base_no_mtp`。
-3. base 成功后仍不直接运行 MTP 或八卡；先归档新的第一失败点/成功 command，并报告新文件清单等待传输方式选择。
-4. P6 baseline 与性能矩阵继续关闭。
+1. 在已授权 NPU 0-7 上复核八卡健康空闲，不清理非本任务进程。
+2. 固定当前 0.22.1/0.22.1rc1、W8A8、TP8/EP 与 `--quantization ascend`，关闭 MTP、`max_num_seqs=1`，保留 graph capture 执行一个 `4096+64`。
+3. 仅当主模型 graph capture 仍失败时再执行 eager；任一请求成功即停止并标 P5 yellow。
+4. MTP patch/backport、context ladder、P6 baseline 与性能矩阵继续关闭；结果先生成 server-local 候选清单并等待新的传输选择。

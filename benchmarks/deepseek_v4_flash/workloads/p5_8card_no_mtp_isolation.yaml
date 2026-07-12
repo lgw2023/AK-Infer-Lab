@@ -1,0 +1,77 @@
+schema_version: 1
+workload_id: p5_8card_no_mtp_isolation
+date: "2026-07-12"
+purpose: isolate_mtp_graph_failure_and_obtain_first_w8a8_request
+model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+scenario: p5_eight_card_no_mtp_graph_then_eager_isolation
+server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+prior_result:
+  task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
+  grade: red_deterministic_mtp_dsa_cp_graph_capture
+  model_shards_loaded: 70
+  model_weights_loaded_on_workers: 8
+  server_ready: false
+  successful_requests: 0
+  first_failure_stage: mtp_drafter_dsa_cp_cudagraph_capture
+  first_failure: positions_cpu_none_type_not_subscriptable
+request_plan:
+  input_tokens: 4096
+  output_tokens: 64
+  request_count_per_profile: 1
+  sampling:
+    temperature: 0.0
+    ignore_eos: true
+    min_tokens: 64
+    max_tokens: 64
+resource_gate:
+  required_visible_devices: "0,1,2,3,4,5,6,7"
+  user_confirmed_scope: true
+  authorization_date: "2026-07-12"
+  all_eight_devices_must_be_healthy_and_idle: true
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: "0.22.1+empty"
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: "0.22.1rc1"
+  torch: "2.10.0+cpu"
+  torch_npu: "2.10.0"
+runtime_fixed:
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  speculative_mtp: disabled
+profiles:
+  - name: base_no_mtp_graph_maxseq1
+    run_order: 1
+    enforce_eager: false
+    cudagraph_mode: FULL_DECODE_ONLY
+    run_request_if_server_ready: true
+  - name: base_no_mtp_eager_maxseq1
+    run_order: 2
+    enforce_eager: true
+    cudagraph_mode: disabled
+    run_only_if: first_profile_fails_in_main_model_graph_capture
+    run_request_if_server_ready: true
+stop_policy:
+  stop_after_first_successful_request: true
+  stop_after_non_graph_deterministic_failure: true
+  no_mtp_profile: true
+  no_context_ladder: true
+  no_environment_or_source_modification: true
+status_grading:
+  yellow_no_mtp_graph: first_profile_server_ready_and_4096_plus_64_success
+  yellow_no_mtp_eager: second_profile_server_ready_and_4096_plus_64_success
+  red: neither_authorized_profile_produces_a_successful_request
+boundaries:
+  - This is a P5 failure-isolation smoke, not a P6 benchmark.
+  - A successful no-MTP request validates only the base W8A8 request path for the exact command and server state.
+  - MTP remains unsupported on the current stack until separately fixed and validated.
+  - Do not patch, upgrade, rebuild or edit vLLM, vLLM-Ascend, site-packages or the checkpoint.
+  - Do not send results until the user selects a transfer method for the exact new result package.

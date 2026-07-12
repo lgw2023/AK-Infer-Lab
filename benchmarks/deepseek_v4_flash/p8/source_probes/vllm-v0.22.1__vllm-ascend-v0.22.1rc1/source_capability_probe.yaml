@@ -1,0 +1,297 @@
+schema_name: ak_target_tag_source_probe
+schema_version: 0.1.0
+probe_id: p8_target_tag_source_capability_probe_v0221_2026_0712
+probe_date: "2026-07-12"
+claim_ceiling: instrumented
+selected_workload:
+  model_id: deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
+  validated: false
+  gate: waiting_selected_workload_runtime_gate
+real_vllm_ascend_adapter_gate: waiting_selected_workload_runtime_gate
+targets:
+  - target_id: vllm
+    repo_path: reference_repos/vllm
+    tag: v0.22.1
+    expected_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  - target_id: vllm_ascend
+    repo_path: reference_repos/vllm-ascend
+    tag: v0.22.1rc1
+    expected_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+capabilities:
+  - capability_id: deepseek_v4_model_registration
+    runtime_scope: [vllm, vllm_ascend]
+    source_evidence:
+      - evidence_id: vllm_deepseek_v4_registry
+        target_id: vllm
+        path: vllm/model_executor/models/registry.py
+        contains: '"DeepseekV4ForCausalLM": ("vllm.models.deepseek_v4", "DeepseekV4ForCausalLM")'
+      - evidence_id: ascend_deepseek_v4_registry
+        target_id: vllm_ascend
+        path: vllm_ascend/models/__init__.py
+        contains: 'ModelRegistry.register_model("DeepseekV4ForCausalLM"'
+    instrumentation_evidence: []
+    documentation_evidence:
+      - evidence_id: vllm_deepseek_v4_supported_model_doc
+        target_id: vllm
+        path: docs/models/supported_models.md
+        contains: DeepseekV4ForCausalLM
+
+  - capability_id: deepseek_v4_mtp
+    runtime_scope: [vllm, vllm_ascend]
+    source_evidence:
+      - evidence_id: vllm_deepseek_v4_mtp_config
+        target_id: vllm
+        path: vllm/config/speculative.py
+        contains: '"architectures": ["DeepSeekV4MTPModel"]'
+      - evidence_id: ascend_deepseek_v4_mtp_registry
+        target_id: vllm_ascend
+        path: vllm_ascend/models/__init__.py
+        contains: 'ModelRegistry.register_model("DeepSeekV4MTPModel"'
+      - evidence_id: ascend_deepseek_v4_mtp_model
+        target_id: vllm_ascend
+        path: vllm_ascend/models/deepseek_v4_mtp.py
+        contains: 'class DeepSeekV4MTP('
+    instrumentation_evidence: []
+    documentation_evidence: []
+
+  - capability_id: deepseek_v4_tool_reasoning_parser
+    runtime_scope: [vllm]
+    source_evidence:
+      - evidence_id: vllm_deepseek_v4_tool_parser
+        target_id: vllm
+        path: vllm/tool_parsers/deepseekv4_tool_parser.py
+        contains: 'class DeepSeekV4ToolParser('
+      - evidence_id: vllm_deepseek_v4_reasoning_alias
+        target_id: vllm
+        path: vllm/reasoning/__init__.py
+        contains: '"deepseek_v4": ('
+    instrumentation_evidence: []
+    documentation_evidence: []
+
+  - capability_id: dsa_context_parallel
+    runtime_scope: [vllm_ascend]
+    source_evidence:
+      - evidence_id: ascend_dsa_cp_config_reader
+        target_id: vllm_ascend
+        path: vllm_ascend/utils.py
+        contains: 'def enable_dsa_cp() -> bool:'
+      - evidence_id: ascend_dsa_cp_metadata_builder
+        target_id: vllm_ascend
+        path: vllm_ascend/attention/context_parallel/dsa_cp.py
+        contains: 'class AscendDSACPMetadataBuilder('
+      - evidence_id: ascend_deepseek_v4_dsa_cp_use
+        target_id: vllm_ascend
+        path: vllm_ascend/models/deepseek_v4.py
+        contains: 'self.enable_dsa_cp = enable_dsa_cp()'
+    instrumentation_evidence: []
+    documentation_evidence:
+      - evidence_id: ascend_dsa_cp_config_doc
+        target_id: vllm_ascend
+        path: docs/source/user_guide/configuration/additional_config.md
+        contains: '`enable_dsa_cp`'
+
+  - capability_id: flashcomm1_config_path
+    runtime_scope: [vllm_ascend]
+    source_evidence:
+      - evidence_id: ascend_flashcomm1_additional_config
+        target_id: vllm_ascend
+        path: vllm_ascend/ascend_config.py
+        contains: 'self.enable_flashcomm1 = self._get_config_value('
+      - evidence_id: ascend_flashcomm1_runtime_gate
+        target_id: vllm_ascend
+        path: vllm_ascend/utils.py
+        contains: 'if not ascend_config.enable_flashcomm1:'
+    instrumentation_evidence: []
+    documentation_evidence:
+      - evidence_id: ascend_flashcomm1_config_doc
+        target_id: vllm_ascend
+        path: docs/source/user_guide/configuration/additional_config.md
+        contains: '`enable_flashcomm1`'
+
+  - capability_id: prefix_cache
+    runtime_scope: [vllm]
+    source_evidence:
+      - evidence_id: vllm_prefix_cache_block_pool
+        target_id: vllm
+        path: vllm/v1/core/block_pool.py
+        contains: 'self.enable_caching = enable_caching'
+      - evidence_id: vllm_prefix_cache_store_event
+        target_id: vllm
+        path: vllm/v1/core/block_pool.py
+        contains: 'BlockStored('
+    instrumentation_evidence:
+      - evidence_id: vllm_prefix_cache_event_queue
+        target_id: vllm
+        path: vllm/v1/core/block_pool.py
+        contains: 'self.kv_event_queue.append('
+      - evidence_id: vllm_prefix_cache_event_publish
+        target_id: vllm
+        path: vllm/v1/core/sched/scheduler.py
+        contains: 'self.kv_event_publisher.publish(batch)'
+    documentation_evidence: []
+
+  - capability_id: kv_cache_events
+    runtime_scope: [vllm]
+    source_evidence:
+      - evidence_id: vllm_kv_events_config
+        target_id: vllm
+        path: vllm/config/kv_events.py
+        contains: 'class KVEventsConfig:'
+      - evidence_id: vllm_kv_event_batch
+        target_id: vllm
+        path: vllm/distributed/kv_events.py
+        contains: 'class KVEventBatch('
+    instrumentation_evidence:
+      - evidence_id: vllm_kv_event_batch_build
+        target_id: vllm
+        path: vllm/v1/core/sched/scheduler.py
+        contains: 'batch = KVEventBatch('
+      - evidence_id: vllm_kv_event_publisher
+        target_id: vllm
+        path: vllm/v1/core/sched/scheduler.py
+        contains: 'self.kv_event_publisher.publish(batch)'
+    documentation_evidence: []
+
+  - capability_id: kv_cache_cpu_offload
+    runtime_scope: [vllm, vllm_ascend]
+    source_evidence:
+      - evidence_id: vllm_offloading_connector
+        target_id: vllm
+        path: vllm/distributed/kv_transfer/kv_connector/v1/offloading_connector.py
+        contains: 'class OffloadingConnector('
+      - evidence_id: ascend_npu_offloading_spec
+        target_id: vllm_ascend
+        path: vllm_ascend/kv_offload/npu.py
+        contains: 'class NPUOffloadingSpec('
+    instrumentation_evidence:
+      - evidence_id: vllm_offload_byte_metric
+        target_id: vllm
+        path: vllm/distributed/kv_transfer/kv_connector/v1/offloading/metrics.py
+        contains: 'name="vllm:kv_offload_total_bytes"'
+      - evidence_id: vllm_offload_event_export
+        target_id: vllm
+        path: vllm/distributed/kv_transfer/kv_connector/v1/offloading_connector.py
+        contains: 'def take_events(self) -> Iterable[KVCacheEvent]:'
+    documentation_evidence:
+      - evidence_id: ascend_cpu_offload_doc
+        target_id: vllm_ascend
+        path: docs/source/user_guide/feature_guide/kv_cache_cpu_offload.md
+        contains: NPUOffloadingSpec
+
+  - capability_id: ucm_store_connector
+    runtime_scope: [vllm_ascend]
+    source_evidence:
+      - evidence_id: ascend_ucm_connector
+        target_id: vllm_ascend
+        path: vllm_ascend/distributed/kv_transfer/kv_pool/ucm_connector.py
+        contains: 'class UCMConnectorV1('
+      - evidence_id: ascend_ucm_connector_registration
+        target_id: vllm_ascend
+        path: vllm_ascend/distributed/kv_transfer/__init__.py
+        contains: '"UCMConnector", "vllm_ascend.distributed.kv_transfer.kv_pool.ucm_connector"'
+    instrumentation_evidence: []
+    documentation_evidence:
+      - evidence_id: ascend_ucm_deployment_doc
+        target_id: vllm_ascend
+        path: docs/source/user_guide/feature_guide/ucm_deployment.md
+        contains: '# UCM Store Deployment Guide'
+
+  - capability_id: kv_cache_pool
+    runtime_scope: [vllm_ascend]
+    source_evidence:
+      - evidence_id: ascend_store_connector
+        target_id: vllm_ascend
+        path: vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py
+        contains: 'class AscendStoreConnector('
+      - evidence_id: ascend_store_mooncake_backend
+        target_id: vllm_ascend
+        path: vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/backend/mooncake_backend.py
+        contains: 'class MooncakeBackend('
+    instrumentation_evidence:
+      - evidence_id: ascend_store_kv_events
+        target_id: vllm_ascend
+        path: vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py
+        contains: 'class AscendStoreKVEvents('
+      - evidence_id: ascend_store_take_events
+        target_id: vllm_ascend
+        path: vllm_ascend/distributed/kv_transfer/kv_pool/ascend_store/ascend_store_connector.py
+        contains: 'def take_events(self) -> Iterable["KVCacheEvent"]:'
+    documentation_evidence:
+      - evidence_id: ascend_kv_pool_doc
+        target_id: vllm_ascend
+        path: docs/source/user_guide/feature_guide/kv_pool.md
+        contains: AscendStoreConnector
+
+  - capability_id: eplb_recording_static_map
+    runtime_scope: [vllm_ascend]
+    source_evidence:
+      - evidence_id: ascend_eplb_static_map_load
+        target_id: vllm_ascend
+        path: vllm_ascend/eplb/core/eplb_utils.py
+        contains: 'def expert_file_to_tensor('
+      - evidence_id: ascend_eplb_map_update
+        target_id: vllm_ascend
+        path: vllm_ascend/eplb/adaptor/vllm_adaptor.py
+        contains: 'def do_update_expert_map('
+    instrumentation_evidence:
+      - evidence_id: ascend_eplb_map_export
+        target_id: vllm_ascend
+        path: vllm_ascend/eplb/adaptor/vllm_adaptor.py
+        contains: 'def _export_tensor_to_file('
+      - evidence_id: ascend_eplb_record_path
+        target_id: vllm_ascend
+        path: vllm_ascend/eplb/eplb_updator.py
+        contains: 'self.expert_map_record_path = self.eplb_config.expert_map_record_path'
+    documentation_evidence:
+      - evidence_id: ascend_eplb_static_map_doc
+        target_id: vllm_ascend
+        path: docs/source/user_guide/feature_guide/eplb_swift_balancer.md
+        contains: '"expert_map_path"'
+
+  - capability_id: expert_hotness_metrics
+    runtime_scope: [vllm, vllm_ascend]
+    source_evidence:
+      - evidence_id: vllm_expert_load_window
+        target_id: vllm
+        path: vllm/distributed/eplb/eplb_state.py
+        contains: 'expert_load_window'
+      - evidence_id: ascend_expert_heat_interval
+        target_id: vllm_ascend
+        path: vllm_ascend/eplb/eplb_updator.py
+        contains: 'self.expert_heat_collection_interval'
+    instrumentation_evidence:
+      - evidence_id: vllm_expert_load_record
+        target_id: vllm
+        path: vllm/model_executor/layers/fused_moe/layer.py
+        contains: 'record the load metrics in `expert_load_view`'
+      - evidence_id: vllm_expert_load_window_copy
+        target_id: vllm
+        path: vllm/distributed/eplb/eplb_state.py
+        contains: '].copy_(eplb_model_state.expert_load_pass)'
+    documentation_evidence:
+      - evidence_id: ascend_expert_load_metric_doc
+        target_id: vllm_ascend
+        path: docs/source/user_guide/feature_guide/eplb_swift_balancer.md
+        contains: expert_load_balance_ratio
+
+  - capability_id: weight_prefetch
+    runtime_scope: [vllm_ascend]
+    source_evidence:
+      - evidence_id: ascend_weight_prefetch_config
+        target_id: vllm_ascend
+        path: vllm_ascend/ascend_config.py
+        contains: 'class WeightPrefetchConfig:'
+      - evidence_id: ascend_weight_prefetch_method
+        target_id: vllm_ascend
+        path: vllm_ascend/ops/weight_prefetch.py
+        contains: 'class WeightPrefetchMethod:'
+      - evidence_id: ascend_weight_prefetch_op
+        target_id: vllm_ascend
+        path: vllm_ascend/ops/weight_prefetch.py
+        contains: 'torch.ops.vllm.prefetch_preprocess('
+    instrumentation_evidence: []
+    documentation_evidence:
+      - evidence_id: ascend_weight_prefetch_doc
+        target_id: vllm_ascend
+        path: docs/source/user_guide/feature_guide/weight_prefetch.md
+        contains: '# Weight Prefetch'

@@ -1,0 +1,192 @@
+schema_name: ak_p8_baseline_contract
+schema_version: 0.1.0
+contract_id: p8_deepseek_v4_flash_w8a8_v0221rc1_pending_2026_0712
+contract_date: "2026-07-12"
+contract_status: pending
+claim_ceiling: runtime_prerequisites_only
+freeze_reason: no_successful_w8a8_request
+frozen_at: null
+
+selected_workload:
+  model_id: deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
+  request_success: false
+  successful_cell: null
+  validated: false
+
+source_capability_matrix:
+  path: benchmarks/deepseek_v4_flash/p8/source_probes/vllm-v0.22.1__vllm-ascend-v0.22.1rc1/runtime_capability_matrix.yaml
+  claim_ceiling: instrumented
+  selected_workload_validated: false
+  targets:
+    vllm:
+      tag: v0.22.1
+      commit: 0decac0d96c42b49572498019f0a0e3600f50398
+    vllm_ascend:
+      tag: v0.22.1rc1
+      commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+
+runtime_baseline:
+  versions:
+    vllm: "0.22.1"
+    vllm_ascend: "0.22.1rc1"
+    cann: "9.0.0"
+    pytorch: "2.10.0"
+    torch_npu: "2.10.0"
+    triton_ascend: "3.2.1"
+  target_commits:
+    vllm: 0decac0d96c42b49572498019f0a0e3600f50398
+    vllm_ascend: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  server_paths:
+    vllm_source: /data/node0_disk1/vllm-0.22.1
+    vllm_ascend_environment: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+    selected_model: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  required_plugins:
+    - ascend
+    - ascend_kv_connector
+    - ascend_model_loader
+    - ascend_service_profiling
+    - ascend_model
+  worker_process_model: spawn
+  cann_pythonpath_policy: clear_before_source_then_preserve_exactly_for_parent_and_spawn
+  environment_contract:
+    clear_stale_pythonpath_before_cann_source: true
+    source_cann_and_atb_environment: true
+    preserve_cann_generated_pythonpath_after_source: true
+    project_pythonpath_overlay_allowed: false
+    sitecustomize_allowed: false
+    user_site_allowed: false
+    expected_acl_origin_prefix: /usr/local/Ascend/
+  process_contract:
+    validate_platform_and_model_registry_in_fresh_process: true
+    validate_memory_redirects_and_snapshot_in_worker_process: true
+    validate_acl_import_and_pythonpath_in_parent_and_spawn_child: true
+
+adapter:
+  implementation_status: not_created
+  mode_after_unlock: observe_only
+  payload_move_allowed: false
+  placement_mutation_allowed: false
+  imports_allowed_before_unlock: false
+
+gate:
+  baseline_freeze: waiting_w8a8_successful_request
+  real_vllm_ascend_adapter: waiting_selected_workload_runtime_gate
+  minimum_unlock_requirements:
+    source_capability_probe_v0221: true
+    installed_content_provenance: true
+    official_plugin_activation: true
+    fresh_process_worker_memory_snapshot: true
+    cann_acl_parent_spawn_path: true
+    w8a8_successful_requests: 1
+    successful_cell_may_be_below_128k: true
+    successful_cell_command_and_config_recorded: true
+    successful_cell_environment_and_artifact_provenance_recorded: true
+  current_satisfaction:
+    source_capability_probe_v0221: true
+    installed_content_provenance: true
+    official_plugin_activation: true
+    fresh_process_worker_memory_snapshot: true
+    cann_acl_parent_spawn_path: true
+    w8a8_successful_requests: 0
+    successful_cell_command_and_config_recorded: false
+    successful_cell_environment_and_artifact_provenance_recorded: false
+
+evidence:
+  - evidence_id: source_capability_probe_v0221
+    scope: fixed_tag_source
+    status: passed
+    selected_workload_validated: false
+    path: benchmarks/deepseek_v4_flash/p8/source_probes/vllm-v0.22.1__vllm-ascend-v0.22.1rc1/runtime_capability_matrix.yaml
+    result: 13_capabilities_all_declared_evidence_matched
+
+  - evidence_id: installed_content_provenance
+    scope: server_runtime_prerequisite
+    status: passed
+    selected_workload_validated: false
+    task_id: p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
+    developer_received_artifact:
+      path: /Volumes/SSD1/Inbox/2026-07-11/installed_content_provenance.json
+      bytes: 3369
+      sha256: fcd0035015972d5f0b165f18729bb7e717af0bc6f0cb86f6557825849033beca
+    result:
+      import_roots_match: true
+      pinned_file_hashes_match: 6
+      pinned_file_hashes_total: 6
+
+  - evidence_id: official_plugin_activation
+    scope: server_runtime_prerequisite
+    status: passed
+    selected_workload_validated: false
+    task_id: p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
+    developer_received_artifact:
+      path: /Volumes/SSD1/Inbox/2026-07-11/plugin_matrix_summary.json
+      bytes: 572
+      sha256: 9cdcf02a2ae0c27fb9f6018c99115fce1698c17999adef0618776908431e01a6
+    result:
+      platform_is_ascend: true
+      model_registry_is_ascend: true
+      complete_plugin_whitelist_required: true
+      restrictive_ascend_only_whitelist_rejected: true
+
+  - evidence_id: fresh_process_worker_memory_snapshot
+    scope: server_runtime_prerequisite
+    status: passed
+    selected_workload_validated: false
+    task_id: p5_deepseek_v4_flash_4card_fp8_plugin_activation_probe_v0221rc1_2026_0711
+    developer_received_artifact:
+      path: /Volumes/SSD1/Inbox/2026-07-11/explicit_official_ascend_plugins.json
+      bytes: 1286
+      sha256: 5540c7ae9ff828d9af4cea0310e8625ab07ab8796f8772e7dbfd338edf6a474c
+    result:
+      memory_stats_redirect_active: true
+      memory_reserved_redirect_active: true
+      reset_peak_memory_stats_redirect_active: true
+      memory_snapshot_ok: true
+
+  - evidence_id: cann_acl_parent_spawn_path
+    scope: server_runtime_prerequisite
+    status: passed
+    selected_workload_validated: false
+    task_id: p5_deepseek_v4_flash_4card_fp8_acl_path_probe_v0221rc1_2026_0711
+    server_git_head: f4c047d3afb4a09524ed91c0ae66fa04743d701f
+    developer_received_artifact:
+      path: /Volumes/SSD1/Inbox/2026-07-11/p5-fp8-v0221rc1-acl-path-20260711/acl_path_summary.json
+      bytes: 605
+      sha256: e1fd25bf7aac2ebfadf10bf5e77394bfef6ef60d8fb6d53ec13811aa66d6e53b
+    result:
+      checks_passed: 9
+      checks_total: 9
+      parent_acl_origin_is_cann: true
+      spawn_child_acl_origin_is_cann: true
+      spawn_inherits_exact_pythonpath: true
+      post_source_unset_reproduces_failure: true
+
+  - evidence_id: w8a8_successful_request
+    scope: selected_workload_runtime
+    status: pending
+    selected_workload_validated: false
+    active_server_task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
+    minimum_successful_evidence:
+      requests: 1
+      input_tokens: 4096
+      output_tokens: 64
+      request_success_required: true
+      mtp_setting_must_be_recorded: true
+    note: 128k_success_is_not_required_to_unlock_the_first_observe_only_adapter_slice
+
+excluded_paths:
+  - path_id: mixed_fp8_fp4_checkpoint
+    reason: ascend_910b1_soc_does_not_support_required_customize_dtype
+    adapter_work_authorized: false
+
+next_actions_after_unlock:
+  - freeze_the_first_successful_w8a8_cell_as_the_runtime_baseline
+  - implement_a_strictly_observe_only_vllm_ascend_adapter
+  - run_p8_2_k0_prefix_cache_on_off_before_payload_move_work
+
+still_locked:
+  - server_collector_publication
+  - kv_cpu_offload_payload_move
+  - ucm_payload_move
+  - expert_hotness_driven_placement
+  - expert_weight_offload_or_prefetch_mutation

@@ -20,9 +20,10 @@ model_objects:
       shard_count: 70
       weight_bytes: 300013759966
       weight_gib: 279.41
-      inventory_status: continuous_shards_metadata_verified_runtime_not_yet_loaded_in_current_stack
+      inventory_status: continuous_shards_weight_load_reported_on_eight_workers_request_not_yet_validated
     expected_scenarios:
       - p5_8card_context_ladder_smoke_authorized
+      - p5_8card_no_mtp_isolation_authorized
       - p6_eight_card_baseline_after_p5_success
       - p7_single_dual_extreme_as_capacity_boundary_not_full_model_runtime
       - p8_expert_tiering
@@ -31,7 +32,7 @@ model_objects:
       - Local path is not a server path.
       - The 279.41 GiB checkpoint cannot fit in the retired four-card 256 GiB aggregate HBM scope.
       - All eight 64 GiB NPUs are explicitly authorized for the current P5 task, but startup still requires them to be healthy, idle and conflict-free.
-      - Inventory and official A2/A3 support do not constitute a successful runtime result on this server.
+      - The first eight-card run reached weight load but did not reach server-ready or a successful request.
   - model_object_id: deepseek_v4_flash_official_hf
     display_name: deepseek-ai/DeepSeek-V4-Flash
     source_family: huggingface

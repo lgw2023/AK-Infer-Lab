@@ -15,7 +15,8 @@ Boundaries:
 - The official source checkpoint is mixed FP8 plus FP4 experts, not pure FP8 and not a `--quantization ascend` object.
 - The v0.22.1/v0.22.1rc1 four-card diagnostic fixed plugin, allocator and ACL path issues, loaded all 46 shards, then failed at FP4 expert post-processing because `customize_dtype` is unsupported by the current SoC.
 - The project will not build an adapter for that mixed route. W8A8-MTP is the only future P5/P6 runtime object.
-- The 279.41 GiB W8A8 checkpoint exceeds four-card aggregate HBM; NPU 0-7 are now authorized for the bounded P5 startup/context smoke.
+- The 279.41 GiB W8A8 checkpoint exceeds four-card aggregate HBM. The first eight-card run loaded all 70 shards but failed before server-ready in the MTP drafter DSA-CP graph-capture path.
+- The active P5 follow-up keeps NPU 0-7, TP8/EP and W8A8 fixed, disables MTP, and attempts one 4096+64 request; eager is allowed only if main-model graph capture still fails.
 - P5 is a startup and long-context smoke, not a benchmark or bottleneck attribution run.
 - Any server task must be written by clearing and rewriting `通信模块/docs/developer-to-server.md`, with body and returned attachments kept within the 70KB communication limit.
 
@@ -28,7 +29,8 @@ P5 deliverables:
 - `workloads/p5_4card_fp8_runtime_resume_probe.yaml`: completed NPU 4-7 retry; it reached worker initialization but failed before weight loading at the generic accelerator allocator assertion.
 - `workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml`: completed diagnostic; the session overlay removed the allocator error and exposed the later upstream NVIDIA model-route failure.
 - `workloads/p5_4card_fp8_plugin_activation_probe.yaml` and `workloads/p5_4card_fp8_acl_path_probe.yaml`: completed historical diagnostics for the retired mixed route.
-- `workloads/p5_8card_context_ladder.yaml`: active W8A8 fixed-output eight-card P5 context ladder contract.
+- `workloads/p5_8card_context_ladder.yaml`: completed first-attempt contract; the run reached weight load but failed in MTP graph capture before the ladder.
+- `workloads/p5_8card_no_mtp_isolation.yaml`: active W8A8 eight-card no-MTP graph/eager isolation contract.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:

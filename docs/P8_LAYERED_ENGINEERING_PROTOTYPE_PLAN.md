@@ -1,8 +1,8 @@
 # P8 分层工程原型实施计划
 
-日期：2026-07-10
+日期：2026-07-10；最后更新：2026-07-12
 
-状态：`implementation_in_progress / source_probe_complete / runtime_adapter_gated`
+状态：`implementation_in_progress / source_probe_v0221_complete / baseline_contract_pending / runtime_adapter_gated`
 
 ## 1. P8 的工程定义
 
@@ -20,7 +20,7 @@ P8 的目标是建立一个**分层工程原型**：
 
 | 项目 | 当前证据 | P8 解释 |
 | --- | --- | --- |
-| vLLM-Ascend | `0.20.2rc1` 通过 Qwen2.5 smoke，但官方 checkpoint 被 `deepseek_v4_fp8` 平台门拒绝；`0.22.1rc1` tag 已注册该格式 | 当前 P5 新建 `0.22.1rc1` 独立栈；结果回来前 P8 runtime adapter 仍受 gate 约束 |
+| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈的 installed-content 6/6、五插件路由、memory redirects / `MemorySnapshot` 与 CANN ACL parent/spawn 路径均已通过；W8A8 已越过 weight load，但尚无成功请求 | adapter 启动前置契约已基本确定，但 selected-workload/runtime gate 仍未关闭 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
 | DeepSeek-V4-Flash | W8A8-MTP 是项目主对象；279.41GiB 权重的八卡 P5 已获授权、等待执行结果；mixed checkpoint 因 910B1 MXFP4 SoC 门退出执行 | P8 不绕过 P5/P6 修改模型路径，也不实现 mixed checkpoint adapter |
 | KV/Prefix object trace | 当前有 server stats proxy、phase memory、H2D/D2H microbench 和统一事件契约 | 尚无 object bytes、真实 hit/miss、restore/recompute 闭环 |
@@ -40,11 +40,11 @@ triton-ascend     3.2.1
 
 `reference_repos/vllm/` 与 `reference_repos/vllm-ascend/` 继续跟踪最新 `main`，上述两个标签已取回到各自 shallow 仓库，不再保留并行的 `vllm-ascend-v0.18.0/` 目录。后续一方修改应在 `reference_repos/` 之外从两个标签 commit 创建开发分支；不直接在被忽略的第三方参考树中积累项目代码。
 
-这套新版本尚未在服务器构建完成。其 tag 源码已证明 `deepseek_v4_fp8` 和 Ascend mixed-quantization scheme 存在，但真实权重加载、DSA、MTP 和请求路径仍由当前四卡任务验证。
+这套版本已在服务器构建并完成 installed-content、五插件、fresh-process memory 和 CANN ACL 路径验证。mixed FP8+FP4 checkpoint 已加载 46/46 分片，但在 910B1 命中不支持所需 `customize_dtype` 的 SoC 门，因此退出执行；W8A8 首轮八卡已到达权重加载后的 MTP+DSA-CP graph capture，当前 no-MTP 任务继续验证第一个 base request，MTP 与长上下文仍未通过。
 
 ### 2.3 框架能力只先登记为候选
 
-截至 2026-07-10，vLLM-Ascend 最新官方资料包含 KV Cache CPU Offload、UCM Store、KV Cache Pool、EPLB 和 Weight Prefetch 等入口；MindIE 2.3 官方资料包含 Prefix Cache、KV Cache 池化、专家热点采集和冗余专家部署等机制。但是：
+截至 2026-07-12，vLLM-Ascend 官方资料和固定 tag 源码包含 KV Cache CPU Offload、UCM Store、KV Cache Pool、EPLB 和 Weight Prefetch 等入口；MindIE 2.3 官方资料包含 Prefix Cache、KV Cache 池化、专家热点采集和冗余专家部署等机制。但是：
 
 - 最新 `main` 文档不等于固定 `vLLM-Ascend 0.22.1rc1` 标签或服务器环境已包含同一接口。
 - `deepseek_v4_fp8` 源码注册不等于官方 mixed checkpoint、当前 CANN 和本项目 workload 已运行成功。
@@ -74,9 +74,17 @@ validated_for_selected_workload
 `p8_0_source_capability_probe_report.md`。真实 `VllmAscendAdapter` 继续受
 `waiting_selected_workload_runtime_gate` 约束。
 
-这份 13 项矩阵是 `0.20.2/0.20.2rc1` 的历史目标-tag快照。P5 改用
-`0.22.1/0.22.1rc1` 后，不直接覆盖历史产物；当前四卡 runtime gate 成功后，
-应另建新版本 capability matrix，再决定 P8 adapter 是否解除门控。
+这份 13 项矩阵是 `0.20.2/0.20.2rc1` 的历史目标-tag快照。2026-07-12
+已在 `source_probes/vllm-v0.22.1__vllm-ascend-v0.22.1rc1/` 新增版本化
+source spec、matrix 和报告，没有覆盖历史产物。新矩阵仍为 7 项
+`available_uninstrumented`、6 项 `instrumented`，全部声明的 blob evidence 命中，
+但 `validated_for_selected_workload=0`。
+
+服务器已证明 installed-content、完整五插件、worker/fresh-process `MemorySnapshot`
+和 CANN ACL parent/spawn 环境继承规则；这些只进入
+`p8_baseline_contract.yaml` 的 `runtime_prerequisites_only` pending contract。
+W8A8-MTP 至少一个请求成功并冻结该成功 cell 前，真实 `VllmAscendAdapter`
+仍保持 `waiting_selected_workload_runtime_gate`。
 
 ## 3. 总体架构
 
@@ -249,23 +257,27 @@ MindIE 不是当前 P8 的阻塞项。只有同时满足以下条件才进入实
 
 输入门：
 
-- P5 至少为 `yellow`，且八卡至少一个请求成功；若 P5 为 `red`，P8 只能在小模型/中型 MoE 上做工具链预研。
-- P6 已固定一个 unprofiled workload 和一个 profiled workload，二者不能混算性能。
+- source capability probe 可在运行门之前完成，但结论上限为 `instrumented`。
+- 冻结真实 baseline 和启动 observe-only adapter 前，P5 必须在八卡 W8A8-MTP 路径至少有一个请求成功；不要求 128K 全部通过。
+- P8.2 性能对照前，P6 再固定一个 unprofiled workload 和一个 profiled workload，二者不能混算性能；这不是首个 observe-only adapter 的前置条件。
 
 交付物：
 
 ```text
-benchmarks/deepseek_v4_flash/p8/runtime_capability_matrix.yaml
-benchmarks/deepseek_v4_flash/p8/baseline_contract.yaml
-p8_0_capability_probe_report.md
+benchmarks/deepseek_v4_flash/p8/source_probes/<runtime-tags>/source_capability_probe.yaml
+benchmarks/deepseek_v4_flash/p8/source_probes/<runtime-tags>/runtime_capability_matrix.yaml
+benchmarks/deepseek_v4_flash/p8/source_probes/<runtime-tags>/source_capability_probe_report.md
+benchmarks/deepseek_v4_flash/p8/p8_baseline_contract.yaml
 ```
 
 退出门：选中的 P8.1/P8.2 路径不能仍是 `documented_unverified`。
 
-当前 source pre-gate 已关闭，但 P8.0 runtime gate 尚未关闭：目标 tag 的注册、
-配置、connector、EPLB、事件和指标符号已经逐 blob 固定；仍需 selected workload
-在服务器上形成至少一个成功请求和固定 baseline，才能把相应能力提升为
-`validated_for_selected_workload`。
+当前 0.22 source pre-gate 与四项启动前置证据门已关闭，但 P8.0 runtime gate
+尚未关闭：目标 tag 的注册、配置、connector、EPLB、事件和指标符号已经逐 blob
+固定，installed-content、五插件、worker memory 和 ACL 环境继承也已形成服务器证据；
+`p8_baseline_contract.yaml` 因 W8A8-MTP 成功请求数仍为 0 而保持 `pending`。
+只有服务器形成至少一个成功请求并冻结该 cell，才能把相应能力提升为
+`validated_for_selected_workload` 并创建真实 adapter。
 
 ### P8.1：Observe-only StateObject Trace
 
@@ -274,7 +286,7 @@ p8_0_capability_probe_report.md
 首个 tracer bullet：
 
 ```text
-1 个成功 P6 workload
+1 个成功 W8A8-MTP baseline cell（首片可来自 P5，P8.2 前再冻结为 P6 workload）
 1 个 vLLM-Ascend runtime
 request_stage + KV/prefix proxy + transfer + policy no_op
 trace_validation_errors = 0
@@ -481,7 +493,7 @@ P9 才负责 sensitivity sweep、bottleneck attribution 和 hardware ask ranking
 
 ## 9. 当前代码与产物边界
 
-截至 2026-07-10，已创建的独立工具链边界为：
+截至 2026-07-12，已创建的独立工具链边界为：
 
 ```text
 tools/ak_state_runtime/
@@ -503,14 +515,22 @@ benchmarks/deepseek_v4_flash/p8/
   source_capability_probe.yaml
   runtime_capability_matrix.yaml
   p8_0_source_capability_probe_report.md
+  source_probes/
+    vllm-v0.22.1__vllm-ascend-v0.22.1rc1/
+      source_capability_probe.yaml
+      runtime_capability_matrix.yaml
+      source_capability_probe_report.md
+  p8_baseline_contract.yaml
   offline_tracer_bullet/
 ```
 
 `capabilities/source.py` 只通过 Git plumbing 读取固定 commit 的文本 blob，
 不 import、不 checkout、不修改第三方参考仓；`capabilities/report.py` 只负责小型
-确定性证据输出；只有 `cli.py` 组合具体 scanner 和输出器。当前明确未创建
-`adapters/vllm_ascend/`、`adapters/mindie/`、payload mover、server collector 或
-baseline contract，这些仍由 runtime/selected-workload gate 控制。
+确定性证据输出；只有 `cli.py` 组合具体 scanner 和输出器。当前已创建的
+`p8_baseline_contract.yaml` 只是 `runtime_prerequisites_only` 的 pending contract，
+不是冻结后的 runtime baseline。仍未创建 `adapters/vllm_ascend/`、
+`adapters/mindie/`、payload mover 或 server collector，这些继续由
+runtime/selected-workload gate 控制。
 
 后续每个 vertical slice 必须同时提供：
 

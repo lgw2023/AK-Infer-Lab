@@ -25,6 +25,13 @@ COMMITTED_MATRIX = Path(
 COMMITTED_REPORT = Path(
     "benchmarks/deepseek_v4_flash/p8/p8_0_source_capability_probe_report.md"
 )
+V0221_PROBE_DIR = Path(
+    "benchmarks/deepseek_v4_flash/p8/source_probes/"
+    "vllm-v0.22.1__vllm-ascend-v0.22.1rc1"
+)
+V0221_SPEC = V0221_PROBE_DIR / "source_capability_probe.yaml"
+V0221_MATRIX = V0221_PROBE_DIR / "runtime_capability_matrix.yaml"
+V0221_REPORT = V0221_PROBE_DIR / "source_capability_probe_report.md"
 
 
 def _result() -> SourceProbeResult:
@@ -320,5 +327,53 @@ def test_committed_matrix_is_source_only_and_adapter_remains_gated() -> None:
         row["capability_id"] for row in spec["capabilities"]
     ]
     report = COMMITTED_REPORT.read_text(encoding="utf-8")
+    assert "does not validate the selected workload" in report
+    assert "does not authorize a real VllmAscendAdapter" in report
+
+
+def test_v0221_probe_is_versioned_without_replacing_v0202_history() -> None:
+    historical_spec = yaml.safe_load(TARGET_SPEC.read_text(encoding="utf-8"))
+    spec = yaml.safe_load(V0221_SPEC.read_text(encoding="utf-8"))
+    matrix = yaml.safe_load(V0221_MATRIX.read_text(encoding="utf-8"))
+
+    assert [target["tag"] for target in historical_spec["targets"]] == [
+        "v0.20.2",
+        "v0.20.2rc1",
+    ]
+    assert [target["tag"] for target in spec["targets"]] == [
+        "v0.22.1",
+        "v0.22.1rc1",
+    ]
+    assert [target["observed_commit"] for target in matrix["targets"]] == [
+        "0decac0d96c42b49572498019f0a0e3600f50398",
+        "5f6faa0cb8830f667266f3b8121cd1383606f2a1",
+    ]
+    assert all(target["ref_verified"] is True for target in matrix["targets"])
+    assert matrix["claim_ceiling"] == "instrumented"
+    assert matrix["selected_workload_validated"] is False
+    assert matrix["real_vllm_ascend_adapter_gate"] == (
+        "waiting_selected_workload_runtime_gate"
+    )
+    assert matrix["capability_count"] == 13
+    assert matrix["status_counts"] == {
+        "unsupported": 0,
+        "documented_unverified": 0,
+        "available_uninstrumented": 7,
+        "instrumented": 6,
+        "validated_for_selected_workload": 0,
+    }
+    assert all(
+        evidence["matched"] is True and evidence["error"] is None
+        for row in matrix["capabilities"]
+        for group in (
+            "source_evidence",
+            "instrumentation_evidence",
+            "documentation_evidence",
+        )
+        for evidence in row[group]
+    )
+    report = V0221_REPORT.read_text(encoding="utf-8")
+    assert "v0.22.1" in report
+    assert "v0.22.1rc1" in report
     assert "does not validate the selected workload" in report
     assert "does not authorize a real VllmAscendAdapter" in report
