@@ -65,7 +65,7 @@ mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门
 p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712
 ```
 
-该任务尚未写入唯一服务器 handoff；当前通信槽由 `server_local_git_worktree_policy_setup_2026_0712` 占用，P8.1 等其完成后再下发。
+server-local Git 管理最终验收已完成；该任务现已写入唯一服务器 handoff，服务器结果待执行。
 
 参考配置：
 

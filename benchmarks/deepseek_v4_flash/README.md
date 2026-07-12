@@ -34,7 +34,7 @@ P5 deliverables:
 - `workloads/p5_8card_no_mtp_isolation.yaml`: completed W8A8 no-MTP graph/eager isolation contract; graph server reached ready but the client failed before request dispatch.
 - `workloads/p5_8card_no_mtp_tokenizer_retry.yaml`: completed native-tokenizer retry; token generation passed, but an over-strict cached-wrapper class assertion stopped execution.
 - `workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml`: completed MRO-validated retry with one successful no-MTP `4096+64` request.
-- `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: next bounded-observation validation for the strictly observe-only adapter; prepared locally but not yet placed in the single server handoff slot.
+- `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: active bounded-observation server validation for the strictly observe-only adapter; it is the current single server handoff.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:

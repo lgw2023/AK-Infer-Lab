@@ -13,13 +13,13 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离让主模型 graph server ready。原生 tokenizer 与 MRO 修正后，固定 no-MTP graph cell 已完成一个 `4096+64` HTTP 200 请求，P5 因关闭 MTP 且未执行 128K ladder 被评为 YELLOW。该成功 cell 已作为 P8 首个 degraded runtime baseline 固结；下一项已准备好的任务只验证严格 observe-only adapter，但尚未占用当前服务器 handoff：
+NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离让主模型 graph server ready。原生 tokenizer 与 MRO 修正后，固定 no-MTP graph cell 已完成一个 `4096+64` HTTP 200 请求，P5 因关闭 MTP 且未执行 128K ladder 被评为 YELLOW。该成功 cell 已作为 P8 首个 degraded runtime baseline 固结；当前唯一服务器任务只验证严格 observe-only adapter：
 
 ```text
 p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712
 ```
 
-当前 `通信模块/docs/developer-to-server.md` 正被独立的 server-local Git worktree policy setup 任务占用；按单任务通信规则，P8.1 等该任务完成后再下发。
+server-local Git 管理最终验收已完成，`通信模块/docs/developer-to-server.md` 已切换为上述 P8.1 任务。
 
 mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败；no-MTP 成功把该错误收窄到 MTP drafter path。P8.1 只复用已成功 cell，采集 bounded request-stage 与 Prefix Cache counter proxy，通过 `VllmAscendAdapter` 生成 `executed=false` 的 no-op trace bundle；不运行 eager、P6、profiler 或 offload。
 

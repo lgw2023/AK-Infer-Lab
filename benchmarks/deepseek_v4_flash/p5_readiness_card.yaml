@@ -175,7 +175,7 @@ boundaries:
   - The 279.41 GiB W8A8 checkpoint cannot be tested as a full model in the retired four-card scope; the current task uses all eight authorized devices.
   - The mixed checkpoint remains historical evidence and will not receive an adapter or conversion effort.
   - The completed P5 task validates only one no-MTP 4096+64 graph request; it is a degraded runtime baseline, not the official MTP/128K target.
-  - The prepared P8.1 task is observe-only and may not import the runtime, hold payloads or mutate placement; it has not replaced the current server-local Git policy handoff.
+  - The active P8.1 handoff is observe-only and may not import the runtime, hold payloads or mutate placement.
   - P6 benchmark, profiler, offload, MTP patching and runtime upgrades remain unauthorized.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:

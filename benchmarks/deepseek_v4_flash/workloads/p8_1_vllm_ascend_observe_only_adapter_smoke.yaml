@@ -75,12 +75,27 @@ observation_contract:
     rule: emit_only_if_a_native_bounded_event_exists
     unavailable_result: record_in_availability_report_without_fabricating_an_event
 
+collector_command: >-
+  python -m tools.ak_state_runtime.cli collect-vllm-ascend-observations
+  --endpoint http://127.0.0.1:7000/v1/completions
+  --metrics-url http://127.0.0.1:7000/metrics
+  --request-payload request_payload.json
+  --observations-output runtime_observations.jsonl
+  --request-result-output request_result.json
+  --metrics-output prefix_cache_metrics.json
+  --transfer-availability-output transfer_availability.json
+
 bundle_command: >-
   python -m tools.ak_state_runtime.cli build-vllm-ascend-observe-bundle
   --source runtime_observations.jsonl
   --output observe_only_bundle
   --baseline-contract benchmarks/deepseek_v4_flash/p8/p8_baseline_contract.yaml
   --model-id deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
+
+execution_state:
+  server_handoff: active
+  server_result: pending
+  expected_grade: green_observe_only_adapter_on_frozen_degraded_cell
 
 acceptance:
   request_successful: true

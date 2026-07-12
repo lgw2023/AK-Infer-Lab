@@ -447,28 +447,27 @@ def test_p5_acl_path_probe_preserves_only_official_cann_path_and_bounds_retry():
     assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
 
 
-def test_server_handoff_contains_only_the_git_management_closeout_task():
+def test_server_handoff_contains_only_the_p8_observe_only_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "server_local_git_management_closeout_2026_0712" in handoff
+    assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" in handoff
     assert "execution_codebase: main-readonly" in handoff
-    assert "/data/node0_disk1/liguowei/AK-Infer-Lab-server-local" in handoff
-    assert "server-local/runtime-adaptations" in handoff
-    assert "bash \"${SCRIPT}\" check" in handoff
-    assert "bash \"${SCRIPT}\" sync" in handoff
+    assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
+    assert "collect-vllm-ascend-observations" in handoff
+    assert "build-vllm-ascend-observe-bundle" in handoff
+    assert "vllm:prefix_cache_queries" in handoff
+    assert "vllm:prefix_cache_hits" in handoff
+    assert "synthetic transfer" in handoff
+    assert 'manifest["server_validated"] is False' in handoff
+    assert 'decisions[0]["executed"] is False' in handoff
+    assert 'objects[0]["payload_ref"] is None' in handoff
+    assert "green_observe_only_adapter_on_frozen_degraded_cell" in handoff
+    assert "request_payload.json" in handoff
+    assert "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1" in handoff
     assert "status --porcelain --untracked-files=no" in handoff
-    assert "不要再次 restore 任何 tracked 文件" in handoff
-    assert "2.54.0" in handoff
-    assert "merge_tree_mode\\twrite-tree" in handoff
-    assert "check_error" in handoff
-    assert "LC_ALL=C comm -12" in handoff
-    assert "git_management_task=completed" in handoff
-    assert "same_path_overlap.txt" in handoff
-    assert "conflict_paths.txt" in handoff
-    assert "任何 remote、任何分支和 tag 都禁止 `git push`" in handoff
+    assert "不得 restore/reset/stash" in handoff
+    assert "不得 commit 或 push" in handoff
     assert "ours/theirs" in handoff
-    assert "不使用 NPU" in handoff
     assert "尚未获得 `email`、`upload-api` 或 `server-local` 的传输选择" in handoff
-    assert "server_local_git_compat_sync_2026_0712" not in handoff
-    assert "server_local_git_worktree_policy_recover_2026_0712" not in handoff
-    assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
+    assert "server_local_git_management_closeout_2026_0712" not in handoff
+    assert "server_local_git_worktree_policy_setup_2026_0712" not in handoff

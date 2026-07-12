@@ -71,4 +71,4 @@ global_boundaries:
   - The project primary runtime object is now the W8A8-MTP checkpoint.
   - The mixed FP8 plus FP4-expert object remains historical diagnostic and source inventory only on the current 910B1 server.
   - The no-MTP 4096+64 graph cell is runtime-validated, but MTP, 128K and P6 performance remain unvalidated.
-  - The prepared P8.1 task may later reuse ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 only for the observe-only adapter tracer bullet; it is queued behind the current server-local Git policy handoff and does not authorize P6, profiler, offload or result transfer.
+  - The active P8.1 handoff reuses ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 only for the observe-only adapter tracer bullet and does not authorize P6, profiler, offload or result transfer.

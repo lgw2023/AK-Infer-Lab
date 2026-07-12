@@ -15,6 +15,7 @@ from .capabilities.report import write_source_probe_outputs
 from .capabilities.source import probe_source_capabilities
 from .replay import replay, validate_replay_result
 from .validation import load_contracts
+from .vllm_ascend_observer import collect_vllm_ascend_observations
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -48,6 +49,21 @@ def build_parser() -> argparse.ArgumentParser:
     runtime_bundle.add_argument("--output", type=Path, required=True)
     runtime_bundle.add_argument("--baseline-contract", type=Path, required=True)
     runtime_bundle.add_argument("--model-id", required=True)
+    runtime_observe = subparsers.add_parser(
+        "collect-vllm-ascend-observations",
+        help="collect one bounded streaming request and prefix-counter observation",
+    )
+    runtime_observe.add_argument("--endpoint", required=True)
+    runtime_observe.add_argument("--metrics-url", required=True)
+    runtime_observe.add_argument("--request-payload", type=Path, required=True)
+    runtime_observe.add_argument("--observations-output", type=Path, required=True)
+    runtime_observe.add_argument("--request-result-output", type=Path, required=True)
+    runtime_observe.add_argument("--metrics-output", type=Path, required=True)
+    runtime_observe.add_argument(
+        "--transfer-availability-output", type=Path, required=True
+    )
+    runtime_observe.add_argument("--timeout-seconds", type=float, default=180.0)
+    runtime_observe.add_argument("--metrics-settle-seconds", type=float, default=15.0)
     return parser
 
 
@@ -126,6 +142,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 sort_keys=True,
             )
         )
+        return 0
+
+    if args.command == "collect-vllm-ascend-observations":
+        result = collect_vllm_ascend_observations(
+            endpoint=args.endpoint,
+            metrics_url=args.metrics_url,
+            request_payload=args.request_payload,
+            observations_output=args.observations_output,
+            request_result_output=args.request_result_output,
+            metrics_output=args.metrics_output,
+            transfer_availability_output=args.transfer_availability_output,
+            timeout_seconds=args.timeout_seconds,
+            metrics_settle_seconds=args.metrics_settle_seconds,
+        )
+        print(json.dumps(result, sort_keys=True))
         return 0
 
     raise AssertionError(f"unsupported command: {args.command}")
