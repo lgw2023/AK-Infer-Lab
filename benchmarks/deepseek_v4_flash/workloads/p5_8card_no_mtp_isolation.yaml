@@ -75,3 +75,16 @@ boundaries:
   - MTP remains unsupported on the current stack until separately fixed and validated.
   - Do not patch, upgrade, rebuild or edit vLLM, vLLM-Ascend, site-packages or the checkpoint.
   - Do not send results until the user selects a transfer method for the exact new result package.
+execution_result:
+  task_status: red_graph_ready_request_client_tokenizer_error
+  server_ready: true
+  main_model_graph_capture: summary_reported_success_all_eight_ranks
+  model_weights_loaded_on_workers: 8
+  per_worker_model_weight_gb: 38.1255
+  http_requests_dispatched: 0
+  successful_requests: 0
+  client_failure_stage: tokenizer_construction_before_http_dispatch
+  client_failure: pretrained_config_missing_max_position_embeddings
+  eager_profile_executed: false
+  evidence_boundary: graph_rank_and_client_traceback_are_summary_reported_but_not_independently_present_in_the_bounded_excerpt
+  superseded_by: p5_8card_no_mtp_tokenizer_retry.yaml

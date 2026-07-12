@@ -66,6 +66,7 @@ def test_pending_baseline_contract_records_only_proven_prerequisites() -> None:
         "official_plugin_activation",
         "fresh_process_worker_memory_snapshot",
         "cann_acl_parent_spawn_path",
+        "w8a8_no_mtp_graph_server_ready",
         "w8a8_successful_request",
     }
     for evidence_id in (
@@ -74,6 +75,7 @@ def test_pending_baseline_contract_records_only_proven_prerequisites() -> None:
         "official_plugin_activation",
         "fresh_process_worker_memory_snapshot",
         "cann_acl_parent_spawn_path",
+        "w8a8_no_mtp_graph_server_ready",
     ):
         assert evidence[evidence_id]["status"] == "passed"
         assert evidence[evidence_id]["selected_workload_validated"] is False
@@ -81,6 +83,14 @@ def test_pending_baseline_contract_records_only_proven_prerequisites() -> None:
     assert evidence["w8a8_successful_request"][
         "selected_workload_validated"
     ] is False
+    assert evidence["w8a8_no_mtp_graph_server_ready"]["result"] == {
+        "mtp_enabled": False,
+        "server_ready": True,
+        "main_model_graph_capture": "summary_reported_success_all_eight_ranks",
+        "http_requests_dispatched": 0,
+        "successful_requests": 0,
+        "first_failure_stage": "client_tokenizer_construction_before_http_dispatch",
+    }
 
 
 def test_pending_baseline_contract_excludes_mixed_checkpoint() -> None:

@@ -55,7 +55,7 @@
 
 | 对象 | 本地路径 | 当前状态 | 用途 | 边界 |
 | --- | --- | --- | --- | --- |
-| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | 服务器盘点 70 连续分片 / `300,013,759,966 B ≈ 279.41 GiB` | 项目主 runtime、当前八卡 P5 对象 | 使用 `--quantization ascend`；NPU 0-7 已授权，但尚无本服务器 runtime 成功证据 |
+| `DeepSeek-V4-Flash-w8a8-mtp` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | 服务器盘点 70 连续分片 / `300,013,759,966 B ≈ 279.41 GiB`；no-MTP 主模型 graph server 已 ready | 项目主 runtime、当前八卡 P5 对象 | 使用 `--quantization ascend`；NPU 0-7 已授权，但 client tokenizer 在 HTTP 发送前失败，尚无成功请求 |
 | `deepseek-ai/DeepSeek-V4-Flash` | `/Volumes/Elements/DeepSeek-V4-Flash` | 服务器盘点 46 连续分片 / `159,617,149,040 B ≈ 148.66 GiB`；0.22.1rc1 加载 46/46 后命中 SoC 不支持 MXFP4 format cast | 历史诊断与来源 inventory | 不开发 adapter、不转换、不作为 P5/P6 fallback |
 
 用户会自行把模型目录拷贝到 Ascend 服务器。本仓库只登记对象、来源、实验用途和边界，不复制模型 payload，不推断服务器路径。

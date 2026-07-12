@@ -20,10 +20,11 @@ model_objects:
       shard_count: 70
       weight_bytes: 300013759966
       weight_gib: 279.41
-      inventory_status: continuous_shards_weight_load_reported_on_eight_workers_request_not_yet_validated
+      inventory_status: continuous_shards_loaded_on_eight_workers_no_mtp_graph_server_ready_request_not_dispatched_due_to_client_tokenizer
     expected_scenarios:
       - p5_8card_context_ladder_smoke_authorized
       - p5_8card_no_mtp_isolation_authorized
+      - p5_8card_no_mtp_tokenizer_retry_authorized
       - p6_eight_card_baseline_after_p5_success
       - p7_single_dual_extreme_as_capacity_boundary_not_full_model_runtime
       - p8_expert_tiering
@@ -32,7 +33,7 @@ model_objects:
       - Local path is not a server path.
       - The 279.41 GiB checkpoint cannot fit in the retired four-card 256 GiB aggregate HBM scope.
       - All eight 64 GiB NPUs are explicitly authorized for the current P5 task, but startup still requires them to be healthy, idle and conflict-free.
-      - The first eight-card run reached weight load but did not reach server-ready or a successful request.
+      - The first MTP run reached weight load but not server-ready; the no-MTP graph run reached server-ready but its client failed before HTTP dispatch.
   - model_object_id: deepseek_v4_flash_official_hf
     display_name: deepseek-ai/DeepSeek-V4-Flash
     source_family: huggingface
@@ -67,5 +68,5 @@ global_boundaries:
   - This registry does not copy, modify or validate model payloads.
   - The project primary runtime object is now the W8A8-MTP checkpoint.
   - The mixed FP8 plus FP4-expert object remains historical diagnostic and source inventory only on the current 910B1 server.
-  - The active server task is the bounded W8A8 P5 startup/context ladder on ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7.
+  - The active server task prevalidates the DeepSeek-V4 tokenizer payload, then retries one no-MTP graph request on ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7.
   - This device authorization does not authorize P6, profiler, offload or result transfer; returned files require a fresh transfer-method choice.

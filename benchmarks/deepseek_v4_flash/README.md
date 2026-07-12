@@ -16,7 +16,8 @@ Boundaries:
 - The v0.22.1/v0.22.1rc1 four-card diagnostic fixed plugin, allocator and ACL path issues, loaded all 46 shards, then failed at FP4 expert post-processing because `customize_dtype` is unsupported by the current SoC.
 - The project will not build an adapter for that mixed route. W8A8-MTP is the only future P5/P6 runtime object.
 - The 279.41 GiB W8A8 checkpoint exceeds four-card aggregate HBM. The first eight-card run loaded all 70 shards but failed before server-ready in the MTP drafter DSA-CP graph-capture path.
-- The active P5 follow-up keeps NPU 0-7, TP8/EP and W8A8 fixed, disables MTP, and attempts one 4096+64 request; eager is allowed only if main-model graph capture still fails.
+- The completed no-MTP isolation then reached graph-ready, but its client used incompatible `AutoTokenizer` construction and failed before HTTP dispatch; successful request count remains zero.
+- The active retry prevalidates exactly 4096 token IDs with vLLM's `DeepseekV4Tokenizer`, then keeps the proven no-MTP graph server unchanged and sends one 4096+64 request. Eager is no longer authorized.
 - P5 is a startup and long-context smoke, not a benchmark or bottleneck attribution run.
 - Any server task must be written by clearing and rewriting `通信模块/docs/developer-to-server.md`, with body and returned attachments kept within the 70KB communication limit.
 
@@ -30,7 +31,8 @@ P5 deliverables:
 - `workloads/p5_4card_fp8_allocator_patch_delivery_probe.yaml`: completed diagnostic; the session overlay removed the allocator error and exposed the later upstream NVIDIA model-route failure.
 - `workloads/p5_4card_fp8_plugin_activation_probe.yaml` and `workloads/p5_4card_fp8_acl_path_probe.yaml`: completed historical diagnostics for the retired mixed route.
 - `workloads/p5_8card_context_ladder.yaml`: completed first-attempt contract; the run reached weight load but failed in MTP graph capture before the ladder.
-- `workloads/p5_8card_no_mtp_isolation.yaml`: active W8A8 eight-card no-MTP graph/eager isolation contract.
+- `workloads/p5_8card_no_mtp_isolation.yaml`: completed W8A8 no-MTP graph/eager isolation contract; graph server reached ready but the client failed before request dispatch.
+- `workloads/p5_8card_no_mtp_tokenizer_retry.yaml`: active tokenizer-preflight plus one-request no-MTP graph retry.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:

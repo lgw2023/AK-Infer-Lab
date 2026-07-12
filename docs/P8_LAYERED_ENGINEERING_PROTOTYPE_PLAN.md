@@ -20,7 +20,7 @@ P8 的目标是建立一个**分层工程原型**：
 
 | 项目 | 当前证据 | P8 解释 |
 | --- | --- | --- |
-| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈的 installed-content 6/6、五插件路由、memory redirects / `MemorySnapshot` 与 CANN ACL parent/spawn 路径均已通过；W8A8 已越过 weight load，但尚无成功请求 | adapter 启动前置契约已基本确定，但 selected-workload/runtime gate 仍未关闭 |
+| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈的 installed-content 6/6、五插件路由、memory redirects / `MemorySnapshot` 与 CANN ACL parent/spawn 路径均已通过；W8A8 no-MTP 主模型 graph server 已 ready，但客户端在 HTTP 发送前失败，尚无成功请求 | adapter 启动前置契约已基本确定，但 selected-workload/runtime gate 仍未关闭 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
 | DeepSeek-V4-Flash | W8A8-MTP 是项目主对象；279.41GiB 权重的八卡 P5 已获授权、等待执行结果；mixed checkpoint 因 910B1 MXFP4 SoC 门退出执行 | P8 不绕过 P5/P6 修改模型路径，也不实现 mixed checkpoint adapter |
 | KV/Prefix object trace | 当前有 server stats proxy、phase memory、H2D/D2H microbench 和统一事件契约 | 尚无 object bytes、真实 hit/miss、restore/recompute 闭环 |
@@ -40,7 +40,7 @@ triton-ascend     3.2.1
 
 `reference_repos/vllm/` 与 `reference_repos/vllm-ascend/` 继续跟踪最新 `main`，上述两个标签已取回到各自 shallow 仓库，不再保留并行的 `vllm-ascend-v0.18.0/` 目录。后续一方修改应在 `reference_repos/` 之外从两个标签 commit 创建开发分支；不直接在被忽略的第三方参考树中积累项目代码。
 
-这套版本已在服务器构建并完成 installed-content、五插件、fresh-process memory 和 CANN ACL 路径验证。mixed FP8+FP4 checkpoint 已加载 46/46 分片，但在 910B1 命中不支持所需 `customize_dtype` 的 SoC 门，因此退出执行；W8A8 首轮八卡已到达权重加载后的 MTP+DSA-CP graph capture，当前 no-MTP 任务继续验证第一个 base request，MTP 与长上下文仍未通过。
+这套版本已在服务器构建并完成 installed-content、五插件、fresh-process memory 和 CANN ACL 路径验证。mixed FP8+FP4 checkpoint 已加载 46/46 分片，但在 910B1 命中不支持所需 `customize_dtype` 的 SoC 门，因此退出执行；W8A8 首轮八卡在 MTP+DSA-CP graph capture 失败，no-MTP 复跑已让主模型 graph server ready。当前只修正 client tokenizer 并重试第一个 base request，MTP 与长上下文仍未通过。
 
 ### 2.3 框架能力只先登记为候选
 

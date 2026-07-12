@@ -1,9 +1,9 @@
-experiment_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation
+experiment_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry
 date: "2026-07-12"
 git_commit: server_fills_after_pull
 operator: external_development_machine
 server: atlas800t_a2_ascend_server
-scenario: w8a8_eight_card_no_mtp_isolation_authorized
+scenario: w8a8_eight_card_no_mtp_tokenizer_retry_authorized
 is_smoke: true
 is_benchmark: false
 model_objects:
@@ -13,7 +13,7 @@ model_objects:
     model_source: modelscope
     server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
     model_role: project_primary_runtime_and_future_p6_baseline_candidate
-    readiness_status: eight_card_weight_load_reported_request_path_still_pending
+    readiness_status: eight_card_no_mtp_graph_server_ready_client_request_not_dispatched
   - model_object_id: deepseek_v4_flash_official_hf
     model: deepseek-ai/DeepSeek-V4-Flash
     model_variant: fp8_non_expert_plus_fp4_experts
@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: eight_card_weight_load_reported_mtp_dsa_cp_graph_capture_failed_before_server_ready
+  runtime_status: no_mtp_graph_server_ready_client_tokenizer_failed_before_http_dispatch
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -66,14 +66,29 @@ prior_eight_card_result:
   first_failure_stage: mtp_drafter_dsa_cp_cudagraph_capture
   first_failure: positions_cpu_none_type_not_subscriptable
   evidence_boundary: weight_load_is_summary_reported_and_request_runtime_is_not_validated
-authorized_runtime_gate:
+prior_no_mtp_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
+  task_status: red_graph_ready_request_client_tokenizer_error
+  model_shards_loaded: 70
+  workers_reporting_weight_load_complete: 8
+  per_worker_model_weight_gb: 38.1255
+  mtp_enabled: false
+  server_ready: true
+  main_model_graph_capture: summary_reported_success_all_eight_ranks
+  http_requests_dispatched: 0
+  successful_requests: 0
+  first_failure_stage: client_tokenizer_construction_before_http_dispatch
+  first_failure: pretrained_config_missing_max_position_embeddings
+  eager_profile_executed: false
+  evidence_boundary: graph_rank_and_client_traceback_are_summary_reported_but_not_independently_present_in_the_bounded_excerpt
+authorized_runtime_gate:
+  task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
   model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
   visible_devices: "0,1,2,3,4,5,6,7"
   authorization_date: "2026-07-12"
   developer_to_server_ready: true
 active_eight_card_smoke:
-  workload: workloads/p5_8card_no_mtp_isolation.yaml
+  workload: workloads/p5_8card_no_mtp_tokenizer_retry.yaml
   model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
   server_model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
   visible_devices: "0,1,2,3,4,5,6,7"
@@ -84,9 +99,10 @@ active_eight_card_smoke:
   input_tokens: 4096
   output_tokens: 64
   max_num_seqs: 1
+  client_tokenizer: vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer
+  client_tokenizer_preflight_before_npu_server_start: true
   profiles:
-    - base_no_mtp_graph_maxseq1
-    - base_no_mtp_eager_maxseq1_if_main_model_graph_capture_fails
+    - base_no_mtp_graph_maxseq1_tokenizer_fixed
 features:
   checkpoint_quantization: w8a8_modelslim
   explicit_quantization_argument: ascend
@@ -113,13 +129,14 @@ artifacts:
   model_registry: deepseek_v4_flash_model_objects.yaml
   historical_mixed_checkpoint_workload: workloads/p5_4card_fp8_acl_path_probe.yaml
   historical_context_ladder_workload: workloads/p5_8card_context_ladder.yaml
-  active_workload: workloads/p5_8card_no_mtp_isolation.yaml
+  active_workload: workloads/p5_8card_no_mtp_tokenizer_retry.yaml
   server_handoff: 通信模块/docs/developer-to-server.md
 boundaries:
   - W8A8 is the only selected DeepSeek-V4-Flash runtime object for the current P5 and future P6 execution.
   - The 279.41 GiB W8A8 checkpoint cannot be tested as a full model in the retired four-card scope; the current task uses all eight authorized devices.
   - The mixed checkpoint remains historical evidence and will not receive an adapter or conversion effort.
-  - The active P5 task is limited to no-MTP graph then conditional eager isolation with one 4096 plus 64 request per authorized profile.
+  - The active P5 task first prevalidates a 4096-token payload with DeepseekV4Tokenizer, then runs one no-MTP graph request only.
+  - AutoTokenizer, eager fallback, MTP and context ladder are forbidden in the active retry.
   - P6 benchmark, profiler, offload, MTP patching and runtime upgrades remain unauthorized.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
@@ -128,4 +145,4 @@ acceptance:
   route_decision_recorded: true
   current_four_card_scope_retired: true
   developer_to_server_ready: true
-  blocked_by: no_successful_w8a8_request_and_eight_device_health_idle_gate
+  blocked_by: no_successful_w8a8_request_and_client_tokenizer_payload_gate_and_eight_device_health_idle_gate

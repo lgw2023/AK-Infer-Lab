@@ -38,10 +38,10 @@ vLLM 0.22.1+empty
 vLLM-Ascend 0.22.1rc1
 triton-ascend 3.2.1
 transformers 5.5.4
-new isolated host conda environment built; W8A8 weight load reached; first request pending
+new isolated host conda environment built; W8A8 no-MTP graph server reached ready; first request pending
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8 首轮八卡已到达权重加载后的 MTP graph capture，但没有 server-ready 或成功请求，真实 base request、MTP 和长上下文仍未验证。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8 首轮八卡在 MTP graph capture 失败；no-MTP 复跑已让主模型 graph server ready，但旧客户端 tokenizer 在 HTTP 发送前失败。真实 base request、MTP 和长上下文仍未验证。
 
 ### 3.2 对照路：MindIE
 
@@ -52,17 +52,17 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 NPU 0-7 已获用户明确授权。首轮 context-ladder 任务在 MTP graph capture 失败，当前活动服务器任务为：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
 ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 TP=8, EP=enabled
 ```
 
-mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门通过，Ascend model route 正确，46/46 分片加载完成，随后四个 worker 在 `process_weights_after_loading` 同样命中当前 SoC 不支持 `customize_dtype`。因此不再继续 mixed 兼容性工作。W8A8 权重为 279.41GiB；首轮八卡摘要报告 70 分片和 MTP draft model 加载完成，随后在 MTP proposer DSA-CP graph capture 因 `positions_cpu=None` 失败，未 server-ready、未发请求。
+mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门通过，Ascend model route 正确，46/46 分片加载完成，随后四个 worker 在 `process_weights_after_loading` 同样命中当前 SoC 不支持 `customize_dtype`。因此不再继续 mixed 兼容性工作。W8A8 权重为 279.41GiB；首轮八卡在 MTP proposer DSA-CP graph capture 因 `positions_cpu=None` 失败，no-MTP 复跑则已权重加载、graph capture 并 server-ready，但 `AutoTokenizer` 在客户端构造阶段失败，HTTP 请求仍未发出。
 
 当前任务：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
 ```
 
 参考配置：
@@ -82,7 +82,7 @@ MTP=disabled for isolation
 
 ```text
 4096 input + fixed 64 output
-graph first; eager only after a main-model graph-capture failure
+prevalidate 4096 token IDs with DeepseekV4Tokenizer; then one graph request; no eager
 ```
 
 P5 只回答：是否 ready、最高成功上下文、是否保持固定输出、发生了何种降级。P5 不跑 msprof，不做性能基准或瓶颈归因。

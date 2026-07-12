@@ -1,164 +1,250 @@
 # Developer to Server
 
-## 当前任务：DeepSeek-V4-Flash W8A8 八卡关闭 MTP 隔离
+## 当前任务：DeepSeek-V4-Flash W8A8 八卡 no-MTP tokenizer 单请求重试
 
 任务 ID：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
+p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
 ```
 
-继续使用用户已授权的同一 P5 八卡范围：
+继续使用用户已授权的设备范围：
 
 ```text
 ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 ```
 
-本轮只回答一个问题：在现有 `vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1` 栈、W8A8 checkpoint、TP8+EP、`--quantization ascend` 下，关闭 MTP 运行 `vllm serve` 后能否完成第一个 `4096 input + 64 output` 请求。
+本轮只回答一个问题：修正上轮仅存在于请求客户端的 tokenizer 路径后，已能 ready 的 W8A8、TP8+EP、no-MTP、`FULL_DECODE_ONLY` graph server 能否完成一个 `4096 input + 64 output` 请求。
 
-只允许两个顺序 profile：
+只允许一个 profile：
 
-1. `base_no_mtp_graph_maxseq1`：关闭 MTP，保留 `FULL_DECODE_ONLY` 图捕获；
-2. `base_no_mtp_eager_maxseq1`：仅当第 1 个 profile 明确失败在主模型 graph capture 时运行，关闭 MTP 并增加 `--enforce-eager`。
+```text
+base_no_mtp_graph_maxseq1_tokenizer_fixed
+```
 
-任一 profile 完成一个 `4096+64` 请求后立即停止。本轮不跑 context ladder、MTP、P6、profiler、并发、offload、A/B 或瓶颈归因。
+禁止 eager fallback、MTP、context ladder、P6、profiler、offload、并发、性能归因、config/checkpoint patch、site-packages patch、环境升级或重建。
 
-## 1. 上轮结论与证据边界
+## 1. 上轮结果与本轮唯一变量
 
-上轮 `p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712` 为 `red_deterministic_mtp_dsa_cp_graph_capture`：
+上轮任务 `p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712` 结果为：
 
-- preflight 通过，vLLM source commit/clean、CANN ACL、五插件和八卡可见性匹配；
-- 服务器摘要报告 8 个 worker 均完成 70 分片、300013759966 bytes（约 279.41 GiB）权重加载，MTP draft model 也完成加载；
-- server 未 ready、没有请求；
-- 首错在 MTP proposer dummy run 的 DSA-CP graph capture：`dsa_cp.py:280` 对 `positions_cpu=None` 做切片，触发 `TypeError: 'NoneType' object is not subscriptable`。
+```text
+red_graph_ready_request_client_tokenizer_error
+```
 
-这证明失败与 MTP graph path 高度相关，但尚未证明关闭 MTP 后的 base request 能运行。上游后续 MTP graph 支持跨多个文件且面向更新版本，本轮禁止在 live 环境做单行补丁或部分 backport。
+已知事实：
 
-注意：上轮权重加载结论来自服务器 `result_summary.md`；开发机收到的有界首错摘录没有包含完整 load 行。本轮必须在小型摘录中同时保留 load 与首错证据，但 raw log 继续留在服务器。
+- preflight 和八卡资源门通过；
+- W8A8 70 分片、权重约 `279.41 GiB`，在 8 个 worker 完成加载，每 worker 报告 `38.1255 GB`；
+- MTP 关闭，未再进入 MTP drafter `positions_cpu=None` 路径；
+- `server_ready_exit_code=0`，服务器摘要报告主模型 8 rank graph capture 完成且 `/health` 为 200；
+- 旧客户端在 `AutoTokenizer.from_pretrained(...)` 中因 `PreTrainedConfig` 缺 `max_position_embeddings` 崩溃，HTTP 请求未发出；
+- eager 未运行，这是正确行为：服务器 graph 已 ready，客户端错误与 eager 无关。
 
-## 2. 完整同步远程 main
+证据边界：上轮小包未包含 `request_client.log`，且有界摘录未包含 graph/startup/health 行；因此完整 client traceback 和全 rank graph 结论目前为服务器摘要证据。本轮必须把 tokenizer preflight、graph-ready 和 request result 的小证据一并留存。
+
+本轮唯一变量是客户端 tokenizer：
+
+```text
+禁止: transformers.AutoTokenizer
+使用: vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer
+```
+
+服务器 runtime、模型、设备、TP/EP、graph、`max_num_seqs=1`、`--quantization ascend`、插件与 CANN/ATB 路径全部保持不变。
+
+## 2. Git 同步和禁止项
+
+1. 完整同步远程 `main`，不要只 cherry-pick 单个提交。
+2. 重新打开拉取后的本文档，只执行本任务 ID。
+3. 执行前记录 server-local `HEAD`、`origin/main`、ahead/behind 和 working-tree clean 状态。
+4. 不修改 vLLM、vLLM-Ascend、checkpoint、conda 环境、CANN/ATB、系统路径或服务器 Git 历史。
+5. 禁止主动终止、暂停或影响任何非本任务进程。
+
+## 3. 固定路径与环境
 
 ```bash
 set -euo pipefail
-cd /data/node0_disk1/liguowei/AK-Infer-Lab
 
-if [ -x server_local/git_pull_remote_wins.sh ]; then
-  server_local/git_pull_remote_wins.sh
-else
-  git fetch origin main
-  git merge --ff-only origin/main
-fi
+REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
+TASK_ID=p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_retry_v0221rc1_2026_0712
+ARTIFACT_DIR="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/${TASK_ID}"
+ENV_PREFIX=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+PYTHON_BIN="${ENV_PREFIX}/bin/python"
+VLLM_BIN="${ENV_PREFIX}/bin/vllm"
+MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+SERVED_MODEL_NAME=deepseek-v4-flash-w8a8-mtp
+HOST=127.0.0.1
+PORT=7000
 
-git fetch origin main
-printf 'local_head=%s\n' "$(git rev-parse HEAD)"
-printf 'origin_main=%s\n' "$(git rev-parse origin/main)"
-printf 'ahead_behind=%s\n' "$(git rev-list --left-right --count HEAD...origin/main)"
+mkdir -p "${ARTIFACT_DIR}"
+cd "${REPO_ROOT}"
+
+export PYTHONNOUSERSITE=1
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+unset PYTHONPATH
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+source /usr/local/Ascend/nnal/atb/set_env.sh
+CANN_GENERATED_PYTHONPATH="${PYTHONPATH:-}"
+printf '%s\n' "${CANN_GENERATED_PYTHONPATH}" > "${ARTIFACT_DIR}/cann_generated_pythonpath.txt"
+
+export PYTHONPATH="${CANN_GENERATED_PYTHONPATH}"
+export VLLM_PLUGINS=ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
+export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 ```
 
-必须完整同步，满足 `HEAD == origin/main`、ahead/behind=`0 0`，然后重新打开拉取后的本文档。禁止只拉一个提交、`cherry-pick`、detached checkout 或单文件覆盖。
+必须保留 source CANN/ATB 生成的 `PYTHONPATH`，不允许 source 后再 unset，不允许加入 project overlay 或 `sitecustomize`。
 
-## 3. 固定对象与禁止项
+## 4. 非 NPU server 预检：DeepSeek-V4 tokenizer 与 4096-token payload
 
-```text
-项目：/data/node0_disk1/liguowei/AK-Infer-Lab
-环境：/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
-vLLM 源码：/data/node0_disk1/vllm-0.22.1
-vLLM commit：0decac0d96c42b49572498019f0a0e3600f50398
-vLLM-Ascend：0.22.1rc1
-模型：/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-```
-
-允许：只读复用上述环境、源码与模型；source 官方 CANN/ATB；在 NPU 0-7 启动本任务 TP8/EP 进程；停止本任务记录的 PID/进程组；生成 server-local 日志和小摘要。
-
-禁止：
-
-- 禁止修改、patch、overlay、升级、降级或重建 vLLM、vLLM-Ascend、site-packages、模型、CANN、ATB、driver、firmware 或系统环境；
-- 禁止 `conda create`、`pip install`、`pip uninstall`、`sitecustomize.py`、手工复制/软链模块或硬编码 ACL 路径；
-- 禁止主动终止、暂停或影响任何非本任务进程；任一卡繁忙、归属不清或端口冲突时写 `blocked_resource` 并停止；上轮针对特定 keepalive PID 的一次性清理授权不得复用；
-- 禁止 `--speculative-config`、MTP、context ladder、mixed checkpoint、P6、msprof、offload、并发或其他模型；
-- 禁止把本轮 timing 写成 benchmark、吞吐基线、瓶颈或收益结论；
-- 禁止发送邮件、附件或调用 upload-api，直到用户针对本轮精确结果范围重新选择传输方式。
-
-## 4. 资源门与预检
+本步必须在启动 vLLM server 之前执行。它只读本地 tokenizer 文件并生成 token ID payload，不加载模型权重，不初始化 NPU runtime。
 
 ```bash
 set +e
-set -uo pipefail
-cd /data/node0_disk1/liguowei/AK-Infer-Lab
-
-RUN_ID=p5_deepseek_v4_flash_w8a8_8card_no_mtp_isolation_v0221rc1_2026_0712
-ARTIFACT_DIR="工作记录与进度笔记本/runtime_trace_smokes/${RUN_ID}"
-ENV_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
-PYTHON_BIN="${ENV_DIR}/bin/python"
-VLLM_BIN="${ENV_DIR}/bin/vllm"
-VLLM_SRC=/data/node0_disk1/vllm-0.22.1
-MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-HOST=127.0.0.1
-PORT=7000
-SERVED_MODEL_NAME=deepseek-v4-flash-w8a8-mtp
-OFFICIAL_ASCEND_PLUGINS=ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
-
-mkdir -p "${ARTIFACT_DIR}"
-printf '%s\n' "$(git rev-parse HEAD)" > "${ARTIFACT_DIR}/git_head.txt"
-npu-smi info > "${ARTIFACT_DIR}/npu_smi_before.txt" 2>&1 || true
-npu-smi info -t usages > "${ARTIFACT_DIR}/npu_usage_before.txt" 2>&1 || true
-ss -ltnp 2>/dev/null | grep -E ":${PORT}([[:space:]]|$)" > "${ARTIFACT_DIR}/port_${PORT}_before.txt" || true
-
-PRECHECK_EXIT=0
-[ -x "${PYTHON_BIN}" ] || PRECHECK_EXIT=10
-[ -x "${VLLM_BIN}" ] || PRECHECK_EXIT=11
-[ -d "${MODEL_PATH}" ] || PRECHECK_EXIT=12
-[ "$(git -C "${VLLM_SRC}" rev-parse HEAD 2>/dev/null)" = "0decac0d96c42b49572498019f0a0e3600f50398" ] || PRECHECK_EXIT=13
-[ -z "$(git -C "${VLLM_SRC}" status --short 2>/dev/null)" ] || PRECHECK_EXIT=14
-[ ! -s "${ARTIFACT_DIR}/port_${PORT}_before.txt" ] || PRECHECK_EXIT=15
-
-unset PYTHONPATH
-set +u
-source /usr/local/Ascend/ascend-toolkit/set_env.sh
-source /usr/local/Ascend/nnal/atb/set_env.sh
-set -u
-export PATH="${ENV_DIR}/bin:${PATH}"
-export PYTHONNOUSERSITE=1
-CANN_GENERATED_PYTHONPATH="${PYTHONPATH:-}"
-export CANN_GENERATED_PYTHONPATH
-printf '%s\n' "${CANN_GENERATED_PYTHONPATH}" > "${ARTIFACT_DIR}/cann_generated_pythonpath.txt"
-
-case ":${CANN_GENERATED_PYTHONPATH}:" in
-  *:/data/node0_disk1/liguowei/AK-Infer-Lab:*|*sitecustomize*) PRECHECK_EXIT=16 ;;
-esac
-
-ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
-VLLM_PLUGINS="${OFFICIAL_ASCEND_PLUGINS}" \
-"${PYTHON_BIN}" - "${ARTIFACT_DIR}/preflight.json" "${MODEL_PATH}" <<'PY'
-import glob
+"${PYTHON_BIN}" - "${MODEL_PATH}" "${ARTIFACT_DIR}" <<'PY'
+import hashlib
+import importlib.metadata
+import inspect
 import json
 import sys
-from importlib.metadata import version
+from pathlib import Path
+
+from vllm.tokenizers.deepseek_v4 import DeepseekV4Tokenizer
+
+model_path = Path(sys.argv[1])
+artifact_dir = Path(sys.argv[2])
+payload_path = artifact_dir / "request_payload.json"
+result_path = artifact_dir / "tokenizer_preflight.json"
+
+tokenizer = DeepseekV4Tokenizer.from_pretrained(
+    str(model_path),
+    local_files_only=True,
+)
+
+ids: list[int] = []
+block = 0
+while len(ids) < 4096:
+    block += 1
+    text = (
+        f"DeepSeek P5 tokenizer retry block {block:07d}. "
+        "Synthetic smoke input with no private or generated content.\n"
+    )
+    ids.extend(tokenizer.encode(text, add_special_tokens=False))
+
+prompt_ids = ids[:4096]
+tokenizer_size = len(tokenizer)
+assert len(prompt_ids) == 4096
+assert all(isinstance(token_id, int) for token_id in prompt_ids)
+assert all(0 <= token_id < tokenizer_size for token_id in prompt_ids)
+assert type(tokenizer).__name__.startswith("DSV4")
+
+payload = {
+    "model": "deepseek-v4-flash-w8a8-mtp",
+    "prompt": prompt_ids,
+    "max_tokens": 64,
+    "min_tokens": 64,
+    "ignore_eos": True,
+    "temperature": 0.0,
+    "stream": True,
+    "stream_options": {"include_usage": True},
+}
+payload_bytes = (json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+payload_path.write_bytes(payload_bytes)
+
+result = {
+    "status": "pass",
+    "tokenizer_loader": "vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer",
+    "tokenizer_runtime_class": type(tokenizer).__name__,
+    "tokenizer_module_path": str(Path(inspect.getfile(DeepseekV4Tokenizer)).resolve()),
+    "transformers_version": importlib.metadata.version("transformers"),
+    "local_files_only": True,
+    "prompt_token_count": len(prompt_ids),
+    "tokenizer_size": tokenizer_size,
+    "min_token_id": min(prompt_ids),
+    "max_token_id": max(prompt_ids),
+    "request_payload_bytes": len(payload_bytes),
+    "request_payload_sha256": hashlib.sha256(payload_bytes).hexdigest(),
+    "npu_server_started": False,
+}
+result_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+print(json.dumps(result, ensure_ascii=False))
+PY
+CLIENT_PREFLIGHT_EXIT=$?
+set -e
+printf '%s\n' "${CLIENT_PREFLIGHT_EXIT}" > "${ARTIFACT_DIR}/client_preflight_exit_code.txt"
+```
+
+硬门：
+
+- `client_preflight_exit_code.txt` 必须为 `0`；
+- `tokenizer_preflight.json.status` 必须为 `pass`；
+- `prompt_token_count` 必须恰好为 `4096`；
+- runtime class 必须以 `DSV4` 开头；
+- payload SHA-256 和 bytes 必须记录；
+- 本步失败则标记 `red_client_tokenizer_preflight`，立即停止，禁止启动 vLLM server。
+
+不允许改用 `AutoTokenizer`，不允许通过改 `config.json`、`rope_scaling`、transformers 版本或 checkpoint 来让预检通过。
+
+## 5. runtime/import 与八卡资源门
+
+预检通过后，用现有命令只读核对：
+
+- Python `3.11.15`；
+- torch `2.10.0+cpu`；
+- torch-npu `2.10.0`；
+- vLLM `0.22.1`，import root `/data/node0_disk1/vllm-0.22.1/vllm`；
+- vLLM source commit `0decac0d96c42b49572498019f0a0e3600f50398` 且 clean；
+- vLLM-Ascend `0.22.1rc1`；
+- `acl` origin 位于 `/usr/local/Ascend/`，parent process 可 import `acl.rt.memcpy`；
+- 模型 70 个连续分片、权重 bytes `300013759966`；
+- 完整五插件值与第 3 节一致。
+
+执行：
+
+```bash
+set +e
+"${PYTHON_BIN}" - "${MODEL_PATH}" "${ARTIFACT_DIR}/preflight.json" <<'PY'
+import importlib.metadata
+import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import torch
-import torch_npu
+import torch_npu  # noqa: F401
 import vllm
 import vllm_ascend
 
-output = Path(sys.argv[1])
-model = Path(sys.argv[2])
-shards = sorted(
-    Path(p) for p in glob.glob(str(model / "quant_model_weights-*.safetensors"))
-    if not Path(p).name.startswith("._")
+model = Path(sys.argv[1])
+output = Path(sys.argv[2])
+source = Path("/data/node0_disk1/vllm-0.22.1")
+expected_plugins = (
+    "ascend,ascend_kv_connector,ascend_model_loader,"
+    "ascend_service_profiling,ascend_model"
 )
+shards = sorted(model.glob("quant_model_weights-*-of-00070.safetensors"))
+
+def git(*args: str) -> str:
+    return subprocess.check_output(
+        ["git", "-C", str(source), *args], text=True
+    ).strip()
+
+errors: list[str] = []
 result = {
-    "python": sys.version.split()[0],
+    "python": ".".join(map(str, sys.version_info[:3])),
     "torch": torch.__version__,
-    "torch_npu": version("torch-npu"),
+    "torch_npu": importlib.metadata.version("torch-npu"),
     "vllm": vllm.__version__,
-    "vllm_ascend": version("vllm-ascend"),
+    "vllm_ascend": importlib.metadata.version("vllm-ascend"),
     "vllm_root": str(Path(vllm.__file__).resolve().parent),
     "vllm_ascend_root": str(Path(vllm_ascend.__file__).resolve().parent),
-    "npu_available": bool(torch.npu.is_available()),
-    "visible_device_count": int(torch.npu.device_count()),
+    "vllm_source_commit": git("rev-parse", "HEAD"),
+    "vllm_source_clean": not bool(git("status", "--porcelain")),
     "canonical_shard_count": len(shards),
     "weight_bytes": sum(path.stat().st_size for path in shards),
+    "vllm_plugins": os.environ.get("VLLM_PLUGINS", ""),
+    "pythonpath": os.environ.get("PYTHONPATH", ""),
     "required_files": {
         name: (model / name).is_file()
         for name in [
@@ -168,181 +254,173 @@ result = {
         ]
     },
     "acl_origin": "",
-    "acl_origin_under_usr_local_Ascend": False,
+    "acl_rt_memcpy_imported": False,
 }
+
 try:
     import acl
-    from acl.rt import memcpy
-    origin = str(Path(acl.__file__).resolve())
-    result["acl_origin"] = origin
-    result["acl_origin_under_usr_local_Ascend"] = origin.startswith("/usr/local/Ascend/")
-    result["acl_rt_memcpy_imported"] = memcpy is not None
+    from acl.rt import memcpy  # noqa: F401
+    result["acl_origin"] = str(Path(acl.__file__).resolve())
+    result["acl_rt_memcpy_imported"] = True
 except Exception as exc:
-    result["acl_error"] = f"{type(exc).__name__}: {exc}"
+    errors.append(f"acl_import:{type(exc).__name__}:{exc}")
 
-ok = (
-    result["torch"].startswith("2.10.0")
-    and result["torch_npu"] == "2.10.0"
-    and result["vllm"].startswith("0.22.1")
-    and result["vllm_ascend"] == "0.22.1rc1"
-    and result["vllm_root"] == "/data/node0_disk1/vllm-0.22.1/vllm"
-    and result["npu_available"] is True
-    and result["visible_device_count"] == 8
-    and result["canonical_shard_count"] == 70
-    and result["weight_bytes"] == 300013759966
-    and all(result["required_files"].values())
-    and result["acl_origin_under_usr_local_Ascend"] is True
-    and result.get("acl_rt_memcpy_imported") is True
-)
-result["preflight_ok"] = ok
-output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-sys.exit(0 if ok else 3)
+checks = {
+    "python": result["python"] == "3.11.15",
+    "torch": result["torch"] == "2.10.0+cpu",
+    "torch_npu": result["torch_npu"] == "2.10.0",
+    "vllm": str(result["vllm"]).startswith("0.22.1"),
+    "vllm_ascend": result["vllm_ascend"] == "0.22.1rc1",
+    "vllm_root": result["vllm_root"] == "/data/node0_disk1/vllm-0.22.1/vllm",
+    "vllm_source_commit": result["vllm_source_commit"] == "0decac0d96c42b49572498019f0a0e3600f50398",
+    "vllm_source_clean": result["vllm_source_clean"] is True,
+    "shard_count": result["canonical_shard_count"] == 70,
+    "weight_bytes": result["weight_bytes"] == 300013759966,
+    "required_files": all(result["required_files"].values()),
+    "plugins": result["vllm_plugins"] == expected_plugins,
+    "acl_origin": result["acl_origin"].startswith("/usr/local/Ascend/"),
+    "acl_rt_memcpy": result["acl_rt_memcpy_imported"] is True,
+}
+errors.extend(name for name, passed in checks.items() if not passed)
+result["checks"] = checks
+result["errors"] = errors
+result["preflight_ok"] = not errors
+output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+raise SystemExit(0 if result["preflight_ok"] else 1)
 PY
-PY_PREFLIGHT_EXIT=$?
-if [ "${PY_PREFLIGHT_EXIT}" -ne 0 ] && [ "${PRECHECK_EXIT}" -eq 0 ]; then PRECHECK_EXIT=17; fi
-
-"${PYTHON_BIN}" -m pytest tests/inference_contracts -q > "${ARTIFACT_DIR}/pytest.log" 2>&1
-PYTEST_EXIT=$?
-if [ "${PYTEST_EXIT}" -ne 0 ] && [ "${PRECHECK_EXIT}" -eq 0 ]; then PRECHECK_EXIT=18; fi
+PRECHECK_EXIT=$?
+set -e
 printf '%s\n' "${PRECHECK_EXIT}" > "${ARTIFACT_DIR}/precheck_exit_code.txt"
+```
 
-RESOURCE_GATE=not_confirmed  # 人工确认 NPU 0-7 全部健康、空闲、无冲突后才改为 pass
+任一不匹配则 `blocked_preflight`，不启动服务。
+
+再记录：
+
+```bash
+npu-smi info > "${ARTIFACT_DIR}/npu_smi_before.txt" 2>&1 || true
+npu-smi info -t usages > "${ARTIFACT_DIR}/npu_usage_before.txt" 2>&1 || true
+ss -ltnp > "${ARTIFACT_DIR}/listening_ports_before.txt" 2>&1 || true
+
+RESOURCE_GATE=not_confirmed
+# 只有人工确认 NPU 0-7 全部 Health=OK、无不明进程、空闲且 127.0.0.1:7000 未占用后，才可改为 pass。
 printf '%s\n' "${RESOURCE_GATE}" > "${ARTIFACT_DIR}/resource_gate.txt"
-if [ "${PRECHECK_EXIT}" -ne 0 ]; then
-  printf '%s\n' blocked_preflight > "${ARTIFACT_DIR}/task_status.txt"
-  exit "${PRECHECK_EXIT}"
-fi
-if [ "${RESOURCE_GATE}" != pass ]; then
-  printf '%s\n' blocked_resource > "${ARTIFACT_DIR}/task_status.txt"
-  exit 20
-fi
 ```
 
-资源门需人工核对八卡健康、空闲、无冲突计算进程、HBM 已回到可启动状态且 7000 端口空闲。只观察，不清理未知进程；无法确认归属即停止。
+若发现任意卡被占用、不健康、存在归属不明进程或端口冲突，写 `blocked_resource` 并停止。不得复用任何历史一次性进程清理授权。
 
-## 5. 固定运行环境
+## 6. 唯一允许的 no-MTP graph server
 
-继续保留 source 后的 `PYTHONPATH`：
-
-```bash
-export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
-export VLLM_PLUGINS="${OFFICIAL_ASCEND_PLUGINS}"
-export VLLM_USE_V1=1
-export VLLM_WORKER_MULTIPROC_METHOD=spawn
-export OMP_PROC_BIND=false
-export OMP_NUM_THREADS=8
-export PYTORCH_NPU_ALLOC_CONF=expandable_segments:True
-export LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libjemalloc.so.2${LD_PRELOAD:+:${LD_PRELOAD}}"
-export ACL_OP_INIT_MODE=1
-export USE_MULTI_GROUPS_KV_CACHE=1
-export TASK_QUEUE_ENABLE=1
-export HCCL_OP_EXPANSION_MODE=AIV
-export HCCL_BUFFSIZE=512
-export USE_MULTI_BLOCK_POOL=1
-
-[ "${PYTHONPATH:-}" = "${CANN_GENERATED_PYTHONPATH}" ] || {
-  printf '%s\n' blocked_cann_pythonpath_changed > "${ARTIFACT_DIR}/task_status.txt"
-  exit 21
-}
-```
-
-## 6. 生命周期与单请求客户端
+只有第 4、5 节全部通过后才执行。
 
 ```bash
-wait_health() {
-  local server_pid="$1"
-  "${PYTHON_BIN}" - "http://${HOST}:${PORT}" "${server_pid}" <<'PY'
-import os
-import sys
-import time
-import urllib.request
+PROFILE_DIR="${ARTIFACT_DIR}/base_no_mtp_graph_maxseq1_tokenizer_fixed"
+mkdir -p "${PROFILE_DIR}"
 
-base = sys.argv[1].rstrip("/")
-pid = int(sys.argv[2])
-deadline = time.monotonic() + 3600
-while time.monotonic() < deadline:
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        sys.exit(2)
-    try:
-        with urllib.request.urlopen(base + "/health", timeout=5) as response:
-            if response.status == 200:
-                sys.exit(0)
-    except Exception:
-        pass
-    time.sleep(5)
-sys.exit(1)
-PY
-}
+cmd=(
+  "${VLLM_BIN}" serve "${MODEL_PATH}"
+  --safetensors-load-strategy prefetch
+  --max-model-len 135168
+  --max-num-batched-tokens 4096
+  --served-model-name "${SERVED_MODEL_NAME}"
+  --gpu-memory-utilization 0.92
+  --max-num-seqs 1
+  --data-parallel-size 1
+  --tensor-parallel-size 8
+  --enable-expert-parallel
+  --quantization ascend
+  --host "${HOST}"
+  --port "${PORT}"
+  --block-size 128
+  --enable-chunked-prefill
+  --enable-prefix-caching
+  --tokenizer-mode deepseek_v4
+  --tool-call-parser deepseek_v4
+  --enable-auto-tool-choice
+  --reasoning-parser deepseek_v4
+  --async-scheduling
+  --additional-config '{"enable_flashcomm1":true,"enable_dsa_cp":true,"enable_cpu_binding":true,"multistream_overlap_shared_expert":false}'
+  --model-loader-extra-config '{"enable_multithread_load":true,"num_threads":16}'
+  --compilation-config '{"cudagraph_mode":"FULL_DECODE_ONLY","cudagraph_capture_sizes":[2,4,6,8,10,12,14,16,18,20,22,24,32,36,40]}'
+)
 
-stop_own_profile() {
-  local profile_dir="$1"
-  if [ -f "${profile_dir}/server_pid.txt" ]; then
-    local pid
-    pid="$(cat "${profile_dir}/server_pid.txt")"
-    kill -- "-${pid}" >/dev/null 2>&1 || kill "${pid}" >/dev/null 2>&1 || true
-    sleep 10
+printf '%q ' "${cmd[@]}" > "${PROFILE_DIR}/server_command.txt"
+printf '\n' >> "${PROFILE_DIR}/server_command.txt"
+
+setsid "${cmd[@]}" > "${PROFILE_DIR}/vllm_server.log" 2>&1 &
+SERVER_PID=$!
+printf '%s\n' "${SERVER_PID}" > "${PROFILE_DIR}/server_pid.txt"
+
+READY_EXIT=1
+for _ in $(seq 1 180); do
+  if ! kill -0 "${SERVER_PID}" 2>/dev/null; then
+    break
   fi
-}
+  if curl -fsS --max-time 5 "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then
+    READY_EXIT=0
+    break
+  fi
+  sleep 10
+done
+printf '%s\n' "${READY_EXIT}" > "${PROFILE_DIR}/server_ready_exit_code.txt"
+```
 
-run_one_request() {
-  local profile_dir="$1"
-  "${PYTHON_BIN}" - "http://${HOST}:${PORT}" "${SERVED_MODEL_NAME}" "${MODEL_PATH}" "${profile_dir}" <<'PY'
+不得加 `--enforce-eager`，不得加 `--speculative-config`，不得修改 graph capture sizes、`max_num_seqs`、TP/EP、DSA-CP 或其他 runtime 参数。
+
+若 server 未 ready，写 `red_server_not_ready`，保留首错后停止；禁止转 eager。
+
+## 7. 只发送一个已预验证 payload
+
+仅当 `READY_EXIT=0` 时执行：
+
+```bash
+set +e
+"${PYTHON_BIN}" - "http://${HOST}:${PORT}" "${ARTIFACT_DIR}/request_payload.json" "${PROFILE_DIR}" <<'PY' \
+  > "${PROFILE_DIR}/request_client.log" 2>&1
 import json
 import sys
 import time
 import urllib.request
 from pathlib import Path
 
-from transformers import AutoTokenizer
+base = sys.argv[1].rstrip("/")
+payload_path = Path(sys.argv[2])
+profile_dir = Path(sys.argv[3])
+payload = json.loads(payload_path.read_text(encoding="utf-8"))
 
-base, served_model, model_path = sys.argv[1:4]
-profile_dir = Path(sys.argv[4])
-tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-ids = []
-block = 0
-while len(ids) < 4096:
-    block += 1
-    text = (
-        f"DeepSeek P5 no-MTP isolation block {block:07d}. "
-        "Synthetic smoke input with no private or generated content.\n"
-    )
-    ids.extend(tokenizer(text, add_special_tokens=False).input_ids)
-payload = {
-    "model": served_model,
-    "prompt": ids[:4096],
-    "max_tokens": 64,
-    "min_tokens": 64,
-    "ignore_eos": True,
-    "temperature": 0.0,
-    "stream": True,
-    "stream_options": {"include_usage": True},
-}
+assert isinstance(payload.get("prompt"), list)
+assert len(payload["prompt"]) == 4096
+assert payload.get("max_tokens") == 64
+assert payload.get("min_tokens") == 64
+
 request = urllib.request.Request(
-    base.rstrip("/") + "/v1/completions",
+    base + "/v1/completions",
     data=json.dumps(payload).encode("utf-8"),
     headers={"Content-Type": "application/json", "Accept": "text/event-stream"},
     method="POST",
 )
+
 start = time.perf_counter_ns()
 first = 0
+http_status = 0
+prompt_tokens = 0
 completion_tokens = 0
 finish_reason = ""
 error = ""
-http_status = 0
+
 try:
-    with urllib.request.urlopen(request, timeout=7200) as response:
-        http_status = response.status
-        for raw in response:
-            line = raw.decode("utf-8", errors="replace").strip()
+    with urllib.request.urlopen(request, timeout=900) as response:
+        http_status = int(response.status)
+        for raw_line in response:
+            line = raw_line.decode("utf-8", errors="replace").strip()
             if not line.startswith("data:"):
                 continue
             data = line[5:].strip()
-            if data == "[DONE]":
-                break
+            if not data or data == "[DONE]":
+                continue
             event = json.loads(data)
             usage = event.get("usage") or {}
+            prompt_tokens = max(prompt_tokens, int(usage.get("prompt_tokens") or 0))
             completion_tokens = max(completion_tokens, int(usage.get("completion_tokens") or 0))
             for choice in event.get("choices", []):
                 if choice.get("text") and not first:
@@ -351,14 +429,15 @@ try:
                     finish_reason = str(choice["finish_reason"])
 except Exception as exc:
     error = f"{type(exc).__name__}: {exc}"
+
 end = time.perf_counter_ns()
-success = http_status == 200 and completion_tokens == 64
+success = http_status == 200 and prompt_tokens == 4096 and completion_tokens == 64
 result = {
     "status": "success" if success else "failed",
-    "input_tokens": 4096,
+    "http_status": http_status,
+    "prompt_tokens": prompt_tokens,
     "requested_output_tokens": 64,
     "generated_token_count": completion_tokens,
-    "http_status": http_status,
     "finish_reason": finish_reason,
     "ttft_us": round((first - start) / 1000, 3) if first else 0.0,
     "client_wall_us": round((end - start) / 1000, 3),
@@ -366,127 +445,72 @@ result = {
     "claim_boundary": "p5_failure_isolation_smoke_not_benchmark",
 }
 (profile_dir / "request_result.json").write_text(
-    json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    json.dumps(result, ensure_ascii=False, indent=2) + "\n",
+    encoding="utf-8",
 )
-sys.exit(0 if success else 3)
+print(json.dumps(result, ensure_ascii=False))
+raise SystemExit(0 if success else 1)
 PY
-}
+REQUEST_EXIT=$?
+set -e
+printf '%s\n' "${REQUEST_EXIT}" > "${PROFILE_DIR}/request_client_exit_code.txt"
 ```
 
-## 7. 两个受限 profile
+不保存完整生成文本；只保存 token count、finish reason、HTTP 状态和仅供 smoke 的 client timing。
+
+## 8. 有界证据、分级与清理
 
 ```bash
-run_profile() {
-  local profile_name="$1"
-  local eager_mode="$2"
-  local profile_dir="${ARTIFACT_DIR}/${profile_name}"
-  mkdir -p "${profile_dir}"
+grep -nE 'Loading model weights took|Loading weights took|Saved compiled graph to cache|Application startup complete|GET /health|Traceback|ERROR|Error|Exception|Assertion|unsupported|not supported|OutOfMemory|OOM|HCCL|positions_cpu' \
+  "${PROFILE_DIR}/vllm_server.log" | head -n 260 > "${PROFILE_DIR}/graph_ready_and_failure_excerpt.txt" || true
 
-  local cmd=(
-    "${VLLM_BIN}" serve "${MODEL_PATH}"
-    --safetensors-load-strategy prefetch
-    --max-model-len 135168
-    --max-num-batched-tokens 4096
-    --served-model-name "${SERVED_MODEL_NAME}"
-    --gpu-memory-utilization 0.92
-    --max-num-seqs 1
-    --data-parallel-size 1
-    --tensor-parallel-size 8
-    --enable-expert-parallel
-    --quantization ascend
-    --host "${HOST}"
-    --port "${PORT}"
-    --block-size 128
-    --enable-chunked-prefill
-    --enable-prefix-caching
-    --tokenizer-mode deepseek_v4
-    --tool-call-parser deepseek_v4
-    --enable-auto-tool-choice
-    --reasoning-parser deepseek_v4
-    --async-scheduling
-    --additional-config '{"enable_flashcomm1":true,"enable_dsa_cp":true,"enable_cpu_binding":true,"multistream_overlap_shared_expert":false}'
-    --model-loader-extra-config '{"enable_multithread_load":true,"num_threads":16}'
-  )
-  if [ "${eager_mode}" = graph ]; then
-    cmd+=(--compilation-config '{"cudagraph_mode":"FULL_DECODE_ONLY","cudagraph_capture_sizes":[2,4,6,8,10,12,14,16,18,20,22,24,32,36,40]}')
-  else
-    cmd+=(--enforce-eager)
-  fi
+npu-smi info -t usages > "${PROFILE_DIR}/npu_usage_after_request.txt" 2>&1 || true
 
-  printf '%q ' "${cmd[@]}" > "${profile_dir}/server_command.txt"
-  printf '\n' >> "${profile_dir}/server_command.txt"
-  npu-smi info -t usages > "${profile_dir}/npu_usage_before_start.txt" 2>&1 || true
-  setsid "${cmd[@]}" > "${profile_dir}/vllm_server.log" 2>&1 &
-  local server_pid=$!
-  printf '%s\n' "${server_pid}" > "${profile_dir}/server_pid.txt"
-
-  wait_health "${server_pid}"
-  local ready_exit=$?
-  printf '%s\n' "${ready_exit}" > "${profile_dir}/server_ready_exit_code.txt"
-  if [ "${ready_exit}" -eq 0 ]; then
-    run_one_request "${profile_dir}" > "${profile_dir}/request_client.log" 2>&1
-    printf '%s\n' "$?" > "${profile_dir}/request_client_exit_code.txt"
-  else
-    printf '%s\n' server_not_ready > "${profile_dir}/request_client_exit_code.txt"
-  fi
-
-  grep -nE 'Loading model weights took|Draft model loaded|Capturing|Traceback|ERROR|Error|Exception|Assertion|unsupported|not supported|OutOfMemory|OOM|HCCL|positions_cpu' \
-    "${profile_dir}/vllm_server.log" | head -n 180 > "${profile_dir}/load_and_failure_excerpt.txt" || true
-  grep -E 'Avg prompt throughput|Avg generation throughput|KV cache usage|Prefix cache hit rate' \
-    "${profile_dir}/vllm_server.log" | tail -n 40 > "${profile_dir}/server_stats_summary.txt" || true
-  npu-smi info -t usages > "${profile_dir}/npu_usage_after_request.txt" 2>&1 || true
-  stop_own_profile "${profile_dir}"
-}
-
-run_profile base_no_mtp_graph_maxseq1 graph
-```
-
-运行第 1 个 profile 后人工分类：
-
-- `request_result.json` 为 success：写 `yellow_no_mtp_graph_request_success`，停止；
-- server ready 但请求失败：记录 request runtime 首错，停止；不得用 eager 掩盖请求错误；
-- server 未 ready，且首个确定性错误明确位于主模型 cudagraph capture：才允许把下面的 `RUN_EAGER` 改为 `pass`；
-- environment/import、quantization/format、unsupported SoC/kernel、collective、model route、模型完整性、OOM/容量或归属不明的错误：停止，不运行 eager。
-
-```bash
-RUN_EAGER=not_confirmed  # 只有人工确认“主模型 graph capture 首错”后才改为 pass
-printf '%s\n' "${RUN_EAGER}" > "${ARTIFACT_DIR}/eager_gate.txt"
-if [ "${RUN_EAGER}" = pass ]; then
-  run_profile base_no_mtp_eager_maxseq1 eager
+if [ -f "${PROFILE_DIR}/server_pid.txt" ]; then
+  OWN_PID="$(cat "${PROFILE_DIR}/server_pid.txt")"
+  kill -- "-${OWN_PID}" >/dev/null 2>&1 || kill "${OWN_PID}" >/dev/null 2>&1 || true
+  sleep 10
 fi
+
+npu-smi info > "${ARTIFACT_DIR}/npu_smi_after.txt" 2>&1 || true
+npu-smi info -t usages > "${ARTIFACT_DIR}/npu_usage_after.txt" 2>&1 || true
+ss -ltnp > "${ARTIFACT_DIR}/listening_ports_after.txt" 2>&1 || true
 ```
+
+只能终止本任务记录的 `SERVER_PID` / process group。清理后必须报告 NPU 0-7 和 7000 端口是否恢复。
 
 分级：
 
-- `yellow_no_mtp_graph_request_success`：第 1 个 profile server ready 且 `4096+64` 成功；
-- `yellow_no_mtp_eager_request_success`：第 2 个 profile server ready 且 `4096+64` 成功；
-- `red_*`：两个允许的 profile 都没有成功请求，按第一失败阶段加后缀；
-- `blocked_preflight` / `blocked_resource`：预检或资源门未通过。
+- `yellow_no_mtp_graph_request_success`：client preflight 通过、server ready、HTTP 200、`prompt_tokens=4096`、`generated_token_count=64`；
+- `red_client_tokenizer_preflight`：专用 tokenizer 或 payload gate 在 server 启动前失败；
+- `red_server_not_ready`：preflight/resource 通过但相同 graph server 未 ready；
+- `red_request_runtime`：server ready 但唯一请求未完成精确 `4096+64`；
+- `blocked_preflight` / `blocked_resource`：对应硬门未通过。
 
-人工判级后把上述精确值写入：
+任何 yellow 都只验证当前 no-MTP graph cell；MTP、128K ladder、P6 和性能仍未验证。
 
-```bash
-TASK_STATUS=not_classified  # 按实际结果改为上述 yellow/red/blocked 精确状态
-printf '%s\n' "${TASK_STATUS}" > "${ARTIFACT_DIR}/task_status.txt"
-```
-
-任何 yellow 都只证明当前 no-MTP base request 路径，MTP 仍未通过；不升级为 P5 green。结束时：
-
-```bash
-npu-smi info > "${ARTIFACT_DIR}/npu_smi_after.txt" 2>&1 || true
-npu-smi info -t usages > "${ARTIFACT_DIR}/npu_usage_after.txt" 2>&1 || true
-```
-
-## 8. 结果摘要与传输等待门
+## 9. 结果摘要与传输等待门
 
 服务器本地生成：
 
 ```text
 ${ARTIFACT_DIR}/result_summary.md
 ${ARTIFACT_DIR}/delivery_candidates.tsv
+${ARTIFACT_DIR}/task_status.txt
 ```
 
-`result_summary.md` 必须回答：task ID 与 Git 三方状态；精确环境/import roots/source commit；70 分片与 bytes；八卡资源门、ACL origin、五插件；每个实际 profile 的完整 shell-escaped command、ready/request exit；是否观察到 MTP 路径；权重加载证据；`4096+64` 状态、finish reason 与仅供 smoke 的 client timing；首错阶段；最终 grade；进程清理和 NPU 恢复；raw log 的 server-local 路径；明确“P5 failure-isolation smoke，不是 P6 benchmark”。
+`result_summary.md` 必须回答：
+
+- task ID、Git 三方状态与完整同步方式；
+- 环境/import roots/source commit/clean；
+- tokenizer loader/runtime class/module path、prompt token count、token ID range、payload bytes/SHA-256 和 preflight exit；
+- 八卡资源门、ACL origin、五插件；
+- 完整 shell-escaped server command、ready/request exit；
+- 8 worker weight-load、graph cache/startup/health 有界证据；
+- HTTP status、prompt/output tokens、finish reason 和仅供 smoke 的 client timing；
+- 首错阶段、最终 grade、进程清理、NPU/端口恢复；
+- raw log server-local 路径；
+- 明确“P5 failure-isolation smoke，不是 P6 benchmark；no-MTP 成功不代表 MTP 或 128K 已验证”。
 
 `delivery_candidates.tsv` 每行列出：
 
@@ -494,14 +518,33 @@ ${ARTIFACT_DIR}/delivery_candidates.tsv
 path    size_bytes    sha256    sensitivity    email_feasible    upload_api_feasible    recommended_method    reason
 ```
 
-候选优先包含 `result_summary.md`、`preflight.json`、`git_head.txt`、`resource_gate.txt`、`eager_gate.txt`、`task_status.txt`，以及每个实际 profile 的 `server_command.txt`、`server_ready_exit_code.txt`、`request_client_exit_code.txt`、`request_result.json`、`server_stats_summary.txt`、有界 `load_and_failure_excerpt.txt`。raw `vllm_server.log`、完整 NPU SMI、模型、生成文本和整个目录不得列为候选。
+候选小文件优先包含：
 
-本轮是新的结果范围，传输方式尚未选择。生成摘要与候选清单后，在当前任务会话报告每个候选的精确路径、bytes、SHA-256、敏感性、可用方法和一个推荐方法，等待用户选择 `email`、`upload-api` 或 `server-local`。
+```text
+result_summary.md
+preflight.json
+client_preflight_exit_code.txt
+tokenizer_preflight.json
+git_head.txt
+resource_gate.txt
+task_status.txt
+base_no_mtp_graph_maxseq1_tokenizer_fixed/server_command.txt
+base_no_mtp_graph_maxseq1_tokenizer_fixed/server_ready_exit_code.txt
+base_no_mtp_graph_maxseq1_tokenizer_fixed/request_client_exit_code.txt
+base_no_mtp_graph_maxseq1_tokenizer_fixed/request_result.json
+base_no_mtp_graph_maxseq1_tokenizer_fixed/request_client.log
+base_no_mtp_graph_maxseq1_tokenizer_fixed/graph_ready_and_failure_excerpt.txt
+```
 
-确认前禁止发送邮件、附件、upload-api 预检或上传。任何传输失败都停止并重新请求选择，不自动重试、改名、扩展范围、补发邮件或切换渠道。
+`request_payload.json`、raw `vllm_server.log`、完整 NPU SMI、模型、生成文本和整个目录保持 server-local，不列为默认传输候选。
 
-## 9. 最终边界
+本轮是新的结果范围，尚未获得 `email`、`upload-api` 或 `server-local` 选择。生成摘要和候选清单后，只在当前任务会话报告每个候选的精确路径、bytes、SHA-256、敏感性、可用方式和一个推荐方式，然后暂停。
 
-- 本轮只授权同一 P5 范围内的 no-MTP graph 与条件式 eager 隔离；不授权 MTP patch/backport、v0.23 环境或 P6。
-- 成功请求可把 P5 记为 yellow，并为后续 baseline freeze 提供候选；是否冻结与进入 P8/P6 由开发机结合结果另行决定。
-- 不提交服务器 runtime artifact，除非后续任务明确指定小文件归档范围。
+确认前禁止发送邮件、附件、upload-api 预检或上传，也禁止测试邮件或状态正文先行。任何传输失败都停止并重新请求选择，不自动重试、改名、扩展范围、补发邮件或切换渠道。
+
+## 10. 完成边界
+
+- 成功只把 P5 记为 no-MTP yellow，并给开发机提供是否冻结该 baseline cell 的证据。
+- 不自动进入 P6，不自动创建或启用 P8 adapter；这些由开发机根据回传另行决定。
+- 失败时按上述首错分类停止，不即兴尝试第二个 profile。
+- 不提交 server runtime artifact，除非后续任务明确指定小文件归档范围。
