@@ -490,6 +490,15 @@ def test_server_handoff_contains_only_the_p6_0_stabilization_task():
 
     assert "p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713" in handoff
     assert "execution_codebase: main-readonly" in handoff
+    assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
+    assert "SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local" in handoff
+    assert "SERVER_LOCAL_BRANCH=server-local/runtime-adaptations" in handoff
+    assert "本轮不得进入该目录执行代码" in handoff
+    assert "不得把 `REPO_ROOT` 切到第二套 worktree" in handoff
+    assert "不得运行 `通信模块/server_local_git_sync.sh`" in handoff
+    assert 'branch --show-current)" = "${SERVER_LOCAL_BRANCH}"' in handoff
+    assert "server_local_head_observed.txt" in handoff
+    assert "server_local_tracked_status_observed.txt" in handoff
     assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
     assert "run_lifecycle 1" in handoff
     assert "run_lifecycle 2" in handoff

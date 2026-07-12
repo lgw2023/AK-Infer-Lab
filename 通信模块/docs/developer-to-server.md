@@ -45,12 +45,19 @@ sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
 
 必须完整 fast-forward 同步远程 `main`；不能只拉或 cherry-pick 某个提交。同步全部代码不代表执行全部内容，执行范围只取同步后本文件的当前 task。
 
-服务器主镜像 tracked 文件只读。结果只写 Git 忽略的 `server_local/<task_id>/`。不得修改 tracked 文件，不得 restore/reset/stash，不得 commit 或 push，不得操作 server-local worktree 分支，不得自行选择 ours/theirs。
+服务器当前有两套代码工作区，必须明确区分：
+
+- 主镜像 `/data/node0_disk1/liguowei/AK-Infer-Lab`，分支 `main`：本轮唯一读取和执行代码的工作区，`execution_codebase=main-readonly`；tracked 文件全部只读，结果只写 Git 忽略的 `server_local/<task_id>/`。
+- 服务器专属 worktree `/data/node0_disk1/liguowei/AK-Infer-Lab-server-local`，分支 `server-local/runtime-adaptations`：只供另行授权的服务器代码适配使用；本轮不得进入该目录执行代码，不得 checkout、merge、commit、push 或改写任何文件，也不得运行 `通信模块/server_local_git_sync.sh` 的 `init`、`check`、`sync`。
+
+不得把 `REPO_ROOT` 切到第二套 worktree，不得从第二套 worktree import 或启动 vLLM。本轮不得修改任一工作区的 tracked 文件，不得 restore/reset/stash，不得 commit 或 push，不得自行选择 ours/theirs。第二套 worktree 即使相对 `main` 有本地提交，也不构成本轮执行输入或同步授权。
 
 ```bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
+SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local
+SERVER_LOCAL_BRANCH=server-local/runtime-adaptations
 TASK_ID=p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713
 RESULT_DIR="${REPO_ROOT}/server_local/${TASK_ID}"
 ENV_PREFIX=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
@@ -67,17 +74,22 @@ git -C "${REPO_ROOT}" fetch origin main
 git -C "${REPO_ROOT}" merge --ff-only origin/main
 test "$(git -C "${REPO_ROOT}" rev-parse HEAD)" = "$(git -C "${REPO_ROOT}" rev-parse origin/main)"
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
+test "$(git -C "${REPO_ROOT}" branch --show-current)" = main
 grep -F "task_id: ${TASK_ID}" "${REPO_ROOT}/通信模块/docs/developer-to-server.md"
 
 test ! -e "${RESULT_DIR}"
 mkdir -p "${RESULT_DIR}"
+test "$(git -C "${SERVER_LOCAL_ROOT}" rev-parse --is-inside-work-tree)" = true
+test "$(git -C "${SERVER_LOCAL_ROOT}" branch --show-current)" = "${SERVER_LOCAL_BRANCH}"
 git -C "${REPO_ROOT}" rev-parse HEAD > "${RESULT_DIR}/git_head.txt"
 git -C "${REPO_ROOT}" rev-parse origin/main > "${RESULT_DIR}/origin_main.txt"
 git -C "${REPO_ROOT}" rev-list --left-right --count HEAD...origin/main > "${RESULT_DIR}/ahead_behind.txt"
 git -C "${REPO_ROOT}" status --porcelain --untracked-files=no > "${RESULT_DIR}/tracked_status_before.txt"
+git -C "${SERVER_LOCAL_ROOT}" rev-parse HEAD > "${RESULT_DIR}/server_local_head_observed.txt"
+git -C "${SERVER_LOCAL_ROOT}" status --porcelain --untracked-files=no > "${RESULT_DIR}/server_local_tracked_status_observed.txt"
 ```
 
-任一条件失败标记 `blocked_repo` 并停止。同步后若 task ID 变化，必须停止并重新读取本文件。
+任一条件失败标记 `blocked_repo` 并停止。同步后若 task ID 变化，必须停止并重新读取本文件。`server_local_head_observed.txt` 和 `server_local_tracked_status_observed.txt` 仅记录第二套 worktree 的只读拓扑证据；不得据此同步、清理或修改该 worktree。
 
 ## 3. payload 与 runtime 精确预检
 
@@ -520,5 +532,6 @@ transfer_status: waiting_for_user_choice
 
 - 成功或失败后都停止，不自动进入 P6.1、P8.1、MTP 修复或 128K ladder。
 - 不提交或 push 服务器 runtime artifact，不修改主镜像 tracked 文件。
+- 不进入或改写 `/data/node0_disk1/liguowei/AK-Infer-Lab-server-local`，不操作 `server-local/runtime-adaptations`，不运行 server-local Git 同步脚本。
 - raw server log、NPU 快照和其他大文件只保留在 `server_local/<task_id>/`。
 - 服务器只执行本任务；同步 `main` 拉下来的其他代码不构成执行授权。
