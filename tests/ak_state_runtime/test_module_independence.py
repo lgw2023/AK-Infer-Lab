@@ -44,6 +44,15 @@ def test_only_cli_imports_the_concrete_p1_adapter() -> None:
     assert importers == ["cli.py"]
 
 
+def test_only_cli_imports_the_concrete_vllm_ascend_adapter() -> None:
+    importers = []
+    for path in sorted(PACKAGE_DIR.rglob("*.py")):
+        if any(imported.endswith("adapters.vllm_ascend") for imported in _imports(path)):
+            importers.append(path.relative_to(PACKAGE_DIR).as_posix())
+
+    assert importers == ["cli.py"]
+
+
 def test_legacy_p1_vocabulary_is_confined_to_the_adapter_and_cli() -> None:
     violations: list[str] = []
     allowed = {"adapters/p1_fixture.py", "cli.py"}
@@ -86,7 +95,7 @@ def test_only_cli_imports_concrete_capability_probe_components() -> None:
     assert report_importers == ["cli.py"]
 
 
-def test_real_vllm_ascend_adapter_is_not_present_before_runtime_gate() -> None:
+def test_real_vllm_ascend_adapter_is_confined_to_its_anti_corruption_module() -> None:
     occurrences = []
     forbidden_name = "Vllm" + "AscendAdapter"
     for path in sorted(PACKAGE_DIR.rglob("*.py")):
@@ -97,4 +106,4 @@ def test_real_vllm_ascend_adapter_is_not_present_before_runtime_gate() -> None:
         ):
             occurrences.append(path.relative_to(PACKAGE_DIR).as_posix())
 
-    assert occurrences == []
+    assert occurrences == ["adapters/vllm_ascend.py"]

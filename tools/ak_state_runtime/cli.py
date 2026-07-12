@@ -8,6 +8,7 @@ from typing import Sequence
 import yaml
 
 from .adapters.p1_fixture import P1FixtureAdapter
+from .adapters.vllm_ascend import VllmAscendAdapter
 from .bundle import write_bundle
 from .capabilities.models import parse_probe_spec
 from .capabilities.report import write_source_probe_outputs
@@ -39,6 +40,14 @@ def build_parser() -> argparse.ArgumentParser:
     probe.add_argument("--repo-root", type=Path, required=True)
     probe.add_argument("--matrix-output", type=Path, required=True)
     probe.add_argument("--report-output", type=Path, required=True)
+    runtime_bundle = subparsers.add_parser(
+        "build-vllm-ascend-observe-bundle",
+        help="normalize bounded server observations into an observe-only P8 bundle",
+    )
+    runtime_bundle.add_argument("--source", type=Path, required=True)
+    runtime_bundle.add_argument("--output", type=Path, required=True)
+    runtime_bundle.add_argument("--baseline-contract", type=Path, required=True)
+    runtime_bundle.add_argument("--model-id", required=True)
     return parser
 
 
@@ -84,6 +93,35 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "selected_workload_validated": (
                         result.selected_workload_validated
                     ),
+                },
+                sort_keys=True,
+            )
+        )
+        return 0
+
+    if args.command == "build-vllm-ascend-observe-bundle":
+        adapted = VllmAscendAdapter(
+            baseline_contract=args.baseline_contract,
+            model_id=args.model_id,
+        ).read(args.source)
+        result = replay(adapted)
+        errors = validate_replay_result(result)
+        write_bundle(
+            result,
+            args.output,
+            source_artifact=args.source,
+            claim_level="selected_workload_observe_only_candidate",
+            provenance_mode="bounded_server_observation",
+            server_validated=False,
+            slice_id="p8_vllm_ascend_observe_only_tracer_bullet",
+        )
+        print(
+            json.dumps(
+                {
+                    "output": args.output.as_posix(),
+                    "placement_decision_count": len(result.placement_decisions),
+                    "state_object_count": len(result.state_objects),
+                    "trace_validation_errors": len(errors),
                 },
                 sort_keys=True,
             )

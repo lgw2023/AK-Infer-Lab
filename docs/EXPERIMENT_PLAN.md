@@ -13,13 +13,15 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离已让主模型 graph server ready，但旧客户端在 HTTP 发送前因 `AutoTokenizer` 不兼容失败。第一次原生 tokenizer 重试已生成 4096 个合法 token ID，却因交接脚本错误要求缓存包装类名以 `DSV4` 开头而在 payload 落盘前停止。当前活动任务只修正该 MRO 校验后重试一个请求：
+NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离让主模型 graph server ready。原生 tokenizer 与 MRO 修正后，固定 no-MTP graph cell 已完成一个 `4096+64` HTTP 200 请求，P5 因关闭 MTP 且未执行 128K ladder 被评为 YELLOW。该成功 cell 已作为 P8 首个 degraded runtime baseline 固结；下一项已准备好的任务只验证严格 observe-only adapter，但尚未占用当前服务器 handoff：
 
 ```text
-p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
+p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712
 ```
 
-mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败；no-MTP 复跑已让主模型 graph server ready，将该错误收窄到 MTP drafter path。原生 tokenizer 已证明可生成恰好 4096 个合法 token ID；当前只把顶层类名首缀断言改为校验 MRO 中的 DSV4 backend，再保持同一 no-MTP graph 配置发送一个 `4096+64`，不允许 eager。
+当前 `通信模块/docs/developer-to-server.md` 正被独立的 server-local Git worktree policy setup 任务占用；按单任务通信规则，P8.1 等该任务完成后再下发。
+
+mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败；no-MTP 成功把该错误收窄到 MTP drafter path。P8.1 只复用已成功 cell，采集 bounded request-stage 与 Prefix Cache counter proxy，通过 `VllmAscendAdapter` 生成 `executed=false` 的 no-op trace bundle；不运行 eager、P6、profiler 或 offload。
 
 ## 2. 阶段依赖
 
@@ -129,6 +131,7 @@ max_num_seqs 16 -> 4 -> 1 -> disable MTP
 - W8A8-MTP 权重为 `279.41 GiB`，超过四卡约 256GiB 聚合 HBM，当前四卡授权不具备 full-model 容量。
 - 当前活动任务已固定 `ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7`；执行前仍必须确认八卡健康空闲，发现冲突时不得清理他人进程，只能标记 `blocked_resource`。
 - 路线选择只关闭模型对象决策，不关闭 W8A8 weight-load、server-ready、请求或性能门。
+- 当前 W8A8 weight-load、server-ready 与一个 no-MTP `4096+64` 请求门已关闭；MTP、128K 和性能门仍未关闭。
 
 P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化收益。
 
@@ -256,6 +259,7 @@ docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md
 - EPLB/static expert map 不等于 expert offload。
 - Expert V0 先模拟；真实 warm prefetch 必须通过 trace、bytes、load latency 和 lead-time 门。
 - SSD/NVMe 只做 cold persistence/离线恢复，不进入逐 token decode 热路径。
+- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 当前只验证 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
 
 ## 8. P9：Trace-driven Hardware Sensitivity
 

@@ -12,6 +12,7 @@ CONTRACT_FILES = {
     "state_object": "ak_state_object.schema.yaml",
     "state_event": "ak_state_event.schema.yaml",
     "placement_decision": "placement_decision.schema.yaml",
+    "vllm_ascend_observation": "vllm_ascend_observation.schema.yaml",
 }
 
 

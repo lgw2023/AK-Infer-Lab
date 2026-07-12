@@ -85,6 +85,29 @@ status_grading:
   red_client_tokenizer_preflight: deepseek_v4_tokenizer_mro_or_4096_token_payload_gate_fails_before_server_start
   red_server_not_ready: identical_graph_server_does_not_become_ready
   red_request_runtime: server_ready_but_single_request_does_not_complete_exactly_64_output_tokens
+execution_result:
+  task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
+  task_status: yellow_no_mtp_graph_request_success
+  server_git_head: c2b5168481eb1aeed08727c729c2c92742177328
+  client_preflight_exit_code: 0
+  tokenizer_runtime_class: CachedDSV4TokenizersBackend
+  tokenizer_runtime_mro_contains_dsv4_backend: true
+  prompt_token_count: 4096
+  payload_artifact_written: true
+  payload_bytes: 19487
+  payload_sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+  resource_gate: pass
+  server_ready: true
+  health_http_status: 200
+  request_client_exit_code: 0
+  request_http_status: 200
+  generated_token_count: 64
+  finish_reason: length
+  successful_requests: 1
+  first_failure_stage: none
+  p8_runtime_gate_effect: opens_observe_only_adapter_for_this_exact_degraded_cell
+  evidence_boundary: no_mtp_4096_64_smoke_only_not_mtp_not_128k_not_p6_performance
+  succeeded_by: p8_1_vllm_ascend_observe_only_adapter_smoke.yaml
 boundaries:
   - This is a P5 failure-isolation smoke, not a P6 benchmark.
   - The only code-path change from the prior task is the tokenizer runtime identity assertion.

@@ -57,23 +57,29 @@ def test_p5_readiness_card_records_w8a8_route_and_no_mtp_tokenizer_mro_retry_tas
     )
     assert card["authorized_runtime_gate"]["visible_devices"] == "0,1,2,3,4,5,6,7"
     assert card["authorized_runtime_gate"]["authorization_date"] == "2026-07-12"
-    assert card["authorized_runtime_gate"]["developer_to_server_ready"] is True
-    assert card["active_eight_card_smoke"]["visible_devices"] == "0,1,2,3,4,5,6,7"
-    assert card["active_eight_card_smoke"]["model_object_id"] == "deepseek_v4_flash_w8a8_mtp_modelscope"
-    assert card["active_eight_card_smoke"]["quantization_argument"] == "ascend"
-    assert card["active_eight_card_smoke"]["resource_gate"] == (
+    assert card["authorized_runtime_gate"]["developer_to_server_ready"] is False
+    assert card["successful_no_mtp_result"]["task_status"] == (
+        "yellow_no_mtp_graph_request_success"
+    )
+    assert card["successful_no_mtp_result"]["successful_requests"] == 1
+    assert card["successful_no_mtp_result"]["generated_token_count"] == 64
+    assert card["successful_no_mtp_result"]["mtp_enabled"] is False
+    assert card["completed_eight_card_smoke"]["visible_devices"] == "0,1,2,3,4,5,6,7"
+    assert card["completed_eight_card_smoke"]["model_object_id"] == "deepseek_v4_flash_w8a8_mtp_modelscope"
+    assert card["completed_eight_card_smoke"]["quantization_argument"] == "ascend"
+    assert card["completed_eight_card_smoke"]["resource_gate"] == (
         "authorized_but_execute_only_if_all_eight_devices_healthy_idle_and_conflict_free"
     )
-    assert card["active_eight_card_smoke"]["input_tokens"] == 4096
-    assert card["active_eight_card_smoke"]["output_tokens"] == 64
-    assert card["active_eight_card_smoke"]["max_num_seqs"] == 1
-    assert card["active_eight_card_smoke"]["client_tokenizer"] == (
+    assert card["completed_eight_card_smoke"]["input_tokens"] == 4096
+    assert card["completed_eight_card_smoke"]["output_tokens"] == 64
+    assert card["completed_eight_card_smoke"]["max_num_seqs"] == 1
+    assert card["completed_eight_card_smoke"]["client_tokenizer"] == (
         "vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer"
     )
-    assert card["active_eight_card_smoke"]["client_tokenizer_runtime_identity_check"] == (
+    assert card["completed_eight_card_smoke"]["client_tokenizer_runtime_identity_check"] == (
         "mro_contains_dsv4_backend"
     )
-    assert card["active_eight_card_smoke"]["profiles"] == [
+    assert card["completed_eight_card_smoke"]["profiles"] == [
         "base_no_mtp_graph_maxseq1_tokenizer_mro_fixed"
     ]
     assert card["features"]["mtp"] == "disabled_for_failure_isolation"
@@ -238,6 +244,12 @@ def test_p5_no_mtp_tokenizer_mro_retry_changes_only_runtime_identity_gate():
         "base_no_mtp_graph_maxseq1_tokenizer_mro_fixed"
     ]
     assert workload["stop_policy"]["no_eager_fallback"] is True
+    assert workload["execution_result"]["task_status"] == (
+        "yellow_no_mtp_graph_request_success"
+    )
+    assert workload["execution_result"]["server_ready"] is True
+    assert workload["execution_result"]["successful_requests"] == 1
+    assert workload["execution_result"]["generated_token_count"] == 64
 
 
 def test_p5_four_card_startup_probe_is_bounded_capacity_diagnostic():
@@ -435,30 +447,20 @@ def test_p5_acl_path_probe_preserves_only_official_cann_path_and_bounds_retry():
     assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
 
 
-def test_server_handoff_contains_only_authorized_w8a8_no_mtp_tokenizer_mro_retry_task():
+def test_server_handoff_contains_only_the_server_local_git_setup_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712" in handoff
-    assert "W8A8 八卡 no-MTP tokenizer MRO 单请求重试" in handoff
-    assert "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp" in handoff
-    assert "279.41 GiB" in handoff
-    assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
-    assert "--tensor-parallel-size 8" in handoff
-    assert "--quantization ascend" in handoff
-    assert "--max-num-seqs 1" in handoff
-    assert "DeepseekV4Tokenizer" in handoff
-    assert "tokenizer_runtime_mro = [cls.__name__ for cls in type(tokenizer).__mro__]" in handoff
-    assert 'dsv4_backend_mro = [name for name in tokenizer_runtime_mro if name.startswith("DSV4")]' in handoff
-    assert 'assert type(tokenizer).__name__.startswith("DSV4")' not in handoff
-    assert 'assert dsv4_backend_mro' in handoff
-    assert "AutoTokenizer" in handoff
-    assert "tokenizer = AutoTokenizer.from_pretrained" not in handoff
-    assert "cmd+=(--enforce-eager)" not in handoff
-    assert "cmd+=(--speculative-config" not in handoff
-    assert '"${VLLM_BIN}" serve "${MODEL_PATH}"' in handoff
-    assert "ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model" in handoff
-    assert "MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp" in handoff
-    assert "RESOURCE_GATE=not_confirmed" in handoff
-    assert "确认前禁止发送邮件、附件、upload-api 预检或上传" in handoff
-    assert "禁止主动终止、暂停或影响任何非本任务进程" in handoff
-    assert "不得把自身列入自身表格" in handoff
+    assert "server_local_git_worktree_policy_setup_2026_0712" in handoff
+    assert "/data/node0_disk1/liguowei/AK-Infer-Lab-server-local" in handoff
+    assert "server-local/runtime-adaptations" in handoff
+    assert "server_local_git_sync.sh\" init" in handoff
+    assert "git status --porcelain --untracked-files=no" in handoff
+    assert "same_path_overlap.txt" in handoff
+    assert "conflict_paths.txt" in handoff
+    assert "merge_tree.txt" in handoff
+    assert "禁止对任何 remote 执行 `git push`" in handoff
+    assert "ours/theirs" in handoff
+    assert "自动选择" in handoff
+    assert "不使用 NPU" in handoff
+    assert "尚未获得 `email`、`upload-api` 或 `server-local` 选择" in handoff
+    assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff

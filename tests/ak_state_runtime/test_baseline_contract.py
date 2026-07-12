@@ -6,32 +6,40 @@ import yaml
 CONTRACT_PATH = Path(
     "benchmarks/deepseek_v4_flash/p8/p8_baseline_contract.yaml"
 )
+ADAPTER_SMOKE_PATH = Path(
+    "benchmarks/deepseek_v4_flash/workloads/"
+    "p8_1_vllm_ascend_observe_only_adapter_smoke.yaml"
+)
 
 
-def test_pending_baseline_contract_keeps_runtime_adapter_gate_closed() -> None:
+def test_frozen_degraded_baseline_opens_only_the_observe_only_adapter() -> None:
     contract = yaml.safe_load(CONTRACT_PATH.read_text(encoding="utf-8"))
 
     assert contract["schema_name"] == "ak_p8_baseline_contract"
     assert contract["schema_version"] == "0.1.0"
-    assert contract["contract_status"] == "pending"
-    assert contract["claim_ceiling"] == "runtime_prerequisites_only"
+    assert contract["contract_status"] == "frozen_degraded"
+    assert contract["claim_ceiling"] == "selected_workload_runtime_cell"
     assert contract["selected_workload"] == {
         "model_id": "deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp",
-        "request_success": False,
-        "successful_cell": None,
-        "validated": False,
+        "request_success": True,
+        "successful_cell": "base_no_mtp_graph_maxseq1_tokenizer_mro_fixed",
+        "validated": True,
     }
     assert contract["gate"]["baseline_freeze"] == (
-        "waiting_w8a8_successful_request"
+        "frozen_degraded_no_mtp_4096_64"
     )
     assert contract["gate"]["real_vllm_ascend_adapter"] == (
-        "waiting_selected_workload_runtime_gate"
+        "open_observe_only"
     )
-    assert contract["adapter"]["implementation_status"] == "not_created"
-    assert contract["adapter"]["mode_after_unlock"] == "observe_only"
+    assert contract["adapter"]["implementation_status"] == (
+        "observe_only_implemented_local_validation_passed"
+    )
+    assert contract["adapter"]["mode"] == "observe_only"
+    assert contract["adapter"]["payload_move_allowed"] is False
+    assert contract["adapter"]["placement_mutation_allowed"] is False
 
 
-def test_pending_baseline_contract_records_only_proven_prerequisites() -> None:
+def test_frozen_baseline_records_the_successful_runtime_cell_and_prerequisites() -> None:
     contract = yaml.safe_load(CONTRACT_PATH.read_text(encoding="utf-8"))
     runtime = contract["runtime_baseline"]
 
@@ -78,13 +86,13 @@ def test_pending_baseline_contract_records_only_proven_prerequisites() -> None:
         "cann_acl_parent_spawn_path",
         "deepseek_v4_token_ids_4096_validated",
         "w8a8_no_mtp_graph_server_ready",
+        "w8a8_successful_request",
     ):
         assert evidence[evidence_id]["status"] == "passed"
-        assert evidence[evidence_id]["selected_workload_validated"] is False
-    assert evidence["w8a8_successful_request"]["status"] == "pending"
+    assert evidence["w8a8_successful_request"]["status"] == "passed"
     assert evidence["w8a8_successful_request"][
         "selected_workload_validated"
-    ] is False
+    ] is True
     assert evidence["deepseek_v4_token_ids_4096_validated"]["result"] == {
         "tokenizer_loader": "vllm.tokenizers.deepseek_v4.DeepseekV4Tokenizer",
         "tokenizer_runtime_class": "CachedDSV4TokenizersBackend",
@@ -117,3 +125,30 @@ def test_pending_baseline_contract_excludes_mixed_checkpoint() -> None:
             "adapter_work_authorized": False,
         }
     ]
+
+
+def test_p8_1_adapter_smoke_reuses_only_the_frozen_degraded_cell() -> None:
+    workload = yaml.safe_load(ADAPTER_SMOKE_PATH.read_text(encoding="utf-8"))
+
+    assert workload["task_id"] == (
+        "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712"
+    )
+    assert workload["frozen_baseline"]["contract_status"] == "frozen_degraded"
+    assert workload["frozen_baseline"]["successful_cell"] == (
+        "base_no_mtp_graph_maxseq1_tokenizer_mro_fixed"
+    )
+    assert workload["runtime_environment"]["visible_devices"] == "0,1,2,3,4,5,6,7"
+    assert workload["runtime_fixed"]["speculative_mtp"] == "disabled"
+    assert workload["runtime_fixed"]["enforce_eager"] is False
+    assert workload["request_plan"]["request_count"] == 1
+    assert workload["request_plan"]["input_tokens"] == 4096
+    assert workload["request_plan"]["output_tokens"] == 64
+    assert workload["observation_contract"]["adapter_mode"] == "observe_only"
+    assert workload["observation_contract"]["runtime_imports_allowed"] is False
+    assert workload["observation_contract"]["payload_fields_allowed"] is False
+    assert workload["observation_contract"]["transfer_observation"]["required"] is False
+    assert workload["acceptance"]["trace_validation_errors"] == 0
+    assert workload["acceptance"]["placement_decision_count"] == 1
+    assert workload["acceptance"]["every_decision_executed"] is False
+    assert workload["stop_policy"]["no_profiler"] is True
+    assert workload["stop_policy"]["no_offload"] is True

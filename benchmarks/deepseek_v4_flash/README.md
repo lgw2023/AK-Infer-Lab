@@ -16,8 +16,8 @@ Boundaries:
 - The v0.22.1/v0.22.1rc1 four-card diagnostic fixed plugin, allocator and ACL path issues, loaded all 46 shards, then failed at FP4 expert post-processing because `customize_dtype` is unsupported by the current SoC.
 - The project will not build an adapter for that mixed route. W8A8-MTP is the only future P5/P6 runtime object.
 - The 279.41 GiB W8A8 checkpoint exceeds four-card aggregate HBM. The first eight-card run loaded all 70 shards but failed before server-ready in the MTP drafter DSA-CP graph-capture path.
-- The completed no-MTP isolation then reached graph-ready, but its client used incompatible `AutoTokenizer` construction and failed before HTTP dispatch; successful request count remains zero.
-- The first native-tokenizer retry generated exactly 4096 valid token IDs but stopped before payload write because the handoff incorrectly required the cached wrapper's top-level class name to start with `DSV4`. The active retry checks the MRO for the DSV4 backend, then keeps the proven no-MTP graph server unchanged and sends one 4096+64 request. Eager remains unauthorized.
+- The no-MTP isolation reached graph-ready; after replacing the incompatible client path and correcting the cached-wrapper MRO assertion, the exact no-MTP graph cell completed one `4096+64` HTTP 200 request.
+- That success is frozen as a degraded P8 runtime baseline only. MTP and the 128K ladder remain unvalidated, and the smoke timing is not a P6 performance result.
 - P5 is a startup and long-context smoke, not a benchmark or bottleneck attribution run.
 - Any server task must be written by clearing and rewriting `通信模块/docs/developer-to-server.md`, with body and returned attachments kept within the 70KB communication limit.
 
@@ -33,7 +33,8 @@ P5 deliverables:
 - `workloads/p5_8card_context_ladder.yaml`: completed first-attempt contract; the run reached weight load but failed in MTP graph capture before the ladder.
 - `workloads/p5_8card_no_mtp_isolation.yaml`: completed W8A8 no-MTP graph/eager isolation contract; graph server reached ready but the client failed before request dispatch.
 - `workloads/p5_8card_no_mtp_tokenizer_retry.yaml`: completed native-tokenizer retry; token generation passed, but an over-strict cached-wrapper class assertion stopped execution.
-- `workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml`: active MRO-validated tokenizer preflight plus one-request no-MTP graph retry.
+- `workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml`: completed MRO-validated retry with one successful no-MTP `4096+64` request.
+- `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: next bounded-observation validation for the strictly observe-only adapter; prepared locally but not yet placed in the single server handoff slot.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:
@@ -44,6 +45,7 @@ Planning references:
 
 Next artifact boundary:
 
-- Do not create P6 benchmark cards until the P5 server result is graded green/yellow/red and the final successful command is archived.
+- P5 is now `yellow_no_mtp_graph_request_success`; do not create P6 performance cards until the degraded profile is separately stabilized and authorized.
+- P8.1 may validate only the observe-only adapter on the frozen cell; its Prefix metrics remain proxies and cannot be promoted to object bytes or performance conclusions.
 - Do not create P8 real-move cards before P8.0 capability probe and P8.1 observe-only trace pass.
 - MindIE cards are conditional on a separately confirmed server runtime; current server evidence does not show MindIE as available.

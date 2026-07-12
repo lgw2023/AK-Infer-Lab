@@ -93,14 +93,27 @@ def _placement_decision() -> PlacementDecision:
 def test_contracts_expose_v020_fields_and_enums() -> None:
     contracts = load_contracts()
 
-    assert set(contracts) == {"state_object", "state_event", "placement_decision"}
-    assert {contract["schema_version"] for contract in contracts.values()} == {"0.2.0"}
+    assert set(contracts) == {
+        "state_object",
+        "state_event",
+        "placement_decision",
+        "vllm_ascend_observation",
+    }
+    assert {contract["schema_version"] for contract in contracts.values()} == {
+        "0.1.0",
+        "0.2.0",
+    }
     assert "object_id" in contracts["state_object"]["required_fields"]
     assert "source_event_id" in contracts["state_event"]["required_fields"]
     assert "execution_mode" in contracts["placement_decision"]["required_fields"]
     assert "prefix_block" in contracts["state_object"]["enums"]["object_type"]
     assert "transfer" in contracts["state_event"]["enums"]["event_type"]
     assert "observe_only" in contracts["placement_decision"]["enums"]["execution_mode"]
+    assert contracts["vllm_ascend_observation"]["enums"]["event_type"] == [
+        "request_stage",
+        "state_lifecycle",
+        "transfer",
+    ]
 
 
 @pytest.mark.parametrize(

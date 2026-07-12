@@ -1,0 +1,57 @@
+schema_name: ak_vllm_ascend_observation
+schema_version: 0.1.0
+record_name: vllm_ascend_observation
+required_fields:
+- schema_version
+- source_event_id
+- timestamp_ns
+- trace_id
+- request_id
+- session_id
+- phase
+- event_type
+- action
+- object_id
+- object_type
+- rank_id
+- source_tier
+- target_tier
+- bytes
+- latency_ms
+- evidence_source
+- reason
+nullable_fields:
+- session_id
+- object_id
+- object_type
+- rank_id
+- source_tier
+- target_tier
+- bytes
+- latency_ms
+field_types:
+  schema_version: string
+  source_event_id: string
+  timestamp_ns: integer
+  trace_id: string
+  request_id: string
+  session_id: string
+  phase: string
+  event_type: string
+  action: string
+  object_id: string
+  object_type: string
+  rank_id: integer
+  source_tier: string
+  target_tier: string
+  bytes: integer
+  latency_ms: number
+  evidence_source: string
+  reason: string
+enums:
+  phase: [enqueue, prefill, decode, attention, kv_restore, idle, unknown]
+  event_type: [request_stage, state_lifecycle, transfer]
+  object_type: [kv_block, prefix_block]
+  source_tier: [hbm, dram, pinned_dram, ssd, remote, none, unknown]
+  target_tier: [hbm, dram, pinned_dram, ssd, remote, none, unknown]
+  evidence_source: [runtime_event, server_stats]

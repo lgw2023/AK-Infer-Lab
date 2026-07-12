@@ -1,17 +1,17 @@
 schema_name: ak_p8_baseline_contract
 schema_version: 0.1.0
-contract_id: p8_deepseek_v4_flash_w8a8_v0221rc1_pending_2026_0712
+contract_id: p8_deepseek_v4_flash_w8a8_v0221rc1_no_mtp_degraded_2026_0712
 contract_date: "2026-07-12"
-contract_status: pending
-claim_ceiling: runtime_prerequisites_only
-freeze_reason: no_successful_w8a8_request
-frozen_at: null
+contract_status: frozen_degraded
+claim_ceiling: selected_workload_runtime_cell
+freeze_reason: first_successful_w8a8_request_is_no_mtp_4096_64_only
+frozen_at: "2026-07-12"
 
 selected_workload:
   model_id: deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
-  request_success: false
-  successful_cell: null
-  validated: false
+  request_success: true
+  successful_cell: base_no_mtp_graph_maxseq1_tokenizer_mro_fixed
+  validated: true
 
 source_capability_matrix:
   path: benchmarks/deepseek_v4_flash/p8/source_probes/vllm-v0.22.1__vllm-ascend-v0.22.1rc1/runtime_capability_matrix.yaml
@@ -60,17 +60,39 @@ runtime_baseline:
     validate_platform_and_model_registry_in_fresh_process: true
     validate_memory_redirects_and_snapshot_in_worker_process: true
     validate_acl_import_and_pythonpath_in_parent_and_spawn_child: true
+  successful_cell:
+    grade: yellow_no_mtp_graph_request_success
+    task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
+    server_git_head: c2b5168481eb1aeed08727c729c2c92742177328
+    visible_devices: "0,1,2,3,4,5,6,7"
+    tensor_parallel_size: 8
+    expert_parallel: true
+    quantization: ascend
+    mtp_enabled: false
+    cudagraph_mode: FULL_DECODE_ONLY
+    max_model_len: 135168
+    max_num_batched_tokens: 4096
+    max_num_seqs: 1
+    input_tokens: 4096
+    output_tokens: 64
+    request_count: 1
+    successful_requests: 1
+    http_status: 200
+    generated_token_count: 64
+    finish_reason: length
+    claim_boundary: degraded_runtime_smoke_not_p6_benchmark
 
 adapter:
-  implementation_status: not_created
-  mode_after_unlock: observe_only
+  implementation_status: observe_only_implemented_local_validation_passed
+  mode: observe_only
   payload_move_allowed: false
   placement_mutation_allowed: false
-  imports_allowed_before_unlock: false
+  runtime_imports_allowed: false
+  source_contract: bounded_vllm_ascend_observation_jsonl_v0_1_0
 
 gate:
-  baseline_freeze: waiting_w8a8_successful_request
-  real_vllm_ascend_adapter: waiting_selected_workload_runtime_gate
+  baseline_freeze: frozen_degraded_no_mtp_4096_64
+  real_vllm_ascend_adapter: open_observe_only
   minimum_unlock_requirements:
     source_capability_probe_v0221: true
     installed_content_provenance: true
@@ -89,10 +111,10 @@ gate:
     cann_acl_parent_spawn_path: true
     w8a8_no_mtp_graph_server_ready: true
     deepseek_v4_token_ids_4096_validated: true
-    deepseek_v4_client_payload_prevalidated: false
-    w8a8_successful_requests: 0
-    successful_cell_command_and_config_recorded: false
-    successful_cell_environment_and_artifact_provenance_recorded: false
+    deepseek_v4_client_payload_prevalidated: true
+    w8a8_successful_requests: 1
+    successful_cell_command_and_config_recorded: true
+    successful_cell_environment_and_artifact_provenance_recorded: true
 
 evidence:
   - evidence_id: source_capability_probe_v0221
@@ -166,16 +188,34 @@ evidence:
 
   - evidence_id: w8a8_successful_request
     scope: selected_workload_runtime
-    status: pending
-    selected_workload_validated: false
-    active_server_task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
-    minimum_successful_evidence:
-      requests: 1
-      input_tokens: 4096
-      output_tokens: 64
-      request_success_required: true
-      mtp_setting_must_be_recorded: true
-    note: 128k_success_is_not_required_to_unlock_the_first_observe_only_adapter_slice
+    status: passed
+    selected_workload_validated: true
+    task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
+    developer_received_artifacts:
+      result_summary:
+        path: /Volumes/SSD1/Inbox/2026-07-12/p5_nomtp_mro_yellow_2026_0712/result_summary.md
+        bytes: 7281
+        sha256: f46ec31254d7cb74b26493fadac2a329971ea42e804ae05a077563d53612faa8
+      request_result:
+        path: /Volumes/SSD1/Inbox/2026-07-12/p5_nomtp_mro_yellow_2026_0712/request_result.json
+        bytes: 305
+        sha256: 3a23fa582d06c8a2b311e988d74f90a38daf73e4011d86bc91610693d40a2689
+      server_command:
+        path: /Volumes/SSD1/Inbox/2026-07-12/p5_nomtp_mro_yellow_2026_0712/server_command.txt
+        bytes: 1051
+        sha256: c8490730b269ca2cf8a72704877ab040099341ec5fe576ee010d3613a61902bc
+    result:
+      mtp_enabled: false
+      server_ready: true
+      health_http_status: 200
+      request_client_exit_code: 0
+      request_http_status: 200
+      prompt_tokens: 4096
+      requested_output_tokens: 64
+      generated_token_count: 64
+      finish_reason: length
+      successful_requests: 1
+    evidence_boundary: exact_no_mtp_graph_cell_only_not_mtp_not_128k_not_performance
 
   - evidence_id: w8a8_no_mtp_graph_server_ready
     scope: selected_workload_runtime_prerequisite
@@ -215,8 +255,8 @@ excluded_paths:
     adapter_work_authorized: false
 
 next_actions_after_unlock:
-  - freeze_the_first_successful_w8a8_cell_as_the_runtime_baseline
-  - implement_a_strictly_observe_only_vllm_ascend_adapter
+  - validate_the_observe_only_vllm_ascend_adapter_on_bounded_server_observations
+  - freeze_a_separate_p6_unprofiled_workload_before_p8_2_k0
   - run_p8_2_k0_prefix_cache_on_off_before_payload_move_work
 
 still_locked:

@@ -20,6 +20,10 @@ def write_bundle(
     output_dir: Path,
     *,
     source_artifact: Path,
+    claim_level: str = "toolchain_only",
+    provenance_mode: str = "offline_fixture",
+    server_validated: bool = False,
+    slice_id: str = "p8_offline_observe_only_tracer_bullet",
 ) -> Path:
     errors = validate_replay_result(result)
     if errors:
@@ -61,15 +65,15 @@ def write_bundle(
     }
     manifest = {
         "artifact_sha256": artifact_sha256,
-        "claim_level": "toolchain_only",
+        "claim_level": claim_level,
         "emitted_event_count": result.emitted_event_count,
         "placement_decision_count": len(result.placement_decisions),
-        "provenance_mode": "offline_fixture",
+        "provenance_mode": provenance_mode,
         "runtime_label": next(iter(runtime_labels)),
         "schema_version": "0.2.0",
-        "server_validated": False,
+        "server_validated": server_validated,
         "skipped_record_count": result.skipped_record_count,
-        "slice_id": "p8_offline_observe_only_tracer_bullet",
+        "slice_id": slice_id,
         "source_artifact": source_artifact.as_posix(),
         "source_record_count": result.source_record_count,
         "source_sha256": _sha256(source_artifact),
