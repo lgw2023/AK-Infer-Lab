@@ -34,7 +34,8 @@ P5 deliverables:
 - `workloads/p5_8card_no_mtp_isolation.yaml`: completed W8A8 no-MTP graph/eager isolation contract; graph server reached ready but the client failed before request dispatch.
 - `workloads/p5_8card_no_mtp_tokenizer_retry.yaml`: completed native-tokenizer retry; token generation passed, but an over-strict cached-wrapper class assertion stopped execution.
 - `workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml`: completed MRO-validated retry with one successful no-MTP `4096+64` request.
-- `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: active bounded-observation server validation for the strictly observe-only adapter; it is the current single server handoff.
+- `workloads/p6_0_no_mtp_degraded_stabilization.yaml`: active P6.0 contract; two new identical fresh lifecycles extend the prior P5 success to three consecutive no-MTP `4096+64` successes.
+- `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: prepared bounded-observation server validation for the strictly observe-only adapter; not executed and deferred until P6.0 stabilization is reviewed.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:
@@ -45,7 +46,7 @@ Planning references:
 
 Next artifact boundary:
 
-- P5 is now `yellow_no_mtp_graph_request_success`; do not create P6 performance cards until the degraded profile is separately stabilized and authorized.
-- P8.1 may validate only the observe-only adapter on the frozen cell; its Prefix metrics remain proxies and cannot be promoted to object bytes or performance conclusions.
+- P5 is now `yellow_no_mtp_graph_request_success`; the current handoff performs only P6.0 degraded stabilization, not P6.1 performance.
+- P8.1 remains a deferred preflight. When separately reauthorized, it may validate only the observe-only adapter on the frozen cell; its Prefix metrics remain proxies and cannot be promoted to object bytes or performance conclusions.
 - Do not create P8 real-move cards before P8.0 capability probe and P8.1 observe-only trace pass.
 - MindIE cards are conditional on a separately confirmed server runtime; current server evidence does not show MindIE as available.

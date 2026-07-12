@@ -1,6 +1,6 @@
 # P5-P9 实验计划
 
-日期：2026-07-12
+日期：2026-07-13
 
 本文档是 P5-P9 的稳定阶段契约。P8 的工程细节见 `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`；每轮实时状态、服务器回传和下一动作写入 `工作记录与进度笔记本/`。
 
@@ -13,15 +13,15 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离让主模型 graph server ready。原生 tokenizer 与 MRO 修正后，固定 no-MTP graph cell 已完成一个 `4096+64` HTTP 200 请求，P5 因关闭 MTP 且未执行 128K ladder 被评为 YELLOW。该成功 cell 已作为 P8 首个 degraded runtime baseline 固结；当前唯一服务器任务只验证严格 observe-only adapter：
+NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离让主模型 graph server ready。原生 tokenizer 与 MRO 修正后，固定 no-MTP graph cell 已完成一个 `4096+64` HTTP 200 请求，P5 因关闭 MTP 且未执行 128K ladder 被评为 YELLOW。该成功 cell 已作为 degraded runtime candidate 固结；当前正式主线只执行 P6.0 stabilization：
 
 ```text
-p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712
+p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713
 ```
 
-server-local Git 管理最终验收已完成，`通信模块/docs/developer-to-server.md` 已切换为上述 P8.1 任务。
+server-local Git 管理最终验收已完成。先前准备的 P8.1 observe-only handoff 尚未下发、未执行，已延后为 preflight；`通信模块/docs/developer-to-server.md` 已改为上述 P6.0 任务。
 
-mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败；no-MTP 成功把该错误收窄到 MTP drafter path。P8.1 只复用已成功 cell，采集 bounded request-stage 与 Prefix Cache counter proxy，通过 `VllmAscendAdapter` 生成 `executed=false` 的 no-op trace bundle；不运行 eager、P6、profiler 或 offload。
+mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败；no-MTP 成功把该错误收窄到 MTP drafter path。P6.0 以前序 1 次成功为第一个样本，再做 2 个完全相同的 fresh lifecycle；任一失败即停，不运行 eager、MTP、128K、P6.1、profiler、P8.1 或 offload。
 
 ## 2. 阶段依赖
 
@@ -145,6 +145,8 @@ P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化
 - P5 `yellow` 时，先解释降级原因并形成稳定 profile；不得直接升级为 official baseline。
 - 冻结一个短上下文 smoke workload、一个中/长上下文 workload 和固定输出策略。
 
+当前动作只稳定 degraded 短上下文 cell：已有 1 次 P5 成功，再执行 2 个独立 fresh server lifecycle，每次只发 1 个相同 `4096+64` 请求。两次皆成功才记为 `yellow_degraded_baseline_stabilized`；这不会自动关闭中/长上下文、MTP 或 official baseline 门。
+
 退出门：相同 command 连续成功，输出控制成立，server lifecycle 和环境无漂移。
 
 ### P6.1：Unprofiled Repeatability
@@ -259,7 +261,7 @@ docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md
 - EPLB/static expert map 不等于 expert offload。
 - Expert V0 先模拟；真实 warm prefetch 必须通过 trace、bytes、load latency 和 lead-time 门。
 - SSD/NVMe 只做 cold persistence/离线恢复，不进入逐 token decode 热路径。
-- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 当前只验证 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
+- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发且已延后到 P6.0 stabilization 之后。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
 
 ## 8. P9：Trace-driven Hardware Sensitivity
 

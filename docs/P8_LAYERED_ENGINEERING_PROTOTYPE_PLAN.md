@@ -530,8 +530,9 @@ benchmarks/deepseek_v4_flash/p8/
 确定性证据输出；只有 `cli.py` 组合具体 scanner 和输出器。
 `p8_baseline_contract.yaml` 已是 exact no-MTP cell 的 `frozen_degraded` runtime
 baseline。`adapters/vllm_ascend.py` 只接受机器可读 bounded observation JSONL，
-不 import runtime、不持有 payload、不执行 placement；server validation 仍待当前
-P8.1 任务关闭。MindIE adapter、payload mover 与长期 server collector 仍未创建。
+不 import runtime、不持有 payload、不执行 placement；P8.1 server validation 尚未
+下发、尚未执行，已延后到正式主线 P6.0 degraded stabilization 完成并经复核之后。
+MindIE adapter、payload mover 与长期 server collector 仍未创建。
 
 后续每个 vertical slice 必须同时提供：
 

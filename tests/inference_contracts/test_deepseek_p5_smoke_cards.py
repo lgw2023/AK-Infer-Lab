@@ -447,27 +447,66 @@ def test_p5_acl_path_probe_preserves_only_official_cann_path_and_bounds_retry():
     assert probe["stop_policy"]["no_package_source_or_system_changes"] is True
 
 
-def test_server_handoff_contains_only_the_p8_observe_only_task():
+def test_p6_0_degraded_stabilization_repeats_only_the_exact_p5_yellow_cell():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_0_no_mtp_degraded_stabilization.yaml"
+    )
+
+    assert workload["task_id"] == (
+        "p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.0",
+        "mode": "degraded_stabilization",
+        "p5_status": "yellow_no_mtp_graph_request_success",
+        "may_claim_official_baseline": False,
+        "may_enter_p6_1_automatically": False,
+        "p8_1_server_validation": "deferred_preflight_not_executed",
+    }
+    assert workload["runtime_environment"]["visible_devices"] == "0,1,2,3,4,5,6,7"
+    assert workload["runtime_fixed"]["speculative_mtp"] == "disabled"
+    assert workload["runtime_fixed"]["enforce_eager"] is False
+    assert workload["runtime_fixed"]["cudagraph_mode"] == "FULL_DECODE_ONLY"
+    assert workload["request_fixed"]["input_tokens"] == 4096
+    assert workload["request_fixed"]["output_tokens"] == 64
+    assert workload["request_fixed"]["payload_bytes"] == 19487
+    assert workload["request_fixed"]["payload_sha256"] == (
+        "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1"
+    )
+    assert workload["repeat_plan"]["prior_accepted_successes"] == 1
+    assert workload["repeat_plan"]["new_fresh_server_lifecycles"] == 2
+    assert workload["repeat_plan"]["requests_per_lifecycle"] == 1
+    assert workload["repeat_plan"]["required_consecutive_successes_total"] == 3
+    assert workload["acceptance"]["final_grade"] == "yellow_degraded_baseline_stabilized"
+    assert workload["stop_policy"]["no_profiler"] is True
+    assert workload["stop_policy"]["no_performance_claim"] is True
+    assert workload["stop_policy"]["no_p8_observer_or_adapter_execution"] is True
+    assert workload["execution_state"]["server_handoff"] == "active"
+    assert workload["execution_state"]["server_result"] == "pending"
+
+
+def test_server_handoff_contains_only_the_p6_0_stabilization_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" in handoff
+    assert "p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713" in handoff
     assert "execution_codebase: main-readonly" in handoff
     assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
-    assert "collect-vllm-ascend-observations" in handoff
-    assert "build-vllm-ascend-observe-bundle" in handoff
-    assert "vllm:prefix_cache_queries" in handoff
-    assert "vllm:prefix_cache_hits" in handoff
-    assert "synthetic transfer" in handoff
-    assert 'manifest["server_validated"] is False' in handoff
-    assert 'decisions[0]["executed"] is False' in handoff
-    assert 'objects[0]["payload_ref"] is None' in handoff
-    assert "green_observe_only_adapter_on_frozen_degraded_cell" in handoff
+    assert "run_lifecycle 1" in handoff
+    assert "run_lifecycle 2" in handoff
+    assert '"prior_accepted_successes": 1' in handoff
+    assert '"new_fresh_lifecycles": 2' in handoff
+    assert '"consecutive_successes_total": 3 if success' in handoff
+    assert "yellow_degraded_baseline_stabilized" in handoff
+    assert "p6_0_stabilization_diagnostic_timing_not_performance" in handoff
     assert "request_payload.json" in handoff
     assert "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1" in handoff
     assert "status --porcelain --untracked-files=no" in handoff
     assert "不得 restore/reset/stash" in handoff
     assert "不得 commit 或 push" in handoff
     assert "ours/theirs" in handoff
-    assert "尚未获得 `email`、`upload-api` 或 `server-local` 的传输选择" in handoff
-    assert "server_local_git_management_closeout_2026_0712" not in handoff
-    assert "server_local_git_worktree_policy_setup_2026_0712" not in handoff
+    assert "recommended_method: upload-api" in handoff
+    assert "selected_method: none" in handoff
+    assert "当前未选择 `email`、`upload-api` 或 `server-local`" in handoff
+    assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
+    assert "collect-vllm-ascend-observations" not in handoff
+    assert "build-vllm-ascend-observe-bundle" not in handoff

@@ -168,15 +168,15 @@ artifacts:
   historical_context_ladder_workload: workloads/p5_8card_context_ladder.yaml
   completed_tokenizer_retry_workload: workloads/p5_8card_no_mtp_tokenizer_retry.yaml
   completed_mro_retry_workload: workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml
-  next_workload: workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml
+  next_workload: workloads/p6_0_no_mtp_degraded_stabilization.yaml
   server_handoff: 通信模块/docs/developer-to-server.md
 boundaries:
   - W8A8 is the only selected DeepSeek-V4-Flash runtime object for the current P5 and future P6 execution.
   - The 279.41 GiB W8A8 checkpoint cannot be tested as a full model in the retired four-card scope; the current task uses all eight authorized devices.
   - The mixed checkpoint remains historical evidence and will not receive an adapter or conversion effort.
   - The completed P5 task validates only one no-MTP 4096+64 graph request; it is a degraded runtime baseline, not the official MTP/128K target.
-  - The active P8.1 handoff is observe-only and may not import the runtime, hold payloads or mutate placement.
-  - P6 benchmark, profiler, offload, MTP patching and runtime upgrades remain unauthorized.
+  - The active handoff is P6.0 degraded stabilization: two identical fresh lifecycles, one fixed request each, with no parameter fallback.
+  - P6.1 performance, P8.1 server validation, profiler, offload, MTP patching and runtime upgrades remain unauthorized.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
   source_versions_recorded: true

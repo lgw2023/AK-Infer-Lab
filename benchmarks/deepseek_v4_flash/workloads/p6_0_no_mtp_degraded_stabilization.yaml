@@ -1,0 +1,116 @@
+schema_version: 1
+workload_id: p6_0_deepseek_v4_flash_no_mtp_degraded_stabilization
+date: "2026-07-13"
+purpose: stabilize_and_freeze_the_exact_p5_yellow_cell_before_any_p6_performance_work
+task_id: p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713
+
+stage_contract:
+  stage: P6.0
+  mode: degraded_stabilization
+  p5_status: yellow_no_mtp_graph_request_success
+  may_claim_official_baseline: false
+  may_enter_p6_1_automatically: false
+  p8_1_server_validation: deferred_preflight_not_executed
+
+frozen_candidate:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  prior_task_id: p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712
+  prior_grade: yellow_no_mtp_graph_request_success
+  prior_success_count: 1
+  prior_server_git_head: c2b5168481eb1aeed08727c729c2c92742177328
+  successful_cell: base_no_mtp_graph_maxseq1_tokenizer_mro_fixed
+  claim_boundary: exact_no_mtp_4096_64_runtime_cell_only
+
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: "0.22.1+empty"
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: "0.22.1rc1"
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  torch: "2.10.0+cpu"
+  torch_npu: "2.10.0"
+  visible_devices: "0,1,2,3,4,5,6,7"
+  user_confirmed_scope: true
+  all_eight_devices_must_be_healthy_idle_and_conflict_free: true
+
+runtime_fixed:
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  speculative_mtp: disabled
+  enforce_eager: false
+  cudagraph_mode: FULL_DECODE_ONLY
+
+request_fixed:
+  input_tokens: 4096
+  output_tokens: 64
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens: 64
+  max_tokens: 64
+  streaming: true
+  return_token_ids: true
+  prompt_source: prior_prevalidated_token_id_payload
+  payload_server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+  payload_bytes: 19487
+  payload_sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+
+repeat_plan:
+  prior_accepted_successes: 1
+  new_fresh_server_lifecycles: 2
+  requests_per_lifecycle: 1
+  required_consecutive_successes_total: 3
+  same_server_command_required: true
+  same_environment_required: true
+  same_payload_required: true
+  clean_shutdown_between_lifecycles: true
+  no_parameter_change_between_lifecycles: true
+
+acceptance:
+  new_lifecycles_successful: 2
+  each_server_ready: true
+  each_health_http_status: 200
+  each_request_http_status: 200
+  each_prompt_tokens: 4096
+  each_generated_token_count: 64
+  each_finish_reason: length
+  each_client_exit_code: 0
+  each_clean_shutdown: true
+  environment_drift_count: 0
+  command_drift_count: 0
+  payload_drift_count: 0
+  final_grade: yellow_degraded_baseline_stabilized
+
+stop_policy:
+  stop_on_first_failed_lifecycle_or_request: true
+  no_third_new_lifecycle: true
+  no_eager_fallback: true
+  no_mtp: true
+  no_context_ladder: true
+  no_concurrency: true
+  no_warmup_or_extra_request: true
+  no_profiler: true
+  no_performance_claim: true
+  no_runtime_source_environment_or_checkpoint_modification: true
+  no_p8_observer_or_adapter_execution: true
+  no_automatic_p6_1_or_p8_1: true
+
+execution_state:
+  server_handoff: active
+  server_result: pending
+  transfer_method: unselected_server_local_only
+
+boundaries:
+  - This is P6.0 degraded stabilization, not P6.1 performance or an official MTP baseline.
+  - The prior P5 success plus two new identical fresh-lifecycle successes form the required three consecutive successes.
+  - Timing may be recorded only as diagnostic lifecycle evidence and must not be reported as benchmark performance.
+  - MTP, the 128K ladder, P6.1, profiler, offload, placement mutation and P8.1 remain closed.
+  - Results remain server-local until the user chooses one transfer method for the exact result package.

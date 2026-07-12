@@ -107,7 +107,7 @@ execution_result:
   first_failure_stage: none
   p8_runtime_gate_effect: opens_observe_only_adapter_for_this_exact_degraded_cell
   evidence_boundary: no_mtp_4096_64_smoke_only_not_mtp_not_128k_not_p6_performance
-  succeeded_by: p8_1_vllm_ascend_observe_only_adapter_smoke.yaml
+  succeeded_by: p6_0_no_mtp_degraded_stabilization.yaml
 boundaries:
   - This is a P5 failure-isolation smoke, not a P6 benchmark.
   - The only code-path change from the prior task is the tokenizer runtime identity assertion.

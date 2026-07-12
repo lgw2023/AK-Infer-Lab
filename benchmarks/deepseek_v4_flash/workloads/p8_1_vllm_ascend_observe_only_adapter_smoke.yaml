@@ -93,9 +93,11 @@ bundle_command: >-
   --model-id deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
 
 execution_state:
-  server_handoff: active
-  server_result: pending
-  expected_grade: green_observe_only_adapter_on_frozen_degraded_cell
+  server_handoff: deferred_preflight
+  server_result: not_executed
+  deferred_reason: formal_mainline_requires_p6_0_degraded_stabilization_first
+  superseded_active_handoff_by: p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713
+  expected_grade_when_reauthorized: green_observe_only_adapter_on_frozen_degraded_cell
 
 acceptance:
   request_successful: true

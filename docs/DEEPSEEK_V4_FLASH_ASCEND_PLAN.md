@@ -1,6 +1,6 @@
 # DeepSeek-V4-Flash on Ascend：P5-P9 专项计划
 
-日期：2026-07-12
+日期：2026-07-13
 
 ## 1. 专项目标
 
@@ -49,23 +49,23 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 
 ## 4. P5：八卡拉起与 128K Context Ladder
 
-NPU 0-7 已获用户明确授权。首轮 context-ladder 任务在 MTP graph capture 失败，no-MTP 单请求已成功；下一项准备好的 P8.1 任务为：
+NPU 0-7 已获用户明确授权。首轮 context-ladder 任务在 MTP graph capture 失败，no-MTP 单请求已成功；下一项正式主线任务为：
 
 ```text
-p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712
+p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713
 ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 TP=8, EP=enabled
 ```
 
 mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门通过，Ascend model route 正确，46/46 分片加载完成，随后四个 worker 在 `process_weights_after_loading` 同样命中当前 SoC 不支持 `customize_dtype`。因此不再继续 mixed 兼容性工作。W8A8 权重为 279.41GiB；首轮八卡在 MTP proposer DSA-CP graph capture 因 `positions_cpu=None` 失败。no-MTP 路线随后完成权重加载、graph capture、server-ready 与一个 `4096+64` 请求，最终评级为 `yellow_no_mtp_graph_request_success`。
 
-当前 P8.1 任务：
+当前 P6.0 任务：
 
 ```text
-p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712
+p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713
 ```
 
-server-local Git 管理最终验收已完成；该任务现已写入唯一服务器 handoff，服务器结果待执行。
+server-local Git 管理最终验收已完成。原 P8.1 handoff 尚未下发、未执行，已延后为 preflight；当前唯一 handoff 先用 2 个新 fresh lifecycle 复测同一 no-MTP `4096+64` cell，与前序 1 次成功合成连续 3 次证据。
 
 参考配置：
 
@@ -80,14 +80,14 @@ chunked_prefill=enabled
 MTP=disabled for isolation
 ```
 
-当前观测请求：
+当前稳定化请求：
 
 ```text
-4096 input + fixed 64 output
-reuse the validated payload; collect request stages and Prefix Cache counter proxy; build an observe-only bundle
+2 fresh lifecycles x (4096 input + fixed 64 output)
+reuse the validated payload and identical command; stop on first failure
 ```
 
-P5 已回答 exact no-MTP cell 可 ready 且固定输出成立，但仍未回答 MTP 与最高稳定上下文。P8.1 只验证 adapter/trace，不跑 msprof，不做性能基准或瓶颈归因。
+P5 已回答 exact no-MTP cell 可 ready 且固定输出成立，但仍未回答 MTP 与最高稳定上下文。P6.0 只做 degraded stabilization，不跑 msprof，不做性能基准或瓶颈归因；P8.1 服务器验证延后。
 
 状态门：
 
@@ -97,7 +97,7 @@ P5 已回答 exact no-MTP cell 可 ready 且固定输出成立，但仍未回答
 
 ## 5. P6：八卡 Reference Baseline
 
-八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point；八卡资源授权已关闭，但它仍必须等待 P5 成功并另行获得 P6 授权。
+八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point。用户已明确要求按正式主线继续，当前只授权 P6.0 degraded stabilization；P6.1 性能、profiler 和后续 A/B 仍需独立决策。
 
 ### 5.1 Baseline freeze
 

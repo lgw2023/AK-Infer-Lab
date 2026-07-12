@@ -152,3 +152,8 @@ def test_p8_1_adapter_smoke_reuses_only_the_frozen_degraded_cell() -> None:
     assert workload["acceptance"]["every_decision_executed"] is False
     assert workload["stop_policy"]["no_profiler"] is True
     assert workload["stop_policy"]["no_offload"] is True
+    assert workload["execution_state"]["server_handoff"] == "deferred_preflight"
+    assert workload["execution_state"]["server_result"] == "not_executed"
+    assert workload["execution_state"]["superseded_active_handoff_by"] == (
+        "p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713"
+    )
