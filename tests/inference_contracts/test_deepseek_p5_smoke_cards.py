@@ -847,16 +847,214 @@ def test_p6_1l_bounds_same_payload_retries_and_result_grades():
     assert workload["acceptance"]["official_baseline_after_green"] is False
 
 
-def test_server_handoff_contains_only_the_p6_1l_decode_length_ladder_task():
+def test_p6_1l_records_measurement_green_and_the_original_protocol_deviation():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1l_mtp_decode_length_ladder.yaml"
+    )
+
+    assert workload["execution_state"] == {
+        "server_handoff": "completed",
+        "server_result": "measurement_green_protocol_deviation",
+        "transfer_method": "server_local_result_package_received",
+        "superseded_by": (
+            "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
+            "rerun1_2026_0713"
+        ),
+    }
+    result = workload["execution_result"]
+    assert result["server_git_head"] == "c5f663385975d95b1f712cbb67556df67b451ba2"
+    assert result["measurement_grade"] == "green_mtp_decode_length_ladder_stable"
+    assert result["planned_slots"] == 6
+    assert result["completed_slots"] == 6
+    assert result["attempt_count"] == 6
+    assert result["retry_count"] == 0
+    assert result["generated_tokens_total"] == 4608
+    assert result["spec_draft_tokens_delta_total"] == 2304
+    assert result["spec_accepted_tokens_delta_total"] == 2304
+    assert result["cleanup_status"] == "clean"
+    assert result["retry2_raw_audit_exit_code"] == 2
+    assert result["retry2_raw_audit_hard_conflict"] is True
+    assert result["execution_contract_clean_pass"] is False
+    assert result["original_artifacts_preserved"] is True
+
+
+def test_p6_1l_rerun_repeats_all_six_slots_with_mandatory_metrics():
+    workload = load_yaml(
+        BENCHMARK_DIR
+        / "workloads"
+        / "p6_1l_mtp_decode_length_ladder_rerun1.yaml"
+    )
+
+    assert workload["task_id"] == (
+        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
+        "rerun1_2026_0713"
+    )
+    assert workload["stage_contract"]["stage"] == "P6.1L-R1"
+    assert workload["stage_contract"]["rerun_cost_class"] == (
+        "acceptable_full_six_slot_rerun"
+    )
+    assert workload["experiment_plan"]["slot_order"] == [
+        "output512_slot1",
+        "output512_slot2",
+        "output512_slot3",
+        "output1024_slot1",
+        "output1024_slot2",
+        "output1024_slot3",
+    ]
+    assert workload["experiment_plan"]["hidden_warmup_requests"] == 0
+    assert workload["experiment_plan"]["server_lifecycles_max"] == 1
+    assert workload["metrics_evidence"]["spec_metrics_required"] is True
+    assert workload["metrics_evidence"]["log_only_fallback_allowed"] is False
+    assert workload["metrics_evidence"]["positive_draft_delta_per_success"] is True
+    assert workload["metrics_evidence"]["positive_draft_token_delta_per_success"] is True
+
+
+def test_p6_1l_rerun_replaces_logger_string_gate_and_closes_grading_bypass():
+    workload = load_yaml(
+        BENCHMARK_DIR
+        / "workloads"
+        / "p6_1l_mtp_decode_length_ladder_rerun1.yaml"
+    )
+
+    assert workload["historical_protocol_deviation"] == {
+        "prior_task_id": (
+            "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713"
+        ),
+        "measurement_grade": "green_mtp_decode_length_ladder_stable",
+        "original_retry2_raw_audit_exit_code": 2,
+        "original_retry2_hard_conflict": True,
+        "original_artifacts_preserved_without_rewrite": True,
+        "prior_result_regrading_allowed": False,
+    }
+    assert workload["historical_lineage_audit_v2"] == {
+        "fresh_npu_rerun_required": True,
+        "offline_regrade_only_forbidden": True,
+        "structured_facts_are_hard_gates": True,
+        "exact_init_log_line_is_hard_gate": False,
+        "logger_wording_is_informational_only": True,
+        "require_prior_patch_lifecycle_request_counts": True,
+        "require_prior_overlay_and_base_hashes": True,
+        "require_prior_http_and_token_checks": True,
+        "require_prior_cleanup_clean": True,
+        "require_prior_positions_cpu_failure_absent": True,
+        "hard_conflict_policy": "stop_before_fresh_lifecycle",
+    }
+    assert workload["grading_gate"] == {
+        "required_zero_exit_codes": [
+            "historical_lineage_audit_v2_exit_code",
+            "server_ready_exit_code",
+            "live_metrics_preflight_exit_code",
+            "ladder_exit_code",
+        ],
+        "resource_gate_must_pass": True,
+        "all_six_slots_must_complete": True,
+        "all_successes_require_complete_spec_metrics": True,
+        "all_successes_require_positive_draft_deltas": True,
+        "cleanup_must_be_clean": True,
+        "any_failed_hard_gate_forbids_green_or_yellow": True,
+    }
+    assert workload["acceptance"]["green_grade"] == (
+        "green_mtp_decode_length_ladder_revalidated"
+    )
+    assert workload["acceptance"]["yellow_recovered_grade"] == (
+        "yellow_mtp_decode_length_ladder_revalidated_with_retry"
+    )
+    assert workload["acceptance"]["missing_spec_metrics_grade"] == (
+        "red_mtp_decode_length_metrics_incomplete"
+    )
+    assert "yellow_log_only_grade" not in workload["acceptance"]
+
+
+def test_p6_1l_rerun_freezes_runtime_request_retry_and_stop_boundaries():
+    workload = load_yaml(
+        BENCHMARK_DIR
+        / "workloads"
+        / "p6_1l_mtp_decode_length_ladder_rerun1.yaml"
+    )
+
+    assert workload["runtime_fixed"]["model_path"] == (
+        "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp"
+    )
+    assert workload["runtime_fixed"]["tensor_parallel_size"] == 8
+    assert workload["runtime_fixed"]["enable_expert_parallel"] is True
+    assert workload["runtime_fixed"]["speculative_mtp"] == {
+        "method": "mtp",
+        "num_speculative_tokens": 1,
+    }
+    assert workload["experiment_plan"]["attempts_max"] == 12
+    assert workload["experiment_plan"]["retries_max"] == 6
+    assert workload["experiment_plan"]["concurrency"] == 1
+    assert workload["request_protocol"]["endpoint"] == "/v1/completions"
+    assert workload["request_protocol"]["output_tokens_by_group"] == [512, 1024]
+    assert workload["request_protocol"]["min_tokens_equals_max_tokens"] is True
+    assert workload["request_protocol"]["generated_text_retained"] is False
+    assert workload["request_protocol"]["token_ids_retained"] is False
+    assert workload["retry_policy"]["max_retries_per_slot"] == 1
+    assert workload["retry_policy"]["same_request_body_sha256_required"] is True
+    assert workload["retry_policy"]["server_restart_allowed"] is False
+    assert workload["metrics_evidence"]["live_metrics_preflight_required"] is True
+    assert workload["metrics_evidence"]["request_gauges_required"] is True
+    assert workload["stop_policy"]["no_second_server_lifecycle"] is True
+    assert workload["stop_policy"]["no_context_ladder"] is True
+    assert workload["stop_policy"]["no_profiler"] is True
+    assert workload["stop_policy"]["no_p8_execution"] is True
+
+
+def test_server_handoff_requires_fresh_p6_1l_rerun_and_consumes_all_hard_gates():
+    handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
+        encoding="utf-8"
+    )
+
+    task_id = (
+        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
+        "rerun1_2026_0713"
+    )
+    assert f"task_id: {task_id}" in handoff
+    assert handoff.count("## 当前唯一任务：") == 1
+    assert "## 当前唯一任务：P6.1L-R1 完整六 slot 加固重跑" in handoff
+    assert "不得只做离线 corrected audit/grading" in handoff
+    assert "完整重跑 512×3 → 1024×3" in handoff
+    assert "historical_lineage_audit_v2.json" in handoff
+    assert "historical_lineage_audit_v2_exit_code.txt" in handoff
+    assert '"original_retry2_raw_audit_exit_code": 2' in handoff
+    assert '"exact_init_log_line_is_hard_gate": False' in handoff
+    assert '"mtp_proposer_initialized": bool(mtp_init)' not in handoff
+    assert "live_metrics_preflight.json" in handoff
+    assert "live_metrics_preflight_exit_code.txt" in handoff
+    assert "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19" in handoff
+    assert 'test "${server_command_sha256}" =' in handoff
+    assert 'mtp_activity_evidence = "required_prometheus_counter_delta_missing"' in handoff
+    assert "mtp_activity_ok = False" in handoff
+    assert "log_fallback_proves_mtp_activity" not in handoff
+    assert "yellow_mtp_decode_length_success_activity_log_only" not in handoff
+    assert '"historical_lineage_audit_v2_exit_code"' in handoff
+    assert '"live_metrics_preflight_exit_code"' in handoff
+    assert '"all_hard_gates_pass"' in handoff
+    grading_protocol = handoff.split("protocol_checks = {", 1)[1].split(
+        "measurement_checks = {", 1
+    )[0]
+    assert '"server_command_hash_frozen"' in grading_protocol
+    assert '"source_payload_hash_frozen"' in grading_protocol
+    grading_measurement = handoff.split("measurement_checks = {", 1)[1].split(
+        "hard_gate_failures = [", 1
+    )[0]
+    assert '"cleanup_clean"' in grading_measurement
+    assert "green_mtp_decode_length_ladder_revalidated" in handoff
+    assert "red_mtp_decode_length_metrics_incomplete" in handoff
+    assert "next_task_authorized=false" in handoff
+
+
+def test_server_handoff_contains_only_the_p6_1l_rerun_task_and_frozen_runtime():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
     assert (
         "task_id: "
-        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713"
+        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
+        "rerun1_2026_0713"
         in handoff
     )
     assert handoff.count("## 当前唯一任务：") == 1
-    assert "## 当前唯一任务：P6.1L MTP decode-length ladder" in handoff
+    assert "## 当前唯一任务：P6.1L-R1 完整六 slot 加固重跑" in handoff
     assert "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713" in handoff
     assert '"http://127.0.0.1:7000/v1/completions"' in handoff
     assert '"http://127.0.0.1:7000/v1/chat/completions"' not in handoff
@@ -886,14 +1084,17 @@ def test_server_handoff_contains_only_the_p6_1l_decode_length_ladder_task():
     assert "positions_cpu_none_type_not_subscriptable" in handoff
     assert "不得做第二个 patch" in handoff
     assert "不得使用 eager fallback" in handoff
-    assert "green_mtp_decode_length_ladder_stable" in handoff
-    assert "yellow_mtp_decode_length_ladder_recovered" in handoff
-    assert "yellow_mtp_decode_length_success_activity_log_only" in handoff
-    assert "red_mtp_decode_length_slot_failed_after_retry" in handoff
-    assert "audit_exit=$?" in handoff
-    assert 'printf \'%s\\n\' "${audit_exit}" > "${RESULT_DIR}/retry2_raw_audit_exit_code.txt"' in handoff
-    cleanup_grade = 'elif cleanup != "clean":\n    grade = "red_cleanup_incomplete"'
-    recovered_grade = 'elif retries > 0:\n    grade = "yellow_mtp_decode_length_ladder_recovered"'
+    assert "green_mtp_decode_length_ladder_revalidated" in handoff
+    assert "yellow_mtp_decode_length_ladder_revalidated_with_retry" in handoff
+    assert "red_mtp_decode_length_metrics_incomplete" in handoff
+    assert "red_mtp_decode_length_ladder_revalidation_failed" in handoff
+    assert "historical_audit_exit=$?" in handoff
+    assert "historical_lineage_audit_v2_exit_code.txt" in handoff
+    cleanup_grade = 'if cleanup != "clean":\n    grade = "red_cleanup_incomplete"'
+    recovered_grade = (
+        'elif retries > 0:\n'
+        '    grade = "yellow_mtp_decode_length_ladder_revalidated_with_retry"'
+    )
     assert handoff.index(cleanup_grade) < handoff.index(recovered_grade)
     assert "request_payload.json" in handoff
     assert "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1" in handoff
@@ -910,7 +1111,10 @@ def test_server_handoff_contains_only_the_p6_1l_decode_length_ladder_task():
     assert "当前未选择 `email`、`upload-api` 或 `server-local`" in handoff
     assert 'test "${total_bytes}" -le 71680' in handoff
     assert "不得自动进入 128K context ladder" in handoff
-    assert "p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713" in handoff
+    assert (
+        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713"
+        in handoff
+    )
     assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
     assert "collect-vllm-ascend-observations" not in handoff
     assert "build-vllm-ascend-observe-bundle" not in handoff

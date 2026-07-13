@@ -1,62 +1,44 @@
 schema_version: 1
-workload_id: p6_1l_deepseek_v4_flash_mtp_decode_length_ladder
+workload_id: p6_1l_deepseek_v4_flash_mtp_decode_length_ladder_rerun1
 date: "2026-07-13"
-purpose: validate_mtp_decode_length_stability_at_fixed_4096_input_without_entering_context_or_performance_work
-task_id: p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713
+purpose: rerun_the_complete_mtp_decode_length_ladder_with_hardened_audit_and_grading_gates
+task_id: p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_rerun1_2026_0713
 
 stage_contract:
-  stage: P6.1L
-  mode: mtp_decode_length_stability_ladder
-  claim_level: mtp_4096_decode_length_stability_only
+  stage: P6.1L-R1
+  mode: mtp_decode_length_stability_ladder_protocol_hardened_rerun
+  claim_level: mtp_4096_decode_length_stability_revalidation_only
+  rerun_cost_class: acceptable_full_six_slot_rerun
   may_claim_official_baseline: false
   full_p6_1_matrix_authorized: false
   context_ladder_authorized: false
   profiler_authorized: false
   performance_comparison_authorized: false
 
-prior_mtp_gate:
-  task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
-  git_commit: 5fd6fdb9693e108686b3f8fdea2896d69aede0c0
-  grade: green_mtp_minimal_request_success
-  patch_attempts: 1
-  server_lifecycles: 1
-  requests: 1
-  server_ready: true
-  endpoint: /v1/completions
-  http_status: 200
-  input_tokens: 4096
-  output_tokens: 64
-  generated_tokens: 64
-  streamed_tokens: 64
-  finish_reason: length
-  original_positions_cpu_failure_absent: true
-  cleanup_status: clean
-  raw_evidence_audit_required: true
+historical_protocol_deviation:
+  prior_task_id: p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713
+  measurement_grade: green_mtp_decode_length_ladder_stable
+  original_retry2_raw_audit_exit_code: 2
+  original_retry2_hard_conflict: true
+  original_artifacts_preserved_without_rewrite: true
+  prior_result_regrading_allowed: false
 
-retry2_raw_audit:
-  result_dir: /data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
-  expected_patch_attempts: 1
-  expected_server_lifecycles: 1
-  expected_requests: 1
-  expected_http_status: 200
-  expected_generated_tokens: 64
-  expected_streamed_tokens: 64
-  expected_cleanup: clean
-  require_mtp_proposer_initialization: true
-  require_mtp_draft_model_loaded: true
-  require_graph_capture_completion: true
-  require_completion_access_200: true
-  require_original_positions_cpu_failure_absent: true
-  hard_conflict_policy: stop_before_new_lifecycle
-  historical_spec_metrics_optional: true
-  post_shutdown_errors_classified_separately: true
-  raw_files_remain_server_local: true
+historical_lineage_audit_v2:
+  fresh_npu_rerun_required: true
+  offline_regrade_only_forbidden: true
+  structured_facts_are_hard_gates: true
+  exact_init_log_line_is_hard_gate: false
+  logger_wording_is_informational_only: true
+  require_prior_patch_lifecycle_request_counts: true
+  require_prior_overlay_and_base_hashes: true
+  require_prior_http_and_token_checks: true
+  require_prior_cleanup_clean: true
+  require_prior_positions_cpu_failure_absent: true
+  hard_conflict_policy: stop_before_fresh_lifecycle
 
 repair_artifact:
   path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
   patch_sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
-  package_import_required: true
-  proposer_module_import_required: false
   package_root_from_overlay: true
   patched_proposer_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
   unchanged_base_proposer_sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
@@ -69,6 +51,9 @@ repair_artifact:
 runtime_fixed:
   model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
   model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  runtime: vllm_0_22_1_empty_and_vllm_ascend_0_22_1rc1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
   tensor_parallel_size: 8
   data_parallel_size: 1
   enable_expert_parallel: true
@@ -112,19 +97,21 @@ experiment_plan:
 
 metrics_evidence:
   endpoint: /metrics
+  live_metrics_preflight_required: true
   snapshot_before_and_after_every_attempt: true
-  parser_reference: vllm_v0_22_1_spec_decode_prometheus_counters
+  spec_metrics_required: true
   spec_counter_names:
     - vllm:spec_decode_num_drafts_total
     - vllm:spec_decode_num_draft_tokens_total
     - vllm:spec_decode_num_accepted_tokens_total
+  request_gauges_required: true
   request_gauge_names:
     - vllm:num_requests_running
     - vllm:num_requests_waiting
-  successful_attempt_requires_positive_draft_delta: true
+  log_only_fallback_allowed: false
+  positive_draft_delta_per_success: true
+  positive_draft_token_delta_per_success: true
   zero_accepted_delta_allowed: true
-  missing_spec_metrics_log_fallback_allowed: true
-  missing_metrics_and_runtime_log_evidence_stops: true
   raw_metrics_remain_server_local: true
   optimization_gain_claim_allowed: false
 
@@ -137,12 +124,6 @@ request_protocol:
   source_payload_server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
   source_payload_bytes: 19487
   source_payload_sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
-  derived_fields_only:
-    - min_tokens
-    - max_tokens
-    - stream
-    - stream_options
-    - return_token_ids
   temperature: 0.0
   ignore_eos: true
   min_tokens_equals_max_tokens: true
@@ -168,7 +149,6 @@ retry_policy:
   parameter_mutation_allowed: false
   patch_mutation_allowed: false
   recovered_attempt_fills_slot: true
-  recovered_run_max_grade: yellow_mtp_decode_length_ladder_recovered
   second_failure_stops_task: true
   second_failure_requires_server_local_root_cause_analysis: true
   server_may_self_patch_after_failure: false
@@ -194,26 +174,31 @@ attempt_result_schema:
     - metrics_after
     - metrics_delta
     - mtp_activity_evidence
+    - queue_evidence_ok
     - retry_recovery
   generated_text_field_forbidden: true
   token_ids_field_forbidden: true
 
+grading_gate:
+  required_zero_exit_codes:
+    - historical_lineage_audit_v2_exit_code
+    - server_ready_exit_code
+    - live_metrics_preflight_exit_code
+    - ladder_exit_code
+  resource_gate_must_pass: true
+  all_six_slots_must_complete: true
+  all_successes_require_complete_spec_metrics: true
+  all_successes_require_positive_draft_deltas: true
+  cleanup_must_be_clean: true
+  any_failed_hard_gate_forbids_green_or_yellow: true
+
 acceptance:
-  green_grade: green_mtp_decode_length_ladder_stable
-  green_requires_first_attempt_successes: 6
-  green_requires_retries_used: 0
-  green_requires_positive_draft_delta_per_attempt: true
-  green_requires_cleanup: clean
-  yellow_recovered_grade: yellow_mtp_decode_length_ladder_recovered
-  yellow_recovered_condition: all_six_slots_eventually_succeed_with_one_or_more_retries
-  yellow_recovered_requires_cleanup: clean
-  yellow_log_only_grade: yellow_mtp_decode_length_success_activity_log_only
-  yellow_log_only_condition: all_six_slots_succeed_but_mtp_activity_is_proven_only_by_runtime_logs
-  yellow_log_only_requires_cleanup: clean
-  red_grade: red_mtp_decode_length_slot_failed_after_retry
-  red_condition: any_slot_fails_twice_or_server_becomes_unhealthy
+  green_grade: green_mtp_decode_length_ladder_revalidated
+  yellow_recovered_grade: yellow_mtp_decode_length_ladder_revalidated_with_retry
+  missing_spec_metrics_grade: red_mtp_decode_length_metrics_incomplete
+  functional_failure_grade: red_mtp_decode_length_ladder_revalidation_failed
   cleanup_failure_grade: red_cleanup_incomplete
-  blocked_grade: blocked_retry2_raw_audit_or_resource_gate
+  blocked_grade: blocked_protocol_or_resource_gate
   prior_4096_64_green_remains_valid: true
   official_baseline_after_green: false
   context_128k_validated_after_green: false
@@ -221,7 +206,8 @@ acceptance:
   optimization_gain_validated_after_green: false
 
 stop_policy:
-  stop_on_retry2_hard_conflict: true
+  stop_on_historical_lineage_audit_v2_failure: true
+  stop_on_live_metrics_preflight_failure: true
   stop_if_server_not_ready: true
   stop_if_retry_idle_state_unproven: true
   stop_after_second_failure_in_slot: true
@@ -237,28 +223,6 @@ stop_policy:
   no_automatic_follow_up_task: true
 
 execution_state:
-  server_handoff: completed
-  server_result: measurement_green_protocol_deviation
-  transfer_method: server_local_result_package_received
-  superseded_by: p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_rerun1_2026_0713
-
-execution_result:
-  result_package_local: /Volumes/SSD1/Inbox/2026-07-13/p6_1l_mtp_decode_length_ladder_green_2026_0713_185918
-  server_git_head: c5f663385975d95b1f712cbb67556df67b451ba2
-  measurement_grade: green_mtp_decode_length_ladder_stable
-  planned_slots: 6
-  completed_slots: 6
-  attempt_count: 6
-  retry_count: 0
-  generated_tokens_total: 4608
-  spec_draft_tokens_delta_total: 2304
-  spec_accepted_tokens_delta_total: 2304
-  cleanup_status: clean
-  retry2_raw_audit_exit_code: 2
-  retry2_raw_audit_hard_conflict: true
-  execution_contract_clean_pass: false
-  original_artifacts_preserved: true
-  official_baseline: false
-  context_128k_validated: false
-  full_p6_1_matrix_validated: false
-  optimization_gain_validated: false
+  server_handoff: planned
+  server_result: pending
+  transfer_method: unselected_server_local_only
