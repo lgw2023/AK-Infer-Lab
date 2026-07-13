@@ -550,41 +550,118 @@ def test_p6_1_minimal_unprofiled_control_is_one_cell_with_bounded_statistics():
     assert workload["stop_policy"]["no_profiler"] is True
     assert workload["stop_policy"]["no_mtp_or_128k"] is True
     assert workload["stop_policy"]["no_automatic_mtp_remediation"] is True
+    assert workload["execution_state"]["server_handoff"] == "completed"
+    assert workload["execution_state"]["server_result"] == (
+        "yellow_degraded_minimal_unprofiled_control_measured"
+    )
+    assert workload["execution_result"]["server_git_head"] == (
+        "b798621d904335517f28eebe364a8f06013fc684"
+    )
+    assert workload["execution_result"]["measured_requests_successful"] == 3
+    assert workload["execution_result"]["each_exact_token_arrival_timestamps"] == 64
+    assert workload["execution_result"]["cleanup_status"] == "clean"
+    assert workload["execution_result"]["official_baseline"] is False
+
+
+def test_p6_1r_bounded_mtp_repair_has_one_diagnostic_and_one_conditional_validation():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1r_bounded_mtp_reference_repair.yaml"
+    )
+
+    assert workload["task_id"] == (
+        "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.1R",
+        "mode": "bounded_mtp_reference_repair",
+        "prior_control_grade": "yellow_degraded_minimal_unprofiled_control_measured",
+        "claim_level": "mtp_minimal_functional_repair",
+        "may_claim_official_baseline": False,
+        "full_p6_1_matrix_authorized": False,
+        "context_ladder_authorized": False,
+        "profiler_authorized": False,
+    }
+    assert workload["historical_failure"]["first_failure_stage"] == (
+        "mtp_drafter_dsa_cp_cudagraph_capture"
+    )
+    assert workload["historical_failure"]["first_failure"] == (
+        "positions_cpu_none_type_not_subscriptable"
+    )
+    assert workload["source_evidence"]["upstream_commit"] == (
+        "1930088f960aba65eeaae82e9617d090283edc1f"
+    )
+    assert workload["source_evidence"]["upstream_pr"] == 11062
+    assert workload["source_evidence"]["upstream_tested_vllm"] == "0.23.0"
+    assert workload["source_evidence"]["full_upstream_backport_authorized"] is False
+    assert workload["repair_artifact"]["task_local_overlay_only"] is True
+    assert workload["repair_artifact"]["base_environment_mutation"] is False
+    assert workload["repair_artifact"]["changed_files"] == 1
+    assert workload["repair_artifact"]["changed_lines"] == 1
+    assert workload["runtime_fixed"]["speculative_mtp"] == {
+        "method": "mtp",
+        "num_speculative_tokens": 1,
+    }
+    assert workload["validation_plan"] == {
+        "read_only_diagnostic_passes": 1,
+        "task_local_overlay_patch_attempts_max": 1,
+        "server_lifecycles_max": 1,
+        "requests_max": 1,
+        "input_tokens": 4096,
+        "output_tokens": 64,
+        "concurrency": 1,
+        "unprofiled": True,
+    }
+    assert workload["stop_policy"]["stop_if_root_cause_not_unique"] is True
+    assert workload["stop_policy"]["stop_after_first_post_patch_failure"] is True
+    assert workload["stop_policy"]["no_second_patch"] is True
+    assert workload["stop_policy"]["no_eager_fallback"] is True
+    assert workload["stop_policy"]["no_context_ladder"] is True
+    assert workload["stop_policy"]["no_profiler"] is True
     assert workload["execution_state"]["server_handoff"] == "active"
     assert workload["execution_state"]["server_result"] == "pending"
 
+    patch = (
+        BENCHMARK_DIR
+        / "patches"
+        / "vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch"
+    ).read_text(encoding="utf-8")
+    assert patch.count("+                positions_cpu=") == 1
+    assert "self.runner._dsa_positions_cpu_buf if self.use_compress else None" in patch
+    assert patch.count("diff --git ") == 1
 
-def test_server_handoff_contains_only_the_p6_1_minimal_unprofiled_control_task():
+
+def test_server_handoff_contains_only_the_p6_1r_bounded_mtp_repair_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713" in handoff
-    assert "execution_codebase: main-readonly" in handoff
+    assert "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713" in handoff
+    assert "execution_codebase: main-readonly-with-task-local-overlay" in handoff
     assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
     assert "SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local" in handoff
     assert "SERVER_LOCAL_BRANCH=server-local/runtime-adaptations" in handoff
-    assert "本轮不得进入该目录执行代码" in handoff
-    assert "不得把 `REPO_ROOT` 切到第二套 worktree" in handoff
+    assert "服务器专属 worktree 仍只读观察" in handoff
     assert "不得运行 `通信模块/server_local_git_sync.sh`" in handoff
     assert 'branch --show-current)" = "${SERVER_LOCAL_BRANCH}"' in handoff
     assert "server_local_head_observed.txt" in handoff
     assert "server_local_tracked_status_observed.txt" in handoff
     assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
-    assert "WARMUP_REQUESTS=1" in handoff
-    assert "MEASURED_REQUESTS=3" in handoff
+    assert "1930088f960aba65eeaae82e9617d090283edc1f" in handoff
+    assert "https://github.com/vllm-project/vllm-ascend/pull/11062" in handoff
+    assert "vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch" in handoff
+    assert "0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb" in handoff
+    assert "task-local overlay" in handoff
+    assert "不得修改 base conda environment" in handoff
+    assert "PATCH_ATTEMPTS_MAX=1" in handoff
+    assert "SERVER_LIFECYCLES_MAX=1" in handoff
+    assert "REQUESTS_MAX=1" in handoff
     assert "CONCURRENCY=1" in handoff
-    assert '"phase": "warmup"' in handoff
-    assert '"phase": "measured"' in handoff
-    assert "time.monotonic_ns" in handoff
-    assert "token_arrival_ns" in handoff
-    assert '"streamed_token_count": streamed_token_count == 64' in handoff
-    assert '"blocked_measurement_semantics"' in handoff
-    assert "ttft_ms" in handoff
-    assert "tpot_ms" in handoff
-    assert "e2el_ms" in handoff
-    assert "report_p95_p99: false" in handoff
-    assert "n3_is_insufficient" in handoff
-    assert "yellow_degraded_baseline_stabilized" in handoff
-    assert "p6_1_minimal_unprofiled_control_only" in handoff
+    assert '\"method\":\"mtp\",\"num_speculative_tokens\":1' in handoff
+    assert "positions_cpu_none_type_not_subscriptable" in handoff
+    assert "stop_after_first_post_patch_failure" in handoff
+    assert "不得做第二个 patch" in handoff
+    assert "不得使用 eager fallback" in handoff
+    assert "green_mtp_minimal_request_success" in handoff
+    assert "yellow_mtp_graph_capture_advanced_new_first_failure" in handoff
+    assert "red_same_positions_cpu_failure" in handoff
     assert "request_payload.json" in handoff
     assert "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1" in handoff
     assert "status --porcelain --untracked-files=no" in handoff
@@ -594,12 +671,9 @@ def test_server_handoff_contains_only_the_p6_1_minimal_unprofiled_control_task()
     assert "recommended_method: upload-api" in handoff
     assert "selected_method: none" in handoff
     assert "当前未选择 `email`、`upload-api` 或 `server-local`" in handoff
-    assert 'test "$(<"${RESULT_DIR}/server_ready_exit_code.txt")" = 0' in handoff
-    assert 'test "$(<"${RESULT_DIR}/client_exit_code.txt")" = 0' in handoff
-    assert 'test "$(<"${RESULT_DIR}/cleanup_status.txt")" = clean' in handoff
     assert 'test "${total_bytes}" -le 71680' in handoff
-    assert "不得自动进入 MTP 修复" in handoff
-    assert "p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713" in handoff
+    assert "不得自动进入 128K" in handoff
+    assert "p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713" in handoff
     assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
     assert "collect-vllm-ascend-observations" not in handoff
     assert "build-vllm-ascend-observe-bundle" not in handoff

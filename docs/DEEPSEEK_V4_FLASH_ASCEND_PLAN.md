@@ -49,23 +49,23 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 
 ## 4. P5：八卡拉起与 128K Context Ladder
 
-NPU 0-7 已获用户明确授权。首轮 context-ladder 任务在 MTP graph capture 失败，no-MTP cell 已完成 3 次连续 `4096+64` 成功；下一项正式主线任务为：
+NPU 0-7 已获用户明确授权。首轮 context-ladder 任务在 MTP graph capture 失败，no-MTP cell 已完成 3 次连续 `4096+64` 成功，修复前 minimal control 的 warmup 与 3/3 measured 也已通过；下一项正式主线任务为：
 
 ```text
-p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713
+p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713
 ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 TP=8, EP=enabled
 ```
 
 mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门通过，Ascend model route 正确，46/46 分片加载完成，随后四个 worker 在 `process_weights_after_loading` 同样命中当前 SoC 不支持 `customize_dtype`。因此不再继续 mixed 兼容性工作。W8A8 权重为 279.41GiB；首轮八卡在 MTP proposer DSA-CP graph capture 因 `positions_cpu=None` 失败。no-MTP 路线随后完成权重加载、graph capture、server-ready 与一个 `4096+64` 请求，最终评级为 `yellow_no_mtp_graph_request_success`。
 
-当前 P6.1 最小 control 任务：
+当前 P6.1R bounded MTP repair 任务：
 
 ```text
-p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713
+p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713
 ```
 
-server-local Git 管理最终验收已完成。P6.0 已以 `yellow_degraded_baseline_stabilized` 收口。原 P8.1 handoff 尚未下发、未执行，已延后为 preflight；当前唯一 handoff 在同一 no-MTP cell 上执行一次 warmup 和三次 measured `4096+64+c1`，不扩展其他 pilot。
+server-local Git 管理最终验收已完成。P6.0 已以 `yellow_degraded_baseline_stabilized` 收口，P6.1 minimal control 已以 `yellow_degraded_minimal_unprofiled_control_measured` 收口。原 P8.1 handoff 尚未下发、未执行，继续延后为 preflight；当前唯一 handoff 先只读验证 MTP proposer/DSA-CP `positions_cpu` 接口错位，再有条件应用 task-local 单行 overlay，并最多执行一个 MTP `4096+64+c1`。
 
 参考配置：
 
@@ -77,17 +77,18 @@ max_model_len=135168
 max_num_seqs=1
 prefix_cache=enabled
 chunked_prefill=enabled
-MTP=disabled for isolation
+MTP={"method":"mtp","num_speculative_tokens":1}
 ```
 
-当前最小计量请求：
+当前最小修复验证：
 
 ```text
-1 fresh lifecycle x (1 warmup + 3 measured 4096 input + fixed 64 output)
-concurrency=1; unprofiled; report raw and min/median/max only
+1 read-only diagnosis + at most 1 task-local patch
+at most 1 fresh lifecycle x 1 request (4096 input + fixed 64 output)
+concurrency=1; unprofiled; stop on first post-patch failure
 ```
 
-P6.0 已回答 exact no-MTP cell 可重复，但仍未回答 MTP 与最高稳定上下文。当前只建立一个修复前 minimal unprofiled control，`n=3` 不报 P95/P99；P8.1 服务器验证继续延后。
+P6.0/P6.1 已回答 exact no-MTP cell 可重复并建立修复前 control，但仍未回答 MTP 与最高稳定上下文。P6.1R green 也只关闭 MTP 4K 最小功能门，不自动授权 128K；P8.1 服务器验证继续延后。
 
 状态门：
 
@@ -97,7 +98,7 @@ P6.0 已回答 exact no-MTP cell 可重复，但仍未回答 MTP 与最高稳定
 
 ## 5. P6：八卡 Reference Baseline
 
-八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point。用户已授权当前一个 no-MTP P6.1 minimal unprofiled control；其他 P6.1 pilot/matrix、profiler、MTP 修复和后续 A/B 仍需独立决策。
+八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point。用户已授权当前 P6.1R bounded MTP repair；其他 P6.1 pilot/matrix、128K、profiler 和后续 A/B 仍需独立决策。
 
 ### 5.1 Baseline freeze
 
@@ -107,7 +108,7 @@ P6.0 已回答 exact no-MTP cell 可重复，但仍未回答 MTP 与最高稳定
 
 ### 5.2 Unprofiled 性能
 
-当前只执行 `4K+64+c1`、1 warmup + 3 measured 的最小对照。3 个 measured 样本仅报原始值与 min/median/max，不报 P95/P99、不删 outlier。完成后停止，等待 MTP 修复任务另行授权。
+`4K+64+c1`、1 warmup + 3 measured 的 no-MTP 最小对照已完成。当前 P6.1R 只做一个 task-local 单行修正尝试和最多一个 MTP 请求；任何新首错都停止并回报。
 
 先跑 `4K+64+c1`、`中档+64+c4`、`最高稳定档+64+c1` 三个 tracer-bullet cell，每个重复 3 次；稳定后再扩展 4K/中档/最高稳定档、64/256 输出和 1/4/8 并发。记录 TTFT、TPOT、ITL、E2EL、throughput、P95/P99、server stats 和 token control。
 

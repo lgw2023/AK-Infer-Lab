@@ -128,9 +128,34 @@ stop_policy:
   no_automatic_mtp_remediation: true
 
 execution_state:
-  server_handoff: active
-  server_result: pending
-  transfer_method: unselected_server_local_only
+  server_handoff: completed
+  server_result: yellow_degraded_minimal_unprofiled_control_measured
+  transfer_method: received_as_one_bounded_package_method_not_reconstructed
+
+execution_result:
+  reviewed_date: "2026-07-13"
+  server_git_head: b798621d904335517f28eebe364a8f06013fc684
+  warmup_successful: true
+  measured_requests_successful: 3
+  each_http_status: 200
+  each_prompt_tokens: 4096
+  each_generated_tokens: 64
+  each_streamed_tokens: 64
+  each_finish_reason: length
+  each_exact_token_arrival_timestamps: 64
+  each_token_chunk_width: 1
+  cleanup_status: clean
+  ttft_median_ms: 399.087682
+  tpot_median_ms: 380.24076853968256
+  e2el_median_ms: 24354.31785
+  decode_tokens_per_second_median: 2.6299126309903786
+  request_output_tokens_per_second_median: 2.627870769946447
+  final_grade: yellow_degraded_minimal_unprofiled_control_measured
+  official_baseline: false
+  mtp_validated: false
+  context_128k_validated: false
+  full_p6_1_matrix_validated: false
+  evidence_boundary: raw_request_timestamps_and_summary_were_independently_recalculated_but_server_lifecycle_and_exit_codes_remain_bounded_server_summary_evidence
 
 boundaries:
   - This is one minimal no-MTP unprofiled control point, not the full P6.1 pilot or matrix.

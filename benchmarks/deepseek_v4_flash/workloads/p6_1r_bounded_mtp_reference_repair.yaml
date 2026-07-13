@@ -1,0 +1,154 @@
+schema_version: 1
+workload_id: p6_1r_deepseek_v4_flash_bounded_mtp_reference_repair
+date: "2026-07-13"
+purpose: repair_the_first_mtp_dsa_cp_graph_capture_failure_with_one_bounded_task_local_overlay_attempt
+task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713
+
+stage_contract:
+  stage: P6.1R
+  mode: bounded_mtp_reference_repair
+  prior_control_grade: yellow_degraded_minimal_unprofiled_control_measured
+  claim_level: mtp_minimal_functional_repair
+  may_claim_official_baseline: false
+  full_p6_1_matrix_authorized: false
+  context_ladder_authorized: false
+  profiler_authorized: false
+
+historical_failure:
+  task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
+  model_shards_loaded: 70
+  workers_reporting_weight_load_complete: 8
+  mtp_draft_model_loaded: true
+  server_ready: false
+  successful_requests: 0
+  first_failure_stage: mtp_drafter_dsa_cp_cudagraph_capture
+  first_failure: positions_cpu_none_type_not_subscriptable
+  failing_file: vllm_ascend/attention/context_parallel/dsa_cp.py
+  failing_line_at_installed_release: 280
+  failing_expression: common_attn_metadata.positions_cpu[:num_input_tokens].long()
+
+source_evidence:
+  installed_vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  installed_proposer_sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+  installed_dsa_cp_sha256: 0906c953fd80a0f86875a947446fe6c72c0057f422a787b52b6adbf7b77fe77b
+  installed_model_runner_sha256: 27cbd078817cf746ed0dca27ace2e188e5a13612ee0fe1764da4e55bf3ecbdd5
+  mismatch: release_proposer_dummy_metadata_omits_positions_cpu_while_dsa_cp_builder_requires_it
+  upstream_repository: https://github.com/vllm-project/vllm-ascend
+  upstream_pr: 11062
+  upstream_commit: 1930088f960aba65eeaae82e9617d090283edc1f
+  upstream_tested_vllm: "0.23.0"
+  selected_backport_hunk: add_positions_cpu_to_proposer_dummy_common_attention_metadata
+  full_upstream_backport_authorized: false
+  evidence_boundary: upstream_commit_supports_the_field_mapping_but_does_not_validate_this_release_backport_on_the_server
+
+repair_artifact:
+  path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  target_file: vllm_ascend/spec_decode/llm_base_proposer.py
+  patched_target_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+  task_local_overlay_only: true
+  base_environment_mutation: false
+  server_local_worktree_mutation: false
+  changed_files: 1
+  changed_lines: 1
+  patch_attempts_max: 1
+
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: "0.22.1+empty"
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  torch: 2.10.0+cpu
+  torch_npu: 2.10.0
+  python: 3.11.15
+  visible_devices: 0,1,2,3,4,5,6,7
+
+runtime_fixed:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  tensor_parallel_size: 8
+  data_parallel_size: 1
+  enable_expert_parallel: true
+  quantization: ascend
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  enforce_eager: false
+  cudagraph_mode: FULL_DECODE_ONLY
+  speculative_mtp:
+    method: mtp
+    num_speculative_tokens: 1
+
+request_fixed:
+  input_tokens: 4096
+  output_tokens: 64
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens: 64
+  max_tokens: 64
+  streaming: true
+  return_token_ids: true
+  payload_server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+  payload_bytes: 19487
+  payload_sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+
+validation_plan:
+  read_only_diagnostic_passes: 1
+  task_local_overlay_patch_attempts_max: 1
+  server_lifecycles_max: 1
+  requests_max: 1
+  input_tokens: 4096
+  output_tokens: 64
+  concurrency: 1
+  unprofiled: true
+
+acceptance:
+  green_grade: green_mtp_minimal_request_success
+  green_requires_server_ready: true
+  green_requires_http_status: 200
+  green_requires_prompt_tokens: 4096
+  green_requires_generated_tokens: 64
+  green_requires_streamed_tokens: 64
+  green_requires_finish_reason: length
+  green_requires_cleanup: clean
+  yellow_grade: yellow_mtp_graph_capture_advanced_new_first_failure
+  yellow_condition: original_positions_cpu_failure_absent_but_a_new_first_failure_occurs
+  red_grade: red_same_positions_cpu_failure
+  blocked_grade: blocked_root_cause_not_unique_or_source_mismatch
+  official_baseline_after_green: false
+  context_ladder_required_for_official_baseline: true
+
+stop_policy:
+  stop_if_root_cause_not_unique: true
+  stop_if_installed_source_hash_mismatch: true
+  stop_if_patch_does_not_apply_cleanly: true
+  stop_after_first_post_patch_failure: true
+  no_second_patch: true
+  no_eager_fallback: true
+  no_parameter_fallback: true
+  no_version_upgrade: true
+  no_base_environment_or_site_packages_mutation: true
+  no_server_local_worktree_mutation: true
+  no_checkpoint_or_payload_mutation: true
+  no_context_ladder: true
+  no_additional_p6_1_cells: true
+  no_profiler: true
+  no_p8_observer_or_adapter_execution: true
+  no_automatic_follow_up_task: true
+
+execution_state:
+  server_handoff: active
+  server_result: pending
+  transfer_method: unselected_server_local_only
+
+boundaries:
+  - The overlay is a one-line diagnostic backport from one hunk of upstream PR 11062, not the full upstream change.
+  - Upstream tested the full change against vLLM 0.23.0; this task must not claim the selected hunk is validated on 0.22.1rc1 before the server run.
+  - Green validates only one MTP 4096+64 request and does not establish the official 128K reference baseline.
+  - Any new first failure is evidence to report, not authorization for a second patch.
+  - The original environment, installed site-packages, both Git worktrees, checkpoint and payload remain unchanged.

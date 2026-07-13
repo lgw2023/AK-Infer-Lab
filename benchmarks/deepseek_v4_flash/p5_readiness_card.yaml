@@ -169,7 +169,9 @@ artifacts:
   completed_tokenizer_retry_workload: workloads/p5_8card_no_mtp_tokenizer_retry.yaml
   completed_mro_retry_workload: workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml
   completed_p6_0_workload: workloads/p6_0_no_mtp_degraded_stabilization.yaml
-  next_workload: workloads/p6_1_no_mtp_minimal_unprofiled_control.yaml
+  completed_p6_1_control_workload: workloads/p6_1_no_mtp_minimal_unprofiled_control.yaml
+  next_workload: workloads/p6_1r_bounded_mtp_reference_repair.yaml
+  bounded_mtp_patch: patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
   server_handoff: 通信模块/docs/developer-to-server.md
 boundaries:
   - W8A8 is the only selected DeepSeek-V4-Flash runtime object for the current P5 and future P6 execution.
@@ -177,8 +179,9 @@ boundaries:
   - The mixed checkpoint remains historical evidence and will not receive an adapter or conversion effort.
   - The completed P5 task validates only one no-MTP 4096+64 graph request; it is a degraded runtime baseline, not the official MTP/128K target.
   - P6.0 completed with two new identical lifecycle successes and grade yellow_degraded_baseline_stabilized.
-  - The active handoff is one minimal P6.1 no-MTP unprofiled control: one warmup plus three measured 4096+64+c1 requests in one lifecycle.
-  - The remaining P6.1 pilots and matrix, P8.1 server validation, profiler, offload, MTP patching and runtime upgrades remain unauthorized.
+  - P6.1 minimal control completed with one warmup and three measured 4096+64+c1 requests, grade yellow_degraded_minimal_unprofiled_control_measured.
+  - The active P6.1R handoff allows one read-only diagnosis and one conditional task-local overlay patch followed by at most one MTP 4096+64+c1 request.
+  - The full upstream backport, second patch, remaining P6.1 pilots and matrix, 128K, P8.1 server validation, profiler, offload and runtime upgrades remain unauthorized.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
   source_versions_recorded: true
