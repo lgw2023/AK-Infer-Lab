@@ -569,8 +569,21 @@ def test_p6_1r_bounded_mtp_repair_has_one_diagnostic_and_one_conditional_validat
     )
 
     assert workload["task_id"] == (
-        "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713"
+        "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713"
     )
+    assert workload["retry_lineage"] == {
+        "attempt": 2,
+        "retry_label": "retry1",
+        "parent_task_id": (
+            "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713"
+        ),
+        "parent_result": "blocked_repo",
+        "parent_block_point": "section3_prior_evidence_path",
+        "parent_patch_attempts": 0,
+        "parent_server_lifecycles": 0,
+        "parent_requests": 0,
+        "correction": "use_exact_prior_failure_excerpt_path",
+    }
     assert workload["stage_contract"] == {
         "stage": "P6.1R",
         "mode": "bounded_mtp_reference_repair",
@@ -630,10 +643,24 @@ def test_p6_1r_bounded_mtp_repair_has_one_diagnostic_and_one_conditional_validat
     assert patch.count("diff --git ") == 1
 
 
-def test_server_handoff_contains_only_the_p6_1r_bounded_mtp_repair_task():
+def test_server_handoff_contains_only_the_p6_1r_bounded_mtp_repair_retry_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713" in handoff
+    assert (
+        "task_id: "
+        "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713"
+        in handoff
+    )
+    assert "PRIOR_RESULT_DIR=" not in handoff
+    assert (
+        'PRIOR_FAILURE_EXCERPT="${REPO_ROOT}/工作记录与进度笔记本/'
+        "runtime_trace_smokes/"
+        "p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712/"
+        'reference_mtp_maxseq16/first_failure_excerpt.txt"'
+        in handoff
+    )
+    assert "prior_failure_gate.txt" in handoff
+    assert "prior_failure_excerpt_sha256.txt" in handoff
     assert "execution_codebase: main-readonly-with-task-local-overlay" in handoff
     assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
     assert "SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local" in handoff

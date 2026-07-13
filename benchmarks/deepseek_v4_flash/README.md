@@ -36,7 +36,7 @@ P5 deliverables:
 - `workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml`: completed MRO-validated retry with one successful no-MTP `4096+64` request.
 - `workloads/p6_0_no_mtp_degraded_stabilization.yaml`: completed P6.0 contract; two new identical fresh lifecycles extended the prior P5 success to three consecutive no-MTP `4096+64` successes.
 - `workloads/p6_1_no_mtp_minimal_unprofiled_control.yaml`: completed bounded P6.1 control; warmup plus three measured `4096+64+c1` requests passed with grade `yellow_degraded_minimal_unprofiled_control_measured`.
-- `workloads/p6_1r_bounded_mtp_reference_repair.yaml`: active bounded MTP repair; one read-only diagnostic and, only if the first cause is unique, one task-local overlay patch plus one MTP `4096+64+c1` validation.
+- `workloads/p6_1r_bounded_mtp_reference_repair.yaml`: active bounded MTP repair retry1; the first attempt stopped `blocked_repo` before overlay because the handoff used a nonexistent prior-evidence path, while retry1 uses the exact server evidence file and preserves the original one-patch/one-lifecycle/one-request budget.
 - `patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch`: one-line diagnostic backport of the `positions_cpu` proposer metadata field from upstream PR 11062; it is not a full upstream backport.
 - `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: prepared bounded-observation server validation for the strictly observe-only adapter; not executed and still deferred during the minimal control and MTP decision sequence.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
@@ -50,7 +50,7 @@ Planning references:
 Next artifact boundary:
 
 - P6.0 is `yellow_degraded_baseline_stabilized`, and the repair-before control is `yellow_degraded_minimal_unprofiled_control_measured`.
-- The current P6.1R handoff allows one diagnostic, one task-local one-line patch attempt and at most one MTP `4096+64+c1` request. Any new first failure stops the task; 128K, the remaining P6.1 pilots and the full matrix remain closed.
+- The current P6.1R retry1 handoff returns a bounded three-line prior-failure gate plus its source SHA-256, then allows one diagnostic, one task-local one-line patch attempt and at most one MTP `4096+64+c1` request. Any new first failure stops the task; 128K, the remaining P6.1 pilots and the full matrix remain closed.
 - P8.1 remains a deferred preflight. When separately reauthorized, it may validate only the observe-only adapter on the frozen cell; its Prefix metrics remain proxies and cannot be promoted to object bytes or performance conclusions.
 - Do not create P8 real-move cards before P8.0 capability probe and P8.1 observe-only trace pass.
 - MindIE cards are conditional on a separately confirmed server runtime; current server evidence does not show MindIE as available.

@@ -1,9 +1,9 @@
 # Developer to Server
 
-## 当前唯一任务：P6.1R bounded MTP reference repair
+## 当前唯一任务：P6.1R bounded MTP reference repair retry1
 
 ```text
-task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713
+task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713
 execution_codebase: main-readonly-with-task-local-overlay
 ASCEND_RT_VISIBLE_DEVICES: 0,1,2,3,4,5,6,7
 claim_boundary: mtp_minimal_functional_repair_only
@@ -14,6 +14,8 @@ CONCURRENCY=1
 ```
 
 P6.1 任务 `p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713` 已完成：warmup 与 3/3 measured `4096+64+c1` 全部成功，最终等级为 `yellow_degraded_minimal_unprofiled_control_measured`。不得重跑 P6.0 或 P6.1 control。
+
+首次 P6.1R 任务 `p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713` 已在 overlay 前定级 `blocked_repo`：五项实质 root-cause 诊断与 source/patch/payload hash 均通过，但 handoff 的历史首错证据路径不存在。该次 patch、server lifecycle、request 实际次数为 `0/0/0`。服务器报告实际 excerpt 位于本 retry 固定的精确路径并匹配全部三项首错字符串。本轮只修正该路径并建立新 task/result lineage；原 patch、runtime、资源、请求和停止边界全部不变。
 
 本轮只修复首轮 MTP graph capture 的第一个确定性错误：MTP proposer 的 dummy `AscendCommonAttentionMetadata` 没有填 `positions_cpu`，而同版本 DSA-CP builder 在 `dsa_cp.py:280` 无条件执行 `common_attn_metadata.positions_cpu[:num_input_tokens]`，因此八个 worker 同点报 `positions_cpu_none_type_not_subscriptable`。
 
@@ -76,7 +78,7 @@ set -euo pipefail
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local
 SERVER_LOCAL_BRANCH=server-local/runtime-adaptations
-TASK_ID=p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713
+TASK_ID=p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713
 RESULT_DIR="${REPO_ROOT}/server_local/${TASK_ID}"
 OVERLAY_ROOT="${RESULT_DIR}/overlay_root"
 ENV_PREFIX=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
@@ -93,7 +95,7 @@ REQUESTS_MAX=1
 CONCURRENCY=1
 PATCH_PATH="${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch"
 PAYLOAD_PATH="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json"
-PRIOR_RESULT_DIR="${REPO_ROOT}/server_local/p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712"
+PRIOR_FAILURE_EXCERPT="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712/reference_mtp_maxseq16/first_failure_excerpt.txt"
 
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 git -C "${REPO_ROOT}" fetch origin main
@@ -124,10 +126,13 @@ git -C "${SERVER_LOCAL_ROOT}" status --porcelain --untracked-files=no > "${RESUL
 ```bash
 set -euo pipefail
 
-test -f "${PRIOR_RESULT_DIR}/first_failure_excerpt.txt"
-grep -F "dsa_cp.py\", line 280, in build" "${PRIOR_RESULT_DIR}/first_failure_excerpt.txt"
-grep -F "common_attn_metadata.positions_cpu[:num_input_tokens].long()" "${PRIOR_RESULT_DIR}/first_failure_excerpt.txt"
-grep -F "TypeError: 'NoneType' object is not subscriptable" "${PRIOR_RESULT_DIR}/first_failure_excerpt.txt"
+test -f "${PRIOR_FAILURE_EXCERPT}"
+{
+  grep -F -m 1 "dsa_cp.py\", line 280, in build" "${PRIOR_FAILURE_EXCERPT}"
+  grep -F -m 1 "common_attn_metadata.positions_cpu[:num_input_tokens].long()" "${PRIOR_FAILURE_EXCERPT}"
+  grep -F -m 1 "TypeError: 'NoneType' object is not subscriptable" "${PRIOR_FAILURE_EXCERPT}"
+} > "${RESULT_DIR}/prior_failure_gate.txt"
+sha256sum "${PRIOR_FAILURE_EXCERPT}" > "${RESULT_DIR}/prior_failure_excerpt_sha256.txt"
 
 BASE_PROPOSER="${BASE_PLUGIN_ROOT}/spec_decode/llm_base_proposer.py"
 BASE_DSA_CP="${BASE_PLUGIN_ROOT}/attention/context_parallel/dsa_cp.py"
@@ -162,7 +167,7 @@ checks = {
     "model_compress_ratios_nonempty": bool(config.get("compress_ratios")),
 }
 result = {
-    "task_id": "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713",
+    "task_id": "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713",
     "historical_failure": "positions_cpu_none_type_not_subscriptable",
     "upstream_commit": "1930088f960aba65eeaae82e9617d090283edc1f",
     "upstream_tested_vllm": "0.23.0",
@@ -488,7 +493,7 @@ PY
 - `red_same_positions_cpu_failure`：post-patch 仍出现相同 `positions_cpu_none_type_not_subscriptable`。
 - `blocked_root_cause_not_unique_or_source_mismatch` / `blocked_patch_apply` / `blocked_repo` / `blocked_resource`：对应门失败。
 
-`result_summary.md` 必须写明：task/Git/runtime/model/NPU、历史首错、官方 upstream PR/commit 与 vLLM 0.23.0 测试边界、五项诊断门、base/patch/patched hash、overlay import root、patch/lifecycle/request 实际次数、server-ready/request/cleanup、post-patch 第一失败点和最终 grade。
+`result_summary.md` 必须写明：task/Git/runtime/model/NPU、parent task 的 `blocked_repo` 与 `0/0/0` 计数、修正后的历史 excerpt 精确路径和 SHA-256、三行 `prior_failure_gate.txt`、历史首错、官方 upstream PR/commit 与 vLLM 0.23.0 测试边界、五项诊断门、base/patch/patched hash、overlay import root、patch/lifecycle/request 实际次数、server-ready/request/cleanup、post-patch 第一失败点和最终 grade。
 
 即使 green，也必须写：
 
@@ -512,6 +517,8 @@ request_result.json              # 仅成功启动并发送请求时
 first_failure_excerpt.txt        # 仅失败/blocked 时
 server_command_sha256.txt        # 仅启动 server 时
 payload_sha256.txt
+prior_failure_gate.txt
+prior_failure_excerpt_sha256.txt
 cleanup_status.txt               # 仅启动 server 时
 ```
 
@@ -524,7 +531,7 @@ summary_path: <绝对路径>
 attachment_scope: <精确候选列表>
 total_bytes: <精确值>
 set_sha256: <候选 path/bytes/hash 清单 SHA-256>
-sensitivity: internal_mtp_functional_repair_no_generated_text_or_token_ids
+sensitivity: internal_mtp_functional_repair_selected_error_lines_no_generated_text_or_token_ids
 available_methods: email, upload-api, server-local
 recommended_method: upload-api
 recommendation_reason: one_named_multi_file_session_preserves_the_exact_small_package_and_hashes
@@ -536,7 +543,7 @@ transfer_status: waiting_for_user_choice
 
 ```bash
 candidates=()
-for relative_path in result_summary.md diagnostic.json overlay_import.json grading_inputs.json request_result.json first_failure_excerpt.txt server_command_sha256.txt payload_sha256.txt cleanup_status.txt; do
+for relative_path in result_summary.md diagnostic.json overlay_import.json grading_inputs.json request_result.json first_failure_excerpt.txt server_command_sha256.txt payload_sha256.txt prior_failure_gate.txt prior_failure_excerpt_sha256.txt cleanup_status.txt; do
   if [ -f "${RESULT_DIR}/${relative_path}" ]; then
     candidates+=("${relative_path}")
   fi

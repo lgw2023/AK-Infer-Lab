@@ -531,7 +531,7 @@ benchmarks/deepseek_v4_flash/p8/
 `p8_baseline_contract.yaml` 已是 exact no-MTP cell 的 `frozen_degraded` runtime
 baseline。`adapters/vllm_ascend.py` 只接受机器可读 bounded observation JSONL，
 不 import runtime、不持有 payload、不执行 placement；P8.1 server validation 尚未
-下发、尚未执行；P6.0 stabilization 与 P6.1 minimal control 已完成并经复核，但 P8.1 在当前 P6.1R bounded MTP repair 及其后 reference-baseline 决策中继续延后。
+下发、尚未执行；P6.0 stabilization 与 P6.1 minimal control 已完成并经复核，P6.1R 首次 attempt 仅因历史证据路径错误在 overlay 前 blocked，当前 retry1 保持原有界预算继续该 repair gate；P8.1 在其后 reference-baseline 决策中继续延后。
 MindIE adapter、payload mover 与长期 server collector 仍未创建。
 
 后续每个 vertical slice 必须同时提供：

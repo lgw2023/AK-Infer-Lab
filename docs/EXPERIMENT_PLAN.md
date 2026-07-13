@@ -16,12 +16,12 @@ P0-P4 已建立两类可复用资产：
 NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离让主模型 graph server ready。原生 tokenizer 与 MRO 修正后，固定 no-MTP graph cell 完成首个 `4096+64` HTTP 200 请求；P6.0 又完成两个相同 fresh lifecycle，共形成 3 次连续成功，已固结为 `yellow_degraded_baseline_stabilized`。P6.1 最小 no-MTP control 的 warmup 与 3/3 measured `4096+64+c1` 也已通过，等级为 `yellow_degraded_minimal_unprofiled_control_measured`。当前正式主线进入有预算 MTP repair gate：
 
 ```text
-p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713
+p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713
 ```
 
 server-local Git 管理最终验收已完成。先前准备的 P8.1 observe-only handoff 尚未下发、未执行，继续延后为 preflight；`通信模块/docs/developer-to-server.md` 已改为上述 P6.1R bounded MTP repair。
 
-mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer dummy metadata 未填 `positions_cpu`、而 DSA-CP builder 无条件切片该字段而失败；no-MTP 成功把错误收窄到 MTP drafter path。当前 P6.1R 只允许一个只读诊断、一个 task-local 单行 overlay patch 和最多一个 MTP `4096+64+c1` 请求；任何新首错立即停止，不进入 128K、完整 P6.1、profiler、P8.1 或 offload。
+mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer dummy metadata 未填 `positions_cpu`、而 DSA-CP builder 无条件切片该字段而失败；no-MTP 成功把错误收窄到 MTP drafter path。P6.1R 首次执行只因 handoff 历史证据路径不存在而在 overlay 前 `blocked_repo`，五项实质诊断与 hash 门均通过，patch/lifecycle/request 为 `0/0/0`。当前 retry1 只修正为精确 excerpt 路径，仍只允许一个只读诊断、一个 task-local 单行 overlay patch 和最多一个 MTP `4096+64+c1` 请求；任何新首错立即停止，不进入 128K、完整 P6.1、profiler、P8.1 或 offload。
 
 ## 2. 阶段依赖
 
@@ -175,10 +175,11 @@ repeats_per_pilot_cell: 3
 
 P6.1R 是 P6.1 与既有 P6.2 profiled evidence 之间的 repair gate，不占用原 P6.2 阶段编号。当前只允许：
 
-1. 只读证明 `v0.22.1rc1` proposer dummy metadata 缺失 `positions_cpu`，而同版本 DSA-CP builder 要求该字段。
-2. 仅在 root cause 唯一时，把上游 PR 11062 的对应单字段 hunk 应用到 task-local overlay；base environment、site-packages 与两个 Git worktree 不变。
-3. 最多启动一个 MTP lifecycle，并最多发送一个 `4096+64+c1` 请求。
-4. 原错消失但出现新首错时立即停止；不得第二 patch、eager fallback、完整上游 backport或调参。
+1. 首次 attempt 已因不存在的历史证据路径在 overlay 前 `blocked_repo`；retry1 只把该门修正为服务器已报告存在的精确 excerpt 文件，并返回三条匹配行和 source SHA-256。
+2. 只读证明 `v0.22.1rc1` proposer dummy metadata 缺失 `positions_cpu`，而同版本 DSA-CP builder 要求该字段。
+3. 仅在 root cause 唯一时，把上游 PR 11062 的对应单字段 hunk 应用到 task-local overlay；base environment、site-packages 与两个 Git worktree 不变。
+4. 最多启动一个 MTP lifecycle，并最多发送一个 `4096+64+c1` 请求。
+5. 原错消失但出现新首错时立即停止；不得第二 patch、eager fallback、完整上游 backport 或调参。
 
 green 只表示最小 MTP `4096+64` 功能门关闭；official reference baseline 仍要求后续单独授权的 `131072+64` context ladder。
 
@@ -278,7 +279,7 @@ docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md
 - EPLB/static expert map 不等于 expert offload。
 - Expert V0 先模拟；真实 warm prefetch 必须通过 trace、bytes、load latency 和 lead-time 门。
 - SSD/NVMe 只做 cold persistence/离线恢复，不进入逐 token decode 热路径。
-- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发，在当前 P6.1R bounded MTP repair 与随后 reference-baseline 决策中继续延后。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
+- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发，在当前 P6.1R bounded MTP repair retry1 与随后 reference-baseline 决策中继续延后。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
 
 ## 8. P9：Trace-driven Hardware Sensitivity
 
@@ -318,7 +319,7 @@ simulator_validation_report.md
 ## 9. 当前执行顺序
 
 1. P6.0 已固结 `yellow_degraded_baseline_stabilized`，P6.1 minimal control 已固结 `yellow_degraded_minimal_unprofiled_control_measured`；两者都不重跑。
-2. 当前只执行 P6.1R：一个只读 root-cause gate、一个条件式 task-local 单行 overlay patch，最多一个 MTP server lifecycle 和一个 `4096+64+c1` 请求。
+2. 当前只执行 P6.1R retry1：精确历史 excerpt 门、一个只读 root-cause gate、一个条件式 task-local 单行 overlay patch，最多一个 MTP server lifecycle 和一个 `4096+64+c1` 请求。
 3. installed source/hash、模型 `compress_ratios` 或 patch dry-run 任一不一致即 blocked；不得放宽门或修改 base environment。
 4. post-patch 原错消失但出现新首错即停止，不做第二 patch、eager fallback 或调参。
 5. green 后仍不自动进入 128K、其他 P6.1 pilot/matrix、profiler 或 P8.1；这些任务均需另行授权。
