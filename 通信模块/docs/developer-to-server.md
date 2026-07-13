@@ -1,40 +1,45 @@
 # Developer to Server
 
-## 当前唯一任务：P6.1R bounded MTP reference repair retry2
+## 当前唯一任务：P6.1L MTP decode-length ladder
 
-```text
-task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
+~~~text
+task_id: p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713
 execution_codebase: main-readonly-with-task-local-overlay
 ASCEND_RT_VISIBLE_DEVICES: 0,1,2,3,4,5,6,7
-claim_boundary: mtp_minimal_functional_repair_only
+claim_boundary: mtp_4096_decode_length_stability_only
 PATCH_ATTEMPTS_MAX=1
 SERVER_LIFECYCLES_MAX=1
-REQUESTS_MAX=1
+PLANNED_SLOTS=6
+ATTEMPTS_MAX=12
+RETRIES_MAX=6
 CONCURRENCY=1
-```
+~~~
 
-P6.1 任务 `p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713` 已完成：warmup 与 3/3 measured `4096+64+c1` 全部成功，最终等级为 `yellow_degraded_minimal_unprofiled_control_measured`。不得重跑 P6.0 或 P6.1 control。
+P6.1 no-MTP minimal control
+p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713
+已完成 warmup 与 3/3 measured 4096+64+c1；P6.1R retry2
+p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
+也已取得 green_mtp_minimal_request_success：单行 task-local overlay 修复原
+positions_cpu_none_type_not_subscriptable，MTP server ready，唯一
+/v1/completions 请求 HTTP 200、prompt=4096、generated/streamed=64、
+finish_reason=length，cleanup=clean。
 
-首次 P6.1R 任务 `p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713` 已在 overlay 前定级 `blocked_repo`，patch/lifecycle/request=`0/0/0`。retry1 `p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713` 修正历史 excerpt 路径后完成 patch/lifecycle/request=`1/1/1`：单行 overlay 生效，服务完成 MTP graph capture 并 `/health=200`，原 `positions_cpu_none_type_not_subscriptable` 首错消失；唯一 completion-style payload 被误发到 `/v1/chat/completions` 后 HTTP 400，cleanup=`clean`，最终等级为 `yellow_mtp_graph_capture_advanced_new_first_failure`。HTTPError response body 未保存，回传的 first-failure excerpt 仅含停机期 TBE 异常，因此不能把该 HTTP 400 解释为新的 MTP engine 失败。
+本轮不是 128K context ladder，也不是完整 P6.1、profiler、P8.1 或性能比较。
+目标只是在固定 4096 input、同一 MTP runtime 下执行 512×3 → 1024×3；
+无隐藏 warmup。每个 slot 最多一次同请求原样重试，因此最多六个计划 slot、十二次
+attempt、六次 retry，始终单 lifecycle、concurrency=1。
 
-本轮建立独立 retry2 task/result lineage，不复用 retry1 目录。patch、server command、runtime、模型、NPU、payload bytes/hash、MTP 参数和 `4096+64+c1` 请求预算全部不变；仅把 endpoint 修正为此前同 payload 已成功使用的 `/v1/completions`，有界捕获 HTTPError status/body，让首错证据优先采用 request error，并正式使用 package root + patched overlay hash + unchanged base hash 校验。retry1 中 proposer 直接 import 命中了 base/overlay 均存在的 circular import，本轮不得再使用该已知不稳定 gate。
+服务器上的 AI 助手必须先就地审计 retry2 的 raw server log 和 count files。
+raw log、raw metrics、NPU 快照和生成内容全部留在服务器；只回传小型结构化摘要、
+哈希和选定摘录。发现 retry2 摘要与原始证据硬冲突时，不得启动新 lifecycle。
 
-既有单行 patch 仍只修复首轮 MTP graph capture 的第一个确定性错误：MTP proposer 的 dummy `AscendCommonAttentionMetadata` 没有填 `positions_cpu`，而同版本 DSA-CP builder 在 `dsa_cp.py:280` 无条件执行 `common_attn_metadata.positions_cpu[:num_input_tokens]`，因此八个 worker 同点报 `positions_cpu_none_type_not_subscriptable`。retry2 只是重新在新的 task-local overlay 应用同一 patch，不得开发或尝试第二个 plugin patch。
+## 1. 固定基线、路径和禁止项
 
-官方上游 PR <https://github.com/vllm-project/vllm-ascend/pull/11062> / commit `1930088f960aba65eeaae82e9617d090283edc1f` 为 DSV4 MTP graph 补充了 proposer dummy-run 参数，其中包含本轮选择的 `positions_cpu` 字段；但上游声明测试基线是 vLLM `0.23.0`，不是当前 `0.22.1rc1`。因此本轮只允许把该单字段、单行 hunk 应用到 task-local overlay；不允许完整 cherry-pick、版本升级或宣称上游已验证当前 backport。
-
-诊断门全部成立后，最多启动一个 MTP lifecycle，并且最多发送一个固定 `4096+64+c1` 请求。若原错误消失但出现新首错，立即标记 `yellow_mtp_graph_capture_advanced_new_first_failure` 并停止；不得做第二个 patch、不得使用 eager fallback、不得调参。即使请求成功，也只得到 `green_mtp_minimal_request_success`，仍不是 official MTP/128K reference baseline。
-
-禁止 128K/context ladder、其他 P6.1 cell、profiler、P8.1、offload、placement mutation、checkpoint/payload 修改、runtime 升级、base environment/site-packages 修改。成功或失败后都停止，不得自动进入下一任务。
-
-## 1. 固定基线与修正面
-
-```text
+~~~text
 model: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
 runtime: vLLM 0.22.1+empty / vLLM-Ascend 0.22.1rc1
 vLLM commit: 0decac0d96c42b49572498019f0a0e3600f50398
 vLLM-Ascend commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-NPU: 0,1,2,3,4,5,6,7
 parallelism: TP8 + EP
 quantization: ascend
 MTP: {"method":"mtp","num_speculative_tokens":1}
@@ -42,47 +47,55 @@ cudagraph: FULL_DECODE_ONLY
 max_model_len: 135168
 max_num_batched_tokens: 4096
 max_num_seqs: 1
-request: POST /v1/completions, one 4096 input + fixed 64 output, concurrency=1, unprofiled
-```
+endpoint: POST /v1/completions
+fixed request URL: "http://127.0.0.1:7000/v1/completions"
+request groups: 4096+512 x3, then 4096+1024 x3
+sampling: temperature=0, ignore_eos=true, min_tokens=max_tokens
+~~~
 
-固定 payload：
+source payload：
 
-```text
+~~~text
 path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
 bytes: 19487
 sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
-```
+~~~
 
-唯一修正 artifact：
+唯一 patch：
 
-```text
+该单行 hunk 来自上游 <https://github.com/vllm-project/vllm-ascend/pull/11062> /
+commit `1930088f960aba65eeaae82e9617d090283edc1f` 的字段映射证据；上游测试基线为
+vLLM 0.23.0，本轮仍只使用已通过 retry2 的 0.22.1rc1 task-local backport，
+不得完整 cherry-pick 或宣称上游验证了当前栈。
+
+~~~text
 path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
 sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
-base target sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
-patched target sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
-changed files: 1
-changed lines: 1
-```
+base proposer sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+patched proposer sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+changed files/lines: 1/1
+~~~
 
-## 2. 完整同步 main 与双工作区安全门
+不得运行 `通信模块/server_local_git_sync.sh`。不得 restore/reset/stash，不得 commit 或 push，
+不得自行选择 ours/theirs。主镜像 tracked 文件、服务器专属 worktree、
+base conda environment、site-packages 和 checkpoint 全部只读；不得修改 base conda environment。
+不得做第二个 patch，
+不得使用 eager fallback，不得调参、升级、重启第二个 lifecycle、切到 no-MTP、
+进入 128K context ladder、完整 P6.1、profiler、P8.1、offload 或 placement mutation。
 
-必须完整 fast-forward 同步远程 `main`，同步后重新读取本文件并确认 task ID。主镜像 tracked 文件继续只读；服务器专属 worktree 仍只读观察。task-local overlay 只能位于主镜像 Git 忽略的 `server_local/<task_id>/overlay_root/`。
+## 2. 同步 main 与双工作区门
 
-- 主镜像 `/data/node0_disk1/liguowei/AK-Infer-Lab@main`：读取 handoff、patch 和固定 payload；tracked 文件不得修改。
-- 服务器专属 worktree `/data/node0_disk1/liguowei/AK-Infer-Lab-server-local@server-local/runtime-adaptations`：只记录身份，不从中 import/启动，不 checkout、merge、commit、push 或改写。
-- base conda environment：只读；不得修改 base conda environment、`site-packages`、dist-info、entry point 或源码。
-
-不得 restore/reset/stash，不得 commit 或 push，不得自行选择 ours/theirs。不得运行 `通信模块/server_local_git_sync.sh`。
-
-```bash
+~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local
 SERVER_LOCAL_BRANCH=server-local/runtime-adaptations
-TASK_ID=p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
+TASK_ID=p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713
 RESULT_DIR="${REPO_ROOT}/server_local/${TASK_ID}"
 OVERLAY_ROOT="${RESULT_DIR}/overlay_root"
+PRIOR_TASK_ID=p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
+PRIOR_RESULT_DIR="${REPO_ROOT}/server_local/${PRIOR_TASK_ID}"
 ENV_PREFIX=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 PYTHON_BIN="${ENV_PREFIX}/bin/python"
 VLLM_BIN="${ENV_PREFIX}/bin/vllm"
@@ -93,11 +106,12 @@ HOST=127.0.0.1
 PORT=7000
 PATCH_ATTEMPTS_MAX=1
 SERVER_LIFECYCLES_MAX=1
-REQUESTS_MAX=1
+PLANNED_SLOTS=6
+ATTEMPTS_MAX=12
+RETRIES_MAX=6
 CONCURRENCY=1
 PATCH_PATH="${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch"
 PAYLOAD_PATH="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json"
-PRIOR_FAILURE_EXCERPT="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712/reference_mtp_maxseq16/first_failure_excerpt.txt"
 
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 git -C "${REPO_ROOT}" fetch origin main
@@ -108,90 +122,144 @@ test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 grep -F "task_id: ${TASK_ID}" "${REPO_ROOT}/通信模块/docs/developer-to-server.md"
 
 test ! -e "${RESULT_DIR}"
-mkdir -p "${RESULT_DIR}"
+test -d "${PRIOR_RESULT_DIR}"
 test "$(git -C "${SERVER_LOCAL_ROOT}" rev-parse --is-inside-work-tree)" = true
 test "$(git -C "${SERVER_LOCAL_ROOT}" branch --show-current)" = "${SERVER_LOCAL_BRANCH}"
+test -z "$(git -C "${SERVER_LOCAL_ROOT}" status --porcelain --untracked-files=no)"
+
+mkdir -p "${RESULT_DIR}"
 git -C "${REPO_ROOT}" rev-parse HEAD > "${RESULT_DIR}/git_head.txt"
 git -C "${REPO_ROOT}" rev-parse origin/main > "${RESULT_DIR}/origin_main.txt"
 git -C "${REPO_ROOT}" rev-list --left-right --count HEAD...origin/main > "${RESULT_DIR}/ahead_behind.txt"
 git -C "${REPO_ROOT}" status --porcelain --untracked-files=no > "${RESULT_DIR}/tracked_status_before.txt"
 git -C "${SERVER_LOCAL_ROOT}" rev-parse HEAD > "${RESULT_DIR}/server_local_head_observed.txt"
 git -C "${SERVER_LOCAL_ROOT}" status --porcelain --untracked-files=no > "${RESULT_DIR}/server_local_tracked_status_observed.txt"
-```
+~~~
 
-任一门失败标记 `blocked_repo` 并停止，不得建立 overlay 或启动 server。
+服务器专属 worktree 仍只读观察；不得从中 import、启动、checkout、merge、commit、
+push 或修改。任一仓库门失败，标记 blocked_repo 并停止。
 
-## 3. 只读首错与源码一致性诊断
+## 3. retry2 raw log/count files 就地审计
 
-诊断必须证明五件事：历史首错仍是 `dsa_cp.py:280` 的 `positions_cpu=None`；installed source 精确等于 `v0.22.1rc1`；proposer dummy metadata 缺失字段；DSA-CP builder 要求字段；model config 含非空 `compress_ratios`，从而 proposer 的 `self.use_compress` 为真。
+先运行确定性审计，再由服务器 AI 助手阅读同一原始目录，确认自动摘要没有漏掉
+阶段边界。历史 speculative metrics 未采集可以记 unavailable，不构成硬冲突。
 
-```bash
+~~~bash
 set -euo pipefail
 
-test -f "${PRIOR_FAILURE_EXCERPT}"
-{
-  grep -F -m 1 "dsa_cp.py\", line 280, in build" "${PRIOR_FAILURE_EXCERPT}"
-  grep -F -m 1 "common_attn_metadata.positions_cpu[:num_input_tokens].long()" "${PRIOR_FAILURE_EXCERPT}"
-  grep -F -m 1 "TypeError: 'NoneType' object is not subscriptable" "${PRIOR_FAILURE_EXCERPT}"
-} > "${RESULT_DIR}/prior_failure_gate.txt"
-sha256sum "${PRIOR_FAILURE_EXCERPT}" > "${RESULT_DIR}/prior_failure_excerpt_sha256.txt"
+for name in patch_attempt_count.txt server_lifecycle_count.txt request_count.txt \
+  server_ready_exit_code.txt request_exit_code.txt cleanup_status.txt request_result.json \
+  overlay_import.json vllm_server.log server_command.txt; do
+  test -f "${PRIOR_RESULT_DIR}/${name}"
+done
 
-BASE_PROPOSER="${BASE_PLUGIN_ROOT}/spec_decode/llm_base_proposer.py"
-BASE_DSA_CP="${BASE_PLUGIN_ROOT}/attention/context_parallel/dsa_cp.py"
-BASE_RUNNER="${BASE_PLUGIN_ROOT}/worker/model_runner_v1.py"
-test "$(sha256sum "${BASE_PROPOSER}" | awk '{print $1}')" = 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
-test "$(sha256sum "${BASE_DSA_CP}" | awk '{print $1}')" = 0906c953fd80a0f86875a947446fe6c72c0057f422a787b52b6adbf7b77fe77b
-test "$(sha256sum "${BASE_RUNNER}" | awk '{print $1}')" = 27cbd078817cf746ed0dca27ace2e188e5a13612ee0fe1764da4e55bf3ecbdd5
-test "$(sha256sum "${PATCH_PATH}" | awk '{print $1}')" = 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
-test "$(stat -c '%s' "${PAYLOAD_PATH}")" = 19487
-test "$(sha256sum "${PAYLOAD_PATH}" | awk '{print $1}')" = 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
-sha256sum "${PAYLOAD_PATH}" > "${RESULT_DIR}/payload_sha256.txt"
-
-"${PYTHON_BIN}" - "${BASE_PROPOSER}" "${BASE_DSA_CP}" "${BASE_RUNNER}" "${MODEL_PATH}/config.json" "${RESULT_DIR}/diagnostic.json" <<'PY'
+set +e
+"${PYTHON_BIN}" - "${PRIOR_RESULT_DIR}" "${RESULT_DIR}/retry2_raw_audit.json" <<'PY'
+import hashlib
 import json
 import sys
 from pathlib import Path
 
-proposer_path, dsa_path, runner_path, config_path, output_path = map(Path, sys.argv[1:])
-proposer = proposer_path.read_text(encoding="utf-8")
-dsa = dsa_path.read_text(encoding="utf-8")
-runner = runner_path.read_text(encoding="utf-8")
-config = json.loads(config_path.read_text(encoding="utf-8"))
+prior = Path(sys.argv[1])
+output = Path(sys.argv[2])
 
-selected_line = "positions_cpu=self.runner._dsa_positions_cpu_buf if self.use_compress else None,"
+def read_int(name: str) -> int:
+    return int((prior / name).read_text(encoding="utf-8").strip())
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+request = json.loads((prior / "request_result.json").read_text(encoding="utf-8"))
+overlay = json.loads((prior / "overlay_import.json").read_text(encoding="utf-8"))
+cleanup = (prior / "cleanup_status.txt").read_text(encoding="utf-8").strip()
+log_path = prior / "vllm_server.log"
+log_lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+log_text = "\n".join(log_lines)
+
+def selected(pattern: str, limit: int = 8) -> list[str]:
+    return [line for line in log_lines if pattern in line][:limit]
+
+mtp_init = selected("[spec_decode/base] Initializing spec decode proposer: method=mtp")
+draft_loaded = selected("[spec_decode/base] Draft model loaded successfully: method=mtp")
+access_200 = [
+    line for line in log_lines
+    if "POST /v1/completions" in line and " 200 " in line
+][:8]
+positions_failure = (
+    "common_attn_metadata.positions_cpu[:num_input_tokens].long()" in log_text
+    and "TypeError: 'NoneType' object is not subscriptable" in log_text
+)
 checks = {
-    "proposer_positions_field_missing": selected_line not in proposer,
-    "proposer_positions_device_field_present": "positions=self.runner.positions," in proposer,
-    "dsa_builder_unconditional_cpu_slice_present": (
-        "input_positions_cpu = common_attn_metadata.positions_cpu[:num_input_tokens].long()" in dsa
-    ),
-    "runner_cpu_buffer_present": "self._dsa_positions_cpu_buf = torch.zeros(" in runner,
-    "model_compress_ratios_nonempty": bool(config.get("compress_ratios")),
+    "patch_attempts_1": read_int("patch_attempt_count.txt") == 1,
+    "server_lifecycles_1": read_int("server_lifecycle_count.txt") == 1,
+    "requests_1": read_int("request_count.txt") == 1,
+    "server_ready": read_int("server_ready_exit_code.txt") == 0,
+    "request_exit_zero": read_int("request_exit_code.txt") == 0,
+    "http_200": request.get("http_status") == 200,
+    "prompt_4096": request.get("prompt_tokens") == 4096,
+    "generated_64": request.get("generated_token_count") == 64,
+    "streamed_64": request.get("streamed_token_count") == 64,
+    "finish_reason_length": request.get("finish_reason") == "length",
+    "saw_done": request.get("saw_done") is True,
+    "cleanup_clean": cleanup == "clean",
+    "package_from_overlay": overlay.get("package_from_overlay") is True,
+    "overlay_hash": overlay.get("overlay_proposer_sha256")
+        == "7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02",
+    "base_hash": overlay.get("base_proposer_sha256")
+        == "0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb",
+    "mtp_proposer_initialized": bool(mtp_init),
+    "mtp_draft_model_loaded": bool(draft_loaded),
+    "completion_access_200": bool(access_200),
+    "positions_cpu_failure_absent": not positions_failure,
 }
 result = {
     "task_id": "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713",
-    "historical_failure": "positions_cpu_none_type_not_subscriptable",
-    "upstream_commit": "1930088f960aba65eeaae82e9617d090283edc1f",
-    "upstream_tested_vllm": "0.23.0",
+    "raw_log_path": str(log_path),
+    "raw_log_bytes": log_path.stat().st_size,
+    "raw_log_sha256": sha256(log_path),
+    "raw_log_retained_server_local": True,
+    "historical_spec_metrics": "not_required_or_unavailable",
+    "post_shutdown_errors_must_be_classified_separately": True,
+    "graph_capture_completion_inferred_from_server_ready_and_successful_mtp_request": True,
+    "selected_evidence": {
+        "mtp_init": mtp_init,
+        "draft_loaded": draft_loaded,
+        "completion_access_200": access_200,
+    },
     "checks": checks,
-    "root_cause_unique": all(checks.values()),
-    "selected_backport": selected_line,
-    "full_upstream_backport": False,
+    "hard_conflict": not all(checks.values()),
 }
-output_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-if not result["root_cause_unique"]:
+output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+if result["hard_conflict"]:
     raise SystemExit(2)
 PY
-```
+audit_exit=$?
+set -e
+printf '%s\n' "${audit_exit}" > "${RESULT_DIR}/retry2_raw_audit_exit_code.txt"
+test "${audit_exit}" -eq 0
+~~~
 
-若 `diagnostic.json.root_cause_unique` 不是 `true`，最终等级为 `blocked_root_cause_not_unique_or_source_mismatch`，直接生成摘要并停止。不得猜测、放宽 hash、改 patch 或启动 server。
+服务器 AI 助手还必须检查：
+
+- request 之前和期间是否存在 fatal worker/engine traceback；
+- MTP proposer、draft model load、graph capture、server ready、access 200 的顺序；
+- request 完成后的 shutdown/TBE 背景异常是否只发生在清理阶段；
+- 自动摘要中的 selected_evidence 是否忠实于原始日志。
+
+若发现摘要与 raw 文件冲突，写 retry2_raw_audit_exit_code.txt=2 和小型
+first_failure_excerpt.txt 后停止；不得创建 overlay 或启动 server。
 
 ## 4. 创建并验证 task-local overlay
 
-base conda environment 和两个 Git worktree 全部保持不变。overlay 可占用较大 server-local 空间，但不得列入外发候选。不得直接 import `vllm_ascend.spec_decode.llm_base_proposer`；该路径在 retry1 已确认会命中既存 circular import。正式 gate 为 `vllm_ascend` package root 来自 overlay、overlay proposer 命中 patched hash、base proposer 仍命中原 hash。
-
-```bash
+~~~bash
 set -euo pipefail
+
+BASE_PROPOSER="${BASE_PLUGIN_ROOT}/spec_decode/llm_base_proposer.py"
+test "$(sha256sum "${BASE_PROPOSER}" | awk '{print $1}')" = 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+test "$(sha256sum "${PATCH_PATH}" | awk '{print $1}')" = 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+test "$(stat -c '%s' "${PAYLOAD_PATH}")" = 19487
+test "$(sha256sum "${PAYLOAD_PATH}" | awk '{print $1}')" = 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+sha256sum "${PAYLOAD_PATH}" > "${RESULT_DIR}/source_payload_sha256.txt"
 
 mkdir -p "${OVERLAY_ROOT}"
 cp -a "${BASE_PLUGIN_ROOT}" "${OVERLAY_ROOT}/vllm_ascend"
@@ -203,7 +271,7 @@ patch -p1 -d "${OVERLAY_ROOT}" < "${PATCH_PATH}" > "${RESULT_DIR}/patch_apply.tx
 printf '%s\n' 1 > "${RESULT_DIR}/patch_attempt_count.txt"
 test "$(<"${RESULT_DIR}/patch_attempt_count.txt")" = "${PATCH_ATTEMPTS_MAX}"
 test "$(sha256sum "${OVERLAY_PROPOSER}" | awk '{print $1}')" = 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
-test "$(sha256sum "${BASE_PLUGIN_ROOT}/spec_decode/llm_base_proposer.py" | awk '{print $1}')" = 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+test "$(sha256sum "${BASE_PROPOSER}" | awk '{print $1}')" = 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
 
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
 source /usr/local/Ascend/nnal/atb/set_env.sh
@@ -236,9 +304,7 @@ result = {
     "package_root": str(package_root),
     "package_from_overlay": package_root.is_relative_to(overlay),
     "proposer_module_imported": False,
-    "overlay_proposer": str(overlay_proposer),
     "overlay_proposer_sha256": sha256(overlay_proposer),
-    "base_proposer": str(base_proposer),
     "base_proposer_sha256": sha256(base_proposer),
 }
 output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -246,30 +312,32 @@ assert result["package_from_overlay"]
 assert result["overlay_proposer_sha256"] == "7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02"
 assert result["base_proposer_sha256"] == "0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb"
 PY
-```
+~~~
 
-dry-run 或唯一实际 apply 失败时标记 `blocked_patch_apply` 并停止。不得做第二个 patch，不得改 base file，不得改用 full upstream commit。
+不得直接 import vllm_ascend.spec_decode.llm_base_proposer；retry1 已证明该路径会命中
+既存 circular import。dry-run 或唯一 apply 失败即 blocked_patch_apply。
 
 ## 5. 八卡资源门
 
-```bash
+~~~bash
 npu-smi info > "${RESULT_DIR}/npu_smi_before.txt" 2>&1 || true
 npu-smi info -t usages > "${RESULT_DIR}/npu_usage_before.txt" 2>&1 || true
 ss -ltnp > "${RESULT_DIR}/listening_ports_before.txt" 2>&1 || true
 
 RESOURCE_GATE=not_confirmed
-# 只有人工确认 NPU 0-7 全部 Health=OK、无归属不明进程、空闲，且 127.0.0.1:7000 未占用后，才可改为 pass。
+# 服务器 AI 助手人工确认 NPU 0-7 全部 Health=OK、空闲、无未知进程且端口 7000 未占用后，改为 pass。
 printf '%s\n' "${RESOURCE_GATE}" > "${RESULT_DIR}/resource_gate.txt"
 test "${RESOURCE_GATE}" = pass
-```
+~~~
 
-任一卡不健康、忙碌、有未知进程或端口冲突，标记 `blocked_resource` 并停止。不得清理或影响非本任务进程。
+任一卡不健康、忙碌、存在未知进程或端口冲突，标记 blocked_resource 并停止。
+不得清理非本任务进程。
 
-## 6. 唯一 MTP lifecycle 与唯一请求
+## 6. 启动唯一 MTP lifecycle
 
-只允许以下 command。与冻结 no-MTP cell 的唯一功能差异是 task-local overlay 和 `--speculative-config`；不得添加 `--enforce-eager`，不得改变 capture size、context、并发或 sampling。唯一请求必须发往 `/v1/completions`；不得改回 chat endpoint。若 HTTPError，最多保留 8192 bytes response body 到 `request_error.json`，不得保存或回传 request payload、generated text 或 token IDs。
+只允许以下 server command。不得添加 enforce-eager 或修改 capture size。
 
-```bash
+~~~bash
 set -euo pipefail
 
 cmd=(
@@ -322,120 +390,364 @@ for _ in $(seq 1 180); do
   sleep 10
 done
 printf '%s\n' "${ready_exit}" > "${RESULT_DIR}/server_ready_exit_code.txt"
+test "${ready_exit}" -eq 0
+~~~
 
-request_exit=90
-request_count=0
-if [ "${ready_exit}" -eq 0 ]; then
-  request_count=1
-  set +e
-  "${PYTHON_BIN}" - "${PAYLOAD_PATH}" "${RESULT_DIR}/request_result.json" <<'PY'
+server 未 ready 时禁止发送请求；清理后标记 blocked_server_not_ready。
+
+## 7. 六个 slot、metrics 与每 slot 一次原样重试
+
+该客户端不保存 generated text 或 token IDs。它只计数 token_ids，记录结构化 usage、
+诊断时长、HTTPError 的有界 server-local body、每次 attempt 前后 /metrics 和
+/health。原始 metrics 保存到 raw_metrics/，不得列入外发候选。
+
+~~~bash
+set -euo pipefail
+mkdir -p "${RESULT_DIR}/raw_metrics" "${RESULT_DIR}/request_errors"
+
+set +e
+"${PYTHON_BIN}" - "${PAYLOAD_PATH}" "${RESULT_DIR}" "${server_pid}" "http://${HOST}:${PORT}" <<'PY'
+import hashlib
 import json
+import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 HTTP_ERROR_BODY_MAX_BYTES = 8192
+SOCKET_INACTIVITY_TIMEOUT_SECONDS = 1800
 payload_path = Path(sys.argv[1])
-output_path = Path(sys.argv[2])
-payload = json.loads(payload_path.read_text(encoding="utf-8"))
-payload["stream"] = True
-payload["stream_options"] = {"include_usage": True}
-payload["return_token_ids"] = True
+result_dir = Path(sys.argv[2])
+server_pid = int(sys.argv[3])
+base_url = sys.argv[4].rstrip("/")
+raw_metrics_dir = result_dir / "raw_metrics"
+error_dir = result_dir / "request_errors"
+attempts_path = result_dir / "attempt_results.jsonl"
 
-request = urllib.request.Request(
-    "http://127.0.0.1:7000/v1/completions",
-    data=json.dumps(payload, separators=(",", ":")).encode("utf-8"),
-    headers={"Content-Type": "application/json"},
-    method="POST",
-)
+slots = [
+    ("output512_slot1", 512),
+    ("output512_slot2", 512),
+    ("output512_slot3", 512),
+    ("output1024_slot1", 1024),
+    ("output1024_slot2", 1024),
+    ("output1024_slot3", 1024),
+]
 
-streamed = 0
-usage = None
-finish_reason = None
-saw_done = False
-try:
-    response_context = urllib.request.urlopen(request, timeout=1800)
-except urllib.error.HTTPError as exc:
-    body = exc.read(HTTP_ERROR_BODY_MAX_BYTES + 1)
-    bounded_body = body[:HTTP_ERROR_BODY_MAX_BYTES]
-    error_result = {
-        "status": "http_error",
-        "http_status": exc.code,
-        "reason": str(exc.reason),
-        "response_body": bounded_body.decode("utf-8", errors="replace"),
-        "response_body_bytes_retained": len(bounded_body),
-        "response_body_truncated": len(body) > HTTP_ERROR_BODY_MAX_BYTES,
-        "raw_request_payload_retained": False,
+source_payload = json.loads(payload_path.read_text(encoding="utf-8"))
+if source_payload.get("temperature") != 0.0:
+    raise SystemExit("source payload temperature mismatch")
+if source_payload.get("ignore_eos") is not True:
+    raise SystemExit("source payload ignore_eos mismatch")
+
+def process_alive() -> bool:
+    try:
+        os.kill(server_pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+
+def get(path: str, timeout: int = 10) -> tuple[int | None, bytes]:
+    try:
+        with urllib.request.urlopen(f"{base_url}{path}", timeout=timeout) as response:
+            return response.status, response.read()
+    except Exception:
+        return None, b""
+
+def health() -> int | None:
+    status, _ = get("/health", timeout=5)
+    return status
+
+def parse_metrics(text: str) -> dict:
+    names = {
+        "vllm:spec_decode_num_drafts_total": "num_drafts",
+        "vllm:spec_decode_num_draft_tokens_total": "num_draft_tokens",
+        "vllm:spec_decode_num_accepted_tokens_total": "num_accepted_tokens",
+        "vllm:num_requests_running": "num_requests_running",
+        "vllm:num_requests_waiting": "num_requests_waiting",
+    }
+    values = {value: 0.0 for value in names.values()}
+    found = {value: False for value in names.values()}
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split(None, 1)
+        if len(parts) != 2:
+            continue
+        metric_name = parts[0].split("{", 1)[0]
+        key = names.get(metric_name)
+        if key is None:
+            continue
+        try:
+            values[key] += float(parts[1])
+            found[key] = True
+        except ValueError:
+            continue
+    values["spec_metrics_available"] = (
+        found["num_drafts"] and found["num_draft_tokens"]
+        and found["num_accepted_tokens"]
+    )
+    values["request_gauges_available"] = (
+        found["num_requests_running"] and found["num_requests_waiting"]
+    )
+    return values
+
+def metrics(snapshot_name: str) -> dict:
+    status, body = get("/metrics", timeout=10)
+    raw_path = raw_metrics_dir / f"{snapshot_name}.prom"
+    raw_path.write_bytes(body)
+    parsed = parse_metrics(body.decode("utf-8", errors="replace")) if status == 200 else {
+        "num_drafts": 0.0,
+        "num_draft_tokens": 0.0,
+        "num_accepted_tokens": 0.0,
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "spec_metrics_available": False,
+        "request_gauges_available": False,
+    }
+    parsed["http_status"] = status
+    parsed["raw_server_path"] = str(raw_path)
+    return parsed
+
+def metric_delta(before: dict, after: dict) -> dict | None:
+    if not before["spec_metrics_available"] or not after["spec_metrics_available"]:
+        return None
+    return {
+        "num_drafts": after["num_drafts"] - before["num_drafts"],
+        "num_draft_tokens": after["num_draft_tokens"] - before["num_draft_tokens"],
+        "num_accepted_tokens": (
+            after["num_accepted_tokens"] - before["num_accepted_tokens"]
+        ),
+    }
+
+def append_attempt(record: dict) -> None:
+    with attempts_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n")
+
+def run_attempt(slot_id: str, output_tokens: int, attempt_index: int) -> dict:
+    payload = dict(source_payload)
+    payload["min_tokens"] = output_tokens
+    payload["max_tokens"] = output_tokens
+    payload["stream"] = True
+    payload["stream_options"] = {"include_usage": True}
+    payload["return_token_ids"] = True
+    body = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    request_body_sha256 = hashlib.sha256(body).hexdigest()
+    prefix = f"{slot_id}_attempt{attempt_index}"
+    health_before = health()
+    metrics_before = metrics(f"{prefix}_before")
+    request = urllib.request.Request(
+        f"{base_url}/v1/completions",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    streamed = 0
+    usage = None
+    finish_reason = None
+    saw_done = False
+    http_status = None
+    error_type = None
+    error_reason = None
+    start_ns = time.monotonic_ns()
+    try:
+        response_context = urllib.request.urlopen(
+            request, timeout=SOCKET_INACTIVITY_TIMEOUT_SECONDS
+        )
+        with response_context as response:
+            http_status = response.status
+            for raw in response:
+                line = raw.decode("utf-8").strip()
+                if not line.startswith("data:"):
+                    continue
+                data = line[5:].strip()
+                if data == "[DONE]":
+                    saw_done = True
+                    break
+                event = json.loads(data)
+                if event.get("usage"):
+                    usage = event["usage"]
+                for choice in event.get("choices", []):
+                    if choice.get("finish_reason") is not None:
+                        finish_reason = choice["finish_reason"]
+                    token_ids = choice.get("token_ids")
+                    if token_ids is None:
+                        token_ids = choice.get("delta", {}).get("token_ids")
+                    if token_ids:
+                        streamed += len(token_ids)
+    except urllib.error.HTTPError as exc:
+        http_status = exc.code
+        error_type = "http_error"
+        error_reason = str(exc.reason)
+        body_error = exc.read(HTTP_ERROR_BODY_MAX_BYTES + 1)
+        retained = body_error[:HTTP_ERROR_BODY_MAX_BYTES]
+        (error_dir / f"{prefix}.json").write_text(
+            json.dumps(
+                {
+                    "http_status": exc.code,
+                    "reason": str(exc.reason),
+                    "response_body": retained.decode("utf-8", errors="replace"),
+                    "response_body_bytes_retained": len(retained),
+                    "response_body_truncated": len(body_error) > HTTP_ERROR_BODY_MAX_BYTES,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    except Exception as exc:
+        error_type = type(exc).__name__
+        error_reason = str(exc)
+    wall_ms = (time.monotonic_ns() - start_ns) // 1_000_000
+    health_after = health()
+    metrics_after = metrics(f"{prefix}_after")
+    delta = metric_delta(metrics_before, metrics_after)
+    if delta is None:
+        mtp_activity_evidence = "metrics_unavailable_requires_runtime_log_review"
+        mtp_activity_ok = True
+    else:
+        mtp_activity_evidence = "prometheus_counter_delta"
+        mtp_activity_ok = (
+            delta["num_drafts"] > 0 and delta["num_draft_tokens"] > 0
+        )
+    generated = usage.get("completion_tokens") if usage else None
+    prompt = usage.get("prompt_tokens") if usage else None
+    functional_ok = (
+        error_type is None
+        and http_status == 200
+        and prompt == 4096
+        and generated == output_tokens
+        and streamed == output_tokens
+        and finish_reason == "length"
+        and saw_done is True
+        and health_before == 200
+        and health_after == 200
+    )
+    record = {
+        "slot_id": slot_id,
+        "output_tokens": output_tokens,
+        "attempt_index": attempt_index,
+        "request_body_sha256": request_body_sha256,
+        "status": "success" if functional_ok and mtp_activity_ok else "failed",
+        "http_status": http_status,
+        "prompt_tokens": prompt,
+        "generated_token_count": generated,
+        "streamed_token_count": streamed,
+        "finish_reason": finish_reason,
+        "saw_done": saw_done,
+        "health_before": health_before,
+        "health_after": health_after,
+        "request_wall_ms_diagnostic_only": wall_ms,
+        "metrics_before": metrics_before,
+        "metrics_after": metrics_after,
+        "metrics_delta": delta,
+        "mtp_activity_evidence": mtp_activity_evidence,
+        "retry_recovery": attempt_index == 2 and functional_ok and mtp_activity_ok,
+        "error_type": error_type,
+        "error_reason": error_reason,
         "generated_text_retained": False,
         "token_ids_retained": False,
     }
-    output_path.with_name("request_error.json").write_text(
-        json.dumps(error_result, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    raise SystemExit(3)
+    append_attempt(record)
+    return record
 
-with response_context as response:
-    status = response.status
-    for raw in response:
-        line = raw.decode("utf-8").strip()
-        if not line.startswith("data:"):
-            continue
-        data = line[5:].strip()
-        if data == "[DONE]":
-            saw_done = True
+attempt_count = 0
+retry_count = 0
+completed_slots = []
+failed_slot = None
+stop_reason = None
+request_hash_by_slot = {}
+
+for slot_id, output_tokens in slots:
+    slot_success = False
+    for attempt_index in (1, 2):
+        attempt_count += 1
+        record = run_attempt(slot_id, output_tokens, attempt_index)
+        old_hash = request_hash_by_slot.setdefault(slot_id, record["request_body_sha256"])
+        if old_hash != record["request_body_sha256"]:
+            stop_reason = "retry_request_body_hash_changed"
+            failed_slot = slot_id
             break
-        event = json.loads(data)
-        if event.get("usage"):
-            usage = event["usage"]
-        for choice in event.get("choices", []):
-            reason = choice.get("finish_reason")
-            if reason is not None:
-                finish_reason = reason
-            token_ids = choice.get("token_ids")
-            if token_ids is None:
-                token_ids = choice.get("delta", {}).get("token_ids")
-            if token_ids:
-                streamed += len(token_ids)
+        if record["status"] == "success":
+            completed_slots.append(slot_id)
+            slot_success = True
+            break
+        if attempt_index == 1:
+            fresh_health = health()
+            idle_metrics = metrics(f"{slot_id}_retry_idle_gate")
+            retry_allowed = (
+                process_alive()
+                and fresh_health == 200
+                and idle_metrics["request_gauges_available"]
+                and idle_metrics["num_requests_running"] == 0
+                and idle_metrics["num_requests_waiting"] == 0
+            )
+            if retry_allowed:
+                retry_count += 1
+                continue
+            stop_reason = "retry_idle_or_health_gate_failed"
+            failed_slot = slot_id
+            break
+        stop_reason = "slot_failed_twice"
+        failed_slot = slot_id
+    if not slot_success:
+        break
 
-result = {
-    "status": "success",
-    "http_status": status,
-    "prompt_tokens": usage.get("prompt_tokens") if usage else None,
-    "generated_token_count": usage.get("completion_tokens") if usage else None,
-    "streamed_token_count": streamed,
-    "finish_reason": finish_reason,
-    "saw_done": saw_done,
+all_slots_success = completed_slots == [slot_id for slot_id, _ in slots]
+attempt_records = [
+    json.loads(line)
+    for line in attempts_path.read_text(encoding="utf-8").splitlines()
+    if line.strip()
+]
+missing_spec_metrics = any(
+    item["metrics_delta"] is None for item in attempt_records
+    if item["status"] == "success"
+)
+summary = {
+    "planned_slots": 6,
+    "completed_slots": completed_slots,
+    "completed_slot_count": len(completed_slots),
+    "attempt_count": attempt_count,
+    "attempts_max": 12,
+    "retry_count": retry_count,
+    "retries_max": 6,
+    "all_slots_success": all_slots_success,
+    "all_slots_first_attempt_success": all_slots_success and retry_count == 0,
+    "missing_spec_metrics_on_success": missing_spec_metrics,
+    "failed_slot": failed_slot,
+    "stop_reason": stop_reason,
     "generated_text_retained": False,
     "token_ids_retained": False,
 }
-checks = {
-    "http_status": result["http_status"] == 200,
-    "prompt_tokens": result["prompt_tokens"] == 4096,
-    "generated_tokens": result["generated_token_count"] == 64,
-    "streamed_tokens": result["streamed_token_count"] == 64,
-    "finish_reason": result["finish_reason"] == "length",
-    "saw_done": result["saw_done"] is True,
-}
-result["checks"] = checks
-output_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-if not all(checks.values()):
-    raise SystemExit(2)
+(result_dir / "ladder_summary.json").write_text(
+    json.dumps(summary, indent=2, sort_keys=True) + "\n",
+    encoding="utf-8",
+)
+(result_dir / "attempt_count.txt").write_text(f"{attempt_count}\n", encoding="utf-8")
+(result_dir / "retry_count.txt").write_text(f"{retry_count}\n", encoding="utf-8")
+(result_dir / "completed_slot_count.txt").write_text(
+    f"{len(completed_slots)}\n", encoding="utf-8"
+)
+raise SystemExit(0 if all_slots_success else 2)
 PY
-  request_exit=$?
-  set -e
-fi
-printf '%s\n' "${request_exit}" > "${RESULT_DIR}/request_exit_code.txt"
-printf '%s\n' "${request_count}" > "${RESULT_DIR}/request_count.txt"
-test "${request_count}" -le "${REQUESTS_MAX}"
-```
+ladder_exit=$?
+set -e
+printf '%s\n' "${ladder_exit}" > "${RESULT_DIR}/ladder_exit_code.txt"
+test "$(<"${RESULT_DIR}/attempt_count.txt")" -le "${ATTEMPTS_MAX}"
+test "$(<"${RESULT_DIR}/retry_count.txt")" -le "${RETRIES_MAX}"
+~~~
 
-若 server 未 ready，禁止发送请求。若 request 失败，禁止补发。首个 post-patch failure 出现后执行 `stop_after_first_post_patch_failure`，不得做第二个 patch、第二个 lifecycle 或第二个 request。
+如果首个 attempt 失败，只有进程存活、health=200、running=0、waiting=0 且同
+request-body SHA-256 时才能重试。重试成功填满原 slot 并继续；该任务最终最高为
+yellow_mtp_decode_length_ladder_recovered。重试再失败、server 不健康或 idle 无法证明，
+立即停止剩余 slot。
 
-## 7. 只清理本任务 process group
+## 8. 清理唯一 process group
 
-```bash
+~~~bash
 set +e
 if kill -0 "${server_pid}" 2>/dev/null; then
   kill -TERM -- "-${server_pid}" 2>/dev/null || true
@@ -459,139 +771,180 @@ if ss -ltn | awk '{print $4}' | grep -Eq '(^|:)7000$'; then
 else
   printf '%s\n' clean > "${RESULT_DIR}/cleanup_status.txt"
 fi
-```
+~~~
 
-只能清理本任务记录的 process group。不得 kill 其他 PID。
+只能清理本任务记录的 process group，不得 kill 其他 PID。
 
-## 8. 首错提取、分级与结果摘要
+## 9. 新日志就地分析、分级和故障反馈
 
-首错证据优先取 `request_error.json`；仅当它不存在时，才从 `vllm_server.log` 提取最多 200 行围绕首个 traceback 的小 excerpt。不得再把停机期 TBE 后台异常优先解释为 request 首错，不外发 raw log。分级必须互斥：
+服务器 AI 助手必须读取新 vllm_server.log、attempt_results.jsonl、
+ladder_summary.json、raw_metrics/ 和 request_errors/，但只生成 bounded
+mtp_log_evidence.json、grading_inputs.json、result_summary.md；不得修改代码或 patch。
 
-```bash
+~~~bash
 "${PYTHON_BIN}" - "${RESULT_DIR}" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-result_dir = Path(sys.argv[1])
-log_path = result_dir / "vllm_server.log"
-lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines() if log_path.exists() else []
-failure_markers = ("Traceback (most recent call last):", " ERROR ", "RuntimeError:", "TypeError:")
-start = next((i for i, line in enumerate(lines) if any(marker in line for marker in failure_markers)), None)
-excerpt_path = result_dir / "first_failure_excerpt.txt"
-request_error_path = result_dir / "request_error.json"
-if request_error_path.exists():
-    request_error_lines = request_error_path.read_text(encoding="utf-8", errors="replace").splitlines()
-    excerpt_path.write_text(
-        "\n".join(["source=request_error.json", *request_error_lines[:200]]) + "\n",
-        encoding="utf-8",
-    )
-    first_failure_source = "request_error"
-elif start is not None:
-    excerpt_path.write_text("\n".join(lines[start : start + 200]) + "\n", encoding="utf-8")
-    first_failure_source = "server_log"
-else:
-    if excerpt_path.exists():
-        excerpt_path.unlink()
-    first_failure_source = "none"
+root = Path(sys.argv[1])
+log_path = root / "vllm_server.log"
+lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+text = "\n".join(lines)
+ladder = json.loads((root / "ladder_summary.json").read_text(encoding="utf-8"))
+cleanup = (root / "cleanup_status.txt").read_text(encoding="utf-8").strip()
 
-def read_int(name: str, default: int) -> int:
-    path = result_dir / name
-    return int(path.read_text(encoding="utf-8").strip()) if path.exists() else default
-
-cleanup_path = result_dir / "cleanup_status.txt"
-cleanup = cleanup_path.read_text(encoding="utf-8").strip() if cleanup_path.exists() else "missing"
-ready_exit = read_int("server_ready_exit_code.txt", 99)
-request_exit = read_int("request_exit_code.txt", 99)
-log_text = "\n".join(lines)
-same_failure = (
-    "common_attn_metadata.positions_cpu[:num_input_tokens].long()" in log_text
-    and "TypeError: 'NoneType' object is not subscriptable" in log_text
+init_lines = [
+    line for line in lines
+    if "[spec_decode/base] Initializing spec decode proposer: method=mtp" in line
+][:8]
+draft_lines = [
+    line for line in lines
+    if "[spec_decode/base] Draft model loaded successfully: method=mtp" in line
+][:8]
+runtime_metric_lines = [
+    line for line in lines if "SpecDecoding metrics:" in line
+][:24]
+positions_failure = (
+    "common_attn_metadata.positions_cpu[:num_input_tokens].long()" in text
+    and "TypeError: 'NoneType' object is not subscriptable" in text
 )
-if ready_exit == 0 and request_exit == 0 and cleanup == "clean":
-    grade = "green_mtp_minimal_request_success"
-elif same_failure:
-    grade = "red_same_positions_cpu_failure"
-else:
-    grade = "yellow_mtp_graph_capture_advanced_new_first_failure"
-
-(result_dir / "grade.txt").write_text(grade + "\n", encoding="utf-8")
-(result_dir / "grading_inputs.json").write_text(
-    json.dumps(
-        {
-            "server_ready_exit_code": ready_exit,
-            "request_exit_code": request_exit,
-            "cleanup_status": cleanup,
-            "first_failure_source": first_failure_source,
-            "same_positions_cpu_failure": same_failure,
-            "grade": grade,
-        },
-        indent=2,
-        sort_keys=True,
-    )
-    + "\n",
+log_fallback_proves_mtp_activity = (
+    bool(init_lines) and bool(draft_lines) and bool(runtime_metric_lines)
+    and not positions_failure
+)
+evidence = {
+    "mtp_init_lines": init_lines,
+    "mtp_draft_loaded_lines": draft_lines,
+    "runtime_spec_decode_metric_lines": runtime_metric_lines,
+    "original_positions_cpu_failure_absent": not positions_failure,
+    "log_fallback_proves_mtp_activity": log_fallback_proves_mtp_activity,
+    "raw_log_retained_server_local": True,
+}
+(root / "mtp_log_evidence.json").write_text(
+    json.dumps(evidence, indent=2, sort_keys=True) + "\n",
     encoding="utf-8",
 )
+
+all_success = ladder["all_slots_success"]
+retries = ladder["retry_count"]
+missing_metrics = ladder["missing_spec_metrics_on_success"]
+if not all_success:
+    grade = "red_mtp_decode_length_slot_failed_after_retry"
+elif cleanup != "clean":
+    grade = "red_cleanup_incomplete"
+elif missing_metrics and not log_fallback_proves_mtp_activity:
+    grade = "blocked_mtp_activity_unproven"
+elif retries > 0:
+    grade = "yellow_mtp_decode_length_ladder_recovered"
+elif missing_metrics:
+    grade = "yellow_mtp_decode_length_success_activity_log_only"
+else:
+    grade = "green_mtp_decode_length_ladder_stable"
+
+grading = {
+    "retry2_raw_audit_exit_code": int(
+        (root / "retry2_raw_audit_exit_code.txt").read_text(encoding="utf-8").strip()
+    ),
+    "server_ready_exit_code": int(
+        (root / "server_ready_exit_code.txt").read_text(encoding="utf-8").strip()
+    ),
+    "ladder_exit_code": int(
+        (root / "ladder_exit_code.txt").read_text(encoding="utf-8").strip()
+    ),
+    "planned_slots": 6,
+    "completed_slots": ladder["completed_slot_count"],
+    "attempt_count": ladder["attempt_count"],
+    "retry_count": retries,
+    "missing_spec_metrics_on_success": missing_metrics,
+    "log_fallback_proves_mtp_activity": log_fallback_proves_mtp_activity,
+    "cleanup_status": cleanup,
+    "grade": grade,
+    "prior_4096_64_green_remains_valid": True,
+    "official_baseline": False,
+    "context_128k_validated": False,
+    "full_p6_1_matrix_validated": False,
+    "optimization_gain_validated": False,
+    "next_task_authorized": False,
+}
+(root / "grading_inputs.json").write_text(
+    json.dumps(grading, indent=2, sort_keys=True) + "\n",
+    encoding="utf-8",
+)
+(root / "grade.txt").write_text(grade + "\n", encoding="utf-8")
 PY
-```
+~~~
 
-- `green_mtp_minimal_request_success`：server ready、唯一请求 HTTP 200、prompt=4096、generated/streamed=64、`finish_reason=length`、cleanup=`clean`。
-- `yellow_mtp_graph_capture_advanced_new_first_failure`：原 `positions_cpu` 错误消失，但 server 或 request 出现新的第一失败点；这是定位进展，不授权第二 patch。
-- `red_same_positions_cpu_failure`：post-patch 仍出现相同 `positions_cpu_none_type_not_subscriptable`。
-- `blocked_root_cause_not_unique_or_source_mismatch` / `blocked_patch_apply` / `blocked_repo` / `blocked_resource`：对应门失败。
+分级：
 
-`result_summary.md` 必须写明：task/Git/runtime/model/NPU；首次 attempt 的 `blocked_repo` 与 `0/0/0`；parent retry1 的 yellow、server-ready、原错消失、HTTP 400 与 `1/1/1`；历史 excerpt 精确路径/SHA-256/三行 gate；官方 upstream PR/commit 与 vLLM 0.23.0 测试边界；五项诊断门；base/patch/patched hash；package root + overlay/base hash gate 且 proposer module 未直接 import；固定 `/v1/completions`；patch/lifecycle/request 实际次数；server-ready/request/cleanup；HTTPError 时的 status、response-body 截断状态与 `request_error.json`；首错来源和最终 grade。
+- green_mtp_decode_length_ladder_stable：六个 slot 全部首次成功、每次成功有正
+  speculative draft counter 增量、cleanup clean。
+- yellow_mtp_decode_length_ladder_recovered：六个 slot 最终成功，但至少使用一次重试。
+- yellow_mtp_decode_length_success_activity_log_only：六个 slot 成功，但 speculative
+  metrics 缺失，只能由 MTP 初始化、draft load 和运行期 SpecDecoding log 证明活动。
+- red_mtp_decode_length_slot_failed_after_retry：任一 slot 两次失败或 server 不健康；
+  停止后续 slot。
+- red_cleanup_incomplete：六个 slot 即使完成，只要本任务 process group 或端口未清理干净，
+  不得定为 green/yellow。
+- blocked_mtp_activity_unproven：metrics 和运行期日志都不能证明 MTP 活动。
 
-即使 green，也必须写：
+RED/blocked 时，服务器 AI 助手必须在 result_summary.md 中分析第一次与重试的错误、
+对应日志窗口、metrics/gauge、server health、是否仍有 in-flight request、最可能根因
+和外部开发者最小下一步；不允许自行 patch、调参或重启。
 
-```text
-official_baseline: false
-mtp_4096_64_minimal_request_validated: true
-context_128k_validated: false
-full_p6_1_matrix_validated: false
-optimization_gain_validated: false
-next_task_authorized: false
-```
+无论本轮结果如何，既有 mtp_4096_64_minimal_request_validated=true 仍有效；
+official_baseline=false、context_128k_validated=false、
+full_p6_1_matrix_validated=false、optimization_gain_validated=false、
+next_task_authorized=false。
+
+## 10. 小结果包与传输确认
 
 候选外发文件只允许：
 
-```text
+~~~text
 result_summary.md
-diagnostic.json
+retry2_raw_audit.json
 overlay_import.json
+ladder_summary.json
+attempt_results.jsonl
+mtp_log_evidence.json
 grading_inputs.json
-request_result.json              # 仅成功启动并发送请求时
-request_error.json              # 仅 HTTPError 时
-first_failure_excerpt.txt        # 仅失败/blocked 时
-server_command_sha256.txt        # 仅启动 server 时
-payload_sha256.txt
-prior_failure_gate.txt
-prior_failure_excerpt_sha256.txt
-cleanup_status.txt               # 仅启动 server 时
-```
+first_failure_excerpt.txt       # 仅 RED/blocked，最多 120 行且最多 12KB
+server_command_sha256.txt
+source_payload_sha256.txt
+cleanup_status.txt
+~~~
 
-候选集合必须排除 overlay、raw server log、NPU/Prometheus 快照、patch 副本、checkpoint 和 token IDs。单文件及完整集合均不超过 70KB。
+候选集合必须排除 overlay、raw server log、raw_metrics/、request_errors/、NPU/端口快照、
+server command 原文、patch 副本、checkpoint、request payload、generated text 和 token IDs。
 
-生成 `delivery_candidates.tsv` 和 `transfer_preflight.md`，后者必须包含：
+result_summary.md 必须写明：task/Git/runtime/model/NPU；retry2 raw 审计路径、count/hash、
+MTP init/draft/graph/access 证据与 shutdown 分类；overlay/base hash；唯一 lifecycle；
+六个 slot 的每次 attempt、重试、request-body hash、token checks、health、counter delta；
+metrics 或 log-only MTP activity；cleanup、grade、claim boundary 和故障反馈。
 
-```text
+生成 delivery_candidates.tsv 与 transfer_preflight.md，内容必须包含：
+
+~~~text
 summary_path: <绝对路径>
 attachment_scope: <精确候选列表>
 total_bytes: <精确值>
 set_sha256: <候选 path/bytes/hash 清单 SHA-256>
-sensitivity: internal_mtp_functional_repair_bounded_http_error_or_selected_error_lines_no_payload_generated_text_or_token_ids
+sensitivity: internal_mtp_decode_length_attempt_metadata_bounded_selected_log_evidence_no_payload_generated_text_or_token_ids
 available_methods: email, upload-api, server-local
 recommended_method: upload-api
 recommendation_reason: one_named_multi_file_session_preserves_the_exact_small_package_and_hashes
 selected_method: none
 transfer_status: waiting_for_user_choice
-```
+~~~
 
 最终大小门：
 
-```bash
+~~~bash
 candidates=()
-for relative_path in result_summary.md diagnostic.json overlay_import.json grading_inputs.json request_result.json request_error.json first_failure_excerpt.txt server_command_sha256.txt payload_sha256.txt prior_failure_gate.txt prior_failure_excerpt_sha256.txt cleanup_status.txt; do
+for relative_path in result_summary.md retry2_raw_audit.json overlay_import.json \
+  ladder_summary.json attempt_results.jsonl mtp_log_evidence.json grading_inputs.json \
+  first_failure_excerpt.txt server_command_sha256.txt source_payload_sha256.txt cleanup_status.txt; do
   if [ -f "${RESULT_DIR}/${relative_path}" ]; then
     candidates+=("${relative_path}")
   fi
@@ -604,14 +957,17 @@ for relative_path in "${candidates[@]}"; do
   total_bytes=$((total_bytes + file_bytes))
 done
 test "${total_bytes}" -le 71680
-```
+~~~
 
-当前未选择 `email`、`upload-api` 或 `server-local`。只报告 exact summary path、候选列表、bytes、SHA-256、敏感性、available methods 和推荐方法，然后等待用户选择；不得发送 pending-confirmation 邮件，不得沿用历史选择。
+当前未选择 `email`、`upload-api` 或 `server-local`。只报告 exact summary path、候选列表、
+bytes、SHA-256、敏感性、available methods 和推荐方法，然后等待用户选择；不得发送
+pending-confirmation 邮件，不得沿用历史选择，不得在失败后自动切换传输方法。
 
-## 9. 完成边界
+## 11. 完成边界
 
-- 成功或失败后立即停止，不得自动进入 128K、完整 P6.1、profiler、P8.1 或任何第二修复轮次。
-- 不提交或 push server artifact，不修改主镜像 tracked 文件、server-local worktree、base conda environment 或 installed site-packages。
-- task-local overlay 和 raw artifacts 只保留在 `server_local/<task_id>/`。
-- green 只关闭 MTP `4096+64` 最小功能门；official reference baseline 仍要求未来单独授权的 context ladder 到 `131072+64`。
-- yellow/red/blocked 只返回第一失败点和受限证据；不得自行继续。
+- 任一结果后停止，不得自动进入 128K context ladder、完整 P6.1、profiler 或 P8.1。
+- 不提交或 push server artifact，不修改主镜像 tracked 文件、服务器专属 worktree、
+  base conda environment 或 installed site-packages。
+- task-local overlay 和 raw artifacts 只保留在 server_local/<task_id>/。
+- green/yellow 只说明固定 4096 input 下的 MTP decode-length 稳定性，不是 benchmark、
+  性能收益、官方 baseline 或 128K 验证。

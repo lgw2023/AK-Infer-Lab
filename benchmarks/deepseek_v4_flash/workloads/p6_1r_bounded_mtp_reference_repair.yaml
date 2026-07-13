@@ -176,9 +176,31 @@ stop_policy:
   no_automatic_follow_up_task: true
 
 execution_state:
-  server_handoff: active
-  server_result: pending
-  transfer_method: unselected_server_local_only
+  server_handoff: completed
+  server_result: green_mtp_minimal_request_success
+  result_received: true
+  result_package_local: /Volumes/SSD1/Inbox/2026-07-13/p6_1r_mtp_repair_retry2_green_2026_0713_161318
+  transfer_method: server_local_result_package_received
+
+execution_result:
+  git_commit: 5fd6fdb9693e108686b3f8fdea2896d69aede0c0
+  patch_attempts: 1
+  server_lifecycles: 1
+  requests: 1
+  server_ready: true
+  endpoint: /v1/completions
+  http_status: 200
+  prompt_tokens: 4096
+  generated_tokens: 64
+  streamed_tokens: 64
+  finish_reason: length
+  saw_done: true
+  original_positions_cpu_failure_absent: true
+  cleanup_status: clean
+  official_baseline: false
+  context_128k_validated: false
+  full_p6_1_matrix_validated: false
+  optimization_gain_validated: false
 
 boundaries:
   - The overlay is a one-line diagnostic backport from one hunk of upstream PR 11062, not the full upstream change.

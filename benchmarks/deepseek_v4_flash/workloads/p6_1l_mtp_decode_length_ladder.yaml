@@ -1,0 +1,242 @@
+schema_version: 1
+workload_id: p6_1l_deepseek_v4_flash_mtp_decode_length_ladder
+date: "2026-07-13"
+purpose: validate_mtp_decode_length_stability_at_fixed_4096_input_without_entering_context_or_performance_work
+task_id: p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713
+
+stage_contract:
+  stage: P6.1L
+  mode: mtp_decode_length_stability_ladder
+  claim_level: mtp_4096_decode_length_stability_only
+  may_claim_official_baseline: false
+  full_p6_1_matrix_authorized: false
+  context_ladder_authorized: false
+  profiler_authorized: false
+  performance_comparison_authorized: false
+
+prior_mtp_gate:
+  task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
+  git_commit: 5fd6fdb9693e108686b3f8fdea2896d69aede0c0
+  grade: green_mtp_minimal_request_success
+  patch_attempts: 1
+  server_lifecycles: 1
+  requests: 1
+  server_ready: true
+  endpoint: /v1/completions
+  http_status: 200
+  input_tokens: 4096
+  output_tokens: 64
+  generated_tokens: 64
+  streamed_tokens: 64
+  finish_reason: length
+  original_positions_cpu_failure_absent: true
+  cleanup_status: clean
+  raw_evidence_audit_required: true
+
+retry2_raw_audit:
+  result_dir: /data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
+  expected_patch_attempts: 1
+  expected_server_lifecycles: 1
+  expected_requests: 1
+  expected_http_status: 200
+  expected_generated_tokens: 64
+  expected_streamed_tokens: 64
+  expected_cleanup: clean
+  require_mtp_proposer_initialization: true
+  require_mtp_draft_model_loaded: true
+  require_graph_capture_completion: true
+  require_completion_access_200: true
+  require_original_positions_cpu_failure_absent: true
+  hard_conflict_policy: stop_before_new_lifecycle
+  historical_spec_metrics_optional: true
+  post_shutdown_errors_classified_separately: true
+  raw_files_remain_server_local: true
+
+repair_artifact:
+  path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  patch_sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  package_import_required: true
+  proposer_module_import_required: false
+  package_root_from_overlay: true
+  patched_proposer_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+  unchanged_base_proposer_sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+  task_local_overlay_only: true
+  base_environment_mutation: false
+  server_local_worktree_mutation: false
+  changed_files: 1
+  changed_lines: 1
+
+runtime_fixed:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  tensor_parallel_size: 8
+  data_parallel_size: 1
+  enable_expert_parallel: true
+  quantization: ascend
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  enforce_eager: false
+  cudagraph_mode: FULL_DECODE_ONLY
+  speculative_mtp:
+    method: mtp
+    num_speculative_tokens: 1
+
+experiment_plan:
+  input_tokens: 4096
+  output_ladder:
+    - 512
+    - 1024
+  slots_per_output: 3
+  slot_order:
+    - output512_slot1
+    - output512_slot2
+    - output512_slot3
+    - output1024_slot1
+    - output1024_slot2
+    - output1024_slot3
+  hidden_warmup_requests: 0
+  planned_slots: 6
+  attempts_per_slot_max: 2
+  attempts_max: 12
+  retries_max: 6
+  patch_attempts_max: 1
+  server_lifecycles_max: 1
+  concurrency: 1
+  request_order: sequential
+  unprofiled: true
+
+metrics_evidence:
+  endpoint: /metrics
+  snapshot_before_and_after_every_attempt: true
+  parser_reference: vllm_v0_22_1_spec_decode_prometheus_counters
+  spec_counter_names:
+    - vllm:spec_decode_num_drafts_total
+    - vllm:spec_decode_num_draft_tokens_total
+    - vllm:spec_decode_num_accepted_tokens_total
+  request_gauge_names:
+    - vllm:num_requests_running
+    - vllm:num_requests_waiting
+  successful_attempt_requires_positive_draft_delta: true
+  zero_accepted_delta_allowed: true
+  missing_spec_metrics_log_fallback_allowed: true
+  missing_metrics_and_runtime_log_evidence_stops: true
+  raw_metrics_remain_server_local: true
+  optimization_gain_claim_allowed: false
+
+request_protocol:
+  endpoint: /v1/completions
+  input_tokens: 4096
+  output_tokens_by_group:
+    - 512
+    - 1024
+  source_payload_server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+  source_payload_bytes: 19487
+  source_payload_sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+  derived_fields_only:
+    - min_tokens
+    - max_tokens
+    - stream
+    - stream_options
+    - return_token_ids
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming: true
+  stream_include_usage: true
+  return_token_ids: true
+  canonical_request_body_sha256_recorded: true
+  socket_inactivity_timeout_seconds: 1800
+  http_error_body_bytes_max: 8192
+  generated_text_retained: false
+  token_ids_retained: false
+
+retry_policy:
+  max_retries_per_slot: 1
+  max_retries_total: 6
+  same_request_body_sha256_required: true
+  server_process_must_be_alive: true
+  health_must_be_200: true
+  num_requests_running_must_be_zero: true
+  num_requests_waiting_must_be_zero: true
+  no_retry_if_idle_state_unproven: true
+  server_restart_allowed: false
+  parameter_mutation_allowed: false
+  patch_mutation_allowed: false
+  recovered_attempt_fills_slot: true
+  recovered_run_max_grade: yellow_mtp_decode_length_ladder_recovered
+  second_failure_stops_task: true
+  second_failure_requires_server_local_root_cause_analysis: true
+  server_may_self_patch_after_failure: false
+
+attempt_result_schema:
+  format: json_lines_one_record_per_attempt
+  fields:
+    - slot_id
+    - output_tokens
+    - attempt_index
+    - request_body_sha256
+    - status
+    - http_status
+    - prompt_tokens
+    - generated_token_count
+    - streamed_token_count
+    - finish_reason
+    - saw_done
+    - health_before
+    - health_after
+    - request_wall_ms_diagnostic_only
+    - metrics_before
+    - metrics_after
+    - metrics_delta
+    - mtp_activity_evidence
+    - retry_recovery
+  generated_text_field_forbidden: true
+  token_ids_field_forbidden: true
+
+acceptance:
+  green_grade: green_mtp_decode_length_ladder_stable
+  green_requires_first_attempt_successes: 6
+  green_requires_retries_used: 0
+  green_requires_positive_draft_delta_per_attempt: true
+  green_requires_cleanup: clean
+  yellow_recovered_grade: yellow_mtp_decode_length_ladder_recovered
+  yellow_recovered_condition: all_six_slots_eventually_succeed_with_one_or_more_retries
+  yellow_recovered_requires_cleanup: clean
+  yellow_log_only_grade: yellow_mtp_decode_length_success_activity_log_only
+  yellow_log_only_condition: all_six_slots_succeed_but_mtp_activity_is_proven_only_by_runtime_logs
+  yellow_log_only_requires_cleanup: clean
+  red_grade: red_mtp_decode_length_slot_failed_after_retry
+  red_condition: any_slot_fails_twice_or_server_becomes_unhealthy
+  cleanup_failure_grade: red_cleanup_incomplete
+  blocked_grade: blocked_retry2_raw_audit_or_resource_gate
+  prior_4096_64_green_remains_valid: true
+  official_baseline_after_green: false
+  context_128k_validated_after_green: false
+  full_p6_1_matrix_validated_after_green: false
+  optimization_gain_validated_after_green: false
+
+stop_policy:
+  stop_on_retry2_hard_conflict: true
+  stop_if_server_not_ready: true
+  stop_if_retry_idle_state_unproven: true
+  stop_after_second_failure_in_slot: true
+  no_second_server_lifecycle: true
+  no_second_patch: true
+  no_eager_fallback: true
+  no_parameter_fallback: true
+  no_version_upgrade: true
+  no_context_ladder: true
+  no_no_mtp_comparison: true
+  no_profiler: true
+  no_p8_execution: true
+  no_automatic_follow_up_task: true
+
+execution_state:
+  server_handoff: planned
+  server_result: pending
+  transfer_method: unselected_server_local_only

@@ -633,8 +633,36 @@ def test_p6_1r_bounded_mtp_repair_has_one_diagnostic_and_one_conditional_validat
     assert workload["stop_policy"]["no_eager_fallback"] is True
     assert workload["stop_policy"]["no_context_ladder"] is True
     assert workload["stop_policy"]["no_profiler"] is True
-    assert workload["execution_state"]["server_handoff"] == "active"
-    assert workload["execution_state"]["server_result"] == "pending"
+    assert workload["execution_state"] == {
+        "server_handoff": "completed",
+        "server_result": "green_mtp_minimal_request_success",
+        "result_received": True,
+        "result_package_local": (
+            "/Volumes/SSD1/Inbox/2026-07-13/"
+            "p6_1r_mtp_repair_retry2_green_2026_0713_161318"
+        ),
+        "transfer_method": "server_local_result_package_received",
+    }
+    assert workload["execution_result"] == {
+        "git_commit": "5fd6fdb9693e108686b3f8fdea2896d69aede0c0",
+        "patch_attempts": 1,
+        "server_lifecycles": 1,
+        "requests": 1,
+        "server_ready": True,
+        "endpoint": "/v1/completions",
+        "http_status": 200,
+        "prompt_tokens": 4096,
+        "generated_tokens": 64,
+        "streamed_tokens": 64,
+        "finish_reason": "length",
+        "saw_done": True,
+        "original_positions_cpu_failure_absent": True,
+        "cleanup_status": "clean",
+        "official_baseline": False,
+        "context_128k_validated": False,
+        "full_p6_1_matrix_validated": False,
+        "optimization_gain_validated": False,
+    }
 
     patch = (
         BENCHMARK_DIR
@@ -646,26 +674,192 @@ def test_p6_1r_bounded_mtp_repair_has_one_diagnostic_and_one_conditional_validat
     assert patch.count("diff --git ") == 1
 
 
-def test_server_handoff_contains_only_the_p6_1r_bounded_mtp_repair_retry2_task():
+def test_p6_1l_decode_length_ladder_freezes_one_lifecycle_and_six_slots():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1l_mtp_decode_length_ladder.yaml"
+    )
+
+    assert workload["task_id"] == (
+        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.1L",
+        "mode": "mtp_decode_length_stability_ladder",
+        "claim_level": "mtp_4096_decode_length_stability_only",
+        "may_claim_official_baseline": False,
+        "full_p6_1_matrix_authorized": False,
+        "context_ladder_authorized": False,
+        "profiler_authorized": False,
+        "performance_comparison_authorized": False,
+    }
+    assert workload["prior_mtp_gate"]["grade"] == "green_mtp_minimal_request_success"
+    assert workload["prior_mtp_gate"]["input_tokens"] == 4096
+    assert workload["prior_mtp_gate"]["output_tokens"] == 64
+    assert workload["prior_mtp_gate"]["raw_evidence_audit_required"] is True
+    assert workload["runtime_fixed"]["speculative_mtp"] == {
+        "method": "mtp",
+        "num_speculative_tokens": 1,
+    }
+    assert workload["experiment_plan"] == {
+        "input_tokens": 4096,
+        "output_ladder": [512, 1024],
+        "slots_per_output": 3,
+        "slot_order": [
+            "output512_slot1",
+            "output512_slot2",
+            "output512_slot3",
+            "output1024_slot1",
+            "output1024_slot2",
+            "output1024_slot3",
+        ],
+        "hidden_warmup_requests": 0,
+        "planned_slots": 6,
+        "attempts_per_slot_max": 2,
+        "attempts_max": 12,
+        "retries_max": 6,
+        "patch_attempts_max": 1,
+        "server_lifecycles_max": 1,
+        "concurrency": 1,
+        "request_order": "sequential",
+        "unprofiled": True,
+    }
+
+
+def test_p6_1l_gates_execution_on_retry2_raw_audit_and_mtp_counter_evidence():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1l_mtp_decode_length_ladder.yaml"
+    )
+
+    assert workload["retry2_raw_audit"] == {
+        "result_dir": (
+            "/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/"
+            "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_"
+            "retry2_2026_0713"
+        ),
+        "expected_patch_attempts": 1,
+        "expected_server_lifecycles": 1,
+        "expected_requests": 1,
+        "expected_http_status": 200,
+        "expected_generated_tokens": 64,
+        "expected_streamed_tokens": 64,
+        "expected_cleanup": "clean",
+        "require_mtp_proposer_initialization": True,
+        "require_mtp_draft_model_loaded": True,
+        "require_graph_capture_completion": True,
+        "require_completion_access_200": True,
+        "require_original_positions_cpu_failure_absent": True,
+        "hard_conflict_policy": "stop_before_new_lifecycle",
+        "historical_spec_metrics_optional": True,
+        "post_shutdown_errors_classified_separately": True,
+        "raw_files_remain_server_local": True,
+    }
+    assert workload["metrics_evidence"] == {
+        "endpoint": "/metrics",
+        "snapshot_before_and_after_every_attempt": True,
+        "parser_reference": "vllm_v0_22_1_spec_decode_prometheus_counters",
+        "spec_counter_names": [
+            "vllm:spec_decode_num_drafts_total",
+            "vllm:spec_decode_num_draft_tokens_total",
+            "vllm:spec_decode_num_accepted_tokens_total",
+        ],
+        "request_gauge_names": [
+            "vllm:num_requests_running",
+            "vllm:num_requests_waiting",
+        ],
+        "successful_attempt_requires_positive_draft_delta": True,
+        "zero_accepted_delta_allowed": True,
+        "missing_spec_metrics_log_fallback_allowed": True,
+        "missing_metrics_and_runtime_log_evidence_stops": True,
+        "raw_metrics_remain_server_local": True,
+        "optimization_gain_claim_allowed": False,
+    }
+
+
+def test_p6_1l_bounds_same_payload_retries_and_result_grades():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1l_mtp_decode_length_ladder.yaml"
+    )
+
+    assert workload["request_protocol"]["endpoint"] == "/v1/completions"
+    assert workload["request_protocol"]["input_tokens"] == 4096
+    assert workload["request_protocol"]["output_tokens_by_group"] == [512, 1024]
+    assert workload["request_protocol"]["temperature"] == 0.0
+    assert workload["request_protocol"]["ignore_eos"] is True
+    assert workload["request_protocol"]["min_tokens_equals_max_tokens"] is True
+    assert workload["request_protocol"]["generated_text_retained"] is False
+    assert workload["request_protocol"]["token_ids_retained"] is False
+    assert workload["retry_policy"] == {
+        "max_retries_per_slot": 1,
+        "max_retries_total": 6,
+        "same_request_body_sha256_required": True,
+        "server_process_must_be_alive": True,
+        "health_must_be_200": True,
+        "num_requests_running_must_be_zero": True,
+        "num_requests_waiting_must_be_zero": True,
+        "no_retry_if_idle_state_unproven": True,
+        "server_restart_allowed": False,
+        "parameter_mutation_allowed": False,
+        "patch_mutation_allowed": False,
+        "recovered_attempt_fills_slot": True,
+        "recovered_run_max_grade": "yellow_mtp_decode_length_ladder_recovered",
+        "second_failure_stops_task": True,
+        "second_failure_requires_server_local_root_cause_analysis": True,
+        "server_may_self_patch_after_failure": False,
+    }
+    assert workload["attempt_result_schema"]["fields"] == [
+        "slot_id",
+        "output_tokens",
+        "attempt_index",
+        "request_body_sha256",
+        "status",
+        "http_status",
+        "prompt_tokens",
+        "generated_token_count",
+        "streamed_token_count",
+        "finish_reason",
+        "saw_done",
+        "health_before",
+        "health_after",
+        "request_wall_ms_diagnostic_only",
+        "metrics_before",
+        "metrics_after",
+        "metrics_delta",
+        "mtp_activity_evidence",
+        "retry_recovery",
+    ]
+    assert workload["acceptance"]["green_grade"] == (
+        "green_mtp_decode_length_ladder_stable"
+    )
+    assert workload["acceptance"]["green_requires_first_attempt_successes"] == 6
+    assert workload["acceptance"]["yellow_recovered_grade"] == (
+        "yellow_mtp_decode_length_ladder_recovered"
+    )
+    assert workload["acceptance"]["yellow_recovered_requires_cleanup"] == "clean"
+    assert workload["acceptance"]["yellow_log_only_grade"] == (
+        "yellow_mtp_decode_length_success_activity_log_only"
+    )
+    assert workload["acceptance"]["yellow_log_only_requires_cleanup"] == "clean"
+    assert workload["acceptance"]["cleanup_failure_grade"] == "red_cleanup_incomplete"
+    assert workload["acceptance"]["red_grade"] == (
+        "red_mtp_decode_length_slot_failed_after_retry"
+    )
+    assert workload["acceptance"]["prior_4096_64_green_remains_valid"] is True
+    assert workload["acceptance"]["official_baseline_after_green"] is False
+
+
+def test_server_handoff_contains_only_the_p6_1l_decode_length_ladder_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
     assert (
         "task_id: "
-        "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713"
+        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713"
         in handoff
     )
+    assert handoff.count("## 当前唯一任务：") == 1
+    assert "## 当前唯一任务：P6.1L MTP decode-length ladder" in handoff
+    assert "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713" in handoff
     assert '"http://127.0.0.1:7000/v1/completions"' in handoff
     assert '"http://127.0.0.1:7000/v1/chat/completions"' not in handoff
-    assert "PRIOR_RESULT_DIR=" not in handoff
-    assert (
-        'PRIOR_FAILURE_EXCERPT="${REPO_ROOT}/工作记录与进度笔记本/'
-        "runtime_trace_smokes/"
-        "p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712/"
-        'reference_mtp_maxseq16/first_failure_excerpt.txt"'
-        in handoff
-    )
-    assert "prior_failure_gate.txt" in handoff
-    assert "prior_failure_excerpt_sha256.txt" in handoff
     assert "execution_codebase: main-readonly-with-task-local-overlay" in handoff
     assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
     assert "SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local" in handoff
@@ -684,18 +878,29 @@ def test_server_handoff_contains_only_the_p6_1r_bounded_mtp_repair_retry2_task()
     assert "不得修改 base conda environment" in handoff
     assert "PATCH_ATTEMPTS_MAX=1" in handoff
     assert "SERVER_LIFECYCLES_MAX=1" in handoff
-    assert "REQUESTS_MAX=1" in handoff
+    assert "PLANNED_SLOTS=6" in handoff
+    assert "ATTEMPTS_MAX=12" in handoff
+    assert "RETRIES_MAX=6" in handoff
     assert "CONCURRENCY=1" in handoff
     assert '\"method\":\"mtp\",\"num_speculative_tokens\":1' in handoff
     assert "positions_cpu_none_type_not_subscriptable" in handoff
-    assert "stop_after_first_post_patch_failure" in handoff
     assert "不得做第二个 patch" in handoff
     assert "不得使用 eager fallback" in handoff
-    assert "green_mtp_minimal_request_success" in handoff
-    assert "yellow_mtp_graph_capture_advanced_new_first_failure" in handoff
-    assert "red_same_positions_cpu_failure" in handoff
+    assert "green_mtp_decode_length_ladder_stable" in handoff
+    assert "yellow_mtp_decode_length_ladder_recovered" in handoff
+    assert "yellow_mtp_decode_length_success_activity_log_only" in handoff
+    assert "red_mtp_decode_length_slot_failed_after_retry" in handoff
+    assert "audit_exit=$?" in handoff
+    assert 'printf \'%s\\n\' "${audit_exit}" > "${RESULT_DIR}/retry2_raw_audit_exit_code.txt"' in handoff
+    cleanup_grade = 'elif cleanup != "clean":\n    grade = "red_cleanup_incomplete"'
+    recovered_grade = 'elif retries > 0:\n    grade = "yellow_mtp_decode_length_ladder_recovered"'
+    assert handoff.index(cleanup_grade) < handoff.index(recovered_grade)
     assert "request_payload.json" in handoff
     assert "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1" in handoff
+    assert "output512_slot1" in handoff
+    assert "output1024_slot3" in handoff
+    assert "512×3 → 1024×3" in handoff
+    assert "无隐藏 warmup" in handoff
     assert "status --porcelain --untracked-files=no" in handoff
     assert "不得 restore/reset/stash" in handoff
     assert "不得 commit 或 push" in handoff
@@ -704,54 +909,60 @@ def test_server_handoff_contains_only_the_p6_1r_bounded_mtp_repair_retry2_task()
     assert "selected_method: none" in handoff
     assert "当前未选择 `email`、`upload-api` 或 `server-local`" in handoff
     assert 'test "${total_bytes}" -le 71680' in handoff
-    assert "不得自动进入 128K" in handoff
+    assert "不得自动进入 128K context ladder" in handoff
     assert "p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713" in handoff
     assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
     assert "collect-vllm-ascend-observations" not in handoff
     assert "build-vllm-ascend-observe-bundle" not in handoff
 
 
-def test_p6_1r_retry2_captures_bounded_http_error_evidence():
+def test_p6_1l_captures_bounded_request_errors_without_generated_content():
     workload = load_yaml(
-        BENCHMARK_DIR / "workloads" / "p6_1r_bounded_mtp_reference_repair.yaml"
+        BENCHMARK_DIR / "workloads" / "p6_1l_mtp_decode_length_ladder.yaml"
     )
-    assert workload["request_error_capture"] == {
-        "http_error_status": True,
-        "response_body_bytes_max": 8192,
-        "response_body_encoding": "utf-8-replace",
-        "raw_request_payload_retained": False,
-        "generated_text_retained": False,
-        "token_ids_retained": False,
-    }
+    assert workload["request_protocol"]["http_error_body_bytes_max"] == 8192
+    assert workload["request_protocol"]["generated_text_retained"] is False
+    assert workload["request_protocol"]["token_ids_retained"] is False
+    assert workload["attempt_result_schema"]["generated_text_field_forbidden"] is True
+    assert workload["attempt_result_schema"]["token_ids_field_forbidden"] is True
 
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
     assert "import urllib.error" in handoff
     assert "except urllib.error.HTTPError as exc:" in handoff
     assert "HTTP_ERROR_BODY_MAX_BYTES = 8192" in handoff
-    assert "body = exc.read(HTTP_ERROR_BODY_MAX_BYTES + 1)" in handoff
-    assert '"request_error.json"' in handoff
-    assert "request_error.json              # 仅 HTTPError 时" in handoff
+    assert "body_error = exc.read(HTTP_ERROR_BODY_MAX_BYTES + 1)" in handoff
+    assert 'result_dir / "request_errors"' in handoff
+    assert '"generated_text_retained": False' in handoff
+    assert '"token_ids_retained": False' in handoff
 
 
-def test_p6_1r_retry2_uses_hash_based_overlay_gate_and_request_first_failure():
+def test_p6_1l_uses_hash_based_overlay_and_health_idle_retry_gate():
     workload = load_yaml(
-        BENCHMARK_DIR / "workloads" / "p6_1r_bounded_mtp_reference_repair.yaml"
+        BENCHMARK_DIR / "workloads" / "p6_1l_mtp_decode_length_ladder.yaml"
     )
-    assert workload["overlay_validation"] == {
+    assert workload["repair_artifact"] == {
+        "path": (
+            "benchmarks/deepseek_v4_flash/patches/"
+            "vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch"
+        ),
+        "patch_sha256": (
+            "75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1"
+        ),
         "package_import_required": True,
         "proposer_module_import_required": False,
         "package_root_from_overlay": True,
-        "patched_overlay_sha256": (
+        "patched_proposer_sha256": (
             "7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02"
         ),
-        "unchanged_base_sha256": (
+        "unchanged_base_proposer_sha256": (
             "0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb"
         ),
+        "task_local_overlay_only": True,
+        "base_environment_mutation": False,
+        "server_local_worktree_mutation": False,
+        "changed_files": 1,
+        "changed_lines": 1,
     }
-    assert workload["failure_evidence"]["first_failure_source_priority"] == [
-        "request_error",
-        "server_log",
-    ]
 
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
     assert 'importlib.import_module("vllm_ascend")' in handoff
@@ -759,4 +970,10 @@ def test_p6_1r_retry2_uses_hash_based_overlay_gate_and_request_first_failure():
     assert '"proposer_module_imported": False' in handoff
     assert '"overlay_proposer_sha256"' in handoff
     assert '"base_proposer_sha256"' in handoff
-    assert handoff.index("if request_error_path.exists():") < handoff.index("elif start is not None:")
+    assert 'old_hash != record["request_body_sha256"]' in handoff
+    assert "fresh_health == 200" in handoff
+    assert 'idle_metrics["request_gauges_available"]' in handoff
+    assert 'idle_metrics["num_requests_running"] == 0' in handoff
+    assert 'idle_metrics["num_requests_waiting"] == 0' in handoff
+    assert 'stop_reason = "slot_failed_twice"' in handoff
+    assert "retry_count += 1" in handoff
