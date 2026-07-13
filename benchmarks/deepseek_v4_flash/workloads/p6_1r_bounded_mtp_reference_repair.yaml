@@ -2,18 +2,20 @@ schema_version: 1
 workload_id: p6_1r_deepseek_v4_flash_bounded_mtp_reference_repair
 date: "2026-07-13"
 purpose: repair_the_first_mtp_dsa_cp_graph_capture_failure_with_one_bounded_task_local_overlay_attempt
-task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713
+task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
 
 retry_lineage:
-  attempt: 2
-  retry_label: retry1
-  parent_task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713
-  parent_result: blocked_repo
-  parent_block_point: section3_prior_evidence_path
-  parent_patch_attempts: 0
-  parent_server_lifecycles: 0
-  parent_requests: 0
-  correction: use_exact_prior_failure_excerpt_path
+  attempt: 3
+  retry_label: retry2
+  parent_task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713
+  parent_result: yellow_mtp_graph_capture_advanced_new_first_failure
+  parent_server_ready: true
+  parent_original_positions_cpu_failure_absent: true
+  parent_http_status: 400
+  parent_patch_attempts: 1
+  parent_server_lifecycles: 1
+  parent_requests: 1
+  correction: completion_endpoint_error_capture_and_overlay_gate
 
 stage_contract:
   stage: P6.1R
@@ -96,6 +98,7 @@ runtime_fixed:
     num_speculative_tokens: 1
 
 request_fixed:
+  endpoint: /v1/completions
   input_tokens: 4096
   output_tokens: 64
   temperature: 0.0
@@ -107,6 +110,26 @@ request_fixed:
   payload_server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
   payload_bytes: 19487
   payload_sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+
+request_error_capture:
+  http_error_status: true
+  response_body_bytes_max: 8192
+  response_body_encoding: utf-8-replace
+  raw_request_payload_retained: false
+  generated_text_retained: false
+  token_ids_retained: false
+
+overlay_validation:
+  package_import_required: true
+  proposer_module_import_required: false
+  package_root_from_overlay: true
+  patched_overlay_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+  unchanged_base_sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+
+failure_evidence:
+  first_failure_source_priority:
+    - request_error
+    - server_log
 
 validation_plan:
   read_only_diagnostic_passes: 1
@@ -163,3 +186,4 @@ boundaries:
   - Green validates only one MTP 4096+64 request and does not establish the official 128K reference baseline.
   - Any new first failure is evidence to report, not authorization for a second patch.
   - The original environment, installed site-packages, both Git worktrees, checkpoint and payload remain unchanged.
+  - Retry2 corrects only the endpoint, bounded HTTPError evidence, first-failure priority and overlay validation gate; it does not introduce a second plugin patch.

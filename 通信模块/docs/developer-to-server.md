@@ -1,9 +1,9 @@
 # Developer to Server
 
-## 当前唯一任务：P6.1R bounded MTP reference repair retry1
+## 当前唯一任务：P6.1R bounded MTP reference repair retry2
 
 ```text
-task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713
+task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
 execution_codebase: main-readonly-with-task-local-overlay
 ASCEND_RT_VISIBLE_DEVICES: 0,1,2,3,4,5,6,7
 claim_boundary: mtp_minimal_functional_repair_only
@@ -15,9 +15,11 @@ CONCURRENCY=1
 
 P6.1 任务 `p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713` 已完成：warmup 与 3/3 measured `4096+64+c1` 全部成功，最终等级为 `yellow_degraded_minimal_unprofiled_control_measured`。不得重跑 P6.0 或 P6.1 control。
 
-首次 P6.1R 任务 `p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713` 已在 overlay 前定级 `blocked_repo`：五项实质 root-cause 诊断与 source/patch/payload hash 均通过，但 handoff 的历史首错证据路径不存在。该次 patch、server lifecycle、request 实际次数为 `0/0/0`。服务器报告实际 excerpt 位于本 retry 固定的精确路径并匹配全部三项首错字符串。本轮只修正该路径并建立新 task/result lineage；原 patch、runtime、资源、请求和停止边界全部不变。
+首次 P6.1R 任务 `p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713` 已在 overlay 前定级 `blocked_repo`，patch/lifecycle/request=`0/0/0`。retry1 `p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713` 修正历史 excerpt 路径后完成 patch/lifecycle/request=`1/1/1`：单行 overlay 生效，服务完成 MTP graph capture 并 `/health=200`，原 `positions_cpu_none_type_not_subscriptable` 首错消失；唯一 completion-style payload 被误发到 `/v1/chat/completions` 后 HTTP 400，cleanup=`clean`，最终等级为 `yellow_mtp_graph_capture_advanced_new_first_failure`。HTTPError response body 未保存，回传的 first-failure excerpt 仅含停机期 TBE 异常，因此不能把该 HTTP 400 解释为新的 MTP engine 失败。
 
-本轮只修复首轮 MTP graph capture 的第一个确定性错误：MTP proposer 的 dummy `AscendCommonAttentionMetadata` 没有填 `positions_cpu`，而同版本 DSA-CP builder 在 `dsa_cp.py:280` 无条件执行 `common_attn_metadata.positions_cpu[:num_input_tokens]`，因此八个 worker 同点报 `positions_cpu_none_type_not_subscriptable`。
+本轮建立独立 retry2 task/result lineage，不复用 retry1 目录。patch、server command、runtime、模型、NPU、payload bytes/hash、MTP 参数和 `4096+64+c1` 请求预算全部不变；仅把 endpoint 修正为此前同 payload 已成功使用的 `/v1/completions`，有界捕获 HTTPError status/body，让首错证据优先采用 request error，并正式使用 package root + patched overlay hash + unchanged base hash 校验。retry1 中 proposer 直接 import 命中了 base/overlay 均存在的 circular import，本轮不得再使用该已知不稳定 gate。
+
+既有单行 patch 仍只修复首轮 MTP graph capture 的第一个确定性错误：MTP proposer 的 dummy `AscendCommonAttentionMetadata` 没有填 `positions_cpu`，而同版本 DSA-CP builder 在 `dsa_cp.py:280` 无条件执行 `common_attn_metadata.positions_cpu[:num_input_tokens]`，因此八个 worker 同点报 `positions_cpu_none_type_not_subscriptable`。retry2 只是重新在新的 task-local overlay 应用同一 patch，不得开发或尝试第二个 plugin patch。
 
 官方上游 PR <https://github.com/vllm-project/vllm-ascend/pull/11062> / commit `1930088f960aba65eeaae82e9617d090283edc1f` 为 DSV4 MTP graph 补充了 proposer dummy-run 参数，其中包含本轮选择的 `positions_cpu` 字段；但上游声明测试基线是 vLLM `0.23.0`，不是当前 `0.22.1rc1`。因此本轮只允许把该单字段、单行 hunk 应用到 task-local overlay；不允许完整 cherry-pick、版本升级或宣称上游已验证当前 backport。
 
@@ -40,7 +42,7 @@ cudagraph: FULL_DECODE_ONLY
 max_model_len: 135168
 max_num_batched_tokens: 4096
 max_num_seqs: 1
-request: one 4096 input + fixed 64 output, concurrency=1, unprofiled
+request: POST /v1/completions, one 4096 input + fixed 64 output, concurrency=1, unprofiled
 ```
 
 固定 payload：
@@ -78,7 +80,7 @@ set -euo pipefail
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local
 SERVER_LOCAL_BRANCH=server-local/runtime-adaptations
-TASK_ID=p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713
+TASK_ID=p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
 RESULT_DIR="${REPO_ROOT}/server_local/${TASK_ID}"
 OVERLAY_ROOT="${RESULT_DIR}/overlay_root"
 ENV_PREFIX=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
@@ -167,7 +169,7 @@ checks = {
     "model_compress_ratios_nonempty": bool(config.get("compress_ratios")),
 }
 result = {
-    "task_id": "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713",
+    "task_id": "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713",
     "historical_failure": "positions_cpu_none_type_not_subscriptable",
     "upstream_commit": "1930088f960aba65eeaae82e9617d090283edc1f",
     "upstream_tested_vllm": "0.23.0",
@@ -186,7 +188,7 @@ PY
 
 ## 4. 创建并验证 task-local overlay
 
-base conda environment 和两个 Git worktree 全部保持不变。overlay 可占用较大 server-local 空间，但不得列入外发候选。
+base conda environment 和两个 Git worktree 全部保持不变。overlay 可占用较大 server-local 空间，但不得列入外发候选。不得直接 import `vllm_ascend.spec_decode.llm_base_proposer`；该路径在 retry1 已确认会命中既存 circular import。正式 gate 为 `vllm_ascend` package root 来自 overlay、overlay proposer 命中 patched hash、base proposer 仍命中原 hash。
 
 ```bash
 set -euo pipefail
@@ -213,27 +215,36 @@ export PYTHONPATH="${OVERLAY_ROOT}:${CANN_GENERATED_PYTHONPATH}"
 export VLLM_PLUGINS=ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
 export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 
-"${PYTHON_BIN}" - "${OVERLAY_ROOT}" "${RESULT_DIR}/overlay_import.json" <<'PY'
+"${PYTHON_BIN}" - "${OVERLAY_ROOT}" "${BASE_PROPOSER}" "${RESULT_DIR}/overlay_import.json" <<'PY'
+import hashlib
 import importlib
 import json
 import sys
 from pathlib import Path
 
 overlay = Path(sys.argv[1]).resolve()
-output = Path(sys.argv[2])
+base_proposer = Path(sys.argv[2]).resolve()
+output = Path(sys.argv[3])
 package = importlib.import_module("vllm_ascend")
-proposer = importlib.import_module("vllm_ascend.spec_decode.llm_base_proposer")
 package_root = Path(package.__file__).resolve()
-proposer_file = Path(proposer.__file__).resolve()
+overlay_proposer = overlay / "vllm_ascend/spec_decode/llm_base_proposer.py"
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
 result = {
     "package_root": str(package_root),
-    "proposer_file": str(proposer_file),
     "package_from_overlay": package_root.is_relative_to(overlay),
-    "proposer_from_overlay": proposer_file.is_relative_to(overlay),
+    "proposer_module_imported": False,
+    "overlay_proposer": str(overlay_proposer),
+    "overlay_proposer_sha256": sha256(overlay_proposer),
+    "base_proposer": str(base_proposer),
+    "base_proposer_sha256": sha256(base_proposer),
 }
 output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 assert result["package_from_overlay"]
-assert result["proposer_from_overlay"]
+assert result["overlay_proposer_sha256"] == "7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02"
+assert result["base_proposer_sha256"] == "0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb"
 PY
 ```
 
@@ -256,7 +267,7 @@ test "${RESOURCE_GATE}" = pass
 
 ## 6. 唯一 MTP lifecycle 与唯一请求
 
-只允许以下 command。与冻结 no-MTP cell 的唯一功能差异是 task-local overlay 和 `--speculative-config`；不得添加 `--enforce-eager`，不得改变 capture size、context、并发或 sampling。
+只允许以下 command。与冻结 no-MTP cell 的唯一功能差异是 task-local overlay 和 `--speculative-config`；不得添加 `--enforce-eager`，不得改变 capture size、context、并发或 sampling。唯一请求必须发往 `/v1/completions`；不得改回 chat endpoint。若 HTTPError，最多保留 8192 bytes response body 到 `request_error.json`，不得保存或回传 request payload、generated text 或 token IDs。
 
 ```bash
 set -euo pipefail
@@ -320,9 +331,11 @@ if [ "${ready_exit}" -eq 0 ]; then
   "${PYTHON_BIN}" - "${PAYLOAD_PATH}" "${RESULT_DIR}/request_result.json" <<'PY'
 import json
 import sys
+import urllib.error
 import urllib.request
 from pathlib import Path
 
+HTTP_ERROR_BODY_MAX_BYTES = 8192
 payload_path = Path(sys.argv[1])
 output_path = Path(sys.argv[2])
 payload = json.loads(payload_path.read_text(encoding="utf-8"))
@@ -331,7 +344,7 @@ payload["stream_options"] = {"include_usage": True}
 payload["return_token_ids"] = True
 
 request = urllib.request.Request(
-    "http://127.0.0.1:7000/v1/chat/completions",
+    "http://127.0.0.1:7000/v1/completions",
     data=json.dumps(payload, separators=(",", ":")).encode("utf-8"),
     headers={"Content-Type": "application/json"},
     method="POST",
@@ -341,7 +354,29 @@ streamed = 0
 usage = None
 finish_reason = None
 saw_done = False
-with urllib.request.urlopen(request, timeout=1800) as response:
+try:
+    response_context = urllib.request.urlopen(request, timeout=1800)
+except urllib.error.HTTPError as exc:
+    body = exc.read(HTTP_ERROR_BODY_MAX_BYTES + 1)
+    bounded_body = body[:HTTP_ERROR_BODY_MAX_BYTES]
+    error_result = {
+        "status": "http_error",
+        "http_status": exc.code,
+        "reason": str(exc.reason),
+        "response_body": bounded_body.decode("utf-8", errors="replace"),
+        "response_body_bytes_retained": len(bounded_body),
+        "response_body_truncated": len(body) > HTTP_ERROR_BODY_MAX_BYTES,
+        "raw_request_payload_retained": False,
+        "generated_text_retained": False,
+        "token_ids_retained": False,
+    }
+    output_path.with_name("request_error.json").write_text(
+        json.dumps(error_result, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    raise SystemExit(3)
+
+with response_context as response:
     status = response.status
     for raw in response:
         line = raw.decode("utf-8").strip()
@@ -430,7 +465,7 @@ fi
 
 ## 8. 首错提取、分级与结果摘要
 
-从 `vllm_server.log` 只提取最多 200 行围绕首个 traceback 的小 excerpt，不外发 raw log。分级必须互斥：
+首错证据优先取 `request_error.json`；仅当它不存在时，才从 `vllm_server.log` 提取最多 200 行围绕首个 traceback 的小 excerpt。不得再把停机期 TBE 后台异常优先解释为 request 首错，不外发 raw log。分级必须互斥：
 
 ```bash
 "${PYTHON_BIN}" - "${RESULT_DIR}" <<'PY'
@@ -444,10 +479,21 @@ lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines() if l
 failure_markers = ("Traceback (most recent call last):", " ERROR ", "RuntimeError:", "TypeError:")
 start = next((i for i, line in enumerate(lines) if any(marker in line for marker in failure_markers)), None)
 excerpt_path = result_dir / "first_failure_excerpt.txt"
-if start is not None:
+request_error_path = result_dir / "request_error.json"
+if request_error_path.exists():
+    request_error_lines = request_error_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    excerpt_path.write_text(
+        "\n".join(["source=request_error.json", *request_error_lines[:200]]) + "\n",
+        encoding="utf-8",
+    )
+    first_failure_source = "request_error"
+elif start is not None:
     excerpt_path.write_text("\n".join(lines[start : start + 200]) + "\n", encoding="utf-8")
-elif excerpt_path.exists():
-    excerpt_path.unlink()
+    first_failure_source = "server_log"
+else:
+    if excerpt_path.exists():
+        excerpt_path.unlink()
+    first_failure_source = "none"
 
 def read_int(name: str, default: int) -> int:
     path = result_dir / name
@@ -476,6 +522,7 @@ else:
             "server_ready_exit_code": ready_exit,
             "request_exit_code": request_exit,
             "cleanup_status": cleanup,
+            "first_failure_source": first_failure_source,
             "same_positions_cpu_failure": same_failure,
             "grade": grade,
         },
@@ -493,7 +540,7 @@ PY
 - `red_same_positions_cpu_failure`：post-patch 仍出现相同 `positions_cpu_none_type_not_subscriptable`。
 - `blocked_root_cause_not_unique_or_source_mismatch` / `blocked_patch_apply` / `blocked_repo` / `blocked_resource`：对应门失败。
 
-`result_summary.md` 必须写明：task/Git/runtime/model/NPU、parent task 的 `blocked_repo` 与 `0/0/0` 计数、修正后的历史 excerpt 精确路径和 SHA-256、三行 `prior_failure_gate.txt`、历史首错、官方 upstream PR/commit 与 vLLM 0.23.0 测试边界、五项诊断门、base/patch/patched hash、overlay import root、patch/lifecycle/request 实际次数、server-ready/request/cleanup、post-patch 第一失败点和最终 grade。
+`result_summary.md` 必须写明：task/Git/runtime/model/NPU；首次 attempt 的 `blocked_repo` 与 `0/0/0`；parent retry1 的 yellow、server-ready、原错消失、HTTP 400 与 `1/1/1`；历史 excerpt 精确路径/SHA-256/三行 gate；官方 upstream PR/commit 与 vLLM 0.23.0 测试边界；五项诊断门；base/patch/patched hash；package root + overlay/base hash gate 且 proposer module 未直接 import；固定 `/v1/completions`；patch/lifecycle/request 实际次数；server-ready/request/cleanup；HTTPError 时的 status、response-body 截断状态与 `request_error.json`；首错来源和最终 grade。
 
 即使 green，也必须写：
 
@@ -514,6 +561,7 @@ diagnostic.json
 overlay_import.json
 grading_inputs.json
 request_result.json              # 仅成功启动并发送请求时
+request_error.json              # 仅 HTTPError 时
 first_failure_excerpt.txt        # 仅失败/blocked 时
 server_command_sha256.txt        # 仅启动 server 时
 payload_sha256.txt
@@ -531,7 +579,7 @@ summary_path: <绝对路径>
 attachment_scope: <精确候选列表>
 total_bytes: <精确值>
 set_sha256: <候选 path/bytes/hash 清单 SHA-256>
-sensitivity: internal_mtp_functional_repair_selected_error_lines_no_generated_text_or_token_ids
+sensitivity: internal_mtp_functional_repair_bounded_http_error_or_selected_error_lines_no_payload_generated_text_or_token_ids
 available_methods: email, upload-api, server-local
 recommended_method: upload-api
 recommendation_reason: one_named_multi_file_session_preserves_the_exact_small_package_and_hashes
@@ -543,7 +591,7 @@ transfer_status: waiting_for_user_choice
 
 ```bash
 candidates=()
-for relative_path in result_summary.md diagnostic.json overlay_import.json grading_inputs.json request_result.json first_failure_excerpt.txt server_command_sha256.txt payload_sha256.txt prior_failure_gate.txt prior_failure_excerpt_sha256.txt cleanup_status.txt; do
+for relative_path in result_summary.md diagnostic.json overlay_import.json grading_inputs.json request_result.json request_error.json first_failure_excerpt.txt server_command_sha256.txt payload_sha256.txt prior_failure_gate.txt prior_failure_excerpt_sha256.txt cleanup_status.txt; do
   if [ -f "${RESULT_DIR}/${relative_path}" ]; then
     candidates+=("${relative_path}")
   fi

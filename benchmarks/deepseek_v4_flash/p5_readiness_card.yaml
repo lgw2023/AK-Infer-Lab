@@ -181,7 +181,8 @@ boundaries:
   - P6.0 completed with two new identical lifecycle successes and grade yellow_degraded_baseline_stabilized.
   - P6.1 minimal control completed with one warmup and three measured 4096+64+c1 requests, grade yellow_degraded_minimal_unprofiled_control_measured.
   - The first P6.1R attempt stopped blocked_repo before overlay because its prior-evidence path did not exist; all substantive root-cause and hash gates passed and patch/lifecycle/request counts remained 0/0/0.
-  - The active P6.1R retry1 uses the exact prior-failure excerpt path and allows one read-only diagnosis and one conditional task-local overlay patch followed by at most one MTP 4096+64+c1 request.
+  - P6.1R retry1 applied the one-line overlay, reached server-ready and removed the original positions_cpu graph-capture failure; its only request returned HTTP 400 because the completion payload was sent to the chat endpoint, so MTP 4096+64 remains unvalidated.
+  - The active P6.1R retry2 preserves the same patch, runtime, payload and one-lifecycle/one-request budget while using /v1/completions, bounded HTTPError capture, request-first failure evidence and a package-root-plus-hash overlay gate.
   - The full upstream backport, second patch, remaining P6.1 pilots and matrix, 128K, P8.1 server validation, profiler, offload and runtime upgrades remain unauthorized.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:

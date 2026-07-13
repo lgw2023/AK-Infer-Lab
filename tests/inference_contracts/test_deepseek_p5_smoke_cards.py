@@ -569,20 +569,22 @@ def test_p6_1r_bounded_mtp_repair_has_one_diagnostic_and_one_conditional_validat
     )
 
     assert workload["task_id"] == (
-        "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713"
+        "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713"
     )
     assert workload["retry_lineage"] == {
-        "attempt": 2,
-        "retry_label": "retry1",
+        "attempt": 3,
+        "retry_label": "retry2",
         "parent_task_id": (
-            "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_2026_0713"
+            "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713"
         ),
-        "parent_result": "blocked_repo",
-        "parent_block_point": "section3_prior_evidence_path",
-        "parent_patch_attempts": 0,
-        "parent_server_lifecycles": 0,
-        "parent_requests": 0,
-        "correction": "use_exact_prior_failure_excerpt_path",
+        "parent_result": "yellow_mtp_graph_capture_advanced_new_first_failure",
+        "parent_server_ready": True,
+        "parent_original_positions_cpu_failure_absent": True,
+        "parent_http_status": 400,
+        "parent_patch_attempts": 1,
+        "parent_server_lifecycles": 1,
+        "parent_requests": 1,
+        "correction": "completion_endpoint_error_capture_and_overlay_gate",
     }
     assert workload["stage_contract"] == {
         "stage": "P6.1R",
@@ -614,6 +616,7 @@ def test_p6_1r_bounded_mtp_repair_has_one_diagnostic_and_one_conditional_validat
         "method": "mtp",
         "num_speculative_tokens": 1,
     }
+    assert workload["request_fixed"]["endpoint"] == "/v1/completions"
     assert workload["validation_plan"] == {
         "read_only_diagnostic_passes": 1,
         "task_local_overlay_patch_attempts_max": 1,
@@ -643,14 +646,16 @@ def test_p6_1r_bounded_mtp_repair_has_one_diagnostic_and_one_conditional_validat
     assert patch.count("diff --git ") == 1
 
 
-def test_server_handoff_contains_only_the_p6_1r_bounded_mtp_repair_retry_task():
+def test_server_handoff_contains_only_the_p6_1r_bounded_mtp_repair_retry2_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
     assert (
         "task_id: "
-        "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713"
+        "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713"
         in handoff
     )
+    assert '"http://127.0.0.1:7000/v1/completions"' in handoff
+    assert '"http://127.0.0.1:7000/v1/chat/completions"' not in handoff
     assert "PRIOR_RESULT_DIR=" not in handoff
     assert (
         'PRIOR_FAILURE_EXCERPT="${REPO_ROOT}/工作记录与进度笔记本/'
@@ -704,3 +709,54 @@ def test_server_handoff_contains_only_the_p6_1r_bounded_mtp_repair_retry_task():
     assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
     assert "collect-vllm-ascend-observations" not in handoff
     assert "build-vllm-ascend-observe-bundle" not in handoff
+
+
+def test_p6_1r_retry2_captures_bounded_http_error_evidence():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1r_bounded_mtp_reference_repair.yaml"
+    )
+    assert workload["request_error_capture"] == {
+        "http_error_status": True,
+        "response_body_bytes_max": 8192,
+        "response_body_encoding": "utf-8-replace",
+        "raw_request_payload_retained": False,
+        "generated_text_retained": False,
+        "token_ids_retained": False,
+    }
+
+    handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
+    assert "import urllib.error" in handoff
+    assert "except urllib.error.HTTPError as exc:" in handoff
+    assert "HTTP_ERROR_BODY_MAX_BYTES = 8192" in handoff
+    assert "body = exc.read(HTTP_ERROR_BODY_MAX_BYTES + 1)" in handoff
+    assert '"request_error.json"' in handoff
+    assert "request_error.json              # 仅 HTTPError 时" in handoff
+
+
+def test_p6_1r_retry2_uses_hash_based_overlay_gate_and_request_first_failure():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1r_bounded_mtp_reference_repair.yaml"
+    )
+    assert workload["overlay_validation"] == {
+        "package_import_required": True,
+        "proposer_module_import_required": False,
+        "package_root_from_overlay": True,
+        "patched_overlay_sha256": (
+            "7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02"
+        ),
+        "unchanged_base_sha256": (
+            "0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb"
+        ),
+    }
+    assert workload["failure_evidence"]["first_failure_source_priority"] == [
+        "request_error",
+        "server_log",
+    ]
+
+    handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
+    assert 'importlib.import_module("vllm_ascend")' in handoff
+    assert 'importlib.import_module("vllm_ascend.spec_decode.llm_base_proposer")' not in handoff
+    assert '"proposer_module_imported": False' in handoff
+    assert '"overlay_proposer_sha256"' in handoff
+    assert '"base_proposer_sha256"' in handoff
+    assert handoff.index("if request_error_path.exists():") < handoff.index("elif start is not None:")

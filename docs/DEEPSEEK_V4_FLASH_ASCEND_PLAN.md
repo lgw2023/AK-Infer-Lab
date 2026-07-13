@@ -52,7 +52,7 @@ MindIE 是 P6/P8 的候选对照底座，不是当前前置条件。现有服务
 NPU 0-7 已获用户明确授权。首轮 context-ladder 任务在 MTP graph capture 失败，no-MTP cell 已完成 3 次连续 `4096+64` 成功，修复前 minimal control 的 warmup 与 3/3 measured 也已通过；下一项正式主线任务为：
 
 ```text
-p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713
+p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
 ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 TP=8, EP=enabled
 ```
@@ -62,10 +62,10 @@ mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门
 当前 P6.1R bounded MTP repair 任务：
 
 ```text
-p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry1_2026_0713
+p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
 ```
 
-server-local Git 管理最终验收已完成。P6.0 已以 `yellow_degraded_baseline_stabilized` 收口，P6.1 minimal control 已以 `yellow_degraded_minimal_unprofiled_control_measured` 收口。P6.1R 首次执行因 handoff 的历史 excerpt 路径不存在而在 overlay 前 `blocked_repo`，实质诊断均通过且 patch/lifecycle/request 为 `0/0/0`。原 P8.1 handoff 尚未下发、未执行，继续延后为 preflight；当前唯一 retry1 handoff 只修正为精确历史 excerpt 路径，然后只读验证 MTP proposer/DSA-CP `positions_cpu` 接口错位，再有条件应用 task-local 单行 overlay，并最多执行一个 MTP `4096+64+c1`。
+server-local Git 管理最终验收已完成。P6.0 已以 `yellow_degraded_baseline_stabilized` 收口，P6.1 minimal control 已以 `yellow_degraded_minimal_unprofiled_control_measured` 收口。P6.1R 首次执行因历史 excerpt 路径不存在而在 overlay 前 `blocked_repo`；retry1 的同一单行 overlay 随后跨过原 `positions_cpu` graph-capture 首错并使 MTP 服务 ready，但唯一 completion payload 被误发到 chat endpoint 后 HTTP 400。原 P8.1 handoff 尚未下发、未执行，继续延后为 preflight；当前唯一 retry2 handoff 只修正 `/v1/completions`、有界 HTTPError 留证、request-first 首错和 package-root+hash overlay gate，原 patch/runtime/payload 及一个 lifecycle/一个 `4096+64+c1` 请求预算不变。
 
 参考配置：
 
