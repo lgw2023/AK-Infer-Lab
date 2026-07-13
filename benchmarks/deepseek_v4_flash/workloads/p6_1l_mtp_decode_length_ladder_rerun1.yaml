@@ -223,6 +223,49 @@ stop_policy:
   no_automatic_follow_up_task: true
 
 execution_state:
-  server_handoff: planned
-  server_result: pending
-  transfer_method: unselected_server_local_only
+  server_handoff: completed
+  server_result: green_mtp_decode_length_ladder_revalidated
+  transfer_method: server_local_result_package_received
+
+execution_result:
+  server_git_head: bef2d8be182973c8c7c6206b14fad91d906b8efc
+  grade: green_mtp_decode_length_ladder_revalidated
+  claim_boundary: mtp_4096_decode_length_stability_revalidation_only
+  historical_lineage_audit_v2_exit_code: 0
+  historical_lineage_audit_v2_hard_conflict: false
+  structured_hard_check_count: 22
+  structured_hard_checks_all_true: true
+  summary_hard_check_count_reported: 21
+  summary_count_mismatch_effect: non_blocking_summary_typo
+  live_metrics_preflight_exit_code: 0
+  all_required_metric_names_present: true
+  all_hard_gates_pass: true
+  protocol_checks_passed: 12
+  protocol_checks_total: 12
+  measurement_checks_passed: 8
+  measurement_checks_total: 8
+  server_lifecycle_count: 1
+  planned_slots: 6
+  completed_slots: 6
+  attempt_count: 6
+  retry_count: 0
+  all_slots_first_attempt_success: true
+  generated_tokens_total: 4608
+  spec_drafts_delta_total: 2304
+  spec_draft_tokens_delta_total: 2304
+  spec_accepted_tokens_delta_total: 2304
+  counter_continuity_verified: true
+  health_and_queue_checks_passed: true
+  cleanup_status: clean
+  result_package:
+    file_count: 11
+    total_bytes: 30289
+    sorted_manifest_sha256: fb242141cc033633fb0ce5c4950da95005c7c253e239187623eafc2637c3b4fa
+  generated_text_retained: false
+  token_ids_retained: false
+  raw_artifacts_retained_server_local: true
+  official_baseline: false
+  context_128k_validated: false
+  full_p6_1_matrix_validated: false
+  optimization_gain_validated: false
+  next_task_authorized: false

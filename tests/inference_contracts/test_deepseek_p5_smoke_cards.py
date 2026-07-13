@@ -907,6 +907,45 @@ def test_p6_1l_rerun_repeats_all_six_slots_with_mandatory_metrics():
     assert workload["metrics_evidence"]["log_only_fallback_allowed"] is False
     assert workload["metrics_evidence"]["positive_draft_delta_per_success"] is True
     assert workload["metrics_evidence"]["positive_draft_token_delta_per_success"] is True
+    assert workload["execution_state"] == {
+        "server_handoff": "completed",
+        "server_result": "green_mtp_decode_length_ladder_revalidated",
+        "transfer_method": "server_local_result_package_received",
+    }
+    result = workload["execution_result"]
+    assert result["server_git_head"] == "bef2d8be182973c8c7c6206b14fad91d906b8efc"
+    assert result["grade"] == "green_mtp_decode_length_ladder_revalidated"
+    assert result["historical_lineage_audit_v2_exit_code"] == 0
+    assert result["historical_lineage_audit_v2_hard_conflict"] is False
+    assert result["structured_hard_check_count"] == 22
+    assert result["structured_hard_checks_all_true"] is True
+    assert result["summary_hard_check_count_reported"] == 21
+    assert result["summary_count_mismatch_effect"] == "non_blocking_summary_typo"
+    assert result["live_metrics_preflight_exit_code"] == 0
+    assert result["planned_slots"] == 6
+    assert result["completed_slots"] == 6
+    assert result["attempt_count"] == 6
+    assert result["retry_count"] == 0
+    assert result["generated_tokens_total"] == 4608
+    assert result["spec_drafts_delta_total"] == 2304
+    assert result["spec_draft_tokens_delta_total"] == 2304
+    assert result["spec_accepted_tokens_delta_total"] == 2304
+    assert result["cleanup_status"] == "clean"
+    assert result["result_package"] == {
+        "file_count": 11,
+        "total_bytes": 30289,
+        "sorted_manifest_sha256": (
+            "fb242141cc033633fb0ce5c4950da95005c7c253e239187623eafc2637c3b4fa"
+        ),
+    }
+    assert result["generated_text_retained"] is False
+    assert result["token_ids_retained"] is False
+    assert result["raw_artifacts_retained_server_local"] is True
+    assert result["official_baseline"] is False
+    assert result["context_128k_validated"] is False
+    assert result["full_p6_1_matrix_validated"] is False
+    assert result["optimization_gain_validated"] is False
+    assert result["next_task_authorized"] is False
 
 
 def test_p6_1l_rerun_replaces_logger_string_gate_and_closes_grading_bypass():
@@ -1000,121 +1039,52 @@ def test_p6_1l_rerun_freezes_runtime_request_retry_and_stop_boundaries():
     assert workload["stop_policy"]["no_p8_execution"] is True
 
 
-def test_server_handoff_requires_fresh_p6_1l_rerun_and_consumes_all_hard_gates():
+def test_server_handoff_contains_only_the_p6_1l_rerun_closeout_action():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    task_id = (
+    source_task_id = (
         "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
         "rerun1_2026_0713"
     )
-    assert f"task_id: {task_id}" in handoff
-    assert handoff.count("## 当前唯一任务：") == 1
-    assert "## 当前唯一任务：P6.1L-R1 完整六 slot 加固重跑" in handoff
-    assert "不得只做离线 corrected audit/grading" in handoff
-    assert "完整重跑 512×3 → 1024×3" in handoff
-    assert "historical_lineage_audit_v2.json" in handoff
-    assert "historical_lineage_audit_v2_exit_code.txt" in handoff
-    assert '"original_retry2_raw_audit_exit_code": 2' in handoff
-    assert '"exact_init_log_line_is_hard_gate": False' in handoff
-    assert '"mtp_proposer_initialized": bool(mtp_init)' not in handoff
-    assert "live_metrics_preflight.json" in handoff
-    assert "live_metrics_preflight_exit_code.txt" in handoff
-    assert "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19" in handoff
-    assert 'test "${server_command_sha256}" =' in handoff
-    assert 'mtp_activity_evidence = "required_prometheus_counter_delta_missing"' in handoff
-    assert "mtp_activity_ok = False" in handoff
-    assert "log_fallback_proves_mtp_activity" not in handoff
-    assert "yellow_mtp_decode_length_success_activity_log_only" not in handoff
-    assert '"historical_lineage_audit_v2_exit_code"' in handoff
-    assert '"live_metrics_preflight_exit_code"' in handoff
-    assert '"all_hard_gates_pass"' in handoff
-    grading_protocol = handoff.split("protocol_checks = {", 1)[1].split(
-        "measurement_checks = {", 1
-    )[0]
-    assert '"server_command_hash_frozen"' in grading_protocol
-    assert '"source_payload_hash_frozen"' in grading_protocol
-    grading_measurement = handoff.split("measurement_checks = {", 1)[1].split(
-        "hard_gate_failures = [", 1
-    )[0]
-    assert '"cleanup_clean"' in grading_measurement
+    assert f"source_result_task_id: {source_task_id}" in handoff
+    assert handoff.count("## 当前唯一服务器动作：") == 1
+    assert "## 当前唯一服务器动作：同步 P6.1L-R1 green 收口并停止" in handoff
+    assert "task_id: none" in handoff
+    assert "execution_mode: read_only_sync_and_wait_no_npu" in handoff
     assert "green_mtp_decode_length_ladder_revalidated" in handoff
-    assert "red_mtp_decode_length_metrics_incomplete" in handoff
-    assert "next_task_authorized=false" in handoff
+    assert "bef2d8be182973c8c7c6206b14fad91d906b8efc" in handoff
+    assert "next_task_authorized: false" in handoff
+    assert "不得重新执行六个 slot" in handoff
 
 
-def test_server_handoff_contains_only_the_p6_1l_rerun_task_and_frozen_runtime():
+def test_server_handoff_syncs_main_preserves_raw_evidence_and_waits():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
+    assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
+    assert 'git -C "${REPO_ROOT}" fetch origin main' in handoff
+    assert 'git -C "${REPO_ROOT}" merge --ff-only origin/main' in handoff
+    assert 'rev-parse HEAD)" = "$(git -C "${REPO_ROOT}" rev-parse origin/main)' in handoff
+    assert "status --porcelain --untracked-files=no" in handoff
+    assert "benchmarks/deepseek_v4_flash/workloads/p6_1l_mtp_decode_length_ladder_rerun1.yaml" in handoff
+    assert "工作记录与进度笔记本/05_下一步行动指导.md" in handoff
     assert (
-        "task_id: "
+        "/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/"
         "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
         "rerun1_2026_0713"
         in handoff
     )
-    assert handoff.count("## 当前唯一任务：") == 1
-    assert "## 当前唯一任务：P6.1L-R1 完整六 slot 加固重跑" in handoff
-    assert "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713" in handoff
-    assert '"http://127.0.0.1:7000/v1/completions"' in handoff
-    assert '"http://127.0.0.1:7000/v1/chat/completions"' not in handoff
-    assert "execution_codebase: main-readonly-with-task-local-overlay" in handoff
-    assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
-    assert "SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local" in handoff
-    assert "SERVER_LOCAL_BRANCH=server-local/runtime-adaptations" in handoff
-    assert "服务器专属 worktree 仍只读观察" in handoff
+    assert "保留 raw server log、raw metrics 和计数文件" in handoff
     assert "不得运行 `通信模块/server_local_git_sync.sh`" in handoff
-    assert 'branch --show-current)" = "${SERVER_LOCAL_BRANCH}"' in handoff
-    assert "server_local_head_observed.txt" in handoff
-    assert "server_local_tracked_status_observed.txt" in handoff
-    assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
-    assert "1930088f960aba65eeaae82e9617d090283edc1f" in handoff
-    assert "https://github.com/vllm-project/vllm-ascend/pull/11062" in handoff
-    assert "vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch" in handoff
-    assert "0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb" in handoff
-    assert "task-local overlay" in handoff
-    assert "不得修改 base conda environment" in handoff
-    assert "PATCH_ATTEMPTS_MAX=1" in handoff
-    assert "SERVER_LIFECYCLES_MAX=1" in handoff
-    assert "PLANNED_SLOTS=6" in handoff
-    assert "ATTEMPTS_MAX=12" in handoff
-    assert "RETRIES_MAX=6" in handoff
-    assert "CONCURRENCY=1" in handoff
-    assert '\"method\":\"mtp\",\"num_speculative_tokens\":1' in handoff
-    assert "positions_cpu_none_type_not_subscriptable" in handoff
-    assert "不得做第二个 patch" in handoff
-    assert "不得使用 eager fallback" in handoff
-    assert "green_mtp_decode_length_ladder_revalidated" in handoff
-    assert "yellow_mtp_decode_length_ladder_revalidated_with_retry" in handoff
-    assert "red_mtp_decode_length_metrics_incomplete" in handoff
-    assert "red_mtp_decode_length_ladder_revalidation_failed" in handoff
-    assert "historical_audit_exit=$?" in handoff
-    assert "historical_lineage_audit_v2_exit_code.txt" in handoff
-    cleanup_grade = 'if cleanup != "clean":\n    grade = "red_cleanup_incomplete"'
-    recovered_grade = (
-        'elif retries > 0:\n'
-        '    grade = "yellow_mtp_decode_length_ladder_revalidated_with_retry"'
-    )
-    assert handoff.index(cleanup_grade) < handoff.index(recovered_grade)
-    assert "request_payload.json" in handoff
-    assert "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1" in handoff
-    assert "output512_slot1" in handoff
-    assert "output1024_slot3" in handoff
-    assert "512×3 → 1024×3" in handoff
-    assert "无隐藏 warmup" in handoff
-    assert "status --porcelain --untracked-files=no" in handoff
-    assert "不得 restore/reset/stash" in handoff
-    assert "不得 commit 或 push" in handoff
-    assert "ours/theirs" in handoff
-    assert "recommended_method: upload-api" in handoff
-    assert "selected_method: none" in handoff
-    assert "当前未选择 `email`、`upload-api` 或 `server-local`" in handoff
-    assert 'test "${total_bytes}" -le 71680' in handoff
-    assert "不得自动进入 128K context ladder" in handoff
-    assert (
-        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_2026_0713"
-        in handoff
-    )
+    assert "不得启动 vLLM" in handoff
+    assert "不得发送模型请求" in handoff
+    assert "不得创建或修改 overlay" in handoff
+    assert "不得生成或传输新的结果包" in handoff
+    assert "同步并核对完成后停止，等待用户授权下一任务" in handoff
+    assert "/v1/completions" not in handoff
+    assert "PATCH_ATTEMPTS_MAX" not in handoff
+    assert "PLANNED_SLOTS" not in handoff
     assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
     assert "collect-vllm-ascend-observations" not in handoff
     assert "build-vllm-ascend-observe-bundle" not in handoff
@@ -1129,15 +1099,6 @@ def test_p6_1l_captures_bounded_request_errors_without_generated_content():
     assert workload["request_protocol"]["token_ids_retained"] is False
     assert workload["attempt_result_schema"]["generated_text_field_forbidden"] is True
     assert workload["attempt_result_schema"]["token_ids_field_forbidden"] is True
-
-    handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
-    assert "import urllib.error" in handoff
-    assert "except urllib.error.HTTPError as exc:" in handoff
-    assert "HTTP_ERROR_BODY_MAX_BYTES = 8192" in handoff
-    assert "body_error = exc.read(HTTP_ERROR_BODY_MAX_BYTES + 1)" in handoff
-    assert 'result_dir / "request_errors"' in handoff
-    assert '"generated_text_retained": False' in handoff
-    assert '"token_ids_retained": False' in handoff
 
 
 def test_p6_1l_uses_hash_based_overlay_and_health_idle_retry_gate():
@@ -1167,17 +1128,3 @@ def test_p6_1l_uses_hash_based_overlay_and_health_idle_retry_gate():
         "changed_files": 1,
         "changed_lines": 1,
     }
-
-    handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
-    assert 'importlib.import_module("vllm_ascend")' in handoff
-    assert 'importlib.import_module("vllm_ascend.spec_decode.llm_base_proposer")' not in handoff
-    assert '"proposer_module_imported": False' in handoff
-    assert '"overlay_proposer_sha256"' in handoff
-    assert '"base_proposer_sha256"' in handoff
-    assert 'old_hash != record["request_body_sha256"]' in handoff
-    assert "fresh_health == 200" in handoff
-    assert 'idle_metrics["request_gauges_available"]' in handoff
-    assert 'idle_metrics["num_requests_running"] == 0' in handoff
-    assert 'idle_metrics["num_requests_waiting"] == 0' in handoff
-    assert 'stop_reason = "slot_failed_twice"' in handoff
-    assert "retry_count += 1" in handoff
