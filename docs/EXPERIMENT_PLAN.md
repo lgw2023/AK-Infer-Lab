@@ -13,15 +13,15 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离让主模型 graph server ready。原生 tokenizer 与 MRO 修正后，固定 no-MTP graph cell 已完成一个 `4096+64` HTTP 200 请求，P5 因关闭 MTP 且未执行 128K ladder 被评为 YELLOW。该成功 cell 已作为 degraded runtime candidate 固结；当前正式主线只执行 P6.0 stabilization：
+NPU 0-7 已获明确授权。首轮 W8A8-MTP 八卡 P5 已完成权重加载并在 MTP+DSA-CP graph capture 失败；后续 no-MTP 隔离让主模型 graph server ready。原生 tokenizer 与 MRO 修正后，固定 no-MTP graph cell 完成首个 `4096+64` HTTP 200 请求；P6.0 又完成两个相同 fresh lifecycle，共形成 3 次连续成功，已固结为 `yellow_degraded_baseline_stabilized`。当前正式主线只执行一个最小 P6.1 unprofiled control：
 
 ```text
-p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713
+p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713
 ```
 
-server-local Git 管理最终验收已完成。先前准备的 P8.1 observe-only handoff 尚未下发、未执行，已延后为 preflight；`通信模块/docs/developer-to-server.md` 已改为上述 P6.0 任务。
+server-local Git 管理最终验收已完成。先前准备的 P8.1 observe-only handoff 尚未下发、未执行，已延后为 preflight；`通信模块/docs/developer-to-server.md` 已改为上述最小 P6.1 control 任务。
 
-mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败；no-MTP 成功把该错误收窄到 MTP drafter path。P6.0 以前序 1 次成功为第一个样本，再做 2 个完全相同的 fresh lifecycle；任一失败即停，不运行 eager、MTP、128K、P6.1、profiler、P8.1 或 offload。
+mixed checkpoint 的最终四卡诊断已关闭插件、allocator 和 ACL 路径问题，加载 46/46 分片后在 `process_weights_after_loading` 命中 `customize_dtype is not supported by the current soc version`。结合官方 MXFP4/MXFP8 hardware boundary，项目不再实现兼容 adapter 或继续 mixed runtime probe。W8A8-MTP 首轮八卡因 MTP proposer 的 `positions_cpu=None` 在 DSA-CP cudagraph capture 失败；no-MTP 成功把该错误收窄到 MTP drafter path。当前 control 只运行一个 server lifecycle、1 次 warmup 和 3 次 measured `4096+64+c1`；不扩展其他 pilot，不运行 MTP、128K、profiler、P8.1 或 offload。
 
 ## 2. 阶段依赖
 
@@ -149,7 +149,13 @@ P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化
 
 退出门：相同 command 连续成功，输出控制成立，server lifecycle 和环境无漂移。
 
+当前结果：P6.0 已以 `yellow_degraded_baseline_stabilized` 收口；仍非 official MTP/128K baseline。
+
 ### P6.1：Unprofiled Repeatability
+
+当前只授权一个修复前最小对照：固定 no-MTP degraded cell，一个 server lifecycle，1 次 warmup 后串行 3 次 measured `4K+64+c1`。warmup 不进入统计；3 个样本只报原始值和 min/median/max，不报 P95/P99、不删除 outlier。成功或失败后均停止，等待用户另行确认 MTP 修复任务。
+
+上述最小对照不等于以下三个 tracer-bullet 已授权。后续完整 P6.1 仍按原计划：
 
 先跑三个 tracer-bullet cell：
 
@@ -261,7 +267,7 @@ docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md
 - EPLB/static expert map 不等于 expert offload。
 - Expert V0 先模拟；真实 warm prefetch 必须通过 trace、bytes、load latency 和 lead-time 门。
 - SSD/NVMe 只做 cold persistence/离线恢复，不进入逐 token decode 热路径。
-- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发且已延后到 P6.0 stabilization 之后。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
+- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发，在当前最小 P6.1 control 和随后 MTP 决策序列中继续延后。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
 
 ## 8. P9：Trace-driven Hardware Sensitivity
 
@@ -300,8 +306,9 @@ simulator_validation_report.md
 
 ## 9. 当前执行顺序
 
-1. 在 server 启动前用 `DeepseekV4Tokenizer` 生成 4096 个 token ID，并以 MRO 含 DSV4 backend 作为 runtime identity 门；禁止依赖缓存包装后的顶层类名前缀。
-2. 预检与八卡健康空闲门通过后，原样启动 no-MTP TP8/EP graph server，只发送一个 `4096+64` 请求。
-3. 请求成功只冻结当前 no-MTP graph cell；MTP、128K ladder、P6 benchmark、profiler 和 offload 继续关闭。
-4. P8 baseline/adapter 仍等待至少一个 W8A8 成功请求；P7 工具链预研可继续，但不得外推 full-model runtime。
+1. P6.0 已固结 `yellow_degraded_baseline_stabilized`，不重跑。
+2. 当前只执行一个 no-MTP `4K+64+c1` minimal unprofiled control：1 次 warmup + 3 次 measured，一个 server lifecycle。
+3. 只记录原始样本和 min/median/max；`n=3` 不报 P95/P99，不删 outlier，不运行 profiler。
+4. control 结束后停止；MTP 修复、128K、其他 P6.1 pilot/matrix 和 P8.1 均需另行授权。
+5. P7 工具链预研可继续，但不得外推 full-model runtime。
 7. P9 最后消费统一 trace bundle，输出硬件优先级。

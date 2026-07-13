@@ -481,14 +481,83 @@ def test_p6_0_degraded_stabilization_repeats_only_the_exact_p5_yellow_cell():
     assert workload["stop_policy"]["no_profiler"] is True
     assert workload["stop_policy"]["no_performance_claim"] is True
     assert workload["stop_policy"]["no_p8_observer_or_adapter_execution"] is True
+    assert workload["execution_state"]["server_handoff"] == "completed"
+    assert workload["execution_state"]["server_result"] == "yellow_degraded_baseline_stabilized"
+    assert workload["execution_result"]["server_git_head"] == (
+        "bc94abcc05c79eeea249d2c87fbe465c47a5015e"
+    )
+    assert workload["execution_result"]["new_successful_lifecycles"] == 2
+    assert workload["execution_result"]["consecutive_successes_total"] == 3
+    assert workload["execution_result"]["command_drift_count"] == 0
+    assert workload["execution_result"]["environment_drift_count"] == 0
+    assert workload["execution_result"]["payload_drift_count"] == 0
+    assert workload["execution_result"]["official_baseline"] is False
+
+
+def test_p6_1_minimal_unprofiled_control_is_one_cell_with_bounded_statistics():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1_no_mtp_minimal_unprofiled_control.yaml"
+    )
+
+    assert workload["task_id"] == (
+        "p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.1",
+        "mode": "minimal_unprofiled_control",
+        "baseline_grade": "yellow_degraded_baseline_stabilized",
+        "claim_level": "controlled_benchmark_minimal_control",
+        "may_claim_official_baseline": False,
+        "full_p6_1_matrix_authorized": False,
+        "mtp_remediation_authorized": False,
+    }
+    assert workload["prior_p6_0_evidence"]["consecutive_successes_total"] == 3
+    assert workload["runtime_fixed"]["speculative_mtp"] == "disabled"
+    assert workload["runtime_fixed"]["tensor_parallel_size"] == 8
+    assert workload["runtime_fixed"]["enable_expert_parallel"] is True
+    assert workload["runtime_fixed"]["max_num_seqs"] == 1
+    assert workload["runtime_fixed"]["cudagraph_mode"] == "FULL_DECODE_ONLY"
+    assert workload["measurement_plan"] == {
+        "server_lifecycles": 1,
+        "warmup_requests": 1,
+        "measured_requests": 3,
+        "request_order": "sequential",
+        "concurrency": 1,
+        "input_tokens": 4096,
+        "output_tokens": 64,
+        "unprofiled": True,
+    }
+    assert workload["request_fixed"]["payload_sha256"] == (
+        "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1"
+    )
+    assert workload["request_fixed"]["temperature"] == 0.0
+    assert workload["request_fixed"]["ignore_eos"] is True
+    assert workload["request_fixed"]["min_tokens"] == 64
+    assert workload["request_fixed"]["max_tokens"] == 64
+    assert workload["metrics"]["client_clock"] == "time.monotonic_ns"
+    assert workload["metrics"]["exact_token_arrival_timestamps_required"] is True
+    assert workload["metrics"]["ttft_definition"] == "first_token_ns-request_start_ns"
+    assert workload["metrics"]["tpot_definition"] == (
+        "(last_token_ns-first_token_ns)/(completion_tokens-1)"
+    )
+    assert workload["metrics"]["e2el_definition"] == "request_end_ns-request_start_ns"
+    assert workload["statistics"]["report_raw_three_samples"] is True
+    assert workload["statistics"]["report_min_median_max"] is True
+    assert workload["statistics"]["outlier_removal"] is False
+    assert workload["statistics"]["report_p95_p99"] is False
+    assert workload["statistics"]["tail_percentile_reason"] == "n3_is_insufficient"
+    assert workload["stop_policy"]["no_additional_p6_1_cells"] is True
+    assert workload["stop_policy"]["no_profiler"] is True
+    assert workload["stop_policy"]["no_mtp_or_128k"] is True
+    assert workload["stop_policy"]["no_automatic_mtp_remediation"] is True
     assert workload["execution_state"]["server_handoff"] == "active"
     assert workload["execution_state"]["server_result"] == "pending"
 
 
-def test_server_handoff_contains_only_the_p6_0_stabilization_task():
+def test_server_handoff_contains_only_the_p6_1_minimal_unprofiled_control_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
-    assert "p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713" in handoff
+    assert "p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713" in handoff
     assert "execution_codebase: main-readonly" in handoff
     assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
     assert "SERVER_LOCAL_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab-server-local" in handoff
@@ -500,13 +569,22 @@ def test_server_handoff_contains_only_the_p6_0_stabilization_task():
     assert "server_local_head_observed.txt" in handoff
     assert "server_local_tracked_status_observed.txt" in handoff
     assert "ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7" in handoff
-    assert "run_lifecycle 1" in handoff
-    assert "run_lifecycle 2" in handoff
-    assert '"prior_accepted_successes": 1' in handoff
-    assert '"new_fresh_lifecycles": 2' in handoff
-    assert '"consecutive_successes_total": 3 if success' in handoff
+    assert "WARMUP_REQUESTS=1" in handoff
+    assert "MEASURED_REQUESTS=3" in handoff
+    assert "CONCURRENCY=1" in handoff
+    assert '"phase": "warmup"' in handoff
+    assert '"phase": "measured"' in handoff
+    assert "time.monotonic_ns" in handoff
+    assert "token_arrival_ns" in handoff
+    assert '"streamed_token_count": streamed_token_count == 64' in handoff
+    assert '"blocked_measurement_semantics"' in handoff
+    assert "ttft_ms" in handoff
+    assert "tpot_ms" in handoff
+    assert "e2el_ms" in handoff
+    assert "report_p95_p99: false" in handoff
+    assert "n3_is_insufficient" in handoff
     assert "yellow_degraded_baseline_stabilized" in handoff
-    assert "p6_0_stabilization_diagnostic_timing_not_performance" in handoff
+    assert "p6_1_minimal_unprofiled_control_only" in handoff
     assert "request_payload.json" in handoff
     assert "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1" in handoff
     assert "status --porcelain --untracked-files=no" in handoff
@@ -516,6 +594,12 @@ def test_server_handoff_contains_only_the_p6_0_stabilization_task():
     assert "recommended_method: upload-api" in handoff
     assert "selected_method: none" in handoff
     assert "当前未选择 `email`、`upload-api` 或 `server-local`" in handoff
+    assert 'test "$(<"${RESULT_DIR}/server_ready_exit_code.txt")" = 0' in handoff
+    assert 'test "$(<"${RESULT_DIR}/client_exit_code.txt")" = 0' in handoff
+    assert 'test "$(<"${RESULT_DIR}/cleanup_status.txt")" = clean' in handoff
+    assert 'test "${total_bytes}" -le 71680' in handoff
+    assert "不得自动进入 MTP 修复" in handoff
+    assert "p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713" in handoff
     assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
     assert "collect-vllm-ascend-observations" not in handoff
     assert "build-vllm-ascend-observe-bundle" not in handoff

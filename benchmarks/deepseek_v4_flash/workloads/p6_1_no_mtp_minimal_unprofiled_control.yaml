@@ -1,0 +1,140 @@
+schema_version: 1
+workload_id: p6_1_deepseek_v4_flash_no_mtp_minimal_unprofiled_control
+date: "2026-07-13"
+purpose: validate_the_p6_1_measurement_chain_and_retain_one_pre_mtp_repair_control_point
+task_id: p6_1_deepseek_v4_flash_w8a8_no_mtp_minimal_unprofiled_control_2026_0713
+
+stage_contract:
+  stage: P6.1
+  mode: minimal_unprofiled_control
+  baseline_grade: yellow_degraded_baseline_stabilized
+  claim_level: controlled_benchmark_minimal_control
+  may_claim_official_baseline: false
+  full_p6_1_matrix_authorized: false
+  mtp_remediation_authorized: false
+
+prior_p6_0_evidence:
+  task_id: p6_0_deepseek_v4_flash_w8a8_no_mtp_degraded_stabilization_2026_0713
+  server_git_head: bc94abcc05c79eeea249d2c87fbe465c47a5015e
+  grade: yellow_degraded_baseline_stabilized
+  prior_p5_successes: 1
+  new_successful_lifecycles: 2
+  consecutive_successes_total: 3
+  command_sha256: c8490730b269ca2cf8a72704877ab040099341ec5fe576ee010d3613a61902bc
+  official_baseline: false
+
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: "0.22.1+empty"
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  torch: 2.10.0+cpu
+  torch_npu: 2.10.0
+  python: 3.11.15
+  visible_devices: 0,1,2,3,4,5,6,7
+  required_plugins:
+    - ascend
+    - ascend_kv_connector
+    - ascend_model_loader
+    - ascend_service_profiling
+    - ascend_model
+
+runtime_fixed:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  tensor_parallel_size: 8
+  data_parallel_size: 1
+  enable_expert_parallel: true
+  quantization: ascend
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  speculative_mtp: disabled
+  enforce_eager: false
+  cudagraph_mode: FULL_DECODE_ONLY
+
+request_fixed:
+  input_tokens: 4096
+  output_tokens: 64
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens: 64
+  max_tokens: 64
+  streaming: true
+  return_token_ids: true
+  payload_server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+  payload_bytes: 19487
+  payload_sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+
+measurement_plan:
+  server_lifecycles: 1
+  warmup_requests: 1
+  measured_requests: 3
+  request_order: sequential
+  concurrency: 1
+  input_tokens: 4096
+  output_tokens: 64
+  unprofiled: true
+
+metrics:
+  client_clock: time.monotonic_ns
+  exact_token_arrival_timestamps_required: true
+  ttft_definition: first_token_ns-request_start_ns
+  tpot_definition: (last_token_ns-first_token_ns)/(completion_tokens-1)
+  itl_definition: adjacent_token_arrival_ns_difference
+  e2el_definition: request_end_ns-request_start_ns
+  decode_tokens_per_second_definition: (completion_tokens-1)/(last_token_ns-first_token_ns)
+  request_output_tokens_per_second_definition: completion_tokens/(request_end_ns-request_start_ns)
+  generated_text_retained: false
+  token_ids_retained: false
+
+statistics:
+  report_raw_three_samples: true
+  report_min_median_max: true
+  outlier_removal: false
+  report_p95_p99: false
+  tail_percentile_reason: n3_is_insufficient
+  warmup_excluded_from_statistics: true
+
+acceptance:
+  server_ready: true
+  warmup_successful: true
+  measured_successful: 3
+  each_http_status: 200
+  each_prompt_tokens: 4096
+  each_generated_tokens: 64
+  each_streamed_tokens: 64
+  each_finish_reason: length
+  each_exact_token_arrival_timestamps: 64
+  cleanup_status: clean
+  final_grade: yellow_degraded_minimal_unprofiled_control_measured
+
+stop_policy:
+  stop_on_warmup_failure: true
+  stop_on_first_measured_failure: true
+  no_replacement_or_extra_request: true
+  no_additional_p6_1_cells: true
+  no_concurrency_above_one: true
+  no_profiler: true
+  no_mtp_or_128k: true
+  no_eager_fallback: true
+  no_runtime_source_environment_or_checkpoint_modification: true
+  no_p8_observer_or_adapter_execution: true
+  no_automatic_mtp_remediation: true
+
+execution_state:
+  server_handoff: active
+  server_result: pending
+  transfer_method: unselected_server_local_only
+
+boundaries:
+  - This is one minimal no-MTP unprofiled control point, not the full P6.1 pilot or matrix.
+  - The result remains degraded and cannot be called the official MTP or 128K reference baseline.
+  - Three samples support raw values and min/median/max only; P95 and P99 are forbidden for n=3.
+  - A successful result stops for a separate user decision before any MTP remediation task is written.
+  - Profiled evidence, additional contexts, concurrency, P8.1, offload and placement mutation remain closed.

@@ -104,9 +104,25 @@ stop_policy:
   no_automatic_p6_1_or_p8_1: true
 
 execution_state:
-  server_handoff: active
-  server_result: pending
-  transfer_method: unselected_server_local_only
+  server_handoff: completed
+  server_result: yellow_degraded_baseline_stabilized
+  transfer_method: received_as_two_bounded_packages_method_not_reconstructed
+
+execution_result:
+  reviewed_date: "2026-07-13"
+  server_git_head: bc94abcc05c79eeea249d2c87fbe465c47a5015e
+  new_successful_lifecycles: 2
+  consecutive_successes_total: 3
+  command_drift_count: 0
+  environment_drift_count: 0
+  payload_drift_count: 0
+  command_sha256: c8490730b269ca2cf8a72704877ab040099341ec5fe576ee010d3613a61902bc
+  grade: yellow_degraded_baseline_stabilized
+  official_baseline: false
+  p6_1_performance_validated: false
+  mtp_validated: false
+  context_128k_validated: false
+  evidence_boundary: environment_and_payload_cross_lifecycle_equality_are_server_summary_evidence_because_the_bounded_delivery_contains_one_representative_copy_each
 
 boundaries:
   - This is P6.0 degraded stabilization, not P6.1 performance or an official MTP baseline.
