@@ -1,3 +1,6 @@
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -1039,7 +1042,7 @@ def test_p6_1l_rerun_freezes_runtime_request_retry_and_stop_boundaries():
     assert workload["stop_policy"]["no_p8_execution"] is True
 
 
-def test_p6_1c_official_context_ladder_is_authorized_for_execution():
+def test_p6_1c_official_context_ladder_is_closed_before_r1():
     workload = load_yaml(
         BENCHMARK_DIR / "workloads" / "p6_1c_mtp_official_context_ladder.yaml"
     )
@@ -1059,11 +1062,362 @@ def test_p6_1c_official_context_ladder_is_authorized_for_execution():
         "p8_execution_authorized": False,
     }
     assert workload["execution_state"] == {
-        "status": "authorized_for_execution",
-        "server_handoff": "authorized_for_execution",
-        "npu_execution_authorized": True,
-        "next_task_authorized": True,
+        "status": "completed_blocked_sampling_calibration",
+        "server_handoff": "superseded_by_p6_1c_r1_prepared_not_dispatched",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
     }
+
+
+def test_p6_1c_completed_as_blocked_sampling_without_official_context_evidence():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1c_mtp_official_context_ladder.yaml"
+    )
+
+    result = workload["completed_result"]
+    assert result["server_grade"] == "blocked_sampling_calibration"
+    assert result["developer_review"] == "accepted_blocked_sampling_calibration"
+    assert result["server_git_head"] == (
+        "c4bf41c63f4ca094ceb844d14c436e771cc53470"
+    )
+    assert result["sampling_failure"] == {
+        "command": "npu-smi info -t usages",
+        "npu_smi_version": "26.0.rc1",
+        "raw_sweep_count": 36,
+        "all_eight_devices_and_no_parse_failures": False,
+        "sweep_wall_seconds_p50": 0.5375788585,
+        "sweep_wall_seconds_p95": 0.553860023,
+        "selected_interval_seconds": None,
+        "first_failure": "command_requires_card_id_and_returns_help_text",
+    }
+    assert result["official_lifecycle_started"] is False
+    assert result["highest_stable_context"] is None
+    assert result["official_reference_baseline"] is False
+    assert result["cleanup"] == "clean"
+    assert result["evidence_boundary"] == {
+        "calibration_requests_count_as_official_context_evidence": False,
+        "request_success_and_mtp_counters": (
+            "server_summary_only_missing_request_results_and_counter_snapshots"
+        ),
+        "transfer_hash_match": (
+            "server_reported_missing_transfer_manifest_in_received_package"
+        ),
+    }
+    assert result["received_package"] == {
+        "relative_inbox_path": (
+            "2026-07-14/p6_1c_blocked_sampling_calibration_20260714"
+        ),
+        "file_count": 9,
+        "total_bytes": 10267,
+        "sorted_name_bytes_sha256_manifest_sha256": (
+            "fbfe0aa9f34a5b912de895f42df2a1a8effb83a51155a04fb926a342ace67304"
+        ),
+    }
+
+
+def test_p6_1c_r1_sampling_repair_is_prepared_but_not_authorized():
+    workload = load_yaml(
+        BENCHMARK_DIR
+        / "workloads"
+        / "p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
+    )
+
+    assert workload["workload_id"] == (
+        "p6_1c_r1_deepseek_v4_flash_mtp_official_context_ladder_sampling_repair"
+    )
+    assert workload["task_id"] == (
+        "p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_"
+        "sampling_repair_2026_0714"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.1C-R1",
+        "mode": "mtp_official_context_ladder_hbm_table_sampling_repair",
+        "claim_boundary": "mtp_context_ladder_functional_capacity_and_stability_only",
+        "may_claim_performance_baseline": False,
+        "profiler_authorized": False,
+        "p8_execution_authorized": False,
+    }
+    assert workload["execution_state"] == {
+        "status": "prepared_not_dispatched",
+        "server_handoff": "prepared_not_dispatched",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
+    }
+
+
+def test_p6_1c_r1_preserves_the_blocked_parent_and_requires_a_fresh_rerun():
+    workload = load_yaml(
+        BENCHMARK_DIR
+        / "workloads"
+        / "p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
+    )
+
+    assert workload["parent_result"] == {
+        "task_id": (
+            "p6_1c_deepseek_v4_flash_w8a8_mtp_official_context_ladder_"
+            "2026_0714"
+        ),
+        "server_grade": "blocked_sampling_calibration",
+        "developer_review": "accepted_blocked_sampling_calibration",
+        "failed_command": "npu-smi info -t usages",
+        "raw_sweep_count": 36,
+        "selected_interval_seconds": None,
+        "official_lifecycle_started": False,
+        "highest_stable_context": None,
+        "cleanup": "clean",
+    }
+    assert workload["rerun_policy"] == {
+        "new_result_lineage_required": True,
+        "fresh_calibration_lifecycle_required": True,
+        "fresh_official_lifecycle_required_after_calibration_green": True,
+        "reuse_prior_calibration_measurements": False,
+        "prior_4096_64_green_remains_valid": True,
+        "prior_decode_length_green_remains_valid": True,
+    }
+
+
+def test_p6_1c_r1_uses_one_eight_device_table_sweep_and_feasible_sampling_gates():
+    workload = load_yaml(
+        BENCHMARK_DIR
+        / "workloads"
+        / "p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
+    )
+
+    preflight = workload["hbm_sampler_preflight"]
+    assert preflight == {
+        "before_model_server_start": True,
+        "command": "npu-smi info",
+        "sweeps": 3,
+        "required_device_ids": list(range(8)),
+        "required_hbm_capacity_mb_per_device": 65536,
+        "required_fields": ["device_id", "hbm_used_mb", "hbm_capacity_mb"],
+        "all_sweeps_return_code_zero": True,
+        "all_sweeps_parse_eight_devices": True,
+        "sweep_wall_time_diagnostic_only": True,
+        "failure_grade": "blocked_protocol_or_resource_gate",
+    }
+
+    calibration = workload["hbm_sampling_calibration"]
+    assert calibration["context_tokens"] == 65536
+    assert calibration["output_tokens"] == 64
+    assert calibration["counts_as_official_context_evidence"] is False
+    assert calibration["hbm_sweep"] == {
+        "command": "npu-smi info",
+        "one_subprocess_per_sweep": True,
+        "parses_all_eight_devices_from_one_table": True,
+        "source_field": "HBM-Usage(MB)",
+        "derived_field": "hbm_usage_pct",
+        "record_start_end_wall_time_and_start_gap": True,
+    }
+    assert calibration["candidate_intervals_seconds"] == [0.5, 1.0, 2.0, 5.0]
+    assert calibration["selection_gates"] == {
+        "device_coverage_required": 8,
+        "parse_failures_allowed": 0,
+        "max_hbm_usage_peak_delta_percentage_points": 1.0,
+        "min_reference_prefill_samples_per_device": 4,
+        "min_selected_prefill_samples_per_device": 2,
+    }
+    assert calibration["sweep_wall_duty_cycle"] == {
+        "record_p50_p95_and_ratio": True,
+        "hard_gate": False,
+        "reason": "subprocess_wall_time_is_not_inference_interference",
+    }
+    assert calibration["selected_validation"] == {
+        "max_wall_time_increase_ratio": 0.10,
+        "hard_interference_gate": True,
+        "token_health_queue_and_mtp_gates_required": True,
+        "diagnostic_only_not_performance": True,
+    }
+    assert calibration["selection_policy"] == "largest_interval_passing_all_gates"
+    assert calibration["failure_grade"] == "blocked_sampling_calibration"
+    assert calibration["failure_stops_before_official_lifecycle"] is True
+    assert calibration["raw_traces_remain_server_local"] is True
+
+
+def test_p6_1c_r1_reuses_the_verified_runtime_and_three_calibration_bodies():
+    workload = load_yaml(
+        BENCHMARK_DIR
+        / "workloads"
+        / "p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
+    )
+
+    assert workload["accepted_prerequisites"] == {
+        "minimal_mtp_task_id": (
+            "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_"
+            "retry2_2026_0713"
+        ),
+        "minimal_mtp_grade": "green_mtp_minimal_request_success",
+        "decode_length_task_id": (
+            "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
+            "rerun1_2026_0713"
+        ),
+        "decode_length_grade": "green_mtp_decode_length_ladder_revalidated",
+        "prior_green_results_remain_valid_on_r1_failure": True,
+    }
+    assert workload["lifecycle_plan"] == {
+        "server_lifecycles_max": 2,
+        "order": [
+            "hbm_sampling_calibration_lifecycle",
+            "fresh_official_context_ladder_lifecycle",
+        ],
+        "official_lifecycle_requires_calibration_green": True,
+        "cleanup_between_lifecycles_required": True,
+        "calibration_cache_or_counters_may_carry_over": False,
+    }
+    assert workload["repair_artifact"]["patch_sha256"] == (
+        "75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1"
+    )
+    assert workload["repair_artifact"]["patched_proposer_sha256"] == (
+        "7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02"
+    )
+    runtime = workload["runtime_fixed"]
+    assert runtime["model_path"] == "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp"
+    assert runtime["vllm_commit"] == "0decac0d96c42b49572498019f0a0e3600f50398"
+    assert runtime["vllm_ascend_commit"] == "5f6faa0cb8830f667266f3b8121cd1383606f2a1"
+    assert runtime["server_command_sha256"] == (
+        "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19"
+    )
+    assert runtime["max_model_len"] == 135168
+    assert runtime["max_num_seqs"] == 1
+    assert runtime["tensor_parallel_size"] == 8
+    assert runtime["enable_expert_parallel"] is True
+    assert runtime["enforce_eager"] is False
+    assert runtime["cudagraph_mode"] == "FULL_DECODE_ONLY"
+    assert runtime["speculative_mtp"] == {"method": "mtp", "num_speculative_tokens": 1}
+
+    calibration = workload["hbm_sampling_calibration"]
+    assert calibration["requests"] == [
+        {"role": "calibration_control", "sampling_enabled": False},
+        {
+            "role": "calibration_high_resolution",
+            "sampling_enabled": True,
+            "requested_min_start_interval_seconds": 0.5,
+        },
+        {
+            "role": "calibration_selected_validation",
+            "sampling_enabled": True,
+            "interval_source": "selected_interval_from_calibration",
+        },
+    ]
+    assert calibration["payload_construction"] == {
+        "source_prompt_tokens": 4096,
+        "target_prompt_tokens": 65536,
+        "method": "repeat_then_apply_distinct_cyclic_offsets",
+        "same_token_multiset_required": True,
+        "pairwise_common_prefix_tokens_required": 0,
+        "canonical_bodies_frozen_before_server_start": True,
+    }
+
+
+def test_p6_1c_r1_preserves_the_official_ladder_retry_and_grading_boundaries():
+    workload = load_yaml(
+        BENCHMARK_DIR
+        / "workloads"
+        / "p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
+    )
+
+    ladder = workload["official_context_ladder"]
+    assert ladder["contexts_tokens"] == [4096, 32768, 65536, 98304, 131072]
+    assert ladder["output_tokens"] == 64
+    assert ladder["hidden_warmup_requests"] == 0
+    assert ladder["concurrency"] == 1
+    assert ladder["selected_hbm_interval_frozen_for_all_attempts"] is True
+    assert ladder["highest_stable_context_excludes_calibration"] is True
+
+    request = workload["request_protocol"]
+    assert request["endpoint"] == "/v1/completions"
+    assert request["temperature"] == 0.0
+    assert request["ignore_eos"] is True
+    assert request["min_tokens_equals_max_tokens"] is True
+    assert request["streaming"] is True
+    assert request["generated_text_retained"] is False
+    assert request["token_ids_retained"] is False
+
+    metrics = workload["metrics_evidence"]
+    assert metrics["snapshot_before_and_after_every_attempt"] is True
+    assert metrics["positive_drafts_per_success"] is True
+    assert metrics["positive_draft_tokens_per_success"] is True
+    assert metrics["positive_accepted_delta_total_required"] is True
+    assert metrics["counter_continuity_required"] is True
+
+    retry = workload["retry_policy"]
+    assert retry["max_retries_per_context"] == 1
+    assert retry["max_retries_total"] == 5
+    assert retry["attempts_total_max"] == 10
+    assert retry["same_request_body_sha256_required"] is True
+    assert retry["selected_hbm_interval_must_remain_frozen"] is True
+    assert retry["server_restart_allowed"] is False
+
+    acceptance = workload["acceptance"]
+    assert acceptance["blocked_sampling_grade"] == "blocked_sampling_calibration"
+    assert acceptance["partial_grade"] == "yellow_mtp_context_ladder_partial"
+    assert acceptance["retry_grade"] == (
+        "yellow_mtp_official_context_ladder_recovered_with_retry"
+    )
+    assert acceptance["server_candidate_green_grade"] == (
+        "candidate_green_mtp_official_context_ladder"
+    )
+    assert acceptance["developer_accepted_green_grade"] == (
+        "green_mtp_official_context_ladder"
+    )
+    assert acceptance["official_baseline_requires_external_developer_review"] is True
+    assert acceptance["retry_path_may_claim_official_baseline"] is False
+
+    stop = workload["stop_policy"]
+    assert stop["server_restart_allowed"] is False
+    assert stop["parameter_mutation_allowed"] is False
+    assert stop["patch_mutation_allowed"] is False
+    assert stop["second_patch_allowed"] is False
+    assert stop["mtp_disable_allowed"] is False
+    assert stop["context_reduction_allowed"] is False
+    assert stop["eager_fallback_allowed"] is False
+    assert stop["profiler_allowed"] is False
+    assert stop["p8_execution_allowed"] is False
+
+
+def test_p6_1c_r1_keeps_raw_hbm_and_content_out_of_the_bounded_result_package():
+    workload = load_yaml(
+        BENCHMARK_DIR
+        / "workloads"
+        / "p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
+    )
+
+    hbm = workload["hbm_resource_evidence"]
+    assert hbm["scope"] == "whole_device_hbm_occupancy_not_kv_object_bytes_or_traffic"
+    assert hbm["raw_samples_remain_server_local"] is True
+    assert hbm["all_eight_devices_required_for_green"] is True
+    assert hbm["per_attempt_summary_fields"] == [
+        "context_tokens",
+        "attempt_index",
+        "selected_interval_seconds",
+        "device_id",
+        "sample_count",
+        "hbm_capacity_mb",
+        "hbm_used_max_mb",
+        "hbm_free_min_mb",
+        "hbm_usage_pct_max",
+        "parser_ok",
+    ]
+
+    schema = workload["attempt_result_schema"]
+    assert schema["format"] == "json_lines_one_record_per_attempt"
+    assert "request_body_sha256" in schema["fields"]
+    assert "selected_hbm_interval_seconds" in schema["fields"]
+    assert "request_wall_ms_diagnostic_only" in schema["fields"]
+    assert schema["generated_text_field_forbidden"] is True
+    assert schema["token_ids_field_forbidden"] is True
+
+    package = workload["result_package_policy"]
+    assert package["max_total_bytes"] == 71680
+    assert package["raw_logs_metrics_hbm_and_request_bodies_remain_server_local"] is True
+    assert package["generated_text_or_token_ids_allowed"] is False
+    assert package["selection_required_before_any_transfer"] is True
+    assert package["available_methods"] == ["email", "upload-api", "server-local"]
+    assert package["methods_are_mutually_exclusive"] is True
+    assert package["handoff_contains_transfer_command"] is False
+    assert "sampler_preflight.json" in package["bounded_candidates"]
+    assert "calibration_request_summary.json" in package["bounded_candidates"]
+    assert package["calibration_request_summary_required_for_developer_review"] is True
 
 
 def test_p6_1c_calibrates_and_freezes_hbm_sampling_before_the_official_ladder():
@@ -1324,28 +1678,31 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_authorizes_only_the_p6_1c_task_for_npu_execution():
+def test_server_handoff_prepares_only_p6_1c_r1_without_npu_authorization():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "## 当前唯一服务器动作：执行已授权的 P6.1C 合同" in handoff
+    assert "## 当前唯一服务器动作：准备但不执行 P6.1C-R1" in handoff
     assert (
-        "task_id: p6_1c_deepseek_v4_flash_w8a8_mtp_official_context_ladder_"
-        "2026_0714"
+        "task_id: p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_"
+        "ladder_sampling_repair_2026_0714"
         in handoff
     )
-    assert "execution_mode: authorized_for_execution" in handoff
-    assert "npu_execution_authorized: true" in handoff
-    assert "next_task_authorized: true" in handoff
-    assert "benchmarks/deepseek_v4_flash/workloads/p6_1c_mtp_official_context_ladder.yaml" in handoff
-    assert "用户已明确授权 P6.1C 服务器/NPU 执行" in handoff
-    assert "完成远程 main 的 fast-forward 同步与授权门核验后" in handoff
-    assert "只执行本文 P6.1C 合同" in handoff
+    assert "execution_mode: prepared_not_dispatched" in handoff
+    assert "npu_execution_authorized: false" in handoff
+    assert "next_task_authorized: false" in handoff
+    assert (
+        "benchmarks/deepseek_v4_flash/workloads/"
+        "p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
+        in handoff
+    )
+    assert "尚未授权 P6.1C-R1 服务器/NPU 执行" in handoff
+    assert "当前只允许同步、阅读和核验合同，不得执行" in handoff
 
 
-def test_server_handoff_contains_the_full_authorized_p6_1c_execution_contract():
+def test_server_handoff_contains_the_full_prepared_p6_1c_r1_execution_contract():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
     assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
@@ -1353,19 +1710,26 @@ def test_server_handoff_contains_the_full_authorized_p6_1c_execution_contract():
     assert 'git -C "${REPO_ROOT}" merge --ff-only origin/main' in handoff
     assert 'rev-parse HEAD)" = "$(git -C "${REPO_ROOT}" rev-parse origin/main)' in handoff
     assert "status --porcelain --untracked-files=no" in handoff
-    assert "NPU_EXECUTION_AUTHORIZED=true" in handoff
+    assert "NPU_EXECUTION_AUTHORIZED=false" in handoff
     assert 'test "${NPU_EXECUTION_AUTHORIZED}" = true' in handoff
     assert "SERVER_LIFECYCLES_MAX=2" in handoff
+    assert "SAMPLER_PREFLIGHT_SWEEPS=3" in handoff
     assert "CALIBRATION_CONTEXT_TOKENS=65536" in handoff
     assert "CALIBRATION_OUTPUT_TOKENS=64" in handoff
     assert "CANDIDATE_INTERVALS=(0.5 1.0 2.0 5.0)" in handoff
     assert "calibration_control" in handoff
     assert "calibration_high_resolution" in handoff
     assert "calibration_selected_validation" in handoff
-    assert '"npu-smi", "info", "-t", "usages"' in handoff
+    assert '"npu-smi", "info"' in handoff
+    assert '"npu-smi", "info", "-t", "usages"' not in handoff
+    assert "HBM-Usage(MB)" in handoff
+    assert "one subprocess per sweep" in handoff
     assert "max_peak_delta_percentage_points=1.0" in handoff
-    assert "min_prefill_samples_per_device=20" in handoff
-    assert "max_p95_sweep_duty_cycle_ratio=0.05" in handoff
+    assert "min_reference_prefill_samples_per_device=4" in handoff
+    assert "min_selected_prefill_samples_per_device=2" in handoff
+    assert "sweep_wall_duty_cycle_hard_gate=false" in handoff
+    assert "min_prefill_samples_per_device=20" not in handoff
+    assert "max_p95_sweep_duty_cycle_ratio=0.05" not in handoff
     assert "max_selected_wall_time_increase_ratio=0.10" in handoff
     assert "OFFICIAL_CONTEXTS=(4096 32768 65536 98304 131072)" in handoff
     assert "SELECTED_HBM_INTERVAL_SECONDS" in handoff
@@ -1378,6 +1742,7 @@ def test_server_handoff_contains_the_full_authorized_p6_1c_execution_contract():
     assert "yellow_mtp_context_ladder_partial" in handoff
     assert "blocked_sampling_calibration" in handoff
     assert "result_summary.md" in handoff
+    assert "calibration_request_summary.json" in handoff
     assert "delivery_candidates.tsv" in handoff
     assert "71680" in handoff
     assert "不得发送 email、不得调用 upload-api" in handoff
@@ -1389,7 +1754,132 @@ def test_server_handoff_contains_the_full_authorized_p6_1c_execution_contract():
     assert "build-vllm-ascend-observe-bundle" not in handoff
 
 
-def test_p6_1c_is_the_authorized_next_action_across_current_truth_surfaces():
+def test_p6_1c_r1_embedded_hbm_parser_reads_the_eight_device_table_fixture():
+    handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
+        encoding="utf-8"
+    )
+    helper_marker = "Path(sys.argv[1]).write_text(r'''import argparse"
+    helper_source = "import argparse" + handoff.split(helper_marker, 1)[1].split(
+        "''', encoding=\"utf-8\")", 1
+    )[0]
+    parse_source = helper_source[
+        helper_source.index("def parse_usage(text):") : helper_source.index("\nsequence = 0")
+    ]
+    namespace = {"re": __import__("re")}
+    exec(parse_source, namespace)
+
+    fixture = (
+        REPO_ROOT
+        / "工作记录与进度笔记本"
+        / "observability_profiles"
+        / "obs_2026_0705_atlas800t_a2_004"
+        / "server_feedback"
+        / "npu_smi_info.txt"
+    ).read_text(encoding="utf-8")
+    devices = namespace["parse_usage"](fixture)
+
+    assert [item["device_id"] for item in devices] == list(range(8))
+    assert all(item["parser_ok"] for item in devices)
+    assert all(item["hbm_capacity_mb"] == 65536.0 for item in devices)
+    assert devices[0]["hbm_used_mb"] == 59541.0
+    assert devices[2]["hbm_used_mb"] == 59540.0
+    assert devices[7]["hbm_used_mb"] == 3413.0
+    assert devices[7]["hbm_usage_pct"] == 3413.0 * 100.0 / 65536.0
+
+
+def test_p6_1c_r1_embedded_selector_picks_the_largest_accurate_feasible_interval(
+    tmp_path: Path,
+):
+    handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
+        encoding="utf-8"
+    )
+    selector_marker = (
+        '"${RESULT_DIR}/calibration/sampling_calibration.json" <<\'PY\'\n'
+    )
+    selector_source = handoff.split(selector_marker, 1)[1].split(
+        "\nPY\nselector_exit=$?", 1
+    )[0]
+
+    start_ns = 1_000_000_000
+    sweep_starts = [
+        start_ns + offset
+        for offset in [
+            0,
+            500_000_000,
+            1_000_000_000,
+            1_500_000_000,
+            2_000_000_000,
+            2_500_000_000,
+            3_000_000_000,
+        ]
+    ]
+    sweeps = []
+    for sequence, sweep_start in enumerate(sweep_starts):
+        devices = [
+            {
+                "device_id": device_id,
+                "hbm_capacity_mb": 65536.0,
+                "hbm_used_mb": 32768.0,
+                "hbm_free_mb": 32768.0,
+                "hbm_usage_pct": 50.0,
+                "parser_ok": True,
+            }
+            for device_id in range(8)
+        ]
+        sweeps.append(
+            {
+                "sequence": sequence,
+                "command": ["npu-smi", "info"],
+                "return_code": 0,
+                "sweep_start_monotonic_ns": sweep_start,
+                "sweep_end_monotonic_ns": sweep_start + 300_000_000,
+                "sweep_wall_seconds": 0.3,
+                "device_coverage": 8,
+                "parse_failure_count": 0,
+                "devices": devices,
+            }
+        )
+
+    trace_path = tmp_path / "trace.jsonl"
+    request_path = tmp_path / "request.json"
+    output_path = tmp_path / "selection.json"
+    trace_path.write_text(
+        "".join(json.dumps(item) + "\n" for item in sweeps), encoding="utf-8"
+    )
+    request_path.write_text(
+        json.dumps(
+            {
+                "status": "success",
+                "request_start_monotonic_ns": start_ns,
+                "first_token_monotonic_ns": start_ns + 3_000_000_000,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            selector_source,
+            str(trace_path),
+            str(request_path),
+            str(output_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+    selection = json.loads(output_path.read_text(encoding="utf-8"))
+    assert selection["selected_interval_seconds"] == 2.0
+    assert selection["sweep_wall_duty_cycle_hard_gate"] is False
+    assert next(
+        item for item in selection["candidates"] if item["interval_seconds"] == 5.0
+    )["gates"]["selected_has_at_least_two_prefill_samples_per_device"] is False
+
+
+def test_p6_1c_r1_is_the_prepared_next_action_across_current_truth_surfaces():
     readiness = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
     artifacts = readiness["artifacts"]
     acceptance = readiness["acceptance"]
@@ -1400,14 +1890,17 @@ def test_p6_1c_is_the_authorized_next_action_across_current_truth_surfaces():
     assert artifacts["completed_p6_1l_rerun_workload"] == (
         "workloads/p6_1l_mtp_decode_length_ladder_rerun1.yaml"
     )
-    assert artifacts["next_workload"] == (
+    assert artifacts["completed_p6_1c_workload"] == (
         "workloads/p6_1c_mtp_official_context_ladder.yaml"
     )
-    assert readiness["target_runtime"]["runtime_status"] == (
-        "mtp_4096_64_and_decode_length_green_context_ladder_pending"
+    assert artifacts["next_workload"] == (
+        "workloads/p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
     )
-    assert acceptance["blocked_by"] == "official_mtp_context_ladder_not_executed"
-    assert acceptance["next_task_authorized"] is True
+    assert readiness["target_runtime"]["runtime_status"] == (
+        "mtp_4096_64_and_decode_length_green_context_ladder_sampling_repair_pending"
+    )
+    assert acceptance["blocked_by"] == "p6_1c_r1_sampling_repair_not_executed"
+    assert acceptance["next_task_authorized"] is False
 
     current_surfaces = {
         "next_action": REPO_ROOT / "工作记录与进度笔记本" / "05_下一步行动指导.md",
@@ -1418,9 +1911,10 @@ def test_p6_1c_is_the_authorized_next_action_across_current_truth_surfaces():
     }
     for name, path in current_surfaces.items():
         text = path.read_text(encoding="utf-8")
-        assert "P6.1C" in text, name
-        assert "authorized_for_execution" in text, name
-        assert "npu_execution_authorized:true" in text, name
+        assert "P6.1C-R1" in text, name
+        assert "prepared_not_dispatched" in text, name
+        assert "npu_execution_authorized:false" in text, name
+        assert "npu-smi info" in text, name
         assert "65536+64" in text, name
         assert "4096/32768/65536/98304/131072" in text, name
         assert "完整 P6.1" in text, name

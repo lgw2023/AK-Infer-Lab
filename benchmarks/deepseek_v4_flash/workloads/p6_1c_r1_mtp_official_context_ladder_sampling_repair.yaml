@@ -1,12 +1,12 @@
 schema_version: 1
-workload_id: p6_1c_deepseek_v4_flash_mtp_official_context_ladder
+workload_id: p6_1c_r1_deepseek_v4_flash_mtp_official_context_ladder_sampling_repair
 date: "2026-07-14"
-purpose: calibrate_hbm_sampling_then_validate_the_mtp_official_context_ladder
-task_id: p6_1c_deepseek_v4_flash_w8a8_mtp_official_context_ladder_2026_0714
+purpose: repair_hbm_sampling_then_rerun_the_mtp_official_context_ladder
+task_id: p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_sampling_repair_2026_0714
 
 stage_contract:
-  stage: P6.1C
-  mode: mtp_official_context_ladder_with_hbm_sampling_calibration
+  stage: P6.1C-R1
+  mode: mtp_official_context_ladder_hbm_table_sampling_repair
   claim_boundary: mtp_context_ladder_functional_capacity_and_stability_only
   may_claim_performance_baseline: false
   profiler_authorized: false
@@ -17,7 +17,26 @@ accepted_prerequisites:
   minimal_mtp_grade: green_mtp_minimal_request_success
   decode_length_task_id: p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_rerun1_2026_0713
   decode_length_grade: green_mtp_decode_length_ladder_revalidated
-  prior_green_results_remain_valid_on_new_task_failure: true
+  prior_green_results_remain_valid_on_r1_failure: true
+
+parent_result:
+  task_id: p6_1c_deepseek_v4_flash_w8a8_mtp_official_context_ladder_2026_0714
+  server_grade: blocked_sampling_calibration
+  developer_review: accepted_blocked_sampling_calibration
+  failed_command: npu-smi info -t usages
+  raw_sweep_count: 36
+  selected_interval_seconds: null
+  official_lifecycle_started: false
+  highest_stable_context: null
+  cleanup: clean
+
+rerun_policy:
+  new_result_lineage_required: true
+  fresh_calibration_lifecycle_required: true
+  fresh_official_lifecycle_required_after_calibration_green: true
+  reuse_prior_calibration_measurements: false
+  prior_4096_64_green_remains_valid: true
+  prior_decode_length_green_remains_valid: true
 
 repair_artifact:
   path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
@@ -66,6 +85,29 @@ lifecycle_plan:
   cleanup_between_lifecycles_required: true
   calibration_cache_or_counters_may_carry_over: false
 
+hbm_sampler_preflight:
+  before_model_server_start: true
+  command: npu-smi info
+  sweeps: 3
+  required_device_ids:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+  required_hbm_capacity_mb_per_device: 65536
+  required_fields:
+    - device_id
+    - hbm_used_mb
+    - hbm_capacity_mb
+  all_sweeps_return_code_zero: true
+  all_sweeps_parse_eight_devices: true
+  sweep_wall_time_diagnostic_only: true
+  failure_grade: blocked_protocol_or_resource_gate
+
 hbm_sampling_calibration:
   context_tokens: 65536
   output_tokens: 64
@@ -75,7 +117,7 @@ hbm_sampling_calibration:
       sampling_enabled: false
     - role: calibration_high_resolution
       sampling_enabled: true
-      target_interval_seconds: 0.5
+      requested_min_start_interval_seconds: 0.5
     - role: calibration_selected_validation
       sampling_enabled: true
       interval_source: selected_interval_from_calibration
@@ -87,21 +129,12 @@ hbm_sampling_calibration:
     pairwise_common_prefix_tokens_required: 0
     canonical_bodies_frozen_before_server_start: true
   hbm_sweep:
-    command: npu-smi info -t usages
-    required_device_ids:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-    required_fields:
-      - NPU ID
-      - HBM Capacity(MB)
-      - HBM Usage Rate(%)
-    record_start_end_and_wall_time: true
+    command: npu-smi info
+    one_subprocess_per_sweep: true
+    parses_all_eight_devices_from_one_table: true
+    source_field: HBM-Usage(MB)
+    derived_field: hbm_usage_pct
+    record_start_end_wall_time_and_start_gap: true
   candidate_intervals_seconds:
     - 0.5
     - 1.0
@@ -112,10 +145,16 @@ hbm_sampling_calibration:
     device_coverage_required: 8
     parse_failures_allowed: 0
     max_hbm_usage_peak_delta_percentage_points: 1.0
-    min_prefill_samples_per_device: 20
-    max_p95_sweep_duty_cycle_ratio: 0.05
+    min_reference_prefill_samples_per_device: 4
+    min_selected_prefill_samples_per_device: 2
+  sweep_wall_duty_cycle:
+    record_p50_p95_and_ratio: true
+    hard_gate: false
+    reason: subprocess_wall_time_is_not_inference_interference
   selected_validation:
     max_wall_time_increase_ratio: 0.10
+    hard_interference_gate: true
+    token_health_queue_and_mtp_gates_required: true
     diagnostic_only_not_performance: true
   failure_grade: blocked_sampling_calibration
   failure_stops_before_official_lifecycle: true
@@ -240,6 +279,7 @@ result_package_policy:
     - upload-api
     - server-local
   methods_are_mutually_exclusive: true
+  calibration_request_summary_required_for_developer_review: true
   report_before_choice:
     - exact_result_summary_path
     - complete_candidate_file_list
@@ -251,7 +291,9 @@ result_package_policy:
   handoff_contains_transfer_command: false
   bounded_candidates:
     - result_summary.md
+    - sampler_preflight.json
     - sampling_calibration.json
+    - calibration_request_summary.json
     - request_body_manifest.json
     - official_ladder_summary.json
     - attempt_results.jsonl
@@ -293,35 +335,8 @@ stop_policy:
   p8_execution_allowed: false
   automatic_follow_up_allowed: false
 
-completed_result:
-  server_grade: blocked_sampling_calibration
-  developer_review: accepted_blocked_sampling_calibration
-  server_git_head: c4bf41c63f4ca094ceb844d14c436e771cc53470
-  sampling_failure:
-    command: npu-smi info -t usages
-    npu_smi_version: 26.0.rc1
-    raw_sweep_count: 36
-    all_eight_devices_and_no_parse_failures: false
-    sweep_wall_seconds_p50: 0.5375788585
-    sweep_wall_seconds_p95: 0.553860023
-    selected_interval_seconds: null
-    first_failure: command_requires_card_id_and_returns_help_text
-  official_lifecycle_started: false
-  highest_stable_context: null
-  official_reference_baseline: false
-  cleanup: clean
-  evidence_boundary:
-    calibration_requests_count_as_official_context_evidence: false
-    request_success_and_mtp_counters: server_summary_only_missing_request_results_and_counter_snapshots
-    transfer_hash_match: server_reported_missing_transfer_manifest_in_received_package
-  received_package:
-    relative_inbox_path: 2026-07-14/p6_1c_blocked_sampling_calibration_20260714
-    file_count: 9
-    total_bytes: 10267
-    sorted_name_bytes_sha256_manifest_sha256: fbfe0aa9f34a5b912de895f42df2a1a8effb83a51155a04fb926a342ace67304
-
 execution_state:
-  status: completed_blocked_sampling_calibration
-  server_handoff: superseded_by_p6_1c_r1_prepared_not_dispatched
+  status: prepared_not_dispatched
+  server_handoff: prepared_not_dispatched
   npu_execution_authorized: false
   next_task_authorized: false
