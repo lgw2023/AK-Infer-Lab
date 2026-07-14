@@ -1,21 +1,21 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P6.1C 合同已准备，未授权执行
+## 当前唯一服务器动作：执行已授权的 P6.1C 合同
 
 ~~~text
 task_id: p6_1c_deepseek_v4_flash_w8a8_mtp_official_context_ladder_2026_0714
-execution_mode: prepared_not_dispatched
+execution_mode: authorized_for_execution
 workload: benchmarks/deepseek_v4_flash/workloads/p6_1c_mtp_official_context_ladder.yaml
-npu_execution_authorized: false
-next_task_authorized: false
+npu_execution_authorized: true
+next_task_authorized: true
 ~~~
 
-本文已准备 P6.1C 的完整服务器执行合同，但当前只作为外部开发机上的待发布输入。
-当前不得执行本文任何 Bash/Python 命令；不得启动 vLLM，不得发送模型请求，也不得
-占用 NPU 0-7。必须等待本合同发布完成且用户另行明确授权下发后，服务器才可同步并执行。
+用户已明确授权 P6.1C 服务器/NPU 执行。本文随授权提交发布到远程 `main`；服务器
+完成远程 main 的 fast-forward 同步与授权门核验后，只执行本文 P6.1C 合同，不得把本次
+授权扩展到其他 workload、profiler、P8、自动修复或结果外发。
 
-当前开发范围只包括 workload、handoff、合同测试和直接相关真值面。外部开发机不运行
-NPU，开发完成后也不自动提交、推送、下发或传输结果。
+本次开发机发布只切换 workload、handoff、合同测试和直接相关真值面的授权状态；外部
+开发机不运行 NPU。服务器必须继续遵守本文全部 frozen runtime、停止和传输边界。
 
 ## 1. 声明边界与固定合同
 
@@ -57,14 +57,14 @@ checkpoint。不得关闭 MTP、降低 context、修改 max_num_seqs 或 eager f
 
 ## 2. 授权门、同步和任务目录
 
-当前代码块中的授权值故意为 `false`，所以即使误复制也会在任何同步、NPU 查询或目录
-创建前停止。只有用户另行明确授权执行、开发机把 workload 与本文中的授权值一并改为
-true、发布到远程 `main` 后，服务器才可从本节开始逐节执行。
+用户已于 2026-07-14 明确授权本任务执行，workload、本文和下方 Bash 门均已切换为
+`true`。服务器必须先 fast-forward 同步远程 `main` 并通过仓库、授权和资源门，随后才可
+从本节开始逐节执行；任何门失败均按本文停止，不得绕过或自行修复。
 
 ~~~bash
 set -euo pipefail
 
-NPU_EXECUTION_AUTHORIZED=false
+NPU_EXECUTION_AUTHORIZED=true
 test "${NPU_EXECUTION_AUTHORIZED}" = true
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
@@ -1568,6 +1568,6 @@ duty-cycle、selected validation wall guard、五档逐 attempt token/health/que
 retry、highest stable context、server grade、首错和 raw server paths。不得把 calibration 写入
 official 成功档位，也不得把 candidate green 写成开发机已接受的 green。
 
-当前 `npu_execution_authorized:false`、`next_task_authorized:false` 不因本文合同完整而改变。
-本轮开发机只验证合同语义与语法，不运行 NPU；后续发布、授权值变更、服务器同步执行和
-任何结果外发都分别需要用户新的明确授权。
+当前 `npu_execution_authorized:true`、`next_task_authorized:true` 只授权本文 task ID 的
+calibration 与 official ladder。开发机不运行 NPU；服务器同步后按本文执行和就地报告。
+任何结果外发仍须先报告完整候选范围，并重新获得用户对单一传输方法的明确选择。

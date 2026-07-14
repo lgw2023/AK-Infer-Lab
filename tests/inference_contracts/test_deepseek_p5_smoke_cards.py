@@ -1039,7 +1039,7 @@ def test_p6_1l_rerun_freezes_runtime_request_retry_and_stop_boundaries():
     assert workload["stop_policy"]["no_p8_execution"] is True
 
 
-def test_p6_1c_official_context_ladder_is_prepared_but_not_dispatched():
+def test_p6_1c_official_context_ladder_is_authorized_for_execution():
     workload = load_yaml(
         BENCHMARK_DIR / "workloads" / "p6_1c_mtp_official_context_ladder.yaml"
     )
@@ -1059,10 +1059,10 @@ def test_p6_1c_official_context_ladder_is_prepared_but_not_dispatched():
         "p8_execution_authorized": False,
     }
     assert workload["execution_state"] == {
-        "status": "prepared_not_dispatched",
-        "server_handoff": "prepared_not_dispatched",
-        "npu_execution_authorized": False,
-        "next_task_authorized": False,
+        "status": "authorized_for_execution",
+        "server_handoff": "authorized_for_execution",
+        "npu_execution_authorized": True,
+        "next_task_authorized": True,
     }
 
 
@@ -1324,29 +1324,28 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_prepares_only_the_p6_1c_task_without_authorizing_npu():
+def test_server_handoff_authorizes_only_the_p6_1c_task_for_npu_execution():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "## 当前唯一服务器动作：P6.1C 合同已准备，未授权执行" in handoff
+    assert "## 当前唯一服务器动作：执行已授权的 P6.1C 合同" in handoff
     assert (
         "task_id: p6_1c_deepseek_v4_flash_w8a8_mtp_official_context_ladder_"
         "2026_0714"
         in handoff
     )
-    assert "execution_mode: prepared_not_dispatched" in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "next_task_authorized: false" in handoff
+    assert "execution_mode: authorized_for_execution" in handoff
+    assert "npu_execution_authorized: true" in handoff
+    assert "next_task_authorized: true" in handoff
     assert "benchmarks/deepseek_v4_flash/workloads/p6_1c_mtp_official_context_ladder.yaml" in handoff
-    assert "当前不得执行本文任何 Bash/Python 命令" in handoff
-    assert "必须等待本合同发布完成且用户另行明确授权下发" in handoff
-    assert "不得启动 vLLM" in handoff
-    assert "不得发送模型请求" in handoff
+    assert "用户已明确授权 P6.1C 服务器/NPU 执行" in handoff
+    assert "完成远程 main 的 fast-forward 同步与授权门核验后" in handoff
+    assert "只执行本文 P6.1C 合同" in handoff
 
 
-def test_server_handoff_contains_the_full_but_gated_p6_1c_execution_contract():
+def test_server_handoff_contains_the_full_authorized_p6_1c_execution_contract():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
     assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
@@ -1354,7 +1353,7 @@ def test_server_handoff_contains_the_full_but_gated_p6_1c_execution_contract():
     assert 'git -C "${REPO_ROOT}" merge --ff-only origin/main' in handoff
     assert 'rev-parse HEAD)" = "$(git -C "${REPO_ROOT}" rev-parse origin/main)' in handoff
     assert "status --porcelain --untracked-files=no" in handoff
-    assert "NPU_EXECUTION_AUTHORIZED=false" in handoff
+    assert "NPU_EXECUTION_AUTHORIZED=true" in handoff
     assert 'test "${NPU_EXECUTION_AUTHORIZED}" = true' in handoff
     assert "SERVER_LIFECYCLES_MAX=2" in handoff
     assert "CALIBRATION_CONTEXT_TOKENS=65536" in handoff
@@ -1390,7 +1389,7 @@ def test_server_handoff_contains_the_full_but_gated_p6_1c_execution_contract():
     assert "build-vllm-ascend-observe-bundle" not in handoff
 
 
-def test_p6_1c_is_the_prepared_next_action_across_current_truth_surfaces():
+def test_p6_1c_is_the_authorized_next_action_across_current_truth_surfaces():
     readiness = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
     artifacts = readiness["artifacts"]
     acceptance = readiness["acceptance"]
@@ -1408,7 +1407,7 @@ def test_p6_1c_is_the_prepared_next_action_across_current_truth_surfaces():
         "mtp_4096_64_and_decode_length_green_context_ladder_pending"
     )
     assert acceptance["blocked_by"] == "official_mtp_context_ladder_not_executed"
-    assert acceptance["next_task_authorized"] is False
+    assert acceptance["next_task_authorized"] is True
 
     current_surfaces = {
         "next_action": REPO_ROOT / "工作记录与进度笔记本" / "05_下一步行动指导.md",
@@ -1420,8 +1419,8 @@ def test_p6_1c_is_the_prepared_next_action_across_current_truth_surfaces():
     for name, path in current_surfaces.items():
         text = path.read_text(encoding="utf-8")
         assert "P6.1C" in text, name
-        assert "prepared_not_dispatched" in text, name
-        assert "npu_execution_authorized:false" in text, name
+        assert "authorized_for_execution" in text, name
+        assert "npu_execution_authorized:true" in text, name
         assert "65536+64" in text, name
         assert "4096/32768/65536/98304/131072" in text, name
         assert "完整 P6.1" in text, name
