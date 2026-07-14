@@ -1039,27 +1039,314 @@ def test_p6_1l_rerun_freezes_runtime_request_retry_and_stop_boundaries():
     assert workload["stop_policy"]["no_p8_execution"] is True
 
 
-def test_server_handoff_contains_only_the_p6_1l_rerun_closeout_action():
+def test_p6_1c_official_context_ladder_is_prepared_but_not_dispatched():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1c_mtp_official_context_ladder.yaml"
+    )
+
+    assert workload["workload_id"] == (
+        "p6_1c_deepseek_v4_flash_mtp_official_context_ladder"
+    )
+    assert workload["task_id"] == (
+        "p6_1c_deepseek_v4_flash_w8a8_mtp_official_context_ladder_2026_0714"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.1C",
+        "mode": "mtp_official_context_ladder_with_hbm_sampling_calibration",
+        "claim_boundary": "mtp_context_ladder_functional_capacity_and_stability_only",
+        "may_claim_performance_baseline": False,
+        "profiler_authorized": False,
+        "p8_execution_authorized": False,
+    }
+    assert workload["execution_state"] == {
+        "status": "prepared_not_dispatched",
+        "server_handoff": "prepared_not_dispatched",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
+    }
+
+
+def test_p6_1c_calibrates_and_freezes_hbm_sampling_before_the_official_ladder():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1c_mtp_official_context_ladder.yaml"
+    )
+
+    lifecycle = workload["lifecycle_plan"]
+    assert lifecycle["server_lifecycles_max"] == 2
+    assert lifecycle["order"] == [
+        "hbm_sampling_calibration_lifecycle",
+        "fresh_official_context_ladder_lifecycle",
+    ]
+    assert lifecycle["official_lifecycle_requires_calibration_green"] is True
+    assert lifecycle["cleanup_between_lifecycles_required"] is True
+    assert lifecycle["calibration_cache_or_counters_may_carry_over"] is False
+
+    calibration = workload["hbm_sampling_calibration"]
+    assert calibration["context_tokens"] == 65536
+    assert calibration["output_tokens"] == 64
+    assert calibration["counts_as_official_context_evidence"] is False
+    assert [request["role"] for request in calibration["requests"]] == [
+        "calibration_control",
+        "calibration_high_resolution",
+        "calibration_selected_validation",
+    ]
+    assert calibration["requests"][0]["sampling_enabled"] is False
+    assert calibration["requests"][1]["target_interval_seconds"] == 0.5
+    assert calibration["requests"][2]["interval_source"] == (
+        "selected_interval_from_calibration"
+    )
+    assert calibration["payload_construction"] == {
+        "source_prompt_tokens": 4096,
+        "target_prompt_tokens": 65536,
+        "method": "repeat_then_apply_distinct_cyclic_offsets",
+        "same_token_multiset_required": True,
+        "pairwise_common_prefix_tokens_required": 0,
+        "canonical_bodies_frozen_before_server_start": True,
+    }
+    assert calibration["hbm_sweep"] == {
+        "command": "npu-smi info -t usages",
+        "required_device_ids": list(range(8)),
+        "required_fields": [
+            "NPU ID",
+            "HBM Capacity(MB)",
+            "HBM Usage Rate(%)",
+        ],
+        "record_start_end_and_wall_time": True,
+    }
+    assert calibration["candidate_intervals_seconds"] == [0.5, 1.0, 2.0, 5.0]
+    assert calibration["selection_policy"] == "largest_interval_passing_all_gates"
+    assert calibration["selection_gates"] == {
+        "device_coverage_required": 8,
+        "parse_failures_allowed": 0,
+        "max_hbm_usage_peak_delta_percentage_points": 1.0,
+        "min_prefill_samples_per_device": 20,
+        "max_p95_sweep_duty_cycle_ratio": 0.05,
+    }
+    assert calibration["selected_validation"]["max_wall_time_increase_ratio"] == 0.10
+    assert calibration["selected_validation"]["diagnostic_only_not_performance"] is True
+    assert calibration["failure_grade"] == "blocked_sampling_calibration"
+    assert calibration["failure_stops_before_official_lifecycle"] is True
+    assert calibration["raw_traces_remain_server_local"] is True
+
+
+def test_p6_1c_reuses_the_accepted_mtp_runtime_without_fallbacks():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1c_mtp_official_context_ladder.yaml"
+    )
+
+    assert workload["accepted_prerequisites"] == {
+        "minimal_mtp_task_id": (
+            "p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_"
+            "retry2_2026_0713"
+        ),
+        "minimal_mtp_grade": "green_mtp_minimal_request_success",
+        "decode_length_task_id": (
+            "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
+            "rerun1_2026_0713"
+        ),
+        "decode_length_grade": "green_mtp_decode_length_ladder_revalidated",
+        "prior_green_results_remain_valid_on_new_task_failure": True,
+    }
+    assert workload["repair_artifact"] == {
+        "path": (
+            "benchmarks/deepseek_v4_flash/patches/"
+            "vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch"
+        ),
+        "patch_sha256": (
+            "75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1"
+        ),
+        "patched_proposer_sha256": (
+            "7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02"
+        ),
+        "unchanged_base_proposer_sha256": (
+            "0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb"
+        ),
+        "task_local_overlay_only": True,
+        "patch_attempts_per_lifecycle_max": 1,
+    }
+    runtime = workload["runtime_fixed"]
+    assert runtime["model_path"] == "/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp"
+    assert runtime["vllm_commit"] == "0decac0d96c42b49572498019f0a0e3600f50398"
+    assert runtime["vllm_ascend_commit"] == "5f6faa0cb8830f667266f3b8121cd1383606f2a1"
+    assert runtime["server_command_sha256"] == (
+        "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19"
+    )
+    assert runtime["max_model_len"] == 135168
+    assert runtime["max_num_seqs"] == 1
+    assert runtime["tensor_parallel_size"] == 8
+    assert runtime["enable_expert_parallel"] is True
+    assert runtime["enforce_eager"] is False
+    assert runtime["cudagraph_mode"] == "FULL_DECODE_ONLY"
+    assert runtime["speculative_mtp"] == {"method": "mtp", "num_speculative_tokens": 1}
+    assert workload["source_payload"] == {
+        "server_path": (
+            "工作记录与进度笔记本/runtime_trace_smokes/"
+            "p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_"
+            "v0221rc1_2026_0712/request_payload.json"
+        ),
+        "prompt_tokens": 4096,
+        "bytes": 19487,
+        "sha256": (
+            "48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1"
+        ),
+    }
+    assert workload["stop_policy"]["server_restart_allowed"] is False
+    assert workload["stop_policy"]["parameter_mutation_allowed"] is False
+    assert workload["stop_policy"]["mtp_disable_allowed"] is False
+    assert workload["stop_policy"]["context_reduction_allowed"] is False
+    assert workload["stop_policy"]["eager_fallback_allowed"] is False
+    assert workload["stop_policy"]["version_upgrade_allowed"] is False
+
+
+def test_p6_1c_freezes_the_five_slot_ladder_and_hard_gate_grading():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1c_mtp_official_context_ladder.yaml"
+    )
+
+    ladder = workload["official_context_ladder"]
+    assert ladder["contexts_tokens"] == [4096, 32768, 65536, 98304, 131072]
+    assert ladder["output_tokens"] == 64
+    assert ladder["slots_per_context"] == 1
+    assert ladder["hidden_warmup_requests"] == 0
+    assert ladder["concurrency"] == 1
+    assert ladder["request_order"] == "sequential"
+    assert ladder["selected_hbm_interval_frozen_for_all_attempts"] is True
+    assert ladder["highest_stable_context_excludes_calibration"] is True
+    assert ladder["canonical_body_policy"] == {
+        "method": "repeat_and_truncate_frozen_4096_prompt_ids",
+        "freeze_before_first_lifecycle": True,
+        "record_prompt_tokens_body_bytes_and_sha256_per_context": True,
+        "same_body_bytes_required_for_retry": True,
+    }
+
+    request = workload["request_protocol"]
+    assert request["endpoint"] == "/v1/completions"
+    assert request["temperature"] == 0.0
+    assert request["ignore_eos"] is True
+    assert request["min_tokens_equals_max_tokens"] is True
+    assert request["streaming"] is True
+    assert request["stream_include_usage"] is True
+    assert request["return_token_ids"] is True
+    assert request["generated_text_retained"] is False
+    assert request["token_ids_retained"] is False
+
+    metrics = workload["metrics_evidence"]
+    assert metrics["snapshot_before_and_after_every_attempt"] is True
+    assert metrics["spec_counter_names"] == [
+        "vllm:spec_decode_num_drafts_total",
+        "vllm:spec_decode_num_draft_tokens_total",
+        "vllm:spec_decode_num_accepted_tokens_total",
+    ]
+    assert metrics["request_gauge_names"] == [
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting",
+    ]
+    assert metrics["positive_drafts_per_success"] is True
+    assert metrics["positive_draft_tokens_per_success"] is True
+    assert metrics["zero_accepted_delta_per_slot_allowed"] is True
+    assert metrics["positive_accepted_delta_total_required"] is True
+    assert metrics["counter_continuity_required"] is True
+
+    retry = workload["retry_policy"]
+    assert retry["max_retries_per_context"] == 1
+    assert retry["max_retries_total"] == 5
+    assert retry["attempts_total_max"] == 10
+    assert retry["same_request_body_sha256_required"] is True
+    assert retry["health_200_and_idle_queue_required"] is True
+    assert retry["complete_metrics_required"] is True
+    assert retry["second_failure_stops_before_higher_contexts"] is True
+
+    acceptance = workload["acceptance"]
+    assert acceptance["blocked_sampling_grade"] == "blocked_sampling_calibration"
+    assert acceptance["blocked_pre_request_grade"] == "blocked_protocol_or_resource_gate"
+    assert acceptance["no_success_grade"] == "red_mtp_context_ladder_no_success"
+    assert acceptance["partial_grade"] == "yellow_mtp_context_ladder_partial"
+    assert acceptance["retry_grade"] == (
+        "yellow_mtp_official_context_ladder_recovered_with_retry"
+    )
+    assert acceptance["server_candidate_green_grade"] == (
+        "candidate_green_mtp_official_context_ladder"
+    )
+    assert acceptance["developer_accepted_green_grade"] == (
+        "green_mtp_official_context_ladder"
+    )
+    assert acceptance["green_requires_all_five_first_attempt_successes"] is True
+    assert acceptance["official_baseline_requires_external_developer_review"] is True
+    assert acceptance["retry_path_may_claim_official_baseline"] is False
+
+
+def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_choice():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1c_mtp_official_context_ladder.yaml"
+    )
+
+    hbm = workload["hbm_resource_evidence"]
+    assert hbm["scope"] == "whole_device_hbm_occupancy_not_kv_object_bytes_or_traffic"
+    assert hbm["raw_samples_remain_server_local"] is True
+    assert hbm["per_attempt_summary_fields"] == [
+        "context_tokens",
+        "attempt_index",
+        "selected_interval_seconds",
+        "device_id",
+        "sample_count",
+        "hbm_capacity_mb",
+        "hbm_used_max_mb",
+        "hbm_free_min_mb",
+        "hbm_usage_pct_max",
+        "parser_ok",
+    ]
+    assert hbm["all_eight_devices_required_for_green"] is True
+
+    schema = workload["attempt_result_schema"]
+    assert schema["format"] == "json_lines_one_record_per_attempt"
+    assert "request_body_sha256" in schema["fields"]
+    assert "hbm_summary_path" in schema["fields"]
+    assert "request_wall_ms_diagnostic_only" in schema["fields"]
+    assert schema["generated_text_field_forbidden"] is True
+    assert schema["token_ids_field_forbidden"] is True
+
+    package = workload["result_package_policy"]
+    assert package["max_total_bytes"] == 71680
+    assert package["raw_logs_metrics_hbm_and_request_bodies_remain_server_local"] is True
+    assert package["generated_text_or_token_ids_allowed"] is False
+    assert package["selection_required_before_any_transfer"] is True
+    assert package["available_methods"] == ["email", "upload-api", "server-local"]
+    assert package["methods_are_mutually_exclusive"] is True
+    assert package["report_before_choice"] == [
+        "exact_result_summary_path",
+        "complete_candidate_file_list",
+        "size_bytes_per_file",
+        "sha256_per_file",
+        "sensitivity_per_file",
+        "available_methods",
+        "recommended_method_and_reason",
+    ]
+    assert package["handoff_contains_transfer_command"] is False
+
+
+def test_server_handoff_prepares_only_the_p6_1c_task_without_authorizing_npu():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    source_task_id = (
-        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
-        "rerun1_2026_0713"
-    )
-    assert f"source_result_task_id: {source_task_id}" in handoff
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "## 当前唯一服务器动作：同步 P6.1L-R1 green 收口并停止" in handoff
-    assert "task_id: none" in handoff
-    assert "execution_mode: read_only_sync_and_wait_no_npu" in handoff
-    assert "green_mtp_decode_length_ladder_revalidated" in handoff
-    assert "bef2d8be182973c8c7c6206b14fad91d906b8efc" in handoff
+    assert "## 当前唯一服务器动作：P6.1C 合同已准备，未授权执行" in handoff
+    assert (
+        "task_id: p6_1c_deepseek_v4_flash_w8a8_mtp_official_context_ladder_"
+        "2026_0714"
+        in handoff
+    )
+    assert "execution_mode: prepared_not_dispatched" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "不得重新执行六个 slot" in handoff
+    assert "benchmarks/deepseek_v4_flash/workloads/p6_1c_mtp_official_context_ladder.yaml" in handoff
+    assert "当前不得执行本文任何 Bash/Python 命令" in handoff
+    assert "必须等待本合同发布完成且用户另行明确授权下发" in handoff
+    assert "不得启动 vLLM" in handoff
+    assert "不得发送模型请求" in handoff
 
 
-def test_server_handoff_syncs_main_preserves_raw_evidence_and_waits():
+def test_server_handoff_contains_the_full_but_gated_p6_1c_execution_contract():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
     assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
@@ -1067,27 +1354,79 @@ def test_server_handoff_syncs_main_preserves_raw_evidence_and_waits():
     assert 'git -C "${REPO_ROOT}" merge --ff-only origin/main' in handoff
     assert 'rev-parse HEAD)" = "$(git -C "${REPO_ROOT}" rev-parse origin/main)' in handoff
     assert "status --porcelain --untracked-files=no" in handoff
-    assert "benchmarks/deepseek_v4_flash/workloads/p6_1l_mtp_decode_length_ladder_rerun1.yaml" in handoff
-    assert "工作记录与进度笔记本/05_下一步行动指导.md" in handoff
-    assert (
-        "/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/"
-        "p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_"
-        "rerun1_2026_0713"
-        in handoff
-    )
-    assert "保留 raw server log、raw metrics 和计数文件" in handoff
+    assert "NPU_EXECUTION_AUTHORIZED=false" in handoff
+    assert 'test "${NPU_EXECUTION_AUTHORIZED}" = true' in handoff
+    assert "SERVER_LIFECYCLES_MAX=2" in handoff
+    assert "CALIBRATION_CONTEXT_TOKENS=65536" in handoff
+    assert "CALIBRATION_OUTPUT_TOKENS=64" in handoff
+    assert "CANDIDATE_INTERVALS=(0.5 1.0 2.0 5.0)" in handoff
+    assert "calibration_control" in handoff
+    assert "calibration_high_resolution" in handoff
+    assert "calibration_selected_validation" in handoff
+    assert '"npu-smi", "info", "-t", "usages"' in handoff
+    assert "max_peak_delta_percentage_points=1.0" in handoff
+    assert "min_prefill_samples_per_device=20" in handoff
+    assert "max_p95_sweep_duty_cycle_ratio=0.05" in handoff
+    assert "max_selected_wall_time_increase_ratio=0.10" in handoff
+    assert "OFFICIAL_CONTEXTS=(4096 32768 65536 98304 131072)" in handoff
+    assert "SELECTED_HBM_INTERVAL_SECONDS" in handoff
+    assert "selected interval 在正式 lifecycle 内不得改变" in handoff
+    assert "/v1/completions" in handoff
+    assert "vllm:spec_decode_num_drafts_total" in handoff
+    assert "vllm:num_requests_running" in handoff
+    assert "candidate_green_mtp_official_context_ladder" in handoff
+    assert "yellow_mtp_official_context_ladder_recovered_with_retry" in handoff
+    assert "yellow_mtp_context_ladder_partial" in handoff
+    assert "blocked_sampling_calibration" in handoff
+    assert "result_summary.md" in handoff
+    assert "delivery_candidates.tsv" in handoff
+    assert "71680" in handoff
+    assert "不得发送 email、不得调用 upload-api" in handoff
+    assert "generated text 和 token IDs 不得进入结果包" in handoff
     assert "不得运行 `通信模块/server_local_git_sync.sh`" in handoff
-    assert "不得启动 vLLM" in handoff
-    assert "不得发送模型请求" in handoff
-    assert "不得创建或修改 overlay" in handoff
-    assert "不得生成或传输新的结果包" in handoff
-    assert "同步并核对完成后停止，等待用户授权下一任务" in handoff
-    assert "/v1/completions" not in handoff
-    assert "PATCH_ATTEMPTS_MAX" not in handoff
-    assert "PLANNED_SLOTS" not in handoff
+    assert "关闭 MTP、降低 context、修改 max_num_seqs 或 eager fallback" in handoff
     assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
     assert "collect-vllm-ascend-observations" not in handoff
     assert "build-vllm-ascend-observe-bundle" not in handoff
+
+
+def test_p6_1c_is_the_prepared_next_action_across_current_truth_surfaces():
+    readiness = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
+    artifacts = readiness["artifacts"]
+    acceptance = readiness["acceptance"]
+
+    assert artifacts["completed_p6_1r_workload"] == (
+        "workloads/p6_1r_bounded_mtp_reference_repair.yaml"
+    )
+    assert artifacts["completed_p6_1l_rerun_workload"] == (
+        "workloads/p6_1l_mtp_decode_length_ladder_rerun1.yaml"
+    )
+    assert artifacts["next_workload"] == (
+        "workloads/p6_1c_mtp_official_context_ladder.yaml"
+    )
+    assert readiness["target_runtime"]["runtime_status"] == (
+        "mtp_4096_64_and_decode_length_green_context_ladder_pending"
+    )
+    assert acceptance["blocked_by"] == "official_mtp_context_ladder_not_executed"
+    assert acceptance["next_task_authorized"] is False
+
+    current_surfaces = {
+        "next_action": REPO_ROOT / "工作记录与进度笔记本" / "05_下一步行动指导.md",
+        "stage_plan": REPO_ROOT / "工作记录与进度笔记本" / "02_阶段计划.md",
+        "reordered_plan": REPO_ROOT / "工作记录与进度笔记本" / "12_P5_P9_后续阶段重排计划.md",
+        "special_plan": REPO_ROOT / "工作记录与进度笔记本" / "09_DeepSeek_V4_Flash_专项计划.md",
+        "stable_plan": REPO_ROOT / "docs" / "EXPERIMENT_PLAN.md",
+    }
+    for name, path in current_surfaces.items():
+        text = path.read_text(encoding="utf-8")
+        assert "P6.1C" in text, name
+        assert "prepared_not_dispatched" in text, name
+        assert "npu_execution_authorized:false" in text, name
+        assert "65536+64" in text, name
+        assert "4096/32768/65536/98304/131072" in text, name
+        assert "完整 P6.1" in text, name
+        assert "profiler" in text, name
+        assert "P8" in text, name
 
 
 def test_p6_1l_captures_bounded_request_errors_without_generated_content():

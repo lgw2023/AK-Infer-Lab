@@ -1,0 +1,300 @@
+schema_version: 1
+workload_id: p6_1c_deepseek_v4_flash_mtp_official_context_ladder
+date: "2026-07-14"
+purpose: calibrate_hbm_sampling_then_validate_the_mtp_official_context_ladder
+task_id: p6_1c_deepseek_v4_flash_w8a8_mtp_official_context_ladder_2026_0714
+
+stage_contract:
+  stage: P6.1C
+  mode: mtp_official_context_ladder_with_hbm_sampling_calibration
+  claim_boundary: mtp_context_ladder_functional_capacity_and_stability_only
+  may_claim_performance_baseline: false
+  profiler_authorized: false
+  p8_execution_authorized: false
+
+accepted_prerequisites:
+  minimal_mtp_task_id: p6_1r_deepseek_v4_flash_w8a8_bounded_mtp_reference_repair_retry2_2026_0713
+  minimal_mtp_grade: green_mtp_minimal_request_success
+  decode_length_task_id: p6_1l_deepseek_v4_flash_w8a8_mtp_decode_length_ladder_rerun1_2026_0713
+  decode_length_grade: green_mtp_decode_length_ladder_revalidated
+  prior_green_results_remain_valid_on_new_task_failure: true
+
+repair_artifact:
+  path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  patch_sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  patched_proposer_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+  unchanged_base_proposer_sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+  task_local_overlay_only: true
+  patch_attempts_per_lifecycle_max: 1
+
+runtime_fixed:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  runtime: vllm_0_22_1_empty_and_vllm_ascend_0_22_1rc1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  server_command_sha256: 370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  data_parallel_size: 1
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  enforce_eager: false
+  cudagraph_mode: FULL_DECODE_ONLY
+  speculative_mtp:
+    method: mtp
+    num_speculative_tokens: 1
+
+source_payload:
+  server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+  prompt_tokens: 4096
+  bytes: 19487
+  sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+
+lifecycle_plan:
+  server_lifecycles_max: 2
+  order:
+    - hbm_sampling_calibration_lifecycle
+    - fresh_official_context_ladder_lifecycle
+  official_lifecycle_requires_calibration_green: true
+  cleanup_between_lifecycles_required: true
+  calibration_cache_or_counters_may_carry_over: false
+
+hbm_sampling_calibration:
+  context_tokens: 65536
+  output_tokens: 64
+  counts_as_official_context_evidence: false
+  requests:
+    - role: calibration_control
+      sampling_enabled: false
+    - role: calibration_high_resolution
+      sampling_enabled: true
+      target_interval_seconds: 0.5
+    - role: calibration_selected_validation
+      sampling_enabled: true
+      interval_source: selected_interval_from_calibration
+  payload_construction:
+    source_prompt_tokens: 4096
+    target_prompt_tokens: 65536
+    method: repeat_then_apply_distinct_cyclic_offsets
+    same_token_multiset_required: true
+    pairwise_common_prefix_tokens_required: 0
+    canonical_bodies_frozen_before_server_start: true
+  hbm_sweep:
+    command: npu-smi info -t usages
+    required_device_ids:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    required_fields:
+      - NPU ID
+      - HBM Capacity(MB)
+      - HBM Usage Rate(%)
+    record_start_end_and_wall_time: true
+  candidate_intervals_seconds:
+    - 0.5
+    - 1.0
+    - 2.0
+    - 5.0
+  selection_policy: largest_interval_passing_all_gates
+  selection_gates:
+    device_coverage_required: 8
+    parse_failures_allowed: 0
+    max_hbm_usage_peak_delta_percentage_points: 1.0
+    min_prefill_samples_per_device: 20
+    max_p95_sweep_duty_cycle_ratio: 0.05
+  selected_validation:
+    max_wall_time_increase_ratio: 0.10
+    diagnostic_only_not_performance: true
+  failure_grade: blocked_sampling_calibration
+  failure_stops_before_official_lifecycle: true
+  raw_traces_remain_server_local: true
+
+official_context_ladder:
+  contexts_tokens:
+    - 4096
+    - 32768
+    - 65536
+    - 98304
+    - 131072
+  output_tokens: 64
+  slots_per_context: 1
+  hidden_warmup_requests: 0
+  concurrency: 1
+  request_order: sequential
+  selected_hbm_interval_frozen_for_all_attempts: true
+  highest_stable_context_excludes_calibration: true
+  canonical_body_policy:
+    method: repeat_and_truncate_frozen_4096_prompt_ids
+    freeze_before_first_lifecycle: true
+    record_prompt_tokens_body_bytes_and_sha256_per_context: true
+    same_body_bytes_required_for_retry: true
+
+request_protocol:
+  endpoint: /v1/completions
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming: true
+  stream_include_usage: true
+  return_token_ids: true
+  socket_inactivity_timeout_seconds: 7200
+  http_error_body_bytes_max: 8192
+  generated_text_retained: false
+  token_ids_retained: false
+
+metrics_evidence:
+  endpoint: /metrics
+  live_metrics_preflight_required_per_lifecycle: true
+  snapshot_before_and_after_every_attempt: true
+  spec_counter_names:
+    - vllm:spec_decode_num_drafts_total
+    - vllm:spec_decode_num_draft_tokens_total
+    - vllm:spec_decode_num_accepted_tokens_total
+  request_gauge_names:
+    - vllm:num_requests_running
+    - vllm:num_requests_waiting
+  positive_drafts_per_success: true
+  positive_draft_tokens_per_success: true
+  zero_accepted_delta_per_slot_allowed: true
+  positive_accepted_delta_total_required: true
+  counter_continuity_required: true
+  log_only_fallback_allowed: false
+
+retry_policy:
+  max_retries_per_context: 1
+  max_retries_total: 5
+  attempts_total_max: 10
+  same_request_body_sha256_required: true
+  server_process_must_be_alive: true
+  health_200_and_idle_queue_required: true
+  complete_metrics_required: true
+  selected_hbm_interval_must_remain_frozen: true
+  second_failure_stops_before_higher_contexts: true
+  server_restart_allowed: false
+  recovered_attempt_fills_context_slot: true
+
+hbm_resource_evidence:
+  scope: whole_device_hbm_occupancy_not_kv_object_bytes_or_traffic
+  raw_samples_remain_server_local: true
+  per_attempt_summary_fields:
+    - context_tokens
+    - attempt_index
+    - selected_interval_seconds
+    - device_id
+    - sample_count
+    - hbm_capacity_mb
+    - hbm_used_max_mb
+    - hbm_free_min_mb
+    - hbm_usage_pct_max
+    - parser_ok
+  all_eight_devices_required_for_green: true
+
+attempt_result_schema:
+  format: json_lines_one_record_per_attempt
+  fields:
+    - slot_id
+    - context_tokens
+    - output_tokens
+    - attempt_index
+    - request_body_sha256
+    - status
+    - http_status
+    - prompt_tokens
+    - generated_token_count
+    - streamed_token_count
+    - finish_reason
+    - saw_done
+    - health_before
+    - health_after
+    - metrics_before
+    - metrics_after
+    - metrics_delta
+    - mtp_activity_evidence
+    - queue_evidence_ok
+    - selected_hbm_interval_seconds
+    - hbm_summary_path
+    - retry_recovery
+    - request_wall_ms_diagnostic_only
+  generated_text_field_forbidden: true
+  token_ids_field_forbidden: true
+
+result_package_policy:
+  max_total_bytes: 71680
+  raw_logs_metrics_hbm_and_request_bodies_remain_server_local: true
+  generated_text_or_token_ids_allowed: false
+  selection_required_before_any_transfer: true
+  available_methods:
+    - email
+    - upload-api
+    - server-local
+  methods_are_mutually_exclusive: true
+  report_before_choice:
+    - exact_result_summary_path
+    - complete_candidate_file_list
+    - size_bytes_per_file
+    - sha256_per_file
+    - sensitivity_per_file
+    - available_methods
+    - recommended_method_and_reason
+  handoff_contains_transfer_command: false
+  bounded_candidates:
+    - result_summary.md
+    - sampling_calibration.json
+    - request_body_manifest.json
+    - official_ladder_summary.json
+    - attempt_results.jsonl
+    - hbm_summary.json
+    - grading_inputs.json
+    - overlay_import.json
+    - server_command_sha256.txt
+    - source_payload_sha256.txt
+    - cleanup_status.txt
+    - first_failure_excerpt.txt
+
+acceptance:
+  blocked_sampling_grade: blocked_sampling_calibration
+  blocked_pre_request_grade: blocked_protocol_or_resource_gate
+  no_success_grade: red_mtp_context_ladder_no_success
+  partial_grade: yellow_mtp_context_ladder_partial
+  evidence_incomplete_grade: red_mtp_context_ladder_evidence_incomplete
+  cleanup_failure_grade: red_cleanup_incomplete
+  retry_grade: yellow_mtp_official_context_ladder_recovered_with_retry
+  server_candidate_green_grade: candidate_green_mtp_official_context_ladder
+  developer_accepted_green_grade: green_mtp_official_context_ladder
+  green_requires_all_five_first_attempt_successes: true
+  official_baseline_requires_external_developer_review: true
+  retry_path_may_claim_official_baseline: false
+  prior_4096_64_green_remains_valid: true
+  prior_decode_length_green_remains_valid: true
+
+stop_policy:
+  server_restart_allowed: false
+  parameter_mutation_allowed: false
+  patch_mutation_allowed: false
+  second_patch_allowed: false
+  mtp_disable_allowed: false
+  context_reduction_allowed: false
+  max_num_seqs_reduction_allowed: false
+  eager_fallback_allowed: false
+  version_upgrade_allowed: false
+  profiler_allowed: false
+  p8_execution_allowed: false
+  automatic_follow_up_allowed: false
+
+execution_state:
+  status: prepared_not_dispatched
+  server_handoff: prepared_not_dispatched
+  npu_execution_authorized: false
+  next_task_authorized: false

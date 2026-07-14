@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: no_mtp_graph_request_4096_64_success_degraded_baseline
+  runtime_status: mtp_4096_64_and_decode_length_green_context_ladder_pending
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -170,7 +170,9 @@ artifacts:
   completed_mro_retry_workload: workloads/p5_8card_no_mtp_tokenizer_mro_retry.yaml
   completed_p6_0_workload: workloads/p6_0_no_mtp_degraded_stabilization.yaml
   completed_p6_1_control_workload: workloads/p6_1_no_mtp_minimal_unprofiled_control.yaml
-  next_workload: workloads/p6_1r_bounded_mtp_reference_repair.yaml
+  completed_p6_1r_workload: workloads/p6_1r_bounded_mtp_reference_repair.yaml
+  completed_p6_1l_rerun_workload: workloads/p6_1l_mtp_decode_length_ladder_rerun1.yaml
+  next_workload: workloads/p6_1c_mtp_official_context_ladder.yaml
   bounded_mtp_patch: patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
   server_handoff: 通信模块/docs/developer-to-server.md
 boundaries:
@@ -181,8 +183,9 @@ boundaries:
   - P6.0 completed with two new identical lifecycle successes and grade yellow_degraded_baseline_stabilized.
   - P6.1 minimal control completed with one warmup and three measured 4096+64+c1 requests, grade yellow_degraded_minimal_unprofiled_control_measured.
   - The first P6.1R attempt stopped blocked_repo before overlay because its prior-evidence path did not exist; all substantive root-cause and hash gates passed and patch/lifecycle/request counts remained 0/0/0.
-  - P6.1R retry1 applied the one-line overlay, reached server-ready and removed the original positions_cpu graph-capture failure; its only request returned HTTP 400 because the completion payload was sent to the chat endpoint, so MTP 4096+64 remains unvalidated.
-  - The active P6.1R retry2 preserves the same patch, runtime, payload and one-lifecycle/one-request budget while using /v1/completions, bounded HTTPError capture, request-first failure evidence and a package-root-plus-hash overlay gate.
+  - P6.1R retry1 applied the one-line overlay, reached server-ready and removed the original positions_cpu graph-capture failure; its only request returned HTTP 400 because the completion payload was sent to the chat endpoint.
+  - P6.1R retry2 completed the minimal MTP 4096+64 request with exact token checks and clean cleanup; P6.1L-R1 then revalidated all six 4096+512/1024 slots without retries.
+  - P6.1C is prepared_not_dispatched with npu_execution_authorized:false; its first lifecycle calibrates HBM sampling with independent 65536+64 requests, and a fresh lifecycle would then run 4096/32768/65536/98304/131072 with fixed output 64.
   - The full upstream backport, second patch, remaining P6.1 pilots and matrix, 128K, P8.1 server validation, profiler, offload and runtime upgrades remain unauthorized.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
@@ -193,4 +196,5 @@ acceptance:
   developer_to_server_ready: true
   p5_status: yellow_no_mtp_graph_request_success
   p8_observe_only_adapter_gate: open
-  blocked_by: mtp_and_128k_unvalidated_for_p5_green
+  blocked_by: official_mtp_context_ladder_not_executed
+  next_task_authorized: false
