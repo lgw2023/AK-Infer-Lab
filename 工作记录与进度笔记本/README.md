@@ -16,6 +16,10 @@ DeepSeek-V4-Flash on Ascend
   → P9 trace-driven simulator 与下一代硬件规格反推
 ```
 
+当前 P6.1C-R1 official context、P6.1 unprofiled performance 与 P6.2 profiled evidence
+三层 reference 已关闭；P6.3A matched MTP on/off 已授权，采用 8-cell / 48-batch /
+108-request 的 unprofiled 合同。P6.3B/P8/P9 不自动进入。
+
 ## 当前范围
 
 范围内：
@@ -54,6 +58,7 @@ DeepSeek-V4-Flash on Ascend
 | `12_P5_P9_后续阶段重排计划.md` | P5-P9 当前路线、阶段门、P8 分层工程原型和硬件联合分析。 |
 | `13_P0_P4_数据资产成果包索引.md` | P0-P4 硬件性能与推理观测数据资产成果包入口，串联审计计划、审计结果正文、静态仪表盘和副本关系。 |
 | `14_Qwen3_5_4B_vLLM_AISBench_性能指标记录.md` | P1.28-P1.30 Qwen3.5-4B / vLLM AISBench 风格性能指标、phase memory matrix、server stats 和边界记录。 |
+| `16_P6_阶段复盘与P6_3进入评估.md` | P6.0-P6.2 evidence chain、结果包索引、声明边界和 P6.3/P7-P9 路线复审入口。 |
 | `ak_infer_lab_p0_p4_data_asset_audit_2026_0708.txt` | P0-P4 数据资产全量审计结果正文，作为成果包主读文本版本。 |
 | `P0_P4_硬件性能与推理观测数据资产仪表盘_2026_0708.html` | P0-P4 数据资产全量审计的静态可视化仪表盘，作为成果包主展示版本。 |
 | `p1_inference_contracts/` | workload、schema、handoff、fixture、prompt。 |

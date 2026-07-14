@@ -1430,11 +1430,25 @@ def test_p6_2_mtp_profiled_evidence_uses_three_independent_reference_cells():
     assert workload["profiler"]["request_device_aggregate_enabled"] is True
     assert workload["profiler"]["raw_profiler_remains_server_local"] is True
     assert workload["execution_state"] == {
-        "status": "authorized_for_execution",
-        "server_handoff": "authorized_for_execution",
-        "npu_execution_authorized": True,
-        "next_task_authorized": True,
+        "status": "completed_developer_accepted_green",
+        "server_handoff": "completed",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
     }
+    result = workload["execution_result"]
+    assert result["server_grade"] == "candidate_green_mtp_profiled_evidence"
+    assert result["developer_grade"] == "green_mtp_profiled_evidence"
+    assert result["profiled_evidence_baseline"] is True
+    assert result["performance_reference_baseline_remains_true"] is True
+    assert result["profiled_latency_is_performance_baseline"] is False
+    assert result["measured_cells"] == 3
+    assert result["accepted_token_delta_total"] == 192.0
+    assert result["profiler_sqlite_files_per_cell"] == 136
+    assert result["phase_memory_rows"] == 6
+    assert result["minimum_device_coverage"] == 8
+    assert result["parse_failure_count"] == 0
+    assert result["retry_count"] == 0
+    assert result["cleanup_status"] == "clean"
 
 
 def test_p6_1c_r1_uses_one_eight_device_table_sweep_and_feasible_sampling_gates():
@@ -1939,16 +1953,15 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_authorizes_only_p6_2_profiled_evidence_for_immediate_execution():
+def test_server_handoff_authorizes_the_current_p6_3a_matched_ab_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "## 当前唯一服务器动作：同步并执行 P6.2 MTP profiled evidence" in handoff
+    assert "## 当前唯一服务器动作：同步并执行 P6.3A matched MTP on/off" in handoff
     assert (
-        "task_id: p6_2_deepseek_v4_flash_w8a8_mtp_profiled_evidence_"
-        "2026_0714"
+        "task_id: p6_3a_deepseek_v4_flash_w8a8_mtp_matched_ab_2026_0715"
         in handoff
     )
     assert "execution_mode: authorized_for_execution" in handoff
@@ -1956,94 +1969,38 @@ def test_server_handoff_authorizes_only_p6_2_profiled_evidence_for_immediate_exe
     assert "next_task_authorized: true" in handoff
     assert (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p6_2_mtp_profiled_evidence.yaml"
+        "p6_3a_mtp_matched_ab.yaml"
         in handoff
     )
-    assert "用户已明确授权 P6.2 MTP profiled evidence 服务器/NPU 执行" in handoff
-    assert "同步并通过全部硬门后立即执行当前唯一任务" in handoff
-
-
-def test_server_handoff_contains_the_full_authorized_p6_2_profiled_execution_contract():
-    handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
-        encoding="utf-8"
-    )
-
-    assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
-    assert 'git -C "${REPO_ROOT}" fetch origin main' in handoff
-    assert 'git -C "${REPO_ROOT}" merge --ff-only origin/main' in handoff
-    assert 'rev-parse HEAD)" = "$(git -C "${REPO_ROOT}" rev-parse origin/main)' in handoff
-    assert "status --porcelain --untracked-files=no" in handoff
+    assert "P6.2 已由开发机接受为 `green_mtp_profiled_evidence`" in handoff
     assert "NPU_EXECUTION_AUTHORIZED=true" in handoff
-    assert 'test "${NPU_EXECUTION_AUTHORIZED}" = true' in handoff
-    assert "server_lifecycle_count.txt" in handoff
-    assert "short_prefill" in handoff
-    assert "long_prefill" in handoff
-    assert "decode_heavy" in handoff
-    assert "4096 input + 64 output + concurrency 1" in handoff
-    assert "131072 input + 64 output + concurrency 1" in handoff
-    assert "4096 input + 256 output + concurrency 1" in handoff
-    assert "run_deepseek_p6_2_profiled_evidence.py" in handoff
-    assert "run_deepseek_p6_2_profiled_cell.sh" in handoff
-    assert "analyze_msprof_request_device_aggregate.py" in handoff
-    assert '"${PYTHON_BIN}" "${RUNNER_PATH}" prepare' in handoff
-    assert '"${PYTHON_BIN}" "${RUNNER_PATH}" finalize' in handoff
-    assert "--msproftx=on" in handoff
-    assert "--storage-limit=4096" in handoff
-    assert "--skip-heavy-joins" in handoff
-    assert "--mode short_prefill --mode long_prefill --mode decode_heavy" in handoff
-    assert "all_eight_healthy" in handoff
-    assert "all_eight_idle" in handoff
-    assert "set +u" in handoff
-    assert "vllm:spec_decode_num_drafts_total" in handoff
-    assert "vllm:num_requests_running" in handoff
-    assert "blocked_protocol_or_resource_gate" in handoff
-    assert "candidate_green_mtp_profiled_evidence" in handoff
-    assert "yellow_mtp_profiled_evidence_partial" in handoff
-    assert "result_summary.md" in handoff
-    assert "71680" in handoff
-    assert "不得发送 email、不得调用 upload-api" in handoff
-    assert "generated text 和 token IDs 不得进入小包" in handoff
-    assert "不得使用 `pull-remote` alias" in handoff
-    assert "无 request retry" in handoff
-    assert "profiled latency" in handoff
-    assert "whole-device occupancy" in handoff
-    assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
+    assert "run_deepseek_p6_3a_mode.sh" in handoff
+    assert "modes=(mtp_off mtp_on)" in handoff
+    assert "立即执行" in handoff
 
 
-def test_p6_1_unprofiled_handoff_resource_gate_accepts_eight_healthy_idle_devices(
-    tmp_path: Path,
-):
+def test_server_handoff_keeps_p6_3a_unprofiled_and_stops_before_p6_3b():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
-    marker = (
-        '"${PYTHON_BIN}" - "${RESULT_DIR}/npu_smi_before.txt" '
-        '"${RESULT_DIR}/resource_gate.json" <<\'PY\'\n'
-    )
-    source = handoff.split(marker, 1)[1].split("\nPY\nif ss", 1)[0]
-    fixture_path = tmp_path / "npu_smi.txt"
-    output_path = tmp_path / "resource_gate.json"
-    fixture_path.write_text(
-        "\n".join(
-            [f"| {device}     910B1 | OK |" for device in range(8)]
-            + [f"| No running processes found in NPU {device}" for device in range(8)]
-        ),
-        encoding="utf-8",
-    )
-    completed = subprocess.run(
-        [sys.executable, "-c", source, str(fixture_path), str(output_path)],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert completed.returncode == 0, completed.stderr
-    resource = json.loads(output_path.read_text(encoding="utf-8"))
-    assert resource["all_eight_healthy"] is True
-    assert resource["all_eight_idle"] is True
-    assert resource["pass"] is True
+
+    assert "git fetch origin main" in handoff
+    assert "git merge --ff-only origin/main" in handoff
+    assert "不得使用 `pull-remote` alias" in handoff
+    assert "mtp_off" in handoff
+    assert "mtp_on" in handoff
+    assert "108" in handoff
+    assert "48" in handoff
+    assert "profiler" in handoff
+    assert "HBM sampler" in handoff
+    assert "不得自动进入 P6.3B" in handoff
+    assert "不得自动进入 P8" in handoff
+    assert "不得发送 email" in handoff
+    assert "不得调用 upload-api" in handoff
+    assert "等待用户对该完整范围重新选择唯一传输方法" in handoff
 
 
-def test_p6_2_profiled_evidence_is_the_authorized_next_action_across_truth_surfaces():
+def test_p6_2_is_closed_and_p6_3a_is_authorized_across_truth_surfaces():
     readiness = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
     artifacts = readiness["artifacts"]
     acceptance = readiness["acceptance"]
@@ -2063,17 +2020,20 @@ def test_p6_2_profiled_evidence_is_the_authorized_next_action_across_truth_surfa
     assert artifacts["completed_p6_1_workload"] == (
         "workloads/p6_1_mtp_unprofiled_baseline.yaml"
     )
-    assert artifacts["next_workload"] == (
+    assert artifacts["completed_p6_2_workload"] == (
         "workloads/p6_2_mtp_profiled_evidence.yaml"
     )
+    assert artifacts["next_workload"] == "workloads/p6_3a_mtp_matched_ab.yaml"
     assert readiness["target_runtime"]["runtime_status"] == (
-        "mtp_unprofiled_baseline_green_p6_2_profiled_evidence_authorized"
+        "p6_3a_matched_mtp_ab_authorized"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
     assert acceptance["performance_reference_baseline"] is True
-    assert acceptance["profiled_evidence_baseline"] is False
-    assert acceptance["blocked_by"] == "p6_2_profiled_evidence_not_executed"
+    assert acceptance["profiled_evidence_baseline"] is True
+    assert acceptance["blocked_by"] is None
+    assert acceptance["p6_3_plan_review_required"] is False
+    assert acceptance["p6_3a_execution_authorized"] is True
     assert acceptance["next_task_authorized"] is True
 
     current_surfaces = {
@@ -2091,14 +2051,126 @@ def test_p6_2_profiled_evidence_is_the_authorized_next_action_across_truth_surfa
         assert "green_mtp_unprofiled_baseline" in text, name
         assert "P6.2" in text, name
         assert "profiled" in text, name
-        assert "authorized_for_execution" in text, name
-        assert "npu_execution_authorized:true" in text, name
+        assert "green_mtp_profiled_evidence" in text, name
+        assert "P6.3" in text, name
+        assert "P6.3A" in text, name
+        assert "已授权" in text, name
         assert "short_prefill" in text, name
         assert "long_prefill" in text, name
         assert "decode_heavy" in text, name
         assert "msprof" in text, name
         assert "request-device" in text, name
         assert "P8" in text, name
+
+    review = (
+        REPO_ROOT
+        / "工作记录与进度笔记本"
+        / "16_P6_阶段复盘与P6_3进入评估.md"
+    ).read_text(encoding="utf-8")
+    assert "green_mtp_official_context_ladder" in review
+    assert "green_mtp_unprofiled_baseline" in review
+    assert "green_mtp_profiled_evidence" in review
+    assert "P6.3A" in review
+    assert "P6.3B" in review
+    assert "max_model_len" in review
+    assert "npu_execution_authorized:true" in review
+
+
+def test_p6_3a_workload_defines_the_authorized_matched_mtp_ab_contract():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_3a_mtp_matched_ab.yaml"
+    )
+
+    assert workload["workload_id"] == "p6_3a_deepseek_v4_flash_mtp_matched_ab"
+    assert workload["task_id"] == (
+        "p6_3a_deepseek_v4_flash_w8a8_mtp_matched_ab_2026_0715"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.3A",
+        "mode": "matched_mtp_on_off_unprofiled_ab",
+        "claim_boundary": "matched_mtp_on_off_mechanism_effect_only",
+        "performance_reference_baseline": True,
+        "profiled_evidence_baseline": True,
+        "profiler_authorized": False,
+        "hbm_sampler_authorized": False,
+        "p6_3b_execution_authorized": False,
+        "p8_execution_authorized": False,
+    }
+    assert workload["execution_state"] == {
+        "status": "authorized_for_execution",
+        "server_handoff": "current",
+        "npu_execution_authorized": True,
+        "next_task_authorized": True,
+    }
+
+
+def test_p6_3a_changes_only_mtp_across_an_expanded_matched_cell_set():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_3a_mtp_matched_ab.yaml"
+    )
+
+    assert workload["mode_order"] == ["mtp_off", "mtp_on"]
+    assert workload["single_variable"] == {
+        "name": "speculative_mtp",
+        "mtp_off_server_delta": "omit_speculative_config_only",
+        "mtp_on_server_delta": {
+            "method": "mtp",
+            "num_speculative_tokens": 1,
+        },
+        "all_other_server_arguments_identical": True,
+        "same_task_local_overlay_and_environment": True,
+        "same_canonical_body_bytes_across_modes": True,
+    }
+    assert workload["lifecycle_plan"] == {
+        "server_lifecycles": 2,
+        "one_fresh_lifecycle_per_mode": True,
+        "hidden_warmup_requests": 0,
+        "explicit_warmup_requests_per_mode": 1,
+        "measured_batches_per_mode": 24,
+        "measured_requests_per_mode": 54,
+        "total_measured_batches": 48,
+        "total_measured_requests": 108,
+        "retries": 0,
+        "unprofiled": True,
+    }
+    assert workload["matched_cells"] == [
+        {"cell_id": "short_prefill", "context_tokens": 4096, "output_tokens": 64, "concurrency": 1},
+        {"cell_id": "short_decode", "context_tokens": 4096, "output_tokens": 256, "concurrency": 1},
+        {"cell_id": "short_decode_c8", "context_tokens": 4096, "output_tokens": 256, "concurrency": 8},
+        {"cell_id": "mid_prefill", "context_tokens": 65536, "output_tokens": 64, "concurrency": 1},
+        {"cell_id": "mid_prefill_c4", "context_tokens": 65536, "output_tokens": 64, "concurrency": 4},
+        {"cell_id": "mid_decode", "context_tokens": 65536, "output_tokens": 256, "concurrency": 1},
+        {"cell_id": "long_prefill", "context_tokens": 131072, "output_tokens": 64, "concurrency": 1},
+        {"cell_id": "long_decode", "context_tokens": 131072, "output_tokens": 256, "concurrency": 1},
+    ]
+    assert workload["batches_per_cell_per_mode"] == 3
+    assert workload["runtime_fixed"]["max_num_seqs"] == 1
+    assert workload["runtime_fixed"]["enable_prefix_caching"] is True
+    assert workload["runtime_fixed"]["enable_chunked_prefill"] is True
+    assert workload["runtime_fixed"]["cudagraph_mode"] == "FULL_DECODE_ONLY"
+
+
+def test_p6_3a_mode_runner_freezes_both_server_commands_and_only_toggles_mtp():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_3a_mtp_matched_ab.yaml"
+    )
+    runner = (
+        REPO_ROOT / "tools" / "inference_contracts" / "run_deepseek_p6_3a_mode.sh"
+    ).read_text(encoding="utf-8")
+
+    assert workload["server_command_sha256"] == {
+        "mtp_off": "c8490730b269ca2cf8a72704877ab040099341ec5fe576ee010d3613a61902bc",
+        "mtp_on": "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19",
+    }
+    assert 'if test "${MODE}" = mtp_on; then' in runner
+    assert "cmd+=(--speculative-config" in runner
+    assert runner.count("--speculative-config") == 1
+    assert 'EXPECTED_COMMAND_SHA256[mtp_off]=c8490730' in runner
+    assert 'EXPECTED_COMMAND_SHA256[mtp_on]=370f8d25' in runner
+    assert 'run-mode' in runner
+    assert '--mode "${MODE}"' in runner
+    assert "msprof" not in runner
+    assert "hbm" not in runner.lower()
 
 
 def test_p6_1l_captures_bounded_request_errors_without_generated_content():

@@ -251,7 +251,46 @@ stop_policy:
   automatic_external_transfer_allowed: false
 
 execution_state:
-  status: authorized_for_execution
-  server_handoff: authorized_for_execution
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_developer_accepted_green
+  server_handoff: completed
+  npu_execution_authorized: false
+  next_task_authorized: false
+
+execution_result:
+  reviewed_date: "2026-07-15"
+  server_git_head: 9756b868937c7ec3cbe3892144c053de7e62b486
+  server_grade: candidate_green_mtp_profiled_evidence
+  developer_grade: green_mtp_profiled_evidence
+  claim_boundary: mtp_profiled_operator_memory_transfer_and_request_device_evidence_only
+  profiled_evidence_baseline: true
+  performance_reference_baseline_remains_true: true
+  profiled_latency_is_performance_baseline: false
+  measured_cells: 3
+  all_measured_requests_first_attempt_success: true
+  retry_count: 0
+  accepted_token_delta_total: 192.0
+  profiler_exit_zero_per_cell: true
+  profiler_sqlite_files_per_cell: 136
+  full_request_device_aggregate_exit_zero_per_cell: true
+  heavy_joins_skipped: false
+  phase_memory_rows: 6
+  minimum_device_coverage: 8
+  parse_failure_count: 0
+  cleanup_status: clean
+  received_package:
+    relative_inbox_path: 2026-07-15/p6_2_profiled_evidence_candidate_green_2026_0714
+    file_count: 11
+    total_bytes: 17501
+    sorted_filename_manifest_sha256: 9bf348373ee7ab660f0877d1fdbdbd79a07616823f1762b0ac28a06a550944c9
+    transfer_method: upload-api
+  server_local_runner_adaptations:
+    - msprof_storage_limit_requires_space_separated_value
+    - msprof_output_requires_equals_separated_value
+  runner_adaptations_change_runtime_body_cell_or_metric_contract: false
+  rerun_required: false
+  interpretation_boundaries:
+    whole_device_hbm_is_not_kv_object_bytes_or_hbm_traffic: true
+    process_group_rss_pss_is_not_object_footprint: true
+    raw_profiled_duration_is_not_user_performance: true
+    bottleneck_or_optimization_claim_allowed: false
+    hardware_priority_claim_allowed: false

@@ -1,6 +1,6 @@
 # P5-P9 实验计划
 
-日期：2026-07-14
+日期：2026-07-15
 
 本文档是 P5-P9 的稳定阶段契约。P8 的工程细节见 `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`；每轮实时状态、服务器回传和下一动作写入 `工作记录与进度笔记本/`。
 
@@ -16,19 +16,20 @@ P0-P4 已建立两类可复用资产：
 NPU 0-7 已获当前任务明确授权。P6.1R retry2 与 P6.1L-R1 已关闭最小 MTP 和固定 4K 长输出门；
 P6.1C-R1 已由开发机接受为 `green_mtp_official_context_ladder`，
 `highest_stable_context=131072`，official 功能/容量/稳定性 reference baseline=true。P6.1
-unprofiled 随后由开发机接受为 `green_mtp_unprofiled_baseline`，性能 reference baseline=true。
-当前合同主线为：
+unprofiled 随后由开发机接受为 `green_mtp_unprofiled_baseline`，性能 reference baseline=true；
+P6.2 也已接受为 `green_mtp_profiled_evidence`，profiled evidence baseline=true。
+当前合同状态为：
 
 ```text
-p6_2_deepseek_v4_flash_w8a8_mtp_profiled_evidence_2026_0714
-authorized_for_execution / npu_execution_authorized:true
-short_prefill=4096+64 / long_prefill=131072+64 / decode_heavy=4096+256
-fresh lifecycle per cell -> msprof + phase memory + request-device aggregate
+task_id:p6_3a_deepseek_v4_flash_w8a8_mtp_matched_ab_2026_0715
+authorized_for_execution
+npu_execution_authorized:true / next_task_authorized:true
+P6.3A matched MTP on/off: 8 cells / 48 batches / 108 requests
 ```
 
-server-local Git 管理最终验收已完成。P8.1 observe-only handoff 继续延后；`通信模块/docs/developer-to-server.md` 当前只包含上述已授权执行的 P6.2 profiler 合同，P6.3 与 P8 未授权。
+server-local Git 管理最终验收已完成。P8.1 observe-only handoff 继续延后；`通信模块/docs/developer-to-server.md` 当前已授权 P6.3A，P6.3B 与 P8 不自动进入。
 
-mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context 与 P6.1 unprofiled 性能门均已关闭。当前只授权 P6.2 三个代表性 profiler cell，P6.3 和 P8 继续分离，外部开发机不运行 NPU。
+mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context、P6.1 unprofiled 性能门与 P6.2 profiled evidence 门均已关闭。P6.3 和 P8 继续分离，外部开发机不运行 NPU。
 
 ## 2. 阶段依赖
 
@@ -138,7 +139,7 @@ max_num_seqs 16 -> 4 -> 1 -> disable MTP
 - W8A8-MTP 权重为 `279.41 GiB`，超过四卡约 256GiB 聚合 HBM，当前四卡授权不具备 full-model 容量。
 - 当前活动任务已固定 `ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7`；执行前仍必须确认八卡健康空闲，发现冲突时不得清理他人进程，只能标记 `blocked_resource`。
 - 路线选择只关闭模型对象决策，不关闭 W8A8 weight-load、server-ready、请求或性能门。
-- 当前 W8A8 weight-load、server-ready、MTP `4096+64`、固定 4K 长输出、official `131072+64` context ladder 与 P6.1 unprofiled 性能基线均已关闭；当前缺口为 P6.2 profiled evidence。
+- 当前 W8A8 weight-load、server-ready、MTP `4096+64`、固定 4K 长输出、official `131072+64` context ladder、P6.1 unprofiled 性能基线与 P6.2 profiled evidence 均已关闭；当前缺口为 P6.3 matched single-variable evidence。
 
 P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化收益。
 
@@ -152,7 +153,7 @@ P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化
 - P5 `yellow` 时，先解释降级原因并形成稳定 profile；不得直接升级为 official baseline。
 - 冻结一个短上下文 smoke workload、一个中/长上下文 workload 和固定输出策略。
 
-当前动作只稳定 degraded 短上下文 cell：已有 1 次 P5 成功，再执行 2 个独立 fresh server lifecycle，每次只发 1 个相同 `4096+64` 请求。两次皆成功才记为 `yellow_degraded_baseline_stabilized`；这不会自动关闭中/长上下文、MTP 或 official baseline 门。
+P6.0 当时只稳定 degraded 短上下文 cell：已有 1 次 P5 成功，再执行 2 个独立 fresh server lifecycle，每次只发 1 个相同 `4096+64` 请求。两次皆成功才记为 `yellow_degraded_baseline_stabilized`；这不会自动关闭中/长上下文、MTP 或 official baseline 门。
 
 退出门：相同 command 连续成功，输出控制成立，server lifecycle 和环境无漂移。
 
@@ -180,7 +181,7 @@ repeats_per_pilot_cell: 3
 
 ### P6.1R：Bounded MTP Reference Repair
 
-P6.1R 是 P6.1 与既有 P6.2 profiled evidence 之间的 repair gate，不占用原 P6.2 阶段编号。当前只允许：
+P6.1R 是 P6.1 与既有 P6.2 profiled evidence 之间的 repair gate，不占用原 P6.2 阶段编号。该 gate 当时只允许：
 
 1. 首次 attempt 因不存在的历史证据路径在 overlay 前 `blocked_repo`；retry1 修正路径后以同一单行 overlay 跨过原 `positions_cpu` graph-capture 首错并使服务 ready，但唯一请求因 completion payload/chat endpoint 错配而 HTTP 400。
 2. retry2 继续只读证明同一根因和精确 source/patch/payload hash，沿用同一单字段 patch，不开发第二个 plugin patch。
@@ -224,17 +225,29 @@ health/queue、HBM、resource 与 cleanup hard gates 全通过，服务器才可
 
 输出 operator/device/transfer/memory 读数及 join coverage，不把 profiler 下用户 latency 当 P6.1 性能。
 
+当前结果：三个 cell 均首次成功；每 cell `profiler_exit=0`、136 个 SQLite 文件，full
+request-device aggregate exit=0 且未使用 skip-heavy-joins fallback；phase-memory 共 6 行、
+八卡覆盖完整、parse failure=0。开发机接受为 `green_mtp_profiled_evidence`。
+
 ### P6.3：单变量 A/B
 
-建议顺序：
+复审后的顺序：
 
-1. Prefix Cache on/off。
-2. MTP on/off。
-3. Chunked Prefill on/off。
-4. `max_num_seqs`。
-5. `max_model_len`。
+1. P6.3A matched MTP on/off。
+2. P6.3B purpose-built repeated-prefix Prefix Cache on/off。
+3. P6.3C Chunked Prefill on/off，仅在严格单变量成立时执行。
+4. P6.3D 可选 `max_num_seqs` scheduler/capacity sweep。
 
-每组必须使用相同请求集、固定输出、相同 warmup、相同 server lifecycle 和相同非目标开关。
+`max_model_len` 移入 P7 capacity boundary，不再是 P6.3 必做性能 A/B。每组必须使用相同请求集、
+固定输出、相同 warmup、等价 lifecycle 和相同非目标开关。性能 A/B 以 unprofiled run 为主；
+差异成立后才另起 profiled 跟进。
+
+当前 P6.3A 合同已授权：固定 `mtp_off -> mtp_on` 两个 fresh lifecycle，采用
+`4096+64+c1`、`4096+256+c1/c8`、`65536+64+c1/c4`、`65536+256+c1`、
+`131072+64+c1`、`131072+256+c1` 八个 matched cell，每 mode 每 cell 3 个 batch，合计
+48 measured batch / 108 measured request。55 份 canonical body 只生成一次并跨 mode 复用；
+唯一 server 自变量是是否存在 MTP speculative config。固定 mode 顺序作为限制报告，green
+表示 matched evidence 完整，不自动表示 MTP 更快或达到统计显著。
 
 ### P6.4：MindIE 对照（条件项）
 
@@ -310,7 +323,7 @@ docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md
 - EPLB/static expert map 不等于 expert offload。
 - Expert V0 先模拟；真实 warm prefetch 必须通过 trace、bytes、load latency 和 lead-time 门。
 - SSD/NVMe 只做 cold persistence/离线恢复，不进入逐 token decode 热路径。
-- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发，并继续等待 P6.2/P6.3。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
+- P8.0 的旧 `frozen_degraded` contract 保留首个 no-MTP runtime cell 作为历史 provenance；official MTP、unprofiled 与 profiled P6 reference 已就绪。P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发；进入前先确认 P6.3 计划并新建或提升 baseline contract。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
 
 ## 8. P9：Trace-driven Hardware Sensitivity
 
@@ -353,7 +366,9 @@ simulator_validation_report.md
 2. P6.1R retry2 与 P6.1L-R1 已完成并验收，不原样重跑。
 3. P6.1C-R1 已完成并验收为 official green，不重跑。
 4. P6.1 unprofiled 已完成并验收为 `green_mtp_unprofiled_baseline`，不重跑。
-5. P6.2 profiled evidence 当前为 `authorized_for_execution`、`npu_execution_authorized:true`、
-   `next_task_authorized:true`；P6.3 与 P8.1 不自动进入。
+5. P6.2 profiled evidence 已验收为 `green_mtp_profiled_evidence`；P6.3A 已授权执行，P6.3B 与 P8.1 不自动进入。
 6. P7 工具链预研可继续，但不得外推 full-model runtime。
 7. P9 最后消费统一 trace bundle，输出硬件优先级。
+
+当前 P6.3A 双授权均为 true；执行并完成开发机复核后，再按
+`工作记录与进度笔记本/16_P6_阶段复盘与P6_3进入评估.md` 决定 P6.3B 合同。

@@ -1,0 +1,293 @@
+schema_version: 1
+workload_id: p6_3a_deepseek_v4_flash_mtp_matched_ab
+date: "2026-07-15"
+purpose: measure_the_matched_unprofiled_effect_of_mtp_on_deepseek_v4_flash
+task_id: p6_3a_deepseek_v4_flash_w8a8_mtp_matched_ab_2026_0715
+
+stage_contract:
+  stage: P6.3A
+  mode: matched_mtp_on_off_unprofiled_ab
+  claim_boundary: matched_mtp_on_off_mechanism_effect_only
+  performance_reference_baseline: true
+  profiled_evidence_baseline: true
+  profiler_authorized: false
+  hbm_sampler_authorized: false
+  p6_3b_execution_authorized: false
+  p8_execution_authorized: false
+
+accepted_prerequisites:
+  official_context_workload: p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml
+  official_context_grade: green_mtp_official_context_ladder
+  highest_stable_context: 131072
+  unprofiled_workload: p6_1_mtp_unprofiled_baseline.yaml
+  unprofiled_grade: green_mtp_unprofiled_baseline
+  performance_reference_baseline: true
+  profiled_workload: p6_2_mtp_profiled_evidence.yaml
+  profiled_grade: green_mtp_profiled_evidence
+  profiled_evidence_baseline: true
+
+repair_artifact:
+  path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  patch_sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  patched_proposer_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+  unchanged_base_proposer_sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+  same_overlay_in_both_modes: true
+  task_local_overlay_only: true
+  patch_attempts_max: 1
+
+runtime_fixed:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  runtime: vllm_0_22_1_empty_and_vllm_ascend_0_22_1rc1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  data_parallel_size: 1
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  enforce_eager: false
+  cudagraph_mode: FULL_DECODE_ONLY
+
+server_command_sha256:
+  mtp_off: c8490730b269ca2cf8a72704877ab040099341ec5fe576ee010d3613a61902bc
+  mtp_on: 370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19
+
+mode_order:
+  - mtp_off
+  - mtp_on
+
+single_variable:
+  name: speculative_mtp
+  mtp_off_server_delta: omit_speculative_config_only
+  mtp_on_server_delta:
+    method: mtp
+    num_speculative_tokens: 1
+  all_other_server_arguments_identical: true
+  same_task_local_overlay_and_environment: true
+  same_canonical_body_bytes_across_modes: true
+
+source_payload:
+  server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+  prompt_tokens: 4096
+  bytes: 19487
+  sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+
+lifecycle_plan:
+  server_lifecycles: 2
+  one_fresh_lifecycle_per_mode: true
+  hidden_warmup_requests: 0
+  explicit_warmup_requests_per_mode: 1
+  measured_batches_per_mode: 24
+  measured_requests_per_mode: 54
+  total_measured_batches: 48
+  total_measured_requests: 108
+  retries: 0
+  unprofiled: true
+
+matched_cells:
+  - cell_id: short_prefill
+    context_tokens: 4096
+    output_tokens: 64
+    concurrency: 1
+  - cell_id: short_decode
+    context_tokens: 4096
+    output_tokens: 256
+    concurrency: 1
+  - cell_id: short_decode_c8
+    context_tokens: 4096
+    output_tokens: 256
+    concurrency: 8
+  - cell_id: mid_prefill
+    context_tokens: 65536
+    output_tokens: 64
+    concurrency: 1
+  - cell_id: mid_prefill_c4
+    context_tokens: 65536
+    output_tokens: 64
+    concurrency: 4
+  - cell_id: mid_decode
+    context_tokens: 65536
+    output_tokens: 256
+    concurrency: 1
+  - cell_id: long_prefill
+    context_tokens: 131072
+    output_tokens: 64
+    concurrency: 1
+  - cell_id: long_decode
+    context_tokens: 131072
+    output_tokens: 256
+    concurrency: 1
+
+batches_per_cell_per_mode: 3
+
+canonical_body_policy:
+  freeze_before_first_server_start: true
+  construction: repeat_truncate_and_distinct_cyclic_offsets
+  source_prompt_tokens: 4096
+  pairwise_common_prefix_tokens_less_than: 128
+  reuse_exact_body_bytes_and_sha256_across_modes: true
+  unique_body_sha256_within_plan_required: true
+  record_cell_context_output_concurrency_repeat_request_index_bytes_and_sha256: true
+  bodies_and_prompt_ids_remain_server_local: true
+  generated_text_retained: false
+  token_ids_retained: false
+
+request_protocol:
+  endpoint: /v1/completions
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming: true
+  stream_include_usage: true
+  return_token_ids: true
+  concurrent_batch_start_barrier: true
+  socket_inactivity_timeout_seconds: 7200
+  http_error_body_bytes_max: 8192
+  generated_text_retained: false
+  token_ids_retained: false
+
+metrics:
+  client_clock: time.monotonic_ns
+  ttft_definition: first_token_ns-request_start_ns
+  tpot_definition: (last_token_ns-first_token_ns)/(completion_tokens-1)
+  itl_definition: adjacent_token_arrival_ns_difference
+  e2el_definition: request_end_ns-request_start_ns
+  per_request_output_throughput_definition: completion_tokens/(request_end_ns-request_start_ns)
+  batch_output_throughput_definition: sum_completion_tokens/(batch_end_ns-batch_start_ns)
+  request_throughput_definition: successful_requests/(batch_end_ns-batch_start_ns)
+  token_chunk_width_allowed_max: 2
+  same_sse_chunk_tokens_share_arrival_timestamp: true
+  concurrency_e2el_includes_queue_time: true
+  profiler_or_hbm_sampler_running: false
+
+metrics_evidence:
+  endpoint: /metrics
+  health_before_and_after_each_batch: true
+  queue_idle_before_and_after_each_batch: true
+  request_gauges_required_in_both_modes: true
+  mtp_on_requires_spec_counters_present_and_positive_drafts_per_batch: true
+  mtp_on_requires_positive_accepted_delta_across_mode: true
+  mtp_off_allows_spec_counters_absent: true
+  mtp_off_requires_zero_spec_counter_delta_if_present: true
+  counter_continuity_within_each_mode_required: true
+  cross_lifecycle_counter_continuity_required: false
+
+comparison_policy:
+  pairing_key:
+    - cell_id
+    - repeat_index
+  compare_mtp_on_minus_mtp_off: true
+  lower_is_better_metrics:
+    - ttft_ms
+    - tpot_ms
+    - e2el_ms
+  higher_is_better_metrics:
+    - output_tokens_per_second
+    - batch_output_tokens_per_second
+    - batch_requests_per_second
+  report_per_mode_n_min_median_max_mean_cv: true
+  report_paired_absolute_and_relative_deltas: true
+  outlier_removal: false
+  significance_claim_allowed: false
+  improvement_claim_requires_external_developer_review: true
+  green_means_evidence_complete_not_mtp_faster: true
+  fixed_mode_order_is_a_reported_limitation: true
+
+acceptance:
+  blocked_preflight_grade: blocked_protocol_or_resource_gate
+  no_matched_success_grade: red_p6_3a_mtp_matched_ab_no_success
+  partial_grade: yellow_p6_3a_mtp_matched_ab_partial
+  evidence_incomplete_grade: red_p6_3a_mtp_matched_ab_evidence_incomplete
+  cleanup_failure_grade: red_cleanup_incomplete
+  server_candidate_green_grade: candidate_green_p6_3a_mtp_matched_ab
+  developer_accepted_green_grade: green_p6_3a_mtp_matched_ab
+  green_requires_both_warmups: true
+  green_requires_all_48_measured_batches: true
+  green_requires_all_108_measured_requests: true
+  green_requires_zero_retries: true
+  green_requires_exact_body_pairing: true
+  green_requires_mtp_on_activity_and_mtp_off_inactivity: true
+  green_requires_health_queue_metrics_and_cleanup: true
+  mechanism_effect_requires_external_developer_review: true
+  existing_p6_references_remain_true_on_failure: true
+
+result_package_policy:
+  max_total_bytes: 71680
+  raw_timestamps_metrics_logs_bodies_and_token_arrivals_remain_server_local: true
+  generated_text_or_token_ids_allowed: false
+  selection_required_before_any_transfer: true
+  available_methods:
+    - email
+    - upload-api
+    - server-local
+  methods_are_mutually_exclusive: true
+  report_before_choice:
+    - exact_result_summary_path
+    - complete_candidate_file_list
+    - size_bytes_per_file
+    - sha256_per_file
+    - sensitivity_per_file
+    - available_methods
+    - recommended_method_and_reason
+  handoff_contains_transfer_command: false
+  bounded_candidates:
+    - result_summary.md
+    - environment_and_hashes.json
+    - request_body_manifest.json
+    - mode_cell_summary.tsv
+    - paired_batch_summary.tsv
+    - grading_inputs.json
+    - cleanup_status.txt
+    - first_failure_excerpt.txt
+
+task_local_adaptation_policy:
+  allowed_without_new_round_trip:
+    - mkdir_or_path_creation
+    - shell_quoting
+    - set_u_source_compatibility
+    - actual_command_output_parser
+    - equivalent_server_local_runner_error_handling
+  must_not_change:
+    - tracked_files
+    - runtime_or_site_packages
+    - model_or_quantization
+    - request_bodies_or_order
+    - cell_set_or_repeats
+    - server_arguments_except_the_declared_mtp_delta
+    - metric_definitions
+  all_adaptations_must_be_reported: true
+
+stop_policy:
+  retries_allowed: false
+  same_mode_server_restart_allowed: false
+  runtime_or_parameter_mutation_allowed: false
+  patch_mutation_or_second_patch_allowed: false
+  context_output_concurrency_or_repeat_reduction_allowed: false
+  max_num_seqs_change_allowed: false
+  prefix_cache_or_chunked_prefill_change_allowed: false
+  eager_fallback_allowed: false
+  version_upgrade_allowed: false
+  profiler_or_hbm_sampler_allowed: false
+  p6_3b_or_p8_execution_allowed: false
+  continue_independent_batches_if_server_healthy_and_idle: true
+  continue_second_mode_after_first_mode_failure_if_cleanup_clean: true
+  automatic_result_transfer_allowed: false
+
+execution_state:
+  status: authorized_for_execution
+  server_handoff: current
+  npu_execution_authorized: true
+  next_task_authorized: true
+
+authorization_policy:
+  npu_and_vllm_consumption_standing_authorization: true
+  completion_does_not_revoke_resource_authorization: true
+  authorization_does_not_expand_beyond_the_current_explicit_workload: true
+  a_new_workload_and_unique_handoff_are_still_required_for_p6_3b_or_later: true
