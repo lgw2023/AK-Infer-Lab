@@ -336,7 +336,46 @@ stop_policy:
   automatic_follow_up_allowed: false
 
 execution_state:
-  status: authorized_for_execution
-  server_handoff: authorized_for_execution
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_developer_accepted_green
+  server_handoff: completed_superseded_by_p6_1_unprofiled_baseline
+  npu_execution_authorized: false
+  next_task_authorized: false
+
+completed_result:
+  reviewed_date: "2026-07-14"
+  server_grade: candidate_green_mtp_official_context_ladder
+  developer_grade: green_mtp_official_context_ladder
+  server_git_head: b2e4f14cd739177e90f262b420f25c1cb8de4fa5
+  selected_hbm_interval_seconds: 5.0
+  highest_stable_context: 131072
+  official_contexts:
+    - 4096
+    - 32768
+    - 65536
+    - 98304
+    - 131072
+  all_first_attempt_successes: true
+  retry_count: 0
+  mtp_counter_totals:
+    drafts: 160.0
+    draft_tokens: 160.0
+    accepted_tokens: 160.0
+  counter_continuity: true
+  request_body_hashes_stable: true
+  token_health_queue_and_hbm_gates: pass
+  cleanup: clean
+  official_reference_baseline: true
+  performance_reference_baseline: false
+  claim_boundary: mtp_context_ladder_functional_capacity_and_stability_only
+  received_package:
+    relative_inbox_path: 2026-07-14/p6_1c_r1_candidate_green_2026_0714
+    file_count: 13
+    total_bytes: 47955
+    aggregate_sha256: e03639bd43b71112c5027ac79fa44b8b11abeed18a709e1a2659468afbed953f
+    transfer_method: upload-api
+    transfer_authorization_provenance: not_reconstructed_in_current_developer_review
+  server_local_runner_adaptations:
+    - actual_eight_device_and_port_resource_self_check
+    - nounset_guard_around_ascend_environment_scripts
+    - create_overlay_parent_before_copy
+  runner_adaptations_change_measured_runtime_or_request_contract: false

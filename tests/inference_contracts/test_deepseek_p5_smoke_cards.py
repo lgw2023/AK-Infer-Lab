@@ -1115,7 +1115,7 @@ def test_p6_1c_completed_as_blocked_sampling_without_official_context_evidence()
     }
 
 
-def test_p6_1c_r1_sampling_repair_is_authorized_for_execution():
+def test_p6_1c_r1_sampling_repair_is_closed_as_developer_accepted_green():
     workload = load_yaml(
         BENCHMARK_DIR
         / "workloads"
@@ -1138,11 +1138,34 @@ def test_p6_1c_r1_sampling_repair_is_authorized_for_execution():
         "p8_execution_authorized": False,
     }
     assert workload["execution_state"] == {
-        "status": "authorized_for_execution",
-        "server_handoff": "authorized_for_execution",
-        "npu_execution_authorized": True,
-        "next_task_authorized": True,
+        "status": "completed_developer_accepted_green",
+        "server_handoff": "completed_superseded_by_p6_1_unprofiled_baseline",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
     }
+    result = workload["completed_result"]
+    assert result["server_grade"] == "candidate_green_mtp_official_context_ladder"
+    assert result["developer_grade"] == "green_mtp_official_context_ladder"
+    assert result["server_git_head"] == (
+        "b2e4f14cd739177e90f262b420f25c1cb8de4fa5"
+    )
+    assert result["highest_stable_context"] == 131072
+    assert result["official_reference_baseline"] is True
+    assert result["performance_reference_baseline"] is False
+    assert result["official_contexts"] == [4096, 32768, 65536, 98304, 131072]
+    assert result["all_first_attempt_successes"] is True
+    assert result["retry_count"] == 0
+    assert result["mtp_counter_totals"] == {
+        "drafts": 160.0,
+        "draft_tokens": 160.0,
+        "accepted_tokens": 160.0,
+    }
+    assert result["cleanup"] == "clean"
+    assert result["received_package"]["file_count"] == 13
+    assert result["received_package"]["total_bytes"] == 47955
+    assert result["received_package"]["aggregate_sha256"] == (
+        "e03639bd43b71112c5027ac79fa44b8b11abeed18a709e1a2659468afbed953f"
+    )
 
 
 def test_p6_1c_r1_preserves_the_blocked_parent_and_requires_a_fresh_rerun():
@@ -1174,6 +1197,158 @@ def test_p6_1c_r1_preserves_the_blocked_parent_and_requires_a_fresh_rerun():
         "prior_4096_64_green_remains_valid": True,
         "prior_decode_length_green_remains_valid": True,
     }
+
+
+def test_p6_1_mtp_unprofiled_baseline_freezes_the_accepted_official_runtime():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1_mtp_unprofiled_baseline.yaml"
+    )
+
+    assert workload["workload_id"] == (
+        "p6_1_deepseek_v4_flash_mtp_unprofiled_baseline"
+    )
+    assert workload["task_id"] == (
+        "p6_1_deepseek_v4_flash_w8a8_mtp_unprofiled_baseline_2026_0714"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.1",
+        "mode": "mtp_unprofiled_pilot_then_matrix",
+        "claim_boundary": "mtp_unprofiled_streaming_performance_baseline_only",
+        "official_functional_reference_baseline": True,
+        "may_claim_performance_reference_baseline": (
+            "only_after_external_developer_review"
+        ),
+        "profiler_authorized": False,
+        "p8_execution_authorized": False,
+        "optimization_comparison_authorized": False,
+    }
+    prerequisite = workload["accepted_prerequisite"]
+    assert prerequisite["workload"] == (
+        "p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
+    )
+    assert prerequisite["developer_grade"] == "green_mtp_official_context_ladder"
+    assert prerequisite["highest_stable_context"] == 131072
+    assert prerequisite["official_reference_baseline"] is True
+    runtime = workload["runtime_fixed"]
+    assert runtime["server_command_sha256"] == (
+        "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19"
+    )
+    assert runtime["tensor_parallel_size"] == 8
+    assert runtime["enable_expert_parallel"] is True
+    assert runtime["max_num_seqs"] == 1
+    assert runtime["speculative_mtp"] == {
+        "method": "mtp",
+        "num_speculative_tokens": 1,
+    }
+    assert workload["execution_state"] == {
+        "status": "authorized_for_execution",
+        "server_handoff": "authorized_for_execution",
+        "npu_execution_authorized": True,
+        "next_task_authorized": True,
+    }
+
+
+def test_p6_1_mtp_unprofiled_baseline_runs_pilot_then_expands_without_a_pause():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1_mtp_unprofiled_baseline.yaml"
+    )
+
+    assert workload["lifecycle_plan"] == {
+        "server_lifecycles_max": 1,
+        "hidden_warmup_requests": 0,
+        "explicit_warmup_batches": 1,
+        "measured_batches": 24,
+        "measured_requests": 90,
+        "unprofiled": True,
+        "hbm_sampler_enabled": False,
+    }
+    assert workload["warmup_cell"] == {
+        "context_tokens": 4096,
+        "output_tokens": 64,
+        "concurrency": 1,
+        "batches": 1,
+        "excluded_from_statistics": True,
+    }
+    assert workload["pilot_plan"] == {
+        "cells": [
+            {"context_tokens": 4096, "output_tokens": 64, "concurrency": 1},
+            {"context_tokens": 65536, "output_tokens": 64, "concurrency": 4},
+            {"context_tokens": 131072, "output_tokens": 64, "concurrency": 1},
+        ],
+        "batches_per_cell": 3,
+        "measured_batches": 9,
+        "measured_requests": 18,
+        "auto_expand_after_green": True,
+        "variability_is_diagnostic_not_an_expansion_gate": True,
+    }
+    matrix = workload["matrix_plan"]
+    assert matrix["contexts_tokens"] == [4096, 65536, 131072]
+    assert matrix["output_tokens"] == [64, 256]
+    assert matrix["concurrency"] == [1, 4, 8]
+    assert matrix["cell_count"] == 18
+    assert matrix["pilot_cells_reused_without_rerun"] is True
+    assert matrix["remaining_cells_run_once"] == 15
+    assert matrix["remaining_measured_requests"] == 72
+    assert matrix["continue_after_independent_cell_failure_if_server_healthy"] is True
+    assert workload["retry_policy"] == {
+        "request_retries": 0,
+        "cell_retries": 0,
+        "server_restarts": 0,
+        "reason": "retries_would_contaminate_the_unprofiled_baseline",
+    }
+
+
+def test_p6_1_mtp_unprofiled_baseline_keeps_metrics_clean_and_results_bounded():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_1_mtp_unprofiled_baseline.yaml"
+    )
+
+    bodies = workload["canonical_body_policy"]
+    assert bodies["freeze_before_server_start"] is True
+    assert bodies["construction"] == "repeat_truncate_and_distinct_cyclic_offsets"
+    assert bodies["pairwise_common_prefix_tokens_less_than"] == 128
+    assert bodies["unique_request_body_sha256_required"] is True
+    assert bodies["generated_text_retained"] is False
+    assert bodies["token_ids_retained"] is False
+    protocol = workload["request_protocol"]
+    assert protocol["endpoint"] == "/v1/completions"
+    assert protocol["temperature"] == 0.0
+    assert protocol["ignore_eos"] is True
+    assert protocol["min_tokens_equals_max_tokens"] is True
+    assert protocol["streaming"] is True
+    assert protocol["return_token_ids"] is True
+    metrics = workload["metrics"]
+    assert metrics["client_clock"] == "time.monotonic_ns"
+    assert metrics["ttft_definition"] == "first_token_ns-request_start_ns"
+    assert metrics["tpot_definition"] == (
+        "(last_token_ns-first_token_ns)/(completion_tokens-1)"
+    )
+    assert metrics["e2el_definition"] == "request_end_ns-request_start_ns"
+    assert metrics["batch_output_throughput_definition"] == (
+        "sum_completion_tokens/(batch_end_ns-batch_start_ns)"
+    )
+    assert metrics["exact_token_arrival_timestamps_required"] is True
+    assert metrics["profiler_or_hbm_sampler_running"] is False
+    assert workload["statistics_policy"]["outlier_removal"] is False
+    assert workload["statistics_policy"]["request_level_p95_p99_for_n_lt_20"] is False
+    assert workload["statistics_policy"]["itl_p50_p95_p99_with_sample_count"] is True
+    assert workload["acceptance"]["server_candidate_green_grade"] == (
+        "candidate_green_mtp_unprofiled_baseline"
+    )
+    assert workload["acceptance"]["developer_accepted_green_grade"] == (
+        "green_mtp_unprofiled_baseline"
+    )
+    assert workload["acceptance"]["green_requires_all_90_measured_requests"] is True
+    assert workload["acceptance"]["performance_baseline_requires_developer_review"] is True
+    package = workload["result_package_policy"]
+    assert package["max_total_bytes"] == 71680
+    assert package["raw_timestamps_metrics_logs_and_bodies_remain_server_local"] is True
+    assert package["generated_text_or_token_ids_allowed"] is False
+    assert package["selection_required_before_any_transfer"] is True
+    assert package["handoff_contains_transfer_command"] is False
+    assert workload["stop_policy"]["profiler_allowed"] is False
+    assert workload["stop_policy"]["p8_execution_allowed"] is False
+    assert workload["stop_policy"]["runtime_or_parameter_mutation_allowed"] is False
 
 
 def test_p6_1c_r1_uses_one_eight_device_table_sweep_and_feasible_sampling_gates():
@@ -1678,16 +1853,16 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_authorizes_only_p6_1c_r1_for_immediate_execution():
+def test_server_handoff_authorizes_only_p6_1_unprofiled_baseline_for_immediate_execution():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "## 当前唯一服务器动作：同步并执行 P6.1C-R1" in handoff
+    assert "## 当前唯一服务器动作：同步并执行 P6.1 MTP unprofiled baseline" in handoff
     assert (
-        "task_id: p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_"
-        "ladder_sampling_repair_2026_0714"
+        "task_id: p6_1_deepseek_v4_flash_w8a8_mtp_unprofiled_baseline_"
+        "2026_0714"
         in handoff
     )
     assert "execution_mode: authorized_for_execution" in handoff
@@ -1695,14 +1870,14 @@ def test_server_handoff_authorizes_only_p6_1c_r1_for_immediate_execution():
     assert "next_task_authorized: true" in handoff
     assert (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
+        "p6_1_mtp_unprofiled_baseline.yaml"
         in handoff
     )
-    assert "用户已明确授权 P6.1C-R1 服务器/NPU 执行" in handoff
+    assert "用户已明确授权 P6.1 MTP unprofiled baseline 服务器/NPU 执行" in handoff
     assert "同步并通过全部硬门后立即执行当前唯一任务" in handoff
 
 
-def test_server_handoff_contains_the_full_authorized_p6_1c_r1_execution_contract():
+def test_server_handoff_contains_the_full_authorized_p6_1_unprofiled_execution_contract():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(encoding="utf-8")
 
     assert "REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab" in handoff
@@ -1712,174 +1887,81 @@ def test_server_handoff_contains_the_full_authorized_p6_1c_r1_execution_contract
     assert "status --porcelain --untracked-files=no" in handoff
     assert "NPU_EXECUTION_AUTHORIZED=true" in handoff
     assert 'test "${NPU_EXECUTION_AUTHORIZED}" = true' in handoff
-    assert "SERVER_LIFECYCLES_MAX=2" in handoff
-    assert "SAMPLER_PREFLIGHT_SWEEPS=3" in handoff
-    assert "CALIBRATION_CONTEXT_TOKENS=65536" in handoff
-    assert "CALIBRATION_OUTPUT_TOKENS=64" in handoff
-    assert "CANDIDATE_INTERVALS=(0.5 1.0 2.0 5.0)" in handoff
-    assert "calibration_control" in handoff
-    assert "calibration_high_resolution" in handoff
-    assert "calibration_selected_validation" in handoff
-    assert '"npu-smi", "info"' in handoff
-    assert '"npu-smi", "info", "-t", "usages"' not in handoff
-    assert "HBM-Usage(MB)" in handoff
-    assert "one subprocess per sweep" in handoff
-    assert "max_peak_delta_percentage_points=1.0" in handoff
-    assert "min_reference_prefill_samples_per_device=4" in handoff
-    assert "min_selected_prefill_samples_per_device=2" in handoff
-    assert "sweep_wall_duty_cycle_hard_gate=false" in handoff
-    assert "min_prefill_samples_per_device=20" not in handoff
-    assert "max_p95_sweep_duty_cycle_ratio=0.05" not in handoff
-    assert "max_selected_wall_time_increase_ratio=0.10" in handoff
-    assert "OFFICIAL_CONTEXTS=(4096 32768 65536 98304 131072)" in handoff
-    assert "SELECTED_HBM_INTERVAL_SECONDS" in handoff
-    assert "selected interval 在正式 lifecycle 内不得改变" in handoff
+    assert "server_lifecycle_count.txt" in handoff
+    assert "24 measured batches" in handoff
+    assert "90 measured requests" in handoff
+    assert "0 retry" in handoff
+    assert "4096+64+c1 x 3 batches" in handoff
+    assert "65536+64+c4 x 3 batches" in handoff
+    assert "131072+64+c1 x 3 batches" in handoff
+    assert "context = 4096 / 65536 / 131072" in handoff
+    assert "output = 64 / 256" in handoff
+    assert "concurrency = 1 / 4 / 8" in handoff
+    assert "run_deepseek_p6_1_unprofiled_baseline.py" in handoff
+    assert '"${PYTHON_BIN}" "${RUNNER_PATH}" prepare' in handoff
+    assert '"${PYTHON_BIN}" "${RUNNER_PATH}" run' in handoff
+    assert '"${PYTHON_BIN}" "${RUNNER_PATH}" finalize' in handoff
+    assert "all_eight_healthy" in handoff
+    assert "all_eight_idle" in handoff
+    assert "set +u" in handoff
+    assert 'mkdir -p "${OVERLAY_ROOT}"' in handoff
     assert "/v1/completions" in handoff
     assert "vllm:spec_decode_num_drafts_total" in handoff
     assert "vllm:num_requests_running" in handoff
-    assert "candidate_green_mtp_official_context_ladder" in handoff
-    assert "yellow_mtp_official_context_ladder_recovered_with_retry" in handoff
-    assert "yellow_mtp_context_ladder_partial" in handoff
-    assert "blocked_sampling_calibration" in handoff
+    assert 'metrics_preflight_exit=$?' in handoff
+    assert 'if test "${metrics_preflight_exit}" -eq 0; then' in handoff
+    assert "blocked_protocol_or_resource_gate" in handoff
+    assert "live_metrics_preflight_failed" in handoff
+    assert "candidate_green_mtp_unprofiled_baseline" in handoff
+    assert "yellow_mtp_unprofiled_matrix_partial" in handoff
     assert "result_summary.md" in handoff
-    assert "calibration_request_summary.json" in handoff
     assert "delivery_candidates.tsv" in handoff
     assert "71680" in handoff
     assert "不得发送 email、不得调用 upload-api" in handoff
     assert "generated text 和 token IDs 不得进入结果包" in handoff
-    assert "不得运行 `通信模块/server_local_git_sync.sh`" in handoff
-    assert "关闭 MTP、降低 context、修改 max_num_seqs 或 eager fallback" in handoff
+    assert "不得运行 `pull-remote` alias" in handoff
+    assert "不得重启 server、重试请求、改参数" in handoff
+    assert "运行 HBM sampler/profiler" in handoff
+    assert "server-local runner/调用脚手架" in handoff
     assert "p8_1_deepseek_v4_flash_vllm_ascend_observe_only_trace_2026_0712" not in handoff
     assert "collect-vllm-ascend-observations" not in handoff
     assert "build-vllm-ascend-observe-bundle" not in handoff
 
 
-def test_p6_1c_r1_embedded_hbm_parser_reads_the_eight_device_table_fixture():
-    handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
-        encoding="utf-8"
-    )
-    helper_marker = "Path(sys.argv[1]).write_text(r'''import argparse"
-    helper_source = "import argparse" + handoff.split(helper_marker, 1)[1].split(
-        "''', encoding=\"utf-8\")", 1
-    )[0]
-    parse_source = helper_source[
-        helper_source.index("def parse_usage(text):") : helper_source.index("\nsequence = 0")
-    ]
-    namespace = {"re": __import__("re")}
-    exec(parse_source, namespace)
-
-    fixture = (
-        REPO_ROOT
-        / "工作记录与进度笔记本"
-        / "observability_profiles"
-        / "obs_2026_0705_atlas800t_a2_004"
-        / "server_feedback"
-        / "npu_smi_info.txt"
-    ).read_text(encoding="utf-8")
-    devices = namespace["parse_usage"](fixture)
-
-    assert [item["device_id"] for item in devices] == list(range(8))
-    assert all(item["parser_ok"] for item in devices)
-    assert all(item["hbm_capacity_mb"] == 65536.0 for item in devices)
-    assert devices[0]["hbm_used_mb"] == 59541.0
-    assert devices[2]["hbm_used_mb"] == 59540.0
-    assert devices[7]["hbm_used_mb"] == 3413.0
-    assert devices[7]["hbm_usage_pct"] == 3413.0 * 100.0 / 65536.0
-
-
-def test_p6_1c_r1_embedded_selector_picks_the_largest_accurate_feasible_interval(
+def test_p6_1_unprofiled_handoff_resource_gate_accepts_eight_healthy_idle_devices(
     tmp_path: Path,
 ):
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
-    selector_marker = (
-        '"${RESULT_DIR}/calibration/sampling_calibration.json" <<\'PY\'\n'
+    marker = (
+        '"${PYTHON_BIN}" - "${RESULT_DIR}/npu_smi_before.txt" '
+        '"${RESULT_DIR}/resource_gate.json" <<\'PY\'\n'
     )
-    selector_source = handoff.split(selector_marker, 1)[1].split(
-        "\nPY\nselector_exit=$?", 1
-    )[0]
-
-    start_ns = 1_000_000_000
-    sweep_starts = [
-        start_ns + offset
-        for offset in [
-            0,
-            500_000_000,
-            1_000_000_000,
-            1_500_000_000,
-            2_000_000_000,
-            2_500_000_000,
-            3_000_000_000,
-        ]
-    ]
-    sweeps = []
-    for sequence, sweep_start in enumerate(sweep_starts):
-        devices = [
-            {
-                "device_id": device_id,
-                "hbm_capacity_mb": 65536.0,
-                "hbm_used_mb": 32768.0,
-                "hbm_free_mb": 32768.0,
-                "hbm_usage_pct": 50.0,
-                "parser_ok": True,
-            }
-            for device_id in range(8)
-        ]
-        sweeps.append(
-            {
-                "sequence": sequence,
-                "command": ["npu-smi", "info"],
-                "return_code": 0,
-                "sweep_start_monotonic_ns": sweep_start,
-                "sweep_end_monotonic_ns": sweep_start + 300_000_000,
-                "sweep_wall_seconds": 0.3,
-                "device_coverage": 8,
-                "parse_failure_count": 0,
-                "devices": devices,
-            }
-        )
-
-    trace_path = tmp_path / "trace.jsonl"
-    request_path = tmp_path / "request.json"
-    output_path = tmp_path / "selection.json"
-    trace_path.write_text(
-        "".join(json.dumps(item) + "\n" for item in sweeps), encoding="utf-8"
-    )
-    request_path.write_text(
-        json.dumps(
-            {
-                "status": "success",
-                "request_start_monotonic_ns": start_ns,
-                "first_token_monotonic_ns": start_ns + 3_000_000_000,
-            }
+    source = handoff.split(marker, 1)[1].split("\nPY\nif ss", 1)[0]
+    fixture_path = tmp_path / "npu_smi.txt"
+    output_path = tmp_path / "resource_gate.json"
+    fixture_path.write_text(
+        "\n".join(
+            [f"| {device}     910B1 | OK |" for device in range(8)]
+            + [f"| No running processes found in NPU {device}" for device in range(8)]
         ),
         encoding="utf-8",
     )
-
     completed = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            selector_source,
-            str(trace_path),
-            str(request_path),
-            str(output_path),
-        ],
+        [sys.executable, "-c", source, str(fixture_path), str(output_path)],
         check=False,
         capture_output=True,
         text=True,
     )
     assert completed.returncode == 0, completed.stderr
-    selection = json.loads(output_path.read_text(encoding="utf-8"))
-    assert selection["selected_interval_seconds"] == 2.0
-    assert selection["sweep_wall_duty_cycle_hard_gate"] is False
-    assert next(
-        item for item in selection["candidates"] if item["interval_seconds"] == 5.0
-    )["gates"]["selected_has_at_least_two_prefill_samples_per_device"] is False
+    resource = json.loads(output_path.read_text(encoding="utf-8"))
+    assert resource["all_eight_healthy"] is True
+    assert resource["all_eight_idle"] is True
+    assert resource["pass"] is True
 
 
-def test_p6_1c_r1_is_the_authorized_next_action_across_current_truth_surfaces():
+def test_p6_1_unprofiled_is_the_authorized_next_action_across_current_truth_surfaces():
     readiness = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
     artifacts = readiness["artifacts"]
     acceptance = readiness["acceptance"]
@@ -1893,13 +1975,19 @@ def test_p6_1c_r1_is_the_authorized_next_action_across_current_truth_surfaces():
     assert artifacts["completed_p6_1c_workload"] == (
         "workloads/p6_1c_mtp_official_context_ladder.yaml"
     )
-    assert artifacts["next_workload"] == (
+    assert artifacts["completed_p6_1c_r1_workload"] == (
         "workloads/p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml"
     )
-    assert readiness["target_runtime"]["runtime_status"] == (
-        "mtp_4096_64_and_decode_length_green_context_ladder_sampling_repair_pending"
+    assert artifacts["next_workload"] == (
+        "workloads/p6_1_mtp_unprofiled_baseline.yaml"
     )
-    assert acceptance["blocked_by"] == "p6_1c_r1_sampling_repair_not_executed"
+    assert readiness["target_runtime"]["runtime_status"] == (
+        "mtp_official_context_131072_green_unprofiled_baseline_authorized"
+    )
+    assert acceptance["official_reference_baseline"] is True
+    assert acceptance["highest_stable_context"] == 131072
+    assert acceptance["performance_reference_baseline"] is False
+    assert acceptance["blocked_by"] == "p6_1_mtp_unprofiled_baseline_not_executed"
     assert acceptance["next_task_authorized"] is True
 
     current_surfaces = {
@@ -1912,12 +2000,15 @@ def test_p6_1c_r1_is_the_authorized_next_action_across_current_truth_surfaces():
     for name, path in current_surfaces.items():
         text = path.read_text(encoding="utf-8")
         assert "P6.1C-R1" in text, name
+        assert "green_mtp_official_context_ladder" in text, name
+        assert "131072" in text, name
+        assert "P6.1" in text, name
+        assert "unprofiled" in text, name
         assert "authorized_for_execution" in text, name
         assert "npu_execution_authorized:true" in text, name
-        assert "npu-smi info" in text, name
-        assert "65536+64" in text, name
-        assert "4096/32768/65536/98304/131072" in text, name
-        assert "完整 P6.1" in text, name
+        assert "4096/65536/131072" in text, name
+        assert "64/256" in text, name
+        assert "1/4/8" in text, name
         assert "profiler" in text, name
         assert "P8" in text, name
 
