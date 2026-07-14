@@ -15,17 +15,20 @@ P0-P4 已建立两类可复用资产：
 
 NPU 0-7 已获当前任务明确授权。P6.1R retry2 与 P6.1L-R1 已关闭最小 MTP 和固定 4K 长输出门；
 P6.1C-R1 已由开发机接受为 `green_mtp_official_context_ladder`，
-`highest_stable_context=131072`，official 功能/容量/稳定性 reference baseline=true。当前合同主线为：
+`highest_stable_context=131072`，official 功能/容量/稳定性 reference baseline=true。P6.1
+unprofiled 随后由开发机接受为 `green_mtp_unprofiled_baseline`，性能 reference baseline=true。
+当前合同主线为：
 
 ```text
-p6_1_deepseek_v4_flash_w8a8_mtp_unprofiled_baseline_2026_0714
+p6_2_deepseek_v4_flash_w8a8_mtp_profiled_evidence_2026_0714
 authorized_for_execution / npu_execution_authorized:true
-pilot -> context 4096/65536/131072 x output 64/256 x concurrency 1/4/8
+short_prefill=4096+64 / long_prefill=131072+64 / decode_heavy=4096+256
+fresh lifecycle per cell -> msprof + phase memory + request-device aggregate
 ```
 
-server-local Git 管理最终验收已完成。P8.1 observe-only handoff 继续延后；`通信模块/docs/developer-to-server.md` 当前只包含上述已授权执行的 P6.1 unprofiled 合同，profiler 与 P8 未授权。
+server-local Git 管理最终验收已完成。P8.1 observe-only handoff 继续延后；`通信模块/docs/developer-to-server.md` 当前只包含上述已授权执行的 P6.2 profiler 合同，P6.3 与 P8 未授权。
 
-mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context 门已关闭。当前只授权 P6.1 unprofiled pilot/matrix，profiler 和 P8 继续分离，外部开发机不运行 NPU。
+mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context 与 P6.1 unprofiled 性能门均已关闭。当前只授权 P6.2 三个代表性 profiler cell，P6.3 和 P8 继续分离，外部开发机不运行 NPU。
 
 ## 2. 阶段依赖
 
@@ -135,7 +138,7 @@ max_num_seqs 16 -> 4 -> 1 -> disable MTP
 - W8A8-MTP 权重为 `279.41 GiB`，超过四卡约 256GiB 聚合 HBM，当前四卡授权不具备 full-model 容量。
 - 当前活动任务已固定 `ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7`；执行前仍必须确认八卡健康空闲，发现冲突时不得清理他人进程，只能标记 `blocked_resource`。
 - 路线选择只关闭模型对象决策，不关闭 W8A8 weight-load、server-ready、请求或性能门。
-- 当前 W8A8 weight-load、server-ready、MTP `4096+64`、固定 4K 长输出和 official `131072+64` context ladder 均已关闭；P6.1 unprofiled 性能基线仍未关闭。
+- 当前 W8A8 weight-load、server-ready、MTP `4096+64`、固定 4K 长输出、official `131072+64` context ladder 与 P6.1 unprofiled 性能基线均已关闭；当前缺口为 P6.2 profiled evidence。
 
 P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化收益。
 
@@ -159,7 +162,7 @@ P5 不运行 msprof，不做 request-device aggregate，不输出瓶颈或优化
 
 修复前最小对照已完成：固定 no-MTP degraded cell，一个 server lifecycle，1 次 warmup 后串行 3 次 measured `4K+64+c1`。warmup 不进入统计；3 个样本只报原始值和 min/median/max，不报 P95/P99、不删除 outlier。
 
-以下三个 tracer-bullet 现已授权，并在同一任务内通过后自动扩展矩阵：
+以下三个 tracer-bullet 与完整矩阵已完成：
 
 先跑三个 tracer-bullet cell：
 
@@ -171,7 +174,7 @@ pilot_cells:
 repeats_per_pilot_cell: 3
 ```
 
-三个 pilot 稳定后自动扩展 `context=[4096,65536,131072]`、`output_tokens=[64,256]`、`concurrency=[1,4,8]`；pilot cell 复用三批数据，其余 15 cell 各跑一批，零 retry。
+三个 pilot 稳定后已自动扩展 `context=[4096,65536,131072]`、`output_tokens=[64,256]`、`concurrency=[1,4,8]`；pilot cell 复用三批数据，其余 15 cell 各跑一批，零 retry。最终 18/18 cells、24/24 measured batches、90/90 measured requests 首次成功，开发机接受为 `green_mtp_unprofiled_baseline`。
 
 输出：TTFT、TPOT、ITL、E2EL、throughput、success/token control 和 server stats。ITL 报 P50/P95/P99；小样本 request 指标保留原始值与 `n`，不伪造稳健尾分位。
 
@@ -213,11 +216,11 @@ health/queue、HBM、resource 与 cleanup hard gates 全通过，服务器才可
 
 ### P6.2：Profiled Evidence
 
-从 P6.1 选择代表性 cell 单独运行 msprof 和 request-device aggregate：
+从 P6.1 选择三个代表性 cell 单独运行 msprof、phase-memory sampler 和 request-device aggregate：
 
-- 一个低并发短上下文 cell。
-- 一个中并发中/长上下文 cell。
-- 一个接近容量边界的 cell。
+- `short_prefill=4096+64+c1`。
+- `long_prefill=131072+64+c1`。
+- `decode_heavy=4096+256+c1`。
 
 输出 operator/device/transfer/memory 读数及 join coverage，不把 profiler 下用户 latency 当 P6.1 性能。
 
@@ -307,7 +310,7 @@ docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md
 - EPLB/static expert map 不等于 expert offload。
 - Expert V0 先模拟；真实 warm prefetch 必须通过 trace、bytes、load latency 和 lead-time 门。
 - SSD/NVMe 只做 cold persistence/离线恢复，不进入逐 token decode 热路径。
-- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发，在当前 P6.1C official context reference 门关闭前继续延后。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
+- P8.0 已冻结首个 no-MTP degraded runtime cell；P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发，并继续等待 P6.2/P6.3。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
 
 ## 8. P9：Trace-driven Hardware Sensitivity
 
@@ -349,8 +352,8 @@ simulator_validation_report.md
 1. P6.0 已固结 `yellow_degraded_baseline_stabilized`，P6.1 minimal control 已固结 `yellow_degraded_minimal_unprofiled_control_measured`；两者都不重跑。
 2. P6.1R retry2 与 P6.1L-R1 已完成并验收，不原样重跑。
 3. P6.1C-R1 已完成并验收为 official green，不重跑。
-4. P6.1 unprofiled 当前为 `authorized_for_execution`、`npu_execution_authorized:true`；
-   pilot green 后在同一 lifecycle 自动进入 18-cell matrix。
-5. profiler 与 P8.1 仍需后续独立任务。
+4. P6.1 unprofiled 已完成并验收为 `green_mtp_unprofiled_baseline`，不重跑。
+5. P6.2 profiled evidence 当前为 `authorized_for_execution`、`npu_execution_authorized:true`、
+   `next_task_authorized:true`；P6.3 与 P8.1 不自动进入。
 6. P7 工具链预研可继续，但不得外推 full-model runtime。
 7. P9 最后消费统一 trace bundle，输出硬件优先级。

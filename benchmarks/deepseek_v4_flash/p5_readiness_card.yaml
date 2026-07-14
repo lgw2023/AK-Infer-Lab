@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: mtp_official_context_131072_green_unprofiled_baseline_authorized
+  runtime_status: mtp_unprofiled_baseline_green_p6_2_profiled_evidence_authorized
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -174,7 +174,8 @@ artifacts:
   completed_p6_1l_rerun_workload: workloads/p6_1l_mtp_decode_length_ladder_rerun1.yaml
   completed_p6_1c_workload: workloads/p6_1c_mtp_official_context_ladder.yaml
   completed_p6_1c_r1_workload: workloads/p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml
-  next_workload: workloads/p6_1_mtp_unprofiled_baseline.yaml
+  completed_p6_1_workload: workloads/p6_1_mtp_unprofiled_baseline.yaml
+  next_workload: workloads/p6_2_mtp_profiled_evidence.yaml
   bounded_mtp_patch: patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
   server_handoff: 通信模块/docs/developer-to-server.md
 boundaries:
@@ -189,8 +190,9 @@ boundaries:
   - P6.1R retry2 completed the minimal MTP 4096+64 request with exact token checks and clean cleanup; P6.1L-R1 then revalidated all six 4096+512/1024 slots without retries.
   - P6.1C completed as blocked_sampling_calibration after npu-smi info -t usages returned only a missing-card-id help message for all 36 sweeps; two 65536+64 calibration requests were summary-reported successful, but they are not official context evidence and the official lifecycle never started.
   - P6.1C-R1 completed as green_mtp_official_context_ladder: calibration selected 5.0s, the unchanged 4096/32768/65536/98304/131072+64 ladder passed on every first attempt, highest_stable_context=131072 and the developer accepted the official functional/capacity/stability reference baseline.
-  - P6.1 MTP unprofiled baseline is authorized_for_execution with npu_execution_authorized:true; it runs a 4096/65536/131072 context, 64/256 output and 1/4/8 concurrency matrix after the three-cell pilot in one frozen lifecycle.
-  - This authorization covers only the frozen unprofiled performance task; profiler, P8.1 server validation, offload, runtime upgrade and result transfer remain unauthorized.
+  - P6.1 MTP unprofiled baseline completed as green_mtp_unprofiled_baseline: 90/90 measured requests, 24/24 measured batches and 18/18 cells succeeded without retry, so the performance reference baseline is accepted.
+  - P6.2 MTP profiled evidence is authorized_for_execution with npu_execution_authorized:true; short_prefill, long_prefill and decode_heavy run as three independent msprof plus phase-memory and request-device aggregate lifecycles.
+  - This authorization covers only P6.2 profiled evidence; P6.3, P8.1 server validation, offload, runtime upgrade and result transfer remain unauthorized.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
   source_versions_recorded: true
@@ -202,6 +204,7 @@ acceptance:
   p8_observe_only_adapter_gate: open
   official_reference_baseline: true
   highest_stable_context: 131072
-  performance_reference_baseline: false
-  blocked_by: p6_1_mtp_unprofiled_baseline_not_executed
+  performance_reference_baseline: true
+  profiled_evidence_baseline: false
+  blocked_by: p6_2_profiled_evidence_not_executed
   next_task_authorized: true

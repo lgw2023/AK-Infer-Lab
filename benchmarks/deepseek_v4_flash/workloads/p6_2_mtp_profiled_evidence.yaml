@@ -1,0 +1,257 @@
+schema_version: 1
+workload_id: p6_2_deepseek_v4_flash_mtp_profiled_evidence
+date: "2026-07-14"
+purpose: collect_profiled_operator_memory_transfer_and_request_device_evidence
+task_id: p6_2_deepseek_v4_flash_w8a8_mtp_profiled_evidence_2026_0714
+
+stage_contract:
+  stage: P6.2
+  mode: mtp_profiled_representative_cells
+  claim_boundary: mtp_profiled_operator_memory_transfer_and_request_device_evidence_only
+  performance_reference_baseline: true
+  profiled_latency_is_performance_baseline: false
+  p8_execution_authorized: false
+  optimization_comparison_authorized: false
+
+accepted_prerequisite:
+  workload: p6_1_mtp_unprofiled_baseline.yaml
+  task_id: p6_1_deepseek_v4_flash_w8a8_mtp_unprofiled_baseline_2026_0714
+  server_grade: candidate_green_mtp_unprofiled_baseline
+  developer_grade: green_mtp_unprofiled_baseline
+  performance_reference_baseline: true
+  measured_requests: 90
+  measured_batches: 24
+  represented_cells: 18
+  accepted_token_delta_total: 6624.0
+  server_git_head: 210ca1281af2318912e6d69854705d1b53ae6a74
+
+repair_artifact:
+  path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  patch_sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  patched_proposer_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+  unchanged_base_proposer_sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+  task_local_overlay_only: true
+  patch_attempts_max_per_lifecycle: 1
+
+runtime_fixed:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  runtime: vllm_0_22_1_empty_and_vllm_ascend_0_22_1rc1
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  server_command_sha256: 370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19
+  visible_devices: "0,1,2,3,4,5,6,7"
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  data_parallel_size: 1
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  enforce_eager: false
+  cudagraph_mode: FULL_DECODE_ONLY
+  speculative_mtp:
+    method: mtp
+    num_speculative_tokens: 1
+
+source_payload:
+  server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+  prompt_tokens: 4096
+  bytes: 19487
+  sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+
+profiled_cells:
+  - cell_id: short_prefill
+    context_tokens: 4096
+    output_tokens: 64
+    concurrency: 1
+  - cell_id: long_prefill
+    context_tokens: 131072
+    output_tokens: 64
+    concurrency: 1
+  - cell_id: decode_heavy
+    context_tokens: 4096
+    output_tokens: 256
+    concurrency: 1
+
+lifecycle_plan:
+  server_lifecycles_max: 3
+  one_cell_per_fresh_lifecycle: true
+  warmup_requests_per_cell: 1
+  measured_requests_per_cell: 1
+  hidden_warmup_requests: 0
+  request_retries: 0
+  server_restart_inside_cell: false
+  continue_independent_cell_after_clean_failure: true
+  profiler_wraps_server_and_client_lifecycle: true
+
+canonical_body_policy:
+  freeze_before_first_server_start: true
+  construction: repeat_truncate_and_distinct_cyclic_offsets
+  warmup_context_tokens: 4096
+  warmup_output_tokens: 64
+  measured_bodies: 3
+  pairwise_common_prefix_tokens_less_than: 128
+  unique_request_body_sha256_required: true
+  body_bytes_and_sha256_recorded: true
+  bodies_and_prompt_ids_remain_server_local: true
+  retry_or_body_rebuild_allowed: false
+  generated_text_retained: false
+  token_ids_retained: false
+
+request_protocol:
+  endpoint: /v1/completions
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming: true
+  stream_include_usage: true
+  return_token_ids: true
+  token_chunk_width_allowed_max: 2
+  same_sse_chunk_tokens_share_arrival_timestamp: true
+  socket_inactivity_timeout_seconds: 7200
+  generated_text_retained: false
+  token_ids_retained: false
+
+profiler:
+  msprof_enabled: true
+  command: msprof
+  msproftx: true
+  output_root_template: /tmp/p6_2_deepseek_v4_flash_w8a8_mtp_profiled_evidence_2026_0714_<cell_id>_msprof
+  storage_limit_mb_per_cell: 4096
+  one_raw_profile_per_cell: true
+  sqlite_required_per_cell: true
+  direct_request_window_overlap_required_per_cell: true
+  request_device_aggregate_enabled: true
+  aggregate_strategy: bulk_temp_window_join
+  aggregate_full_timeout_minutes: 45
+  aggregate_skip_heavy_joins_fallback_timeout_minutes: 15
+  fallback_reuses_same_raw_profile_without_new_model_request: true
+  top_op_rows_requested_per_cell: 10
+  raw_profiler_remains_server_local: true
+  profiled_user_latency_is_diagnostic_only: true
+
+phase_memory:
+  enabled: true
+  sample_interval_seconds: 1.0
+  sampler_runs_only_during_measured_request: true
+  npu_smi_command: npu-smi info
+  npu_smi_one_table_all_eight_devices: true
+  npu_hbm_source_field: HBM-Usage(MB)
+  npu_capacity_mb_expected_per_device: 65536
+  host_process_scope: server_root_pid_and_all_descendants
+  host_rss_source: proc_status_VmRSS_sum
+  host_pss_source: proc_smaps_rollup_Pss_sum_when_readable
+  prefill_window: request_start_ns_to_first_token_ns
+  decode_window: first_token_ns_to_response_end_ns
+  overlapping_boundary_sample_counted_in_both_phases: true
+  raw_samples_remain_server_local: true
+  whole_device_hbm_not_kv_object_bytes: true
+  whole_device_hbm_not_hbm_traffic: true
+
+live_evidence:
+  health_before_and_after_measured_request: true
+  queue_idle_before_and_after_measured_request: true
+  metrics_before_and_after_measured_request: true
+  spec_counter_names:
+    - vllm:spec_decode_num_drafts_total
+    - vllm:spec_decode_num_draft_tokens_total
+    - vllm:spec_decode_num_accepted_tokens_total
+  positive_drafts_and_draft_tokens_per_successful_cell: true
+  accepted_delta_total_across_successful_cells_positive: true
+  counter_continuity_within_each_lifecycle: true
+
+required_outputs:
+  raw_server_local:
+    - request_bodies
+    - request_timing_and_token_arrival_json
+    - raw_metrics_snapshots
+    - raw_phase_memory_samples
+    - raw_msprof_tree
+    - full_request_device_aggregate_tables
+    - server_logs
+  bounded_candidates:
+    - result_summary.md
+    - environment_and_hashes.json
+    - profiled_cell_summary.tsv
+    - phase_memory_summary.tsv
+    - request_device_aggregate_summary.tsv
+    - request_top_op_summary.tsv
+    - ai_core_metric_summary.tsv
+    - profiler_inventory.tsv
+    - grading_inputs.json
+    - cleanup_status.txt
+    - first_failure_excerpt.txt
+
+acceptance:
+  blocked_preflight_grade: blocked_protocol_or_resource_gate
+  no_profiled_request_success_grade: red_mtp_profiled_evidence_no_success
+  partial_cells_grade: yellow_mtp_profiled_evidence_partial
+  aggregate_fallback_grade: yellow_mtp_profiled_evidence_skip_heavy_joins
+  cleanup_failure_grade: red_cleanup_incomplete
+  server_candidate_green_grade: candidate_green_mtp_profiled_evidence
+  developer_accepted_green_grade: green_mtp_profiled_evidence
+  green_requires_all_three_measured_requests_first_attempt: true
+  green_requires_token_health_queue_mtp_and_cleanup_gates: true
+  green_requires_three_profiler_sqlite_roots: true
+  green_requires_direct_overlap_and_request_device_aggregate_per_cell: true
+  green_requires_prefill_and_decode_memory_samples_per_cell: true
+  green_requires_eight_device_hbm_parser_clean: true
+  p6_1_performance_reference_remains_true_on_failure: true
+
+interpretation_boundaries:
+  profiled_latency_not_comparable_to_p6_1_unprofiled_latency: true
+  duration_time_is_raw_profiler_field_not_user_latency: true
+  task_or_op_duration_sum_may_overlap: true
+  transfer_claim_limited_to_reported_profiler_task_and_metric_fields: true
+  memory_is_process_group_and_whole_device_occupancy: true
+  kv_object_bytes_claim_allowed: false
+  hbm_traffic_bytes_claim_allowed_without_profiler_field: false
+  bottleneck_or_optimization_claim_allowed: false
+
+result_package_policy:
+  max_total_bytes: 71680
+  generated_text_or_token_ids_allowed: false
+  raw_profiler_or_raw_memory_allowed: false
+  selection_required_before_any_transfer: true
+  available_methods:
+    - email
+    - upload-api
+    - server-local
+  methods_are_mutually_exclusive: true
+  report_before_choice:
+    - exact_result_summary_path
+    - complete_candidate_file_list
+    - size_bytes_per_file
+    - sha256_per_file
+    - sensitivity_per_file
+    - available_methods
+    - recommended_method_and_reason
+  handoff_contains_transfer_command: false
+
+stop_policy:
+  runtime_or_parameter_mutation_allowed: false
+  patch_mutation_or_second_patch_allowed: false
+  mtp_disable_allowed: false
+  context_or_output_reduction_allowed: false
+  max_num_seqs_change_allowed: false
+  eager_fallback_allowed: false
+  version_upgrade_allowed: false
+  model_request_retry_allowed: false
+  offline_parser_fix_for_actual_msprof_schema_allowed: true
+  offline_aggregate_rerun_on_same_raw_data_allowed: true
+  server_local_mkdir_quoting_nounset_and_parser_scaffolding_fix_allowed: true
+  p6_3_execution_allowed: false
+  p8_execution_allowed: false
+  automatic_external_transfer_allowed: false
+
+execution_state:
+  status: authorized_for_execution
+  server_handoff: authorized_for_execution
+  npu_execution_authorized: true
+  next_task_authorized: true

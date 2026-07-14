@@ -494,7 +494,7 @@ def _stream_request(
         "finish_reason_length": finish_reason == "length",
         "saw_done": saw_done,
         "exact_token_arrival_count": len(token_arrival_ns) == expected_output,
-        "token_chunk_width_one": max_token_chunk_width == 1,
+        "token_chunk_width_within_mtp_bound": max_token_chunk_width <= 2,
     }
     return {
         "request_id": request_item["request_id"],

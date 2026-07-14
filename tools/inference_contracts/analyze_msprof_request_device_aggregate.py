@@ -5,11 +5,17 @@ import csv
 import json
 import os
 import sqlite3
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from tools.inference_contracts.analyze_msprof_sqlite_windows import (
     DEFAULT_ARTIFACT_ROOT,
@@ -70,7 +76,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--msprof-root-on", type=Path, default=None)
     parser.add_argument("--msprof-root-off", type=Path, default=None)
-    parser.add_argument("--mode", action="append", choices=DEFAULT_MODES, default=None)
+    parser.add_argument("--mode", action="append", default=None)
     parser.add_argument("--top-n-op-types", type=int, default=DEFAULT_TOP_N_OP_TYPES)
     parser.add_argument(
         "--workers",

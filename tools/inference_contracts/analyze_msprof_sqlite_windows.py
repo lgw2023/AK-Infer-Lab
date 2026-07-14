@@ -55,7 +55,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--msprof-root-on", type=Path, default=None)
     parser.add_argument("--msprof-root-off", type=Path, default=None)
-    parser.add_argument("--mode", action="append", choices=DEFAULT_MODES, default=None)
+    parser.add_argument("--mode", action="append", default=None)
     return parser.parse_args()
 
 
@@ -159,7 +159,7 @@ def analyze_msprof_windows(
 
 
 def discover_mode_paths(source_artifact_dir: Path, mode: str, explicit_root: Path | None) -> ModePaths:
-    suffix = FLAT_SUFFIX[mode]
+    suffix = FLAT_SUFFIX.get(mode, "")
     result_candidates = [
         source_artifact_dir / mode / "vllm" / "vllm_api_concurrency_result.json",
         source_artifact_dir / mode / "vllm_api_concurrency_result.json",

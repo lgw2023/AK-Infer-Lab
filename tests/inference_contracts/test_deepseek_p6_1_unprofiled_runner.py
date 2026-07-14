@@ -142,7 +142,7 @@ def test_finalize_preserves_a_pre_request_protocol_gate_grade(tmp_path):
     assert grading["cleanup_status"] == "clean"
 
 
-def test_execute_artifacts_reads_streaming_token_ids_and_live_metrics(tmp_path):
+def test_execute_artifacts_accepts_mtp_two_token_sse_chunks(tmp_path):
     state = {"drafts": 0, "draft_tokens": 0, "accepted": 0}
 
     class Handler(BaseHTTPRequestHandler):
@@ -176,12 +176,13 @@ def test_execute_artifacts_reads_streaming_token_ids_and_live_metrics(tmp_path):
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
             self.end_headers()
-            for index in range(output):
+            chunks = [[100, 101], [102]]
+            for index, token_ids in enumerate(chunks):
                 event = {
                     "choices": [
                         {
-                            "token_ids": [100 + index],
-                            "finish_reason": "length" if index == output - 1 else None,
+                            "token_ids": token_ids,
+                            "finish_reason": "length" if index == len(chunks) - 1 else None,
                         }
                     ]
                 }
@@ -254,8 +255,10 @@ def test_execute_artifacts_reads_streaming_token_ids_and_live_metrics(tmp_path):
         )
         assert result["status"] == "success"
         assert result["streamed_token_count"] == 3
-        assert result["max_token_chunk_width"] == 1
+        assert result["max_token_chunk_width"] == 2
         assert len(result["token_arrival_ns"]) == 3
+        assert result["token_arrival_ns"][0] == result["token_arrival_ns"][1]
+        assert result["checks"]["token_chunk_width_within_mtp_bound"] is True
         assert result["generated_text_retained"] is False
         assert result["token_ids_retained"] is False
         assert batch["status"] == "success"

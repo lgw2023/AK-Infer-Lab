@@ -154,7 +154,10 @@ metrics:
   batch_output_throughput_definition: sum_completion_tokens/(batch_end_ns-batch_start_ns)
   request_throughput_definition: successful_requests/(batch_end_ns-batch_start_ns)
   exact_token_arrival_timestamps_required: true
-  token_chunk_width_required: 1
+  token_chunk_width_allowed_max: 2
+  same_sse_chunk_tokens_share_arrival_timestamp: true
+  itl_scope: client_observed_sse_delivery_gap
+  npu_decode_step_latency_claim_allowed: false
   concurrency_e2el_includes_queue_time: true
   profiler_or_hbm_sampler_running: false
 
@@ -261,7 +264,44 @@ stop_policy:
   continue_independent_matrix_cells_after_failure_only_if_server_healthy_and_queue_idle: true
 
 execution_state:
-  status: authorized_for_execution
-  server_handoff: authorized_for_execution
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_developer_accepted_green
+  server_handoff: completed
+  npu_execution_authorized: false
+  next_task_authorized: false
+
+execution_result:
+  server_git_head: 210ca1281af2318912e6d69854705d1b53ae6a74
+  server_grade: candidate_green_mtp_unprofiled_baseline
+  developer_grade: green_mtp_unprofiled_baseline
+  performance_reference_baseline: true
+  official_functional_reference_baseline_remains_true: true
+  warmup_ok: true
+  pilot_complete: true
+  measured_requests: 90
+  measured_batches: 24
+  represented_cells: 18
+  retry_count: 0
+  accepted_token_delta_total: 6624.0
+  counter_evidence_ok: true
+  counter_continuity_ok: true
+  cleanup_status: clean
+  profiler_run: false
+  hbm_sampler_run: false
+  candidate_package:
+    developer_path: /Volumes/SSD1/Inbox/2026-07-14/p6_1_unprofiled_baseline_candidate_green_2026_0714
+    file_count: 8
+    total_bytes: 67917
+    sorted_filename_manifest_sha256: 5110750ad684770e21bf2081556387b9c7ac891865f952e526ebf8506574d415
+  server_local_adaptation:
+    attempted_tracked_gate: max_token_chunk_width_equals_1
+    observed_mtp_width: 2
+    accepted_gate: max_token_chunk_width_less_than_or_equal_to_2
+    timing_formula_changed: false
+    request_or_runtime_changed: false
+    rerun_required: false
+  interpretation_boundaries:
+    itl_is_client_observed_sse_delivery_gap: true
+    same_chunk_token_gap_ms: 0
+    npu_decode_step_latency: false
+    concurrency_scaling_claim: false
+    max_num_seqs_one_queue_time_included: true
