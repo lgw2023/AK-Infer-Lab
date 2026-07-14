@@ -1,21 +1,21 @@
 # Developer to Server
 
-## 当前唯一服务器动作：准备但不执行 P6.1C-R1
+## 当前唯一服务器动作：同步并执行 P6.1C-R1
 
 ~~~text
 task_id: p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_sampling_repair_2026_0714
-execution_mode: prepared_not_dispatched
+execution_mode: authorized_for_execution
 workload: benchmarks/deepseek_v4_flash/workloads/p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml
-npu_execution_authorized: false
-next_task_authorized: false
+npu_execution_authorized: true
+next_task_authorized: true
 ~~~
 
-尚未授权 P6.1C-R1 服务器/NPU 执行。当前只允许同步、阅读和核验合同，不得执行；不得
-启动 vLLM、发送 calibration/official 请求或占用 NPU 0-7。本文只准备 R1 sampler repair，
-不得把它解释为对其他 workload、profiler、P8、自动修复或结果外发的授权。
+用户已明确授权 P6.1C-R1 服务器/NPU 执行。服务器必须先按本文使用
+`fetch + merge --ff-only` 同步最终远程 `main`，核验 tracked 工作区、HEAD/origin parity、
+workload/handoff 双授权和全部 preflight；同步并通过全部硬门后立即执行当前唯一任务。
+不得把本授权解释为对其他 workload、profiler、P8、自动修复或结果外发的授权。
 
-本次开发机修改只准备 workload、handoff、合同测试和直接相关真值面；外部开发机不运行
-NPU。只有本合同另行发布且用户明确授权后，服务器才可把本文执行门切换为 true。
+外部开发机不运行 NPU；真实执行只允许在服务器 NPU 0-7 上按本合同进行。
 
 ## 1. 声明边界与固定合同
 
@@ -63,16 +63,15 @@ CANDIDATE_INTERVALS=(0.5 1.0 2.0 5.0)
 checkpoint。不得关闭 MTP、降低 context、修改 max_num_seqs 或 eager fallback；不得调参、
 升级版本、运行 profiler、进入完整 P6.1 性能、P8/offload，或自动修复失败。
 
-## 2. 未授权硬门、未来同步和任务目录
+## 2. 已授权硬门、同步和任务目录
 
-用户尚未授权本任务执行，workload、本文和下方 Bash 门均固定为 `false`。当前读取者必须
-在硬门处停止。只有后续发布明确把三个真值面都切换为 true，并由用户另行通知执行时，
-服务器才可 fast-forward 同步后从本节重新开始；任何门失败均停止，不得绕过或自行修复。
+用户已明确授权本任务执行。服务器必须先 fast-forward 同步授权提交，再从本节开始；
+workload、本文和下方 Bash 门必须全部为 `true`。任何门失败均停止，不得绕过或自行修复。
 
 ~~~bash
 set -euo pipefail
 
-NPU_EXECUTION_AUTHORIZED=false
+NPU_EXECUTION_AUTHORIZED=true
 test "${NPU_EXECUTION_AUTHORIZED}" = true
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
@@ -1711,6 +1710,6 @@ duty-cycle、selected validation wall guard、五档逐 attempt token/health/que
 retry、highest stable context、server grade、首错和 raw server paths。不得把 calibration 写入
 official 成功档位，也不得把 candidate green 写成开发机已接受的 green。
 
-当前 `npu_execution_authorized:false`、`next_task_authorized:false`，只允许同步、阅读和核验
-本文 P6.1C-R1 合同；开发机不运行 NPU，服务器不得执行。后续即使另获执行授权，任何结果
-外发仍须先报告完整候选范围，并重新获得用户对单一传输方法的明确选择。
+当前 `npu_execution_authorized:true`、`next_task_authorized:true`，授权服务器在同步并通过
+全部硬门后立即执行本文 P6.1C-R1；开发机不运行 NPU。任何结果外发仍须先报告完整候选
+范围，并重新获得用户对单一传输方法的明确选择。

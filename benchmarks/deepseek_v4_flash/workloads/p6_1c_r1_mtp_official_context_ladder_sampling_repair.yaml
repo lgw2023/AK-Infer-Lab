@@ -336,7 +336,7 @@ stop_policy:
   automatic_follow_up_allowed: false
 
 execution_state:
-  status: prepared_not_dispatched
-  server_handoff: prepared_not_dispatched
-  npu_execution_authorized: false
-  next_task_authorized: false
+  status: authorized_for_execution
+  server_handoff: authorized_for_execution
+  npu_execution_authorized: true
+  next_task_authorized: true

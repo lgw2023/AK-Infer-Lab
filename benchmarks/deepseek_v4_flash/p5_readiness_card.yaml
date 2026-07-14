@@ -187,8 +187,8 @@ boundaries:
   - P6.1R retry1 applied the one-line overlay, reached server-ready and removed the original positions_cpu graph-capture failure; its only request returned HTTP 400 because the completion payload was sent to the chat endpoint.
   - P6.1R retry2 completed the minimal MTP 4096+64 request with exact token checks and clean cleanup; P6.1L-R1 then revalidated all six 4096+512/1024 slots without retries.
   - P6.1C completed as blocked_sampling_calibration after npu-smi info -t usages returned only a missing-card-id help message for all 36 sweeps; two 65536+64 calibration requests were summary-reported successful, but they are not official context evidence and the official lifecycle never started.
-  - P6.1C-R1 is prepared_not_dispatched with npu_execution_authorized:false; it uses one npu-smi info table sweep for all eight devices, parser/timing preflight, feasible reference/selected sample gates and the existing selected-validation 10% interference guard before the unchanged 4096/32768/65536/98304/131072 ladder.
-  - No P6.1C-R1 execution, profiler, P8.1 server validation, offload, second patch, runtime upgrade or result transfer is authorized by the prepared contract.
+  - P6.1C-R1 is authorized_for_execution with npu_execution_authorized:true; it uses one npu-smi info table sweep for all eight devices, parser/timing preflight, feasible reference/selected sample gates and the existing selected-validation 10% interference guard before the unchanged 4096/32768/65536/98304/131072 ladder.
+  - This authorization covers only the frozen P6.1C-R1 execution; profiler, P8.1 server validation, offload, second patch, runtime upgrade, automatic repair/follow-up and result transfer remain unauthorized.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
   source_versions_recorded: true
@@ -199,4 +199,4 @@ acceptance:
   p5_status: yellow_no_mtp_graph_request_success
   p8_observe_only_adapter_gate: open
   blocked_by: p6_1c_r1_sampling_repair_not_executed
-  next_task_authorized: false
+  next_task_authorized: true
