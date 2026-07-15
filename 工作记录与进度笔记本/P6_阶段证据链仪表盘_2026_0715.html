@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>AK-Infer-Lab · P6 Evidence Console</title>
+  <style>
+    :root {
+      --ink: #0b0d0e;
+      --panel: #111516;
+      --panel-2: #171c1d;
+      --line: #303738;
+      --muted: #8e9997;
+      --paper: #e9ede8;
+      --green: #a9f04d;
+      --green-dim: #557e2b;
+      --cyan: #64d8d4;
+      --amber: #f1b85b;
+      --red: #e4705b;
+      --mono: "IBM Plex Mono", "SFMono-Regular", "Noto Sans Mono CJK SC", monospace;
+      --body: "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--paper);
+      background:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+        radial-gradient(circle at 84% 8%, rgba(100,216,212,.10), transparent 28rem),
+        var(--ink);
+      background-size: 32px 32px, 32px 32px, auto, auto;
+      font-family: var(--body);
+      line-height: 1.58;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .16;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.86' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+      mix-blend-mode: soft-light;
+    }
+
+    main {
+      width: min(1480px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 32px 0 72px;
+    }
+
+    .masthead {
+      min-height: 410px;
+      border: 1px solid var(--line);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.35fr .65fr;
+      background: linear-gradient(135deg, rgba(17,21,22,.96), rgba(11,13,14,.82));
+    }
+
+    .masthead::after {
+      content: "P6";
+      position: absolute;
+      right: -22px;
+      bottom: -96px;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(169,240,77,.22);
+      font: 900 330px/1 var(--mono);
+      letter-spacing: -.12em;
+    }
+
+    .hero-copy { padding: 42px 48px; position: relative; z-index: 1; }
+
+    .eyebrow, .section-id, .tag, .metric-label, th, .stamp {
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+
+    .eyebrow { color: var(--green); font-size: 12px; }
+
+    h1 {
+      margin: 32px 0 24px;
+      max-width: 900px;
+      font: 700 clamp(42px, 6.2vw, 92px)/.94 var(--mono);
+      letter-spacing: -.065em;
+    }
+
+    .hero-copy p { max-width: 820px; color: #c5ccc8; font-size: 18px; }
+
+    .hero-status {
+      border-left: 1px solid var(--line);
+      padding: 40px 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+      background: rgba(7,10,10,.55);
+    }
+
+    .status-light {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font: 700 13px var(--mono);
+      color: var(--green);
+    }
+
+    .status-light::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 18px var(--green);
+    }
+
+    .status-stack { display: grid; gap: 12px; }
+    .status-row { border-top: 1px solid var(--line); padding-top: 12px; }
+    .status-row small { color: var(--muted); display: block; font: 11px var(--mono); }
+    .status-row strong { font: 600 15px var(--mono); }
+
+    section { margin-top: 26px; border: 1px solid var(--line); background: rgba(17,21,22,.92); }
+    .section-head { display: flex; justify-content: space-between; gap: 24px; padding: 24px 28px; border-bottom: 1px solid var(--line); }
+    .section-head h2 { margin: 0; font: 700 clamp(24px, 3vw, 40px)/1 var(--mono); letter-spacing: -.035em; }
+    .section-id { color: var(--cyan); font-size: 11px; }
+    .section-note { color: var(--muted); max-width: 620px; font-size: 14px; text-align: right; }
+
+    .evidence-rail { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .gate { min-height: 290px; padding: 26px; border-right: 1px solid var(--line); position: relative; }
+    .gate:last-child { border-right: 0; }
+    .gate::before { content: attr(data-step); position: absolute; top: 18px; right: 20px; color: #2a3131; font: 800 66px/1 var(--mono); }
+    .tag { display: inline-block; border: 1px solid var(--green-dim); color: var(--green); padding: 5px 8px; font-size: 9px; }
+    .gate h3 { margin: 42px 0 10px; font: 700 22px/1.15 var(--mono); }
+    .gate .big { margin: 20px 0 6px; color: var(--green); font: 700 36px/1 var(--mono); }
+    .gate p { color: #b5bdb9; font-size: 13px; }
+    .gate code { color: var(--cyan); font-family: var(--mono); font-size: 11px; }
+
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); }
+    .metric { padding: 22px 26px; border-right: 1px solid var(--line); }
+    .metric:last-child { border-right: 0; }
+    .metric-label { color: var(--muted); font-size: 9px; }
+    .metric-value { display: block; margin-top: 8px; font: 700 28px/1 var(--mono); }
+
+    .chart-wrap { padding: 28px; overflow-x: auto; }
+    .chart-head, .chart-row { min-width: 920px; display: grid; grid-template-columns: 190px 1fr 1fr 140px; gap: 18px; align-items: center; }
+    .chart-head { padding: 0 10px 12px; color: var(--muted); font: 10px var(--mono); }
+    .chart-row { padding: 12px 10px; border-top: 1px solid rgba(48,55,56,.7); }
+    .cell-name strong { display: block; font: 600 13px var(--mono); }
+    .cell-name small { color: var(--muted); font: 10px var(--mono); }
+    .bar-track { height: 12px; background: #252b2c; position: relative; overflow: hidden; }
+    .bar { height: 100%; width: calc(var(--value) * 1%); transform-origin: left; animation: grow .8s ease-out both; }
+    .bar.e2el { background: var(--cyan); }
+    .bar.throughput { background: var(--green); }
+    .bar-label { margin-top: 5px; color: #cbd2cf; font: 10px var(--mono); }
+    .tp-note { text-align: right; color: var(--amber); font: 700 13px var(--mono); }
+
+    @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    .ab-layout { display: grid; grid-template-columns: 1.15fr .85fr; }
+    .matrix { display: grid; grid-template-columns: 130px repeat(2, 1fr); border-right: 1px solid var(--line); }
+    .matrix > div { padding: 16px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .matrix > div:nth-child(3n) { border-right: 0; }
+    .matrix .axis { color: var(--muted); font: 10px var(--mono); }
+    .matrix .context { color: var(--cyan); font: 700 15px var(--mono); }
+    .matrix .cell { min-height: 86px; background: linear-gradient(135deg, rgba(169,240,77,.08), transparent); }
+    .matrix .cell strong { color: var(--green); font: 700 18px var(--mono); }
+    .matrix .cell small { display: block; color: var(--muted); font: 10px var(--mono); margin-top: 7px; }
+    .contract { padding: 28px; }
+    .contract h3 { margin: 0 0 18px; font: 700 20px var(--mono); }
+    .contract ol { margin: 0; padding-left: 22px; color: #bbc4bf; }
+    .contract li { margin: 12px 0; }
+    .contract code { color: var(--green); font-family: var(--mono); }
+
+    .boundary-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .boundary { padding: 24px; border-right: 1px solid var(--line); }
+    .boundary:last-child { border-right: 0; }
+    .boundary h3 { margin: 0; font: 700 16px var(--mono); }
+    .boundary .state { display: block; margin: 16px 0; font: 700 12px var(--mono); }
+    .state.green { color: var(--green); }
+    .state.amber { color: var(--amber); }
+    .boundary p { color: var(--muted); font-size: 12px; }
+
+    .route { padding: 30px; display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 16px; align-items: center; }
+    .route-node { min-height: 150px; border: 1px solid var(--line); padding: 22px; }
+    .route-node.current { border-color: var(--amber); background: rgba(241,184,91,.06); }
+    .route-node h3 { margin: 0 0 12px; font: 700 17px var(--mono); }
+    .route-node p { color: var(--muted); font-size: 12px; }
+    .arrow { color: var(--green); font: 700 26px var(--mono); }
+
+    footer { margin-top: 26px; padding: 28px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+    footer strong { color: var(--paper); }
+    .stamp { color: var(--green); font-size: 10px; float: right; }
+
+    @media (max-width: 980px) {
+      .masthead, .ab-layout { grid-template-columns: 1fr; }
+      .hero-status { border-left: 0; border-top: 1px solid var(--line); gap: 30px; }
+      .evidence-rail, .metric-grid, .boundary-grid { grid-template-columns: repeat(2, 1fr); }
+      .gate:nth-child(2), .metric:nth-child(2), .boundary:nth-child(2) { border-right: 0; }
+      .matrix { border-right: 0; }
+      .route { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); text-align: center; }
+    }
+
+    @media (max-width: 620px) {
+      main { width: min(100% - 20px, 1480px); padding-top: 10px; }
+      .hero-copy { padding: 30px 24px; }
+      .section-head { flex-direction: column; }
+      .section-note { text-align: left; }
+      .evidence-rail, .metric-grid, .boundary-grid { grid-template-columns: 1fr; }
+      .gate, .metric, .boundary { border-right: 0; border-bottom: 1px solid var(--line); }
+      .matrix { grid-template-columns: 100px repeat(2, 1fr); }
+      .matrix > div { padding: 12px 10px; }
+    }
+
+    @media print {
+      body { background: #fff; color: #111; }
+      body::before { display: none; }
+      section, .masthead, footer { break-inside: avoid; background: #fff; color: #111; }
+      .hero-status { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <div class="hero-copy">
+        <div class="eyebrow">AK-INFER-LAB / EVIDENCE CONSOLE / 2026-07-15</div>
+        <h1>P6<br>EVIDENCE<br>CHAIN</h1>
+        <p>DeepSeek-V4-Flash W8A8-MTP · Atlas 800T A2 · 8×64GB。这里区分已验收的服务器结果、开发机复核与当前仅获授权的下一任务。</p>
+      </div>
+      <aside class="hero-status">
+        <div class="status-light">P6.0—P6.3A CLOSED</div>
+        <div class="status-stack">
+          <div class="status-row"><small>CURRENT TASK</small><strong>P6.3B PREFIX CACHE A/B</strong></div>
+          <div class="status-row"><small>EXECUTION</small><strong>AUTHORIZED · SERVER PENDING</strong></div>
+          <div class="status-row"><small>CLAIM BOUNDARY</small><strong>MECHANISM EFFECT ONLY</strong></div>
+          <div class="status-row"><small>NEXT LOCK</small><strong>NO AUTO P6.3C / P7 / P8</strong></div>
+        </div>
+      </aside>
+    </header>
+
+    <section aria-labelledby="chain-title">
+      <div class="section-head">
+        <div><div class="section-id">01 / CLOSED GATES</div><h2 id="chain-title">四层证据链</h2></div>
+        <div class="section-note">绿色表示开发机已接受的服务器证据，不表示更宽的性能、容量或因果结论。</div>
+      </div>
+      <div class="evidence-rail">
+        <article class="gate" data-step="01"><span class="tag">GREEN</span><h3>Official Context</h3><div class="big">131072</div><p>五档输入 + 固定 64 输出全部首次成功；冻结配置下 functional/capacity/stability gate 关闭。</p><code>P6.1C-R1</code></article>
+        <article class="gate" data-step="02"><span class="tag">GREEN</span><h3>Unprofiled Baseline</h3><div class="big">90 / 90</div><p>18 cells、24 measured batches、零 retry；TTFT/TPOT/ITL/E2EL 与 streaming throughput reference 成立。</p><code>P6.1</code></article>
+        <article class="gate" data-step="03"><span class="tag">GREEN</span><h3>Profiled Evidence</h3><div class="big">3 × 136</div><p>三个代表 cell、每 cell 136 SQLite；full request-device aggregate 与八卡 phase-memory 完整。</p><code>P6.2</code></article>
+        <article class="gate" data-step="04"><span class="tag">GREEN</span><h3>Matched MTP A/B</h3><div class="big">24 / 24</div><p>全部 paired batches 方向一致；接受 fixed-order workload 内的描述性 mechanism effect。</p><code>P6.3A</code></article>
+      </div>
+      <div class="metric-grid">
+        <div class="metric"><span class="metric-label">official requests</span><span class="metric-value">5 / 5</span></div>
+        <div class="metric"><span class="metric-label">unprofiled cells</span><span class="metric-value">18 / 18</span></div>
+        <div class="metric"><span class="metric-label">phase memory</span><span class="metric-value">6 rows</span></div>
+        <div class="metric"><span class="metric-label">mtp accepted delta</span><span class="metric-value">4896</span></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="mtp-title">
+      <div class="section-head">
+        <div><div class="section-id">02 / P6.3A READOUT</div><h2 id="mtp-title">MTP-on 描述性差异</h2></div>
+        <div class="section-note">条形长度为绝对百分比。E2EL/TPOT 越低越好；throughput 越高越好。固定 off→on 顺序、3 repeats、无显著性检验。</div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-head"><span>CELL</span><span>E2EL ↓</span><span>BATCH OUTPUT THROUGHPUT ↑</span><span>TPOT ↓</span></div>
+        <div class="chart-row"><div class="cell-name"><strong>short_prefill</strong><small>4K + 64 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:45.1"></div></div><div class="bar-label">−45.1%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:82.6"></div></div><div class="bar-label">+82.6%</div></div><div class="tp-note">−45.9%</div></div>
+        <div class="chart-row"><div class="cell-name"><strong>short_decode</strong><small>4K + 256 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:46"></div></div><div class="bar-label">−46.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:85.2"></div></div><div class="bar-label">+85.2%</div></div><div class="tp-note">−46.2%</div></div>
+        <div class="chart-row"><div class="cell-name"><strong>short_decode_c8</strong><small>4K + 256 · c8</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:47"></div></div><div class="bar-label">−47.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:89.2"></div></div><div class="bar-label">+89.2%</div></div><div class="tp-note">−47.3%</div></div>
+        <div class="chart-row"><div class="cell-name"><strong>mid_prefill</strong><small>64K + 64 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:36"></div></div><div class="bar-label">−36.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:56.1"></div></div><div class="bar-label">+56.1%</div></div><div class="tp-note">−46.5%</div></div>
+        <div class="chart-row"><div class="cell-name"><strong>mid_prefill_c4</strong><small>64K + 64 · c4</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:35.7"></div></div><div class="bar-label">−35.7%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:55.9"></div></div><div class="bar-label">+55.9%</div></div><div class="tp-note">−46.3%</div></div>
+        <div class="chart-row"><div class="cell-name"><strong>mid_decode</strong><small>64K + 256 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:44.9"></div></div><div class="bar-label">−44.9%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:81.6"></div></div><div class="bar-label">+81.6%</div></div><div class="tp-note">−47.9%</div></div>
+        <div class="chart-row"><div class="cell-name"><strong>long_prefill</strong><small>128K + 64 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:30"></div></div><div class="bar-label">−30.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:42.8"></div></div><div class="bar-label">+42.8%</div></div><div class="tp-note">−47.2%</div></div>
+        <div class="chart-row"><div class="cell-name"><strong>long_decode</strong><small>128K + 256 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:42.8"></div></div><div class="bar-label">−42.8%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:74.7"></div></div><div class="bar-label">+74.7%</div></div><div class="tp-note">−48.3%</div></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="ab-title">
+      <div class="section-head">
+        <div><div class="section-id">03 / CURRENT AUTHORIZED TASK</div><h2 id="ab-title">P6.3B Repeated-Prefix Matrix</h2></div>
+        <div class="section-note">黄色状态：合同已发布、NPU/vLLM 已授权，尚无服务器结果。两边都保持 MTP，只切换 Prefix Cache。</div>
+      </div>
+      <div class="ab-layout">
+        <div class="matrix" role="table" aria-label="P6.3B context and prefix ratio matrix">
+          <div class="axis">CONTEXT</div><div class="axis">50% TARGET</div><div class="axis">90% TARGET</div>
+          <div class="context">4K</div><div class="cell"><strong>2048</strong><small>aligned shared tokens</small></div><div class="cell"><strong>3584</strong><small>aligned shared tokens</small></div>
+          <div class="context">32K</div><div class="cell"><strong>16384</strong><small>aligned shared tokens</small></div><div class="cell"><strong>29440</strong><small>aligned shared tokens</small></div>
+          <div class="context">64K</div><div class="cell"><strong>32768</strong><small>aligned shared tokens</small></div><div class="cell"><strong>58880</strong><small>aligned shared tokens</small></div>
+          <div class="context">128K</div><div class="cell"><strong>65536</strong><small>aligned shared tokens</small></div><div class="cell"><strong>117888</strong><small>aligned shared tokens</small></div>
+        </div>
+        <div class="contract">
+          <h3>硬合同 / 2 lifecycles</h3>
+          <ol>
+            <li><code>prefix_cache_off → prefix_cache_on</code></li>
+            <li>每 group：1 prime + 3 measured follower</li>
+            <li>总计：16 prime / 48 measured / 64 requests</li>
+            <li>Prefix-on：24/24 measured follower hit delta &gt; 0</li>
+            <li>Prefix-off：hit delta = 0；两边 MTP activity 为正</li>
+            <li>0 retry；无 profiler；无 HBM sampler；不自动进入 P6.3C</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="boundary-title">
+      <div class="section-head">
+        <div><div class="section-id">04 / EVIDENCE BOUNDARY</div><h2 id="boundary-title">四个状态轴不混写</h2></div>
+        <div class="section-note">尤其是 HBM：整卡 occupancy 不是 KV object bytes，也不是 HBM traffic。</div>
+      </div>
+      <div class="boundary-grid">
+        <article class="boundary"><h3>Functional</h3><span class="state green">GREEN</span><p>冻结配置下 131072+64 成功、健康、queue、MTP 与 cleanup 完整。</p></article>
+        <article class="boundary"><h3>User Performance</h3><span class="state green">GREEN</span><p>P6.1 unprofiled streaming reference；不由 profiled latency 回填。</p></article>
+        <article class="boundary"><h3>Mechanism</h3><span class="state green">MTP GREEN</span><p>P6.3A fixed-order matched readout 已关闭；Prefix Cache 仍待 P6.3B。</p></article>
+        <article class="boundary"><h3>Physical HBM</h3><span class="state amber">BOUNDED SIDEBAND</span><p>npu-smi 仅作 event-aligned 旁证；逻辑 KV capacity 需独立指标。</p></article>
+      </div>
+    </section>
+
+    <section aria-labelledby="route-title">
+      <div class="section-head">
+        <div><div class="section-id">05 / DEPENDENCY ROUTE</div><h2 id="route-title">下一跳由证据决定</h2></div>
+        <div class="section-note">P6.3B 是 P8.2 K0 的直接输入；P6.3C 只有在严格单变量成立时才执行。</div>
+      </div>
+      <div class="route">
+        <div class="route-node"><h3>P6.3A · MTP</h3><p>开发机已接受 green。保留 fixed-order 与小样本限制。</p></div>
+        <div class="arrow">→</div>
+        <div class="route-node current"><h3>P6.3B · Prefix Cache</h3><p>当前唯一服务器任务。purpose-built repeated-prefix、matched unprofiled A/B。</p></div>
+        <div class="arrow">→</div>
+        <div class="route-node"><h3>P8.2 · K0</h3><p>消费 Prefix Cache baseline；KV offload/UCM 与 real move 仍需独立合同。</p></div>
+      </div>
+    </section>
+
+    <footer>
+      <span class="stamp">SNAPSHOT / 2026-07-15 / DEV-CONTROL MACHINE</span>
+      <strong>来源边界：</strong>P6.1C-R1、P6.1、P6.2、P6.3A 小结果包与开发机复核记录；服务器 raw logs/metrics/profiler artifacts 保留在服务器。本页不代表 P6.3B 已执行，不代表 P8 real move、bottleneck attribution 或 P9 hardware priority 已成立。
+    </footer>
+  </main>
+</body>
+</html>

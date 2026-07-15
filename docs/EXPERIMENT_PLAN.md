@@ -18,16 +18,17 @@ P6.1C-R1 已由开发机接受为 `green_mtp_official_context_ladder`，
 `highest_stable_context=131072`，official 功能/容量/稳定性 reference baseline=true。P6.1
 unprofiled 随后由开发机接受为 `green_mtp_unprofiled_baseline`，性能 reference baseline=true；
 P6.2 也已接受为 `green_mtp_profiled_evidence`，profiled evidence baseline=true。
+P6.3A 已接受为 `green_p6_3a_mtp_matched_ab`；当前 P6.3B 已授权。
 当前合同状态为：
 
 ```text
-task_id:p6_3a_deepseek_v4_flash_w8a8_mtp_matched_ab_2026_0715
+task_id:p6_3b_deepseek_v4_flash_w8a8_mtp_prefix_cache_matched_ab_2026_0715
 authorized_for_execution
 npu_execution_authorized:true / next_task_authorized:true
-P6.3A matched MTP on/off: 8 cells / 48 batches / 108 requests
+P6.3B Prefix Cache on/off: 8 groups / 16 prime / 48 measured / 64 requests
 ```
 
-server-local Git 管理最终验收已完成。P8.1 observe-only handoff 继续延后；`通信模块/docs/developer-to-server.md` 当前已授权 P6.3A，P6.3B 与 P8 不自动进入。
+server-local Git 管理最终验收已完成。P8.1 observe-only handoff 继续延后；`通信模块/docs/developer-to-server.md` 当前已授权 P6.3B，P6.3C 与 P8 不自动进入。
 
 mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context、P6.1 unprofiled 性能门与 P6.2 profiled evidence 门均已关闭。P6.3 和 P8 继续分离，外部开发机不运行 NPU。
 
@@ -242,12 +243,17 @@ request-device aggregate exit=0 且未使用 skip-heavy-joins fallback；phase-m
 固定输出、相同 warmup、等价 lifecycle 和相同非目标开关。性能 A/B 以 unprofiled run 为主；
 差异成立后才另起 profiled 跟进。
 
-当前 P6.3A 合同已授权：固定 `mtp_off -> mtp_on` 两个 fresh lifecycle，采用
+P6.3A 已接受为 `green_p6_3a_mtp_matched_ab`：固定 `mtp_off -> mtp_on` 两个 fresh lifecycle，采用
 `4096+64+c1`、`4096+256+c1/c8`、`65536+64+c1/c4`、`65536+256+c1`、
 `131072+64+c1`、`131072+256+c1` 八个 matched cell，每 mode 每 cell 3 个 batch，合计
 48 measured batch / 108 measured request。55 份 canonical body 只生成一次并跨 mode 复用；
 唯一 server 自变量是是否存在 MTP speculative config。固定 mode 顺序作为限制报告，green
-表示 matched evidence 完整，不自动表示 MTP 更快或达到统计显著。
+表示 matched evidence 完整；开发机复核确认 24/24 paired batches 方向一致，但不扩写为随机化因果或统计显著。
+
+当前 P6.3B 合同已授权：固定 `prefix_cache_off -> prefix_cache_on` 两个 fresh lifecycle，
+采用 `4096/32768/65536/131072 × 50%/90% shared prefix` 八个 group；每 group 每 mode
+1 个 prime + 3 个 measured follower，两边都保持 MTP，只切换 `--enable-prefix-caching`。
+Prefix-on 每个 measured follower 必须有正 hit delta，off 侧 hit delta 必须为 0。
 
 ### P6.4：MindIE 对照（条件项）
 
@@ -366,9 +372,9 @@ simulator_validation_report.md
 2. P6.1R retry2 与 P6.1L-R1 已完成并验收，不原样重跑。
 3. P6.1C-R1 已完成并验收为 official green，不重跑。
 4. P6.1 unprofiled 已完成并验收为 `green_mtp_unprofiled_baseline`，不重跑。
-5. P6.2 profiled evidence 已验收为 `green_mtp_profiled_evidence`；P6.3A 已授权执行，P6.3B 与 P8.1 不自动进入。
+5. P6.2 profiled evidence 与 P6.3A matched MTP A/B 已验收；P6.3B 已授权执行，P6.3C 与 P8.1 不自动进入。
 6. P7 工具链预研可继续，但不得外推 full-model runtime。
 7. P9 最后消费统一 trace bundle，输出硬件优先级。
 
-当前 P6.3A 双授权均为 true；执行并完成开发机复核后，再按
-`工作记录与进度笔记本/16_P6_阶段复盘与P6_3进入评估.md` 决定 P6.3B 合同。
+当前 P6.3B 双授权均为 true；执行并完成开发机复核后，再按
+`工作记录与进度笔记本/16_P6_阶段复盘与P6_3进入评估.md` 判断是否需要条件式 P6.3C。

@@ -20,7 +20,7 @@ DeepSeek 模型与 v0.18.0、v0.20.2rc1 的失败保留为历史证据。独立 
 
 ### 场景 A：单机八卡官方基准
 
-目标是形成 DeepSeek-V4-Flash W8A8-MTP 在 Ascend 上的可信八卡基线。模型使用 vLLM-Ascend A2/A3 参考路径和 `--quantization ascend`；当前 official context、unprofiled performance 与 profiled evidence 已建立，P6.3A matched MTP on/off 已授权执行。不从 profiled timing 外推用户性能或瓶颈。
+目标是形成 DeepSeek-V4-Flash W8A8-MTP 在 Ascend 上的可信八卡基线。模型使用 vLLM-Ascend A2/A3 参考路径和 `--quantization ascend`；当前 official context、unprofiled performance、profiled evidence 与 P6.3A matched MTP on/off 已建立，P6.3B repeated-prefix Prefix Cache on/off 已授权执行。不从 profiled timing 外推用户性能或瓶颈。
 
 ### 场景 B：单卡/双卡极限硬件实验
 
@@ -55,6 +55,7 @@ AK-Infer-Lab/
     11_P0_P4_阶段收尾报告.md
     12_P5_P9_后续阶段重排计划.md
     16_P6_阶段复盘与P6_3进入评估.md
+    P6_阶段证据链仪表盘_2026_0715.html
     p1_inference_contracts/          # prompt、schema、handoff、fixture
     runtime_trace_smokes/            # smoke 与 profiler run 归档
     hardware_ceiling_runs/            # P0/P3 hardware ceiling sweep 归档
@@ -71,7 +72,7 @@ AK-Infer-Lab/
 
 ## 当前状态摘要
 
-P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference 和 P6.2 三个代表性 profiled evidence cell。当前活动任务是已授权的 P6.3A：8-cell、48-batch、108-request matched MTP on/off；P8 real move 与 P9 仍未解锁。
+P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell 和 P6.3A matched MTP on/off。当前活动任务是已授权的 P6.3B：8-group、16-prime、48-measured repeated-prefix Prefix Cache on/off；P8 real move 与 P9 仍未解锁。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 

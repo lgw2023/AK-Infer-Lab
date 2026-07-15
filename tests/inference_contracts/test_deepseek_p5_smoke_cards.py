@@ -1953,15 +1953,15 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_authorizes_the_current_p6_3a_matched_ab_task():
+def test_server_handoff_authorizes_the_current_p6_3b_prefix_cache_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "## 当前唯一服务器动作：同步并执行 P6.3A matched MTP on/off" in handoff
+    assert "## 当前唯一服务器动作：同步并执行 P6.3B Prefix Cache on/off" in handoff
     assert (
-        "task_id: p6_3a_deepseek_v4_flash_w8a8_mtp_matched_ab_2026_0715"
+        "task_id: p6_3b_deepseek_v4_flash_w8a8_mtp_prefix_cache_matched_ab_2026_0715"
         in handoff
     )
     assert "execution_mode: authorized_for_execution" in handoff
@@ -1969,17 +1969,17 @@ def test_server_handoff_authorizes_the_current_p6_3a_matched_ab_task():
     assert "next_task_authorized: true" in handoff
     assert (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p6_3a_mtp_matched_ab.yaml"
+        "p6_3b_prefix_cache_matched_ab.yaml"
         in handoff
     )
-    assert "P6.2 已由开发机接受为 `green_mtp_profiled_evidence`" in handoff
+    assert "P6.3A 已由开发机接受为 `green_p6_3a_mtp_matched_ab`" in handoff
     assert "NPU_EXECUTION_AUTHORIZED=true" in handoff
-    assert "run_deepseek_p6_3a_mode.sh" in handoff
-    assert "modes=(mtp_off mtp_on)" in handoff
+    assert "run_deepseek_p6_3b_mode.sh" in handoff
+    assert "modes=(prefix_cache_off prefix_cache_on)" in handoff
     assert "立即执行" in handoff
 
 
-def test_server_handoff_keeps_p6_3a_unprofiled_and_stops_before_p6_3b():
+def test_server_handoff_keeps_p6_3b_unprofiled_and_stops_before_p6_3c():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
@@ -1987,20 +1987,21 @@ def test_server_handoff_keeps_p6_3a_unprofiled_and_stops_before_p6_3b():
     assert "git fetch origin main" in handoff
     assert "git merge --ff-only origin/main" in handoff
     assert "不得使用 `pull-remote` alias" in handoff
-    assert "mtp_off" in handoff
-    assert "mtp_on" in handoff
-    assert "108" in handoff
+    assert "prefix_cache_off" in handoff
+    assert "prefix_cache_on" in handoff
+    assert "prime" in handoff
+    assert "64" in handoff
     assert "48" in handoff
     assert "profiler" in handoff
     assert "HBM sampler" in handoff
-    assert "不得自动进入 P6.3B" in handoff
+    assert "不得自动进入 P6.3C" in handoff
     assert "不得自动进入 P8" in handoff
     assert "不得发送 email" in handoff
     assert "不得调用 upload-api" in handoff
     assert "等待用户对该完整范围重新选择唯一传输方法" in handoff
 
 
-def test_p6_2_is_closed_and_p6_3a_is_authorized_across_truth_surfaces():
+def test_p6_3a_is_closed_and_p6_3b_is_authorized_across_truth_surfaces():
     readiness = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
     artifacts = readiness["artifacts"]
     acceptance = readiness["acceptance"]
@@ -2023,9 +2024,12 @@ def test_p6_2_is_closed_and_p6_3a_is_authorized_across_truth_surfaces():
     assert artifacts["completed_p6_2_workload"] == (
         "workloads/p6_2_mtp_profiled_evidence.yaml"
     )
-    assert artifacts["next_workload"] == "workloads/p6_3a_mtp_matched_ab.yaml"
+    assert artifacts["completed_p6_3a_workload"] == (
+        "workloads/p6_3a_mtp_matched_ab.yaml"
+    )
+    assert artifacts["next_workload"] == "workloads/p6_3b_prefix_cache_matched_ab.yaml"
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p6_3a_matched_mtp_ab_authorized"
+        "p6_3b_prefix_cache_matched_ab_authorized"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2033,7 +2037,8 @@ def test_p6_2_is_closed_and_p6_3a_is_authorized_across_truth_surfaces():
     assert acceptance["profiled_evidence_baseline"] is True
     assert acceptance["blocked_by"] is None
     assert acceptance["p6_3_plan_review_required"] is False
-    assert acceptance["p6_3a_execution_authorized"] is True
+    assert acceptance["p6_3a_matched_ab_baseline"] is True
+    assert acceptance["p6_3b_execution_authorized"] is True
     assert acceptance["next_task_authorized"] is True
 
     current_surfaces = {
@@ -2054,6 +2059,8 @@ def test_p6_2_is_closed_and_p6_3a_is_authorized_across_truth_surfaces():
         assert "green_mtp_profiled_evidence" in text, name
         assert "P6.3" in text, name
         assert "P6.3A" in text, name
+        assert "green_p6_3a_mtp_matched_ab" in text, name
+        assert "P6.3B" in text, name
         assert "已授权" in text, name
         assert "short_prefill" in text, name
         assert "long_prefill" in text, name
@@ -2072,6 +2079,7 @@ def test_p6_2_is_closed_and_p6_3a_is_authorized_across_truth_surfaces():
     assert "green_mtp_profiled_evidence" in review
     assert "P6.3A" in review
     assert "P6.3B" in review
+    assert "green_p6_3a_mtp_matched_ab" in review
     assert "max_model_len" in review
     assert "npu_execution_authorized:true" in review
 
@@ -2097,10 +2105,10 @@ def test_p6_3a_workload_defines_the_authorized_matched_mtp_ab_contract():
         "p8_execution_authorized": False,
     }
     assert workload["execution_state"] == {
-        "status": "authorized_for_execution",
-        "server_handoff": "current",
-        "npu_execution_authorized": True,
-        "next_task_authorized": True,
+        "status": "completed_developer_accepted_green",
+        "server_handoff": "historical_not_current",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
     }
 
 
@@ -2171,6 +2179,74 @@ def test_p6_3a_mode_runner_freezes_both_server_commands_and_only_toggles_mtp():
     assert '--mode "${MODE}"' in runner
     assert "msprof" not in runner
     assert "hbm" not in runner.lower()
+
+
+def test_p6_3b_workload_defines_authorized_repeated_prefix_matched_ab():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_3b_prefix_cache_matched_ab.yaml"
+    )
+
+    assert workload["workload_id"] == (
+        "p6_3b_deepseek_v4_flash_mtp_prefix_cache_matched_ab"
+    )
+    assert workload["task_id"] == (
+        "p6_3b_deepseek_v4_flash_w8a8_mtp_prefix_cache_matched_ab_2026_0715"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.3B",
+        "mode": "matched_prefix_cache_on_off_unprofiled_ab",
+        "claim_boundary": "matched_prefix_cache_on_off_mechanism_effect_only",
+        "official_reference_baseline": True,
+        "performance_reference_baseline": True,
+        "profiled_evidence_baseline": True,
+        "mtp_matched_ab_baseline": True,
+        "profiler_authorized": False,
+        "hbm_sampler_authorized": False,
+        "p6_3c_execution_authorized": False,
+        "p8_execution_authorized": False,
+    }
+    assert workload["mode_order"] == ["prefix_cache_off", "prefix_cache_on"]
+    assert workload["single_variable"] == {
+        "name": "enable_prefix_caching",
+        "prefix_cache_off_server_delta": "omit_enable_prefix_caching_only",
+        "prefix_cache_on_server_delta": "include_enable_prefix_caching_only",
+        "mtp_enabled_in_both_modes": True,
+        "all_other_server_arguments_identical": True,
+        "same_task_local_overlay_and_environment": True,
+        "same_canonical_body_bytes_across_modes": True,
+    }
+    assert workload["server_command_sha256"] == {
+        "prefix_cache_off": "89376c9577dc70671b2b071113397c04de1ee8c1e1e802238ff4b61d753f0b98",
+        "prefix_cache_on": "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19",
+    }
+    assert len(workload["prefix_groups"]) == 8
+    assert {
+        (group["context_tokens"], group["target_shared_prefix_ratio_pct"])
+        for group in workload["prefix_groups"]
+    } == {
+        (context, ratio)
+        for context in (4096, 32768, 65536, 131072)
+        for ratio in (50, 90)
+    }
+    assert workload["lifecycle_plan"] == {
+        "server_lifecycles": 2,
+        "one_fresh_lifecycle_per_mode": True,
+        "hidden_warmup_requests": 0,
+        "prime_requests_per_group_per_mode": 1,
+        "measured_reuse_requests_per_group_per_mode": 3,
+        "requests_per_mode": 32,
+        "total_prime_requests": 16,
+        "total_measured_requests": 48,
+        "total_requests": 64,
+        "retries": 0,
+        "unprofiled": True,
+    }
+    assert workload["execution_state"] == {
+        "status": "authorized_for_execution",
+        "server_handoff": "current",
+        "npu_execution_authorized": True,
+        "next_task_authorized": True,
+    }
 
 
 def test_p6_1l_captures_bounded_request_errors_without_generated_content():

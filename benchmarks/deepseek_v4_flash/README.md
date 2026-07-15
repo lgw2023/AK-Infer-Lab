@@ -6,7 +6,7 @@ Current objects:
 
 | model_object_id | source | server path | role |
 | --- | --- | --- | --- |
-| `deepseek_v4_flash_w8a8_mtp_modelscope` | ModelScope `DeepSeek-V4-Flash-w8a8-mtp` | `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` | project primary runtime object; P6 official/unprofiled/profiled references green; P6.3A authorized |
+| `deepseek_v4_flash_w8a8_mtp_modelscope` | ModelScope `DeepSeek-V4-Flash-w8a8-mtp` | `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` | project primary runtime object; P6 official/unprofiled/profiled/P6.3A green; P6.3B authorized |
 | `deepseek_v4_flash_official_hf` | Hugging Face `deepseek-ai/DeepSeek-V4-Flash` | `/data/node0_disk1/Public/DeepSeek-V4-Flash` | historical mixed-checkpoint diagnostic and source inventory only |
 
 Boundaries:
@@ -40,7 +40,8 @@ P5 deliverables:
 - `workloads/p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml`: completed official context reference through `131072+64`.
 - `workloads/p6_1_mtp_unprofiled_baseline.yaml`: completed 18-cell unprofiled performance reference.
 - `workloads/p6_2_mtp_profiled_evidence.yaml`: completed three-cell profiled evidence reference.
-- `workloads/p6_3a_mtp_matched_ab.yaml`: current authorized matched MTP on/off task; 8 cells, 48 measured batches and 108 measured requests across two fresh unprofiled lifecycles.
+- `workloads/p6_3a_mtp_matched_ab.yaml`: completed matched MTP on/off task; developer grade `green_p6_3a_mtp_matched_ab`.
+- `workloads/p6_3b_prefix_cache_matched_ab.yaml`: current authorized repeated-prefix Prefix Cache on/off task; 8 groups, 16 prime and 48 measured requests across two fresh unprofiled lifecycles.
 - `patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch`: one-line diagnostic backport of the `positions_cpu` proposer metadata field from upstream PR 11062; it is not a full upstream backport.
 - `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: prepared bounded-observation server validation for the strictly observe-only adapter; not executed and still deferred during the minimal control and MTP decision sequence.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
@@ -53,8 +54,7 @@ Planning references:
 
 Next artifact boundary:
 
-- P6.3A changes only the MTP speculative server argument; body bytes/hash, runtime, graph, prefix cache, chunked prefill and `max_num_seqs=1` remain matched.
-- Its candidate green means complete matched evidence, not that MTP is faster; specific mechanism-effect claims require developer review.
-- P6.3B remains a new purpose-built repeated-prefix Prefix Cache A/B workload. P8.1 remains deferred and cannot be auto-entered from standing NPU/vLLM resource authorization.
+- P6.3A changed only the MTP speculative server argument and is complete; its accepted mechanism effect remains fixed-order descriptive evidence, not a randomized or statistically significant claim.
+- P6.3B changes only `--enable-prefix-caching`; both modes retain MTP and reuse the same block-aligned repeated-prefix bodies. P8.1 remains deferred and cannot be auto-entered from standing NPU/vLLM resource authorization.
 - Do not create P8 real-move cards before P8.0 capability probe and P8.1 observe-only trace pass.
 - MindIE cards are conditional on a separately confirmed server runtime; current server evidence does not show MindIE as available.
