@@ -78,6 +78,8 @@ def prepare_artifacts(
     source_payload: Path,
     artifact_dir: Path,
     model_name: str,
+    *,
+    plan: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     source = json.loads(source_payload.read_text(encoding="utf-8"))
     source_tokens = source.get("prompt")
@@ -92,7 +94,7 @@ def prepare_artifacts(
     artifact_dir.mkdir(parents=True, exist_ok=True)
     body_dir = artifact_dir / "bodies"
     body_dir.mkdir(parents=True, exist_ok=True)
-    plan = build_run_plan()
+    plan = build_run_plan() if plan is None else plan
     selected_offsets = _select_offsets(source_tokens, 40)
     group_offsets = iter(offset for offset, _ in selected_offsets[:8])
     suffix_offsets = iter(offset for offset, _ in selected_offsets[8:])
@@ -178,7 +180,7 @@ def prepare_artifacts(
         raise ValueError("request body hashes are not unique")
     manifest = {
         "source_prompt_tokens": len(source_tokens),
-        "group_count": 8,
+        "group_count": len({row["group_id"] for row in records}),
         "request_count": len(records),
         "mode_order": list(MODES),
         "modes_reuse_identical_body_bytes": True,
@@ -587,7 +589,9 @@ def execute_mode(
         ):
             break
 
-    complete = len(rows) == 32 and all(row.get("status") == "success" for row in rows)
+    complete = len(rows) == len(plan) and all(
+        row.get("status") == "success" for row in rows
+    )
     return 0 if complete else 2
 
 

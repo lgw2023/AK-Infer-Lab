@@ -1,0 +1,18 @@
+diff --git a/vllm_ascend/patch/platform/patch_kv_cache_coordinator.py b/vllm_ascend/patch/platform/patch_kv_cache_coordinator.py
+--- a/vllm_ascend/patch/platform/patch_kv_cache_coordinator.py
++++ b/vllm_ascend/patch/platform/patch_kv_cache_coordinator.py
+@@ -194,6 +194,13 @@ class AscendHybridKVCacheCoordinator(HybridKVCacheCoordinator):
+             if any(gid in self.eagle_group_ids for gid in group_ids)
+         }
+-
++
++        # Keep the frozen vLLM write path consistent with the EAGLE-aware
++        # read path.  Same-spec siblings are looked up as one attention group,
++        # so every manager in an EAGLE-containing group needs the same flag.
++        for idx in self.eagle_attn_group_indices:
++            for gid in self.attention_groups[idx][1]:
++                self.single_type_managers[gid].use_eagle = True
++
+         # The LCM of the block sizes of all attention types.
+         # The cache hit length must be a multiple of the LCM of the block sizes
+         # to make sure the cache hit length is a multiple of the block size of

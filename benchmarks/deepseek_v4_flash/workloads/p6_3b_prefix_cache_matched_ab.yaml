@@ -269,10 +269,10 @@ stop_policy:
   automatic_result_transfer_allowed: false
 
 execution_state:
-  status: authorized_for_execution
-  server_handoff: current
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_server_yellow_developer_reviewed
+  server_handoff: historical_not_current
+  npu_execution_authorized: false
+  next_task_authorized: false
 
 authorization_policy:
   npu_and_vllm_consumption_standing_authorization: true

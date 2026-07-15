@@ -1953,15 +1953,16 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_authorizes_the_current_p6_3b_prefix_cache_task():
+def test_server_handoff_authorizes_the_current_p6_3b_r1_hybrid_kv_task():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "## 当前唯一服务器动作：同步并执行 P6.3B Prefix Cache on/off" in handoff
+    assert "## 当前唯一服务器动作：立即执行 P6.3B-R1 hybrid-KV 修复验证" in handoff
     assert (
-        "task_id: p6_3b_deepseek_v4_flash_w8a8_mtp_prefix_cache_matched_ab_2026_0715"
+        "task_id: p6_3b_r1_deepseek_v4_flash_w8a8_mtp_prefix_cache_"
+        "hybrid_kv_repair_2026_0715"
         in handoff
     )
     assert "execution_mode: authorized_for_execution" in handoff
@@ -1969,17 +1970,17 @@ def test_server_handoff_authorizes_the_current_p6_3b_prefix_cache_task():
     assert "next_task_authorized: true" in handoff
     assert (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p6_3b_prefix_cache_matched_ab.yaml"
+        "p6_3b_r1_hybrid_kv_repair.yaml"
         in handoff
     )
-    assert "P6.3A 已由开发机接受为 `green_p6_3a_mtp_matched_ab`" in handoff
+    assert "yellow_p6_3b_prefix_cache_matched_ab_partial" in handoff
     assert "NPU_EXECUTION_AUTHORIZED=true" in handoff
-    assert "run_deepseek_p6_3b_mode.sh" in handoff
-    assert "modes=(prefix_cache_off prefix_cache_on)" in handoff
+    assert "run_deepseek_p6_3b_r1_mode.sh" in handoff
+    assert "server_lifecycle_count.txt" in handoff
     assert "立即执行" in handoff
 
 
-def test_server_handoff_keeps_p6_3b_unprofiled_and_stops_before_p6_3c():
+def test_server_handoff_keeps_p6_3b_r1_bounded_and_stops_before_later_stages():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
@@ -1987,21 +1988,20 @@ def test_server_handoff_keeps_p6_3b_unprofiled_and_stops_before_p6_3c():
     assert "git fetch origin main" in handoff
     assert "git merge --ff-only origin/main" in handoff
     assert "不得使用 `pull-remote` alias" in handoff
-    assert "prefix_cache_off" in handoff
-    assert "prefix_cache_on" in handoff
+    assert "Prefix Cache" in handoff
     assert "prime" in handoff
     assert "64" in handoff
-    assert "48" in handoff
+    assert "12" in handoff
+    assert "9/9" in handoff
     assert "profiler" in handoff
     assert "HBM sampler" in handoff
-    assert "不得自动进入 P6.3C" in handoff
-    assert "不得自动进入 P8" in handoff
+    assert "不得自动进入完整 P6.3B matched A/B、P6.3C、P7 或 P8" in handoff
     assert "不得发送 email" in handoff
     assert "不得调用 upload-api" in handoff
     assert "等待用户对该完整范围重新选择唯一传输方法" in handoff
 
 
-def test_p6_3a_is_closed_and_p6_3b_is_authorized_across_truth_surfaces():
+def test_p6_3b_yellow_is_preserved_and_r1_is_authorized_across_truth_surfaces():
     readiness = load_yaml(BENCHMARK_DIR / "p5_readiness_card.yaml")
     artifacts = readiness["artifacts"]
     acceptance = readiness["acceptance"]
@@ -2027,9 +2027,12 @@ def test_p6_3a_is_closed_and_p6_3b_is_authorized_across_truth_surfaces():
     assert artifacts["completed_p6_3a_workload"] == (
         "workloads/p6_3a_mtp_matched_ab.yaml"
     )
-    assert artifacts["next_workload"] == "workloads/p6_3b_prefix_cache_matched_ab.yaml"
+    assert artifacts["completed_p6_3b_workload"] == (
+        "workloads/p6_3b_prefix_cache_matched_ab.yaml"
+    )
+    assert artifacts["next_workload"] == "workloads/p6_3b_r1_hybrid_kv_repair.yaml"
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p6_3b_prefix_cache_matched_ab_authorized"
+        "p6_3b_r1_hybrid_kv_repair_authorized"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2038,7 +2041,11 @@ def test_p6_3a_is_closed_and_p6_3b_is_authorized_across_truth_surfaces():
     assert acceptance["blocked_by"] is None
     assert acceptance["p6_3_plan_review_required"] is False
     assert acceptance["p6_3a_matched_ab_baseline"] is True
-    assert acceptance["p6_3b_execution_authorized"] is True
+    assert acceptance["p6_3b_matched_ab_grade"] == (
+        "yellow_p6_3b_prefix_cache_matched_ab_partial"
+    )
+    assert acceptance["p6_3b_execution_authorized"] is False
+    assert acceptance["p6_3b_r1_execution_authorized"] is True
     assert acceptance["next_task_authorized"] is True
 
     current_surfaces = {
@@ -2061,6 +2068,9 @@ def test_p6_3a_is_closed_and_p6_3b_is_authorized_across_truth_surfaces():
         assert "P6.3A" in text, name
         assert "green_p6_3a_mtp_matched_ab" in text, name
         assert "P6.3B" in text, name
+        assert "P6.3B-R1" in text, name
+        assert "yellow_p6_3b_prefix_cache_matched_ab_partial" in text, name
+        assert "hybrid-KV" in text, name
         assert "已授权" in text, name
         assert "short_prefill" in text, name
         assert "long_prefill" in text, name
@@ -2079,6 +2089,9 @@ def test_p6_3a_is_closed_and_p6_3b_is_authorized_across_truth_surfaces():
     assert "green_mtp_profiled_evidence" in review
     assert "P6.3A" in review
     assert "P6.3B" in review
+    assert "P6.3B-R1" in review
+    assert "yellow_p6_3b_prefix_cache_matched_ab_partial" in review
+    assert "hybrid-KV" in review
     assert "green_p6_3a_mtp_matched_ab" in review
     assert "max_model_len" in review
     assert "npu_execution_authorized:true" in review
@@ -2181,7 +2194,7 @@ def test_p6_3a_mode_runner_freezes_both_server_commands_and_only_toggles_mtp():
     assert "hbm" not in runner.lower()
 
 
-def test_p6_3b_workload_defines_authorized_repeated_prefix_matched_ab():
+def test_p6_3b_workload_preserves_completed_repeated_prefix_matched_ab():
     workload = load_yaml(
         BENCHMARK_DIR / "workloads" / "p6_3b_prefix_cache_matched_ab.yaml"
     )
@@ -2242,10 +2255,10 @@ def test_p6_3b_workload_defines_authorized_repeated_prefix_matched_ab():
         "unprofiled": True,
     }
     assert workload["execution_state"] == {
-        "status": "authorized_for_execution",
-        "server_handoff": "current",
-        "npu_execution_authorized": True,
-        "next_task_authorized": True,
+        "status": "completed_server_yellow_developer_reviewed",
+        "server_handoff": "historical_not_current",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
     }
 
 
@@ -2287,3 +2300,100 @@ def test_p6_1l_uses_hash_based_overlay_and_health_idle_retry_gate():
         "changed_files": 1,
         "changed_lines": 1,
     }
+
+
+def test_p6_3b_r1_authorizes_bounded_hybrid_kv_repair_validation():
+    workload = load_yaml(
+        BENCHMARK_DIR / "workloads" / "p6_3b_r1_hybrid_kv_repair.yaml"
+    )
+
+    assert workload["workload_id"] == (
+        "p6_3b_r1_deepseek_v4_flash_mtp_prefix_cache_hybrid_kv_repair"
+    )
+    assert workload["task_id"] == (
+        "p6_3b_r1_deepseek_v4_flash_w8a8_mtp_prefix_cache_"
+        "hybrid_kv_repair_2026_0715"
+    )
+    assert workload["stage_contract"] == {
+        "stage": "P6.3B-R1",
+        "mode": "hybrid_kv_mtp_prefix_cache_compatibility_repair_validation",
+        "claim_boundary": (
+            "hybrid_kv_mtp_prefix_cache_compatibility_repair_and_positive_hit_only"
+        ),
+        "prior_p6_3b_grade": "yellow_p6_3b_prefix_cache_matched_ab_partial",
+        "prior_p6_3b_evidence_preserved": True,
+        "performance_effect_claim_allowed": False,
+        "profiler_authorized": False,
+        "hbm_sampler_authorized": False,
+        "p6_3c_execution_authorized": False,
+        "p8_execution_authorized": False,
+    }
+    assert workload["runtime_fixed"]["vllm_commit"] == (
+        "0decac0d96c42b49572498019f0a0e3600f50398"
+    )
+    assert workload["runtime_fixed"]["vllm_ascend_commit"] == (
+        "5f6faa0cb8830f667266f3b8121cd1383606f2a1"
+    )
+    assert workload["runtime_fixed"]["prefix_cache_retention_interval"] == (
+        "explicitly_unset"
+    )
+    assert workload["hybrid_kv_repair"]["base_environment_mutation"] is False
+    assert workload["hybrid_kv_repair"]["task_local_runtime_patch"] is True
+    assert workload["hybrid_kv_repair"]["upstream_semantics"] == [
+        "vllm_pull_44082_eagle_swa_write_path",
+        "vllm_ascend_pull_11107_eagle_manager_propagation",
+    ]
+    assert workload["lifecycle_plan"] == {
+        "server_lifecycles": 1,
+        "hidden_warmup_requests": 0,
+        "prime_requests_per_group": 1,
+        "measured_reuse_requests_per_group": 3,
+        "total_prime_requests": 3,
+        "total_measured_requests": 9,
+        "total_requests": 12,
+        "retries": 0,
+        "unprofiled": True,
+    }
+    assert [group["context_tokens"] for group in workload["prefix_groups"]] == [
+        32768,
+        65536,
+        131072,
+    ]
+    assert all(
+        group["target_shared_prefix_ratio_pct"] == 90
+        for group in workload["prefix_groups"]
+    )
+    assert workload["acceptance"]["green_requires_positive_hit_measured_count"] == 9
+    assert workload["execution_state"] == {
+        "status": "authorized_for_execution",
+        "server_handoff": "current",
+        "npu_execution_authorized": True,
+        "next_task_authorized": True,
+    }
+
+
+def test_server_handoff_executes_only_the_authorized_p6_3b_r1_repair():
+    handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "## 当前唯一服务器动作：立即执行 P6.3B-R1 hybrid-KV 修复验证" in handoff
+    assert (
+        "task_id: p6_3b_r1_deepseek_v4_flash_w8a8_mtp_prefix_cache_"
+        "hybrid_kv_repair_2026_0715"
+    ) in handoff
+    assert "npu_execution_authorized: true" in handoff
+    assert "next_task_authorized: true" in handoff
+    assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
+    assert "p6_3b_r1_hybrid_kv_repair.yaml" in handoff
+    assert "run_deepseek_p6_3b_r1_mode.sh" in handoff
+    assert "P6_3B_R1_ENABLE_HYBRID_KV_PATCH=1" in handoff
+    assert "unset VLLM_PREFIX_CACHE_RETENTION_INTERVAL" in handoff
+    assert "32768 / 65536 / 131072" in handoff
+    assert "3 prime + 9 measured = 12" in handoff
+    assert "candidate_green_p6_3b_r1_hybrid_kv_repair" in handoff
+    assert "git merge --ff-only origin/main" in handoff
+    assert "upload-api" in handoff
+    assert "不得调用 upload-api" in handoff
+    assert "不得修改 base environment 或 site-packages" in handoff
+    assert "不得自动进入完整 P6.3B matched A/B、P6.3C、P7 或 P8" in handoff

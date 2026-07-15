@@ -1,0 +1,229 @@
+schema_version: 1
+workload_id: p6_3b_r1_deepseek_v4_flash_mtp_prefix_cache_hybrid_kv_repair
+date: "2026-07-15"
+purpose: repair_and_validate_deepseek_v4_hybrid_kv_mtp_prefix_cache_hits
+task_id: p6_3b_r1_deepseek_v4_flash_w8a8_mtp_prefix_cache_hybrid_kv_repair_2026_0715
+
+stage_contract:
+  stage: P6.3B-R1
+  mode: hybrid_kv_mtp_prefix_cache_compatibility_repair_validation
+  claim_boundary: hybrid_kv_mtp_prefix_cache_compatibility_repair_and_positive_hit_only
+  prior_p6_3b_grade: yellow_p6_3b_prefix_cache_matched_ab_partial
+  prior_p6_3b_evidence_preserved: true
+  performance_effect_claim_allowed: false
+  profiler_authorized: false
+  hbm_sampler_authorized: false
+  p6_3c_execution_authorized: false
+  p8_execution_authorized: false
+
+accepted_prerequisites:
+  original_workload: p6_3b_prefix_cache_matched_ab.yaml
+  original_server_grade: yellow_p6_3b_prefix_cache_matched_ab_partial
+  original_http_and_token_success: 64_of_64
+  original_prefix_on_measured_positive_hits: 0_of_24
+  original_prefix_on_query_counter_positive: true
+  official_context_grade: green_mtp_official_context_ladder
+  unprofiled_grade: green_mtp_unprofiled_baseline
+  profiled_grade: green_mtp_profiled_evidence
+  mtp_matched_ab_grade: green_p6_3a_mtp_matched_ab
+
+runtime_fixed:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  runtime: vllm_0_22_1_empty_and_vllm_ascend_0_22_1rc1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  data_parallel_size: 1
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  speculative_method: mtp
+  num_speculative_tokens: 1
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  enforce_eager: false
+  cudagraph_mode: FULL_DECODE_ONLY
+  prefix_cache_retention_interval: explicitly_unset
+
+existing_mtp_overlay:
+  path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  patch_sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  patched_proposer_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+  unchanged_base_proposer_sha256: 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+
+installed_source_gate:
+  vllm_single_type_manager:
+    relative_path: vllm/v1/core/single_type_kv_cache_manager.py
+    bytes: 53714
+    sha256: d57ad1c8e3d32db4a9d929ee201ab169305ef703b5bda9eb933d0f2f2a2299a1
+  vllm_kv_cache_coordinator:
+    relative_path: vllm/v1/core/kv_cache_coordinator.py
+    bytes: 25255
+    sha256: a5f0683483508fcfd0b2e3477940825bae5953eec715a4f704becec805484b89
+  vllm_ascend_kv_cache_coordinator:
+    relative_path: vllm_ascend/patch/platform/patch_kv_cache_coordinator.py
+    bytes: 23103
+    sha256: dc65ed2adbb05ea52d9e891f648b62a5391eb41b2a6b262b71d40efe31effe20
+  fail_closed_before_npu_on_any_mismatch: true
+
+hybrid_kv_repair:
+  task_local_runtime_patch: true
+  base_environment_mutation: false
+  site_packages_mutation: false
+  upstream_semantics:
+    - vllm_pull_44082_eagle_swa_write_path
+    - vllm_ascend_pull_11107_eagle_manager_propagation
+  vllm_runtime_patch_path: tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py
+  vllm_ascend_overlay_patch_path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch
+  runtime_patch_sha256: 6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
+  vllm_ascend_overlay_patch_sha256: cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
+  patched_vllm_ascend_coordinator_sha256: a1ed9c82e308608cd20965a49baa29a3e95d723248fff699fd83dfb3caf10250
+  source_hash_validation_before_patch_install: true
+  overlay_patch_dry_run_before_apply: true
+  post_patch_self_test_before_server_start: true
+  manager_use_eagle_propagated_to_same_spec_siblings: true
+  swa_eagle_lookahead_write_block_cached: true
+  reachable_mask_matches_eagle_read_boundary: true
+  vllm_ascend_pull_11383_backport_included: false
+  pull_11383_excluded_reason: frozen_v0221_mask_receives_lcm_alignment_directly_and_retention_is_explicitly_unset
+
+source_payload:
+  server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+  prompt_tokens: 4096
+  bytes: 19487
+  sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+
+lifecycle_plan:
+  server_lifecycles: 1
+  hidden_warmup_requests: 0
+  prime_requests_per_group: 1
+  measured_reuse_requests_per_group: 3
+  total_prime_requests: 3
+  total_measured_requests: 9
+  total_requests: 12
+  retries: 0
+  unprofiled: true
+
+prefix_groups:
+  - {group_id: ctx32768_prefix90, context_tokens: 32768, target_shared_prefix_ratio_pct: 90, output_tokens: 64, concurrency: 1}
+  - {group_id: ctx65536_prefix90, context_tokens: 65536, target_shared_prefix_ratio_pct: 90, output_tokens: 64, concurrency: 1}
+  - {group_id: ctx131072_prefix90, context_tokens: 131072, target_shared_prefix_ratio_pct: 90, output_tokens: 64, concurrency: 1}
+
+canonical_body_policy:
+  construction: reuse_p6_3b_deterministic_block_aligned_bodies
+  freeze_before_server_start: true
+  same_source_payload_and_builder_as_original_p6_3b: true
+  shared_prefix_block_size_tokens: 128
+  one_prime_then_three_immediate_followers_per_group: true
+  unique_body_sha256_required: true
+  bodies_and_prompt_ids_remain_server_local: true
+  generated_text_retained: false
+  token_ids_retained: false
+
+request_protocol:
+  endpoint: /v1/completions
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  output_tokens: 64
+  streaming: true
+  stream_include_usage: true
+  return_token_ids: true
+  concurrency: 1
+  sequential_group_order: true
+  socket_inactivity_timeout_seconds: 7200
+  generated_text_retained: false
+  token_ids_retained: false
+
+diagnostic_evidence:
+  runtime_jsonl_required: true
+  installed_source_hashes_required: true
+  effective_retention_interval_required: true
+  kv_group_spec_and_manager_type_required: true
+  group_ids_and_eagle_group_ids_required: true
+  lcm_and_effective_block_sizes_required: true
+  manager_use_eagle_state_required: true
+  aligned_and_lookahead_cache_target_required: true
+  whole_runtime_trace_remains_server_local: true
+  bounded_summary_contains_no_generated_content_or_token_ids: true
+
+metrics_evidence:
+  health_before_and_after_each_request: true
+  queue_idle_before_and_after_each_request: true
+  speculative_counters_required: true
+  positive_draft_and_accepted_delta_required: true
+  prefix_query_and_hit_counters_required: true
+  positive_hit_delta_for_every_measured_follower_required: true
+  counter_continuity_required: true
+  observed_hit_ratio_definition: prefix_hits_delta/prefix_queries_delta
+
+acceptance:
+  blocked_preflight_grade: blocked_p6_3b_r1_source_or_resource_gate
+  no_request_success_grade: red_p6_3b_r1_hybrid_kv_repair_no_success
+  zero_hit_grade: red_p6_3b_r1_hybrid_kv_zero_hit_persists
+  partial_grade: yellow_p6_3b_r1_hybrid_kv_repair_partial
+  evidence_incomplete_grade: red_p6_3b_r1_hybrid_kv_evidence_incomplete
+  cleanup_failure_grade: red_cleanup_incomplete
+  server_candidate_green_grade: candidate_green_p6_3b_r1_hybrid_kv_repair
+  developer_accepted_green_grade: green_p6_3b_r1_hybrid_kv_repair
+  green_requires_all_3_prime_requests: true
+  green_requires_all_9_measured_requests: true
+  green_requires_positive_hit_measured_count: 9
+  green_requires_zero_retries: true
+  green_requires_mtp_health_queue_counter_diagnostic_and_cleanup: true
+  performance_or_generalized_prefix_cache_claim_allowed: false
+  original_p6_3b_yellow_and_existing_p6_greens_remain_on_failure: true
+
+stop_policy:
+  retries_allowed: false
+  server_restart_allowed: false
+  base_environment_or_site_packages_mutation_allowed: false
+  version_upgrade_allowed: false
+  untracked_second_patch_allowed: false
+  request_group_or_repeat_reduction_allowed: false
+  mtp_chunked_prefill_graph_or_max_num_seqs_change_allowed: false
+  retention_interval_change_allowed: false
+  eager_fallback_allowed: false
+  profiler_or_hbm_sampler_allowed: false
+  p6_3c_p7_or_p8_execution_allowed: false
+  automatic_result_transfer_allowed: false
+
+result_package_policy:
+  max_total_bytes: 71680
+  raw_logs_metrics_diagnostics_bodies_prompt_ids_and_token_arrivals_remain_server_local: true
+  generated_text_or_token_ids_allowed: false
+  selection_required_before_any_transfer: true
+  available_methods:
+    - email
+    - upload-api
+    - server-local
+  methods_are_mutually_exclusive: true
+  handoff_contains_transfer_command: false
+  bounded_candidates:
+    - result_summary.md
+    - environment_and_hashes.json
+    - request_body_manifest.json
+    - group_summary.tsv
+    - grading_inputs.json
+    - hybrid_kv_diagnostic_summary.json
+    - cleanup_status.txt
+    - first_failure_excerpt.txt
+
+execution_state:
+  status: authorized_for_execution
+  server_handoff: current
+  npu_execution_authorized: true
+  next_task_authorized: true
+
+authorization_policy:
+  code_sync_and_task_local_runtime_patch_authorized: true
+  npu_and_vllm_consumption_standing_authorization: true
+  completion_does_not_revoke_resource_authorization: true
+  authorization_does_not_expand_beyond_the_current_explicit_workload: true
+  a_new_workload_and_unique_handoff_are_required_for_full_matched_ab_or_later: true

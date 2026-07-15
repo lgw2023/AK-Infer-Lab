@@ -1,0 +1,563 @@
+<!doctype html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>DeepSeek-V4-Flash W8A8-MTP 八卡性能总览｜绝对值表版</title>
+<style>
+  :root{
+    --red:#b00000;
+    --red2:#c00000;
+    --blue:#003f98;
+    --blue2:#1f5ea8;
+    --green:#237804;
+    --green-bg:#e8f4df;
+    --yellow:#fff2cc;
+    --yellow2:#fff8e6;
+    --gray0:#ffffff;
+    --gray1:#f4f5f6;
+    --gray2:#e1e3e5;
+    --gray3:#a5a9ad;
+    --gray4:#64686c;
+    --ink:#17191b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#dfe2e5;font-family:"Microsoft YaHei","Noto Sans CJK SC","PingFang SC",Arial,sans-serif;color:var(--ink)}
+  body{display:flex;align-items:center;justify-content:center}
+  #stage{width:1920px;height:1080px;transform-origin:center center;position:relative;background:#fff;border:1px solid #555;overflow:hidden}
+  .slide{position:absolute;inset:0;padding:28px 34px 23px;display:grid;grid-template-rows:128px 1fr 100px 29px;gap:10px;background:#fff}
+  .header{border-bottom:3px solid var(--red);display:grid;grid-template-columns:1fr 520px;gap:18px;align-items:start;padding-bottom:9px}
+  .title{font-size:33px;line-height:1.13;font-weight:800;color:var(--red);letter-spacing:-.6px;margin:0 0 5px}
+  .subtitle{font-size:15.8px;line-height:1.34;color:#2f3336;margin:0}
+  .subtitle b{color:var(--blue)}
+  .header-meta{height:100%;border:1px solid #777;display:grid;grid-template-columns:1.2fr 1fr 1fr;background:var(--gray1)}
+  .meta-cell{padding:9px 12px;border-right:1px solid #999;display:flex;flex-direction:column;justify-content:center}
+  .meta-cell:last-child{border-right:0}
+  .meta-k{font-size:11px;color:#555;margin-bottom:3px;font-weight:700}
+  .meta-v{font-size:20px;line-height:1.15;font-weight:800;color:var(--blue)}
+  .meta-v.red{color:var(--red)}
+  .meta-s{font-size:11px;color:#555;margin-top:3px}
+
+  .main{display:grid;grid-template-columns:520px 1fr 475px;gap:10px;min-height:0}
+  .col{display:grid;gap:10px;min-height:0}
+  .left{grid-template-rows:260px 174px 1fr}
+  .center{grid-template-rows:1fr 190px}
+  .right{grid-template-rows:218px 205px 1fr}
+  .panel{border:1px solid #707070;background:#fff;min-height:0;overflow:hidden;position:relative}
+  .panel-title{height:34px;background:var(--yellow);border-bottom:1px solid #777;display:flex;align-items:center;justify-content:space-between;padding:0 11px;font-size:16px;font-weight:800;color:#191919}
+  .panel-title .idx{color:var(--red);margin-right:7px}
+  .panel-title small{font-size:11px;color:#555;font-weight:600}
+  .panel-body{padding:10px 11px;height:calc(100% - 34px)}
+
+  .config-grid{display:grid;grid-template-columns:126px 1fr;height:100%;border-left:1px solid #999;border-top:1px solid #999}
+  .config-grid div{border-right:1px solid #999;border-bottom:1px solid #999;padding:4px 7px;font-size:11.7px;line-height:1.22;display:flex;align-items:center}
+  .config-grid .k{background:var(--gray1);font-weight:700;color:#3d4144}
+  .config-grid .v b{color:var(--blue)}
+  .config-grid .v .risk{color:var(--red);font-weight:800}
+
+  .ladder{display:flex;align-items:center;justify-content:space-between;height:62px;margin-top:4px}
+  .step{width:78px;height:48px;border:1px solid #5f6f54;background:var(--green-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+  .step strong{font-size:19px;color:var(--green);line-height:1}
+  .step span{font-size:10px;color:#4c5a47;margin-top:4px}
+  .arrow{font-size:22px;color:#777;font-weight:700}
+  .ladder-note{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+  .mini-note{border:1px solid #999;background:#fafafa;padding:5px 7px;font-size:11px;line-height:1.25}
+  .mini-note b{color:var(--red)}
+
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid #888;padding:4px 5px;text-align:center;font-size:11px;line-height:1.15}
+  th{background:var(--yellow);font-weight:800;color:#222}
+  .matrix th:first-child,.matrix td:first-child{width:68px;text-align:left;padding-left:7px;font-weight:800}
+  .ok{background:var(--green-bg);color:var(--green);font-weight:900;font-size:15px}
+  .matrix-foot{font-size:10.5px;color:#555;margin-top:6px;line-height:1.3}
+  .matrix-foot b{color:var(--red)}
+
+  .evidence{display:grid;grid-template-columns:1fr 1fr;gap:7px;height:100%}
+  .gate{border:1px solid #8d8d8d;position:relative;padding:9px 9px 8px;background:#fff}
+  .gate:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--green)}
+  .gate h3{margin:0 0 5px 6px;font-size:13px;color:#333}
+  .gate .big{margin-left:6px;font-size:23px;font-weight:900;color:var(--blue);line-height:1}
+  .gate p{margin:6px 0 0 6px;font-size:10.5px;line-height:1.25;color:#4b4e50}
+  .green-label{position:absolute;right:6px;top:6px;border:1px solid #579237;background:var(--green-bg);color:var(--green);font-weight:900;font-size:9px;padding:1px 4px}
+
+  .chart-body{padding:6px 8px 7px;height:calc(100% - 34px);display:grid;grid-template-rows:30px repeat(8,1fr);gap:2px}
+  .chart-head,.chart-row{display:grid;grid-template-columns:175px 1fr 1fr 1fr;gap:6px;align-items:center}
+  .chart-head{background:var(--gray1);border:1px solid #aaa;padding:0 5px;font-size:10.5px;font-weight:800;text-align:center;color:#333}
+  .chart-head span:first-child{text-align:left}
+  .chart-row{border-bottom:1px dotted #aaa;padding:1px 5px;min-height:0}
+  .chart-row:last-child{border-bottom:0}
+  .cell-name{font-size:11px;line-height:1.15}
+  .cell-name strong{display:block;color:#202224;font-size:11.5px}
+  .cell-name small{color:#666;font-size:9.5px}
+  .barbox{position:relative;height:23px;background:#f0f1f2;border:1px solid #b1b1b1;overflow:hidden}
+  .bar{height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:5px;color:#fff;font-size:10px;font-weight:800;white-space:nowrap}
+  .bar.e2el{background:var(--blue2);width:calc(var(--v) * 2%)}
+  .bar.tput{background:#5b8c00;width:calc(var(--v) * 1%)}
+  .bar.tpot{background:var(--red2);width:calc(var(--v) * 2%)}
+  .bar span{filter:drop-shadow(0 0 1px rgba(0,0,0,.45))}
+  .chart-legend{position:absolute;right:9px;top:38px;font-size:9px;color:#666}
+
+  .interpret{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;height:100%}
+  .insight{border:1px solid #888;padding:9px 10px;background:#fff}
+  .insight h4{margin:0 0 7px;font-size:13px;color:var(--red)}
+  .insight p{font-size:11px;line-height:1.33;margin:0;color:#3f4346}
+  .insight b{color:var(--blue)}
+
+  .profile-table td:first-child{text-align:left;font-weight:800;background:#fafafa}
+  .profile-table td:nth-child(2){color:var(--blue);font-weight:800}
+  .profile-table td:nth-child(3){color:var(--green);font-weight:800}
+  .profile-note{font-size:10px;color:#555;margin-top:5px;line-height:1.28}
+
+  .hbm-wrap{display:grid;grid-template-columns:135px 1fr;gap:10px;height:100%;align-items:center}
+  .ring{width:122px;height:122px;border-radius:50%;background:conic-gradient(var(--red) 0 93.8%,#dedede 93.8% 100%);display:grid;place-items:center;margin:auto;position:relative}
+  .ring:after{content:"";width:86px;height:86px;border-radius:50%;background:#fff;position:absolute}
+  .ring-text{position:relative;z-index:2;text-align:center}
+  .ring-text strong{display:block;font-size:22px;color:var(--red)}
+  .ring-text span{font-size:9.5px;color:#555}
+  .hbm-list{font-size:11px;line-height:1.45;color:#3e4143}
+  .hbm-list b{color:var(--blue)}
+  .warn{border-left:5px solid var(--red);background:#fff5f3;padding:6px 8px;margin-top:6px;color:#5c2720;font-size:10.5px;line-height:1.3}
+
+  .boundary-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;height:100%}
+  .boundary{border:1px solid #888;padding:8px 9px;background:#fafafa}
+  .boundary h4{margin:0 0 5px;font-size:12px;color:#333}
+  .state{display:inline-block;padding:1px 5px;border:1px solid #777;font-size:9.5px;font-weight:900;margin-bottom:5px}
+  .state.green{background:var(--green-bg);color:var(--green);border-color:#579237}
+  .state.amber{background:#fff1d6;color:#965b00;border-color:#c98b2b}
+  .boundary p{margin:0;font-size:10px;line-height:1.25;color:#555}
+
+  .summary{border:1px solid #6f6f6f;background:#fff;display:grid;grid-template-columns:118px 1fr 1fr 1fr;min-height:0}
+  .summary-head{background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;letter-spacing:2px}
+  .summary-item{padding:11px 13px;border-left:1px solid #888;font-size:12.5px;line-height:1.4;display:flex;align-items:center}
+  .summary-item b{color:var(--blue)}
+  .summary-item .risk{color:var(--red);font-weight:900}
+
+  .footer{display:grid;grid-template-columns:1fr 1.4fr 1fr;align-items:end;font-size:10px;color:#666;border-top:1px solid #aaa;padding-top:4px}
+  .footer div:nth-child(2){text-align:center}
+  .footer div:last-child{text-align:right}
+  .footer a{color:#666;text-decoration:none}
+
+  @media print{
+    html,body{background:#fff;overflow:visible}
+    #stage{transform:none !important;border:0}
+    @page{size:16in 9in;margin:0}
+  }
+
+
+  /* V2: absolute-value comparison table + local TSV import */
+  .abs-wrap{padding:6px 8px 7px;height:calc(100% - 34px);display:grid;grid-template-rows:44px 1fr 34px;gap:5px}
+  .abs-source{border:1px solid #9b7a33;background:#fff8e6;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:5px 7px;min-width:0}
+  .abs-source-text{font-size:9.6px;line-height:1.25;color:#4f4531;min-width:0}
+  .abs-source-text b{color:var(--red)}
+  .abs-actions{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .import-label{display:inline-flex;align-items:center;justify-content:center;height:27px;padding:0 8px;border:1px solid #555;background:#f1f1f1;color:#222;font-size:9.5px;font-weight:800;cursor:pointer}
+  .import-label:hover{background:#e5e5e5}
+  .import-label input{display:none}
+  .import-status{display:inline-flex;align-items:center;height:27px;padding:0 7px;border:1px solid #b98a2b;background:#fff;color:#8a5700;font-size:9px;font-weight:800;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+  .import-status.ready{border-color:#579237;background:#e8f4df;color:#237804}
+  .abs-table{table-layout:fixed;height:100%;border-collapse:collapse}
+  .abs-table col.cell{width:142px}
+  .abs-table col.val{width:58px}
+  .abs-table col.delta{width:48px}
+  .abs-table th,.abs-table td{padding:2px 2px;font-size:8.8px;line-height:1.08;border:1px solid #858585;vertical-align:middle}
+  .abs-table thead tr:first-child th{height:25px;font-size:9.6px}
+  .abs-table thead tr:nth-child(2) th{height:23px;font-size:8.4px;background:#f4f5f6}
+  .abs-table th.group-e2el{background:#dce8f7;color:#153d72}
+  .abs-table th.group-tpot{background:#f4dddd;color:#8f1010}
+  .abs-table th.group-tps{background:#e4f0db;color:#2b680a}
+  .abs-table td.cell-label{text-align:left;padding-left:5px;background:#fafafa}
+  .abs-table td.cell-label b{display:block;font-size:9.5px;color:#222}
+  .abs-table td.cell-label span{display:block;margin-top:2px;color:#666;font-size:8px}
+  .abs-table td.value{font-variant-numeric:tabular-nums;font-weight:800;color:#222}
+  .abs-table td.missing{background:#fff7e8;color:#9a5d00;font-size:7.9px;font-weight:800}
+  .abs-table td.delta-down{background:#f7e3e3;color:#a00000;font-weight:900;font-size:9.2px}
+  .abs-table td.delta-up{background:#e8f3de;color:#2b7207;font-weight:900;font-size:9.2px}
+  .abs-foot{display:grid;grid-template-columns:1fr 1fr;gap:5px;align-items:stretch}
+  .abs-foot div{border:1px solid #aaa;background:#fafafa;padding:4px 6px;font-size:8.8px;line-height:1.2;color:#555}
+  .abs-foot b{color:var(--blue)}
+  .abs-foot .critical{border-left:4px solid var(--red);background:#fff2f0;color:#6d2b25}
+
+  .term-grid{display:grid;grid-template-columns:1.15fr 1.15fr 1fr 1fr;gap:6px;height:100%}
+  .term-card{border:1px solid #888;padding:7px 8px;background:#fff;overflow:hidden}
+  .term-card.definition{background:#eef4ff;border-top:4px solid var(--blue)}
+  .term-card.concurrency{background:#fff8e6;border-top:4px solid #b27b16}
+  .term-card.insight-card{background:#f6faf2;border-top:4px solid var(--green)}
+  .term-card.boundary-card{background:#fff2f0;border-top:4px solid var(--red)}
+  .term-card h4{margin:0 0 5px;font-size:12px;color:var(--red)}
+  .term-card.definition h4{color:var(--blue)}
+  .term-card.concurrency h4{color:#8a5700}
+  .term-card.insight-card h4{color:var(--green)}
+  .term-card p{margin:0;font-size:9.8px;line-height:1.28;color:#42474a}
+  .term-card b{color:var(--blue)}
+  .term-card .red{color:var(--red)}
+  .term-card code{font-family:Consolas,monospace;font-size:9px;background:#fff;border:1px solid #ccc;padding:0 2px}
+
+  @media print{
+    .abs-actions{display:none}
+    .abs-source{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div aria-label="DeepSeek-V4-Flash W8A8-MTP 八卡性能总览" id="stage" role="img">
+<main class="slide">
+<header class="header">
+<div>
+<h1 class="title">DeepSeek-V4-Flash W8A8-MTP 八卡基线已闭环：<br/>128K 稳定跑通，MTP 显著降低逐 Token 生成时延</h1>
+<p class="subtitle">Atlas 800T A2（8×64GB Ascend 910B1）完成 <b>功能 / 用户性能 / Profile / 机制对照</b> 四层证据链；第 04 区块已按 <b>Off 绝对值 → On 绝对值 → 相对变化</b> 重构。绝对值直接取自服务器结果包的原始汇总 TSV，未以百分比反推基线。</p>
+</div>
+<div class="header-meta">
+<div class="meta-cell"><span class="meta-k">模型 / 量化对象</span><span class="meta-v red">284B / 13B Active</span><span class="meta-s">W8A8-MTP · 70 shards · 279.41 GiB</span></div>
+<div class="meta-cell"><span class="meta-k">已验证上下文</span><span class="meta-v">131,072</span><span class="meta-s">模型标称 1M；本页只陈述 128K 实测</span></div>
+<div class="meta-cell"><span class="meta-k">八卡资源</span><span class="meta-v">512 GB</span><span class="meta-s">8×64GB HBM；TP8 + EP</span></div>
+</div>
+</header>
+<section class="main">
+<div class="col left">
+<article class="panel">
+<div class="panel-title"><span><span class="idx">01</span>冻结运行配置</span><small>REFERENCE CONFIG</small></div>
+<div class="panel-body">
+<div class="config-grid">
+<div class="k">硬件</div><div class="v"><b>Atlas 800T A2</b>，Ascend 910B1 ×8，64GB/NPU</div>
+<div class="k">推理栈</div><div class="v">vLLM <b>0.22.1+empty</b> / vLLM-Ascend <b>0.22.1rc1</b></div>
+<div class="k">并行与量化</div><div class="v"><b>TP8 + Expert Parallel</b>；<b>ascend W8A8</b></div>
+<div class="k">核心开关</div><div class="v"><b>MTP（Multi-Token Prediction）</b>；本实验 1 speculative token；Prefix Cache ON；Chunked Prefill ON</div>
+<div class="k">图与容量</div><div class="v">FULL_DECODE_ONLY；max_model_len=<b>135168</b></div>
+<div class="k">调度边界</div><div class="v">max_num_seqs=<span class="risk">1</span>；C4/C8 为客户端批次并发，指标含排队，不作 4×/8× 服务扩展性结论</div>
+<div class="k">修复边界</div><div class="v">task-local <b>positions_cpu</b> 单行 overlay；未改模型/量化</div>
+</div>
+</div>
+</article>
+<article class="panel">
+<div class="panel-title"><span><span class="idx">02</span>Official Context Ladder</span><small>5 / 5 FIRST-PASS</small></div>
+<div class="panel-body">
+<div class="ladder">
+<div class="step"><strong>4K</strong><span>+64 output</span></div><div class="arrow">→</div>
+<div class="step"><strong>32K</strong><span>+64 output</span></div><div class="arrow">→</div>
+<div class="step"><strong>64K</strong><span>+64 output</span></div><div class="arrow">→</div>
+<div class="step"><strong>96K</strong><span>+64 output</span></div><div class="arrow">→</div>
+<div class="step"><strong>128K</strong><span>+64 output</span></div>
+</div>
+<div class="ladder-note">
+<div class="mini-note"><b>功能门：</b>请求、health、queue、MTP counter、cleanup 均通过。</div>
+<div class="mini-note"><b>边界：</b>成功不等于 1M、KV 逻辑余量或生产 SLA 已验证。</div>
+</div>
+</div>
+</article>
+<article class="panel">
+<div class="panel-title"><span><span class="idx">03</span>18-cell 用户侧性能覆盖</span><small>90 REQUESTS · 0 RETRY</small></div>
+<div class="panel-body">
+<table class="matrix">
+<tr><th rowspan="2">Context</th><th colspan="3">Output 64</th><th colspan="3">Output 256</th></tr>
+<tr><th>C1</th><th>C4</th><th>C8</th><th>C1</th><th>C4</th><th>C8</th></tr>
+<tr><td>4K</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+<tr><td>64K</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+<tr><td>128K</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+</table>
+<div class="matrix-foot"><b>口径：</b>C1/C4/C8 = 每个 measured batch 同时发起 1/4/8 个客户端请求；全部仍运行在同一套 8 NPU 上。由于 max_num_seqs=1，C4/C8 含服务端排队。</div>
+</div>
+</article>
+</div>
+<div class="col center">
+<article class="panel">
+<div class="panel-title"><span><span class="idx">04</span>MTP On/Off 同条件性能对照：绝对值 + 相对变化</span><small>8 CELLS · 24 PAIRED BATCHES · FIXED OFF→ON</small></div>
+
+<div class="abs-wrap">
+<div class="abs-source">
+<div class="abs-source-text"><b>绝对值事实源：</b>P6.3A 七文件结果包的 <code>mode_cell_summary.tsv</code>（16 mode-cell rows）。本页已将原始统计对象中的 <code>mean</code> 静态写入；右侧导入仅用于本地复核或替换，文件不会上传。</div>
+<div class="abs-actions">
+<label class="import-label">复核导入 TSV<input accept=".tsv,.csv,.txt,text/tab-separated-values,text/csv" id="mtpTsvInput" type="file"/></label>
+<span class="import-status ready" id="mtpImportStatus">静态值已写入</span>
+</div>
+</div>
+<table aria-label="MTP on off absolute and relative metrics" class="abs-table">
+<colgroup><col class="cell"/><col class="val"/><col class="val"/><col class="delta"/><col class="val"/><col class="val"/><col class="delta"/><col class="val"/><col class="val"/><col class="delta"/></colgroup>
+<thead>
+<tr><th rowspan="2">Workload Cell</th><th class="group-e2el" colspan="3">E2EL（ms）</th><th class="group-tpot" colspan="3">TPOT（ms/token）</th><th class="group-tps" colspan="3">Batch Output Throughput（tok/s）</th></tr>
+<tr><th>Off</th><th>On</th><th>Δ</th><th>Off</th><th>On</th><th>Δ</th><th>Off</th><th>On</th><th>Δ</th></tr>
+</thead>
+<tbody>
+<tr data-cell-row="short_prefill">
+<td class="cell-label"><b>Short Prefill</b><span>4K + 64 · C1</span></td>
+<td class="value" data-cell="short_prefill" data-metric="e2el" data-mode="off">24,427.9</td>
+<td class="value" data-cell="short_prefill" data-metric="e2el" data-mode="on">13,389.3</td>
+<td class="delta-down">−45.1%</td>
+<td class="value" data-cell="short_prefill" data-metric="tpot" data-mode="off">381.42</td>
+<td class="value" data-cell="short_prefill" data-metric="tpot" data-mode="on">205.93</td>
+<td class="delta-down">−45.9%</td>
+<td class="value" data-cell="short_prefill" data-metric="throughput" data-mode="off">2.62</td>
+<td class="value" data-cell="short_prefill" data-metric="throughput" data-mode="on">4.78</td>
+<td class="delta-up">+82.6%</td>
+</tr>
+<tr data-cell-row="short_decode">
+<td class="cell-label"><b>Short Decode</b><span>4K + 256 · C1</span></td>
+<td class="value" data-cell="short_decode" data-metric="e2el" data-mode="off">96,449.5</td>
+<td class="value" data-cell="short_decode" data-metric="e2el" data-mode="on">52,075.7</td>
+<td class="delta-down">−46.0%</td>
+<td class="value" data-cell="short_decode" data-metric="tpot" data-mode="off">376.69</td>
+<td class="value" data-cell="short_decode" data-metric="tpot" data-mode="on">202.59</td>
+<td class="delta-down">−46.2%</td>
+<td class="value" data-cell="short_decode" data-metric="throughput" data-mode="off">2.65</td>
+<td class="value" data-cell="short_decode" data-metric="throughput" data-mode="on">4.92</td>
+<td class="delta-up">+85.2%</td>
+</tr>
+<tr data-cell-row="short_decode_c8">
+<td class="cell-label"><b>Short Decode · C8</b><span>4K + 256 · C8</span></td>
+<td class="value" data-cell="short_decode_c8" data-metric="e2el" data-mode="off">431,357.2</td>
+<td class="value" data-cell="short_decode_c8" data-metric="e2el" data-mode="on">228,470.6</td>
+<td class="delta-down">−47.0%</td>
+<td class="value" data-cell="short_decode_c8" data-metric="tpot" data-mode="off">374.99</td>
+<td class="value" data-cell="short_decode_c8" data-metric="tpot" data-mode="on">197.48</td>
+<td class="delta-down">−47.3%</td>
+<td class="value" data-cell="short_decode_c8" data-metric="throughput" data-mode="off">2.67</td>
+<td class="value" data-cell="short_decode_c8" data-metric="throughput" data-mode="on">5.04</td>
+<td class="delta-up">+89.2%</td>
+</tr>
+<tr data-cell-row="mid_prefill">
+<td class="cell-label"><b>Mid Prefill</b><span>64K + 64 · C1</span></td>
+<td class="value" data-cell="mid_prefill" data-metric="e2el" data-mode="off">29,649.0</td>
+<td class="value" data-cell="mid_prefill" data-metric="e2el" data-mode="on">18,985.0</td>
+<td class="delta-down">−36.0%</td>
+<td class="value" data-cell="mid_prefill" data-metric="tpot" data-mode="off">372.51</td>
+<td class="value" data-cell="mid_prefill" data-metric="tpot" data-mode="on">199.46</td>
+<td class="delta-down">−46.5%</td>
+<td class="value" data-cell="mid_prefill" data-metric="throughput" data-mode="off">2.16</td>
+<td class="value" data-cell="mid_prefill" data-metric="throughput" data-mode="on">3.37</td>
+<td class="delta-up">+56.1%</td>
+</tr>
+<tr data-cell-row="mid_prefill_c4">
+<td class="cell-label"><b>Mid Prefill · C4</b><span>64K + 64 · C4</span></td>
+<td class="value" data-cell="mid_prefill_c4" data-metric="e2el" data-mode="off">74,394.5</td>
+<td class="value" data-cell="mid_prefill_c4" data-metric="e2el" data-mode="on">47,776.0</td>
+<td class="delta-down">−35.7%</td>
+<td class="value" data-cell="mid_prefill_c4" data-metric="tpot" data-mode="off">374.05</td>
+<td class="value" data-cell="mid_prefill_c4" data-metric="tpot" data-mode="on">200.91</td>
+<td class="delta-down">−46.3%</td>
+<td class="value" data-cell="mid_prefill_c4" data-metric="throughput" data-mode="off">2.15</td>
+<td class="value" data-cell="mid_prefill_c4" data-metric="throughput" data-mode="on">3.35</td>
+<td class="delta-up">+55.9%</td>
+</tr>
+<tr data-cell-row="mid_decode">
+<td class="cell-label"><b>Mid Decode</b><span>64K + 256 · C1</span></td>
+<td class="value" data-cell="mid_decode" data-metric="e2el" data-mode="off">103,319.8</td>
+<td class="value" data-cell="mid_decode" data-metric="e2el" data-mode="on">56,894.2</td>
+<td class="delta-down">−44.9%</td>
+<td class="value" data-cell="mid_decode" data-metric="tpot" data-mode="off">379.96</td>
+<td class="value" data-cell="mid_decode" data-metric="tpot" data-mode="on">197.74</td>
+<td class="delta-down">−47.9%</td>
+<td class="value" data-cell="mid_decode" data-metric="throughput" data-mode="off">2.48</td>
+<td class="value" data-cell="mid_decode" data-metric="throughput" data-mode="on">4.50</td>
+<td class="delta-up">+81.6%</td>
+</tr>
+<tr data-cell-row="long_prefill">
+<td class="cell-label"><b>Long Prefill</b><span>128K + 64 · C1</span></td>
+<td class="value" data-cell="long_prefill" data-metric="e2el" data-mode="off">36,504.7</td>
+<td class="value" data-cell="long_prefill" data-metric="e2el" data-mode="on">25,564.7</td>
+<td class="delta-down">−30.0%</td>
+<td class="value" data-cell="long_prefill" data-metric="tpot" data-mode="off">378.61</td>
+<td class="value" data-cell="long_prefill" data-metric="tpot" data-mode="on">199.99</td>
+<td class="delta-down">−47.2%</td>
+<td class="value" data-cell="long_prefill" data-metric="throughput" data-mode="off">1.75</td>
+<td class="value" data-cell="long_prefill" data-metric="throughput" data-mode="on">2.50</td>
+<td class="delta-up">+42.8%</td>
+</tr>
+<tr data-cell-row="long_decode">
+<td class="cell-label"><b>Long Decode</b><span>128K + 256 · C1</span></td>
+<td class="value" data-cell="long_decode" data-metric="e2el" data-mode="off">111,313.2</td>
+<td class="value" data-cell="long_decode" data-metric="e2el" data-mode="on">63,693.4</td>
+<td class="delta-down">−42.8%</td>
+<td class="value" data-cell="long_decode" data-metric="tpot" data-mode="off">385.18</td>
+<td class="value" data-cell="long_decode" data-metric="tpot" data-mode="on">199.03</td>
+<td class="delta-down">−48.3%</td>
+<td class="value" data-cell="long_decode" data-metric="throughput" data-mode="off">2.30</td>
+<td class="value" data-cell="long_decode" data-metric="throughput" data-mode="on">4.02</td>
+<td class="delta-up">+74.7%</td>
+</tr></tbody>
+</table>
+<div class="abs-foot">
+<div><b>绝对值口径：</b>E2EL / TPOT 为 mode-cell request mean；Batch Output Throughput 为 3 个 measured batch 的 mean。</div>
+<div class="critical"><b>Δ 口径：</b>E2EL / TPOT 为 3 个 paired batch 内 request median 相对变化的均值；吞吐为 paired batch throughput 相对变化的均值。</div>
+</div>
+</div>
+</article>
+<article class="panel">
+<div class="panel-title"><span><span class="idx">05</span>术语口径与工程解读</span><small>DEFINITION · QUEUEING · BOUNDARY</small></div>
+<div class="panel-body">
+<div class="term-grid">
+<div class="term-card definition"><h4>MTP 是什么？</h4><p><b>Multi-Token Prediction，多 Token 预测。</b>在本次推理配置中用于推测解码：草稿分支每步提出 <b>1 个额外 token</b>，主模型校验；命中时一个主模型解码周期可接受更多 token。<span class="red">W8A8 是量化精度，MTP 是解码加速机制。</span></p></div>
+<div class="term-card concurrency"><h4>C1 / C4 / C8 是什么？</h4><p>表示一个 measured batch 同时发起 <b>1 / 4 / 8 个客户端请求</b>，不是 1/4/8 张卡；所有测试都使用同一套 8 NPU。由于 <code>max_num_seqs=1</code>，C4/C8 会排队，TTFT、E2EL 与批次吞吐包含排队影响。</p></div>
+<div class="term-card insight-card"><h4>结果怎么读？</h4><p>8 个 cell 的 TPOT 均下降约 <b>46%–48%</b>，说明收益主要落在逐 token 生成；输入越长，Prefill/TTFT 占比越高，E2EL 收益越被稀释。</p></div>
+<div class="term-card boundary-card"><h4>证据边界</h4><p>24/24 paired batches 方向一致，但顺序固定为 <b>Off→On</b>、每 cell 仅 3 次重复、无随机化与显著性检验；应表述为冻结配置下的描述性机制收益。</p></div>
+</div></div>
+</article>
+</div>
+<div class="col right">
+<article class="panel">
+<div class="panel-title"><span><span class="idx">06</span>Profile 证据链</span><small>3 REPRESENTATIVE CELLS</small></div>
+<div class="panel-body">
+<table class="profile-table">
+<tr><th>Cell</th><th>MTP accepted Δ</th><th>Profiler</th></tr>
+<tr><td>Short Prefill<br/><small>4K+64 · c1</small></td><td>32</td><td>136 SQLite<br/>8-card</td></tr>
+<tr><td>Long Prefill<br/><small>128K+64 · c1</small></td><td>32</td><td>136 SQLite<br/>8-card</td></tr>
+<tr><td>Decode Heavy<br/><small>4K+256 · c1</small></td><td>128</td><td>136 SQLite<br/>8-card</td></tr>
+</table>
+<div class="profile-note"><b>完整性：</b>full request-device aggregate 均 exit 0；phase-memory 共 6 行，最小 device coverage=8，parse failure=0，cleanup clean。</div>
+</div>
+</article>
+<article class="panel">
+<div class="panel-title"><span><span class="idx">07</span>HBM 旁证与容量边界</span><small>PHYSICAL OCCUPANCY ONLY</small></div>
+<div class="panel-body">
+<div class="hbm-wrap">
+<div class="ring"><div class="ring-text"><strong>93.8%</strong><span>61,447 / 65,536 MB</span></div></div>
+<div class="hbm-list">
+<div><b>五档峰值：</b>61,436–61,447 MB / card</div>
+<div><b>4K→128K：</b>最紧张卡仅 +5 MB</div>
+<div><b>解释：</b>服务启动阶段已建立物理 KV pool；请求长度主要改变逻辑 block 使用。</div>
+<div class="warn">整卡 occupancy ≠ KV object bytes ≠ HBM traffic；不能据此给出逻辑 KV headroom、memory-bound 或硬件优先级。</div>
+</div>
+</div>
+</div>
+</article>
+<article class="panel">
+<div class="panel-title"><span><span class="idx">08</span>证据边界 / 下一步</span><small>DO NOT OVERCLAIM</small></div>
+<div class="panel-body">
+<div class="boundary-grid">
+<div class="boundary"><h4>Functional</h4><span class="state green">GREEN</span><p>128K+64 请求及服务健康、queue、MTP、cleanup 完整。</p></div>
+<div class="boundary"><h4>User Performance</h4><span class="state green">GREEN</span><p>18-cell unprofiled streaming reference 已建立；第 04 区块绝对 Off/On 指标已由原始 mode_cell_summary.tsv 静态填充。</p></div>
+<div class="boundary"><h4>Mechanism</h4><span class="state green">MTP GREEN</span><p>Matched A/B 已关闭；总 accepted speculative token delta=4,896。</p></div>
+<div class="boundary"><h4>Next</h4><span class="state amber">R1 AUTHORIZED</span><p>P6.3B 已形成 query-positive / hit-zero yellow；当前授权 task-local hybrid-KV repair 与 9/9 measured positive-hit 门。</p></div>
+</div>
+</div>
+</article>
+</div>
+</section>
+<section class="summary">
+<div class="summary-head">总结</div>
+<div class="summary-item"><span><b>运行边界：</b>在 Atlas 800T A2（8×64GB）上，279.41 GiB W8A8-MTP checkpoint 于 4K–128K 五档上下文均首轮成功（5/5），验证了 131,072 输入 token + 64 输出 token 的可复现推理边界。</span></div>
+<div class="summary-item"><span><b>机制效应：</b>在 8 个 matched cell、24 个 paired batch 中，MTP 使 E2EL 降低 30.0%–47.0%、TPOT 降低 45.9%–48.3%，并将 Batch Output Throughput 提升 42.8%–89.2%。</span></div>
+<div class="summary-item"><span><b>证据强度：</b>两种模式共 48/48 measured batch、108/108 measured request 成功，MTP-on accepted speculative token 增量为 4,896；鉴于固定 Off→On 顺序且每 cell 仅 3 次重复，结论限于冻结配置下的描述性机制效应。</span></div>
+</section>
+<footer class="footer">
+<div>AK-INFER-LAB / TECHNOLOGY REVIEW</div>
+<div>数据快照：2026-07-15 · V3：原始 TSV 绝对值静态写入</div>
+<div><a href="https://github.com/lgw2023/AK-Infer-Lab">github.com/lgw2023/AK-Infer-Lab</a> · Page 1</div>
+</footer>
+</main>
+</div>
+<script>
+(function(){
+  const stage=document.getElementById('stage');
+  function fit(){
+    const s=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+    stage.style.transform=`scale(${s})`;
+  }
+  window.addEventListener('resize',fit,{passive:true});
+  fit();
+})();
+</script>
+
+<script>
+(function(){
+  const input=document.getElementById('mtpTsvInput');
+  const status=document.getElementById('mtpImportStatus');
+  if(!input||!status) return;
+  const expected=['short_prefill','short_decode','short_decode_c8','mid_prefill','mid_prefill_c4','mid_decode','long_prefill','long_decode'];
+  const normalize=s=>String(s??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const parseMetricMean=v=>{
+    const raw=String(v??'').trim();
+    const unquoted=raw.startsWith('"')&&raw.endsWith('"')?raw.slice(1,-1).replace(/""/g,'"'):raw;
+    try{
+      const parsed=JSON.parse(unquoted);
+      if(parsed&&Number.isFinite(Number(parsed.mean)))return Number(parsed.mean);
+    }catch(_){ /* flat numeric TSV/CSV remains supported */ }
+    const m=unquoted.replace(/,/g,'').match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/);
+    return m?Number(m[0]):NaN;
+  };
+  const findHeader=(headers, exact, includesAll, excludes=[])=>{
+    const nh=headers.map(h=>normalize(h));
+    for(const e of exact){const i=nh.indexOf(e);if(i>=0)return i;}
+    const candidates=[];
+    nh.forEach((h,i)=>{
+      if(includesAll.every(x=>h.includes(x)) && excludes.every(x=>!h.includes(x))) candidates.push(i);
+    });
+    if(!candidates.length)return -1;
+    const score=i=>{
+      const h=nh[i]; let s=0;
+      if(h.includes('mean')||h.includes('avg')||h.includes('average'))s+=5;
+      if(h.includes('median'))s+=3;
+      if(h.includes('ms')||h.includes('tps')||h.includes('tokenpersecond')||h.includes('tokenspersecond'))s+=2;
+      return s;
+    };
+    candidates.sort((a,b)=>score(b)-score(a));
+    return candidates[0];
+  };
+  const canonicalCell=v=>{
+    const n=normalize(v);
+    const exact=expected.find(x=>n===normalize(x));
+    if(exact)return exact;
+    return [...expected].sort((a,b)=>normalize(b).length-normalize(a).length).find(x=>n.includes(normalize(x))) || '';
+  };
+  const canonicalMode=v=>{
+    const n=normalize(v);
+    if(n.includes('off')||n.includes('disable')||n==='0'||n==='false'||n==='baseline')return 'off';
+    if(n.includes('on')||n.includes('enable')||n==='1'||n==='true'||n==='mtp')return 'on';
+    return '';
+  };
+  const fmt=(v,metric)=>{
+    if(!Number.isFinite(v))return '—';
+    if(metric==='e2el')return v.toLocaleString('en-US',{maximumFractionDigits:1,minimumFractionDigits:1});
+    return v.toLocaleString('en-US',{maximumFractionDigits:2,minimumFractionDigits:2});
+  };
+  function fill(cell,mode,metric,value){
+    const el=document.querySelector(`[data-cell="${cell}"][data-mode="${mode}"][data-metric="${metric}"]`);
+    if(!el||!Number.isFinite(value))return false;
+    el.textContent=fmt(value,metric); el.classList.remove('missing'); return true;
+  }
+  input.addEventListener('change',()=>{
+    const file=input.files&&input.files[0]; if(!file)return;
+    status.textContent='解析中…';
+    const reader=new FileReader();
+    reader.onerror=()=>{status.textContent='读取失败';};
+    reader.onload=()=>{
+      try{
+        const text=String(reader.result||'').replace(/^\uFEFF/,'').trim();
+        const first=(text.split(/\r?\n/,1)[0]||'');
+        const delim=(first.split('\t').length>=first.split(',').length)?'\t':',';
+        const lines=text.split(/\r?\n/).filter(x=>x.trim());
+        const splitLine=line=>delim==='\t'?line.split('\t'):line.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/).map(x=>x.replace(/^\"|\"$/g,''));
+        const headers=splitLine(lines[0]).map(x=>x.trim());
+        const cellI=findHeader(headers,['cellid','workloadcell','cell','scenario','workload'],['cell'],['delta','pct']);
+        const modeI=findHeader(headers,['mode','mtpmode','condition'],['mode'],['delta']);
+        const e2elI=findHeader(headers,['e2elmsmean','meane2elms','e2elmeanms','e2elms','e2el'],['e2el'],['delta','pct','percent','ratio']);
+        const tpotI=findHeader(headers,['tpotmsmean','meantpotms','tpotmeanms','tpotms','tpot'],['tpot'],['delta','pct','percent','ratio']);
+        let thrI=findHeader(headers,['batchoutputtokenspersecond','batchoutputthroughputmean','batchoutputthroughputtokenspersecond','batchoutputthroughputtps','outputthroughputmean','batchoutputthroughput'],['output','throughput'],['delta','pct','percent','ratio']);
+        if(thrI<0)thrI=findHeader(headers,['outputtps','batchtps'],['tps'],['delta','pct','percent','ratio']);
+        if(cellI<0||modeI<0||e2elI<0||tpotI<0||thrI<0){
+          throw new Error('未识别列：需要 cell_id、mode、E2EL、TPOT、batch output throughput');
+        }
+        let cells=0, values=0;
+        for(const line of lines.slice(1)){
+          const r=splitLine(line);
+          const cell=canonicalCell(r[cellI]); const mode=canonicalMode(r[modeI]);
+          if(!cell||!mode)continue;
+          let rowFilled=0;
+          rowFilled+=fill(cell,mode,'e2el',parseMetricMean(r[e2elI]))?1:0;
+          rowFilled+=fill(cell,mode,'tpot',parseMetricMean(r[tpotI]))?1:0;
+          rowFilled+=fill(cell,mode,'throughput',parseMetricMean(r[thrI]))?1:0;
+          if(rowFilled){cells++;values+=rowFilled;}
+        }
+        if(!values)throw new Error('未匹配到 8 个 workload cell / off-on mode');
+        status.textContent=`已填 ${cells}/16 行`;
+        status.classList.add('ready');
+      }catch(err){
+        console.error(err); status.classList.remove('ready');status.textContent='列名/数据不匹配';
+        status.title=String(err&&err.message||err);
+      }
+    };
+    reader.readAsText(file,'utf-8');
+  });
+})();
+</script>
+</body>
+</html>

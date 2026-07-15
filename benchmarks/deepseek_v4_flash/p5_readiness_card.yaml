@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: p6_3b_prefix_cache_matched_ab_authorized
+  runtime_status: p6_3b_r1_hybrid_kv_repair_authorized
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -177,9 +177,10 @@ artifacts:
   completed_p6_1_workload: workloads/p6_1_mtp_unprofiled_baseline.yaml
   completed_p6_2_workload: workloads/p6_2_mtp_profiled_evidence.yaml
   completed_p6_3a_workload: workloads/p6_3a_mtp_matched_ab.yaml
-  next_workload: workloads/p6_3b_prefix_cache_matched_ab.yaml
-  current_p6_3b_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_prefix_cache_ab.py
-  current_p6_3b_mode_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_mode.sh
+  completed_p6_3b_workload: workloads/p6_3b_prefix_cache_matched_ab.yaml
+  next_workload: workloads/p6_3b_r1_hybrid_kv_repair.yaml
+  current_p6_3b_r1_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r1_hybrid_kv_repair.py
+  current_p6_3b_r1_mode_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r1_mode.sh
   bounded_mtp_patch: patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
   server_handoff: 通信模块/docs/developer-to-server.md
 boundaries:
@@ -197,7 +198,8 @@ boundaries:
   - P6.1 MTP unprofiled baseline completed as green_mtp_unprofiled_baseline: 90/90 measured requests, 24/24 measured batches and 18/18 cells succeeded without retry, so the performance reference baseline is accepted.
   - P6.2 MTP profiled evidence completed as green_mtp_profiled_evidence: all three representative cells succeeded on the first attempt, each produced a clean msprof SQLite root and full request-device aggregate, and all six phase-memory rows had eight-device coverage without parse failures.
   - P6.3A matched MTP on/off completed as green_p6_3a_mtp_matched_ab: all 48 measured batches and 108 measured requests succeeded, and all 24 paired batches had directionally consistent E2EL, TPOT and batch-throughput differences within the fixed-order workload.
-  - P6.3B Prefix Cache on/off is authorized with two fresh unprofiled lifecycles and eight repeated-prefix groups; each mode runs one prime plus three measured followers per group, and only --enable-prefix-caching changes.
+  - P6.3B Prefix Cache on/off completed as yellow_p6_3b_prefix_cache_matched_ab_partial: all 64 HTTP/token/MTP requests completed, but all 24 Prefix-on measured followers had zero hit delta despite positive query deltas.
+  - P6.3B-R1 is authorized as a separate task-local frozen-version hybrid-KV repair validation with one lifecycle and 3 prime plus 9 measured repeated-prefix requests; it does not claim matched performance effect.
   - Standing NPU/vLLM consumption authorization is enabled for explicit published workloads, but the server still may not invent or auto-enter P6.3C, P7, P8.1, offload or runtime-upgrade work without a new workload and unique handoff.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
@@ -215,6 +217,8 @@ acceptance:
   blocked_by: null
   p6_3_plan_review_required: false
   p6_3a_matched_ab_baseline: true
-  p6_3b_execution_authorized: true
+  p6_3b_matched_ab_grade: yellow_p6_3b_prefix_cache_matched_ab_partial
+  p6_3b_execution_authorized: false
+  p6_3b_r1_execution_authorized: true
   standing_npu_and_vllm_consumption_authorization: true
   next_task_authorized: true
