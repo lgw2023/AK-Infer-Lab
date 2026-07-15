@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if test "$#" -ne 2; then
+  echo "usage: $0 RESULT_DIR MODE" >&2
+  exit 64
+fi
+
+RESULT_DIR=$1
+MODE=$2
+case "${MODE}" in
+  prefix_cache_off|prefix_cache_on) ;;
+  *) echo "unsupported mode: ${MODE}" >&2; exit 64 ;;
+esac
+
+REPO_ROOT=${REPO_ROOT:-/data/node0_disk1/liguowei/AK-Infer-Lab}
+ENV_PREFIX=${ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1}
+PYTHON_BIN=${PYTHON_BIN:-${ENV_PREFIX}/bin/python}
+VLLM_BIN=${VLLM_BIN:-${ENV_PREFIX}/bin/vllm}
+BASE_VLLM_ROOT=${BASE_VLLM_ROOT:-${ENV_PREFIX}/lib/python3.11/site-packages/vllm}
+BASE_PLUGIN_ROOT=${BASE_PLUGIN_ROOT:-${ENV_PREFIX}/lib/python3.11/site-packages/vllm_ascend}
+BASE_PROPOSER=${BASE_PROPOSER:-${BASE_PLUGIN_ROOT}/spec_decode/llm_base_proposer.py}
+BASE_VLLM_SINGLE=${BASE_VLLM_ROOT}/v1/core/single_type_kv_cache_manager.py
+BASE_VLLM_COORDINATOR=${BASE_VLLM_ROOT}/v1/core/kv_cache_coordinator.py
+BASE_ASCEND_COORDINATOR=${BASE_PLUGIN_ROOT}/patch/platform/patch_kv_cache_coordinator.py
+BASE_ASCEND_INTERFACE=${BASE_PLUGIN_ROOT}/patch/platform/patch_kv_cache_interface.py
+MODEL_PATH=${MODEL_PATH:-/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp}
+SERVED_MODEL_NAME=${SERVED_MODEL_NAME:-deepseek-v4-flash-w8a8-mtp}
+HOST=${HOST:-127.0.0.1}
+PORT=${PORT:-7000}
+REQUEST_RUNNER=${REQUEST_RUNNER:-${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r3_repaired_matched_ab.py}
+RUNTIME_IMPL=${RUNTIME_IMPL:-${REPO_ROOT}/tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py}
+RUNTIME_LOADER=${RUNTIME_LOADER:-${REPO_ROOT}/tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py}
+MTP_PATCH=${MTP_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch}
+HYBRID_PATCH=${HYBRID_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch}
+DEFERRED_PATCH=${DEFERRED_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch}
+MODE_DIR=${RESULT_DIR}/modes/${MODE}
+RUNTIME_DIR=${MODE_DIR}/runtime
+OVERLAY_ROOT=${RUNTIME_DIR}/overlay_root
+DIAGNOSTIC_PATH=${RUNTIME_DIR}/hybrid_kv_runtime_diagnostic.jsonl
+server_pid=
+
+declare -A EXPECTED_COMMAND_SHA256
+EXPECTED_COMMAND_SHA256[prefix_cache_off]=89376c9577dc70671b2b071113397c04de1ee8c1e1e802238ff4b61d753f0b98
+EXPECTED_COMMAND_SHA256[prefix_cache_on]=370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19
+
+cleanup_mode() {
+  local cleanup=clean
+  if test -n "${server_pid}" && kill -0 "${server_pid}" 2>/dev/null; then
+    kill -TERM -- "-${server_pid}" 2>/dev/null || true
+    for _ in $(seq 1 60); do
+      kill -0 "${server_pid}" 2>/dev/null || break
+      sleep 2
+    done
+    if kill -0 "${server_pid}" 2>/dev/null; then
+      kill -KILL -- "-${server_pid}" 2>/dev/null || true
+    fi
+  fi
+  if test -n "${server_pid}" && kill -0 "${server_pid}" 2>/dev/null; then
+    cleanup=incomplete
+  fi
+  printf '%s\n' "${cleanup}" > "${MODE_DIR}/cleanup_status.txt"
+}
+trap cleanup_mode EXIT
+
+mkdir -p "${RUNTIME_DIR}" "${MODE_DIR}/raw_metrics" "${OVERLAY_ROOT}"
+set +u
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+source /usr/local/Ascend/nnal/atb/set_env.sh
+set -u
+CANN_GENERATED_PYTHONPATH=${PYTHONPATH:-}
+
+test "$(stat -c '%s' "${BASE_VLLM_SINGLE}")" = 53714
+test "$(sha256sum "${BASE_VLLM_SINGLE}" | awk '{print $1}')" = d57ad1c8e3d32db4a9d929ee201ab169305ef703b5bda9eb933d0f2f2a2299a1
+test "$(stat -c '%s' "${BASE_VLLM_COORDINATOR}")" = 25255
+test "$(sha256sum "${BASE_VLLM_COORDINATOR}" | awk '{print $1}')" = a5f0683483508fcfd0b2e3477940825bae5953eec715a4f704becec805484b89
+test "$(stat -c '%s' "${BASE_ASCEND_COORDINATOR}")" = 23103
+test "$(sha256sum "${BASE_ASCEND_COORDINATOR}" | awk '{print $1}')" = dc65ed2adbb05ea52d9e891f648b62a5391eb41b2a6b262b71d40efe31effe20
+test "$(stat -c '%s' "${BASE_ASCEND_INTERFACE}")" = 11819
+test "$(sha256sum "${BASE_ASCEND_INTERFACE}" | awk '{print $1}')" = a4969e2c1b2ebde9a3c5a4d02df5175879fb56ea43322869871a3868ec1981b2
+test "$(sha256sum "${RUNTIME_IMPL}" | awk '{print $1}')" = 6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
+test "$(sha256sum "${RUNTIME_LOADER}" | awk '{print $1}')" = 9d720389f520918642ddecf288d0ac3922f61873251760129ba34ba203d02631
+test "$(sha256sum "${MTP_PATCH}" | awk '{print $1}')" = 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+test "$(sha256sum "${HYBRID_PATCH}" | awk '{print $1}')" = cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
+test "$(sha256sum "${DEFERRED_PATCH}" | awk '{print $1}')" = ad845854461605ae28ae7000f24ada0cb07c5c17f3b0c23ee1485ec537a7a85b
+
+cp -a "${BASE_PLUGIN_ROOT}" "${OVERLAY_ROOT}/vllm_ascend"
+cp "${RUNTIME_IMPL}" "${OVERLAY_ROOT}/p6_3b_hybrid_kv_runtime_impl.py"
+cp "${RUNTIME_LOADER}" "${OVERLAY_ROOT}/p6_3b_r2_hybrid_kv_runtime_patch.py"
+patch -p1 -d "${OVERLAY_ROOT}" --dry-run < "${MTP_PATCH}" > "${RUNTIME_DIR}/mtp_patch_dry_run.txt"
+patch -p1 -d "${OVERLAY_ROOT}" < "${MTP_PATCH}" > "${RUNTIME_DIR}/mtp_patch_apply.txt"
+patch -p1 -d "${OVERLAY_ROOT}" --dry-run < "${HYBRID_PATCH}" > "${RUNTIME_DIR}/hybrid_patch_dry_run.txt"
+patch -p1 -d "${OVERLAY_ROOT}" < "${HYBRID_PATCH}" > "${RUNTIME_DIR}/hybrid_patch_apply.txt"
+if patch -l -p1 -d "${OVERLAY_ROOT}" --dry-run < "${DEFERRED_PATCH}" \
+  > "${RUNTIME_DIR}/deferred_patch_dry_run.txt" 2>&1; then
+  patch -l -p1 -d "${OVERLAY_ROOT}" < "${DEFERRED_PATCH}" \
+    > "${RUNTIME_DIR}/deferred_patch_apply.txt"
+  printf '%s\n' patch_l > "${RUNTIME_DIR}/deferred_patch_method.txt"
+else
+  (
+    cd "${OVERLAY_ROOT}"
+    GIT_DIR=/dev/null git apply --check --ignore-whitespace "${DEFERRED_PATCH}"
+    GIT_DIR=/dev/null git apply --ignore-whitespace "${DEFERRED_PATCH}"
+  ) > "${RUNTIME_DIR}/deferred_patch_apply.txt" 2>&1
+  printf '%s\n' git_apply_ignore_whitespace \
+    > "${RUNTIME_DIR}/deferred_patch_method.txt"
+fi
+OVERLAY_PROPOSER=${OVERLAY_ROOT}/vllm_ascend/spec_decode/llm_base_proposer.py
+OVERLAY_ASCEND_COORDINATOR=${OVERLAY_ROOT}/vllm_ascend/patch/platform/patch_kv_cache_coordinator.py
+OVERLAY_ASCEND_INTERFACE=${OVERLAY_ROOT}/vllm_ascend/patch/platform/patch_kv_cache_interface.py
+test "$(sha256sum "${OVERLAY_PROPOSER}" | awk '{print $1}')" = 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+test "$(sha256sum "${BASE_PROPOSER}" | awk '{print $1}')" = 0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
+test "$(sha256sum "${OVERLAY_ASCEND_COORDINATOR}" | awk '{print $1}')" = a1ed9c82e308608cd20965a49baa29a3e95d723248fff699fd83dfb3caf10250
+test "$(sha256sum "${OVERLAY_ASCEND_INTERFACE}" | awk '{print $1}')" = 524c933ef17806ecba0634804bc562de1f69dc095fe1346e2edd0103845bfa75
+{
+  printf 'runtime_impl\t%s\n' "$(sha256sum "${RUNTIME_IMPL}" | awk '{print $1}')"
+  printf 'deferred_loader\t%s\n' "$(sha256sum "${RUNTIME_LOADER}" | awk '{print $1}')"
+  printf 'mtp_patch\t%s\n' "$(sha256sum "${MTP_PATCH}" | awk '{print $1}')"
+  printf 'hybrid_patch\t%s\n' "$(sha256sum "${HYBRID_PATCH}" | awk '{print $1}')"
+  printf 'deferred_patch\t%s\n' "$(sha256sum "${DEFERRED_PATCH}" | awk '{print $1}')"
+  printf 'overlay_proposer\t%s\n' "$(sha256sum "${OVERLAY_PROPOSER}" | awk '{print $1}')"
+  printf 'overlay_ascend_coordinator\t%s\n' "$(sha256sum "${OVERLAY_ASCEND_COORDINATOR}" | awk '{print $1}')"
+  printf 'overlay_ascend_interface\t%s\n' "$(sha256sum "${OVERLAY_ASCEND_INTERFACE}" | awk '{print $1}')"
+} > "${MODE_DIR}/repair_identity.tsv"
+
+export PYTHONPATH="${OVERLAY_ROOT}:${CANN_GENERATED_PYTHONPATH}"
+export PYTHONNOUSERSITE=1
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export VLLM_PLUGINS=ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model
+export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+if test -v VLLM_PREFIX_CACHE_RETENTION_INTERVAL; then
+  printf '%s\n' set > "${RUNTIME_DIR}/inherited_retention_interval_presence.txt"
+else
+  printf '%s\n' unset > "${RUNTIME_DIR}/inherited_retention_interval_presence.txt"
+fi
+unset VLLM_PREFIX_CACHE_RETENTION_INTERVAL
+printf '%s\n' explicitly_unset > "${RUNTIME_DIR}/effective_retention_interval.txt"
+
+P6_3B_R2_ENABLE_HYBRID_KV_PATCH=1 \
+P6_3B_R2_HYBRID_KV_DIAGNOSTIC_PATH="${DIAGNOSTIC_PATH}" \
+"${PYTHON_BIN}" -c 'import vllm_ascend.patch.platform.patch_kv_cache_interface; import p6_3b_r2_hybrid_kv_runtime_patch as patch; assert patch.PATCH_INSTALLED; assert all(patch.require_ascend_manager_resolution().values())' \
+  > "${RUNTIME_DIR}/runtime_patch_self_test.txt" 2>&1
+printf '%s\n' pass > "${RUNTIME_DIR}/source_gate_status.txt"
+
+cmd=(
+  "${VLLM_BIN}" serve "${MODEL_PATH}"
+  --safetensors-load-strategy prefetch
+  --max-model-len 135168
+  --max-num-batched-tokens 4096
+  --served-model-name "${SERVED_MODEL_NAME}"
+  --gpu-memory-utilization 0.92
+  --max-num-seqs 1
+  --data-parallel-size 1
+  --tensor-parallel-size 8
+  --enable-expert-parallel
+  --quantization ascend
+  --host "${HOST}"
+  --port "${PORT}"
+  --block-size 128
+  --enable-chunked-prefill
+)
+if test "${MODE}" = prefix_cache_on; then
+  cmd+=(--enable-prefix-caching)
+fi
+cmd+=(
+  --tokenizer-mode deepseek_v4
+  --tool-call-parser deepseek_v4
+  --enable-auto-tool-choice
+  --reasoning-parser deepseek_v4
+  --async-scheduling
+  --additional-config '{"enable_flashcomm1":true,"enable_dsa_cp":true,"enable_cpu_binding":true,"multistream_overlap_shared_expert":false}'
+  --model-loader-extra-config '{"enable_multithread_load":true,"num_threads":16}'
+  --compilation-config '{"cudagraph_mode":"FULL_DECODE_ONLY","cudagraph_capture_sizes":[2,4,6,8,10,12,14,16,18,20,22,24,32,36,40]}'
+  --speculative-config '{"method":"mtp","num_speculative_tokens":1}'
+)
+printf '%q ' "${cmd[@]}" > "${RUNTIME_DIR}/server_command.txt"
+printf '\n' >> "${RUNTIME_DIR}/server_command.txt"
+sha256sum "${RUNTIME_DIR}/server_command.txt" > "${MODE_DIR}/server_command_sha256.txt"
+test "$(awk '{print $1}' "${MODE_DIR}/server_command_sha256.txt")" = "${EXPECTED_COMMAND_SHA256[${MODE}]}"
+
+P6_3B_R2_ENABLE_HYBRID_KV_PATCH=1 \
+P6_3B_R2_HYBRID_KV_DIAGNOSTIC_PATH="${DIAGNOSTIC_PATH}" \
+setsid "${cmd[@]}" > "${RUNTIME_DIR}/vllm_server.log" 2>&1 &
+server_pid=$!
+printf '%s\n' "${server_pid}" > "${RUNTIME_DIR}/server_pid.txt"
+ready_exit=1
+for _ in $(seq 1 180); do
+  kill -0 "${server_pid}" 2>/dev/null || break
+  if curl -fsS --max-time 5 "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then
+    ready_exit=0
+    break
+  fi
+  sleep 10
+done
+printf '%s\n' "${ready_exit}" > "${RUNTIME_DIR}/server_ready_exit_code.txt"
+if test "${ready_exit}" -ne 0; then
+  LC_ALL=C tail -n 120 "${RUNTIME_DIR}/vllm_server.log" | tail -c 8192 \
+    > "${MODE_DIR}/first_failure_excerpt.txt"
+  exit 2
+fi
+
+curl -fsS "http://${HOST}:${PORT}/metrics" > "${RUNTIME_DIR}/live_metrics_preflight.prom"
+grep -F 'vllm:num_requests_running' "${RUNTIME_DIR}/live_metrics_preflight.prom" >/dev/null
+grep -F 'vllm:num_requests_waiting' "${RUNTIME_DIR}/live_metrics_preflight.prom" >/dev/null
+grep -F 'vllm:spec_decode_num_drafts_total' "${RUNTIME_DIR}/live_metrics_preflight.prom" >/dev/null
+grep -F 'vllm:spec_decode_num_draft_tokens_total' "${RUNTIME_DIR}/live_metrics_preflight.prom" >/dev/null
+grep -F 'vllm:spec_decode_num_accepted_tokens_total' "${RUNTIME_DIR}/live_metrics_preflight.prom" >/dev/null
+if test "${MODE}" = prefix_cache_on; then
+  grep -E 'vllm:prefix_cache_queries(_total)?' "${RUNTIME_DIR}/live_metrics_preflight.prom" >/dev/null
+  grep -E 'vllm:prefix_cache_hits(_total)?' "${RUNTIME_DIR}/live_metrics_preflight.prom" >/dev/null
+fi
+
+set +e
+"${PYTHON_BIN}" "${REQUEST_RUNNER}" run-mode \
+  --artifact-dir "${RESULT_DIR}" \
+  --base-url "http://${HOST}:${PORT}" \
+  --server-pid "${server_pid}" \
+  --mode "${MODE}"
+run_exit=$?
+set -e
+printf '%s\n' "${run_exit}" > "${MODE_DIR}/run_exit_code.txt"
+exit "${run_exit}"

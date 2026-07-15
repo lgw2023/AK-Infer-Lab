@@ -247,11 +247,55 @@ result_package_policy:
     - cleanup_status.txt
     - first_failure_excerpt.txt
 
+execution_result:
+  server_grade: candidate_green_p6_3b_r2_hybrid_kv_repair
+  developer_accepted_grade: green_p6_3b_r2_hybrid_kv_repair
+  developer_reviewed: true
+  server_head: 5a09f93895d3cd3c1e6ce02bfca93df730412888
+  head_equals_origin_main: true
+  tracked_clean: true
+  server_lifecycles: 1
+  server_ready: true
+  prime_success: 3
+  measured_success: 9
+  positive_hit_measured_count: 9
+  retries: 0
+  prefix_queries_delta_total: 917504
+  prefix_hits_delta_total: 540672
+  mtp_accepted_token_delta_total: 384
+  group_observed_hit_ratios:
+    ctx32768_prefix90: 0.375
+    ctx65536_prefix90: 0.5625
+    ctx131072_prefix90: 0.65625
+  deferred_import_order_verified: true
+  ascend_mla_exact_key_registered: true
+  ascend_sliding_window_mla_exact_key_registered: true
+  manager_eagle_propagation_ok: true
+  lookahead_cache_target_observed: true
+  reachable_mask_ok: true
+  lcm_block_sizes: [16384]
+  retention_interval_explicitly_unset: true
+  hybrid_diagnostic_ok: true
+  cleanup: clean
+  result_package:
+    local_path: /Volumes/SSD1/Inbox/2026-07-15/p6_3b_r2_hybrid_kv_deferred_install_repair_2026_0715_run01
+    file_count: 8
+    total_bytes: 10466
+    sorted_manifest_sha256: 59292a724aeae2b5b914d8f9e2d98b0b9952f2553d65a5dac16ff2ebc6f54e0d
+  server_local_adaptations:
+    - editable_vllm_root_selected_after_frozen_source_hash_match
+    - crlf_patch_compatibility_wrapper_with_expected_overlay_hash_match
+  performance_effect_accepted: false
+  generalized_prefix_cache_claim_allowed: false
+  original_p6_3b_yellow_and_r1_red_preserved: true
+  existing_p6_references_remain_true: true
+  superseded_by: p6_3b_r3_repaired_prefix_cache_matched_ab.yaml
+
 execution_state:
-  status: authorized_for_execution
-  server_handoff: current
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_server_candidate_developer_accepted_green
+  server_handoff: historical
+  npu_execution_authorized: false
+  next_task_authorized: false
 
 authorization_policy:
   code_sync_and_task_local_runtime_patch_authorized: true

@@ -219,11 +219,18 @@ def test_r2_workload_closes_r1_and_freezes_only_the_deferred_install_delta():
         ).hexdigest() == expected_sha256
     assert r2["lifecycle_plan"] == r1["lifecycle_plan"]
     assert r2["prefix_groups"] == r1["prefix_groups"]
+    assert r2["execution_result"]["developer_accepted_grade"] == (
+        "green_p6_3b_r2_hybrid_kv_repair"
+    )
+    assert r2["execution_result"]["positive_hit_measured_count"] == 9
+    assert r2["execution_result"]["superseded_by"] == (
+        "p6_3b_r3_repaired_prefix_cache_matched_ab.yaml"
+    )
     assert r2["execution_state"] == {
-        "status": "authorized_for_execution",
-        "server_handoff": "current",
-        "npu_execution_authorized": True,
-        "next_task_authorized": True,
+        "status": "completed_server_candidate_developer_accepted_green",
+        "server_handoff": "historical",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
     }
 
 

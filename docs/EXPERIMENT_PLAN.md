@@ -18,22 +18,23 @@ P6.1C-R1 已由开发机接受为 `green_mtp_official_context_ladder`，
 `highest_stable_context=131072`，official 功能/容量/稳定性 reference baseline=true。P6.1
 unprofiled 随后由开发机接受为 `green_mtp_unprofiled_baseline`，性能 reference baseline=true；
 P6.2 也已接受为 `green_mtp_profiled_evidence`，profiled evidence baseline=true。
-P6.3A 已接受为 `green_p6_3a_mtp_matched_ab`；P6.3B 已完成为
-`yellow_p6_3b_prefix_cache_matched_ab_partial`。P6.3B-R1 因 eager `sitecustomize` 导入早于 Ascend
-spec 替换，在 server ready 前定级 `red_p6_3b_r1_hybrid_kv_repair_no_success`，0/12 request；
-当前独立 P6.3B-R2 deferred-install repair 已授权。
+P6.3A 已接受为 `green_p6_3a_mtp_matched_ab`；原 P6.3B 保留
+`yellow_p6_3b_prefix_cache_matched_ab_partial`，P6.3B-R1 保留 ready 前
+`red_p6_3b_r1_hybrid_kv_repair_no_success`。P6.3B-R2 已接受为
+`green_p6_3b_r2_hybrid_kv_repair`：3/3 prime、9/9 measured、9/9 positive hit，证明 same R2 repair
+恢复有界 hybrid-KV+MTP Prefix Cache hit。当前 P6.3B-R3 repaired matched A/B 已授权。
 当前合同状态为：
 
 ```text
-task_id:p6_3b_r2_deepseek_v4_flash_w8a8_mtp_prefix_cache_hybrid_kv_deferred_install_repair_2026_0715
+task_id:p6_3b_r3_deepseek_v4_flash_w8a8_mtp_repaired_prefix_cache_matched_ab_2026_0715
 authorized_for_execution
 npu_execution_authorized:true / next_task_authorized:true
-P6.3B-R2: deferred task-local frozen hybrid-KV repair / two-spec import-order preflight / 3 groups / 3 prime / 9 measured / 12 requests
+P6.3B-R3: same R2 repair in both modes / only Prefix Cache switch changes / 8 groups / 16 prime / 48 measured / 64 requests
 ```
 
 server-local Git 管理最终验收已完成。P8.1 observe-only handoff 继续延后；
-`通信模块/docs/developer-to-server.md` 当前已授权 P6.3B-R2。R2 只验证 hybrid-KV compatibility
-repair 与 positive hit，不形成 matched performance effect；完整 P6.3B A/B、P6.3C 与 P8 不自动进入。
+`通信模块/docs/developer-to-server.md` 当前已授权 P6.3B-R3。R3 回补原 P6.3B 的 repaired matched
+effect 证据；candidate green 仍须开发机复核。P6.3C 与 P8 不自动进入。
 
 mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context、P6.1 unprofiled 性能门与 P6.2 profiled evidence 门均已关闭。P6.3 和 P8 继续分离，外部开发机不运行 NPU。
 
@@ -256,10 +257,10 @@ P6.3A 已接受为 `green_p6_3a_mtp_matched_ab`：固定 `mtp_off -> mtp_on` 两
 表示 matched evidence 完整；开发机复核确认 24/24 paired batches 方向一致，但不扩写为随机化因果或统计显著。
 
 P6.3B matched 合同已完成为 `yellow_p6_3b_prefix_cache_matched_ab_partial`：64/64 请求完成，
-但 Prefix-on 24/24 measured follower hit 为 0。P6.3B-R1 保留 ready 前 red；当前 P6.3B-R2 合同已授权：deferred task-local backport
-frozen vLLM `#44082` 写入侧和 vLLM-Ascend `#11107` manager 传播，显式 unset retention；一个
-fresh lifecycle 采用 `32768/65536/131072 × 90% shared prefix` 三组，每组 1 prime + 3 measured，
-9/9 measured positive hit 是 candidate green 硬门。R1 不形成 matched performance effect。
+但 Prefix-on 24/24 measured follower hit 为 0；R1 保留 ready 前 red。R2 已接受为
+`green_p6_3b_r2_hybrid_kv_repair`，same R2 repair 在 32K/64K/128K 的 9/9 measured follower 恢复
+positive hit。当前 R3 在 off/on 两侧加载同一 repair，完整复跑原 8 组 matched A/B，只改变
+`--enable-prefix-caching`；R3 candidate green 仍不自动等于 Prefix Cache 普遍加速。
 
 ### P6.4：MindIE 对照（条件项）
 
@@ -378,9 +379,9 @@ simulator_validation_report.md
 2. P6.1R retry2 与 P6.1L-R1 已完成并验收，不原样重跑。
 3. P6.1C-R1 已完成并验收为 official green，不重跑。
 4. P6.1 unprofiled 已完成并验收为 `green_mtp_unprofiled_baseline`，不重跑。
-5. P6.2 profiled evidence 与 P6.3A matched MTP A/B 已验收；P6.3B 已形成 yellow、P6.3B-R1 保留 ready 前 red，当前 P6.3B-R2 deferred-install repair 已授权，完整 matched A/B、P6.3C 与 P8.1 不自动进入。
+5. P6.2 profiled evidence、P6.3A matched MTP A/B 与 P6.3B-R2 repair 已验收；原 P6.3B yellow、R1 red 保留，当前 P6.3B-R3 repaired matched A/B 已授权，P6.3C 与 P8.1 不自动进入。
 6. P7 工具链预研可继续，但不得外推 full-model runtime。
 7. P9 最后消费统一 trace bundle，输出硬件优先级。
 
-当前 P6.3B-R2 双授权均为 true；执行并完成开发机复核后，先判断是否恢复完整 P6.3B matched
-A/B，再按 `工作记录与进度笔记本/16_P6_阶段复盘与P6_3进入评估.md` 判断条件式 P6.3C。
+当前 P6.3B-R3 双授权均为 true；执行并完成开发机复核后，再按
+`工作记录与进度笔记本/16_P6_阶段复盘与P6_3进入评估.md` 判断条件式 P6.3C。
