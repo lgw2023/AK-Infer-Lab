@@ -1,0 +1,15 @@
+diff --git a/vllm_ascend/patch/platform/patch_kv_cache_interface.py b/vllm_ascend/patch/platform/patch_kv_cache_interface.py
+--- a/vllm_ascend/patch/platform/patch_kv_cache_interface.py
++++ b/vllm_ascend/patch/platform/patch_kv_cache_interface.py
+@@ -264,3 +264,11 @@
+ vllm.v1.kv_cache_interface.MLAAttentionSpec = AscendMLAAttentionSpec
+ vllm.v1.kv_cache_interface.SlidingWindowMLASpec = AscendSlidingWindowMLASpec
+ vllm.model_executor.layers.attention.mla_attention.MLAAttentionSpec = AscendMLAAttentionSpec
++
++# P6.3B-R2 task-local bootstrap: importing at the end of this module preserves
++# the normal Ascend spec replacement order before frozen vLLM builds its exact
++# spec-to-manager map.
++import os as _p6_3b_r2_os
++if _p6_3b_r2_os.environ.get("P6_3B_R2_ENABLE_HYBRID_KV_PATCH") == "1":
++    from p6_3b_r2_hybrid_kv_runtime_patch import install_runtime_patch
++    install_runtime_patch()

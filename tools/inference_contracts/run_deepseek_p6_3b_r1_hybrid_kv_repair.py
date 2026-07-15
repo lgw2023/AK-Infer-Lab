@@ -32,12 +32,19 @@ def build_r1_plan() -> list[dict[str, Any]]:
 
 def summarize_hybrid_diagnostics(
     diagnostics: list[dict[str, Any]],
+    *,
+    require_deferred_install: bool = False,
 ) -> dict[str, Any]:
     install_events = [
         row for row in diagnostics if row.get("event") == "runtime_patch_installed"
     ]
     snapshots = [
         row for row in diagnostics if row.get("event") == "coordinator_snapshot"
+    ]
+    deferred_events = [
+        row
+        for row in diagnostics
+        if row.get("event") == "deferred_import_order_verified"
     ]
     source_hashes_ok = any(
         evidence
@@ -106,12 +113,15 @@ def summarize_hybrid_diagnostics(
             eagle_manager_count > 0,
             lookahead_observed,
             reachable_mask_ok,
+            not require_deferred_install or bool(deferred_events),
         )
     )
     return {
         "event_count": len(diagnostics),
         "install_event_count": len(install_events),
         "coordinator_snapshot_count": len(snapshots),
+        "deferred_import_order_event_count": len(deferred_events),
+        "deferred_import_order_verified": bool(deferred_events),
         "source_hashes_ok": source_hashes_ok,
         "retention_interval_explicitly_unset": retention_unset,
         "manager_eagle_propagation_ok": propagation_ok,
@@ -131,6 +141,7 @@ def grade_r1_evidence(
     *,
     diagnostics: list[dict[str, Any]],
     cleanup: str,
+    require_deferred_install: bool = False,
 ) -> dict[str, Any]:
     primes = [row for row in request_rows if row.get("request_role") == "prime"]
     measured = [
@@ -159,7 +170,10 @@ def grade_r1_evidence(
     spec_activity_ok = all(
         row.get("spec_activity_ok") is True for row in request_rows
     )
-    diagnostic = summarize_hybrid_diagnostics(diagnostics)
+    diagnostic = summarize_hybrid_diagnostics(
+        diagnostics,
+        require_deferred_install=require_deferred_install,
+    )
     structural_complete = (
         len(request_rows) == EXPECTED_REQUESTS
         and len(primes) == EXPECTED_PRIMES
@@ -208,6 +222,9 @@ def grade_r1_evidence(
         "spec_activity_ok": spec_activity_ok,
         "structural_complete": structural_complete,
         "hybrid_diagnostic_ok": diagnostic["hybrid_diagnostic_ok"],
+        "deferred_import_order_verified": diagnostic[
+            "deferred_import_order_verified"
+        ],
         "cleanup": cleanup,
         "performance_effect_accepted": False,
         "developer_review_required": True,
@@ -290,7 +307,17 @@ def _write_group_summary(
         writer.writerows(output_rows)
 
 
-def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
+def _grade_for_lineage(grade: str, lineage: str) -> str:
+    if lineage not in {"r1", "r2"}:
+        raise ValueError(f"unsupported P6.3B repair lineage: {lineage}")
+    return grade if lineage == "r1" else grade.replace("p6_3b_r1", "p6_3b_r2")
+
+
+def finalize_artifacts(
+    artifact_dir: Path,
+    *,
+    lineage: str = "r1",
+) -> dict[str, Any]:
     mode_dir = artifact_dir / "modes" / "prefix_cache_on"
     request_rows = _read_jsonl(mode_dir / "raw_request_results.jsonl")
     diagnostic_path = mode_dir / "runtime" / "hybrid_kv_runtime_diagnostic.jsonl"
@@ -304,11 +331,16 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
     (artifact_dir / "cleanup_status.txt").write_text(
         cleanup + "\n", encoding="utf-8"
     )
-    diagnostic_summary = summarize_hybrid_diagnostics(diagnostics)
+    require_deferred_install = lineage == "r2"
+    diagnostic_summary = summarize_hybrid_diagnostics(
+        diagnostics,
+        require_deferred_install=require_deferred_install,
+    )
     grading = grade_r1_evidence(
         request_rows,
         diagnostics=diagnostics,
         cleanup=cleanup,
+        require_deferred_install=require_deferred_install,
     )
     source_gate_path = mode_dir / "runtime" / "source_gate_status.txt"
     if not request_rows and (
@@ -316,6 +348,9 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         or source_gate_path.read_text(encoding="utf-8").strip() != "pass"
     ):
         grading["server_grade"] = "blocked_p6_3b_r1_source_or_resource_gate"
+    grading["server_grade"] = _grade_for_lineage(
+        grading["server_grade"], lineage
+    )
     _write_group_summary(artifact_dir, request_rows)
     (artifact_dir / "hybrid_kv_diagnostic_summary.json").write_text(
         json.dumps(diagnostic_summary, indent=2, sort_keys=True) + "\n",
@@ -326,12 +361,14 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         encoding="utf-8",
     )
 
+    candidate_green = f"candidate_green_p6_3b_{lineage}_hybrid_kv_repair"
     failure = "none"
-    if grading["server_grade"] != "candidate_green_p6_3b_r1_hybrid_kv_repair":
+    if grading["server_grade"] != candidate_green:
         failed = next(
             (row for row in request_rows if row.get("status") != "success"),
             None,
         )
+        mode_failure_path = mode_dir / "first_failure_excerpt.txt"
         failure = (
             json.dumps(
                 {
@@ -343,14 +380,18 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
                 sort_keys=True,
             )
             if failed
-            else grading["server_grade"]
+            else (
+                mode_failure_path.read_text(encoding="utf-8")[:8192].rstrip()
+                if mode_failure_path.exists()
+                else grading["server_grade"]
+            )
         )
     (artifact_dir / "first_failure_excerpt.txt").write_text(
         failure + "\n", encoding="utf-8"
     )
     summary = "\n".join(
         [
-            "# P6.3B-R1 hybrid-KV repair result",
+            f"# P6.3B-{lineage.upper()} hybrid-KV repair result",
             "",
             f"- server_grade: `{grading['server_grade']}`",
             "- claim_boundary: `hybrid_kv_mtp_prefix_cache_compatibility_repair_and_positive_hit_only`",

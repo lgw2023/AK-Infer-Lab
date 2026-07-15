@@ -238,9 +238,9 @@
         <p>DeepSeek-V4-Flash W8A8-MTP · Atlas 800T A2 · 8×64GB。这里区分已验收的服务器结果、开发机复核与当前仅获授权的下一任务。</p>
       </div>
       <aside class="hero-status">
-        <div class="status-light">P6.0—P6.3A GREEN · P6.3B YELLOW</div>
+        <div class="status-light">P6.0—P6.3A GREEN · P6.3B YELLOW · R1 RED</div>
         <div class="status-stack">
-          <div class="status-row"><small>CURRENT TASK</small><strong>P6.3B-R1 HYBRID-KV REPAIR</strong></div>
+          <div class="status-row"><small>CURRENT TASK</small><strong>P6.3B-R2 DEFERRED INSTALL</strong></div>
           <div class="status-row"><small>EXECUTION</small><strong>AUTHORIZED · SERVER PENDING</strong></div>
           <div class="status-row"><small>CLAIM BOUNDARY</small><strong>POSITIVE HIT ONLY</strong></div>
           <div class="status-row"><small>NEXT LOCK</small><strong>NO AUTO FULL A/B / P6.3C / P8</strong></div>
@@ -287,8 +287,8 @@
 
     <section aria-labelledby="ab-title">
       <div class="section-head">
-        <div><div class="section-id">03 / YELLOW RESULT → R1 REPAIR</div><h2 id="ab-title">P6.3B Zero-Hit Boundary</h2></div>
-        <div class="section-note">原 matched A/B 已执行：64/64 HTTP/token/MTP 正常，但 Prefix-on 24/24 measured query 正增、hit=0。当前授权 R1 优先修复 frozen hybrid-KV+MTP compatibility。</div>
+        <div><div class="section-id">03 / YELLOW → R1 RED → R2 REPAIR</div><h2 id="ab-title">P6.3B Zero-Hit Boundary</h2></div>
+        <div class="section-note">原 matched A/B 为 query-positive/hit-zero yellow；R1 因 eager sitecustomize 导入顺序在 ready 前 red、0/12 request。当前授权 R2 延迟安装 frozen hybrid-KV+MTP repair。</div>
       </div>
       <div class="ab-layout">
         <div class="matrix" role="table" aria-label="P6.3B context and prefix ratio matrix">
@@ -299,8 +299,10 @@
           <div class="context">128K</div><div class="cell"><strong>65536</strong><small>aligned shared tokens</small></div><div class="cell"><strong>117888</strong><small>aligned shared tokens</small></div>
         </div>
         <div class="contract">
-          <h3>R1 硬合同 / 1 lifecycle</h3>
+          <h3>R2 硬合同 / 1 lifecycle</h3>
           <ol>
+            <li>Ascend MLA/SWA spec 替换后再安装 repair</li>
+            <li>双 spec 精确 manager 映射 preflight</li>
             <li>task-local vLLM <code>#44082</code> + Ascend <code>#11107</code></li>
             <li><code>32K / 64K / 128K × 90%</code></li>
             <li>每 group：1 prime + 3 measured follower</li>
@@ -320,7 +322,7 @@
       <div class="boundary-grid">
         <article class="boundary"><h3>Functional</h3><span class="state green">GREEN</span><p>冻结配置下 131072+64 成功、健康、queue、MTP 与 cleanup 完整。</p></article>
         <article class="boundary"><h3>User Performance</h3><span class="state green">GREEN</span><p>P6.1 unprofiled streaming reference；不由 profiled latency 回填。</p></article>
-        <article class="boundary"><h3>Mechanism</h3><span class="state amber">MTP GREEN / PREFIX YELLOW</span><p>P6.3A 已关闭；P6.3B query-positive/hit-zero，R1 只验证 compatibility repair。</p></article>
+        <article class="boundary"><h3>Mechanism</h3><span class="state amber">MTP GREEN / PREFIX YELLOW</span><p>P6.3A 已关闭；P6.3B query-positive/hit-zero，R1 ready 前 red，R2 只验证 compatibility repair。</p></article>
         <article class="boundary"><h3>Physical HBM</h3><span class="state amber">BOUNDED SIDEBAND</span><p>npu-smi 仅作 event-aligned 旁证；逻辑 KV capacity 需独立指标。</p></article>
       </div>
     </section>
@@ -328,12 +330,12 @@
     <section aria-labelledby="route-title">
       <div class="section-head">
         <div><div class="section-id">05 / DEPENDENCY ROUTE</div><h2 id="route-title">下一跳由证据决定</h2></div>
-        <div class="section-note">R1 positive hit 是恢复 P6.3B matched A/B 的前置；P8.2 K0 仍需可信 Prefix Cache baseline。</div>
+        <div class="section-note">R2 positive hit 是恢复 P6.3B matched A/B 的前置；P8.2 K0 仍需可信 Prefix Cache baseline。</div>
       </div>
       <div class="route">
         <div class="route-node"><h3>P6.3A · MTP</h3><p>开发机已接受 green。保留 fixed-order 与小样本限制。</p></div>
         <div class="arrow">→</div>
-        <div class="route-node current"><h3>P6.3B-R1 · Hybrid-KV</h3><p>当前唯一服务器任务。task-local repair + bounded positive-hit gate。</p></div>
+        <div class="route-node current"><h3>P6.3B-R2 · Hybrid-KV</h3><p>当前唯一服务器任务。deferred install + bounded positive-hit gate。</p></div>
         <div class="arrow">→</div>
         <div class="route-node"><h3>P8.2 · K0</h3><p>消费 Prefix Cache baseline；KV offload/UCM 与 real move 仍需独立合同。</p></div>
       </div>
@@ -341,7 +343,7 @@
 
     <footer>
       <span class="stamp">SNAPSHOT / 2026-07-15 / DEV-CONTROL MACHINE</span>
-      <strong>来源边界：</strong>P6.1C-R1、P6.1、P6.2、P6.3A green 与 P6.3B yellow 小结果包/开发机复核；服务器 raw logs/metrics/profiler artifacts 保留在服务器。本页不代表 P6.3B-R1 已执行，不代表 Prefix Cache performance effect、P8 real move、bottleneck attribution 或 P9 hardware priority 已成立。
+      <strong>来源边界：</strong>P6.1C-R1、P6.1、P6.2、P6.3A green、P6.3B yellow 与 P6.3B-R1 ready 前 red 小结果包/开发机复核；服务器 raw logs/metrics/profiler artifacts 保留在服务器。本页不代表 P6.3B-R2 已执行，不代表 Prefix Cache performance effect、P8 real move、bottleneck attribution 或 P9 hardware priority 已成立。
     </footer>
   </main>
 </body>

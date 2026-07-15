@@ -1,15 +1,16 @@
 schema_version: 1
-workload_id: p6_3b_r1_deepseek_v4_flash_mtp_prefix_cache_hybrid_kv_repair
+workload_id: p6_3b_r2_deepseek_v4_flash_mtp_prefix_cache_hybrid_kv_deferred_install_repair
 date: "2026-07-15"
-purpose: repair_and_validate_deepseek_v4_hybrid_kv_mtp_prefix_cache_hits
-task_id: p6_3b_r1_deepseek_v4_flash_w8a8_mtp_prefix_cache_hybrid_kv_repair_2026_0715
+purpose: validate_deferred_hybrid_kv_patch_install_and_positive_prefix_hits
+task_id: p6_3b_r2_deepseek_v4_flash_w8a8_mtp_prefix_cache_hybrid_kv_deferred_install_repair_2026_0715
 
 stage_contract:
-  stage: P6.3B-R1
-  mode: hybrid_kv_mtp_prefix_cache_compatibility_repair_validation
+  stage: P6.3B-R2
+  mode: deferred_install_hybrid_kv_mtp_prefix_cache_repair_validation
   claim_boundary: hybrid_kv_mtp_prefix_cache_compatibility_repair_and_positive_hit_only
   prior_p6_3b_grade: yellow_p6_3b_prefix_cache_matched_ab_partial
-  prior_p6_3b_evidence_preserved: true
+  prior_r1_grade: red_p6_3b_r1_hybrid_kv_repair_no_success
+  prior_p6_3b_and_r1_evidence_preserved: true
   performance_effect_claim_allowed: false
   profiler_authorized: false
   hbm_sampler_authorized: false
@@ -22,6 +23,13 @@ accepted_prerequisites:
   original_http_and_token_success: 64_of_64
   original_prefix_on_measured_positive_hits: 0_of_24
   original_prefix_on_query_counter_positive: true
+  r1_workload: p6_3b_r1_hybrid_kv_repair.yaml
+  r1_server_grade: red_p6_3b_r1_hybrid_kv_repair_no_success
+  r1_source_hash_resource_patch_and_self_test_gates: pass
+  r1_server_ready: false
+  r1_requests_dispatched: 0
+  r1_cleanup: clean
+  r1_failure_does_not_test_prefix_hit_mechanism: true
   official_context_grade: green_mtp_official_context_ladder
   unprofiled_grade: green_mtp_unprofiled_baseline
   profiled_grade: green_mtp_profiled_evidence
@@ -70,28 +78,48 @@ installed_source_gate:
     relative_path: vllm_ascend/patch/platform/patch_kv_cache_coordinator.py
     bytes: 23103
     sha256: dc65ed2adbb05ea52d9e891f648b62a5391eb41b2a6b262b71d40efe31effe20
+  vllm_ascend_kv_cache_interface:
+    relative_path: vllm_ascend/patch/platform/patch_kv_cache_interface.py
+    bytes: 11819
+    sha256: a4969e2c1b2ebde9a3c5a4d02df5175879fb56ea43322869871a3868ec1981b2
   fail_closed_before_npu_on_any_mismatch: true
 
 hybrid_kv_repair:
   task_local_runtime_patch: true
   base_environment_mutation: false
   site_packages_mutation: false
-  upstream_semantics:
-    - vllm_pull_44082_eagle_swa_write_path
-    - vllm_ascend_pull_11107_eagle_manager_propagation
-  vllm_runtime_patch_path: tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py
-  vllm_ascend_overlay_patch_path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch
-  runtime_patch_sha256: 6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
-  vllm_ascend_overlay_patch_sha256: cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
+  runtime_upgrade: false
+  eager_sitecustomize_allowed: false
+  install_trigger: after_ascend_mla_and_sliding_window_mla_spec_replacement
+  manager_resolution_preflight:
+    - AscendMLAAttentionSpec
+    - AscendSlidingWindowMLASpec
+  manager_resolution_requires_exact_spec_manager_map_keys: true
+  runtime_implementation_path: tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py
+  runtime_implementation_sha256: 6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
+  deferred_loader_path: tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py
+  deferred_loader_sha256: 9d720389f520918642ddecf288d0ac3922f61873251760129ba34ba203d02631
+  deferred_bootstrap_patch_path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch
+  deferred_bootstrap_patch_sha256: ad845854461605ae28ae7000f24ada0cb07c5c17f3b0c23ee1485ec537a7a85b
+  patched_vllm_ascend_interface_sha256: 524c933ef17806ecba0634804bc562de1f69dc095fe1346e2edd0103845bfa75
+  vllm_ascend_manager_overlay_patch_path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch
+  vllm_ascend_manager_overlay_patch_sha256: cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
   patched_vllm_ascend_coordinator_sha256: a1ed9c82e308608cd20965a49baa29a3e95d723248fff699fd83dfb3caf10250
   source_hash_validation_before_patch_install: true
   overlay_patch_dry_run_before_apply: true
-  post_patch_self_test_before_server_start: true
+  real_import_order_self_test_before_server_start: true
+  self_test_failure_stops_before_npu: true
   manager_use_eagle_propagated_to_same_spec_siblings: true
   swa_eagle_lookahead_write_block_cached: true
   reachable_mask_matches_eagle_read_boundary: true
   vllm_ascend_pull_11383_backport_included: false
   pull_11383_excluded_reason: frozen_v0221_mask_receives_lcm_alignment_directly_and_retention_is_explicitly_unset
+
+runner_artifacts:
+  runner_path: tools/inference_contracts/run_deepseek_p6_3b_r2_hybrid_kv_repair.py
+  runner_sha256: 9d289a6788e490fb6f376202faebe71e05c20d5c5c3fa1e80e8f5dcb2ba011be
+  mode_runner_path: tools/inference_contracts/run_deepseek_p6_3b_r2_mode.sh
+  mode_runner_sha256: ea61adf3e3b8a0577d53dadaf33498caca65bea43cb3abda8ac2b66d865f57f0
 
 source_payload:
   server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
@@ -143,6 +171,7 @@ request_protocol:
 
 diagnostic_evidence:
   runtime_jsonl_required: true
+  deferred_import_order_event_required: true
   installed_source_hashes_required: true
   effective_retention_interval_required: true
   kv_group_spec_and_manager_type_required: true
@@ -150,6 +179,8 @@ diagnostic_evidence:
   lcm_and_effective_block_sizes_required: true
   manager_use_eagle_state_required: true
   aligned_and_lookahead_cache_target_required: true
+  actual_startup_exception_excerpt_required_on_ready_failure: true
+  startup_exception_excerpt_max_bytes: 8192
   whole_runtime_trace_remains_server_local: true
   bounded_summary_contains_no_generated_content_or_token_ids: true
 
@@ -164,28 +195,29 @@ metrics_evidence:
   observed_hit_ratio_definition: prefix_hits_delta/prefix_queries_delta
 
 acceptance:
-  blocked_preflight_grade: blocked_p6_3b_r1_source_or_resource_gate
-  no_request_success_grade: red_p6_3b_r1_hybrid_kv_repair_no_success
-  zero_hit_grade: red_p6_3b_r1_hybrid_kv_zero_hit_persists
-  partial_grade: yellow_p6_3b_r1_hybrid_kv_repair_partial
-  evidence_incomplete_grade: red_p6_3b_r1_hybrid_kv_evidence_incomplete
+  blocked_preflight_grade: blocked_p6_3b_r2_source_or_resource_gate
+  no_request_success_grade: red_p6_3b_r2_hybrid_kv_repair_no_success
+  zero_hit_grade: red_p6_3b_r2_hybrid_kv_zero_hit_persists
+  partial_grade: yellow_p6_3b_r2_hybrid_kv_repair_partial
+  evidence_incomplete_grade: red_p6_3b_r2_hybrid_kv_evidence_incomplete
   cleanup_failure_grade: red_cleanup_incomplete
-  server_candidate_green_grade: candidate_green_p6_3b_r1_hybrid_kv_repair
-  developer_accepted_green_grade: green_p6_3b_r1_hybrid_kv_repair
+  server_candidate_green_grade: candidate_green_p6_3b_r2_hybrid_kv_repair
+  developer_accepted_green_grade: green_p6_3b_r2_hybrid_kv_repair
   green_requires_all_3_prime_requests: true
   green_requires_all_9_measured_requests: true
   green_requires_positive_hit_measured_count: 9
   green_requires_zero_retries: true
+  green_requires_deferred_import_order_self_test: true
   green_requires_mtp_health_queue_counter_diagnostic_and_cleanup: true
   performance_or_generalized_prefix_cache_claim_allowed: false
-  original_p6_3b_yellow_and_existing_p6_greens_remain_on_failure: true
+  original_p6_3b_yellow_r1_red_and_existing_p6_greens_remain_on_failure: true
 
 stop_policy:
   retries_allowed: false
   server_restart_allowed: false
   base_environment_or_site_packages_mutation_allowed: false
   version_upgrade_allowed: false
-  untracked_second_patch_allowed: false
+  untracked_patch_or_hotfix_allowed: false
   request_group_or_repeat_reduction_allowed: false
   mtp_chunked_prefill_graph_or_max_num_seqs_change_allowed: false
   retention_interval_change_allowed: false
@@ -215,30 +247,11 @@ result_package_policy:
     - cleanup_status.txt
     - first_failure_excerpt.txt
 
-execution_result:
-  task_status: red_p6_3b_r1_hybrid_kv_repair_no_success
-  server_head: e4a7944b57bfee26116f3a72e9228ee8a0c2b214
-  source_hash_resource_patch_and_self_test_gates: pass
-  server_lifecycle_count: 1
-  server_ready: false
-  requests_dispatched: 0
-  prime_success_count: 0
-  measured_success_count: 0
-  first_failure: KeyError_AscendMLAAttentionSpec_exact_spec_manager_map_lookup
-  root_cause: eager_sitecustomize_import_preceded_ascend_spec_replacement
-  cleanup: clean
-  bounded_result_package:
-    file_count: 8
-    total_bytes: 9270
-    sorted_manifest_sha256: 5c3aab8053dd800d4af6cae5da55f69850ccb9474b5279133f07bda04cf41218
-  existing_p6_references_remain_true: true
-  superseded_by: p6_3b_r2_hybrid_kv_deferred_install_repair.yaml
-
 execution_state:
-  status: completed_red_no_request_success
-  server_handoff: historical
-  npu_execution_authorized: false
-  next_task_authorized: false
+  status: authorized_for_execution
+  server_handoff: current
+  npu_execution_authorized: true
+  next_task_authorized: true
 
 authorization_policy:
   code_sync_and_task_local_runtime_patch_authorized: true

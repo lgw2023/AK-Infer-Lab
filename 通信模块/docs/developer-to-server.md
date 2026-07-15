@@ -1,11 +1,11 @@
 # Developer to Server
 
-## 当前唯一服务器动作：立即执行 P6.3B-R1 hybrid-KV 修复验证
+## 当前唯一服务器动作：立即执行 P6.3B-R2 deferred-install 修复验证
 
 ~~~text
-task_id: p6_3b_r1_deepseek_v4_flash_w8a8_mtp_prefix_cache_hybrid_kv_repair_2026_0715
+task_id: p6_3b_r2_deepseek_v4_flash_w8a8_mtp_prefix_cache_hybrid_kv_deferred_install_repair_2026_0715
 execution_mode: authorized_for_execution
-workload: benchmarks/deepseek_v4_flash/workloads/p6_3b_r1_hybrid_kv_repair.yaml
+workload: benchmarks/deepseek_v4_flash/workloads/p6_3b_r2_hybrid_kv_deferred_install_repair.yaml
 npu_execution_authorized: true
 next_task_authorized: true
 standing_npu_and_vllm_consumption_authorization: true
@@ -35,16 +35,24 @@ git merge --ff-only origin/main
 ## 1. 问题、修复边界与成功条件
 
 原 P6.3B 已保留为 `yellow_p6_3b_prefix_cache_matched_ab_partial`：64/64 HTTP/token/MTP
-正常，但 Prefix-on 24/24 measured follower 的 query 正增、hit 全为 0。R1 不重写这份负证据，
-只验证 frozen vLLM/vLLM-Ascend 的 hybrid-KV + MTP compatibility repair 是否恢复真实 local APC hit。
+正常，但 Prefix-on 24/24 measured follower 的 query 正增、hit 全为 0。R1 的 source/hash/patch/self-test
+门通过，但 eager `sitecustomize.py` 在 Ascend 类型替换前导入 frozen vLLM manager，随后
+`AscendMLAAttentionSpec` 在精确 `spec_manager_map[type(...)]` 查表处 `KeyError`；server 未 ready、
+0/12 request、cleanup clean。R2 不把该启动失败写成 Prefix Cache 机制失败，只修复 task-local
+安装顺序并重新执行原有有界 positive-hit 门。
 
 task-local repair 同时包含：
 
-1. frozen vLLM 写入侧：补齐 vLLM PR #44082 的 manager `use_eagle`、SWA reachable mask
+1. 禁止把 runtime loader 命名或复制为 `sitecustomize.py`；先由 vLLM-Ascend 完成
+   `AscendMLAAttentionSpec` 与 `AscendSlidingWindowMLASpec` 替换，再从 patched interface 模块末尾
+   显式安装 frozen repair；
+2. NPU 前 real-import-order self-test 必须证明上述两个 Ascend spec 都是 frozen vLLM
+   `spec_manager_map` 的精确键，且 manager 模块 alias 与 Ascend 类型一致；
+3. frozen vLLM 写入侧：补齐 vLLM PR #44082 的 manager `use_eagle`、SWA reachable mask
    与 alignment boundary 后一个 lookahead block 的 cache target 语义；
-2. frozen vLLM-Ascend coordinator：补齐 PR #11107 的同一 attention group/same-spec sibling
+4. frozen vLLM-Ascend coordinator：补齐 PR #11107 的同一 attention group/same-spec sibling
    `use_eagle` 传播；
-3. 显式执行 `unset VLLM_PREFIX_CACHE_RETENTION_INTERVAL`，本轮不混入 PR #11383 的 retention
+5. 显式执行 `unset VLLM_PREFIX_CACHE_RETENTION_INTERVAL`，本轮不混入 PR #11383 的 retention
    分支，不继承 shell 中未记录的 retention 值。
 
 installed source 必须逐字节匹配：
@@ -56,8 +64,16 @@ vllm/v1/core/kv_cache_coordinator.py
   25255 bytes / a5f0683483508fcfd0b2e3477940825bae5953eec715a4f704becec805484b89
 vllm_ascend/patch/platform/patch_kv_cache_coordinator.py
   23103 bytes / dc65ed2adbb05ea52d9e891f648b62a5391eb41b2a6b262b71d40efe31effe20
-runtime patch
+vllm_ascend/patch/platform/patch_kv_cache_interface.py
+  11819 bytes / a4969e2c1b2ebde9a3c5a4d02df5175879fb56ea43322869871a3868ec1981b2
+frozen runtime implementation
   6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
+deferred runtime loader
+  9d720389f520918642ddecf288d0ac3922f61873251760129ba34ba203d02631
+deferred bootstrap patch
+  ad845854461605ae28ae7000f24ada0cb07c5c17f3b0c23ee1485ec537a7a85b
+patched Ascend KV interface
+  524c933ef17806ecba0634804bc562de1f69dc095fe1346e2edd0103845bfa75
 Ascend overlay patch
   cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
 patched Ascend coordinator
@@ -67,7 +83,7 @@ existing MTP proposer patch
 ~~~
 
 任一 source/hash/patch dry-run/self-test 失败都必须在启动 vLLM 前停止并分级
-`blocked_p6_3b_r1_source_or_resource_gate`，不得就地改 patch、改 site-packages 或升级版本。
+`blocked_p6_3b_r2_source_or_resource_gate`，不得就地改 patch、改 site-packages 或升级版本。
 
 NPU 只运行一个 fresh lifecycle，无 warmup、无 retry。请求固定为
 `32768 / 65536 / 131072 × 90% shared prefix`，每组 1 prime + 3 measured follower，
@@ -92,13 +108,13 @@ test "${NPU_EXECUTION_AUTHORIZED}" = true
 test "${NEXT_TASK_AUTHORIZED}" = true
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-TASK_ID=p6_3b_r1_deepseek_v4_flash_w8a8_mtp_prefix_cache_hybrid_kv_repair_2026_0715
+TASK_ID=p6_3b_r2_deepseek_v4_flash_w8a8_mtp_prefix_cache_hybrid_kv_deferred_install_repair_2026_0715
 RESULT_DIR="${REPO_ROOT}/server_local/${TASK_ID}"
 ENV_PREFIX="${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1"
 PYTHON_BIN="${ENV_PREFIX}/bin/python"
-WORKLOAD_PATH="${REPO_ROOT}/benchmarks/deepseek_v4_flash/workloads/p6_3b_r1_hybrid_kv_repair.yaml"
-RUNNER_PATH="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r1_hybrid_kv_repair.py"
-MODE_RUNNER_PATH="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r1_mode.sh"
+WORKLOAD_PATH="${REPO_ROOT}/benchmarks/deepseek_v4_flash/workloads/p6_3b_r2_hybrid_kv_deferred_install_repair.yaml"
+RUNNER_PATH="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r2_hybrid_kv_repair.py"
+MODE_RUNNER_PATH="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r2_mode.sh"
 PAYLOAD_PATH="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json"
 
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
@@ -186,11 +202,13 @@ repo = Path(sys.argv[2])
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 files = {
-    "workload": repo / "benchmarks/deepseek_v4_flash/workloads/p6_3b_r1_hybrid_kv_repair.yaml",
-    "runtime_patch": repo / "tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py",
+    "workload": repo / "benchmarks/deepseek_v4_flash/workloads/p6_3b_r2_hybrid_kv_deferred_install_repair.yaml",
+    "runtime_impl": repo / "tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py",
+    "deferred_loader": repo / "tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py",
+    "deferred_patch": repo / "benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch",
     "ascend_patch": repo / "benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch",
-    "runner": repo / "tools/inference_contracts/run_deepseek_p6_3b_r1_hybrid_kv_repair.py",
-    "mode_runner": repo / "tools/inference_contracts/run_deepseek_p6_3b_r1_mode.sh",
+    "runner": repo / "tools/inference_contracts/run_deepseek_p6_3b_r2_hybrid_kv_repair.py",
+    "mode_runner": repo / "tools/inference_contracts/run_deepseek_p6_3b_r2_mode.sh",
 }
 evidence = {
     "head": subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip(),
@@ -206,23 +224,24 @@ PY
 exit "${finalize_exit}"
 ~~~
 
-`run_deepseek_p6_3b_r1_mode.sh` 内部会设置
-`P6_3B_R1_ENABLE_HYBRID_KV_PATCH=1`，先做 source hash、patch dry-run/apply 和无 NPU
-self-test，再启动唯一 vLLM lifecycle。禁止直接绕过该 runner 手写一套 server command。
+`run_deepseek_p6_3b_r2_mode.sh` 内部会设置
+`P6_3B_R2_ENABLE_HYBRID_KV_PATCH=1`，先做 source hash、三个 patch 的 dry-run/apply，随后在
+Ascend interface 类型替换后执行 real-import-order 无 NPU self-test；只有两个 Ascend spec 精确 manager
+映射都通过才启动唯一 vLLM lifecycle。禁止直接绕过该 runner 手写一套 server command。
 
 ## 3. 分级、停止和允许的 server-local 适配
 
 - source/hash/resource/patch/self-test 在 server 启动前失败：
-  `blocked_p6_3b_r1_source_or_resource_gate`；停止，不自行修补。
-- server 启动但没有成功请求：`red_p6_3b_r1_hybrid_kv_repair_no_success`。
-- 12 行齐全但 9 measured hit 仍全部为 0：`red_p6_3b_r1_hybrid_kv_zero_hit_persists`。
+  `blocked_p6_3b_r2_source_or_resource_gate`；停止，不自行修补。
+- server 启动但没有成功请求：`red_p6_3b_r2_hybrid_kv_repair_no_success`。
+- 12 行齐全但 9 measured hit 仍全部为 0：`red_p6_3b_r2_hybrid_kv_zero_hit_persists`。
 - 至少一个 measured positive hit，但 9/9、请求结构或证据不全：
-  `yellow_p6_3b_r1_hybrid_kv_repair_partial`。
+  `yellow_p6_3b_r2_hybrid_kv_repair_partial`。
 - 请求/hit 完整但 runtime diagnostic、MTP、health/queue/counter 不全：
-  `red_p6_3b_r1_hybrid_kv_evidence_incomplete`。
+  `red_p6_3b_r2_hybrid_kv_evidence_incomplete`。
 - 3/3 prime、9/9 measured 全部首次成功且每个 measured hit 正增，source/patch/hybrid
   diagnostic、MTP、health/queue/counter、cleanup 全过：
-  `candidate_green_p6_3b_r1_hybrid_kv_repair`。
+  `candidate_green_p6_3b_r2_hybrid_kv_repair`。
 
 允许直接处理 server-local mkdir/path、shell quoting、`set -u` source 兼容、真实输出 parser、
 等价 runner error reporting，以及前述已知 NPU placeholder 的停/恢复；必须逐项报告。不得修改 tracked
@@ -230,7 +249,7 @@ self-test，再启动唯一 vLLM lifecycle。禁止直接绕过该 runner 手写
 参数、retention、指标定义。禁止 retry、restart、第二 patch、版本升级、eager fallback、关闭 MTP/chunked
 prefill/graph、降 context 或自动扩展完整 matched A/B。
 
-失败不撤销 P6.1C-R1、P6.1、P6.2、P6.3A green，也不撤销原 P6.3B yellow 负证据。
+失败不撤销 P6.1C-R1、P6.1、P6.2、P6.3A green，也不撤销原 P6.3B yellow 与 R1 red 证据。
 
 ## 4. 回报与传输门
 
@@ -240,7 +259,8 @@ raw server log、metrics、hybrid diagnostic JSONL、request bodies、prompt/tok
 1. HEAD/origin、tracked 状态、资源/source/hash/patch/self-test 门；
 2. lifecycle PID/ready/exit/cleanup，任何 server-local 适配；
 3. 三组逐组 prime/measured、query/hit/observed ratio、MTP accepted；
-4. diagnostic 中实际 KV group/spec/manager、LCM/effective block、eagle group、manager flag、
+4. deferred-install self-test 的两个 Ascend spec 精确映射，以及 diagnostic 中实际 KV
+   group/spec/manager、LCM/effective block、eagle group、manager flag、
    lookahead cache target 与 retention unset 证据；
 5. server grade、claim boundary、raw result root；
 6. 精确 `result_summary.md` 路径和以下完整候选清单的逐文件 bytes/SHA-256/sensitivity/总 bytes：
