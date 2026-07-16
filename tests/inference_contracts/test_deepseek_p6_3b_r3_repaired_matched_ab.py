@@ -287,34 +287,35 @@ def test_r2_is_closed_green_and_superseded_by_the_authorized_r3():
     }
 
 
-def test_handoff_supersedes_r3_with_explicit_control_r4():
+def test_handoff_supersedes_blocked_r4_with_nfs_portable_r4_r1():
     handoff = (
         REPO_ROOT / "通信模块/docs/developer-to-server.md"
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "立即执行 P6.3B-R4 explicit Prefix Cache control matched A/B" in handoff
+    assert "立即执行 P6.3B-R4-R1" in handoff
     assert (
-        "task_id: p6_3b_r4_deepseek_v4_flash_w8a8_mtp_explicit_"
+        "task_id: p6_3b_r4_r1_deepseek_v4_flash_w8a8_mtp_explicit_"
         "prefix_cache_matched_ab_2026_0716"
     ) in handoff
     assert "execution_mode: authorized_for_execution" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "NPU_EXECUTION_AUTHORIZED=true" in handoff
-    assert "p6_3b_r4_explicit_prefix_cache_matched_ab.yaml" in handoff
-    assert "run_deepseek_p6_3b_r4_explicit_matched_ab.py" in handoff
-    assert "run_deepseek_p6_3b_r4_mode.sh" in handoff
+    assert "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml" in handoff
+    assert "run_deepseek_p6_3b_r4_r1_explicit_matched_ab.py" in handoff
+    assert "run_deepseek_p6_3b_r4_r1_mode.sh" in handoff
+    assert "cp -a --no-preserve=ownership" in handoff
     assert 'for mode in prefix_cache_off prefix_cache_on; do' in handoff
     assert "same R2 repair" in handoff
     assert "16 prime + 48 measured = 64" in handoff
-    assert "candidate_green_p6_3b_r4_explicit_prefix_cache_matched_ab" in handoff
+    assert "candidate_green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "不得自动进入 P6.3C" in handoff
     assert "不得调用 upload-api" in handoff
     assert "不得发送 email" in handoff
 
 
-def test_current_truth_surfaces_preserve_r3_yellow_and_authorize_r4_before_p6_3c():
+def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_authorize_r4_r1():
     readiness = yaml.safe_load(
         (
             REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
@@ -330,17 +331,21 @@ def test_current_truth_surfaces_preserve_r3_yellow_and_authorize_r4_before_p6_3c
         "p6_3b_r3_repaired_prefix_cache_matched_ab.yaml"
     )
     assert artifacts["next_workload"] == (
-        "workloads/p6_3b_r4_explicit_prefix_cache_matched_ab.yaml"
+        "workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
     )
     assert acceptance["p6_3b_r2_execution_authorized"] is False
     assert acceptance["p6_3b_r3_execution_authorized"] is False
-    assert acceptance["p6_3b_r4_execution_authorized"] is True
+    assert acceptance["p6_3b_r4_grade"] == (
+        "blocked_p6_3b_r4_source_or_resource_gate"
+    )
+    assert acceptance["p6_3b_r4_execution_authorized"] is False
+    assert acceptance["p6_3b_r4_r1_execution_authorized"] is True
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p6_3b_r4_explicit_prefix_control_matched_ab_authorized"
+        "p6_3b_r4_r1_nfs_portable_explicit_prefix_control_matched_ab_authorized"
     )
 
     surfaces = [

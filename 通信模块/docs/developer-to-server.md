@@ -1,11 +1,11 @@
 # Developer to Server
 
-## 当前唯一服务器动作：立即执行 P6.3B-R4 explicit Prefix Cache control matched A/B
+## 当前唯一服务器动作：立即执行 P6.3B-R4-R1 NFS-portable explicit Prefix Cache matched A/B
 
 ~~~text
-task_id: p6_3b_r4_deepseek_v4_flash_w8a8_mtp_explicit_prefix_cache_matched_ab_2026_0716
+task_id: p6_3b_r4_r1_deepseek_v4_flash_w8a8_mtp_explicit_prefix_cache_matched_ab_2026_0716
 execution_mode: authorized_for_execution
-workload: benchmarks/deepseek_v4_flash/workloads/p6_3b_r4_explicit_prefix_cache_matched_ab.yaml
+workload: benchmarks/deepseek_v4_flash/workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml
 npu_execution_authorized: true
 next_task_authorized: true
 standing_npu_and_vllm_consumption_authorization: true
@@ -29,7 +29,7 @@ git merge --ff-only origin/main
 记录 PID/命令/释放结果，并在 cleanup 后恢复；不得终止其他用户、真实服务或来源不明的进程。存在真实
 资源冲突时停止并报告。
 
-## 1. 为什么执行 R4
+## 1. 为什么执行 R4-R1
 
 原 P6.3B 保留 `yellow_p6_3b_prefix_cache_matched_ab_partial`。R2 已由开发机接受为
 `green_p6_3b_r2_hybrid_kv_repair`，证明 deferred-install repair 能在
@@ -44,7 +44,21 @@ effective comparison: repaired Prefix Cache on vs on
 ~~~
 
 R3 两侧 24/24 measured pair 的 hit delta 完全相同，两侧均为 9/24 positive、总 hit=540672；不得接受
-任何 on-minus-off mechanism/performance effect。R4 只修复这个控制变量：
+任何 on-minus-off mechanism/performance effect。R4 随后建立了正确的显式 control，但新服务器把仓库挂载在
+NFS4 `sec=sys` root-squash 文件系统上，原 mode runner 的 `cp -a` 尝试保留 ownership 时稳定返回 EPERM，
+两 mode 都在 source gate、vLLM 启动和任何请求之前停止。该次 `mode invocation=2`，但
+`actual vLLM server lifecycle=0`、request=`0/64`、cleanup=`clean`，因此只接受
+`blocked_p6_3b_r4_source_or_resource_gate`，不形成新的 Prefix Cache/hybrid-KV 机制结论。
+
+R4-R1 只修复这一文件系统可移植性问题：tracked wrapper 对原 R4 mode runner 唯一的 archive copy 调用执行：
+
+~~~text
+cp -a --no-preserve=ownership BASE_PLUGIN_ROOT OVERLAY_ROOT/vllm_ascend
+~~~
+
+它继续保留递归、权限、时间戳和 symlink 等 archive 语义，只不请求 root-squash 禁止的 chown；所有
+post-copy content SHA-256、R2 repair、runtime 和请求语义门保持不变。原 R4 runner 字节不改，blocked lineage
+保留。R4-R1 同时继续使用 R4 已定义的正确控制变量：
 
 ~~~text
 prefix_cache_off: --no-enable-prefix-caching
@@ -73,7 +87,7 @@ ctx32768_prefix90 / ctx65536_prefix90 / ctx131072_prefix90
 query/hit 和 16K floor；不得再用“所有 50% shared prefix 小于 16K”解释长 context 的零命中。off 侧
 所有 request 的 hit delta 总和必须严格为 0。
 
-R4 candidate green 只表示 repaired explicit-control matched evidence 完整。TTFT/TPOT/E2EL/throughput 仅作
+R4-R1 candidate green 只表示 repaired explicit-control matched evidence 完整。TTFT/TPOT/E2EL/throughput 仅作
 固定顺序描述统计；服务器不得自动接受 mechanism effect、普遍加速、统计显著性或优化收益。完成后停止，
 不得自动进入 P6.3C、P7、P8 或 P9。
 
@@ -90,13 +104,13 @@ test "${NPU_EXECUTION_AUTHORIZED}" = true
 test "${NEXT_TASK_AUTHORIZED}" = true
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-TASK_ID=p6_3b_r4_deepseek_v4_flash_w8a8_mtp_explicit_prefix_cache_matched_ab_2026_0716
+TASK_ID=p6_3b_r4_r1_deepseek_v4_flash_w8a8_mtp_explicit_prefix_cache_matched_ab_2026_0716
 RESULT_DIR="${REPO_ROOT}/server_local/${TASK_ID}"
 ENV_PREFIX="${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1"
 PYTHON_BIN="${ENV_PREFIX}/bin/python"
-WORKLOAD_PATH="${REPO_ROOT}/benchmarks/deepseek_v4_flash/workloads/p6_3b_r4_explicit_prefix_cache_matched_ab.yaml"
-RUNNER_PATH="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r4_explicit_matched_ab.py"
-MODE_RUNNER_PATH="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r4_mode.sh"
+WORKLOAD_PATH="${REPO_ROOT}/benchmarks/deepseek_v4_flash/workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
+RUNNER_PATH="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r4_r1_explicit_matched_ab.py"
+MODE_RUNNER_PATH="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r4_r1_mode.sh"
 PAYLOAD_PATH="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json"
 
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
@@ -108,6 +122,14 @@ test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 grep -F "task_id: ${TASK_ID}" "${REPO_ROOT}/通信模块/docs/developer-to-server.md"
 grep -F "npu_execution_authorized: true" "${WORKLOAD_PATH}"
 grep -F "next_task_authorized: true" "${WORKLOAD_PATH}"
+test "$(stat -c '%s' "${RUNNER_PATH}")" = 7023
+test "$(sha256sum "${RUNNER_PATH}" | awk '{print $1}')" = c83d673a3b0b15de900bc6c5bbe6a076f94ee58efd30b31fd7ef97335ab726a7
+test "$(stat -c '%s' "${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r4_explicit_matched_ab.py")" = 26209
+test "$(sha256sum "${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r4_explicit_matched_ab.py" | awk '{print $1}')" = 5eca15743072af0fc37e07b8ec7aa128488901f1c7d3003ac60056d15d37d77c
+test "$(stat -c '%s' "${MODE_RUNNER_PATH}")" = 750
+test "$(sha256sum "${MODE_RUNNER_PATH}" | awk '{print $1}')" = 5ebc4e0a8ba8163b56ab26cb72abd93206da64741a303cec6ef9d601cc257b5d
+test "$(stat -c '%s' "${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r4_mode.sh")" = 13955
+test "$(sha256sum "${REPO_ROOT}/tools/inference_contracts/run_deepseek_p6_3b_r4_mode.sh" | awk '{print $1}')" = 1092ae2978c37a103862d7ef76059ef0d71b68c5caa74c6cb3db1e1a45612a57
 test ! -e "${RESULT_DIR}"
 
 test "$(stat -c '%s' "${PAYLOAD_PATH}")" = 19487
@@ -205,8 +227,9 @@ printf 'delivery_total_bytes=%s\n' "$(cat "${RESULT_DIR}/delivery_candidates_tot
 exit "${finalize_exit}"
 ~~~
 
-`BASE_VLLM_ROOT`/`BASE_PLUGIN_ROOT` 只适配 editable install 的真实 import root；R4 mode runner 会对四个
-installed source、R2 repair、三份 patch 和最终 overlay hashes 做精确 gate。R4 wrapper 冻结两个 command
+`BASE_VLLM_ROOT`/`BASE_PLUGIN_ROOT` 只适配 editable install 的真实 import root；R4-R1 mode wrapper 只负责
+ownership-safe archive copy，随后原 R4 mode runner 会对四个 installed source、R2 repair、三份 patch 和最终
+overlay hashes 做精确 gate。R4-R1 继续冻结两个 command
 SHA-256：off=`def3dd8b…`、on=`370f8d25…`。
 
 每个 server PID 启动后、任何请求前，runner 会读取冻结 server command 与 live
@@ -220,20 +243,20 @@ SHA-256：off=`def3dd8b…`、on=`370f8d25…`。
   改 Prefix Cache flag、关闭 MTP/chunked prefill/graph、改变 `max_num_seqs`、eager fallback、版本升级、
   profiler/HBM sampler 或自动修复。
 - off mode 失败但 cleanup clean 时继续独立 on mode，以保留诊断；cleanup 不 clean 立即停止。
-- source/hash/resource/config/LCP 门未过且无请求：`blocked_p6_3b_r4_source_or_resource_gate`。
-- 无 matched measured success：`red_p6_3b_r4_explicit_prefix_cache_matched_ab_no_success`。
-- 结构不完整：`yellow_p6_3b_r4_explicit_prefix_cache_matched_ab_partial`。
+- source/hash/resource/config/LCP 门未过且无请求：`blocked_p6_3b_r4_r1_source_or_resource_gate`。
+- 无 matched measured success：`red_p6_3b_r4_r1_explicit_prefix_cache_matched_ab_no_success`。
+- 结构不完整：`yellow_p6_3b_r4_r1_explicit_prefix_cache_matched_ab_partial`。
 - 64/64 请求完成但显式 control、off zero-hit、primary 9/9、LCM floor、same repair、diagnostic、MTP/
-  health/queue/counter 或 cleanup 任一不完整：`red_p6_3b_r4_explicit_prefix_cache_evidence_incomplete`。
-- 全门通过：`candidate_green_p6_3b_r4_explicit_prefix_cache_matched_ab`；只有开发机复核后才能接受
-  `green_p6_3b_r4_explicit_prefix_cache_matched_ab` 与 mechanism effect。
+  health/queue/counter 或 cleanup 任一不完整：`red_p6_3b_r4_r1_explicit_prefix_cache_evidence_incomplete`。
+- 全门通过：`candidate_green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`；只有开发机复核后才能接受
+  `green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab` 与 mechanism effect。
 
 无需新往返即可做且必须逐项报告的 server-local 适配仅限：目录创建、shell quoting/line-ending、`set -u`
 source 兼容、精确 source hash 相同前提下的 editable import-root 选择、实际命令输出解析、等价 runner 错误处理、
 已知 placeholder 的停止与恢复。不得修改 tracked 文件、site-packages、runtime/model/body/order/repeat/R2 repair、
 两个显式 flag 或指标定义。
 
-R4 失败不撤销 R2、P6.1C-R1、P6.1、P6.2、P6.3A green，也不覆盖原 P6.3B/R1/R3 负证据。
+R4-R1 失败不撤销 R2、P6.1C-R1、P6.1、P6.2、P6.3A green，也不覆盖原 P6.3B/R1/R3/R4 负证据。
 
 ## 4. 回报与传输门
 

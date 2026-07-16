@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: p6_3b_r4_explicit_prefix_control_matched_ab_authorized
+  runtime_status: p6_3b_r4_r1_nfs_portable_explicit_prefix_control_matched_ab_authorized
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -181,9 +181,10 @@ artifacts:
   completed_p6_3b_r1_workload: workloads/p6_3b_r1_hybrid_kv_repair.yaml
   completed_p6_3b_r2_workload: workloads/p6_3b_r2_hybrid_kv_deferred_install_repair.yaml
   completed_p6_3b_r3_workload: workloads/p6_3b_r3_repaired_prefix_cache_matched_ab.yaml
-  next_workload: workloads/p6_3b_r4_explicit_prefix_cache_matched_ab.yaml
-  current_p6_3b_r4_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_explicit_matched_ab.py
-  current_p6_3b_r4_mode_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_mode.sh
+  completed_p6_3b_r4_workload: workloads/p6_3b_r4_explicit_prefix_cache_matched_ab.yaml
+  next_workload: workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml
+  current_p6_3b_r4_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_r1_explicit_matched_ab.py
+  current_p6_3b_r4_mode_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_r1_mode.sh
   bounded_mtp_patch: patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
   server_handoff: 通信模块/docs/developer-to-server.md
 boundaries:
@@ -205,7 +206,8 @@ boundaries:
   - P6.3B-R1 ended red before server ready because eager sitecustomize import preceded Ascend spec replacement; it dispatched 0 requests and therefore does not test the Prefix Cache repair mechanism.
   - P6.3B-R2 completed as green_p6_3b_r2_hybrid_kv_repair: the deferred same R2 repair produced 3/3 prime, 9/9 measured and 9/9 positive-hit followers with complete hybrid diagnostics and clean cleanup; it does not claim matched performance effect.
   - P6.3B-R3 completed as yellow invalid-control evidence: both modes loaded the same R2 repair and both effectively ran Prefix Cache on because the off side omitted the negative flag and inherited the vLLM default true.
-  - P6.3B-R4 is authorized to repeat the full eight-group matched A/B with explicit --no-enable-prefix-caching versus --enable-prefix-caching, live process config proof, token-LCP evidence and the same R2 repair in both modes; P6.3C remains unauthorized until developer review.
+  - P6.3B-R4 stopped before vLLM launch because cp -a could not preserve ownership on the new root-squashed NFS mount; its 0/64 blocked result is not Prefix Cache or hybrid-KV mechanism evidence.
+  - P6.3B-R4-R1 is authorized to repeat the unchanged full eight-group matched A/B with an ownership-safe archive copy, explicit --no-enable-prefix-caching versus --enable-prefix-caching, live process config proof, token-LCP evidence and the same R2 repair in both modes; P6.3C remains unauthorized until developer review.
   - Standing NPU/vLLM consumption authorization is enabled for explicit published workloads, but the server still may not invent or auto-enter P6.3C, P7, P8.1, offload or runtime-upgrade work without a new workload and unique handoff.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
@@ -231,7 +233,9 @@ acceptance:
   p6_3b_r2_execution_authorized: false
   p6_3b_r3_grade: yellow_p6_3b_r3_repaired_prefix_cache_matched_ab_partial
   p6_3b_r3_execution_authorized: false
-  p6_3b_r4_execution_authorized: true
+  p6_3b_r4_grade: blocked_p6_3b_r4_source_or_resource_gate
+  p6_3b_r4_execution_authorized: false
+  p6_3b_r4_r1_execution_authorized: true
   p6_3c_execution_authorized: false
   standing_npu_and_vllm_consumption_authorization: true
   next_task_authorized: true

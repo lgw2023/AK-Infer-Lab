@@ -300,7 +300,7 @@ def test_r4_finalizer_writes_bounded_explicit_control_evidence(tmp_path):
     assert "token_ids" not in candidates
 
 
-def test_r4_workload_is_the_only_authorized_explicit_control_task():
+def test_r4_workload_is_preserved_as_blocked_explicit_control_evidence():
     workload = yaml.safe_load(WORKLOAD_PATH.read_text(encoding="utf-8"))
 
     assert workload["stage_contract"]["stage"] == "P6.3B-R4"
@@ -324,20 +324,23 @@ def test_r4_workload_is_the_only_authorized_explicit_control_task():
     assert workload["positive_hit_policy"]["boundary_measured_requests"] == 15
     assert workload["token_lcp_evidence"]["required"] is True
     assert workload["execution_state"] == {
-        "status": "authorized_for_execution",
-        "server_handoff": "current",
-        "npu_execution_authorized": True,
-        "next_task_authorized": True,
+        "status": "completed_blocked_source_or_resource_gate",
+        "server_handoff": "historical",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
     }
+    assert workload["execution_result"]["actual_server_lifecycles"] == 0
+    assert workload["execution_result"]["request_count"] == 0
+    assert workload["execution_result"]["cleanup"] == "clean"
     assert workload["stage_contract"]["p6_3c_execution_authorized"] is False
 
 
-def test_r4_handoff_and_truth_surfaces_replace_r3_without_erasing_it():
+def test_r4_r1_handoff_preserves_r3_and_blocked_r4_without_erasing_them():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "立即执行 P6.3B-R4 explicit Prefix Cache control matched A/B" in handoff
+    assert "立即执行 P6.3B-R4-R1" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "--no-enable-prefix-caching" in handoff
@@ -377,10 +380,11 @@ def test_r4_handoff_and_truth_surfaces_replace_r3_without_erasing_it():
         "p6_3b_r3_repaired_prefix_cache_matched_ab.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p6_3b_r4_explicit_prefix_cache_matched_ab.yaml"
+        "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
-    assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is True
+    assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False
+    assert readiness["acceptance"]["p6_3b_r4_r1_execution_authorized"] is True
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
 
 

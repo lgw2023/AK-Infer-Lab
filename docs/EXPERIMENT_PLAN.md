@@ -23,18 +23,21 @@ P6.3A 已接受为 `green_p6_3a_mtp_matched_ab`；原 P6.3B 保留
 `red_p6_3b_r1_hybrid_kv_repair_no_success`。P6.3B-R2 已接受为
 `green_p6_3b_r2_hybrid_kv_repair`：3/3 prime、9/9 measured、9/9 positive hit，证明 same R2 repair
 恢复有界 hybrid-KV+MTP Prefix Cache hit。P6.3B-R3 因 off 侧省略 negative flag 后继承 vLLM 默认 true，
-实际为 repaired on-vs-on，保留 yellow。当前 P6.3B-R4 explicit-control matched A/B 已授权。
+实际为 repaired on-vs-on，保留 yellow。P6.3B-R4 已建立 explicit control，但在新服务器 NFS4
+root-squash 挂载上因 `cp -a` 保留 ownership 失败而在 vLLM 启动前 blocked；actual server lifecycle=`0`、
+request=`0/64`，不构成 Prefix Cache/hybrid-KV 机制证据。当前 P6.3B-R4-R1 已授权。
 当前合同状态为：
 
 ```text
-task_id:p6_3b_r4_deepseek_v4_flash_w8a8_mtp_explicit_prefix_cache_matched_ab_2026_0716
+task_id:p6_3b_r4_r1_deepseek_v4_flash_w8a8_mtp_explicit_prefix_cache_matched_ab_2026_0716
 authorized_for_execution
 npu_execution_authorized:true / next_task_authorized:true
-P6.3B-R4: same R2 repair / explicit no-enable vs enable / live resolved config / token LCP / 8 groups / 64 requests
+P6.3B-R4-R1: ownership-safe archive copy / same R2 repair / explicit no-enable vs enable / live resolved config / token LCP / 8 groups / 64 requests
 ```
 
 server-local Git 管理最终验收已完成。P8.1 observe-only handoff 继续延后；
-`通信模块/docs/developer-to-server.md` 当前已授权 P6.3B-R4。R4 回补 R3 缺失的 true off control；
+`通信模块/docs/developer-to-server.md` 当前已授权 P6.3B-R4-R1。R4-R1 只修复新服务器 root-squash
+下的 ownership-preservation portability gate，并继续回补 R3 缺失的 true off control；
 candidate green 仍须开发机复核。P6.3C 与 P8 不自动进入。
 
 mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context、P6.1 unprofiled 性能门与 P6.2 profiled evidence 门均已关闭。P6.3 和 P8 继续分离，外部开发机不运行 NPU。
@@ -315,14 +318,16 @@ p7_capacity_model.yaml
 
 ## 7. P8：分层工程原型
 
-P8 采用六个垂直切片：
+P8 采用八个门控垂直切片：
 
 1. P8.0 baseline freeze 与 runtime capability probe。
 2. P8.1 observe-only StateObject/StateEvent trace。
 3. P8.2 KV/Prefix 真实 DRAM warm-tier 路径。
-4. P8.3 expert trace、hotness 与 static placement。
-5. P8.4 Expert Tier V0 模拟分层。
-6. P8.5 证据门通过后的 DRAM→HBM warm prefetch；P8.6 打包 P9 trace bundle。
+4. P8.3 expert weight inventory、TP4 rank mapping、trace、hotness 与 static placement。
+5. P8.4 Expert Tier V0 模拟分层与 TP4 expert-residency capacity model。
+6. P8.5A 证据门通过后的独立 expert payload mover / DRAM→HBM warm prefetch。
+7. P8.5B CPU-first loader + TP4 W8A8 full-model expert-residency capacity prototype。
+8. P8.6 打包 P9 trace bundle。
 
 完整架构、对象契约、执行模式、门槛、指标和交付物见：
 
@@ -335,7 +340,9 @@ docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md
 - vLLM-Ascend 是当前可执行主路；MindIE 是 availability-gated 对照路。
 - `StateObject` 管理元数据和策略，不接管 tensor payload 或另写推理引擎。
 - EPLB/static expert map 不等于 expert offload。
-- Expert V0 先模拟；真实 warm prefetch 必须通过 trace、bytes、load latency 和 lead-time 门。
+- 当前 TP8 权重/HBM 证据否定直接改 `TP=4`，但不提供固定卸载 GB 数；会话中的 `150–170GB` 只能作为待校准假设。
+- Expert V0 先用逐 tensor/expert inventory、TP4 owner mapping、runtime reserve 与 holdout trace 建模；真实 warm prefetch 必须通过 trace、bytes、load latency 和 lead-time 门。
+- TP4 首个目标只是 `4096+64,c1` capacity/path smoke。必须在完整 TP4 HBM allocation 前由独立 CPU-first loader 建立 HBM/DRAM residency；成功 smoke 或实测不可行报告都能关闭研究问题，缺测不能关闭。
 - SSD/NVMe 只做 cold persistence/离线恢复，不进入逐 token decode 热路径。
 - P8.0 的旧 `frozen_degraded` contract 保留首个 no-MTP runtime cell 作为历史 provenance；official MTP、unprofiled 与 profiled P6 reference 已就绪。P8.1 本地 collector/adapter 已准备，但服务器验证尚未下发；进入前先确认 P6.3 计划并新建或提升 baseline contract。它仍只允许 bounded observation JSONL 到 StateEvent/StateObject/no-op decision 的反腐层，不读取或持有 tensor payload。
 
@@ -380,9 +387,9 @@ simulator_validation_report.md
 2. P6.1R retry2 与 P6.1L-R1 已完成并验收，不原样重跑。
 3. P6.1C-R1 已完成并验收为 official green，不重跑。
 4. P6.1 unprofiled 已完成并验收为 `green_mtp_unprofiled_baseline`，不重跑。
-5. P6.2 profiled evidence、P6.3A matched MTP A/B 与 P6.3B-R2 repair 已验收；原 P6.3B yellow、R1 red 与 R3 on-vs-on yellow 保留，当前 P6.3B-R4 explicit-control matched A/B 已授权，P6.3C 与 P8.1 不自动进入。
+5. P6.2 profiled evidence、P6.3A matched MTP A/B 与 P6.3B-R2 repair 已验收；原 P6.3B yellow、R1 red、R3 on-vs-on yellow 与 R4 root-squash blocked 保留，当前 P6.3B-R4-R1 已授权，P6.3C 与 P8.1 不自动进入。
 6. P7 工具链预研可继续，但不得外推 full-model runtime。
 7. P9 最后消费统一 trace bundle，输出硬件优先级。
 
-当前 P6.3B-R4 双授权均为 true；执行并完成开发机复核后，再按
+当前 P6.3B-R4-R1 双授权均为 true；执行并完成开发机复核后，再按
 `工作记录与进度笔记本/16_P6_阶段复盘与P6_3进入评估.md` 判断条件式 P6.3C。
