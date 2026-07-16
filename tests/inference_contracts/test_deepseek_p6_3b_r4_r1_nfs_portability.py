@@ -110,7 +110,7 @@ def test_r4_r1_finalizer_relabels_and_rehashes_parent_r4_evidence(
     assert manifest.count("\n") == len(module.CANDIDATE_NAMES) + 1
 
 
-def test_r4_r1_is_authorized_without_erasing_the_blocked_r4_lineage():
+def test_r4_r1_is_completed_without_erasing_the_blocked_r4_lineage():
     workload = yaml.safe_load(WORKLOAD_PATH.read_text(encoding="utf-8"))
     historical_r4 = yaml.safe_load(R4_WORKLOAD_PATH.read_text(encoding="utf-8"))
 
@@ -133,11 +133,14 @@ def test_r4_r1_is_authorized_without_erasing_the_blocked_r4_lineage():
         "candidate_green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"
     )
     assert workload["execution_state"] == {
-        "status": "authorized_for_execution",
-        "server_handoff": "current",
-        "npu_execution_authorized": True,
-        "next_task_authorized": True,
+        "status": "completed_developer_accepted_green",
+        "server_handoff": "historical",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
     }
+    assert workload["execution_result"]["developer_grade"] == (
+        "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"
+    )
     for artifact in workload["runner_artifacts"].values():
         path = REPO_ROOT / artifact["path"]
         assert path.stat().st_size == artifact["bytes"]
@@ -154,27 +157,20 @@ def test_r4_r1_is_authorized_without_erasing_the_blocked_r4_lineage():
     assert historical_r4["execution_state"]["next_task_authorized"] is False
 
 
-def test_r4_r1_is_the_unique_authorized_handoff_and_current_truth():
+def test_r4_r1_closeout_is_the_unique_read_only_handoff_and_current_truth():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "立即执行 P6.3B-R4-R1" in handoff
-    assert (
-        "task_id: p6_3b_r4_r1_deepseek_v4_flash_w8a8_mtp_explicit_"
-        "prefix_cache_matched_ab_2026_0716"
-    ) in handoff
-    assert "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml" in handoff
-    assert "run_deepseek_p6_3b_r4_r1_mode.sh" in handoff
-    assert "cp -a --no-preserve=ownership" in handoff
-    assert "5ebc4e0a8ba8163b56ab26cb72abd93206da64741a303cec6ef9d601cc257b5d" in handoff
-    assert "actual vLLM server lifecycle=0" in handoff
-    assert "npu_execution_authorized: true" in handoff
-    assert "next_task_authorized: true" in handoff
-    assert "16 prime + 48 measured = 64" in handoff
-    assert "不得自动进入 P6.3C" in handoff
-    assert "不得调用 upload-api" in handoff
-    assert "不得发送 email" in handoff
+    assert "只读同步复核并等待，不执行 NPU" in handoff
+    assert "task_id: p6_3c_strict_single_variable_blocked_closeout_sync_review_2026_0716" in handoff
+    assert "server_sync_review_authorized: true" in handoff
+    assert "npu_execution_authorized: false" in handoff
+    assert "next_task_authorized: false" in handoff
+    assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
+    assert "64/64" in handoff
+    assert "9/9" in handoff
+    assert "blocked_p6_3c_not_strict_single_variable" in handoff
 
     readiness = yaml.safe_load(
         (
@@ -184,14 +180,18 @@ def test_r4_r1_is_the_unique_authorized_handoff_and_current_truth():
     assert readiness["artifacts"]["completed_p6_3b_r4_workload"].endswith(
         "p6_3b_r4_explicit_prefix_cache_matched_ab.yaml"
     )
-    assert readiness["artifacts"]["next_workload"].endswith(
+    assert readiness["artifacts"]["completed_p6_3b_r4_r1_workload"].endswith(
         "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
+    assert readiness["artifacts"]["next_workload"] is None
     assert readiness["acceptance"]["p6_3b_r4_grade"] == (
         "blocked_p6_3b_r4_source_or_resource_gate"
     )
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False
-    assert readiness["acceptance"]["p6_3b_r4_r1_execution_authorized"] is True
+    assert readiness["acceptance"]["p6_3b_r4_r1_grade"] == (
+        "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"
+    )
+    assert readiness["acceptance"]["p6_3b_r4_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
 
     truth_paths = (

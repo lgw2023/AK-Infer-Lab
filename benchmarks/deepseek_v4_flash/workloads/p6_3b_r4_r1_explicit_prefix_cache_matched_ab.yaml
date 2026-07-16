@@ -186,11 +186,47 @@ result_package_policy:
   methods_are_mutually_exclusive: true
   bounded_candidates: [result_summary.md, environment_and_hashes.json, request_body_manifest.json, mode_group_summary.tsv, paired_request_summary.tsv, grading_inputs.json, hybrid_kv_diagnostic_summary.json, resolved_prefix_cache_config_summary.json, cleanup_status.txt, first_failure_excerpt.txt]
 
+execution_result:
+  status: completed_developer_accepted_green
+  server_grade: candidate_green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
+  developer_grade: green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
+  developer_disposition: accepted_mechanism_evidence_complete
+  server_head: b9d3bfcf11337ce9a26fe9fd4b46651552302c92
+  final_measured_server_lifecycles: 2
+  mode_order: [prefix_cache_off, prefix_cache_on]
+  requests: 64_of_64
+  prime_requests: 16_of_16
+  measured_requests: 48_of_48
+  body_pairing_ok: true
+  resolved_prefix_control_ok: true
+  prefix_cache_off_hit_delta_total: 0
+  prefix_cache_on_hit_delta_total: 540672
+  prefix_cache_on_primary_positive_hit_count: 9_of_9
+  prefix_cache_on_primary_hit_tokens_per_request: [16384, 49152, 114688]
+  prefix_cache_on_boundary_positive_hit_count: 0_of_15
+  same_r2_repair_in_both_modes: true
+  token_lcp_evidence_ok: true
+  mtp_accepted_token_delta_by_mode: {prefix_cache_off: 1024, prefix_cache_on: 1024}
+  mechanism_effect_accepted: true
+  performance_effect_accepted: false
+  fixed_mode_order_is_a_reported_limitation: true
+  boundary_zero_hits_prevent_universal_hit_claim: true
+  aborted_pre_request_invocations: 1
+  aborted_pre_request_request_count: 0
+  aborted_pre_request_reason: localhost_proxy_missing_no_proxy
+  protocol_deviation_disposition: non_blocking_for_mechanism_only_not_performance
+  cleanup: clean
+  result_package: {files: 10, bytes: 44550}
+  developer_received_path: /Volumes/SSD1/Inbox/2026-07-16/p6_3b_r4_r1_explicit_prefix_ab_20260716_green
+  individual_file_size_and_sha256_verified: 10_of_10
+  developer_name_bytes_sha256_manifest: a1b966194eb2b0d05af318375e7ac172ba74af222c13ee221ddc13fd7ba5b218
+  existing_p6_references_remain_true: true
+
 execution_state:
-  status: authorized_for_execution
-  server_handoff: current
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_developer_accepted_green
+  server_handoff: historical
+  npu_execution_authorized: false
+  next_task_authorized: false
 
 authorization_policy:
   code_sync_and_task_local_r2_repair_authorized: true

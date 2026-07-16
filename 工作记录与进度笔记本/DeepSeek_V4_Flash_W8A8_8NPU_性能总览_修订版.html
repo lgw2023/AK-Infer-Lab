@@ -244,7 +244,7 @@
 
   .content-grid{
     display:grid;
-    grid-template-columns:minmax(0,1.45fr) minmax(0,.55fr);
+    grid-template-columns:minmax(0,1.38fr) minmax(0,1fr);
     gap:10px;
     min-height:0;
   }
@@ -375,115 +375,107 @@
   .table-foot b{color:var(--blue)}
   .table-foot .boundary{border-left:4px solid var(--red);background:#fff5f3}
 
-  .right-stack{
+  .prefix-panel-body{
     display:grid;
-    grid-template-rows:196px 174px 1fr;
-    gap:10px;
-    min-height:0;
-  }
-  .context-body{padding:7px 8px 6px;min-height:0}
-  .context-table th,.context-table td{
-    border:1px solid #93979a;
-    padding:5px 4px;
-    text-align:center;
-    font-size:9.7px;
-    line-height:1.08;
-    font-variant-numeric:tabular-nums;
-  }
-  .context-table th{background:var(--gray-1);font-weight:900}
-  .context-table td:first-child{background:#fafafa;font-weight:900}
-  .context-table td:nth-child(3){color:var(--red);font-weight:900}
-  .context-note{
-    margin-top:6px;
-    border-left:4px solid var(--blue);
-    background:var(--blue-soft);
-    padding:5px 7px;
-    color:#394c60;
-    font-size:9.2px;
-    line-height:1.2;
-  }
-  .context-note b{color:var(--blue)}
-
-  .anchor-list{
-    display:grid;
-    grid-template-rows:repeat(3,1fr);
+    grid-template-rows:48px 1fr 64px;
     gap:5px;
     height:100%;
-    padding:7px 8px 8px;
-  }
-  .anchor-row{
-    display:grid;
-    grid-template-columns:106px 1fr 58px;
-    gap:7px;
-    align-items:center;
     min-height:0;
-    border-bottom:1px dotted #999;
+    padding:6px 8px 7px;
   }
-  .anchor-row:last-child{border-bottom:0}
-  .anchor-label{font-size:9.3px;line-height:1.16}
-  .anchor-label b{display:block;color:#24272a;font-size:10.2px}
-  .anchor-value{
-    color:var(--blue-dark);
-    font-size:16px;
-    line-height:1;
+  .prefix-headline{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:8px;
+    align-items:center;
+    border:1px solid #7d9870;
+    border-left:6px solid var(--green);
+    background:linear-gradient(90deg,var(--green-soft),#f8fbf6);
+    padding:5px 8px;
+  }
+  .prefix-headline strong{
+    display:block;
+    color:var(--green);
+    font-size:11.4px;
+    line-height:1.05;
+  }
+  .prefix-headline span{
+    display:block;
+    margin-top:3px;
+    color:#4e5b4b;
+    font-size:8.9px;
+    line-height:1.15;
+  }
+  .prefix-proof{
+    border:1px solid #668359;
+    background:#fff;
+    padding:5px 7px;
+    color:var(--green)!important;
+    font-size:9px!important;
     font-weight:950;
-    font-variant-numeric:tabular-nums;
     white-space:nowrap;
   }
-  .anchor-value small{color:#666;font-size:8px;font-weight:700}
-  .anchor-delta{
-    border:1px solid #8a9f7c;
-    background:var(--green-soft);
-    padding:4px 3px;
-    color:var(--green);
-    text-align:center;
-    font-size:10px;
-    font-weight:950;
-  }
-
-  .coverage-body{
-    display:grid;
-    grid-template-rows:1fr auto;
-    gap:6px;
-    min-height:0;
+  .prefix-table-wrap{min-height:0}
+  .prefix-table{
     height:100%;
-    padding:7px 8px 8px;
-  }
-  .coverage-grid{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:5px;
-    min-height:0;
-  }
-  .coverage-card{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    border:1px solid #969a9d;
-    background:#fafafa;
-    padding:5px 7px;
-  }
-  .coverage-card strong{
-    color:var(--blue-dark);
-    font-size:19px;
-    line-height:1;
-    font-weight:950;
+    table-layout:fixed;
     font-variant-numeric:tabular-nums;
   }
-  .coverage-card span{margin-top:3px;color:#555b60;font-size:8.7px;line-height:1.13}
-  .mechanism-note{
-    border-left:5px solid var(--green);
-    background:var(--green-soft);
-    padding:5px 7px;
-    color:#385334;
-    font-size:9px;
-    line-height:1.2;
+  .prefix-table col.workload{width:83px}
+  .prefix-table col.lcp{width:115px}
+  .prefix-table col.hit{width:63px}
+  .prefix-table col.ttft{width:133px}
+  .prefix-table col.delta{width:61px}
+  .prefix-table col.evidence{width:62px}
+  .prefix-table th,.prefix-table td{
+    border:1px solid #85898c;
+    padding:3px 4px;
+    text-align:center;
+    vertical-align:middle;
+    font-size:9.4px;
+    line-height:1.08;
   }
-  .mechanism-note b{color:var(--green)}
+  .prefix-table thead tr:first-child th{height:25px;background:#dfe8dc;color:#294f24;font-size:9.8px}
+  .prefix-table thead tr:nth-child(2) th{height:23px;background:var(--gray-1);font-size:8.7px}
+  .prefix-table th{font-weight:950}
+  .prefix-table td:first-child{
+    background:#fafafa;
+    color:#26292c;
+    font-weight:900;
+  }
+  .prefix-table td:first-child span{display:block;margin-top:2px;color:#666;font-size:8px;font-weight:700}
+  .prefix-table td.lcp-cell{font-size:8.8px;font-weight:850}
+  .prefix-table td.off-hit{background:#f7f7f7;color:#555;font-weight:900}
+  .prefix-table td.on-hit{background:var(--blue-soft);color:var(--blue);font-weight:950}
+  .prefix-table tr.primary td.on-hit,
+  .prefix-table tr.primary td.ttft-delta,
+  .prefix-table tr.primary td.evidence-primary{background:var(--green-soft);color:var(--green)}
+  .prefix-table td.ttft-pair{font-size:9px;font-weight:850;white-space:nowrap}
+  .prefix-table td.ttft-delta{font-weight:950}
+  .prefix-table td.evidence-primary{font-size:8.5px;font-weight:950}
+  .prefix-table td.evidence-boundary{background:var(--yellow-soft);color:#795700;font-size:8.5px;font-weight:900}
+  .prefix-table tr.primary{box-shadow:inset 4px 0 0 var(--green)}
+  .prefix-foot{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:5px;
+  }
+  .prefix-foot div{
+    display:flex;
+    align-items:center;
+    border:1px solid #969a9d;
+    padding:5px 7px;
+    color:#4f5559;
+    font-size:8.6px;
+    line-height:1.18;
+  }
+  .prefix-foot b{color:var(--green)}
+  .prefix-foot .prefix-boundary{border-left:4px solid #b57b00;background:var(--yellow-soft)}
+  .prefix-foot .prefix-boundary b{color:#795700}
 
   .summary{
     display:grid;
-    grid-template-columns:126px repeat(3,1fr);
+    grid-template-columns:112px repeat(4,1fr);
     min-height:0;
     border:1px solid #6f7376;
     background:#fff;
@@ -503,14 +495,15 @@
     display:flex;
     align-items:center;
     border-left:1px solid #85898c;
-    padding:6px 11px;
+    padding:6px 9px;
     color:#33383c;
-    font-size:12.4px;
-    line-height:1.3;
+    font-size:10.7px;
+    line-height:1.23;
   }
   .summary-item b{color:var(--blue)}
   .summary-item .good{color:var(--green);font-weight:900}
   .summary-item .red{color:var(--red);font-weight:900}
+  .summary-item[data-summary="prefix"]{background:linear-gradient(90deg,var(--green-soft),#fff)}
 
   .footer{
     display:grid;
@@ -542,7 +535,7 @@
   <div>
     <div class="eyebrow">AK-INFER-LAB · P6 DEEPSEEK-V4-FLASH · MEASURED ON ASCEND</div>
     <h1 class="title">MTP 将逐 Token 生成时延近乎减半，八卡长上下文推理进入可量化性能阶段</h1>
-    <p class="subtitle">Atlas 800T A2 · Ascend 910B1 ×8 · DeepSeek-V4-Flash W8A8 · TP8 + EP。<b>本页主结论只取 P6.3A matched MTP Off/On 实测</b>；P6.1 覆盖矩阵用于复现性与运行边界。</p>
+    <p class="subtitle">Atlas 800T A2 · Ascend 910B1 ×8 · DeepSeek-V4-Flash W8A8 · TP8 + EP。<b>性能主结论取 P6.3A matched MTP Off/On 实测</b>；P6.3B-R4-R1 补充显式 Prefix Cache 机制闭环与命中边界。</p>
   </div>
   <div class="header-side">
     <div class="data-actions">
@@ -704,54 +697,54 @@
       </div>
     </article>
 
-    <div class="right-stack">
-      <article class="panel">
-        <div class="panel-title"><span><span class="idx">02</span>MTP On：上下文扩展下的绝对表现</span><small>OUTPUT 64 · C1</small></div>
-        <div class="context-body">
-          <table class="context-table">
-            <tr><th>Input</th><th>TTFT</th><th>TPOT</th><th>E2EL</th><th>Batch TPS</th></tr>
-            <tr><td>4K</td><td>0.42 s</td><td>205.93 ms</td><td>13.39 s</td><td>4.78</td></tr>
-            <tr><td>64K</td><td>6.42 s</td><td>199.46 ms</td><td>18.99 s</td><td>3.37</td></tr>
-            <tr><td>128K</td><td>12.96 s</td><td>199.99 ms</td><td>25.56 s</td><td>2.50</td></tr>
+    <article class="panel">
+      <div class="panel-title"><span><span class="idx">02</span>Prefix Cache Off / On 命中与 TTFT matched 明细</span><small>P6.3B-R4-R1 · 8 GROUPS · 48 MEASURED</small></div>
+      <div class="prefix-panel-body">
+        <div class="prefix-headline">
+          <div><strong>显式 Prefix Cache 开关产生了可观测机制效应</strong><span>resolved false → true · same R2 hybrid-KV repair · 16K LCM · canonical body paired</span></div>
+          <span class="prefix-proof">64 / 64 · Off hit=0 · On primary 9 / 9</span>
+        </div>
+        <div class="prefix-table-wrap">
+          <table aria-label="P6.3B-R4-R1 explicit Prefix Cache matched evidence" class="prefix-table">
+            <colgroup><col class="workload"/><col class="lcp"/><col class="hit"/><col class="hit"/><col class="ttft"/><col class="delta"/><col class="evidence"/></colgroup>
+            <thead>
+              <tr><th rowspan="2">Input · Prefix</th><th rowspan="2">Token-LCP /<br/>16K floor</th><th colspan="2">Hit / measured request</th><th rowspan="2">TTFT mean<br/>Off → On（ms）</th><th rowspan="2">Paired<br/>TTFT Δ</th><th rowspan="2">证据角色</th></tr>
+              <tr><th>Off</th><th>On</th></tr>
+            </thead>
+            <tbody>
+              <tr data-prefix-row="ctx4096_prefix50">
+                <td>4K · 50%<span>3/3 matched</span></td><td class="lcp-cell">2,048 / 0</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">416.2 → 417.4</td><td class="ttft-delta">+0.3%</td><td class="evidence-boundary">Boundary</td>
+              </tr>
+              <tr data-prefix-row="ctx4096_prefix90">
+                <td>4K · 90%<span>3/3 matched</span></td><td class="lcp-cell">3,584 / 0</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">405.0 → 415.7</td><td class="ttft-delta">+2.7%</td><td class="evidence-boundary">Boundary</td>
+              </tr>
+              <tr data-prefix-row="ctx32768_prefix50">
+                <td>32K · 50%<span>3/3 matched</span></td><td class="lcp-cell">16,384 / 16,384</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">3,255.6 → 3,251.4</td><td class="ttft-delta">−0.1%</td><td class="evidence-boundary">Boundary</td>
+              </tr>
+              <tr class="primary" data-prefix-row="ctx32768_prefix90">
+                <td>32K · 90%<span>3/3 matched</span></td><td class="lcp-cell">29,440 / 16,384</td><td class="off-hit">0</td><td class="on-hit">16,384</td><td class="ttft-pair">3,199.4 → 1,645.7</td><td class="ttft-delta">−48.6%</td><td class="evidence-primary">Primary</td>
+              </tr>
+              <tr data-prefix-row="ctx65536_prefix50">
+                <td>64K · 50%<span>3/3 matched</span></td><td class="lcp-cell">32,768 / 32,768</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">6,362.9 → 6,478.8</td><td class="ttft-delta">+1.8%</td><td class="evidence-boundary">Boundary</td>
+              </tr>
+              <tr class="primary" data-prefix-row="ctx65536_prefix90">
+                <td>64K · 90%<span>3/3 matched</span></td><td class="lcp-cell">58,880 / 49,152</td><td class="off-hit">0</td><td class="on-hit">49,152</td><td class="ttft-pair">6,399.3 → 1,734.6</td><td class="ttft-delta">−72.9%</td><td class="evidence-primary">Primary</td>
+              </tr>
+              <tr data-prefix-row="ctx131072_prefix50">
+                <td>128K · 50%<span>3/3 matched</span></td><td class="lcp-cell">65,536 / 65,536</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">12,924.6 → 13,008.2</td><td class="ttft-delta">+0.6%</td><td class="evidence-boundary">Boundary</td>
+              </tr>
+              <tr class="primary" data-prefix-row="ctx131072_prefix90">
+                <td>128K · 90%<span>3/3 matched</span></td><td class="lcp-cell">117,889 / 114,688</td><td class="off-hit">0</td><td class="on-hit">114,688</td><td class="ttft-pair">12,826.0 → 1,873.7</td><td class="ttft-delta">−85.4%</td><td class="evidence-primary">Primary</td>
+              </tr>
+            </tbody>
           </table>
-          <div class="context-note"><b>观察：</b>4K→128K 时 TTFT 增至 12.96 s，而 TPOT 仍约 200 ms/token；因此长输入 cell 的 E2EL 收益低于 decode-heavy cell。</div>
         </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel-title"><span><span class="idx">03</span>代表性 workload 绝对锚点</span><small>OFF → ON</small></div>
-        <div class="anchor-list">
-          <div class="anchor-row">
-            <div class="anchor-label"><b>4K + 256 · C1</b>E2EL</div>
-            <div class="anchor-value">96.45 → 52.08 <small>s</small></div>
-            <div class="anchor-delta">−46.0%</div>
-          </div>
-          <div class="anchor-row">
-            <div class="anchor-label"><b>128K + 256 · C1</b>E2EL</div>
-            <div class="anchor-value">111.31 → 63.69 <small>s</small></div>
-            <div class="anchor-delta">−42.8%</div>
-          </div>
-          <div class="anchor-row">
-            <div class="anchor-label"><b>4K + 256 · C8</b>Batch TPS</div>
-            <div class="anchor-value">2.67 → 5.04 <small>tok/s</small></div>
-            <div class="anchor-delta">+89.2%</div>
-          </div>
+        <div class="prefix-foot">
+          <div><b>主证据：</b>32K/64K/128K × 90% 的 9/9 follower 全部正命中，且每请求 hit 严格等于 token-LCP 的 16K floor。</div>
+          <div class="prefix-boundary"><b>边界：</b>其余 15 条 boundary 仍为零命中；其中三个 50% 长上下文组虽有非零 floor 仍未命中。TTFT Δ 仅作固定 Off→On 描述，<b>不是普遍 Prefix Cache 性能收益</b>。</div>
         </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel-title"><span><span class="idx">04</span>P6 实测覆盖与复现强度</span><small>FUNCTION → PERFORMANCE → MECHANISM</small></div>
-        <div class="coverage-body">
-          <div class="coverage-grid">
-            <div class="coverage-card"><strong>5 / 5</strong><span>4K–128K official context ladder 首轮通过</span></div>
-            <div class="coverage-card"><strong>18 / 18</strong><span>P6.1 context × output × C1/C4/C8 cell 覆盖</span></div>
-            <div class="coverage-card"><strong>90 / 90</strong><span>P6.1 measured request 成功，0 retry</span></div>
-            <div class="coverage-card"><strong>108 / 108</strong><span>P6.3A matched measured request 成功</span></div>
-          </div>
-          <div class="mechanism-note"><b>机制活动：</b>MTP On accepted speculative token counter Δ=4,896；48/48 measured batch 成功，canonical request body 按 batch_id + request_index 配对。</div>
-        </div>
-      </article>
-    </div>
+      </div>
+    </article>
   </div>
 </section>
 
@@ -759,12 +752,13 @@
   <div class="summary-head">核心结论</div>
   <div class="summary-item"><span><b>总体效应：</b>在冻结的 W8A8 / TP8+EP 配置下，MTP 在 24 个 paired batch 中一致降低 E2EL 与 TPOT 并提高 batch output throughput，三项相对变化均值分别为 <span class="good">−40.9%、−47.0%、+71.0%</span>。</span></div>
   <div class="summary-item"><span><b>绝对性能：</b>8 个 cell 的 TPOT 由 <span class="red">372.51–385.18</span> ms/token 收敛至 <b>197.48–205.93</b> ms/token；128K+256 C1 的 E2EL 由 111.31 s 降至 63.69 s。</span></div>
-  <div class="summary-item"><span><b>证据强度：</b>P6 已形成 5/5 长上下文门、18/18 用户性能矩阵、108/108 matched request 与 4,896 accepted token 活动；结论限于固定 Off→On、每 cell 3 次重复的描述性机制效应。</span></div>
+  <div class="summary-item"><span><b>证据强度：</b>P6.3A 为 108/108 matched request、24/24 paired batch 方向一致；固定 Off→On、每 cell 3 repeat，结论保持描述性。</span></div>
+  <div class="summary-item" data-summary="prefix"><span><b>Prefix Cache：</b><span class="good">显式 Prefix Cache 开关产生了可观测机制效应</span>：Off hit=0，On primary 9/9；TTFT 描述性下降 48.6% / 72.9% / 85.4%，boundary 0/15。</span></div>
 </section>
 
 <footer class="footer">
-  <div><b>脚注：</b>P6.2 仅回传 LOW-confidence AI Core raw metric，未回传 utilization(%) 采样摘要，故不作使用率；61,436–61,447 MB/card 为 whole-device occupancy；P6.3B-R3 无有效 Off control，R4 因新服务器 root-squash 在 vLLM 前 blocked，R4-R1 待回传。</div>
-  <div>数据快照 2026-07-16 · P6.1 / P6.3A server artifacts · AK-INFER-LAB</div>
+  <div><b>脚注：</b>P6.2 仅有 LOW-confidence AI Core raw metric，不作 utilization(%)；61,436–61,447 MB/card 为 whole-device occupancy；R3 on-vs-on 与 R4 root-squash blocked 保留，R4-R1 已接受 green；首次 localhost proxy 中断为零请求 pre-run，不计入性能结论。</div>
+  <div>数据快照 2026-07-16 · P6.1 / P6.3A / P6.3B-R4-R1 · V5</div>
 </footer>
 </main>
 </div>

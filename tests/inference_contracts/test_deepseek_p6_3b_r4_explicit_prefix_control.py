@@ -335,23 +335,20 @@ def test_r4_workload_is_preserved_as_blocked_explicit_control_evidence():
     assert workload["stage_contract"]["p6_3c_execution_authorized"] is False
 
 
-def test_r4_r1_handoff_preserves_r3_and_blocked_r4_without_erasing_them():
+def test_r4_r1_closeout_preserves_r3_and_blocked_r4_without_erasing_them():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "立即执行 P6.3B-R4-R1" in handoff
-    assert "npu_execution_authorized: true" in handoff
-    assert "next_task_authorized: true" in handoff
+    assert "只读同步复核并等待，不执行 NPU" in handoff
+    assert "npu_execution_authorized: false" in handoff
+    assert "next_task_authorized: false" in handoff
     assert "--no-enable-prefix-caching" in handoff
     assert "--enable-prefix-caching" in handoff
-    assert "resolved_prefix_cache_config.json" in handoff
-    assert "actual_token_lcp" in handoff
     assert "9/9" in handoff
     assert "15" in handoff and "boundary" in handoff
-    assert "不得自动进入 P6.3C" in handoff
-    assert "不得调用 upload-api" in handoff
-    assert "不得发送 email" in handoff
+    assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
+    assert "blocked_p6_3c_not_strict_single_variable" in handoff
 
     r3 = yaml.safe_load(
         (
@@ -379,12 +376,16 @@ def test_r4_r1_handoff_preserves_r3_and_blocked_r4_without_erasing_them():
     assert readiness["artifacts"]["completed_p6_3b_r3_workload"].endswith(
         "p6_3b_r3_repaired_prefix_cache_matched_ab.yaml"
     )
-    assert readiness["artifacts"]["next_workload"].endswith(
+    assert readiness["artifacts"]["completed_p6_3b_r4_r1_workload"].endswith(
         "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
+    assert readiness["artifacts"]["next_workload"] is None
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False
-    assert readiness["acceptance"]["p6_3b_r4_r1_execution_authorized"] is True
+    assert readiness["acceptance"]["p6_3b_r4_r1_grade"] == (
+        "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"
+    )
+    assert readiness["acceptance"]["p6_3b_r4_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
 
 

@@ -13,7 +13,7 @@ P0-P4 已建立两类可复用资产：
 
 这些资产能提供工具链、指标 schema 和校准输入，但不是 DeepSeek-V4-Flash 八卡性能结论。
 
-NPU 0-7 已获当前任务明确授权。P6.1R retry2 与 P6.1L-R1 已关闭最小 MTP 和固定 4K 长输出门；
+NPU 0-7 的 standing 消耗政策保持允许，但当前没有已授权执行任务。P6.1R retry2 与 P6.1L-R1 已关闭最小 MTP 和固定 4K 长输出门；
 P6.1C-R1 已由开发机接受为 `green_mtp_official_context_ladder`，
 `highest_stable_context=131072`，official 功能/容量/稳定性 reference baseline=true。P6.1
 unprofiled 随后由开发机接受为 `green_mtp_unprofiled_baseline`，性能 reference baseline=true；
@@ -25,20 +25,25 @@ P6.3A 已接受为 `green_p6_3a_mtp_matched_ab`；原 P6.3B 保留
 恢复有界 hybrid-KV+MTP Prefix Cache hit。P6.3B-R3 因 off 侧省略 negative flag 后继承 vLLM 默认 true，
 实际为 repaired on-vs-on，保留 yellow。P6.3B-R4 已建立 explicit control，但在新服务器 NFS4
 root-squash 挂载上因 `cp -a` 保留 ownership 失败而在 vLLM 启动前 blocked；actual server lifecycle=`0`、
-request=`0/64`，不构成 Prefix Cache/hybrid-KV 机制证据。当前 P6.3B-R4-R1 已授权。
+request=`0/64`，不构成 Prefix Cache/hybrid-KV 机制证据。P6.3B-R4-R1 随后完成并由开发机接受为
+`green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`：64/64 request 成功，same R2 repair 下显式
+Prefix Cache off hit=`0`，on 侧三个 primary group 9/9 正命中且逐请求严格符合 16K LCM floor。
+其余 15 条 boundary follower 仍为零命中，因此该 green 关闭显式机制门，不声明普遍命中或性能收益。
 当前合同状态为：
 
 ```text
-task_id:p6_3b_r4_r1_deepseek_v4_flash_w8a8_mtp_explicit_prefix_cache_matched_ab_2026_0716
-authorized_for_execution
-npu_execution_authorized:true / next_task_authorized:true
-P6.3B-R4-R1: ownership-safe archive copy / same R2 repair / explicit no-enable vs enable / live resolved config / token LCP / 8 groups / 64 requests
+task_id:p6_3c_strict_single_variable_blocked_closeout_sync_review_2026_0716
+authorized_read_only_sync_review_and_wait_no_npu
+server_sync_review_authorized:true
+npu_execution_authorized:false / next_task_authorized:false
+standing_npu_and_vllm_consumption_authorization:true
+P6.3C: blocked_p6_3c_not_strict_single_variable, no executable workload
 ```
 
 server-local Git 管理最终验收已完成。P8.1 observe-only handoff 继续延后；
-`通信模块/docs/developer-to-server.md` 当前已授权 P6.3B-R4-R1。R4-R1 只修复新服务器 root-squash
-下的 ownership-preservation portability gate，并继续回补 R3 缺失的 true off control；
-candidate green 仍须开发机复核。P6.3C 与 P8 不自动进入。
+`通信模块/docs/developer-to-server.md` 当前只授权只读同步、复核收口证据并等待。P6.3C frozen-source 审计已确认
+`max_num_batched_tokens=4096 < max_model_len=135168`，vLLM 在 Chunked Prefill off 时会于 resolved config 前拒绝该组合；
+因而以 `blocked_p6_3c_not_strict_single_variable` 停止，不创建 workload，P8 不自动进入。
 
 mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context、P6.1 unprofiled 性能门与 P6.2 profiled evidence 门均已关闭。P6.3 和 P8 继续分离，外部开发机不运行 NPU。
 
@@ -246,7 +251,7 @@ request-device aggregate exit=0 且未使用 skip-heavy-joins fallback；phase-m
 
 1. P6.3A matched MTP on/off。
 2. P6.3B purpose-built repeated-prefix Prefix Cache on/off。
-3. P6.3C Chunked Prefill on/off，仅在严格单变量成立时执行。
+3. P6.3C Chunked Prefill on/off 已因 `4096 < 135168` 的 frozen validation 约束记录为 `blocked_p6_3c_not_strict_single_variable`，不执行伪 A/B。
 4. P6.3D 可选 `max_num_seqs` scheduler/capacity sweep。
 
 `max_model_len` 移入 P7 capacity boundary，不再是 P6.3 必做性能 A/B。每组必须使用相同请求集、
@@ -387,9 +392,9 @@ simulator_validation_report.md
 2. P6.1R retry2 与 P6.1L-R1 已完成并验收，不原样重跑。
 3. P6.1C-R1 已完成并验收为 official green，不重跑。
 4. P6.1 unprofiled 已完成并验收为 `green_mtp_unprofiled_baseline`，不重跑。
-5. P6.2 profiled evidence、P6.3A matched MTP A/B 与 P6.3B-R2 repair 已验收；原 P6.3B yellow、R1 red、R3 on-vs-on yellow 与 R4 root-squash blocked 保留，当前 P6.3B-R4-R1 已授权，P6.3C 与 P8.1 不自动进入。
+5. P6.2 profiled evidence、P6.3A matched MTP A/B、P6.3B-R2 repair 与 P6.3B-R4-R1 explicit control 已验收；原 P6.3B yellow、R1 red、R3 on-vs-on yellow 与 R4 root-squash blocked 均保留，P6.3C 严格单变量门已 blocked，P8.1 不自动进入。
 6. P7 工具链预研可继续，但不得外推 full-model runtime。
 7. P9 最后消费统一 trace bundle，输出硬件优先级。
 
-当前 P6.3B-R4-R1 双授权均为 true；执行并完成开发机复核后，再按
-`工作记录与进度笔记本/16_P6_阶段复盘与P6_3进入评估.md` 判断条件式 P6.3C。
+当前只有服务器只读同步复核任务，NPU 与下一 workload 双授权均为 false。P6.3C 严格单变量可行性已在开发机根据冻结源码完成审计：
+`4096 < 135168` 使 off 侧无法形成 resolved runtime config，结论为 `blocked_p6_3c_not_strict_single_variable`；下一阶段等待用户单独决策。

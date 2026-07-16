@@ -1,0 +1,188 @@
+schema_version: 1
+audit_id: p6_3c_chunked_prefill_strict_single_variable_feasibility_2026_0716
+date: "2026-07-16"
+stage: P6.3C
+audit_status: completed_local_frozen_source_audit
+grade: blocked_p6_3c_not_strict_single_variable
+claim_boundary: chunked_prefill_strict_single_variable_feasibility_only
+
+runtime_pin:
+  vllm_version: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_version: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+
+frozen_source_evidence:
+  vllm_arg_utils:
+    repository: https://github.com/vllm-project/vllm
+    commit: 0decac0d96c42b49572498019f0a0e3600f50398
+    path: vllm/engine/arg_utils.py
+    raw_url: https://raw.githubusercontent.com/vllm-project/vllm/0decac0d96c42b49572498019f0a0e3600f50398/vllm/engine/arg_utils.py
+    bytes: 111327
+    sha256: ee107df77e59d1ca860d826feda540158bdefbdcaa3a2b786967396d83315d16
+    boolean_optional_action_lines: 343-345
+    chunked_prefill_field_line: 598
+    cli_registration_lines: 1390-1394
+  vllm_scheduler_config:
+    repository: https://github.com/vllm-project/vllm
+    commit: 0decac0d96c42b49572498019f0a0e3600f50398
+    path: vllm/config/scheduler.py
+    raw_url: https://raw.githubusercontent.com/vllm-project/vllm/0decac0d96c42b49572498019f0a0e3600f50398/vllm/config/scheduler.py
+    bytes: 13031
+    sha256: c7d4cdd00bcf82be156d2affd170a2bb17ff0dce96af21c79734f01bcd11b049
+    validation_lines: 259-270
+    rejection_condition: max_num_batched_tokens_less_than_max_model_len_and_chunked_prefill_disabled
+    error_requires: increase_max_num_batched_tokens_or_decrease_max_model_len
+  vllm_ascend_scheduler_patch:
+    repository: https://github.com/vllm-project/vllm-ascend
+    commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+    path: vllm_ascend/patch/platform/patch_scheduler.py
+    raw_url: https://raw.githubusercontent.com/vllm-project/vllm-ascend/5f6faa0cb8830f667266f3b8121cd1383606f2a1/vllm_ascend/patch/platform/patch_scheduler.py
+    bytes: 2197
+    sha256: 3c7a4cae783f6a083fd0a3715c3c70ba9243ae2f3ae8668962378edee6d6ed3e
+    changes_scheduler_config_validation: false
+    scope: patches_scheduler_mamba_block_aligned_split_only
+
+explicit_cli_control:
+  field_type: bool_or_none
+  argparse_action: BooleanOptionalAction
+  on_flag: --enable-chunked-prefill
+  off_flag: --no-enable-chunked-prefill
+  omission_is_not_used: true
+  normalized_argv_delta_count: 1
+  normalized_argv_delta:
+    chunked_prefill_off: --no-enable-chunked-prefill
+    chunked_prefill_on: --enable-chunked-prefill
+
+frozen_config:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  quantization: ascend
+  data_parallel_size: 1
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  speculative_config: {method: mtp, num_speculative_tokens: 1}
+  cudagraph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  prefix_cache_flag_both_modes: --enable-prefix-caching
+  r2_hybrid_kv_repair_both_modes: true
+  primary_cell: {context_tokens: 131072, output_tokens: 64, concurrency: 1}
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming: true
+  mode_order: [chunked_prefill_off, chunked_prefill_on]
+  profiler_authorized: false
+  hbm_sampler_authorized: false
+
+candidate_normalized_server_argv:
+  source_basis: current_r4_reference_command_with_prefix_cache_explicitly_enabled
+  serialization: bash_printf_percent_q_space_plus_newline
+  before_chunked_prefill_flag:
+    - /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/vllm
+    - serve
+    - /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+    - --safetensors-load-strategy
+    - prefetch
+    - --max-model-len
+    - "135168"
+    - --max-num-batched-tokens
+    - "4096"
+    - --served-model-name
+    - deepseek-v4-flash-w8a8-mtp
+    - --gpu-memory-utilization
+    - "0.92"
+    - --max-num-seqs
+    - "1"
+    - --data-parallel-size
+    - "1"
+    - --tensor-parallel-size
+    - "8"
+    - --enable-expert-parallel
+    - --quantization
+    - ascend
+    - --host
+    - 127.0.0.1
+    - --port
+    - "7000"
+    - --block-size
+    - "128"
+  chunked_prefill_off_flag: --no-enable-chunked-prefill
+  chunked_prefill_on_flag: --enable-chunked-prefill
+  after_chunked_prefill_flag:
+    - --enable-prefix-caching
+    - --tokenizer-mode
+    - deepseek_v4
+    - --tool-call-parser
+    - deepseek_v4
+    - --enable-auto-tool-choice
+    - --reasoning-parser
+    - deepseek_v4
+    - --async-scheduling
+    - --additional-config
+    - '{"enable_flashcomm1":true,"enable_dsa_cp":true,"enable_cpu_binding":true,"multistream_overlap_shared_expert":false}'
+    - --model-loader-extra-config
+    - '{"enable_multithread_load":true,"num_threads":16}'
+    - --compilation-config
+    - '{"cudagraph_mode":"FULL_DECODE_ONLY","cudagraph_capture_sizes":[2,4,6,8,10,12,14,16,18,20,22,24,32,36,40]}'
+    - --speculative-config
+    - '{"method":"mtp","num_speculative_tokens":1}'
+
+candidate_server_command_sha256:
+  chunked_prefill_off: 46728ac6b0be753670c96021a9292469df0c78437d4e60d1e0458cbdf9b63507
+  chunked_prefill_on: 370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19
+  chunked_prefill_on_matches_current_reference: true
+  hashes_are_a_local_normalization_audit_not_execution_evidence: true
+
+reference_artifacts:
+  r4_mode_runner:
+    path: tools/inference_contracts/run_deepseek_p6_3b_r4_mode.sh
+    sha256: 1092ae2978c37a103862d7ef76059ef0d71b68c5caa74c6cb3db1e1a45612a57
+  r4_r1_nfs_wrapper:
+    path: tools/inference_contracts/run_deepseek_p6_3b_r4_r1_mode.sh
+    sha256: 5ebc4e0a8ba8163b56ab26cb72abd93206da64741a303cec6ef9d601cc257b5d
+  hybrid_kv_runtime_patch:
+    path: tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py
+    sha256: 6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
+  hybrid_kv_deferred_loader:
+    path: tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py
+    sha256: 9d720389f520918642ddecf288d0ac3922f61873251760129ba34ba203d02631
+  mtp_overlay_patch:
+    path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+    sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  hybrid_manager_overlay_patch:
+    path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch
+    sha256: cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
+  deferred_install_overlay_patch:
+    path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch
+    sha256: ad845854461605ae28ae7000f24ada0cb07c5c17f3b0c23ee1485ec537a7a85b
+
+validation_evaluation:
+  chunked_prefill_off: true
+  max_num_batched_tokens_less_than_max_model_len: true
+  raises_value_error_before_resolved_runtime_config: true
+
+resolved_config_gate:
+  chunked_prefill_on: true
+  chunked_prefill_off: unavailable_validation_rejects_engine_config
+  both_modes_resolved_before_requests: false
+
+required_second_variable_escape:
+  increase_max_num_batched_tokens_to_at_least: 135168
+  or_decrease_max_model_len_to_at_most: 4096
+  allowed_by_p6_3c_contract: false
+
+execution_boundary:
+  executable_workload_created: false
+  mode_runner_created: false
+  request_bodies_created: false
+  server_task_created: false
+  npu_execution_authorized: false
+  next_task_authorized: false
+  npu_or_vllm_started: false
+  requests_sent: 0
+
+formal_matched_ab_allowed: false
