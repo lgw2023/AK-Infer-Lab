@@ -140,7 +140,8 @@ def test_matrix_workload_authorizes_six_sequential_observe_only_requests() -> No
     assert workload["stop_policy"]["no_profiler"] is True
     assert workload["stop_policy"]["no_offload"] is True
     assert workload["stop_policy"]["no_p8_2_p7_or_p9"] is True
-    assert workload["execution_state"]["npu_execution_authorized"] is True
+    assert workload["execution_state"]["status"] == "completed_developer_reviewed_yellow"
+    assert workload["execution_state"]["npu_execution_authorized"] is False
     assert workload["execution_state"]["result_transfer_authorized"] is False
 
 
@@ -464,28 +465,29 @@ def test_matrix_workload_hashes_every_executable_contract_artifact() -> None:
         assert frozen[key] == hashlib.sha256(path.read_bytes()).hexdigest(), path
 
 
-def test_current_handoff_authorizes_only_the_six_request_p8_1_matrix() -> None:
+def test_current_handoff_authorizes_only_the_six_request_p8_1_r1_matrix() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-        "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716"
+        "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717"
         in handoff
     )
     assert (
-        "execution_mode: authorized_official_mtp_observe_only_six_request_matrix"
+        "execution_mode: authorized_p8_1_r1_full_r2_repair_observe_only_six_request_replay"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml" in handoff
+    assert "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml" in handoff
     assert "p8_official_mtp_observe_matrix_contract.yaml" in handoff
-    assert "run_deepseek_p8_1_observe_only_matrix.sh" in handoff
-    assert "prepare_deepseek_p8_1_observe_matrix.py" in handoff
-    assert "finalize_deepseek_p8_1_observe_only_matrix.py" in handoff
+    assert "run_deepseek_p8_1_r1_observe_only_matrix.sh" in handoff
+    assert "prepare_deepseek_p8_1_r1_observe_matrix.py" in handoff
+    assert "finalize_deepseek_p8_1_r1_observe_only_matrix.py" in handoff
     assert "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19" in handoff
     assert "4096/65536/131072 × 2" in handoff
     assert "58880" in handoff

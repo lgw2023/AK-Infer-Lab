@@ -340,7 +340,7 @@ def test_r4_r1_closeout_preserves_r3_and_blocked_r4_without_erasing_them():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "执行 official-MTP P8.1 六请求 observe-only matrix" in handoff
+    assert "执行 P8.1-R1 完整 R2 repair observe-only 六请求复跑" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "request_count_exact: 6" in handoff
@@ -377,7 +377,7 @@ def test_r4_r1_closeout_preserves_r3_and_blocked_r4_without_erasing_them():
         "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
+        "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False

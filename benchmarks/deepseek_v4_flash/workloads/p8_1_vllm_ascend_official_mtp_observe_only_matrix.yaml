@@ -234,12 +234,48 @@ stop_policy:
   no_placement_or_payload_mutation: true
   no_p8_2_p7_or_p9: true
 
+execution_result:
+  status: completed_developer_reviewed_yellow
+  server_grade: yellow_p8_1_matrix_trace_invalid
+  developer_grade: yellow_p8_1_matrix_trace_invalid
+  developer_disposition: accepted_as_bounded_negative_trace_evidence
+  server_head: bd486a04765900b2c283f562a3ac214b68da3f3a
+  successful_requests: 6_of_6
+  shared_prefix_slot: medium_shared_follower
+  shared_prefix_token_lcp: 58880
+  shared_prefix_expected_hit_tokens: 49152
+  shared_prefix_actual_hit_tokens: 0
+  other_five_actual_hit_tokens: [0, 0, 0, 0, 0]
+  mtp_health_queue_trace_replay_join_ok: true
+  trace_validation_errors: 0
+  cleanup: clean
+  result_package: {files: 13, bytes: 17195}
+  developer_received_path: /Volumes/SSD1/Inbox/2026-07-17/p8_1_official_mtp_observe_only_matrix_20260716_yellow
+  candidate_file_sha256:
+    cleanup_status.txt: 2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d
+    environment_and_hashes.json: a141f8fd5f7756be3896cc302c090298ddd3dd4de07584cf7356e30d0b8bb91a
+    first_failure_excerpt.txt: 0a6440539ff2eb5f72b86d5506a4571fd22fc6f3d37303cd7e4b43790569ec0f
+    grading_inputs.json: 628ce2e09c2bbd04ea344a711ce2c35174f30eb5b1223f272129d1055c521f79
+    join_coverage.json: 610d0f43b6c7ca5521ceb2c363215e4e18f0d0f41d1e3091c797b353bf5d2038
+    mtp_metrics_summary.json: 3ff00b935855c5ab8ef1c7a80d40de213a2b968255609e1b73f02b4ded7a426e
+    prefix_cache_metrics_summary.json: e5d214e923d1761f5f2fa6694cc1ab8f8b000756c80a0458f270c8804c984502
+    queue_health_summary.json: a0828912ebddcd72f82e83cda22cad6d001a6d330eaf267f35ac56258d6f2f8d
+    replay_determinism.json: 3172766dbb6d801c451bd5f77cb4585168463973f0855bac48eafbba6b5369e8
+    request_matrix_summary.json: 0e397aeb25db1fc4da5723f825da541d9cfbd7a3cfe9c666cbdea4120e4c56e7
+    result_summary.md: c68fdc89a4869725ac0017592fe2a2652707bd3952654d23e37c826dcc859231
+    trace_summary.json: e875e5a5e3cee2ef6324c0a181b7047e7e851fc3eb7123f119af16ca3708fcb5
+    transfer_availability_summary.json: f12850f55ed9abd099f822b3d5218d1da37c8c596aa9660c7e6a2f593103751a
+  generated_text_or_token_ids_received: false
+  cause_proven: false
+  high_confidence_primary_diagnosis: missing_full_r2_hybrid_kv_repair_in_p8_1_runtime_overlay
+  causal_proof_requires_r1_replay: true
+
 execution_state:
-  status: prepared_not_executed
-  server_handoff: current
-  server_result: pending
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_developer_reviewed_yellow
+  server_handoff: historical
+  server_result: received_and_reviewed
+  npu_execution_authorized: false
+  next_task_authorized: false
   result_transfer_authorized: false
   standing_npu_and_vllm_consumption_authorization: true
 

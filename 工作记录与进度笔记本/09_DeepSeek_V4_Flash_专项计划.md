@@ -20,7 +20,7 @@ request=`0/64`，不形成机制证据。P6.3B-R4-R1 随后完成并由开发机
 `green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`：ownership-safe copy、same R2 repair、显式
 `--no-enable-prefix-caching` / `--enable-prefix-caching`、live config 与 token-LCP 门全部通过；64/64 request
 成功，off hit=0，on primary 9/9 正命中且逐请求符合 16K LCM floor。其余 15 条 boundary 仍为零命中，
-故不声明普遍命中或性能收益。P6.3C 已因 frozen `4096 < 135168` 组合使 off 侧无法通过 vLLM validation，收口为 `blocked_p6_3c_not_strict_single_variable`。P6 五份汇总交付物已闭合；当前独立任务为 official-MTP P8.1 observe-only 六请求 matrix，覆盖 `4096/65536/131072 × 2`、64K shared-prefix、逐请求计数、双 replay 与 join，不构成性能比较。
+故不声明普遍命中或性能收益。P6.3C 已因 frozen `4096 < 135168` 组合使 off 侧无法通过 vLLM validation，收口为 `blocked_p6_3c_not_strict_single_variable`。P6 五份汇总交付物已闭合。P8.1 parent 已收口为 `yellow_p8_1_matrix_trace_invalid`：六请求、MTP/queue/trace/replay/join 通过，但 64K follower hit=0。当前独立任务为 P8.1-R1 `p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717`：保持 parent 的 `4096/65536/131072 × 2`、六 body/顺序/server argv 和 observe-only 口径，补齐完整 R2 repair 与诊断门；`cause_proven_before_replay:false`，不构成性能比较或 P8.2 授权。
 `0.22.1/0.22.1rc1` mixed-checkpoint 四卡诊断已在当前 SoC 的 `customize_dtype`
 能力门收口，W8A8-MTP 保持唯一主对象：
 
@@ -46,10 +46,11 @@ fresh lifecycle per cell -> msprof + phase memory + request-device aggregate
 `4096/32768/65536/131072 × 50%/90%`、16 prime + 48 measured；ownership-safe archive copy、same R2
 repair/安装门、resolved false/true、真实 token-LCP、on primary 9/9 positive hit、off hit=0 与 body pairing
 全部通过，其余 15 个 on follower 作为 boundary diagnosis 保留 zero hit。当前 handoff 已授权服务器执行
-`p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716`：只用一个 fresh TP8+EP/MTP lifecycle
-固定发送六个 `4096/65536/131072 × 2` streaming `+64,c1` 请求，验证 shared-prefix/isolated Prefix proxy、
-逐请求 MTP/health/queue、18 个 request-stage、6 个 StateObject/no-op decision、双 bundle determinism 与 join；
-禁止 profiler、offload、placement/payload mutation、第 7 请求与 P8.2。
+`p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717`：只用一个 fresh TP8+EP/MTP lifecycle，
+重放 parent 的六个 `4096/65536/131072 × 2` streaming `+64,c1` 请求，同时补齐 same R2 repair、
+frozen body、resolved Prefix、hybrid diagnostic、localhost proxy 和 retention-unset 门，保留逐请求 MTP/health/queue、
+18 个 request-stage、6 个 StateObject/no-op decision、双 bundle determinism 与 join；禁止 profiler、offload、
+placement/payload mutation、第 7 请求与 P8.2。
 
 首轮在仅 NPU 6、7 空闲的条件下以 TP2 做启动诊断，所有请求均未进入推理阶段。`vLLM 0.18.0 / vLLM-Ascend 0.18.0` 先后暴露 `mtp` 不受支持，以及 `DeepseekV4Config` 缺少 `kv_lora_rank` 的架构错配；最终最高成功输入为 `0`，不能形成容量、性能或瓶颈结论。
 

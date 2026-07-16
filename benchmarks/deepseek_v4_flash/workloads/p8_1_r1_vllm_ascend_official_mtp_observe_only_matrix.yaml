@@ -1,0 +1,220 @@
+schema_version: 1
+workload_id: p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix
+date: "2026-07-17"
+purpose: replay_the_bounded_p8_1_matrix_with_the_complete_accepted_r2_hybrid_kv_repair
+task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717
+
+stage_contract:
+  stage: P8.1-R1
+  mode: vllm_ascend_observe_only_bounded_matrix_r2_repair_replay
+  claim_boundary: official_mtp_shared_prefix_observe_only_trace_repair_replay_not_performance
+  performance_comparison_authorized: false
+  p8_2_execution_authorized: false
+
+parent_lineage:
+  workload: benchmarks/deepseek_v4_flash/workloads/p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml
+  task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716
+  developer_grade: yellow_p8_1_matrix_trace_invalid
+  successful_requests: 6_of_6
+  only_failed_gate: medium_shared_follower_prefix_hit_0_expected_49152
+  mtp_health_queue_trace_replay_join_ok: true
+  cleanup: clean
+  historical_result_preserved: true
+
+repair_hypothesis:
+  high_confidence_primary_diagnosis: parent_runtime_overlay_omitted_the_full_r2_hybrid_kv_repair
+  evidence: parent_used_the_p6_3b_r4_r1_expected_hit_without_its_complete_repair_baseline
+  cause_proven_before_replay: false
+  causal_test: same_matrix_same_server_argv_with_complete_r2_task_local_overlay_and_diagnostics
+  remaining_zero_hit_disposition: stop_for_read_only_frozen_source_and_server_local_log_diagnosis
+
+official_baseline:
+  contract: benchmarks/deepseek_v4_flash/p8/p8_official_mtp_observe_matrix_contract.yaml
+  contract_status: frozen_official
+  model_id: deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
+  accepted_contexts: [4096, 65536, 131072]
+  output_tokens: 64
+  concurrency: 1
+
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  torch: 2.10.0+cpu
+  torch_npu: 2.10.0
+  visible_devices: "0,1,2,3,4,5,6,7"
+
+runtime_fixed:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  speculative_method: mtp
+  num_speculative_tokens: 1
+  cudagraph_mode: FULL_DECODE_ONLY
+
+source_and_repair_gate:
+  source_payload:
+    server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+    prompt_tokens: 4096
+    bytes: 19487
+    sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+  full_p6_3b_r2_task_local_repair_required: true
+  runtime_implementation: tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py
+  runtime_implementation_sha256: 6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
+  deferred_loader: tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py
+  deferred_loader_sha256: 9d720389f520918642ddecf288d0ac3922f61873251760129ba34ba203d02631
+  mtp_overlay_patch: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  mtp_overlay_patch_sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  hybrid_manager_overlay_patch: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch
+  hybrid_manager_overlay_patch_sha256: cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
+  deferred_install_overlay_patch: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch
+  deferred_install_overlay_patch_sha256: ad845854461605ae28ae7000f24ada0cb07c5c17f3b0c23ee1485ec537a7a85b
+  expected_overlay_proposer_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+  expected_overlay_coordinator_sha256: a1ed9c82e308608cd20965a49baa29a3e95d723248fff699fd83dfb3caf10250
+  expected_overlay_interface_sha256: 524c933ef17806ecba0634804bc562de1f69dc095fe1346e2edd0103845bfa75
+  runtime_diagnostic_hard_gate: true
+  runtime_diagnostic_summary_required: true
+  base_environment_or_site_packages_mutation: false
+
+request_plan:
+  lifecycle_count: 1
+  request_count: 6
+  concurrency: 1
+  order_and_bodies_identical_to_parent: true
+  output_tokens: 64
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming_required: true
+  request_retries: 0
+  shared_prefix:
+    prime_slot: medium_shared_prime
+    follower_slot: medium_shared_follower
+    token_lcp: 58880
+    expected_prefix_hit_tokens: 49152
+  other_five_expected_prefix_hit_tokens: 0
+  frozen_request_body_sha256:
+    short_isolated_a: 7d59f274cf53019b221e5d4add7628551bed5a910255e267f52719dac41f2b21
+    medium_shared_prime: 1ff2523c2cb5172f5ce0ba9ce5bde2a66c9ed3d20e73cb8715fbd36841f39496
+    medium_shared_follower: 46363c923be52449e803488bec3f7691a620cd31248ac3b62304407d35485169
+    long_isolated_a: e5d848816122c3d9f1dba0e7149294017471fc4ebfabfe6a69402666b92f2857
+    short_isolated_b: c36dc099ab384fb8da5bff881473af45a75f918bf59104db5828a8302d2aecd5
+    long_isolated_b: 820a663bf3335849673f508fde484a0a84c17ebc16b513b2be4be1e6508eeb88
+  sanitized_body_relationship_summary_required: true
+  request_bodies_remain_server_local: true
+  generated_text_retained: false
+  generated_token_ids_retained: false
+
+protocol_and_environment_controls:
+  localhost_no_proxy_explicit: true
+  lowercase_no_proxy_required: true
+  uppercase_no_proxy_required: true
+  no_proxy_hosts: [127.0.0.1, localhost]
+  prefix_cache_retention_interval: explicitly_unset
+  resolved_enable_prefix_caching: true
+  live_process_cmdline_evidence_required_before_request: true
+
+observation_contract:
+  schema: tools/ak_state_runtime/schema/vllm_ascend_observation.schema.yaml
+  schema_version: 0.1.0
+  adapter_mode: observe_only
+  runtime_imports_allowed: false
+  payload_fields_allowed: false
+  placement_mutation_allowed: false
+  per_request_prefix_mtp_health_queue: true
+  deterministic_replay_bundle_count: 2
+  request_runtime_object_join_required: true
+  request_stage_event_count: 18
+  state_object_count: 6
+  placement_decision_count: 6
+  device_join_unavailable_with_explicit_reason_allowed: true
+  trace_validation_errors: 0
+
+runner:
+  path: tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
+  sha256: c9f7c7cbaeeba903cb2e439ba7fc64afdf5a4fd4f02ce145d3ae983f273d92a1
+  finalizer: tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
+  finalizer_sha256: 4745e4bf263b1343fd6d17e755b1b3989c09dd64646ed4cf5a43e0837186e599
+  preparer: tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
+  preparer_sha256: 8d6e1a294bfd301f98cb5230c6ee3ba6adcec2663d9506f0085ffa3cd8824ad5
+  expected_server_command_sha256: 370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19
+  server_argv_identical_to_parent: true
+
+acceptance:
+  blocked_preflight_grade: blocked_p8_1_r1_source_or_resource_gate
+  server_not_ready_grade: red_p8_1_r1_server_not_ready
+  request_failure_grade: red_p8_1_r1_request_no_success
+  partial_grade: yellow_p8_1_r1_matrix_partial
+  trace_failure_grade: yellow_p8_1_r1_matrix_trace_invalid
+  server_candidate_green_grade: candidate_green_p8_1_r1_official_mtp_observe_only_matrix
+  developer_accepted_green_grade: green_p8_1_r1_official_mtp_observe_only_matrix
+  green_requires:
+    - six_of_six_request_success
+    - exact_frozen_body_hashes_and_order
+    - complete_r2_repair_identity_and_diagnostics
+    - resolved_prefix_cache_true
+    - shared_follower_hit_exactly_49152
+    - other_five_hits_exactly_zero
+    - per_request_mtp_health_queue
+    - trace_replay_join_exact
+    - clean_cleanup
+  server_candidate_requires_external_developer_review: true
+
+result_package_policy:
+  max_total_bytes: 71680
+  raw_logs_metrics_request_bodies_observations_bundles_and_full_diagnostics_remain_server_local: true
+  generated_text_or_token_ids_allowed: false
+  automatic_transfer_allowed: false
+  selection_required_before_any_transfer: true
+  available_methods: [email, upload-api, server-local]
+  bounded_candidates:
+    - result_summary.md
+    - environment_and_hashes.json
+    - body_relationship_summary.json
+    - repair_diagnostic_summary.json
+    - request_matrix_summary.json
+    - prefix_cache_metrics_summary.json
+    - mtp_metrics_summary.json
+    - queue_health_summary.json
+    - transfer_availability_summary.json
+    - replay_determinism.json
+    - join_coverage.json
+    - trace_summary.json
+    - grading_inputs.json
+    - cleanup_status.txt
+    - first_failure_excerpt.txt
+
+stop_policy:
+  stop_on_first_request_failure: true
+  no_retry: true
+  no_seventh_request: true
+  no_profiler_or_offload: true
+  no_runtime_parameter_or_body_mutation: true
+  no_second_repair_after_r2: true
+  no_p8_2_p7_or_p9: true
+  no_automatic_result_transfer: true
+
+execution_state:
+  status: prepared_not_executed
+  server_handoff: current
+  server_result: pending
+  npu_execution_authorized: true
+  next_task_authorized: true
+  result_transfer_authorized: false
+  standing_npu_and_vllm_consumption_authorization: true
+
+boundaries:
+  - R1 tests the missing-repair diagnosis but does not assume that diagnosis is already proven.
+  - Server argv, six request bodies, order and metric definitions remain identical to the parent matrix.
+  - The task-local R2 overlay is a baseline repair, not a second experimental variable or a performance comparison.
+  - A persistent zero-hit follower stops P8.1 and opens only read-only source and server-local log diagnosis.
+  - No P8.2, offload, profiler, payload movement, placement mutation or optimization claim is authorized.

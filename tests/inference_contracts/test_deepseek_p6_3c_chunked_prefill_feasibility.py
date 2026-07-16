@@ -169,24 +169,25 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_while_entering_p8_1():
         "p6_3c_chunked_prefill_feasibility_audit.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
+        "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.1_official_mtp_observe_only_bounded_matrix"
+        "P8.1-R1_official_mtp_observe_only_r2_repair_replay"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
     )
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_1_execution_authorized"] is True
+    assert readiness["acceptance"]["p8_1_execution_authorized"] is False
+    assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is True
     assert readiness["acceptance"]["next_task_authorized"] is True
 
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716" in handoff
-    assert "execution_mode: authorized_official_mtp_observe_only_six_request_matrix" in handoff
+    assert "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717" in handoff
+    assert "execution_mode: authorized_p8_1_r1_full_r2_repair_observe_only_six_request_replay" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff

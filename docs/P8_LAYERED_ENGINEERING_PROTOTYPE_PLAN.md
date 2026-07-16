@@ -1,10 +1,10 @@
 # P8 分层工程原型实施计划
 
-日期：2026-07-10；最后更新：2026-07-16
+日期：2026-07-10；最后更新：2026-07-17
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / observe_only_adapter_implemented_server_validation_pending / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_yellow_repair_replay_pending / tp4_expert_residency_goal_defined`
 
-状态拆分：`local_artifact_state=observe_only_matrix_implemented`；`server_execution_state=p8_1_bounded_matrix_authorized_pending_result`；`real_move_state=closed_by_gate`；`tp4_state=plan_defined_measurements_missing`。任务级授权只覆盖当前六请求 observe-only matrix，不代表 real move 已打开。
+状态拆分：`local_artifact_state=p8_1_r1_full_r2_repair_replay_implemented`；`server_execution_state=p8_1_r1_authorized_pending_result`；`real_move_state=closed_by_gate`；`tp4_state=plan_defined_measurements_missing`。Parent P8.1 已以 `yellow_p8_1_matrix_trace_invalid` 收口：六请求、MTP、queue、trace、replay 和 join 通过，但 shared follower hit=0。当前 P8.1-R1 任务 `p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717` 只在相同 matrix/server argv 上补齐完整 R2 task-local repair。该复跑只验证高置信 repair 诊断，`cause_proven_before_replay:false`；不代表 P8.2 或 real move 已打开。
 
 ## 1. P8 的工程定义
 

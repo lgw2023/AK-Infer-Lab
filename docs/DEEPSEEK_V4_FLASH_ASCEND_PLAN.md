@@ -41,7 +41,7 @@ transformers 5.5.4
 new isolated host conda environment built; W8A8-MTP official context ladder green through 131072+64
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8-MTP 已通过 task-local overlay 完成最小请求、4K 长输出和 official context ladder；开发机接受 `green_mtp_official_context_ladder`，最高稳定上下文 131072。P6.1 unprofiled、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache 均已接受 green；P6.3C 以 strict-single-variable blocked 收口，P6 五份汇总交付物已物化。当前执行缺口是 official-MTP P8.1 六请求 observe-only matrix 的真实服务器 trace/replay/join 复核。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8-MTP 已通过 task-local overlay 完成最小请求、4K 长输出和 official context ladder；开发机接受 `green_mtp_official_context_ladder`，最高稳定上下文 131072。P6.1 unprofiled、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache 均已接受 green；P6.3C 以 strict-single-variable blocked 收口，P6 五份汇总交付物已物化。P8.1 六请求 observe-only matrix 已开发机收口为 `yellow_p8_1_matrix_trace_invalid`：6/6 request 及 MTP/health/queue/trace/replay/join 通过，但 shared follower hit=0。当前执行缺口是 `p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717` P8.1-R1：在不改六 body、顺序、server argv 和 observe-only 边界下补齐完整 R2 repair，验证缺 repair 诊断；复跑前 `cause_proven_before_replay:false`，P8.2 仍关闭。
 
 ### 3.2 对照路：MindIE
 
@@ -65,7 +65,7 @@ mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门
 p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_sampling_repair_2026_0714
 ```
 
-server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 official-MTP observe-only workload 已准备并进入当前唯一服务器 handoff。
+server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 parent 为 `yellow_p8_1_matrix_trace_invalid`，当前唯一服务器 handoff 是 P8.1-R1 完整 R2 repair observe-only 复跑 `p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717`，P8.2 仍关闭。
 
 参考配置：
 

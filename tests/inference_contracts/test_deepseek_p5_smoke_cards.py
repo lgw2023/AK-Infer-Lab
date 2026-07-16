@@ -1953,15 +1953,15 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_advances_from_p6_closeout_to_p8_1_observe_only():
+def test_server_handoff_advances_from_p8_1_yellow_to_r1_repair_replay():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "执行 official-MTP P8.1 六请求 observe-only matrix" in handoff
-    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716" in handoff
-    assert "execution_mode: authorized_official_mtp_observe_only_six_request_matrix" in handoff
+    assert "执行 P8.1-R1 完整 R2 repair observe-only 六请求复跑" in handoff
+    assert "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717" in handoff
+    assert "execution_mode: authorized_p8_1_r1_full_r2_repair_observe_only_six_request_replay" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff
@@ -2031,8 +2031,11 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
     assert artifacts["completed_p6_3b_r4_r1_workload"] == (
         "workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
-    assert artifacts["next_workload"] == (
+    assert artifacts["completed_p8_1_workload"] == (
         "workloads/p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
+    )
+    assert artifacts["next_workload"] == (
+        "workloads/p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
         "p6_3b_r4_r1_explicit_prefix_control_matched_ab_developer_accepted_green"
@@ -2068,7 +2071,10 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
     assert acceptance["p6_3b_mechanism_baseline"] is True
     assert acceptance["p6_3c_execution_authorized"] is False
     assert acceptance["p8_official_mtp_baseline_status"] == "frozen_official"
-    assert acceptance["p8_1_execution_authorized"] is True
+    assert acceptance["p8_1_grade"] == "yellow_p8_1_matrix_trace_invalid"
+    assert acceptance["p8_1_execution_authorized"] is False
+    assert acceptance["p8_1_r1_execution_authorized"] is True
+    assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is True
 
     current_surfaces = {
@@ -2415,13 +2421,13 @@ def test_p6_3b_r1_records_bounded_ready_failure_without_revoking_prior_evidence(
     }
 
 
-def test_server_handoff_executes_only_p8_1_after_r4_r1_closeout():
+def test_server_handoff_executes_only_p8_1_r1_after_parent_yellow_closeout():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    assert "执行 official-MTP P8.1 六请求 observe-only matrix" in handoff
-    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716" in handoff
+    assert "执行 P8.1-R1 完整 R2 repair observe-only 六请求复跑" in handoff
+    assert "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff

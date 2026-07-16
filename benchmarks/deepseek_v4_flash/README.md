@@ -47,7 +47,8 @@ P5 deliverables:
 - `patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch`: one-line diagnostic backport of the `positions_cpu` proposer metadata field from upstream PR 11062; it is not a full upstream backport.
 - `p8/p8_baseline_contract.yaml` and `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: preserved historical no-MTP `frozen_degraded` provenance; not the current P8.1 execution target.
 - `p8/p8_official_mtp_baseline_contract.yaml` and `workloads/p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml`: preserved official-MTP single-request tracer provenance; published but superseded before server execution.
-- `p8/p8_official_mtp_observe_matrix_contract.yaml` and `workloads/p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml`: current authorized P8.1 target; one lifecycle, six sequential `4096/65536/131072 × 2` requests, a 64K shared-prefix pair, per-request Prefix/MTP/health/queue evidence and deterministic offline replay.
+- `p8/p8_official_mtp_observe_matrix_contract.yaml` and `workloads/p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml`: completed P8.1 parent, developer-reviewed `yellow_p8_1_matrix_trace_invalid`; all six requests and trace/replay/join gates passed, but the 64K follower hit was zero instead of 49152.
+- `workloads/p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml`: current authorized P8.1-R1 target; replays the same six bodies/order/server argv in one lifecycle with the complete accepted R2 task-local repair, repair diagnostics, resolved Prefix evidence and explicit localhost/retention controls. It is observe-only, not a performance comparison, and does not open P8.2.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:
@@ -61,5 +62,5 @@ Next artifact boundary:
 - P6.3A changed only the MTP speculative server argument and is complete; its accepted mechanism effect remains fixed-order descriptive evidence, not a randomized or statistically significant claim.
 - P6.3B-R4-R1 changed only explicit `--no-enable-prefix-caching` versus `--enable-prefix-caching`; both modes retained MTP and reused the same block-aligned repeated-prefix bodies. The fifteen boundary followers still had zero hits, so the accepted mechanism scope is not a universal performance claim.
 - P6.3C strict-single-variable feasibility is closed as `blocked_p6_3c_not_strict_single_variable`: explicit CLI on/off exists, but the frozen off configuration is rejected because `4096 < 135168`; changing either value would introduce a forbidden second variable. This does not block the separately published Chunked-Prefill-on P8.1 official-MTP observe-only task.
-- Do not create P8 real-move cards before P8.0 capability probe and P8.1 observe-only trace pass.
+- Do not create P8 real-move cards before P8.1-R1 closes the shared-prefix trace gate; a persistent repaired zero-hit result opens only read-only diagnosis, not P8.2.
 - MindIE cards are conditional on a separately confirmed server runtime; current server evidence does not show MindIE as available.
