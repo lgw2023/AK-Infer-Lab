@@ -1,0 +1,55 @@
+schema_name: ak_p6_artifact_manifest
+schema_version: 1.0.0
+manifest_id: p6_deepseek_v4_flash_closeout_2026_0716
+manifest_date: "2026-07-16"
+manifest_status: complete_repository_closeout
+
+deliverables:
+  baseline_contract:
+    path: benchmarks/deepseek_v4_flash/p6/p6_baseline_contract.yaml
+    bytes: 3141
+    sha256: 2a8ad6e3a618de47898e5083ccadf05b01504f1ba8c5e3f0dd23fd8dc3c81fb0
+  unprofiled_baseline_report:
+    path: benchmarks/deepseek_v4_flash/p6/p6_unprofiled_baseline_report.md
+    bytes: 1862
+    sha256: 1d03da32133b92ab95c69f63ee770144e640c2b70f38a1fdd6d08e8de3e4ab64
+  profiled_evidence_report:
+    path: benchmarks/deepseek_v4_flash/p6/p6_profiled_evidence_report.md
+    bytes: 1579
+    sha256: 91a69bbd4ee27fda46f63353c6397da28101363526aa98f63ce80f771d6b2a34
+  single_variable_ab_report:
+    path: benchmarks/deepseek_v4_flash/p6/p6_single_variable_ab_report.md
+    bytes: 2541
+    sha256: 8445a35a423904ed8201d7b6bf6a204fc78d4803cf1b910c40968d9dbe610774
+
+accepted_evidence:
+  official_context:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml
+    bytes: 12658
+    sha256: ea32a5e14f02590c587f8a9f316b353ca91f98072b3a7debfd8530c642fffd1f
+  unprofiled_baseline:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_1_mtp_unprofiled_baseline.yaml
+    bytes: 10788
+    sha256: b9d172617008974ae6a97f253c9001321b680fed3de89f83e4aa3e1ab20f5232
+  profiled_evidence:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_2_mtp_profiled_evidence.yaml
+    bytes: 11129
+    sha256: 10a786103fe9cc342dda69101b1746bb211673f5f5cc0b4a2c4c8a1f72056d94
+  mtp_matched_ab:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_3a_mtp_matched_ab.yaml
+    bytes: 10734
+    sha256: 7d01f31ea977795def0cddcac2d335256d4f00a6ac58fe56382812b70072f3e2
+  prefix_cache_matched_ab:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml
+    bytes: 11052
+    sha256: e836a2f2d21868a718d72f0369b0283e25033064f6e8b520301ffcf09bf6112b
+  chunked_prefill_feasibility:
+    path: benchmarks/deepseek_v4_flash/p6_3c_chunked_prefill_feasibility_audit.yaml
+    bytes: 7489
+    sha256: aeb91adc8b0b432765392ff85d7d39a3bff5a28aa9df85024a2580189726e7f6
+
+claim_boundary:
+  repository_evidence_only: true
+  raw_server_artifacts_included: false
+  generated_content_or_token_ids_included: false
+  new_npu_execution: false

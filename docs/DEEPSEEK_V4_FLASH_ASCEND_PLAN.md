@@ -41,7 +41,7 @@ transformers 5.5.4
 new isolated host conda environment built; W8A8-MTP official context ladder green through 131072+64
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8-MTP 已通过 task-local overlay 完成最小请求、4K 长输出和 official context ladder；开发机接受 `green_mtp_official_context_ladder`，最高稳定上下文 131072。P6.1 unprofiled 已接受为 `green_mtp_unprofiled_baseline`，P6.2 已接受为 `green_mtp_profiled_evidence`；当前缺口是 P6.3 matched single-variable evidence。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8-MTP 已通过 task-local overlay 完成最小请求、4K 长输出和 official context ladder；开发机接受 `green_mtp_official_context_ladder`，最高稳定上下文 131072。P6.1 unprofiled、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache 均已接受 green；P6.3C 以 strict-single-variable blocked 收口，P6 五份汇总交付物已物化。当前执行缺口是 official-MTP `4096+64+c1` 的 P8.1 observe-only server trace。
 
 ### 3.2 对照路：MindIE
 
@@ -65,7 +65,7 @@ mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门
 p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_sampling_repair_2026_0714
 ```
 
-server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 继续延后。
+server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 official-MTP observe-only workload 已准备并进入当前唯一服务器 handoff。
 
 参考配置：
 
@@ -88,7 +88,7 @@ context=4096/65536/131072; output=64/256; concurrency=1/4/8
 zero retry; no HBM sampler; no profiler
 ```
 
-P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性能 reference；P6.2 已建立 profiled evidence reference；P6.3A 已关闭 matched MTP mechanism gate；P6.3B-R4-R1 已关闭 primary scope 的 explicit Prefix Cache mechanism gate。P6.3C 因 frozen `4096 < 135168` 配置在 off 侧触发 vLLM validation，已记录为 `blocked_p6_3c_not_strict_single_variable`，P8.1 服务器验证继续延后。
+P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性能 reference；P6.2 已建立 profiled evidence reference；P6.3A 已关闭 matched MTP mechanism gate；P6.3B-R4-R1 已关闭 primary scope 的 explicit Prefix Cache mechanism gate。P6.3C 因 frozen `4096 < 135168` 配置在 off 侧触发 vLLM validation，已记录为 `blocked_p6_3c_not_strict_single_variable`。当前 P8.1 只用 Chunked Prefill-on 的 official MTP cell 运行一个 observe-only 请求，不重开 P6.3C，也不形成性能比较。
 
 状态门：
 
@@ -276,6 +276,6 @@ boundaries:
 ## 10. 当前下一步
 
 1. P6.1C-R1 official、P6.1 unprofiled performance、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache control 已完成并验收。
-2. 当前 handoff 已授权服务器只读同步、复核收口证据并等待；`npu_execution_authorized:false`、`next_task_authorized:false`，standing NPU/vLLM 消耗政策只对未来明确 workload 生效。
+2. P6 五份汇总交付物已闭合；当前 handoff 只授权 official-MTP `4096+64+c1` P8.1 observe-only 单请求，`npu_execution_authorized:true`、`next_task_authorized:true`、`result_transfer_authorized:false`。
 3. P6.3C Chunked Prefill on/off 已完成冻结源码审计：显式双布尔 CLI 存在，但 `4096 < 135168` 使 off 侧在 resolved config 前失败，结论为 `blocked_p6_3c_not_strict_single_variable`。
-4. 性能 A/B 使用 unprofiled run；差异成立后才另起 profiler 跟进。P8/P9 仍需新 workload 和唯一 handoff。
+4. 当前 P8.1 不做性能 A/B、profiler、offload 或 placement/payload mutation；P8.2/P7/P9 仍需新 workload 和唯一 handoff。

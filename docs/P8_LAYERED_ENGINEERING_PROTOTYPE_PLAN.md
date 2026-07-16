@@ -275,7 +275,7 @@ MindIE 不是当前 P8 的阻塞项。只有同时满足以下条件才进入实
 
 - source capability probe 可在运行门之前完成，但结论上限为 `instrumented`。
 - 冻结真实 baseline 和启动 observe-only adapter 前，P5/P6 必须在八卡 W8A8-MTP 路径至少有一个请求成功，并记录 MTP、context 与 evidence boundary；该门已由 P6.1C-R1、P6.1 和 P6.2 超额关闭。
-- P8.2 性能对照前，P6 的 unprofiled workload 与 profiled workload 必须分离；该门已关闭，但 Prefix Cache K0 仍等待 P6.3B purpose-built repeated-prefix A/B。
+- P8.2 性能对照前，P6 的 unprofiled workload 与 profiled workload 必须分离；该门已关闭。P6.3B-R4-R1 已提供 primary-scope explicit Prefix Cache mechanism evidence，但 K0 仍须另建 order-balanced/randomized P8.2 合同，不能复用固定顺序 P6.3B 直接宣称性能收益。
 
 交付物：
 
@@ -288,11 +288,12 @@ benchmarks/deepseek_v4_flash/p8/p8_baseline_contract.yaml
 
 退出门：选中的 P8.1/P8.2 路径不能仍是 `documented_unverified`。
 
-当前 0.22 source pre-gate、四项启动前置证据门以及 official MTP/unprofiled/profiled P6
-reference 均已关闭。现有 `p8_baseline_contract.yaml` 仍以 `frozen_degraded` 保存最早成功的
-no-MTP `4096+64` provenance；进入 P8.1 前应新建或提升 baseline contract，不能覆盖该历史。
-13 项 source capability 仍不能整体提升为 `validated_for_selected_workload`，每项能力必须在对应
-runtime 路径实际观测后单独升级。
+当前 0.22 source pre-gate、四项启动前置证据门、official MTP/unprofiled/profiled P6 reference 与
+P6 五份汇总交付物均已关闭。原 `p8_baseline_contract.yaml` 继续以 `frozen_degraded` 保存最早成功的
+no-MTP `4096+64` provenance；新建的 `p8_official_mtp_baseline_contract.yaml` 只将已验收 P6.1
+`4096+64+c1` 提升为 P8.1 observe-only 基线，未覆盖历史。当前已准备独立 workload
+`p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml`；13 项 source capability 仍不能整体提升为
+`validated_for_selected_workload`，只有本轮实际观测到的 selected-cell 字段可在开发机复核后升级。
 
 ### P8.1：Observe-only StateObject Trace
 

@@ -1,0 +1,83 @@
+schema_name: ak_p6_baseline_contract
+schema_version: 1.0.0
+contract_id: p6_deepseek_v4_flash_w8a8_mtp_accepted_evidence_2026_0716
+contract_date: "2026-07-16"
+stage_status: evidence_chain_complete
+deliverable_status: materialized_from_accepted_repository_evidence
+
+runtime_pin:
+  vllm: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+
+official_reference:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  quantization: ascend
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp:
+    method: mtp
+    num_speculative_tokens: 1
+  cudagraph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+
+accepted_gates:
+  official_context: green_mtp_official_context_ladder
+  unprofiled_baseline: green_mtp_unprofiled_baseline
+  profiled_evidence: green_mtp_profiled_evidence
+  mtp_matched_ab: green_p6_3a_mtp_matched_ab
+  prefix_cache_matched_ab: green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
+  chunked_prefill_feasibility: blocked_p6_3c_not_strict_single_variable
+
+accepted_reference_artifacts:
+  official_context:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml
+    highest_stable_context: 131072
+    successful_contexts: [4096, 32768, 65536, 98304, 131072]
+    first_attempt_successes: 5
+    retries: 0
+  unprofiled_baseline:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_1_mtp_unprofiled_baseline.yaml
+    represented_cells: 18
+    measured_batches: 24
+    measured_requests: 90
+    retries: 0
+  profiled_evidence:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_2_mtp_profiled_evidence.yaml
+    measured_cells: 3
+    phase_memory_rows: 6
+    minimum_device_coverage: 8
+    parse_failure_count: 0
+  mtp_matched_ab:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_3a_mtp_matched_ab.yaml
+    measured_batches: 48
+    measured_requests: 108
+    paired_batches: 24
+    retries: 0
+  prefix_cache_matched_ab:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml
+    requests: 64
+    prefix_cache_off_hit_delta_total: 0
+    prefix_cache_on_primary_positive_hit_count: 9
+    prefix_cache_on_boundary_positive_hit_count: 0
+  chunked_prefill_feasibility:
+    path: benchmarks/deepseek_v4_flash/p6_3c_chunked_prefill_feasibility_audit.yaml
+    executable_workload_created: false
+    blocking_relation: max_num_batched_tokens_4096_less_than_max_model_len_135168
+
+claim_boundary:
+  official_context_is_functional_capacity_and_stability_only: true
+  unprofiled_metrics_are_the_performance_reference: true
+  profiled_latency_is_performance_baseline: false
+  mtp_ab_is_fixed_order_descriptive_mechanism_evidence: true
+  prefix_cache_effect_is_primary_scope_mechanism_only: true
+  p6_3c_executable_workload_created: false
+  optimization_gain_claim_allowed: false
+  universal_speedup_claim_allowed: false
+  hardware_bottleneck_or_priority_claim_allowed: false
+  new_npu_execution_performed_for_this_deliverable: false

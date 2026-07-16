@@ -117,7 +117,8 @@ class VllmAscendAdapter:
         adapter = contract.get("adapter")
         gate = contract.get("gate")
         valid = (
-            contract.get("contract_status") == "frozen_degraded"
+            contract.get("contract_status")
+            in {"frozen_degraded", "frozen_official"}
             and isinstance(selected, dict)
             and selected.get("model_id") == self.model_id
             and selected.get("request_success") is True
@@ -132,7 +133,7 @@ class VllmAscendAdapter:
         if not valid:
             raise AdapterError(
                 "VllmAscendAdapter requires a frozen_degraded baseline contract "
-                "with the observe-only gate open"
+                "or frozen_official baseline contract with the observe-only gate open"
             )
 
 

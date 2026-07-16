@@ -15,6 +15,9 @@ from tools.ak_state_runtime.replay import replay, validate_replay_result
 BASELINE_CONTRACT = Path(
     "benchmarks/deepseek_v4_flash/p8/p8_baseline_contract.yaml"
 )
+OFFICIAL_MTP_BASELINE_CONTRACT = Path(
+    "benchmarks/deepseek_v4_flash/p8/p8_official_mtp_baseline_contract.yaml"
+)
 MODEL_ID = "deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp"
 
 
@@ -128,7 +131,7 @@ def _adapter(contract: Path = BASELINE_CONTRACT) -> VllmAscendAdapter:
     )
 
 
-def test_adapter_requires_the_frozen_degraded_runtime_cell(tmp_path: Path) -> None:
+def test_adapter_rejects_a_nonfrozen_or_unvalidated_runtime_cell(tmp_path: Path) -> None:
     contract = yaml.safe_load(BASELINE_CONTRACT.read_text(encoding="utf-8"))
     contract["contract_status"] = "pending"
     contract["selected_workload"]["validated"] = False
@@ -137,6 +140,19 @@ def test_adapter_requires_the_frozen_degraded_runtime_cell(tmp_path: Path) -> No
 
     with pytest.raises(AdapterError, match="frozen_degraded baseline contract"):
         _adapter(path)
+
+
+def test_adapter_accepts_the_frozen_official_mtp_observe_only_cell(
+    tmp_path: Path,
+) -> None:
+    source = _write_jsonl(tmp_path / "observations.jsonl", _records())
+
+    adapted = _adapter(OFFICIAL_MTP_BASELINE_CONTRACT).read(source)
+
+    assert adapted.source_record_count == 5
+    assert adapted.emitted_event_count == 5
+    assert {event.model_id for event in adapted.events} == {MODEL_ID}
+    assert {event.runtime for event in adapted.events} == {"vllm_ascend"}
 
 
 def test_adapter_maps_bounded_runtime_observations_without_runtime_imports(

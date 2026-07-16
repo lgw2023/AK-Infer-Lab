@@ -1,0 +1,123 @@
+schema_name: ak_p8_baseline_contract
+schema_version: 0.2.0
+contract_id: p8_deepseek_v4_flash_w8a8_official_mtp_4096_64_2026_0716
+contract_date: "2026-07-16"
+contract_status: frozen_official
+claim_ceiling: selected_workload_observe_only_cell
+freeze_reason: accepted_p6_1_mtp_unprofiled_reference_contains_4096_64_c1
+
+historical_degraded_contract:
+  path: benchmarks/deepseek_v4_flash/p8/p8_baseline_contract.yaml
+  contract_status: frozen_degraded
+  bytes: 10495
+  sha256: 2c25aab6c81b89052d3ccba9f315ca03f5efe768d3f32fd5acf0b300061755fb
+  preserved: true
+  superseded_for_new_p8_1_execution_only: true
+
+selected_workload:
+  model_id: deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
+  request_success: true
+  successful_cell: p6_1_short_prefill_4096_64_c1
+  validated: true
+
+source_capability_matrix:
+  path: benchmarks/deepseek_v4_flash/p8/source_probes/vllm-v0.22.1__vllm-ascend-v0.22.1rc1/runtime_capability_matrix.yaml
+  claim_ceiling: instrumented
+  selected_workload_validated: false
+  targets:
+    vllm:
+      tag: v0.22.1
+      commit: 0decac0d96c42b49572498019f0a0e3600f50398
+    vllm_ascend:
+      tag: v0.22.1rc1
+      commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+
+runtime_baseline:
+  versions:
+    vllm: 0.22.1+empty
+    vllm_ascend: 0.22.1rc1
+    cann: 9.0.0
+    pytorch: 2.10.0+cpu
+    torch_npu: 2.10.0
+  target_commits:
+    vllm: 0decac0d96c42b49572498019f0a0e3600f50398
+    vllm_ascend: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  server_paths:
+    vllm_source: /data/node0_disk1/vllm-0.22.1
+    vllm_ascend_environment: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+    selected_model: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  required_plugins:
+    - ascend
+    - ascend_kv_connector
+    - ascend_model_loader
+    - ascend_service_profiling
+    - ascend_model
+  worker_process_model: spawn
+  cann_pythonpath_policy: clear_before_source_then_preserve_exactly_for_parent_and_spawn
+  successful_cell:
+    grade: green_mtp_unprofiled_baseline
+    task_id: p6_1_deepseek_v4_flash_w8a8_mtp_unprofiled_baseline_2026_0714
+    reference_workload: benchmarks/deepseek_v4_flash/workloads/p6_1_mtp_unprofiled_baseline.yaml
+    visible_devices: "0,1,2,3,4,5,6,7"
+    tensor_parallel_size: 8
+    expert_parallel: true
+    quantization: ascend
+    mtp_enabled: true
+    num_speculative_tokens: 1
+    enable_chunked_prefill: true
+    enable_prefix_caching: true
+    cudagraph_mode: FULL_DECODE_ONLY
+    max_model_len: 135168
+    max_num_batched_tokens: 4096
+    max_num_seqs: 1
+    block_size: 128
+    input_tokens: 4096
+    output_tokens: 64
+    concurrency: 1
+    request_protocol: streaming_fixed_output
+    measured_reference_complete: true
+    cleanup: clean
+
+repair_artifact:
+  path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  task_local_overlay_only: true
+
+reference_evidence:
+  p6_closeout_contract: benchmarks/deepseek_v4_flash/p6/p6_baseline_contract.yaml
+  p6_unprofiled_workload:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_1_mtp_unprofiled_baseline.yaml
+    sha256: b9d172617008974ae6a97f253c9001321b680fed3de89f83e4aa3e1ab20f5232
+    represented_cells: 18
+    measured_batches: 24
+    measured_requests: 90
+    retry_count: 0
+  p6_profiled_evidence:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_2_mtp_profiled_evidence.yaml
+    grade: green_mtp_profiled_evidence
+    reused_as_latency_baseline: false
+
+adapter:
+  implementation_status: observe_only_implemented_local_validation_passed
+  mode: observe_only
+  payload_move_allowed: false
+  placement_mutation_allowed: false
+  runtime_imports_allowed: false
+  source_contract: bounded_vllm_ascend_observation_jsonl_v0_1_0
+
+gate:
+  baseline_freeze: frozen_official_mtp_4096_64_c1
+  real_vllm_ascend_adapter: open_observe_only
+  server_validation_status: pending_new_p8_1_execution
+  p8_2_gate: closed
+
+claim_boundary:
+  selected_cell_only: true
+  historical_degraded_provenance_retained: true
+  p6_performance_reference_unchanged: true
+  source_capabilities_are_not_runtime_validation: true
+  performance_comparison_allowed: false
+  optimization_gain_claim_allowed: false
+  p8_2_or_offload_authorized: false
+  profiler_authorized: false
+  placement_or_payload_mutation_authorized: false

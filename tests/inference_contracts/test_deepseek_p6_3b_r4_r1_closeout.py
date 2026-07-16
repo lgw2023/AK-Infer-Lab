@@ -86,22 +86,21 @@ def test_r4_r1_workload_is_closed_as_developer_accepted_green():
     }
 
 
-def test_current_handoff_and_truth_surfaces_wait_after_r4_r1_closeout():
+def test_current_handoff_and_truth_surfaces_enter_p8_1_after_r4_r1_closeout():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "只读同步复核并等待，不执行 NPU" in handoff
-    assert "task_id: p6_3c_strict_single_variable_blocked_closeout_sync_review_2026_0716" in handoff
-    assert "server_sync_review_authorized: true" in handoff
-    assert "execution_mode: authorized_read_only_sync_review_and_wait_no_npu" in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "next_task_authorized: false" in handoff
+    assert "执行官方 MTP P8.1 observe-only 单请求 tracer bullet" in handoff
+    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716" in handoff
+    assert "execution_mode: authorized_official_mtp_observe_only_single_request" in handoff
+    assert "npu_execution_authorized: true" in handoff
+    assert "next_task_authorized: true" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
     assert "vllm serve" not in handoff
-    assert "upload-api" not in handoff
+    assert "result_transfer_authorized: false" in handoff
 
     readiness = yaml.safe_load(
         (
@@ -111,14 +110,17 @@ def test_current_handoff_and_truth_surfaces_wait_after_r4_r1_closeout():
     assert readiness["artifacts"]["completed_p6_3b_r4_r1_workload"].endswith(
         "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
-    assert readiness["artifacts"]["next_workload"] is None
+    assert readiness["artifacts"]["next_workload"].endswith(
+        "p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml"
+    )
     assert readiness["acceptance"]["p6_3b_r4_r1_grade"] == (
         "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"
     )
     assert readiness["acceptance"]["p6_3b_r4_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3b_mechanism_baseline"] is True
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
-    assert readiness["acceptance"]["next_task_authorized"] is False
+    assert readiness["acceptance"]["p8_1_execution_authorized"] is True
+    assert readiness["acceptance"]["next_task_authorized"] is True
     assert (
         readiness["acceptance"]["standing_npu_and_vllm_consumption_authorization"]
         is True

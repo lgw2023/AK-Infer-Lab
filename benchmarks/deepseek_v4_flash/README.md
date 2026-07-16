@@ -43,8 +43,10 @@ P5 deliverables:
 - `workloads/p6_3a_mtp_matched_ab.yaml`: completed matched MTP on/off task; developer grade `green_p6_3a_mtp_matched_ab`.
 - `workloads/p6_3b_prefix_cache_matched_ab.yaml` through `workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml`: completed Prefix Cache lineage; R4-R1 developer grade is `green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab` with explicit off hit=0 and on primary 9/9 positive hits under the same R2 repair.
 - `p6_3c_chunked_prefill_feasibility_audit.yaml`: completed exact-commit CLI/config audit; `4096 < 135168` makes Chunked Prefill off fail before resolved runtime config, so the result is `blocked_p6_3c_not_strict_single_variable` and no executable P6.3C workload exists.
+- `p6/`: materialized P6 closeout package containing the baseline contract, unprofiled report, profiled report, single-variable A/B report and hash-verifiable artifact manifest.
 - `patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch`: one-line diagnostic backport of the `positions_cpu` proposer metadata field from upstream PR 11062; it is not a full upstream backport.
-- `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: prepared bounded-observation server validation for the strictly observe-only adapter; not executed and still deferred during the minimal control and MTP decision sequence.
+- `p8/p8_baseline_contract.yaml` and `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: preserved historical no-MTP `frozen_degraded` provenance; not the current P8.1 execution target.
+- `p8/p8_official_mtp_baseline_contract.yaml` and `workloads/p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml`: current official-MTP `4096+64+c1` observe-only P8.1 tracer bullet; prepared and authorized, not yet server-validated.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:
@@ -57,6 +59,6 @@ Next artifact boundary:
 
 - P6.3A changed only the MTP speculative server argument and is complete; its accepted mechanism effect remains fixed-order descriptive evidence, not a randomized or statistically significant claim.
 - P6.3B-R4-R1 changed only explicit `--no-enable-prefix-caching` versus `--enable-prefix-caching`; both modes retained MTP and reused the same block-aligned repeated-prefix bodies. The fifteen boundary followers still had zero hits, so the accepted mechanism scope is not a universal performance claim.
-- P6.3C strict-single-variable feasibility is closed as `blocked_p6_3c_not_strict_single_variable`: explicit CLI on/off exists, but the frozen off configuration is rejected because `4096 < 135168`; changing either value would introduce a forbidden second variable. P8.1 remains deferred and cannot be auto-entered from standing NPU/vLLM resource authorization.
+- P6.3C strict-single-variable feasibility is closed as `blocked_p6_3c_not_strict_single_variable`: explicit CLI on/off exists, but the frozen off configuration is rejected because `4096 < 135168`; changing either value would introduce a forbidden second variable. This does not block the separately published Chunked-Prefill-on P8.1 official-MTP observe-only task.
 - Do not create P8 real-move cards before P8.0 capability probe and P8.1 observe-only trace pass.
 - MindIE cards are conditional on a separately confirmed server runtime; current server evidence does not show MindIE as available.

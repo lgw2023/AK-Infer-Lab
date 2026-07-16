@@ -287,20 +287,18 @@ def test_r2_is_closed_green_and_superseded_by_the_authorized_r3():
     }
 
 
-def test_handoff_waits_after_nfs_portable_r4_r1_closeout():
+def test_handoff_preserves_r4_r1_closeout_while_entering_p8_1():
     handoff = (
         REPO_ROOT / "通信模块/docs/developer-to-server.md"
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "只读同步复核并等待，不执行 NPU" in handoff
-    assert "task_id: p6_3c_strict_single_variable_blocked_closeout_sync_review_2026_0716" in handoff
-    assert "execution_mode: authorized_read_only_sync_review_and_wait_no_npu" in handoff
-    assert "server_sync_review_authorized: true" in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "next_task_authorized: false" in handoff
+    assert "执行官方 MTP P8.1 observe-only 单请求 tracer bullet" in handoff
+    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716" in handoff
+    assert "execution_mode: authorized_official_mtp_observe_only_single_request" in handoff
+    assert "npu_execution_authorized: true" in handoff
+    assert "next_task_authorized: true" in handoff
     assert "same R2 repair" in handoff
-    assert "64/64" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
 
@@ -323,7 +321,9 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert artifacts["completed_p6_3b_r4_r1_workload"] == (
         "workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
-    assert artifacts["next_workload"] is None
+    assert artifacts["next_workload"].endswith(
+        "p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml"
+    )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
     )

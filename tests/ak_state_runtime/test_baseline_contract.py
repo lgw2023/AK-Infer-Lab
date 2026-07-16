@@ -10,6 +10,9 @@ ADAPTER_SMOKE_PATH = Path(
     "benchmarks/deepseek_v4_flash/workloads/"
     "p8_1_vllm_ascend_observe_only_adapter_smoke.yaml"
 )
+OFFICIAL_MTP_CONTRACT_PATH = Path(
+    "benchmarks/deepseek_v4_flash/p8/p8_official_mtp_baseline_contract.yaml"
+)
 
 
 def test_frozen_degraded_baseline_opens_only_the_observe_only_adapter() -> None:
@@ -125,6 +128,46 @@ def test_pending_baseline_contract_excludes_mixed_checkpoint() -> None:
             "adapter_work_authorized": False,
         }
     ]
+
+
+def test_official_mtp_baseline_promotes_only_the_accepted_4096_64_cell() -> None:
+    contract = yaml.safe_load(
+        OFFICIAL_MTP_CONTRACT_PATH.read_text(encoding="utf-8")
+    )
+
+    assert contract["schema_name"] == "ak_p8_baseline_contract"
+    assert contract["schema_version"] == "0.2.0"
+    assert contract["contract_status"] == "frozen_official"
+    assert contract["claim_ceiling"] == "selected_workload_observe_only_cell"
+    assert contract["historical_degraded_contract"]["preserved"] is True
+    assert contract["selected_workload"] == {
+        "model_id": "deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp",
+        "request_success": True,
+        "successful_cell": "p6_1_short_prefill_4096_64_c1",
+        "validated": True,
+    }
+    cell = contract["runtime_baseline"]["successful_cell"]
+    assert cell["grade"] == "green_mtp_unprofiled_baseline"
+    assert cell["tensor_parallel_size"] == 8
+    assert cell["expert_parallel"] is True
+    assert cell["mtp_enabled"] is True
+    assert cell["num_speculative_tokens"] == 1
+    assert cell["enable_chunked_prefill"] is True
+    assert cell["enable_prefix_caching"] is True
+    assert cell["cudagraph_mode"] == "FULL_DECODE_ONLY"
+    assert cell["max_model_len"] == 135168
+    assert cell["max_num_batched_tokens"] == 4096
+    assert cell["max_num_seqs"] == 1
+    assert cell["input_tokens"] == 4096
+    assert cell["output_tokens"] == 64
+    assert contract["gate"]["baseline_freeze"] == (
+        "frozen_official_mtp_4096_64_c1"
+    )
+    assert contract["gate"]["real_vllm_ascend_adapter"] == "open_observe_only"
+    assert contract["adapter"]["payload_move_allowed"] is False
+    assert contract["adapter"]["placement_mutation_allowed"] is False
+    assert contract["claim_boundary"]["performance_comparison_allowed"] is False
+    assert contract["claim_boundary"]["p8_2_or_offload_authorized"] is False
 
 
 def test_p8_1_adapter_smoke_reuses_only_the_frozen_degraded_cell() -> None:

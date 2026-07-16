@@ -1953,26 +1953,24 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_waits_after_p6_3b_r4_r1_explicit_matched_ab():
+def test_server_handoff_advances_from_p6_closeout_to_p8_1_observe_only():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "## 当前唯一服务器动作：只读同步复核并等待，不执行 NPU" in handoff
-    assert "task_id: p6_3c_strict_single_variable_blocked_closeout_sync_review_2026_0716" in handoff
-    assert "execution_mode: authorized_read_only_sync_review_and_wait_no_npu" in handoff
-    assert "server_sync_review_authorized: true" in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "next_task_authorized: false" in handoff
+    assert "执行官方 MTP P8.1 observe-only 单请求 tracer bullet" in handoff
+    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716" in handoff
+    assert "execution_mode: authorized_official_mtp_observe_only_single_request" in handoff
+    assert "npu_execution_authorized: true" in handoff
+    assert "next_task_authorized: true" in handoff
+    assert "result_transfer_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
-    assert "--no-enable-prefix-caching" in handoff
-    assert "--enable-prefix-caching" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
-    assert "启动推理服务" in handoff
+    assert "p8_official_mtp_baseline_contract.yaml" in handoff
 
 
-def test_server_handoff_keeps_p6_3b_r4_bounded_and_stops_before_later_stages():
+def test_server_handoff_keeps_p8_1_bounded_and_stops_before_later_stages():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
@@ -1980,13 +1978,12 @@ def test_server_handoff_keeps_p6_3b_r4_bounded_and_stops_before_later_stages():
     assert "fetch origin main" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "Prefix Cache" in handoff
-    assert "prime" in handoff
-    assert "64" in handoff
-    assert "16/16" in handoff
-    assert "48/48" in handoff
+    assert "request_count_max: 1" in handoff
+    assert "不得发送第二个请求" in handoff
+    assert "trace_validation_errors=0" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
-    assert "不得创建新的任务结果目录" in handoff
-    assert "不得外发任何文件" in handoff
+    assert "不得自动进入 P8.2" in handoff
+    assert "不得外发" in handoff
     assert "vllm serve" not in handoff
 
 
@@ -2034,7 +2031,9 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
     assert artifacts["completed_p6_3b_r4_r1_workload"] == (
         "workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
-    assert artifacts["next_workload"] is None
+    assert artifacts["next_workload"] == (
+        "workloads/p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml"
+    )
     assert readiness["target_runtime"]["runtime_status"] == (
         "p6_3b_r4_r1_explicit_prefix_control_matched_ab_developer_accepted_green"
     )
@@ -2068,7 +2067,9 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
     assert acceptance["p6_3b_r4_r1_execution_authorized"] is False
     assert acceptance["p6_3b_mechanism_baseline"] is True
     assert acceptance["p6_3c_execution_authorized"] is False
-    assert acceptance["next_task_authorized"] is False
+    assert acceptance["p8_official_mtp_baseline_status"] == "frozen_official"
+    assert acceptance["p8_1_execution_authorized"] is True
+    assert acceptance["next_task_authorized"] is True
 
     current_surfaces = {
         "next_action": REPO_ROOT / "工作记录与进度笔记本" / "05_下一步行动指导.md",
@@ -2414,20 +2415,20 @@ def test_p6_3b_r1_records_bounded_ready_failure_without_revoking_prior_evidence(
     }
 
 
-def test_server_handoff_executes_no_workload_after_r4_r1_closeout():
+def test_server_handoff_executes_only_p8_1_after_r4_r1_closeout():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    assert "## 当前唯一服务器动作：只读同步复核并等待，不执行 NPU" in handoff
-    assert "task_id: p6_3c_strict_single_variable_blocked_closeout_sync_review_2026_0716" in handoff
-    assert "server_sync_review_authorized: true" in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "next_task_authorized: false" in handoff
+    assert "执行官方 MTP P8.1 observe-only 单请求 tracer bullet" in handoff
+    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716" in handoff
+    assert "npu_execution_authorized: true" in handoff
+    assert "next_task_authorized: true" in handoff
+    assert "result_transfer_authorized: false" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
     assert "same R2 repair" in handoff
-    assert "64/64" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "不得创建新的任务结果目录" in handoff
+    assert "request_count_max: 1" in handoff
+    assert "不得自动进入 P8.2" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff

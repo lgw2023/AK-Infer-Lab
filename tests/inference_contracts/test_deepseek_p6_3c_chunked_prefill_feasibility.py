@@ -159,7 +159,7 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
     )
 
 
-def test_current_truth_surfaces_record_blocked_p6_3c_and_keep_server_idle():
+def test_current_truth_surfaces_keep_p6_3c_blocked_while_entering_p8_1():
     readiness = yaml.safe_load(
         (
             REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
@@ -168,28 +168,30 @@ def test_current_truth_surfaces_record_blocked_p6_3c_and_keep_server_idle():
     assert readiness["artifacts"]["p6_3c_feasibility_audit"].endswith(
         "p6_3c_chunked_prefill_feasibility_audit.yaml"
     )
-    assert readiness["artifacts"]["next_workload"] is None
+    assert readiness["artifacts"]["next_workload"].endswith(
+        "p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml"
+    )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "none_pending_user_decision_after_p6_3c_blocked"
+        "P8.1_official_mtp_observe_only_tracer_bullet"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
     )
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
-    assert readiness["acceptance"]["next_task_authorized"] is False
+    assert readiness["acceptance"]["p8_1_execution_authorized"] is True
+    assert readiness["acceptance"]["next_task_authorized"] is True
 
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p6_3c_strict_single_variable_blocked_closeout_sync_review_2026_0716" in handoff
-    assert "execution_mode: authorized_read_only_sync_review_and_wait_no_npu" in handoff
-    assert "server_sync_review_authorized: true" in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "next_task_authorized: false" in handoff
+    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716" in handoff
+    assert "execution_mode: authorized_official_mtp_observe_only_single_request" in handoff
+    assert "npu_execution_authorized: true" in handoff
+    assert "next_task_authorized: true" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
     assert "4096 < 135168" in handoff
-    assert "p6_3c_chunked_prefill_feasibility_audit.yaml" in handoff
+    assert "p8_official_mtp_baseline_contract.yaml" in handoff
     assert "vllm serve" not in handoff
 
     truth_paths = (
