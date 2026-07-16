@@ -1,6 +1,6 @@
 # DeepSeek-V4-Flash on Ascend：P5-P9 专项计划
 
-日期：2026-07-15
+日期：2026-07-16
 
 ## 1. 专项目标
 
@@ -8,7 +8,7 @@
 
 1. 在 Atlas 800T A2 8×64GB 上形成 W8A8-MTP checkpoint 的八卡可复现基线。
 2. 在单卡/双卡和等效压力组件上定位容量、格式、kernel、通信和状态恢复边界。
-3. 用 KV/Prefix、MoE expert 与统一状态对象 trace 驱动 simulator，反推下一代硬件优先级。
+3. 用 KV/Prefix、MoE expert 与统一状态对象 trace 驱动 simulator，并以成功 smoke 或实测负结论关闭“Expert Offload / Expert Cache 能否支持 TP4 full-model capacity”问题，再反推下一代硬件优先级。
 
 完整阶段契约见 `docs/EXPERIMENT_PLAN.md`，P8 工程详案见 `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`。
 
@@ -18,7 +18,7 @@ DeepSeek-V4-Flash 的模型规格和量化事实以 `docs/SOURCES_AND_BOUNDARIES
 
 | object_id | 本地镜像 | 服务器路径 | 当前角色 | 边界 |
 | --- | --- | --- | --- | --- |
-| `deepseek_v4_flash_w8a8_mtp_modelscope` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` | 项目主 runtime、P5/P6 候选；70 分片 / 279.41GiB | A2/A3 参考对象；必须八卡授权并显式使用 `--quantization ascend` |
+| `deepseek_v4_flash_w8a8_mtp_modelscope` | `/Volumes/Elements/DeepSeek-V4-Flash-w8a8-mtp` | `/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp` | 项目主 runtime、P5/P6 候选；70 分片 / 279.41GiB | 当前标准 runtime 必须八卡授权并显式使用 `--quantization ascend`；TP4 只能在 P8.5B expert-residency 路径中验证，不能直接改 TP 参数 |
 | `deepseek_v4_flash_official_hf` | `/Volumes/Elements/DeepSeek-V4-Flash` | `/data/node0_disk1/Public/DeepSeek-V4-Flash` | 历史诊断与来源 inventory | mixed FP8+FP4 experts；当前 910B1 在 MXFP4 format cast 失败；不做 adapter、转换或 fallback |
 
 本地目录存在和结构相同只用于准备实验卡，不代替服务器路径、inode、分片完整性和 runtime load 验证。
@@ -177,14 +177,17 @@ P6 Prefix baseline
 ### 7.3 MoE 主线
 
 ```text
-expert aggregated hotness
+expert tensor/role bytes + TP4 rank mapping
+  -> expert aggregated hotness
   -> expert map / static placement / replication
   -> request/session-aware trace when needed
-  -> Expert Tier V0 simulation
-  -> gated DRAM-to-HBM warm prefetch V1
+  -> Expert Tier V0 + TP4 capacity simulation
+  -> gated expert payload mover / DRAM-to-HBM warm prefetch V1
+  -> CPU-first loader + TP4 4096+64,c1 full-model capacity smoke
+  -> MTP/Prefix Cache/larger context only after capacity path
 ```
 
-EPLB 和冗余专家部署只作为 hotness/placement 支点，不包装成 expert offload。SSD cold expert 第一阶段只做 checkpoint、离线 preload 和 simulator cost，不进入 decode step。
+当前 TP8 no-MTP/MTP 权重加载日志为 `38.1255/39.2795 GB per worker`，P6.1C whole-device HBM 峰值为 `61436–61447 MB / 65536 MB`。这些数字足以说明直接 TP4 没有容量前提，但不能相减后固化为应卸载多少 GB；P8 必须以逐 tensor/expert materialized bytes、TP4 owner mapping 和 runtime reserve 重算。EPLB 和冗余专家部署只作为 hotness/placement 支点，不包装成 expert offload。SSD cold expert 第一阶段只做 checkpoint、离线 preload 和 simulator cost，不进入 decode step。
 
 ### 7.4 StateObject 主线
 
