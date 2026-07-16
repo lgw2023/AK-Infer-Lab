@@ -191,10 +191,11 @@ artifacts:
   p6_artifact_manifest: p6/p6_artifact_manifest.yaml
   historical_p8_degraded_baseline_contract: p8/p8_baseline_contract.yaml
   official_p8_mtp_baseline_contract: p8/p8_official_mtp_baseline_contract.yaml
-  next_workload: workloads/p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml
-  next_stage_candidate: P8.1_official_mtp_observe_only_tracer_bullet
-  current_server_handoff_task: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716
-  current_server_handoff_execution_mode: authorized_official_mtp_observe_only_single_request
+  official_p8_mtp_observe_matrix_contract: p8/p8_official_mtp_observe_matrix_contract.yaml
+  next_workload: workloads/p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml
+  next_stage_candidate: P8.1_official_mtp_observe_only_bounded_matrix
+  current_server_handoff_task: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716
+  current_server_handoff_execution_mode: authorized_official_mtp_observe_only_six_request_matrix
   completed_p6_3b_r4_r1_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_r1_explicit_matched_ab.py
   completed_p6_3b_r4_r1_mode_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_r1_mode.sh
   bounded_mtp_patch: patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
@@ -224,8 +225,9 @@ boundaries:
   - P6.3C frozen-source feasibility completed as blocked_p6_3c_not_strict_single_variable: explicit on/off CLI flags exist, but frozen max_num_batched_tokens=4096 is smaller than max_model_len=135168, so the off side is rejected before resolved runtime config unless a forbidden second variable changes.
   - No P6.3C executable workload, mode runner, request body or server task was created; 4096 < 135168 is a source/config gate result, not an NPU result, and it does not revoke any accepted P6 green.
   - The P6 evidence chain and all five planned consolidated deliverables are complete; this materialization reused accepted repository evidence and did not run a new NPU task.
-  - The historical no-MTP P8 baseline remains preserved. A separate frozen official MTP 4096+64+c1 baseline now gates the one-request P8.1 observe-only tracer bullet.
-  - Standing NPU/vLLM consumption authorization is enabled and the published P8.1 workload plus unique handoff explicitly authorize only that single official-MTP request; the server may not invent or auto-enter P6.3C, P7, P8.2, offload or runtime-upgrade work.
+  - The historical no-MTP baseline and the published official-MTP single-request tracer remain preserved; the latter was superseded before execution by the bounded P8.1 matrix.
+  - The current matrix uses one lifecycle and six sequential 4096/65536/131072 x2 requests, including a 65536 prime/follower pair with token-LCP 58880 and expected Prefix hit 49152, plus per-request MTP/health/queue and deterministic replay evidence.
+  - Standing NPU/vLLM consumption authorization is enabled only for that six-request observe-only matrix; the server may not add a seventh request or auto-enter P6.3C, P7, P8.2, offload or runtime-upgrade work.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
   source_versions_recorded: true
@@ -236,6 +238,7 @@ acceptance:
   p5_status: yellow_no_mtp_graph_request_success
   p8_observe_only_adapter_gate: open
   p8_official_mtp_baseline_status: frozen_official
+  p8_official_mtp_observe_matrix_status: frozen_official
   p8_1_execution_authorized: true
   official_reference_baseline: true
   highest_stable_context: 131072

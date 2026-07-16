@@ -293,9 +293,9 @@ def test_handoff_preserves_r4_r1_closeout_while_entering_p8_1():
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "执行官方 MTP P8.1 observe-only 单请求 tracer bullet" in handoff
-    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716" in handoff
-    assert "execution_mode: authorized_official_mtp_observe_only_single_request" in handoff
+    assert "执行 official-MTP P8.1 六请求 observe-only matrix" in handoff
+    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716" in handoff
+    assert "execution_mode: authorized_official_mtp_observe_only_six_request_matrix" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "same R2 repair" in handoff
@@ -322,7 +322,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
         "workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml"
+        "p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"

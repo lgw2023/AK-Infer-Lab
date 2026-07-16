@@ -240,34 +240,27 @@ def test_p8_1_runner_freezes_the_official_command_and_one_request_flow() -> None
     assert "sendmail" not in script
 
 
-def test_current_handoff_authorizes_only_the_p8_1_single_request() -> None:
+def test_single_request_tracer_is_preserved_but_superseded_before_execution() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
+    workload = yaml.safe_load(WORKLOAD_PATH.read_text(encoding="utf-8"))
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
+    assert workload["task_id"] == (
+        "p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716"
+    )
+    assert WORKLOAD_PATH.is_file()
+    assert RUNNER_PATH.is_file()
+    assert (
+        REPO_ROOT
+        / "benchmarks/deepseek_v4_flash/p8/p8_official_mtp_baseline_contract.yaml"
+    ).is_file()
     assert (
         "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716"
-        in handoff
+        not in handoff
     )
     assert (
-        "execution_mode: authorized_official_mtp_observe_only_single_request"
+        "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716"
         in handoff
     )
-    assert "npu_execution_authorized: true" in handoff
-    assert "next_task_authorized: true" in handoff
-    assert "result_transfer_authorized: false" in handoff
-    assert "p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml" in handoff
-    assert "p8_official_mtp_baseline_contract.yaml" in handoff
-    assert "run_deepseek_p8_1_observe_only.sh" in handoff
-    assert "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19" in handoff
-    assert "merge --ff-only origin/main" in handoff
-    assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in handoff
-    assert "不得发送第二个请求" in handoff
-    assert "不得自动进入 P8.2" in handoff
-    assert "不得外发" in handoff
-    assert "git push" not in handoff
-    assert "git commit" not in handoff
-    assert "git reset" not in handoff
-    assert "git stash" not in handoff
-    assert "sync.sh" not in handoff

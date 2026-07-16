@@ -1959,15 +1959,15 @@ def test_server_handoff_advances_from_p6_closeout_to_p8_1_observe_only():
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "执行官方 MTP P8.1 observe-only 单请求 tracer bullet" in handoff
-    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716" in handoff
-    assert "execution_mode: authorized_official_mtp_observe_only_single_request" in handoff
+    assert "执行 official-MTP P8.1 六请求 observe-only matrix" in handoff
+    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716" in handoff
+    assert "execution_mode: authorized_official_mtp_observe_only_six_request_matrix" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
-    assert "p8_official_mtp_baseline_contract.yaml" in handoff
+    assert "p8_official_mtp_observe_matrix_contract.yaml" in handoff
 
 
 def test_server_handoff_keeps_p8_1_bounded_and_stops_before_later_stages():
@@ -1978,8 +1978,8 @@ def test_server_handoff_keeps_p8_1_bounded_and_stops_before_later_stages():
     assert "fetch origin main" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "Prefix Cache" in handoff
-    assert "request_count_max: 1" in handoff
-    assert "不得发送第二个请求" in handoff
+    assert "request_count_exact: 6" in handoff
+    assert "不得发送第 7 个请求" in handoff
     assert "trace_validation_errors=0" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
     assert "不得自动进入 P8.2" in handoff
@@ -2032,7 +2032,7 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
     assert artifacts["next_workload"] == (
-        "workloads/p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml"
+        "workloads/p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
         "p6_3b_r4_r1_explicit_prefix_control_matched_ab_developer_accepted_green"
@@ -2420,8 +2420,8 @@ def test_server_handoff_executes_only_p8_1_after_r4_r1_closeout():
         encoding="utf-8"
     )
 
-    assert "执行官方 MTP P8.1 observe-only 单请求 tracer bullet" in handoff
-    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_trace_2026_0716" in handoff
+    assert "执行 official-MTP P8.1 六请求 observe-only matrix" in handoff
+    assert "task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff
@@ -2429,6 +2429,6 @@ def test_server_handoff_executes_only_p8_1_after_r4_r1_closeout():
     assert "same R2 repair" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "request_count_max: 1" in handoff
+    assert "request_count_exact: 6" in handoff
     assert "不得自动进入 P8.2" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff

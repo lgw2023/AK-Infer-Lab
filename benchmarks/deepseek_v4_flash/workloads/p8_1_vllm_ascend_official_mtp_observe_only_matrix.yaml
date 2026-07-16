@@ -1,0 +1,251 @@
+schema_version: 1
+workload_id: p8_1_vllm_ascend_official_mtp_observe_only_matrix
+date: "2026-07-16"
+purpose: validate_multicontext_shared_prefix_and_replay_join_behavior_in_observe_only_mode
+task_id: p8_1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0716
+
+stage_contract:
+  stage: P8.1
+  mode: vllm_ascend_observe_only_bounded_matrix
+  claim_boundary: official_mtp_multicontext_shared_prefix_trace_only
+  performance_comparison_authorized: false
+  p8_2_execution_authorized: false
+
+official_baseline:
+  contract: benchmarks/deepseek_v4_flash/p8/p8_official_mtp_observe_matrix_contract.yaml
+  contract_status: frozen_official
+  model_id: deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
+  accepted_contexts: [4096, 65536, 131072]
+  output_tokens: 64
+  concurrency: 1
+
+superseded_single_request_provenance:
+  workload: benchmarks/deepseek_v4_flash/workloads/p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml
+  baseline: benchmarks/deepseek_v4_flash/p8/p8_official_mtp_baseline_contract.yaml
+  preserved: true
+  executed: false
+  superseded_reason: user_requested_higher_server_round_information_density
+
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  torch: 2.10.0+cpu
+  torch_npu: 2.10.0
+  visible_devices: "0,1,2,3,4,5,6,7"
+  all_eight_devices_must_be_healthy_and_conflict_free: true
+
+runtime_fixed:
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  enable_flashcomm1: true
+  enable_dsa_cp: true
+  speculative_mtp:
+    method: mtp
+    num_speculative_tokens: 1
+  enforce_eager: false
+  cudagraph_mode: FULL_DECODE_ONLY
+
+repair_artifact:
+  path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  task_local_overlay_only: true
+  base_environment_or_site_packages_mutation_allowed: false
+
+request_plan:
+  lifecycle_count: 1
+  request_count: 6
+  concurrency: 1
+  order_fixed: true
+  output_tokens: 64
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming_required: true
+  stream_include_usage: true
+  exact_prompt_output_finish_and_sse_done_required: true
+  request_retries: 0
+  body_manifest_required: true
+  all_other_pairwise_prefixes_less_than_tokens: 128
+  source_payload_server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+  source_payload_bytes: 19487
+  source_payload_sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+  request_bodies_remain_server_local: true
+  generated_text_retained: false
+  generated_token_ids_retained: false
+  slots:
+    - slot_id: short_isolated_a
+      request_id: req_p8_short_isolated_a
+      input_tokens: 4096
+      role: isolated_anchor
+      expected_prefix_hit_tokens: 0
+      shared_prefix_with: null
+      token_lcp: 0
+    - slot_id: medium_shared_prime
+      request_id: req_p8_medium_shared_prime
+      input_tokens: 65536
+      role: shared_prefix_prime
+      expected_prefix_hit_tokens: 0
+      shared_prefix_with: null
+      token_lcp: 0
+    - slot_id: medium_shared_follower
+      request_id: req_p8_medium_shared_follower
+      input_tokens: 65536
+      role: shared_prefix_follower
+      expected_prefix_hit_tokens: 49152
+      shared_prefix_with: medium_shared_prime
+      token_lcp: 58880
+    - slot_id: long_isolated_a
+      request_id: req_p8_long_isolated_a
+      input_tokens: 131072
+      role: isolated_anchor
+      expected_prefix_hit_tokens: 0
+      shared_prefix_with: null
+      token_lcp: 0
+    - slot_id: short_isolated_b
+      request_id: req_p8_short_isolated_b
+      input_tokens: 4096
+      role: isolated_repeat
+      expected_prefix_hit_tokens: 0
+      shared_prefix_with: null
+      token_lcp: 0
+    - slot_id: long_isolated_b
+      request_id: req_p8_long_isolated_b
+      input_tokens: 131072
+      role: isolated_repeat
+      expected_prefix_hit_tokens: 0
+      shared_prefix_with: null
+      token_lcp: 0
+
+observation_contract:
+  schema: tools/ak_state_runtime/schema/vllm_ascend_observation.schema.yaml
+  schema_version: 0.1.0
+  adapter: tools.ak_state_runtime.adapters.vllm_ascend.VllmAscendAdapter
+  adapter_mode: observe_only
+  runtime_imports_allowed: false
+  payload_fields_allowed: false
+  placement_mutation_allowed: false
+  per_request_prefix_mtp_health_queue: true
+  single_session_identity_required: true
+  deterministic_replay_bundle_count: 2
+  request_runtime_object_join_required: true
+  required_request_events: [request_start, first_token, request_end]
+  prefix_proxy:
+    source: vllm_prometheus_metrics_before_after_each_request
+    query_metric: vllm:prefix_cache_queries
+    hit_metric: vllm:prefix_cache_hits
+    object_type: prefix_block
+    object_bytes: null
+    synthetic_object_bytes_allowed: false
+  mtp_activity:
+    source: vllm_prometheus_metrics_before_after_each_request
+    drafts_and_draft_tokens_must_increase_per_request: true
+    accepted_tokens_must_not_decrease: true
+  health_and_queue:
+    health_before_and_after_each_request: true
+    running_after_request: 0
+    waiting_after_request: 0
+  transfer_observation:
+    required: false
+    unavailable_result: record_reason_without_fabricating_an_event
+  trace_validation_errors: 0
+
+runner:
+  path: tools/inference_contracts/run_deepseek_p8_1_observe_only_matrix.sh
+  finalizer: tools/inference_contracts/finalize_deepseek_p8_1_observe_only_matrix.py
+  collector: tools.ak_state_runtime.cli collect-vllm-ascend-observations
+  bundle_builder: tools.ak_state_runtime.cli build-vllm-ascend-observe-bundle
+  expected_server_command_sha256: 370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19
+  frozen_artifacts:
+    official_matrix_contract_sha256: 9405853cea52683828c99dfa55bc0093270102b4fe27110494502854d7dc49cb
+    preparer_sha256: 9f331af8ff7e08f0c41b1d250beb1a7114a960fd18500ba610203024e91641bc
+    runner_sha256: 3ebf162761db4be0c08777699eba8036c8288d7f34f5ea1e5649eb6034d4b9b1
+    finalizer_sha256: 845cb929790bf3c88fa57a21d686efc199c437103687171751f57af7b404aafe
+    observer_sha256: ecc7122b01c0b56cdc4817d2be780f18266097db2d16b19de0f471668765f201
+    cli_sha256: 9eb3ab2d408b84361916d61fadc981ec2674be9ea154b0f47205524d5b4af5f6
+    adapter_sha256: 17b4d344b66324a8703e8bf5599dfa2082d60fedea5db9ef208cfdb625ef158e
+
+acceptance:
+  blocked_preflight_grade: blocked_p8_1_matrix_source_or_resource_gate
+  server_not_ready_grade: red_p8_1_matrix_server_not_ready
+  request_failure_grade: red_p8_1_matrix_request_no_success
+  trace_failure_grade: yellow_p8_1_matrix_trace_invalid
+  server_candidate_green_grade: candidate_green_p8_1_official_mtp_observe_only_matrix
+  developer_accepted_green_grade: green_p8_1_official_mtp_observe_only_matrix
+  successful_request_count: 6
+  request_stage_event_count: 18
+  prefix_proxy_object_count: 6
+  placement_decision_count: 6
+  exact_shared_prefix_hit_required: true
+  isolated_request_zero_hit_required: true
+  per_request_mtp_activity_required: true
+  health_and_queue_clean_required: true
+  replay_deterministic_required: true
+  join_coverage_complete_required: true
+  every_decision_execution_mode: observe_only
+  every_decision_executed: false
+  every_state_object_payload_ref: null
+  trace_validation_errors: 0
+  cleanup_required: clean
+  server_candidate_requires_external_developer_review: true
+
+result_package_policy:
+  max_total_bytes: 71680
+  raw_logs_metrics_request_bodies_observations_and_bundles_remain_server_local: true
+  generated_text_or_token_ids_allowed: false
+  automatic_transfer_allowed: false
+  selection_required_before_any_transfer: true
+  available_methods: [email, upload-api, server-local]
+  methods_are_mutually_exclusive: true
+  bounded_candidates:
+    - result_summary.md
+    - environment_and_hashes.json
+    - request_matrix_summary.json
+    - prefix_cache_metrics_summary.json
+    - mtp_metrics_summary.json
+    - queue_health_summary.json
+    - transfer_availability_summary.json
+    - replay_determinism.json
+    - join_coverage.json
+    - trace_summary.json
+    - grading_inputs.json
+    - cleanup_status.txt
+    - first_failure_excerpt.txt
+
+stop_policy:
+  stop_on_first_request_failure: true
+  no_retry: true
+  no_additional_request: true
+  no_profiler: true
+  no_offload: true
+  no_runtime_or_source_upgrade: true
+  no_second_patch: true
+  no_eager_fallback: true
+  no_parameter_mutation: true
+  no_placement_or_payload_mutation: true
+  no_p8_2_p7_or_p9: true
+
+execution_state:
+  status: prepared_not_executed
+  server_handoff: current
+  server_result: pending
+  npu_execution_authorized: true
+  next_task_authorized: true
+  result_transfer_authorized: false
+  standing_npu_and_vllm_consumption_authorization: true
+
+boundaries:
+  - This is a P8.1 observation matrix, not a P6 rerun or a performance benchmark.
+  - Prefix counters are token-level proxies; StateObject bytes remain unavailable rather than synthesized.
+  - Request timing may be retained only as trace ordering metadata and is not a performance result.
+  - The adapter and replay must not import the runtime, retain tensor payloads, or mutate placement.
+  - P8.2, offload, profiler, placement mutation and optimization claims remain closed.

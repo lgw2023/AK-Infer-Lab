@@ -46,7 +46,8 @@ P5 deliverables:
 - `p6/`: materialized P6 closeout package containing the baseline contract, unprofiled report, profiled report, single-variable A/B report and hash-verifiable artifact manifest.
 - `patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch`: one-line diagnostic backport of the `positions_cpu` proposer metadata field from upstream PR 11062; it is not a full upstream backport.
 - `p8/p8_baseline_contract.yaml` and `workloads/p8_1_vllm_ascend_observe_only_adapter_smoke.yaml`: preserved historical no-MTP `frozen_degraded` provenance; not the current P8.1 execution target.
-- `p8/p8_official_mtp_baseline_contract.yaml` and `workloads/p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml`: current official-MTP `4096+64+c1` observe-only P8.1 tracer bullet; prepared and authorized, not yet server-validated.
+- `p8/p8_official_mtp_baseline_contract.yaml` and `workloads/p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml`: preserved official-MTP single-request tracer provenance; published but superseded before server execution.
+- `p8/p8_official_mtp_observe_matrix_contract.yaml` and `workloads/p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml`: current authorized P8.1 target; one lifecycle, six sequential `4096/65536/131072 × 2` requests, a 64K shared-prefix pair, per-request Prefix/MTP/health/queue evidence and deterministic offline replay.
 - `workloads/fixed_output_smoke.yaml`: older P6 fixed-output smoke template retained for continuity.
 
 Planning references:

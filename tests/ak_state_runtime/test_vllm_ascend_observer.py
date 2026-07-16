@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -24,12 +26,13 @@ class _ObservationHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     request_payload: dict[str, object] | None = None
     request_complete = False
+    prompt_tokens = 4096
 
     def do_GET(self) -> None:
         if self.path != "/metrics":
             self.send_error(404)
             return
-        queries = 4096 if self.request_complete else 0
+        queries = self.prompt_tokens if self.request_complete else 0
         body = (
             '# TYPE vllm:prefix_cache_queries counter\n'
             f'vllm:prefix_cache_queries_total{{engine="0"}} {queries}.0\n'
@@ -48,6 +51,7 @@ class _ObservationHandler(BaseHTTPRequestHandler):
             return
         length = int(self.headers["Content-Length"])
         type(self).request_payload = json.loads(self.rfile.read(length))
+        type(self).prompt_tokens = len(type(self).request_payload["prompt"])
         chunks = [
             {
                 "choices": [
@@ -70,9 +74,9 @@ class _ObservationHandler(BaseHTTPRequestHandler):
             {
                 "choices": [],
                 "usage": {
-                    "prompt_tokens": 4096,
+                    "prompt_tokens": type(self).prompt_tokens,
                     "completion_tokens": 64,
-                    "total_tokens": 4160,
+                    "total_tokens": type(self).prompt_tokens + 64,
                 },
             },
         ]
@@ -96,6 +100,7 @@ class _ObservationHandler(BaseHTTPRequestHandler):
 def observation_server():
     _ObservationHandler.request_payload = None
     _ObservationHandler.request_complete = False
+    _ObservationHandler.prompt_tokens = 4096
     server = ThreadingHTTPServer(("127.0.0.1", 0), _ObservationHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -107,12 +112,12 @@ def observation_server():
         server.server_close()
 
 
-def _payload(path: Path) -> Path:
+def _payload(path: Path, prompt_tokens: int = 4096) -> Path:
     path.write_text(
         json.dumps(
             {
                 "model": "deepseek-v4-flash-w8a8-mtp",
-                "prompt": list(range(4096)),
+                "prompt": list(range(prompt_tokens)),
                 "temperature": 0.0,
                 "max_tokens": 64,
                 "min_tokens": 64,
@@ -197,6 +202,90 @@ def test_collector_emits_bounded_events_for_the_real_observe_only_adapter(
     availability = json.loads(transfer.read_text())
     assert availability["status"] == "unavailable"
     assert availability["event_emitted"] is False
+
+
+def test_collector_accepts_an_explicit_context_and_request_identity(
+    tmp_path: Path,
+    observation_server: str,
+) -> None:
+    observations = tmp_path / "runtime_observations.jsonl"
+    result = collect_vllm_ascend_observations(
+        endpoint=f"{observation_server}/v1/completions",
+        metrics_url=f"{observation_server}/metrics",
+        request_payload=_payload(tmp_path / "request_payload.json", 8192),
+        observations_output=observations,
+        request_result_output=tmp_path / "request_result.json",
+        metrics_output=tmp_path / "prefix_cache_metrics.json",
+        transfer_availability_output=tmp_path / "transfer_availability.json",
+        timeout_seconds=2.0,
+        metrics_settle_seconds=1.0,
+        expected_prompt_tokens=8192,
+        trace_id="trace_p8_matrix_0001",
+        request_id="req_p8_medium_0001",
+        session_id="session_p8_matrix_0001",
+    )
+
+    assert result["prompt_tokens"] == 8192
+    assert result["trace_id"] == "trace_p8_matrix_0001"
+    assert result["request_id"] == "req_p8_medium_0001"
+    assert result["session_id"] == "session_p8_matrix_0001"
+    records = [json.loads(line) for line in observations.read_text().splitlines()]
+    assert {record["trace_id"] for record in records} == {"trace_p8_matrix_0001"}
+    assert {record["request_id"] for record in records} == {"req_p8_medium_0001"}
+    assert {record["session_id"] for record in records} == {"session_p8_matrix_0001"}
+    assert records[0]["source_event_id"] == "req_p8_medium_0001:request_start"
+    assert records[-1]["object_id"] == "prefix_proxy:req_p8_medium_0001"
+
+
+def test_cli_forwards_the_explicit_context_and_request_identity(
+    tmp_path: Path,
+    observation_server: str,
+) -> None:
+    observations = tmp_path / "runtime_observations.jsonl"
+    run = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "tools.ak_state_runtime.cli",
+            "collect-vllm-ascend-observations",
+            "--endpoint",
+            f"{observation_server}/v1/completions",
+            "--metrics-url",
+            f"{observation_server}/metrics",
+            "--request-payload",
+            str(_payload(tmp_path / "request_payload.json", 8192)),
+            "--observations-output",
+            str(observations),
+            "--request-result-output",
+            str(tmp_path / "request_result.json"),
+            "--metrics-output",
+            str(tmp_path / "prefix_cache_metrics.json"),
+            "--transfer-availability-output",
+            str(tmp_path / "transfer_availability.json"),
+            "--expected-prompt-tokens",
+            "8192",
+            "--trace-id",
+            "trace_p8_matrix_0001",
+            "--request-id",
+            "req_p8_medium_0001",
+            "--session-id",
+            "session_p8_matrix_0001",
+            "--timeout-seconds",
+            "2",
+            "--metrics-settle-seconds",
+            "1",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert run.returncode == 0, run.stderr
+    result = json.loads(run.stdout)
+    assert result["prompt_tokens"] == 8192
+    assert result["request_id"] == "req_p8_medium_0001"
+    records = [json.loads(line) for line in observations.read_text().splitlines()]
+    assert {record["request_id"] for record in records} == {"req_p8_medium_0001"}
 
 
 def test_collector_rejects_non_fixed_payload_and_writes_a_bounded_error(

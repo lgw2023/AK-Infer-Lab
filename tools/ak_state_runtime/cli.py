@@ -64,6 +64,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     runtime_observe.add_argument("--timeout-seconds", type=float, default=180.0)
     runtime_observe.add_argument("--metrics-settle-seconds", type=float, default=15.0)
+    runtime_observe.add_argument("--expected-prompt-tokens", type=int, default=4096)
+    runtime_observe.add_argument(
+        "--trace-id", default="trace_p8_vllm_ascend_0001"
+    )
+    runtime_observe.add_argument("--request-id", default="req_p8_0001")
+    runtime_observe.add_argument("--session-id", default="session_p8_0001")
     return parser
 
 
@@ -155,6 +161,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             transfer_availability_output=args.transfer_availability_output,
             timeout_seconds=args.timeout_seconds,
             metrics_settle_seconds=args.metrics_settle_seconds,
+            expected_prompt_tokens=args.expected_prompt_tokens,
+            trace_id=args.trace_id,
+            request_id=args.request_id,
+            session_id=args.session_id,
         )
         print(json.dumps(result, sort_keys=True))
         return 0

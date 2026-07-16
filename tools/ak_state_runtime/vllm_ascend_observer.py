@@ -64,6 +64,10 @@ def collect_vllm_ascend_observations(
     transfer_availability_output: Path,
     timeout_seconds: float,
     metrics_settle_seconds: float,
+    expected_prompt_tokens: int = 4096,
+    trace_id: str = "trace_p8_vllm_ascend_0001",
+    request_id: str = "req_p8_0001",
+    session_id: str = "session_p8_0001",
 ) -> dict[str, Any]:
     outputs = (
         observations_output,
@@ -77,7 +81,11 @@ def collect_vllm_ascend_observations(
         path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        payload = _load_request_payload(request_payload)
+        if expected_prompt_tokens <= 0:
+            raise ObservationError("expected prompt tokens must be positive")
+        if not trace_id or not request_id or not session_id:
+            raise ObservationError("trace, request and session IDs must be non-empty")
+        payload = _load_request_payload(request_payload, expected_prompt_tokens)
         before = _read_prefix_metrics(metrics_url, timeout_seconds)
         result = _stream_completion(endpoint, payload, timeout_seconds)
         after = _wait_for_prefix_metrics(
@@ -92,8 +100,15 @@ def collect_vllm_ascend_observations(
         }
         if deltas["queries"] <= 0:
             raise ObservationError("prefix cache query counter did not increase")
-        _validate_streaming_result(result)
-        observations = _build_observations(result, deltas, prefix_observed_ns)
+        _validate_streaming_result(result, expected_prompt_tokens)
+        observations = _build_observations(
+            result,
+            deltas,
+            prefix_observed_ns,
+            trace_id=trace_id,
+            request_id=request_id,
+            session_id=session_id,
+        )
         _write_jsonl(observations_output, observations)
         _write_json(
             metrics_output,
@@ -126,6 +141,9 @@ def collect_vllm_ascend_observations(
             "generated_token_count": result.generated_token_count,
             "streamed_token_count": result.streamed_token_count,
             "finish_reason": result.finish_reason,
+            "trace_id": trace_id,
+            "request_id": request_id,
+            "session_id": session_id,
             "request_start_ns": result.request_start_ns,
             "first_token_ns": result.first_token_ns,
             "request_end_ns": result.request_end_ns,
@@ -151,7 +169,7 @@ def collect_vllm_ascend_observations(
         raise
 
 
-def _load_request_payload(path: Path) -> dict[str, Any]:
+def _load_request_payload(path: Path, expected_prompt_tokens: int) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -161,10 +179,13 @@ def _load_request_payload(path: Path) -> dict[str, Any]:
     prompt = payload.get("prompt")
     if (
         not isinstance(prompt, list)
-        or len(prompt) != 4096
+        or len(prompt) != expected_prompt_tokens
         or any(not isinstance(token, int) or isinstance(token, bool) for token in prompt)
     ):
-        raise ObservationError("request payload prompt must contain exactly 4096 token IDs")
+        raise ObservationError(
+            "request payload prompt must contain exactly "
+            f"{expected_prompt_tokens} token IDs"
+        )
     expected = {
         "max_tokens": 64,
         "min_tokens": 64,
@@ -294,13 +315,19 @@ def _required_integer(record: Mapping[str, Any], field: str) -> int:
     return value
 
 
-def _validate_streaming_result(result: StreamingResult) -> None:
+def _validate_streaming_result(
+    result: StreamingResult,
+    expected_prompt_tokens: int,
+) -> None:
     if result.first_token_ns <= result.request_start_ns:
         raise ObservationError("first token timestamp is missing or invalid")
     if result.request_end_ns < result.first_token_ns:
         raise ObservationError("request end precedes first token")
-    if result.prompt_tokens != 4096:
-        raise ObservationError(f"prompt token count is {result.prompt_tokens}, expected 4096")
+    if result.prompt_tokens != expected_prompt_tokens:
+        raise ObservationError(
+            f"prompt token count is {result.prompt_tokens}, "
+            f"expected {expected_prompt_tokens}"
+        )
     if result.generated_token_count != 64:
         raise ObservationError(
             f"generated token count is {result.generated_token_count}, expected 64"
@@ -319,18 +346,23 @@ def _build_observations(
     result: StreamingResult,
     prefix_deltas: Mapping[str, float],
     prefix_observed_ns: int,
+    *,
+    trace_id: str,
+    request_id: str,
+    session_id: str,
 ) -> list[dict[str, Any]]:
+    source_prefix = "" if request_id == "req_p8_0001" else f"{request_id}:"
     common = {
         "schema_version": "0.1.0",
-        "trace_id": "trace_p8_vllm_ascend_0001",
-        "request_id": "req_p8_0001",
-        "session_id": "session_p8_0001",
+        "trace_id": trace_id,
+        "request_id": request_id,
+        "session_id": session_id,
         "rank_id": None,
     }
     observations = [
         {
             **common,
-            "source_event_id": "request_start",
+            "source_event_id": f"{source_prefix}request_start",
             "timestamp_ns": result.request_start_ns,
             "phase": "enqueue",
             "event_type": "request_stage",
@@ -346,7 +378,7 @@ def _build_observations(
         },
         {
             **common,
-            "source_event_id": "first_token",
+            "source_event_id": f"{source_prefix}first_token",
             "timestamp_ns": result.first_token_ns,
             "phase": "decode",
             "event_type": "request_stage",
@@ -362,7 +394,7 @@ def _build_observations(
         },
         {
             **common,
-            "source_event_id": "request_end",
+            "source_event_id": f"{source_prefix}request_end",
             "timestamp_ns": result.request_end_ns,
             "phase": "decode",
             "event_type": "request_stage",
@@ -378,12 +410,12 @@ def _build_observations(
         },
         {
             **common,
-            "source_event_id": "prefix_cache_counter_delta",
+            "source_event_id": f"{source_prefix}prefix_cache_counter_delta",
             "timestamp_ns": prefix_observed_ns,
             "phase": "prefill",
             "event_type": "state_lifecycle",
             "action": "prefix_cache_counter_delta",
-            "object_id": "prefix_proxy:req_p8_0001",
+            "object_id": f"prefix_proxy:{request_id}",
             "object_type": "prefix_block",
             "source_tier": None,
             "target_tier": None,

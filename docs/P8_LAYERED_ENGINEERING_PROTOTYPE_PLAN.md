@@ -4,7 +4,7 @@
 
 状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / observe_only_adapter_implemented_server_validation_pending / tp4_expert_residency_goal_defined`
 
-状态拆分：`local_artifact_state=observe_only_implemented`；`server_execution_state=p8_not_authorized`；`real_move_state=closed_by_gate`；`tp4_state=plan_defined_measurements_missing`。本地已有代码不代表服务器已授权执行 P8，更不代表 real move 已打开。
+状态拆分：`local_artifact_state=observe_only_matrix_implemented`；`server_execution_state=p8_1_bounded_matrix_authorized_pending_result`；`real_move_state=closed_by_gate`；`tp4_state=plan_defined_measurements_missing`。任务级授权只覆盖当前六请求 observe-only matrix，不代表 real move 已打开。
 
 ## 1. P8 的工程定义
 
@@ -24,7 +24,7 @@ P8 还必须关闭一个明确的容量问题：当前 W8A8 不能只把 `TP=8` 
 
 | 项目 | 当前证据 | P8 解释 |
 | --- | --- | --- |
-| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈的 installed-content 6/6、五插件路由、memory redirects / `MemorySnapshot` 与 CANN ACL parent/spawn 路径均已通过；W8A8-MTP 已完成 official 131072 context、unprofiled performance 与三个代表性 profiled evidence cell | P8 已有可信 reference point；observe-only server validation 仍需新 baseline contract 和独立授权，不解锁 payload move 或性能结论 |
+| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈的 installed-content 6/6、五插件路由、memory redirects / `MemorySnapshot` 与 CANN ACL parent/spawn 路径均已通过；W8A8-MTP 已完成 official 131072 context、unprofiled performance 与三个代表性 profiled evidence cell | P8 已有可信 reference point；六请求 observe-only matrix 已获独立任务授权、结果待回，不解锁 payload move 或性能结论 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
 | DeepSeek-V4-Flash | W8A8-MTP 是项目主对象；P6.1C-R1、P6.1 与 P6.2 已建立三层 reference；mixed checkpoint 因 910B1 MXFP4 SoC 门退出执行 | P8 不绕过 P6.3 机制对照修改模型路径，也不实现 mixed checkpoint adapter |
 | TP4 容量证据 | checkpoint 为 `300013759966 B ≈ 279.41 GiB`；TP8 no-MTP/MTP 权重加载日志分别为 `38.1255/39.2795 GB per worker`；P6.1C whole-device HBM 峰值为 `61436–61447 MB / 65536 MB` | 足以否定“原命令直接 TP8→TP4”作为参数调整，但不能据此固定需要卸载多少 GB；先做 expert inventory、TP4 mapping 和 runtime reserve 校准 |
@@ -290,29 +290,32 @@ benchmarks/deepseek_v4_flash/p8/p8_baseline_contract.yaml
 
 当前 0.22 source pre-gate、四项启动前置证据门、official MTP/unprofiled/profiled P6 reference 与
 P6 五份汇总交付物均已关闭。原 `p8_baseline_contract.yaml` 继续以 `frozen_degraded` 保存最早成功的
-no-MTP `4096+64` provenance；新建的 `p8_official_mtp_baseline_contract.yaml` 只将已验收 P6.1
-`4096+64+c1` 提升为 P8.1 observe-only 基线，未覆盖历史。当前已准备独立 workload
-`p8_1_vllm_ascend_official_mtp_observe_only_adapter_smoke.yaml`；13 项 source capability 仍不能整体提升为
-`validated_for_selected_workload`，只有本轮实际观测到的 selected-cell 字段可在开发机复核后升级。
+no-MTP `4096+64` provenance；`p8_official_mtp_baseline_contract.yaml` 与单请求 workload 继续保留为已发布但
+执行前被替代的 tracer provenance。当前 `p8_official_mtp_observe_matrix_contract.yaml` 冻结 P6 已接受的
+`4096/65536/131072+64,c1` 三个 context shape，唯一 workload 为
+`p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml`。13 项 source capability 仍不能整体提升为
+`validated_for_selected_workload`，只有本轮实际观测到的 matrix 字段可在开发机复核后升级。
 
 ### P8.1：Observe-only StateObject Trace
 
 目标：在不改变 placement 和 payload 的前提下，生成统一对象和事件流。
 
-首个 tracer bullet：
+首个单请求 tracer 已本地实现并发布，但在服务器执行前按用户要求扩展为当前 bounded matrix：
 
 ```text
-1 个已冻结的 official MTP P6 reference cell（从 P6.1/P6.2 代表 shape 中选择）
+3 个已冻结的 official MTP P6 reference shape，4096/65536/131072 各 2 个顺序请求
 1 个 vLLM-Ascend runtime
-request_stage + KV/prefix proxy + transfer + policy no_op
+64K prime/follower shared-prefix + isolated-prefix controls
+request_stage + prefix proxy + per-request MTP/health/queue + policy no_op
+same-observation double bundle replay + request/runtime/object join
 trace_validation_errors = 0
 ```
 
-随后才扩展：
+本轮仍不扩展：
 
 - KV block / prefix block lifecycle。
-- session 与 shared-prefix 关系。
-- request↔runtime↔device↔object join。
+- shared-prefix 之外的 KV payload lifecycle。
+- public evidence 不可用时的 request↔device/rank join；只能显式 unavailable，不能推断填充。
 - expert aggregated hotness，再到可行时的 request/router 粒度。
 
 验收：
@@ -586,10 +589,11 @@ benchmarks/deepseek_v4_flash/p8/
 不 import、不 checkout、不修改第三方参考仓；`capabilities/report.py` 只负责小型
 确定性证据输出；只有 `cli.py` 组合具体 scanner 和输出器。
 `p8_baseline_contract.yaml` 保留 exact no-MTP cell 的 `frozen_degraded` 历史 runtime
-baseline；进入 P8.1 前需另建或提升 official MTP baseline contract。`adapters/vllm_ascend.py` 只接受机器可读 bounded observation JSONL，
-不 import runtime、不持有 payload、不执行 placement；P8.1 server validation 尚未
-下发、尚未执行；P6.1C-R1 official、P6.1 unprofiled 与 P6.2 profiled evidence 已完成并经复核，
-当前先执行并复核 P6.3B；P8.1 仍不得自动进入。
+baseline；single-request official contract/workload 保留为执行前被替代的 provenance，当前
+`p8_official_mtp_observe_matrix_contract.yaml` 冻结三个 accepted context shape。`adapters/vllm_ascend.py`
+只接受机器可读 bounded observation JSONL，不 import runtime、不持有 payload、不执行 placement；P8.1 六请求
+matrix 已下发待执行，只有开发机复核 candidate bundle 后才能关闭 server validation。P6.1C-R1 official、
+P6.1 unprofiled、P6.2 profiled 与 P6.3 已完成并经复核；P8.2 仍不得自动进入。
 MindIE adapter、payload mover 与长期 server collector 仍未创建。
 
 后续每个 vertical slice 必须同时提供：

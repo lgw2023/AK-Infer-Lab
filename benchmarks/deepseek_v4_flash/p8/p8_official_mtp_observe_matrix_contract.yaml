@@ -1,0 +1,124 @@
+schema_name: ak_p8_baseline_contract
+schema_version: 0.3.0
+contract_id: p8_deepseek_v4_flash_w8a8_official_mtp_observe_matrix_2026_0716
+contract_date: "2026-07-16"
+contract_status: frozen_official
+claim_ceiling: bounded_observe_only_matrix
+freeze_reason: accepted_p6_official_mtp_contexts_and_prefix_mechanism_support_a_bounded_p8_1_matrix
+
+predecessor_contract:
+  path: benchmarks/deepseek_v4_flash/p8/p8_official_mtp_baseline_contract.yaml
+  bytes: 4334
+  sha256: 128907207f23c91e4383a8c58d32d006372214c329dfaf77ab2bc15d057b91e4
+  preserved: true
+  execution_state: superseded_before_server_execution_by_bounded_matrix
+
+selected_workload:
+  model_id: deepseek-ai/DeepSeek-V4-Flash-w8a8-mtp
+  request_success: true
+  successful_cell: p6_1_short_prefill_4096_64_c1
+  validated: true
+
+observation_matrix:
+  request_count: 6
+  requests_per_context: 2
+  concurrency: 1
+  output_tokens: 64
+  accepted_cells:
+    - cell_id: p8_1_short_4096_64_c1
+      input_tokens: 4096
+      output_tokens: 64
+      concurrency: 1
+      source_grade: green_mtp_unprofiled_baseline
+    - cell_id: p8_1_medium_65536_64_c1
+      input_tokens: 65536
+      output_tokens: 64
+      concurrency: 1
+      source_grade: green_mtp_unprofiled_baseline
+    - cell_id: p8_1_long_131072_64_c1
+      input_tokens: 131072
+      output_tokens: 64
+      concurrency: 1
+      source_grade: green_mtp_official_context_ladder
+
+shared_prefix_probe:
+  context_tokens: 65536
+  token_lcp: 58880
+  hybrid_lcm_tokens: 16384
+  expected_prefix_hit_tokens: 49152
+  source_grade: green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
+  performance_comparison_allowed: false
+
+runtime_baseline:
+  versions:
+    vllm: 0.22.1+empty
+    vllm_ascend: 0.22.1rc1
+    cann: 9.0.0
+    pytorch: 2.10.0+cpu
+    torch_npu: 2.10.0
+  target_commits:
+    vllm: 0decac0d96c42b49572498019f0a0e3600f50398
+    vllm_ascend: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  server_paths:
+    vllm_source: /data/node0_disk1/vllm-0.22.1
+    vllm_ascend_environment: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+    selected_model: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  fixed_runtime:
+    visible_devices: "0,1,2,3,4,5,6,7"
+    tensor_parallel_size: 8
+    expert_parallel: true
+    quantization: ascend
+    mtp_enabled: true
+    num_speculative_tokens: 1
+    enable_chunked_prefill: true
+    enable_prefix_caching: true
+    cudagraph_mode: FULL_DECODE_ONLY
+    max_model_len: 135168
+    max_num_batched_tokens: 4096
+    max_num_seqs: 1
+    block_size: 128
+
+repair_artifact:
+  path: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  task_local_overlay_only: true
+
+reference_evidence:
+  p6_unprofiled_workload:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_1_mtp_unprofiled_baseline.yaml
+    sha256: b9d172617008974ae6a97f253c9001321b680fed3de89f83e4aa3e1ab20f5232
+    represented_cells: 18
+    measured_requests: 90
+  p6_official_context_workload:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_1c_r1_mtp_official_context_ladder_sampling_repair.yaml
+    sha256: ea32a5e14f02590c587f8a9f316b353ca91f98072b3a7debfd8530c642fffd1f
+    highest_stable_context: 131072
+  p6_prefix_cache_workload:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml
+    sha256: e836a2f2d21868a718d72f0369b0283e25033064f6e8b520301ffcf09bf6112b
+    primary_scope_only: true
+
+adapter:
+  implementation_status: observe_only_implemented_local_validation_passed
+  mode: observe_only
+  payload_move_allowed: false
+  placement_mutation_allowed: false
+  runtime_imports_allowed: false
+  source_contract: bounded_vllm_ascend_observation_jsonl_v0_1_0
+
+gate:
+  baseline_freeze: frozen_official_mtp_observe_matrix
+  real_vllm_ascend_adapter: open_observe_only
+  server_validation_status: pending_new_p8_1_matrix_execution
+  p8_2_gate: closed
+
+claim_boundary:
+  bounded_matrix_only: true
+  performance_comparison_allowed: false
+  optimization_gain_claim_allowed: false
+  request_timing_is_not_a_performance_result: true
+  generated_content_or_token_ids_may_leave_server: false
+  profiler_authorized: false
+  offload_authorized: false
+  placement_or_payload_mutation_authorized: false
+  p8_2_p7_or_p9_authorized: false

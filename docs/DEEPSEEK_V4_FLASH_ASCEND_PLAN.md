@@ -41,7 +41,7 @@ transformers 5.5.4
 new isolated host conda environment built; W8A8-MTP official context ladder green through 131072+64
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8-MTP 已通过 task-local overlay 完成最小请求、4K 长输出和 official context ladder；开发机接受 `green_mtp_official_context_ladder`，最高稳定上下文 131072。P6.1 unprofiled、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache 均已接受 green；P6.3C 以 strict-single-variable blocked 收口，P6 五份汇总交付物已物化。当前执行缺口是 official-MTP `4096+64+c1` 的 P8.1 observe-only server trace。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8-MTP 已通过 task-local overlay 完成最小请求、4K 长输出和 official context ladder；开发机接受 `green_mtp_official_context_ladder`，最高稳定上下文 131072。P6.1 unprofiled、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache 均已接受 green；P6.3C 以 strict-single-variable blocked 收口，P6 五份汇总交付物已物化。当前执行缺口是 official-MTP P8.1 六请求 observe-only matrix 的真实服务器 trace/replay/join 复核。
 
 ### 3.2 对照路：MindIE
 
@@ -276,6 +276,6 @@ boundaries:
 ## 10. 当前下一步
 
 1. P6.1C-R1 official、P6.1 unprofiled performance、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache control 已完成并验收。
-2. P6 五份汇总交付物已闭合；当前 handoff 只授权 official-MTP `4096+64+c1` P8.1 observe-only 单请求，`npu_execution_authorized:true`、`next_task_authorized:true`、`result_transfer_authorized:false`。
+2. P6 五份汇总交付物已闭合；当前 handoff 只授权一个 official-MTP lifecycle、六个顺序 `4096/65536/131072 × 2` P8.1 observe-only 请求，含 shared-prefix、逐请求计数、双 replay 与 join，`npu_execution_authorized:true`、`next_task_authorized:true`、`result_transfer_authorized:false`。
 3. P6.3C Chunked Prefill on/off 已完成冻结源码审计：显式双布尔 CLI 存在，但 `4096 < 135168` 使 off 侧在 resolved config 前失败，结论为 `blocked_p6_3c_not_strict_single_variable`。
 4. 当前 P8.1 不做性能 A/B、profiler、offload 或 placement/payload mutation；P8.2/P7/P9 仍需新 workload 和唯一 handoff。
