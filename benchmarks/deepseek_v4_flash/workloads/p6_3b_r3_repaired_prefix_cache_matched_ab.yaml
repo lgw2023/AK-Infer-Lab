@@ -298,11 +298,28 @@ task_local_adaptation_policy:
     - metric_definitions
   all_adaptations_must_be_reported: true
 
+execution_result:
+  server_grade: yellow_p6_3b_r3_repaired_prefix_cache_matched_ab_partial
+  developer_disposition: accepted_as_invalid_control_negative_evidence
+  requests_http_token_mtp_complete: 64_of_64
+  prime_requests: 16_of_16
+  measured_requests: 48_of_48
+  same_r2_repair_in_both_modes: true
+  hybrid_diagnostic_ok_by_mode: true
+  hit_delta_total_by_mode: 540672
+  positive_hit_measured_count_by_mode: 9_of_24
+  paired_hit_pattern_identical_count: 24_of_24
+  effective_comparison: repaired_prefix_cache_on_vs_on
+  root_cause: prefix_cache_off_omitted_the_flag_and_inherited_vllm_default_true
+  mechanism_effect_accepted: false
+  cleanup: clean
+  superseded_by: p6_3b_r4_explicit_prefix_cache_matched_ab.yaml
+
 execution_state:
-  status: authorized_for_execution
-  server_handoff: current
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_server_yellow_invalid_control
+  server_handoff: historical
+  npu_execution_authorized: false
+  next_task_authorized: false
 
 authorization_policy:
   code_sync_and_task_local_r2_repair_authorized: true

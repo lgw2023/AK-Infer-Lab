@@ -415,6 +415,8 @@ def execute_mode(
     base_url: str,
     server_pid: int,
     mode: str,
+    *,
+    positive_hit_required_group_ids: set[str] | None = None,
 ) -> int:
     if mode not in MODES:
         raise ValueError(f"unsupported mode: {mode}")
@@ -520,16 +522,20 @@ def execute_mode(
             and delta["num_accepted_tokens"] >= 0
         )
         if mode == "prefix_cache_on":
+            positive_hit_required = (
+                item["request_role"] == "measured"
+                and (
+                    positive_hit_required_group_ids is None
+                    or item["group_id"] in positive_hit_required_group_ids
+                )
+            )
             prefix_evidence_ok = (
                 metrics_before.get("prefix_metrics_present") is True
                 and metrics_after.get("prefix_metrics_present") is True
                 and delta["prefix_queries"] > 0
                 and delta["prefix_hits"] >= 0
                 and delta["prefix_hits"] <= delta["prefix_queries"]
-                and (
-                    item["request_role"] == "prime"
-                    or delta["prefix_hits"] > 0
-                )
+                and (not positive_hit_required or delta["prefix_hits"] > 0)
             )
         else:
             prefix_evidence_ok = delta["prefix_hits"] == 0
@@ -577,6 +583,16 @@ def execute_mode(
                 "checks": {**request_row.get("checks", {}), **checks},
             }
         )
+        for optional_key in (
+            "planned_shared_tokens",
+            "actual_token_lcp",
+            "actual_lcp_sha256",
+            "actual_lcp_mod_128",
+            "actual_lcp_mod_16384",
+            "expected_prefix_hit_tokens",
+        ):
+            if optional_key in item:
+                request_row[optional_key] = item[optional_key]
         if request_row.get("status") != "success" or not all(checks.values()):
             request_row["status"] = "failed"
         rows.append(request_row)

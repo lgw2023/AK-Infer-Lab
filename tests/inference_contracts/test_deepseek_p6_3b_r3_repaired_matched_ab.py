@@ -31,11 +31,14 @@ def test_r3_workload_repeats_the_full_matched_ab_with_one_repaired_runtime():
     assert workload["lifecycle_plan"]["server_lifecycles"] == 2
     assert workload["lifecycle_plan"]["total_requests"] == 64
     assert workload["execution_state"] == {
-        "status": "authorized_for_execution",
-        "server_handoff": "current",
-        "npu_execution_authorized": True,
-        "next_task_authorized": True,
+        "status": "completed_server_yellow_invalid_control",
+        "server_handoff": "historical",
+        "npu_execution_authorized": False,
+        "next_task_authorized": False,
     }
+    assert workload["execution_result"]["effective_comparison"] == (
+        "repaired_prefix_cache_on_vs_on"
+    )
     assert workload["stage_contract"]["p6_3c_execution_authorized"] is False
 
 
@@ -284,34 +287,34 @@ def test_r2_is_closed_green_and_superseded_by_the_authorized_r3():
     }
 
 
-def test_handoff_authorizes_only_r3_and_runs_both_repaired_modes():
+def test_handoff_supersedes_r3_with_explicit_control_r4():
     handoff = (
         REPO_ROOT / "通信模块/docs/developer-to-server.md"
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "立即执行 P6.3B-R3 repaired matched A/B" in handoff
+    assert "立即执行 P6.3B-R4 explicit Prefix Cache control matched A/B" in handoff
     assert (
-        "task_id: p6_3b_r3_deepseek_v4_flash_w8a8_mtp_repaired_"
-        "prefix_cache_matched_ab_2026_0715"
+        "task_id: p6_3b_r4_deepseek_v4_flash_w8a8_mtp_explicit_"
+        "prefix_cache_matched_ab_2026_0716"
     ) in handoff
     assert "execution_mode: authorized_for_execution" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "NPU_EXECUTION_AUTHORIZED=true" in handoff
-    assert "p6_3b_r3_repaired_prefix_cache_matched_ab.yaml" in handoff
-    assert "run_deepseek_p6_3b_r3_repaired_matched_ab.py" in handoff
-    assert "run_deepseek_p6_3b_r3_mode.sh" in handoff
+    assert "p6_3b_r4_explicit_prefix_cache_matched_ab.yaml" in handoff
+    assert "run_deepseek_p6_3b_r4_explicit_matched_ab.py" in handoff
+    assert "run_deepseek_p6_3b_r4_mode.sh" in handoff
     assert 'for mode in prefix_cache_off prefix_cache_on; do' in handoff
     assert "same R2 repair" in handoff
     assert "16 prime + 48 measured = 64" in handoff
-    assert "candidate_green_p6_3b_r3_repaired_prefix_cache_matched_ab" in handoff
+    assert "candidate_green_p6_3b_r4_explicit_prefix_cache_matched_ab" in handoff
     assert "不得自动进入 P6.3C" in handoff
     assert "不得调用 upload-api" in handoff
     assert "不得发送 email" in handoff
 
 
-def test_current_truth_surfaces_accept_r2_green_and_authorize_r3_before_p6_3c():
+def test_current_truth_surfaces_preserve_r3_yellow_and_authorize_r4_before_p6_3c():
     readiness = yaml.safe_load(
         (
             REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
@@ -323,17 +326,21 @@ def test_current_truth_surfaces_accept_r2_green_and_authorize_r3_before_p6_3c():
     assert artifacts["completed_p6_3b_r2_workload"] == (
         "workloads/p6_3b_r2_hybrid_kv_deferred_install_repair.yaml"
     )
+    assert artifacts["completed_p6_3b_r3_workload"].endswith(
+        "p6_3b_r3_repaired_prefix_cache_matched_ab.yaml"
+    )
     assert artifacts["next_workload"] == (
-        "workloads/p6_3b_r3_repaired_prefix_cache_matched_ab.yaml"
+        "workloads/p6_3b_r4_explicit_prefix_cache_matched_ab.yaml"
     )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
     )
     assert acceptance["p6_3b_r2_execution_authorized"] is False
-    assert acceptance["p6_3b_r3_execution_authorized"] is True
+    assert acceptance["p6_3b_r3_execution_authorized"] is False
+    assert acceptance["p6_3b_r4_execution_authorized"] is True
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p6_3b_r3_repaired_matched_ab_authorized"
+        "p6_3b_r4_explicit_prefix_control_matched_ab_authorized"
     )
 
     surfaces = [
@@ -348,6 +355,7 @@ def test_current_truth_surfaces_accept_r2_green_and_authorize_r3_before_p6_3c():
         text = path.read_text(encoding="utf-8")
         assert "green_p6_3b_r2_hybrid_kv_repair" in text, path.name
         assert "P6.3B-R3" in text, path.name
+        assert "P6.3B-R4" in text, path.name
         assert "same R2 repair" in text, path.name
         assert "P6.3C" in text, path.name
 
