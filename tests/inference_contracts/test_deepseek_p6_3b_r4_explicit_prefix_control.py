@@ -340,7 +340,7 @@ def test_r4_r1_closeout_is_preserved_during_k1a_r1_and_i0_review():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R1 allocator envelope + P8.3-I0 checkpoint inventory" in handoff
+    assert "P8.2-K1A-R2 八 rank rendezvous + P8.3-I0-R1 taxonomy" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "model_request_count_exact: 0" in handoff

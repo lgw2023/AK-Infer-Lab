@@ -101,12 +101,38 @@ def _inventory_schema() -> pa.Schema:
     )
 
 
+def resolve_safetensors_index(
+    model_dir: Path, index_file: Path | None = None
+) -> tuple[Path, str]:
+    model_dir = Path(model_dir)
+    if index_file is not None:
+        index_path = Path(index_file)
+        if not index_path.is_absolute():
+            index_path = model_dir / index_path
+        if not index_path.is_file():
+            raise ValueError(f"explicit safetensors index is not a file: {index_path}")
+        if index_path.is_symlink():
+            raise ValueError(f"safetensors index symlink is not accepted: {index_path}")
+        return index_path, "explicit_index_file"
+    candidates = sorted(model_dir.glob("*.safetensors.index.json"))
+    if len(candidates) != 1:
+        names = [path.name for path in candidates]
+        raise ValueError(
+            "expected exactly one safetensors index or explicit --index-file, "
+            f"got {len(candidates)}: {names}"
+        )
+    if candidates[0].is_symlink():
+        raise ValueError(f"safetensors index symlink is not accepted: {candidates[0]}")
+    return candidates[0], "unique_safetensors_index_discovery"
+
+
 def build_checkpoint_inventory(
     model_dir: Path,
     output_dir: Path,
     *,
     tp_size: int = 4,
     shard_hash_mode: str = "full",
+    index_file: Path | None = None,
 ) -> dict[str, Any]:
     model_dir = Path(model_dir)
     output_dir = Path(output_dir)
@@ -116,7 +142,7 @@ def build_checkpoint_inventory(
         raise ValueError("P8.3-I0 freezes candidate TP size to 4")
     if shard_hash_mode != "full":
         raise ValueError("formal P8.3-I0 requires full shard SHA-256")
-    index_path = model_dir / "model.safetensors.index.json"
+    index_path, index_resolution = resolve_safetensors_index(model_dir, index_file)
     index = json.loads(index_path.read_text(encoding="utf-8"))
     weight_map = index.get("weight_map")
     if not isinstance(weight_map, dict) or not weight_map:
@@ -257,6 +283,8 @@ def build_checkpoint_inventory(
         "schema_version": "p8_3_i0_checkpoint_inventory_summary_v1",
         "model_dir": str(model_dir),
         "index_path": str(index_path),
+        "index_basename": index_path.name,
+        "index_resolution": index_resolution,
         "index_sha256": _sha256(index_path),
         "shard_hash_mode": shard_hash_mode,
         "shard_count": len(shard_names),
@@ -307,6 +335,7 @@ def build_checkpoint_inventory(
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", type=Path, required=True)
+    parser.add_argument("--index-file", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--tp-size", type=int, default=4)
     parser.add_argument("--shard-hash-mode", choices=("full",), default="full")
@@ -320,6 +349,7 @@ def main(argv: list[str] | None = None) -> int:
         args.output_dir,
         tp_size=args.tp_size,
         shard_hash_mode=args.shard_hash_mode,
+        index_file=args.index_file,
     )
     return 0
 

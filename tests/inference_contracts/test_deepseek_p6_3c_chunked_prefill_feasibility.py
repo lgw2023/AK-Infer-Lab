@@ -173,7 +173,7 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
     )
     assert readiness["artifacts"]["next_workload"] is None
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K1A-R1_allocator_envelope_plus_P8.3-I0_checkpoint_inventory"
+        "P8.2-K1A-R2_rendezvous_allocator_plus_P8.3-I0-R1_taxonomy"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
@@ -188,15 +188,16 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
     )
     assert readiness["acceptance"]["p8_2_k1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_2_k1a_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_2_k1a_r1_allocator_probe_authorized"] is True
+    assert readiness["acceptance"]["p8_2_k1a_r1_allocator_probe_authorized"] is False
+    assert readiness["acceptance"]["p8_2_k1a_r2_allocator_probe_authorized"] is True
     assert readiness["acceptance"]["next_task_authorized"] is False
 
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717" in handoff
-    assert "execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope" in handoff
+    assert "task_id: p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717" in handoff
+    assert "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff

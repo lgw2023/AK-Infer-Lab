@@ -330,14 +330,14 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
 
 
 def test_r1_is_closed_and_k1a_r1_plus_i0_are_the_only_authorized_handoff() -> None:
-    task_id = "p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717"
+    task_id = "p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717"
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope"
+        "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff

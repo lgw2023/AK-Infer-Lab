@@ -13,7 +13,10 @@ execution:
   profiler_allowed: false
   runtime_mutation_allowed: false
 checkpoint:
-  index: model.safetensors.index.json
+  index: explicit_or_uniquely_discovered_safetensors_index
+  index_resolution_policy: explicit_index_file_or_unique_safetensors_index_discovery
+  accepted_parent_index_basename: quant_model_weights.safetensors.index.json
+  temporary_symlink_required: false
   parser_scope: safetensors_index_and_binary_headers_without_tensor_load
   shard_hash_mode: full_sha256
   require_index_header_exactness: true

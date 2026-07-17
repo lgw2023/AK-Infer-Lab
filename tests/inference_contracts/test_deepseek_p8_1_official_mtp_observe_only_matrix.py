@@ -465,32 +465,32 @@ def test_matrix_workload_hashes_every_executable_contract_artifact() -> None:
         assert frozen[key] == hashlib.sha256(path.read_bytes()).hexdigest(), path
 
 
-def test_current_handoff_authorizes_only_k1a_r1_and_p8_3_i0_review() -> None:
+def test_current_handoff_authorizes_only_k1a_r2_and_p8_3_i0_r1_review() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-        "task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717"
+        "task_id: p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717"
         in handoff
     )
     assert (
-        "execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope"
+        "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "p8_2_k1a_r1_allocator.py" in handoff
-    assert "p8_3_i0_checkpoint_inventory_authorized: true" in handoff
+    assert "p8_3_i0_r1_existing_inventory_taxonomy_authorized: true" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "16384" in handoff
     assert "model_request_count_exact: 0" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "keep_alive_stop_and_restore_authorized: true" in handoff
     assert "formal_model_lifecycle_count_exact: 0" in handoff
-    assert "K2、P8.3-I1、P8.4、P8.5、P9 均禁止自动进入" in handoff
+    assert "禁止自动进入 K2" in handoff
     assert "email" in handoff
     assert "upload-api" in handoff
     assert "git push origin" not in handoff

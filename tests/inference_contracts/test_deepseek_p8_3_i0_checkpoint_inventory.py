@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pyarrow.parquet as pq
+import pytest
 from safetensors.numpy import save_file
 import yaml
 
@@ -93,6 +94,10 @@ def test_p8_3_i0_repo_contract_freezes_checkpoint_only_claim_boundary() -> None:
     assert contract["execution"]["npu_required"] is False
     assert contract["execution"]["model_requests_allowed"] is False
     assert contract["checkpoint"]["shard_hash_mode"] == "full_sha256"
+    assert contract["checkpoint"]["index_resolution_policy"] == (
+        "explicit_index_file_or_unique_safetensors_index_discovery"
+    )
+    assert contract["checkpoint"]["temporary_symlink_required"] is False
     assert contract["outputs"]["inventory"] == "expert_weight_inventory.parquet"
     assert contract["outputs"]["tp4_budget"] == "tp4_rank_weight_budget.yaml"
     assert contract["ownership"]["tp8_owner_from_header"] is False
@@ -123,3 +128,104 @@ def test_checkpoint_inventory_is_byte_deterministic_for_same_checkpoint(tmp_path
         "inventory_manifest.json",
     ):
         assert _sha256(first / name) == _sha256(second / name)
+
+
+def test_checkpoint_inventory_discovers_unique_quant_index_without_symlink(
+    tmp_path: Path,
+) -> None:
+    from tools.inference_contracts.inventory_deepseek_p8_3_i0_checkpoint import (
+        build_checkpoint_inventory,
+    )
+
+    model = tmp_path / "model"
+    output = tmp_path / "output"
+    model.mkdir()
+    _build_fixture(model)
+    (model / "model.safetensors.index.json").rename(
+        model / "quant_model_weights.safetensors.index.json"
+    )
+
+    summary = build_checkpoint_inventory(
+        model, output, tp_size=4, shard_hash_mode="full"
+    )
+
+    assert summary["index_basename"] == "quant_model_weights.safetensors.index.json"
+    assert summary["index_resolution"] == "unique_safetensors_index_discovery"
+
+
+def test_unclassified_taxonomy_accounts_existing_inventory_without_reclassification(
+    tmp_path: Path,
+) -> None:
+    from tools.inference_contracts.analyze_deepseek_p8_3_i0_unclassified import (
+        build_unclassified_taxonomy,
+    )
+    from tools.inference_contracts.inventory_deepseek_p8_3_i0_checkpoint import (
+        build_checkpoint_inventory,
+    )
+
+    model = tmp_path / "model"
+    inventory = tmp_path / "inventory"
+    output = tmp_path / "unclassified_taxonomy.json"
+    model.mkdir()
+    _build_fixture(model)
+    build_checkpoint_inventory(model, inventory, tp_size=4, shard_hash_mode="full")
+
+    taxonomy = build_unclassified_taxonomy(
+        inventory / "expert_weight_inventory.parquet",
+        inventory / "inventory_summary.json",
+        output,
+        max_groups=128,
+        max_output_bytes=71680,
+    )
+
+    assert taxonomy["unclassified_tensor_count"] == 1
+    assert taxonomy["taxonomy_group_count"] == 1
+    assert taxonomy["reported_group_count"] == 1
+    assert taxonomy["taxonomy_complete"] is True
+    assert taxonomy["accounted_checkpoint_bytes_exact"] is True
+    assert taxonomy["groups"][0]["family_signature"] == "model.unknown_tensor"
+    assert taxonomy["formal_reclassification_allowed"] is False
+    assert taxonomy["formal_tp4_runtime_claim_allowed"] is False
+    assert output.stat().st_size <= 71680
+
+
+def test_i0_r1_audit_accepts_inventory_but_keeps_tp4_budget_incomplete() -> None:
+    audit = yaml.safe_load(
+        (
+            REPO_ROOT
+            / "benchmarks/deepseek_v4_flash/p8_3_i0_r1_inventory_taxonomy_audit.yaml"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert audit["stage"] == "P8.3-I0-R1"
+    assert audit["parent"]["grade"] == "green_p8_3_i0_checkpoint_inventory"
+    assert audit["parent"]["index_basename"] == (
+        "quant_model_weights.safetensors.index.json"
+    )
+    assert audit["parent"]["indexed_tensor_count"] == 103176
+    assert audit["parent"]["index_header_exact"] is True
+    assert audit["parent"]["unclassified_tensor_count"] == 1135
+    assert audit["parent"]["unclassified_checkpoint_bytes"] == 12319364956
+    assert audit["parent"]["budget_complete"] is False
+    assert audit["r1"]["rerun_full_shard_hashes"] is False
+    assert audit["r1"]["existing_parquet_read_only"] is True
+    assert audit["r1"]["max_taxonomy_output_bytes"] == 65536
+    assert audit["claims"]["formal_tp4_runtime_claim_allowed"] is False
+    assert audit["next"]["p8_3_i1_authorized"] is False
+
+
+def test_explicit_index_rejects_symlink_workaround(tmp_path: Path) -> None:
+    from tools.inference_contracts.inventory_deepseek_p8_3_i0_checkpoint import (
+        resolve_safetensors_index,
+    )
+
+    model = tmp_path / "model"
+    model.mkdir()
+    _build_fixture(model)
+    actual = model / "quant_model_weights.safetensors.index.json"
+    (model / "model.safetensors.index.json").rename(actual)
+    alias = model / "model.safetensors.index.json"
+    alias.symlink_to(actual.name)
+
+    with pytest.raises(ValueError, match="symlink"):
+        resolve_safetensors_index(model, alias)

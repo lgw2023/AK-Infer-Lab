@@ -70,6 +70,9 @@ def assess_allocator_envelope(
 ) -> dict[str, Any]:
     if geometry.get("geometry_gate_ok") is not True:
         raise ValueError("geometry gate is not green")
+    is_r2 = geometry.get("stage") == "P8.2-K1A-R2"
+    if is_r2 and geometry.get("rendezvous_gate_ok") is not True:
+        raise ValueError("K1A-R2 geometry rendezvous gate is not green")
     if not waves:
         raise ValueError("allocator envelope is empty")
     block_counts = [int(row["cpu_blocks"]) for row in waves]
@@ -97,13 +100,14 @@ def assess_allocator_envelope(
     candidate = (
         int(geometry["required_capacity_bytes_per_rank"]) if gate_ok else None
     )
+    revision = "r2" if is_r2 else "r1"
     grade = (
-        "candidate_ready_p8_2_k1a_r1_allocator_capacity"
+        f"candidate_ready_p8_2_k1a_{revision}_allocator_capacity"
         if gate_ok
-        else "blocked_p8_2_k1a_r1_pinned_capacity_below_restore_requirement"
+        else f"blocked_p8_2_k1a_{revision}_pinned_capacity_below_restore_requirement"
     )
     return {
-        "schema_version": "p8_2_k1a_r1_allocator_envelope_v1",
+        "schema_version": f"p8_2_k1a_{revision}_allocator_envelope_v1",
         "acl_pinned_host_allocator_gate_ok": gate_ok,
         "required_cpu_blocks": required_blocks,
         "highest_eight_rank_clean_blocks": highest_clean,

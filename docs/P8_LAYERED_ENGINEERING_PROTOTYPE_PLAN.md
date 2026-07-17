@@ -2,9 +2,9 @@
 
 日期：2026-07-10；最后更新：2026-07-17
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_allocator_probe_prepared / p8_3_i0_contract_implemented / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_rendezvous_prepared / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_prepared / tp4_expert_residency_goal_defined`
 
-状态拆分：`local_artifact_state=k1a_r1_allocator_and_p8_3_i0_inventory_prepared`；`server_execution_state=geometry_only_plus_allocator_envelope_and_read_only_inventory_authorized`；`blocked_legacy_path=OffloadingConnector_NPUOffloadingSpec`；`k1a_32gib_state=red_before_server_ready_zero_requests`；`candidate_real_move_path=SimpleCPUOffloadConnector`；`expert_track_state=p8_3_i0_contract_implemented_pending_real_inventory`；`p8_3_technical_dependency_on_k1a=false`；`p8_3_i1_server_execution_authorized=false`；`tp4_state=plan_defined_measurements_missing`。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 和 P8.2-K0 已 green，K1 保留 blocked。K1A 在 32 GiB/rank 的 `aclrtMallocHostWithCfg / 207001` 失败只关闭该容量点；当前 K1A-R1 先导出 exact KV bytes/block，再以八 rank shaped pinned waves 判定 16K restore 最低容量。P8.3-I0 parser/schema/deterministic fixture 已实现，同一 handoff 只读物化真实 checkpoint inventory；本任务正式模型 lifecycle/request 都为 0。
+状态拆分：`local_artifact_state=k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_prepared`；`server_execution_state=geometry_rendezvous_allocator_plus_existing_inventory_taxonomy_authorized`；`blocked_legacy_path=OffloadingConnector_NPUOffloadingSpec`；`k1a_32gib_state=red_before_server_ready_zero_requests`；`k1a_r1_state=red_probe_invalid_rank_0_2_only`；`candidate_real_move_path=SimpleCPUOffloadConnector`；`expert_track_state=p8_3_i0_inventory_green_budget_incomplete_i0_r1_taxonomy_pending`；`p8_3_technical_dependency_on_k1a=false`；`p8_3_i1_server_execution_authorized=false`；`tp4_state=checkpoint_budget_incomplete_1135_unclassified`。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 和 P8.2-K0 已 green，K1 保留 blocked。K1A-R1 的旧 observer 在首 rank 写盘后立即抛 sentinel，只有 rank 0/2 完整记录，allocator 未运行；当前 K1A-R2 以 atomic same-run 八 rank rendezvous 纠正证据采集后才执行 shaped waves。P8.3-I0 的 index/header inventory 已在窄边界 green，I0-R1 只读既有 Parquet 补 taxonomy，不重跑 full shard hash或自动补 TP4 budget。本任务正式模型 lifecycle/request 都为 0。
 
 ## 1. P8 的工程定义
 
@@ -107,14 +107,17 @@ hybrid-group 不兼容而 blocked；K1A 只有 source candidate，真实 D2H/H2D
 
 ```text
 P8.1-R1 observe-only green
-├─ KV/Prefix track: K0 green -> legacy K1 blocked -> K1A 32GiB red -> K1A-R1 geometry/envelope -> formal retry only by new handoff
-└─ Expert/TP4 track: P8.3-I0 inventory -> P8.3-I1 Level-A hotness -> P8.4 simulation
+├─ KV/Prefix track: K0 green -> legacy K1 blocked -> K1A 32GiB red -> K1A-R1 probe-invalid red -> K1A-R2 rendezvous/envelope -> formal retry only by new handoff
+└─ Expert/TP4 track: P8.3-I0 inventory green -> I0-R1 taxonomy -> P8.3-I1 Level-A hotness -> P8.4 simulation
                                                    -> P8.5A mover -> P8.5B TP4 closure
 ```
 
 K1/K1A 只控制 KV warm-tier 的真实迁移门，不是 P8.3 的技术前置。K1A 若成功，可为后续成本模型提供
 同平台 D2H/H2D 机制证据；若失败，也不阻止 checkpoint-first expert inventory、候选 TP4 owner mapping
-或离线 schema/fixture 开发。执行授权必须单列：当前 handoff 授权 P8.3-I0 零 NPU 只读 checkpoint inventory，但 P8.3-I1 hotness/route trace 必须另建 handoff。P8.3-I0 当前是 `contract_implemented_pending_real_checkpoint_inventory`，只产出 index/header/checkpoint-byte 规划证据，不是 TP4 runtime 验证。
+或离线 schema/fixture 开发。执行授权必须单列：当前 handoff 只授权 P8.3-I0-R1 零 NPU 读取既有
+inventory 并形成 unclassified taxonomy，P8.3-I1 hotness/route trace 必须另建 handoff。P8.3-I0 已在
+index/header inventory 边界 green，但 11.5 GiB 未分类字节与缺失 runtime materialized bytes 使 TP4 budget
+继续 incomplete；I0-R1 不是自动 reclassification 或 TP4 runtime 验证。
 
 ## 3. 总体架构
 
@@ -626,9 +629,10 @@ baseline；single-request official contract/workload 保留为执行前被替代
 `p8_official_mtp_observe_matrix_contract.yaml` 冻结三个 accepted context shape。`adapters/vllm_ascend.py`
 只接受机器可读 bounded observation JSONL，不 import runtime、不持有 payload、不执行 placement；P8.1-R1
 已由开发机接受 green。P6.1C-R1 official、P6.1 unprofiled、P6.2 profiled 与 P6.3 已完成并经复核；
-P8.2-K0 已接受 green，K1 旧路径 blocked，K1A 32 GiB/rank 点 red。当前仅授权
-`p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717`：K1A-R1 一个 geometry-only
-lifecycle、零正式 lifecycle/请求与最多四 allocator waves；P8.3-I0 零 NPU 只读 inventory。
+P8.2-K0 已接受 green，K1 旧路径 blocked，K1A 32 GiB/rank 点 red，K1A-R1 probe-invalid red；
+P8.3-I0 inventory 已在窄边界 green但 TP4 budget incomplete。当前仅授权
+`p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717`：K1A-R2 一个 geometry-only
+lifecycle、零正式 lifecycle/请求与最多四 allocator waves；P8.3-I0-R1 零 NPU 只读既有 inventory taxonomy。
 兼容补丁、formal K1A、K2 与 P8.3-I1 均不得自动进入。
 MindIE adapter、payload mover 与长期 server collector 仍未创建。
 

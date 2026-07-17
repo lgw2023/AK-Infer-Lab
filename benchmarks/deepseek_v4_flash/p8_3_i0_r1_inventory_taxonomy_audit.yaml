@@ -1,0 +1,75 @@
+schema_version: p8_3_i0_r1_inventory_taxonomy_audit_v1
+stage: P8.3-I0-R1
+audit_date: 2026-07-17
+task_family: portable_index_resolution_and_bounded_existing_inventory_unclassified_taxonomy
+parent:
+  task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717
+  server_candidate_grade: candidate_green_p8_3_i0_checkpoint_inventory
+  grade: green_p8_3_i0_checkpoint_inventory
+  claim_boundary: checkpoint_header_inventory_and_tp4_planning_budget_only
+  index_basename: quant_model_weights.safetensors.index.json
+  index_sha256: 932abcc237e82bbb52fc044ae52dd7aa9d8af259cd40100ef978e479231164aa
+  index_resolution_used: authorized_temporary_symlink_workspace
+  shard_count: 70
+  shard_hash_mode: full
+  indexed_tensor_count: 103176
+  header_tensor_count: 103176
+  index_header_exact: true
+  missing_index_tensor_count: 0
+  duplicate_header_tensor_count: 0
+  unindexed_header_tensor_count: 0
+  wrong_shard_tensor_count: 0
+  checkpoint_logical_bytes: 300002377534
+  unclassified_tensor_count: 1135
+  unclassified_checkpoint_bytes: 12319364956
+  inventory_parquet_bytes: 339497
+  inventory_parquet_sha256: 3bba8656de0a2ccf5deccccf84e7010ad28f941a7d255a005b82d5d8d225b17c
+  inventory_summary_bytes: 17161
+  inventory_summary_sha256: 90a77c91585278e28f89624d2f767e155939d9e5e7a78d1016a6b10aff93bc0d
+  tp4_budget_sha256: e6cb415880d5131e8913a7f6929cdd7f56cc7944c9b22ba0b24621c990d9e097
+  materialized_bytes_complete: false
+  budget_complete: false
+  formal_tp4_runtime_claim_allowed: false
+r1:
+  index_resolution_policy: explicit_index_file_or_unique_safetensors_index_discovery
+  expected_resolved_index_basename: quant_model_weights.safetensors.index.json
+  temporary_symlink_required: false
+  existing_parquet_read_only: true
+  source_inventory_sha256_must_match_parent: true
+  source_inventory_summary_sha256_must_match_parent: true
+  rerun_full_shard_hashes: false
+  rerun_checkpoint_inventory: false
+  normalization: replace_decimal_runs_with_{n}_then_group_by_dtype_shape_and_quant_metadata
+  max_taxonomy_groups: 256
+  max_taxonomy_output_bytes: 65536
+  exact_unclassified_count_and_byte_accounting_required: true
+  taxonomy_is_analysis_not_reclassification: true
+  checkpoint_mutation_allowed: false
+  npu_required: false
+  vllm_start_allowed: false
+  model_request_count_exact: 0
+outputs:
+  index_resolution_audit: p8_3_i0_r1_index_resolution.json
+  unclassified_taxonomy: p8_3_i0_r1_unclassified_taxonomy.json
+  section_manifest: p8_3_i0_r1_section_manifest.json
+  generated_content_or_token_ids_allowed: false
+grading:
+  complete_grade: candidate_green_p8_3_i0_r1_unclassified_taxonomy
+  bounded_incomplete_grade: yellow_p8_3_i0_r1_unclassified_taxonomy_truncated
+  source_drift_grade: blocked_p8_3_i0_r1_source_inventory_drift
+  index_resolution_failure_grade: blocked_p8_3_i0_r1_index_resolution_invalid
+claims:
+  boundary: existing_inventory_portability_and_unclassified_taxonomy_only
+  formal_reclassification_allowed: false
+  tp4_budget_complete: false
+  formal_tp4_runtime_claim_allowed: false
+  expert_hotness_measured: false
+  expert_offload_validated: false
+  performance_reference_accepted: false
+next:
+  classification_rule_change_authorized: false
+  offline_tp4_budget_refinalization_authorized: false
+  p8_3_i1_authorized: false
+  p8_4_authorized: false
+  p8_5_authorized: false
+  p9_authorized: false

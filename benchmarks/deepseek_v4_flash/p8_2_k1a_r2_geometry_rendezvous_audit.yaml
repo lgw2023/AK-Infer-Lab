@@ -1,0 +1,80 @@
+schema_version: p8_2_k1a_r2_geometry_rendezvous_audit_v1
+stage: P8.2-K1A-R2
+audit_date: 2026-07-17
+task_family: atomic_same_run_eight_rank_geometry_rendezvous_then_bounded_allocator_envelope
+frozen_stack:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  vllm_version: 0.22.1+empty
+  vllm_ascend_version: 0.22.1rc1
+parent:
+  task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717
+  server_head: c7a9b18c814fb1d6c7aa848b785f97ad9a6ac90f
+  grade: red_p8_2_k1a_r1_geometry_probe_invalid
+  geometry_probe_exit: 2
+  server_ready_exit: 1
+  geometry_only_lifecycle_count: 1
+  formal_model_lifecycle_count: 0
+  model_request_count: 0
+  complete_rank_coverage: [0, 2]
+  empty_rank_files: [4, 7]
+  missing_rank_files: [1, 3, 5, 6]
+  allocator_envelope_attempted: false
+  cleanup: clean
+  partial_geometry_diagnostic_only:
+    total_bytes_per_block: 3364096
+    block_size_tokens: 128
+    required_restore_tokens: 16384
+    required_cpu_blocks: 128
+    required_capacity_bytes_per_rank: 430604288
+    accepted_capacity_candidate: false
+root_cause:
+  observer_path: tools/inference_contracts/p8_2_k1a_r1_geometry_observer.py
+  first_rank_raised_before_eight_rank_rendezvous: true
+  cross_rank_barrier_present: false
+  atomic_publish_present: false
+  engine_shutdown_preempted_peer_records: true
+  pinned_allocator_capacity_failure_proven: false
+  connector_runtime_failure_proven: false
+r2:
+  observer_path: tools/inference_contracts/p8_2_k1a_r2_geometry_observer.py
+  summarizer_path: tools/inference_contracts/p8_2_k1a_r2_allocator.py
+  atomic_record_publish: true
+  probe_run_id_required: true
+  expected_world_size: 8
+  required_rank_coverage: [0, 1, 2, 3, 4, 5, 6, 7]
+  same_run_required: true
+  geometry_parity_required: true
+  completion_marker_required: geometry.rendezvous.complete.json
+  sentinel_after_rendezvous_only: true
+  bounded_rendezvous_timeout_seconds: 180
+  geometry_probe_lifecycle_count_exact: 1
+  formal_model_lifecycle_count_exact: 0
+  model_request_count_exact: 0
+  pinned_cpu_mirror_allocation_attempted_during_geometry: false
+allocator_envelope:
+  reuse_shaped_probe: tools/inference_contracts/probe_deepseek_p8_2_k1a_r1_pinned_allocator.py
+  wave_cpu_blocks: [32, 64, 96, 128]
+  world_size_exact: 8
+  ascending_first_failure_stop: true
+  retry_failed_wave: false
+  cleanup_required_each_wave: true
+  required_restore_wave_cpu_blocks: 128
+decision:
+  geometry_success_grade: candidate_ready_p8_2_k1a_r2_geometry
+  required_wave_pass_grade: candidate_ready_p8_2_k1a_r2_allocator_capacity
+  required_wave_fail_grade: blocked_p8_2_k1a_r2_pinned_capacity_below_restore_requirement
+  geometry_failure_grade: red_p8_2_k1a_r2_geometry_probe_invalid
+  formal_lifecycle_authorized: false
+  formal_lifecycle_requires_external_review_and_new_handoff: true
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  p8_4_authorized: false
+  p8_5_authorized: false
+  p9_authorized: false
+claims:
+  boundary: exact_same_run_eight_rank_kv_geometry_and_pinned_allocator_capacity_only
+  offload_store_restore_proven: false
+  performance_reference_accepted: false
+  optimization_claim_accepted: false
+  unique_hardware_cause_allowed: false

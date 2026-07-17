@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: p8_2_k0_green_p8_2_k1_blocked_p8_2_k1a_red_k1a_r1_allocator_and_p8_3_i0_pending
+  runtime_status: p8_2_k0_green_k1_blocked_k1a_red_k1a_r1_probe_invalid_k1a_r2_and_i0_r1_authorized
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -199,11 +199,13 @@ artifacts:
   p8_2_k1a_feasibility_audit: p8_2_k1a_simple_cpu_offload_feasibility_audit.yaml
   completed_p8_2_k1a_workload: workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml
   p8_2_k1a_r1_allocator_audit: p8_2_k1a_r1_allocator_feasibility_audit.yaml
+  p8_2_k1a_r2_rendezvous_audit: p8_2_k1a_r2_geometry_rendezvous_audit.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
+  p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
   next_workload: null
-  next_stage_candidate: P8.2-K1A-R1_allocator_envelope_plus_P8.3-I0_checkpoint_inventory
-  current_server_handoff_task: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717
-  current_server_handoff_execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope
+  next_stage_candidate: P8.2-K1A-R2_rendezvous_allocator_plus_P8.3-I0-R1_taxonomy
+  current_server_handoff_task: p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717
+  current_server_handoff_execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -221,6 +223,9 @@ artifacts:
   current_p8_2_k1a_r1_geometry_observer: ../../tools/inference_contracts/p8_2_k1a_r1_geometry_observer.py
   current_p8_2_k1a_r1_pinned_probe: ../../tools/inference_contracts/probe_deepseek_p8_2_k1a_r1_pinned_allocator.py
   current_p8_3_i0_inventory_tool: ../../tools/inference_contracts/inventory_deepseek_p8_3_i0_checkpoint.py
+  current_p8_2_k1a_r2_geometry_observer: ../../tools/inference_contracts/p8_2_k1a_r2_geometry_observer.py
+  current_p8_2_k1a_r2_allocator: ../../tools/inference_contracts/p8_2_k1a_r2_allocator.py
+  current_p8_3_i0_r1_taxonomy_tool: ../../tools/inference_contracts/analyze_deepseek_p8_3_i0_unclassified.py
   completed_p6_3b_r4_r1_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_r1_explicit_matched_ab.py
   completed_p6_3b_r4_r1_mode_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_r1_mode.sh
   bounded_mtp_patch: patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
@@ -259,10 +264,11 @@ boundaries:
   - P8.2-K1 frozen-source audit is blocked_p8_2_k1_frozen_stack_import_incompatible: the Ascend NPUOffloadingSpec imports three modules absent from frozen vLLM and asserts one GPU block-size group, while the accepted DeepSeek R2 path is hybrid multi-group.
   - The K1 read-only server review confirmed the frozen installed source, missing legacy modules and single-group conflict without NPU use; that consumed task must not be rerun.
   - P8.2-K1A source/import/registration gates passed, but the selected 32 GiB/rank point failed before server-ready at aclrtMallocHostWithCfg/207001 with 0/6 requests; this is red for that point, not proof of ordinary DRAM exhaustion, a unique pinned-pool cause or global connector incompatibility.
-  - The current K1A-R1 action permits one geometry-only lifecycle that stops before pinned CPU mirror allocation and then at most four eight-rank shaped pinned-allocation waves; formal model lifecycle count and model request count are both zero.
+  - P8.2-K1A-R1 completed red_p8_2_k1a_r1_geometry_probe_invalid: only ranks 0 and 2 produced complete geometry because the first worker raised the sentinel before any eight-rank rendezvous; no allocator wave ran, so the partial 430604288-byte/rank diagnostic is not an accepted capacity candidate.
+  - The current K1A-R2 action permits one geometry-only lifecycle with atomic same-run eight-rank rendezvous before the sentinel and then at most four eight-rank shaped pinned-allocation waves; formal model lifecycle count and model request count are both zero.
   - A passing 128-block wave only creates an allocator-capacity candidate for the frozen 16K restore requirement; a formal six-request lifecycle requires external developer review and a new handoff. K2 remains unauthorized.
-  - P8.3 is not technically dependent on K1/K1A. P8.3-I0 parser/schema/deterministic fixture contracts are now implemented, and the current handoff authorizes read-only checkpoint inventory without NPU use.
-  - P8.3-I0 candidate TP4 ownership is planning-only; checkpoint bytes may not fill materialized_bytes, and P8.3-I1 hotness/runtime trace remains unauthorized.
+  - P8.3 is not technically dependent on K1/K1A. P8.3-I0 is accepted as green_p8_3_i0_checkpoint_inventory for index/header inventory only, while 1135 tensors and 12319364956 checkpoint bytes remain unclassified and the TP4 planning budget remains incomplete.
+  - The current I0-R1 action resolves the real quant index without a symlink and builds a bounded taxonomy from the existing server-local Parquet without rerunning full shard hashes; it cannot reclassify tensors, refinalize the TP4 budget or authorize P8.3-I1.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
   source_versions_recorded: true
@@ -289,15 +295,23 @@ acceptance:
   p8_2_k1a_feasibility_grade: conditional_p8_2_k1a_simple_cpu_offload_source_candidate
   p8_2_k1a_runtime_grade: red_p8_2_k1a_simple_cpu_offload_no_success
   p8_2_k1a_execution_authorized: false
-  p8_2_k1a_r1_allocator_probe_authorized: true
+  p8_2_k1a_r1_grade: red_p8_2_k1a_r1_geometry_probe_invalid
+  p8_2_k1a_r1_allocator_probe_authorized: false
   p8_2_k1a_r1_geometry_probe_lifecycle_count_exact: 1
   p8_2_k1a_r1_formal_model_lifecycle_count_exact: 0
   p8_2_k1a_r1_model_request_count_exact: 0
-  current_task_scoped_authorization: P8.2-K1A-R1_and_P8.3-I0_only
+  p8_2_k1a_r2_allocator_probe_authorized: true
+  p8_2_k1a_r2_geometry_probe_lifecycle_count_exact: 1
+  p8_2_k1a_r2_formal_model_lifecycle_count_exact: 0
+  p8_2_k1a_r2_model_request_count_exact: 0
+  current_task_scoped_authorization: P8.2-K1A-R2_and_P8.3-I0-R1_only
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
-  p8_3_i0_local_implementation_status: implemented_contract_pending_real_inventory
-  p8_3_i0_server_checkpoint_inventory_authorized: true
+  p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory
+  p8_3_i0_local_implementation_status: completed_green_inventory_taxonomy_followup_prepared
+  p8_3_i0_server_checkpoint_inventory_authorized: false
+  p8_3_i0_budget_complete: false
+  p8_3_i0_r1_existing_inventory_taxonomy_authorized: true
   p8_3_i1_server_execution_authorized: false
   official_reference_baseline: true
   highest_stable_context: 131072

@@ -91,9 +91,9 @@ def test_current_handoff_preserves_p6_green_during_k1a_r1_and_i0_review():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R1 allocator envelope + P8.3-I0 checkpoint inventory" in handoff
-    assert "task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717" in handoff
-    assert "execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope" in handoff
+    assert "P8.2-K1A-R2 八 rank rendezvous + P8.3-I0-R1 taxonomy" in handoff
+    assert "task_id: p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717" in handoff
+    assert "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff

@@ -529,18 +529,18 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
         ]
 
 
-def test_k1a_r1_and_i0_are_the_only_current_server_handoff():
+def test_k1a_r2_and_i0_r1_are_the_only_current_server_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717"
+    task_id = "p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717"
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope"
+        "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope"
         in handoff
     )
     for field in (
         "server_sync_review_authorized: true",
-        "p8_3_i0_checkpoint_inventory_authorized: true",
+        "p8_3_i0_r1_existing_inventory_taxonomy_authorized: true",
         "npu_execution_authorized: true",
         "geometry_probe_vllm_start_authorized: true",
         "vllm_formal_workload_authorized: false",
@@ -555,14 +555,12 @@ def test_k1a_r1_and_i0_are_the_only_current_server_handoff():
     ):
         assert field in handoff
     for marker in (
-        "model.safetensors.index.json",
-        "expert_weight_inventory.parquet",
-        "tp4_rank_weight_budget.yaml",
-        "full shard SHA-256",
-        "P8_2_K1A_R1_GEOMETRY_PROBE_COMPLETE",
+        "quant_model_weights.safetensors.index.json",
+        "p8_3_i0_r1_unclassified_taxonomy.json",
+        "P8_2_K1A_R2_GEOMETRY_PROBE_COMPLETE",
         "run_deepseek_p8_2_k1a_simple_cpu_offload.sh",
         "32→64→96→128",
-        "candidate_ready_p8_2_k1a_r1_allocator_capacity",
+        "candidate_ready_p8_2_k1a_r2_allocator_capacity",
         "不得启动正式六请求 K1A lifecycle",
         "P8.3-I1",
         "self_pgid",
@@ -586,17 +584,19 @@ def test_k1a_r1_and_i0_are_the_only_current_server_handoff():
         "red_p8_2_k1a_simple_cpu_offload_no_success"
     )
     assert acceptance["p8_2_k1a_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r1_allocator_probe_authorized"] is True
+    assert acceptance["p8_2_k1a_r1_allocator_probe_authorized"] is False
+    assert acceptance["p8_2_k1a_r2_allocator_probe_authorized"] is True
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R1_and_P8.3-I0_only"
+        "P8.2-K1A-R2_and_P8.3-I0-R1_only"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True
     assert acceptance["p8_3_i0_local_implementation_status"] == (
-        "implemented_contract_pending_real_inventory"
+        "completed_green_inventory_taxonomy_followup_prepared"
     )
-    assert acceptance["p8_3_i0_server_checkpoint_inventory_authorized"] is True
+    assert acceptance["p8_3_i0_server_checkpoint_inventory_authorized"] is False
+    assert acceptance["p8_3_i0_r1_existing_inventory_taxonomy_authorized"] is True
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False

@@ -287,18 +287,18 @@ def test_r2_is_closed_green_and_superseded_by_the_authorized_r3():
     }
 
 
-def test_handoff_preserves_r4_r1_closeout_during_k1a_r1_and_i0_review():
+def test_handoff_preserves_r4_r1_closeout_during_k1a_r2_and_i0_r1_review():
     handoff = (
         REPO_ROOT / "通信模块/docs/developer-to-server.md"
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R1 allocator envelope + P8.3-I0 checkpoint inventory" in handoff
-    assert "task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717" in handoff
-    assert "execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope" in handoff
+    assert "P8.2-K1A-R2 八 rank rendezvous + P8.3-I0-R1 taxonomy" in handoff
+    assert "task_id: p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717" in handoff
+    assert "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "DeepSeek R2 hybrid-KV" in handoff
+    assert "R2 hybrid-KV" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
 
@@ -340,7 +340,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert acceptance["p6_3b_r4_r1_execution_authorized"] is False
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_p8_2_k1_blocked_p8_2_k1a_red_k1a_r1_allocator_and_p8_3_i0_pending"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r1_probe_invalid_k1a_r2_and_i0_r1_authorized"
     )
 
     surfaces = [

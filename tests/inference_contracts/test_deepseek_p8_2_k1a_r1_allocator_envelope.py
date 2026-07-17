@@ -147,11 +147,11 @@ def test_k1a_r1_contract_and_current_handoff_forbid_automatic_formal_rerun() -> 
     assert audit["allocator_envelope"]["wave_cpu_blocks"] == [32, 64, 96, 128]
     assert audit["decision"]["formal_lifecycle_authorized"] is False
     assert audit["decision"]["k2_authorized"] is False
-    assert "p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717" in handoff
+    assert "p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717" in handoff
     assert "geometry_probe_lifecycle_count_exact: 1" in handoff
     assert "formal_model_lifecycle_count_exact: 0" in handoff
     assert "model_request_count_exact: 0" in handoff
-    assert "p8_3_i0_checkpoint_inventory_authorized: true" in handoff
+    assert "p8_3_i0_r1_existing_inventory_taxonomy_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "不得启动正式六请求 K1A lifecycle" in handoff

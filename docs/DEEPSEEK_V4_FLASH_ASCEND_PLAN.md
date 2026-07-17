@@ -44,7 +44,7 @@ new isolated host conda environment built; W8A8-MTP official context ladder gree
 P8.1 parent 继续保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 已接受为
 `green_p8_1_r1_official_mtp_observe_only_matrix`；二者均不被后续 K0 覆盖。
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 也已接受 green。P8.2-K0 已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`，仍不是 performance reference 或 offload evidence。K1 旧 `OffloadingConnector + NPUOffloadingSpec` 冻结路径的本地审计与服务器只读复核已关闭为 `blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A source/import/registration 通过，但冻结 32 GiB/rank 容量点在任何请求前因 `aclrtMallocHostWithCfg / 207001` 收口为 `red_p8_2_k1a_simple_cpu_offload_no_success`。当前唯一任务将 K1A-R1 exact KV block geometry/八 rank pinned envelope 与 P8.3-I0 只读 checkpoint inventory 分 section 执行，正式模型 lifecycle/request 为 0。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 也已接受 green。P8.2-K0 已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`，仍不是 performance reference 或 offload evidence。K1 旧路径 blocked，K1A 32 GiB/rank 点 red；K1A-R1 因首 rank sentinel 早于八 rank 汇合而 probe-invalid red，allocator 未运行。P8.3-I0 的 70-shard index/header inventory 已在窄边界 green，但 11.5 GiB 未分类字节使 TP4 budget incomplete。当前唯一任务将 K1A-R2 atomic same-run 八 rank rendezvous/pinned envelope 与 P8.3-I0-R1 既有 Parquet taxonomy 分 section 执行，正式模型 lifecycle/request 为 0。
 
 ### 3.2 对照路：MindIE
 
@@ -68,7 +68,7 @@ mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门
 p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_sampling_repair_2026_0714
 ```
 
-server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。K1 旧路径为 blocked，K1A 32 GiB/rank 容量点为 red。当前唯一服务器 handoff 是 `p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717`：只允许一个 geometry-only lifecycle、零模型请求、最多四个 pinned allocator wave 与零 NPU checkpoint inventory；K2/P8.3-I1 均未授权。
+server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。K1 旧路径 blocked，K1A 32 GiB/rank red，K1A-R1 probe-invalid red；P8.3-I0 inventory green但 budget incomplete。当前唯一服务器 handoff 是 `p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717`：只允许一个 atomic eight-rank geometry lifecycle、零模型请求、最多四个 pinned allocator wave 与零 NPU existing-inventory taxonomy；K2/P8.3-I1 均未授权。
 
 参考配置：
 
@@ -279,6 +279,6 @@ boundaries:
 ## 10. 当前下一步
 
 1. P6.1C-R1 official、P6.1 unprofiled performance、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache control 已完成并验收。
-2. P6 五份汇总交付物、P8.1-R1 observe-only 与 P8.2-K0 已闭合。K1 旧路径保持 blocked；K1A 32 GiB/rank 点保持 red。当前 handoff 只授权 K1A-R1 geometry-only lifecycle + 八 rank pinned envelope 和 P8.3-I0 只读 inventory，`formal_model_lifecycle_count_exact:0`、`model_request_count_exact:0`、`next_task_authorized:false`、`result_transfer_authorized:false`。
+2. P6 五份汇总交付物、P8.1-R1 observe-only、P8.2-K0 与 P8.3-I0 inventory 已闭合。K1 旧路径 blocked；K1A 32 GiB/rank red，K1A-R1 probe-invalid red。当前 handoff 只授权 K1A-R2 same-run 八 rank geometry + pinned envelope 和 P8.3-I0-R1 既有 Parquet taxonomy，`formal_model_lifecycle_count_exact:0`、`model_request_count_exact:0`、`next_task_authorized:false`、`result_transfer_authorized:false`。
 3. P6.3C Chunked Prefill on/off 已完成冻结源码审计：显式双布尔 CLI 存在，但 `4096 < 135168` 使 off 侧在 resolved config 前失败，结论为 `blocked_p6_3c_not_strict_single_variable`。
 4. P8.3-I0 deterministic index/header parser、Parquet schema 与 TP4 planning-budget 合同已实现，当前 handoff 授权其零 NPU 真实 checkpoint 物化；P8.3-I1 hotness/runtime trace、P7 与 P9 均需新授权。
