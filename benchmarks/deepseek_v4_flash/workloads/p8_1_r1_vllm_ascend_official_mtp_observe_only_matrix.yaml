@@ -204,13 +204,60 @@ stop_policy:
   no_automatic_result_transfer: true
 
 execution_state:
-  status: prepared_not_executed
-  server_handoff: current
-  server_result: pending
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_developer_accepted_green
+  server_handoff: consumed_historical
+  server_result: developer_reviewed
+  npu_execution_authorized: false
+  next_task_authorized: false
   result_transfer_authorized: false
   standing_npu_and_vllm_consumption_authorization: true
+
+execution_result:
+  server_grade: candidate_green_p8_1_r1_official_mtp_observe_only_matrix
+  developer_grade: green_p8_1_r1_official_mtp_observe_only_matrix
+  server_head: dee3f7562eafc2b51adbbe31d7183f0fa675d3ec
+  successful_request_count: 6_of_6
+  shared_follower_prefix_hit_tokens: 49152
+  other_five_prefix_hit_tokens: [0, 0, 0, 0, 0]
+  per_request_mtp_ok: true
+  health_queue_ok: true
+  replay_deterministic: true
+  join_coverage_complete: true
+  trace_validation_errors: 0
+  frozen_body_gate_ok: true
+  repair_gate_ok: true
+  resolved_prefix_cache_gate_ok: true
+  persistent_shared_prefix_failure: false
+  cause_supported_by_replay: true
+  cause_proven_as_unique: false
+  cleanup: clean
+  base_vllm_root: /data/node0_disk1/vllm-0.22.1/vllm
+  base_vllm_root_resolution: user_authorized_editable_install_source_checkout
+  base_vllm_source_hashes_exact: true
+  aborted_pre_request_source_gate_invocations: 1
+  request_lifecycle_count: 1
+  request_retry_count: 0
+  candidate_file_count: 15
+  candidate_total_bytes: 22664
+  candidate_size_gate_pass: true
+  package_sha256_verified_by_developer: true
+  developer_received_path: /Volumes/SSD1/Inbox/2026-07-17/p8_1_r1_official_mtp_observe_only_matrix_20260717_green
+  candidate_manifest:
+    body_relationship_summary.json: {bytes: 1881, sha256: 0ed3d27f09dee3d8da436e6fcb0f6c410b0dbf7dcd278599719bd8551f075619}
+    cleanup_status.txt: {bytes: 6, sha256: 2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d}
+    environment_and_hashes.json: {bytes: 1762, sha256: d4f9bb0234d6c36387963b21e97cefbc1a234c8e9f81f12b4f6baa92fe258bea}
+    first_failure_excerpt.txt: {bytes: 5, sha256: fcf33dfbe13c2354bf0e1b063f9fb422747a46cee00b7420bceff2b81457b345}
+    grading_inputs.json: {bytes: 1093, sha256: 83525fc5081ba2a95c9e9083357e16268cf259f13cd69caab334276bf7babdb5}
+    join_coverage.json: {bytes: 821, sha256: 610d0f43b6c7ca5521ceb2c363215e4e18f0d0f41d1e3091c797b353bf5d2038}
+    mtp_metrics_summary.json: {bytes: 3153, sha256: 3ff00b935855c5ab8ef1c7a80d40de213a2b968255609e1b73f02b4ded7a426e}
+    prefix_cache_metrics_summary.json: {bytes: 1323, sha256: f6300d19def5866be36cfcf5a7ce222e37e5049d2a97545c448ce6a49e3c9b86}
+    queue_health_summary.json: {bytes: 1661, sha256: a0828912ebddcd72f82e83cda22cad6d001a6d330eaf267f35ac56258d6f2f8d}
+    repair_diagnostic_summary.json: {bytes: 2233, sha256: e73051d39f949f220cead4ecaeeec5b02c9637dc7bc245094eb1a703fd8b587c}
+    replay_determinism.json: {bytes: 1187, sha256: efe3af63ef39dcd0564914510a21202fcdc8130aace27cf32936ee6107c31013}
+    request_matrix_summary.json: {bytes: 4993, sha256: db853b700a009158c48a5051051dca628379c88606fd37550e83f2738b9bf286}
+    result_summary.md: {bytes: 557, sha256: dc7c3c0d4696660302e4bc787e3fd764e7c254e657632583d21abff498e7d335}
+    trace_summary.json: {bytes: 288, sha256: e875e5a5e3cee2ef6324c0a181b7047e7e851fc3eb7123f119af16ca3708fcb5}
+    transfer_availability_summary.json: {bytes: 1701, sha256: f12850f55ed9abd099f822b3d5218d1da37c8c596aa9660c7e6a2f593103751a}
 
 boundaries:
   - R1 tests the missing-repair diagnosis but does not assume that diagnosis is already proven.

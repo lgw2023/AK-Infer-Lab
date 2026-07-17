@@ -1,0 +1,215 @@
+schema_version: 1
+workload_id: p8_2_k0_order_balanced_prefix_cache_baseline
+date: "2026-07-17"
+purpose: establish_an_order_balanced_unprofiled_prefix_cache_on_off_baseline_before_any_kv_offload_work
+task_id: p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717
+
+stage_contract:
+  stage: P8.2-K0
+  mode: order_balanced_explicit_prefix_cache_on_off_unprofiled_pilot
+  claim_boundary: order_balanced_64k_exact_reuse_prefix_cache_on_off_descriptive_baseline_only
+  performance_reference_authorized: false
+  offload_or_real_move_authorized: false
+  p8_2_k1_execution_authorized: false
+
+depends_on:
+  p8_1_parent_grade: yellow_p8_1_matrix_trace_invalid
+  p8_1_r1_workload: benchmarks/deepseek_v4_flash/workloads/p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml
+  p8_1_r1_grade: green_p8_1_r1_official_mtp_observe_only_matrix
+  p8_1_r1_shared_follower_hit_tokens: 49152
+  p8_1_r1_cause_supported_by_replay: true
+  p8_1_r1_cause_proven_as_unique: false
+  p6_3b_r4_r1_workload: benchmarks/deepseek_v4_flash/workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml
+  p6_3b_r4_r1_grade: green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
+  p6_3b_fixed_order_limitation: prefix_cache_off_then_prefix_cache_on
+  p6_3c_grade: blocked_p6_3c_not_strict_single_variable
+
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  torch: 2.10.0+cpu
+  torch_npu: 2.10.0
+  visible_devices: "0,1,2,3,4,5,6,7"
+  base_vllm_root: /data/node0_disk1/vllm-0.22.1/vllm
+  base_vllm_root_reason: server_uses_editable_vllm_install_and_the_checkout_is_the_hash_verified_source_root
+
+runtime_fixed:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  speculative_method: mtp
+  num_speculative_tokens: 1
+  cudagraph_mode: FULL_DECODE_ONLY
+
+single_variable:
+  name: enable_prefix_caching
+  prefix_cache_off_flag: --no-enable-prefix-caching
+  prefix_cache_on_flag: --enable-prefix-caching
+  normalized_server_argv_delta_count: 1
+  all_other_argv_and_environment_equal: true
+  resolved_value_required_before_requests: true
+  prefix_cache_off_resolved_value: false
+  prefix_cache_on_resolved_value: true
+  prefix_cache_retention_interval: explicitly_unset
+  server_command_sha256:
+    prefix_cache_off: def3dd8bf71ee4cac1922b0d4fa14321e1df5369fd8a5997771d00f3be6418ea
+    prefix_cache_on: 370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19
+
+order_balance:
+  method: frozen_ab_ba_reverse_pair_schedule
+  rationale: each_mode_is_first_once_and_second_once_without_post_hoc_selection
+  each_mode_first_once_and_second_once: true
+  post_hoc_reordering_allowed: false
+  fixed_before_execution: true
+  lifecycle_schedule:
+    - {lifecycle_id: lifecycle_01, pair_id: pair_01, pair_position: first, mode: prefix_cache_off}
+    - {lifecycle_id: lifecycle_02, pair_id: pair_01, pair_position: second, mode: prefix_cache_on}
+    - {lifecycle_id: lifecycle_03, pair_id: pair_02, pair_position: first, mode: prefix_cache_on}
+    - {lifecycle_id: lifecycle_04, pair_id: pair_02, pair_position: second, mode: prefix_cache_off}
+
+request_plan:
+  context_tokens: 65536
+  output_tokens: 64
+  concurrency: 1
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming_required: true
+  prefix_pattern: exact_reuse
+  target_shared_prefix_ratio_pct: 90
+  expected_measured_prefix_hit_tokens_when_on: 49152
+  expected_all_prefix_hit_tokens_when_off: 0
+  lifecycle_count: 4
+  requests_per_lifecycle: 5
+  warmup_requests_per_lifecycle: 1
+  prime_requests_per_lifecycle: 1
+  measured_followers_per_lifecycle: 3
+  warmup_requests_total: 4
+  prime_requests_total: 4
+  measured_follower_requests_total: 12
+  total_request_count: 20
+  matched_measured_pair_count: 6
+  request_retries: 0
+  warmup_has_no_cacheable_lcp_with_primary: true
+  bodies_byte_identical_across_all_lifecycles: true
+  bodies_and_order_identical_within_each_pair: true
+  body_bytes_sha256_and_token_count_frozen_before_server_start: true
+  generated_text_retained: false
+  generated_token_ids_retained: false
+
+source_and_repair_gate:
+  source_payload:
+    server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+    prompt_tokens: 4096
+    bytes: 19487
+    sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+  full_p6_3b_r2_task_local_repair_required: true
+  runtime_implementation: tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py
+  runtime_implementation_sha256: 6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
+  deferred_loader: tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py
+  deferred_loader_sha256: 9d720389f520918642ddecf288d0ac3922f61873251760129ba34ba203d02631
+  mtp_overlay_patch: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+  mtp_overlay_patch_sha256: 75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+  hybrid_manager_overlay_patch: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch
+  hybrid_manager_overlay_patch_sha256: cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
+  deferred_install_overlay_patch: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch
+  deferred_install_overlay_patch_sha256: ad845854461605ae28ae7000f24ada0cb07c5c17f3b0c23ee1485ec537a7a85b
+  expected_overlay_proposer_sha256: 7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+  expected_overlay_coordinator_sha256: a1ed9c82e308608cd20965a49baa29a3e95d723248fff699fd83dfb3caf10250
+  expected_overlay_interface_sha256: 524c933ef17806ecba0634804bc562de1f69dc095fe1346e2edd0103845bfa75
+  base_vllm_source_files_hash_verified_before_npu_start: true
+  runtime_diagnostic_hard_gate: true
+  base_environment_or_site_packages_mutation: false
+
+evidence_contract:
+  unprofiled: true
+  http_token_sse_finish_exact: true
+  prefix_cache_hit_exact: true
+  per_request_mtp_health_queue: true
+  resolved_prefix_control: true
+  normalized_server_argv_one_delta: true
+  repair_identity_equal_across_all_lifecycles: true
+  body_pairing_exact: true
+  order_balance_exact: true
+  streaming_metrics: [ttft_ms, tpot_ms, itl_p50_ms, itl_p95_ms, itl_p99_ms, e2el_ms, output_tokens_per_second]
+  descriptive_statistics: [n, min, median, mean, p95, p99, max, cv]
+  paired_deltas: [absolute, relative]
+  hbm_and_host_dram: unavailable_in_k0_no_sampler
+  d2h_h2d_restore_recompute_overlap: not_applicable_no_offload
+  cleanup_and_port_release: true
+
+acceptance:
+  blocked_preflight_grade: blocked_p8_2_k0_source_or_resource_gate
+  no_success_grade: red_p8_2_k0_order_balanced_prefix_baseline_no_success
+  partial_grade: yellow_p8_2_k0_order_balanced_prefix_baseline_partial
+  evidence_incomplete_grade: red_p8_2_k0_order_balanced_prefix_baseline_evidence_incomplete
+  server_candidate_green_grade: candidate_green_p8_2_k0_order_balanced_prefix_cache_baseline
+  developer_accepted_green_grade: green_p8_2_k0_order_balanced_prefix_cache_baseline
+  candidate_green_requires:
+    - twenty_of_twenty_requests_success
+    - four_clean_fresh_lifecycles_in_frozen_ab_ba_order
+    - six_matched_measured_pairs
+    - single_explicit_prefix_cache_boolean_delta_only
+    - same_r2_repair_and_frozen_body_hashes
+    - on_measured_hit_exactly_49152_and_off_all_hits_zero
+    - mtp_health_queue_streaming_metrics_complete
+    - clean_cleanup_and_no_residual_vllm
+  green_means_evidence_complete_not_prefix_cache_faster: true
+  developer_review_required: true
+
+result_package_policy:
+  max_total_bytes: 71680
+  raw_logs_metrics_request_bodies_and_generated_output_remain_server_local: true
+  generated_text_or_token_ids_allowed: false
+  automatic_transfer_allowed: false
+  selection_required_before_any_transfer: true
+  available_methods: [email, upload-api, server-local]
+  bounded_candidates:
+    - result_summary.md
+    - environment_and_hashes.json
+    - request_body_manifest.json
+    - lifecycle_summary.tsv
+    - measured_request_summary.tsv
+    - paired_request_summary.tsv
+    - mode_statistics.json
+    - prefix_cache_metrics_summary.json
+    - mtp_queue_health_summary.json
+    - repair_diagnostic_summary.json
+    - resolved_prefix_cache_config_summary.json
+    - grading_inputs.json
+    - cleanup_status.txt
+    - first_failure_excerpt.txt
+
+stop_policy:
+  stop_on_first_request_or_lifecycle_failure: true
+  no_retry: true
+  no_post_hoc_schedule_change: true
+  no_profiler_or_offload: true
+  no_runtime_parameter_body_or_repair_mutation: true
+  no_k1_k2_k3_k4_p8_3_p9: true
+  no_automatic_result_transfer: true
+
+execution_state:
+  status: prepared_not_executed
+  server_handoff: current
+  server_result: pending
+  npu_execution_authorized: true
+  next_task_authorized: true
+  result_transfer_authorized: false
+  standing_npu_and_vllm_consumption_authorization: true
+
+boundaries:
+  - K0 corrects the fixed-order limitation of P6.3B with a frozen AB/BA lifecycle schedule.
+  - K0 is an unprofiled descriptive Prefix Cache baseline, not a new performance reference or optimization claim.
+  - K0 does not enable KV Cache CPU Offload, UCM, External KV Cache, payload movement or placement mutation.
+  - Negative, zero or positive timing deltas are all valid when the evidence gates are complete.
+  - K1 remains closed until the external developer accepts the bounded K0 result package.

@@ -86,19 +86,19 @@ def test_r4_r1_workload_is_closed_as_developer_accepted_green():
     }
 
 
-def test_current_handoff_and_truth_surfaces_preserve_p6_green_during_p8_1_r1():
+def test_current_handoff_and_truth_surfaces_preserve_p6_green_during_p8_2_k0():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "执行 P8.1-R1 完整 R2 repair observe-only 六请求复跑" in handoff
-    assert "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717" in handoff
-    assert "execution_mode: authorized_p8_1_r1_full_r2_repair_observe_only_six_request_replay" in handoff
+    assert "执行 P8.2-K0 order-balanced Prefix Cache on/off baseline" in handoff
+    assert "task_id: p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717" in handoff
+    assert "execution_mode: authorized_p8_2_k0_order_balanced_prefix_cache_on_off_unprofiled_pilot" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
-    assert "blocked_p6_3c_not_strict_single_variable" in handoff
+    assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "vllm serve" not in handoff
     assert "result_transfer_authorized: false" in handoff
 
@@ -111,7 +111,7 @@ def test_current_handoff_and_truth_surfaces_preserve_p6_green_during_p8_1_r1():
         "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
+        "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_r1_grade"] == (
         "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"
@@ -120,7 +120,9 @@ def test_current_handoff_and_truth_surfaces_preserve_p6_green_during_p8_1_r1():
     assert readiness["acceptance"]["p6_3b_mechanism_baseline"] is True
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
     assert readiness["acceptance"]["p8_1_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is True
+    assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is False
+    assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is True
+    assert readiness["acceptance"]["p8_2_k1_execution_authorized"] is False
     assert readiness["acceptance"]["next_task_authorized"] is True
     assert (
         readiness["acceptance"]["standing_npu_and_vllm_consumption_authorization"]

@@ -167,9 +167,17 @@ def test_r1_workload_replays_the_same_matrix_with_the_full_r2_repair() -> None:
     assert workload["stop_policy"]["no_retry"] is True
     assert workload["stop_policy"]["no_profiler_or_offload"] is True
     assert workload["stop_policy"]["no_p8_2_p7_or_p9"] is True
-    assert workload["execution_state"]["npu_execution_authorized"] is True
-    assert workload["execution_state"]["next_task_authorized"] is True
+    assert workload["execution_state"]["status"] == (
+        "completed_developer_accepted_green"
+    )
+    assert workload["execution_state"]["npu_execution_authorized"] is False
+    assert workload["execution_state"]["next_task_authorized"] is False
     assert workload["execution_state"]["result_transfer_authorized"] is False
+    assert workload["execution_result"]["developer_grade"] == (
+        "green_p8_1_r1_official_mtp_observe_only_matrix"
+    )
+    assert workload["execution_result"]["shared_follower_prefix_hit_tokens"] == 49152
+    assert workload["execution_result"]["cause_proven_as_unique"] is False
 
 
 def test_r1_body_gate_freezes_hashes_and_emits_only_sanitized_relationships() -> None:
@@ -321,9 +329,10 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
     subprocess.run(["bash", "-n", str(R1_RUNNER)], cwd=REPO_ROOT, check=True)
 
 
-def test_r1_is_the_only_authorized_handoff_and_current_truth() -> None:
+def test_r1_is_closed_and_k0_is_the_only_authorized_handoff() -> None:
     task_id = (
-        "p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717"
+        "p8_2_k0_deepseek_v4_flash_order_balanced_"
+        "prefix_cache_baseline_2026_0717"
     )
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
@@ -331,19 +340,19 @@ def test_r1_is_the_only_authorized_handoff_and_current_truth() -> None:
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_p8_1_r1_full_r2_repair_observe_only_six_request_replay"
+        "execution_mode: authorized_p8_2_k0_order_balanced_prefix_cache_on_off_unprofiled_pilot"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "request_count_exact: 6" in handoff
-    assert "lifecycle_count_max: 1" in handoff
-    assert "no_p8_2_p7_or_p9: true" in handoff
+    assert "request_count_exact: 20" in handoff
+    assert "lifecycle_count_exact: 4" in handoff
+    assert "no_k1_k2_k3_k4_p8_3_or_p9: true" in handoff
     assert "yellow_p8_1_matrix_trace_invalid" in handoff
-    assert "cause_proven_before_replay: false" in handoff
-    assert "p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml" in handoff
+    assert "cause_proven_as_unique: false" in handoff
     assert "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml" in handoff
+    assert "p8_2_k0_order_balanced_prefix_cache_baseline.yaml" in handoff
     assert handoff.count("bash \"${RUNNER}\" \"${RESULT_DIR}\"") == 1
 
     readiness = yaml.safe_load(
@@ -355,15 +364,22 @@ def test_r1_is_the_only_authorized_handoff_and_current_truth() -> None:
     assert artifacts["completed_p8_1_workload"].endswith(
         "p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
-    assert artifacts["next_workload"].endswith(
+    assert artifacts["completed_p8_1_r1_workload"].endswith(
         "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
+    )
+    assert artifacts["next_workload"].endswith(
+        "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     acceptance = readiness["acceptance"]
     assert acceptance["p8_1_grade"] == "yellow_p8_1_matrix_trace_invalid"
     assert acceptance["p8_1_execution_authorized"] is False
-    assert acceptance["p8_1_r1_execution_authorized"] is True
-    assert acceptance["p8_2_execution_authorized"] is False
+    assert acceptance["p8_1_r1_grade"] == (
+        "green_p8_1_r1_official_mtp_observe_only_matrix"
+    )
+    assert acceptance["p8_1_r1_execution_authorized"] is False
+    assert acceptance["p8_2_k0_execution_authorized"] is True
+    assert acceptance["p8_2_k1_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is True
 
     for relative_path in (
@@ -375,6 +391,7 @@ def test_r1_is_the_only_authorized_handoff_and_current_truth() -> None:
     ):
         text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         assert "yellow_p8_1_matrix_trace_invalid" in text, relative_path
-        assert "P8.1-R1" in text, relative_path
+        assert "green_p8_1_r1_official_mtp_observe_only_matrix" in text, relative_path
         assert task_id in text, relative_path
-        assert "P8.2" in text, relative_path
+        assert "P8.2-K0" in text, relative_path
+        assert "K1" in text, relative_path

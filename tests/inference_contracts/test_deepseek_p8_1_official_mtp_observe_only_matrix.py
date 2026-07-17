@@ -465,40 +465,37 @@ def test_matrix_workload_hashes_every_executable_contract_artifact() -> None:
         assert frozen[key] == hashlib.sha256(path.read_bytes()).hexdigest(), path
 
 
-def test_current_handoff_authorizes_only_the_six_request_p8_1_r1_matrix() -> None:
+def test_current_handoff_authorizes_only_the_p8_2_k0_order_balanced_pilot() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-        "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717"
+        "task_id: p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717"
         in handoff
     )
     assert (
-        "execution_mode: authorized_p8_1_r1_full_r2_repair_observe_only_six_request_replay"
+        "execution_mode: authorized_p8_2_k0_order_balanced_prefix_cache_on_off_unprofiled_pilot"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml" in handoff
     assert "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml" in handoff
-    assert "p8_official_mtp_observe_matrix_contract.yaml" in handoff
-    assert "run_deepseek_p8_1_r1_observe_only_matrix.sh" in handoff
-    assert "prepare_deepseek_p8_1_r1_observe_matrix.py" in handoff
-    assert "finalize_deepseek_p8_1_r1_observe_only_matrix.py" in handoff
+    assert "p8_2_k0_order_balanced_prefix_cache_baseline.yaml" in handoff
+    assert "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.sh" in handoff
+    assert "run_deepseek_p8_2_k0_mode.sh" in handoff
+    assert "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py" in handoff
     assert "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19" in handoff
-    assert "4096/65536/131072 × 2" in handoff
-    assert "58880" in handoff
+    assert "off→on/on→off" in handoff
+    assert "20 request" in handoff
     assert "49152" in handoff
-    assert "6/6" in handoff
-    assert "replay_determinism" in handoff
-    assert "join_coverage" in handoff
+    assert "6 matched pair" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in handoff
-    assert "不得发送第 7 个请求" in handoff
-    assert "不得自动进入 P8.2" in handoff
+    assert "第 21 请求" in handoff
+    assert "不得自动进入 K1" in handoff
     assert "不得外发" in handoff
     assert "git push" not in handoff
     assert "git commit" not in handoff

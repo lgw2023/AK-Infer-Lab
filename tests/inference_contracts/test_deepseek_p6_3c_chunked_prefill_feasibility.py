@@ -159,7 +159,7 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
     )
 
 
-def test_current_truth_surfaces_keep_p6_3c_blocked_while_entering_p8_1():
+def test_current_truth_surfaces_keep_p6_3c_blocked_while_entering_p8_2_k0():
     readiness = yaml.safe_load(
         (
             REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
@@ -169,30 +169,31 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_while_entering_p8_1():
         "p6_3c_chunked_prefill_feasibility_audit.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
+        "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.1-R1_official_mtp_observe_only_r2_repair_replay"
+        "P8.2-K0_order_balanced_prefix_cache_on_off_baseline"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
     )
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
     assert readiness["acceptance"]["p8_1_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is True
+    assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is False
+    assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is True
+    assert readiness["acceptance"]["p8_2_k1_execution_authorized"] is False
     assert readiness["acceptance"]["next_task_authorized"] is True
 
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717" in handoff
-    assert "execution_mode: authorized_p8_1_r1_full_r2_repair_observe_only_six_request_replay" in handoff
+    assert "task_id: p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717" in handoff
+    assert "execution_mode: authorized_p8_2_k0_order_balanced_prefix_cache_on_off_unprofiled_pilot" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
-    assert "blocked_p6_3c_not_strict_single_variable" in handoff
-    assert "4096 < 135168" in handoff
-    assert "p8_official_mtp_observe_matrix_contract.yaml" in handoff
+    assert "p8_2_k1_execution_authorized: false" in handoff
+    assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "vllm serve" not in handoff
 
     truth_paths = (

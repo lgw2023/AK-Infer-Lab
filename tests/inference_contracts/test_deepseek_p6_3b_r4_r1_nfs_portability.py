@@ -157,13 +157,13 @@ def test_r4_r1_is_completed_without_erasing_the_blocked_r4_lineage():
     assert historical_r4["execution_state"]["next_task_authorized"] is False
 
 
-def test_r4_r1_closeout_is_preserved_in_the_unique_p8_1_r1_handoff_and_truth():
+def test_r4_r1_closeout_is_preserved_in_the_unique_p8_2_k0_handoff_and_truth():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "执行 P8.1-R1 完整 R2 repair observe-only 六请求复跑" in handoff
-    assert "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717" in handoff
+    assert "执行 P8.2-K0 order-balanced Prefix Cache on/off baseline" in handoff
+    assert "task_id: p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
@@ -181,7 +181,7 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_p8_1_r1_handoff_and_truth():
         "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
+        "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_grade"] == (
         "blocked_p6_3b_r4_source_or_resource_gate"
@@ -192,6 +192,8 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_p8_1_r1_handoff_and_truth():
     )
     assert readiness["acceptance"]["p6_3b_r4_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
+    assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is True
+    assert readiness["acceptance"]["p8_2_k1_execution_authorized"] is False
 
     truth_paths = (
         REPO_ROOT / "docs/EXPERIMENT_PLAN.md",

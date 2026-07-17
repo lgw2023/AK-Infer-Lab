@@ -1953,24 +1953,24 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_advances_from_p8_1_yellow_to_r1_repair_replay():
+def test_server_handoff_advances_from_p8_1_r1_green_to_p8_2_k0():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "执行 P8.1-R1 完整 R2 repair observe-only 六请求复跑" in handoff
-    assert "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717" in handoff
-    assert "execution_mode: authorized_p8_1_r1_full_r2_repair_observe_only_six_request_replay" in handoff
+    assert "执行 P8.2-K0 order-balanced Prefix Cache on/off baseline" in handoff
+    assert "task_id: p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717" in handoff
+    assert "execution_mode: authorized_p8_2_k0_order_balanced_prefix_cache_on_off_unprofiled_pilot" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
-    assert "blocked_p6_3c_not_strict_single_variable" in handoff
-    assert "p8_official_mtp_observe_matrix_contract.yaml" in handoff
+    assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
+    assert "p8_2_k1_execution_authorized: false" in handoff
 
 
-def test_server_handoff_keeps_p8_1_bounded_and_stops_before_later_stages():
+def test_server_handoff_keeps_p8_2_k0_bounded_and_stops_before_k1():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
@@ -1978,12 +1978,12 @@ def test_server_handoff_keeps_p8_1_bounded_and_stops_before_later_stages():
     assert "fetch origin main" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "Prefix Cache" in handoff
-    assert "request_count_exact: 6" in handoff
-    assert "不得发送第 7 个请求" in handoff
-    assert "trace_validation_errors=0" in handoff
-    assert "blocked_p6_3c_not_strict_single_variable" in handoff
-    assert "不得自动进入 P8.2" in handoff
-    assert "不得外发" in handoff
+    assert "request_count_exact: 20" in handoff
+    assert "lifecycle_count_exact: 4" in handoff
+    assert "matched_measured_pair_count_exact: 6" in handoff
+    assert "no_k1_k2_k3_k4_p8_3_or_p9: true" in handoff
+    assert "不得自动进入 K1" in handoff
+    assert "不得自动外发" in handoff
     assert "vllm serve" not in handoff
 
 
@@ -2034,11 +2034,14 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
     assert artifacts["completed_p8_1_workload"] == (
         "workloads/p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
-    assert artifacts["next_workload"] == (
+    assert artifacts["completed_p8_1_r1_workload"] == (
         "workloads/p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
+    assert artifacts["next_workload"] == (
+        "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
+    )
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p6_3b_r4_r1_explicit_prefix_control_matched_ab_developer_accepted_green"
+        "p8_1_r1_observe_only_developer_accepted_green_p8_2_k0_authorized"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2073,8 +2076,13 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
     assert acceptance["p8_official_mtp_baseline_status"] == "frozen_official"
     assert acceptance["p8_1_grade"] == "yellow_p8_1_matrix_trace_invalid"
     assert acceptance["p8_1_execution_authorized"] is False
-    assert acceptance["p8_1_r1_execution_authorized"] is True
-    assert acceptance["p8_2_execution_authorized"] is False
+    assert acceptance["p8_1_r1_grade"] == (
+        "green_p8_1_r1_official_mtp_observe_only_matrix"
+    )
+    assert acceptance["p8_1_r1_execution_authorized"] is False
+    assert acceptance["p8_2_execution_authorized"] is True
+    assert acceptance["p8_2_k0_execution_authorized"] is True
+    assert acceptance["p8_2_k1_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is True
 
     current_surfaces = {
@@ -2421,20 +2429,21 @@ def test_p6_3b_r1_records_bounded_ready_failure_without_revoking_prior_evidence(
     }
 
 
-def test_server_handoff_executes_only_p8_1_r1_after_parent_yellow_closeout():
+def test_server_handoff_executes_only_p8_2_k0_after_r1_green_closeout():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    assert "执行 P8.1-R1 完整 R2 repair observe-only 六请求复跑" in handoff
-    assert "task_id: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717" in handoff
+    assert "执行 P8.2-K0 order-balanced Prefix Cache on/off baseline" in handoff
+    assert "task_id: p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: true" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
     assert "same R2 repair" in handoff
+    assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "request_count_exact: 6" in handoff
-    assert "不得自动进入 P8.2" in handoff
-    assert "blocked_p6_3c_not_strict_single_variable" in handoff
+    assert "request_count_exact: 20" in handoff
+    assert "lifecycle_count_exact: 4" in handoff
+    assert "p8_2_k1_execution_authorized: false" in handoff

@@ -2,9 +2,9 @@
 
 日期：2026-07-10；最后更新：2026-07-17
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_yellow_repair_replay_pending / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_authorized / tp4_expert_residency_goal_defined`
 
-状态拆分：`local_artifact_state=p8_1_r1_full_r2_repair_replay_implemented`；`server_execution_state=p8_1_r1_authorized_pending_result`；`real_move_state=closed_by_gate`；`tp4_state=plan_defined_measurements_missing`。Parent P8.1 已以 `yellow_p8_1_matrix_trace_invalid` 收口：六请求、MTP、queue、trace、replay 和 join 通过，但 shared follower hit=0。当前 P8.1-R1 任务 `p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717` 只在相同 matrix/server argv 上补齐完整 R2 task-local repair。该复跑只验证高置信 repair 诊断，`cause_proven_before_replay:false`；不代表 P8.2 或 real move 已打开。
+状态拆分：`local_artifact_state=p8_2_k0_order_balanced_prefix_baseline_implemented`；`server_execution_state=p8_2_k0_authorized_pending_result`；`real_move_state=closed_by_gate`；`tp4_state=plan_defined_measurements_missing`。Parent P8.1 继续保留 `yellow_p8_1_matrix_trace_invalid`；P8.1-R1 在相同六 body/server argv 上补齐完整 R2 repair 后，由开发机接受为 `green_p8_1_r1_official_mtp_observe_only_matrix`：shared follower hit 从 0 恢复为 49152，其余五条为 0，trace/replay/join/cleanup 全过。该 replay 支持但不唯一证明缺 repair 诊断。当前唯一任务 `p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717` 用 off→on/on→off 四 lifecycle/20 requests 修正 P6.3B 固定顺序限制；它不是 K1 offload 或 real move。
 
 ## 1. P8 的工程定义
 
@@ -24,7 +24,7 @@ P8 还必须关闭一个明确的容量问题：当前 W8A8 不能只把 `TP=8` 
 
 | 项目 | 当前证据 | P8 解释 |
 | --- | --- | --- |
-| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈的 installed-content 6/6、五插件路由、memory redirects / `MemorySnapshot` 与 CANN ACL parent/spawn 路径均已通过；W8A8-MTP 已完成 official 131072 context、unprofiled performance 与三个代表性 profiled evidence cell | P8 已有可信 reference point；六请求 observe-only matrix 已获独立任务授权、结果待回，不解锁 payload move 或性能结论 |
+| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈的 installed-content 6/6、五插件路由、memory redirects / `MemorySnapshot` 与 CANN ACL parent/spawn 路径均已通过；W8A8-MTP 已完成 official 131072 context、unprofiled performance、三个代表性 profiled evidence cell 与 P8.1-R1 observe-only green | P8.2-K0 order-balanced Prefix Cache baseline 已授权；K1 payload move、offload 和性能收益结论未解锁 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
 | DeepSeek-V4-Flash | W8A8-MTP 是项目主对象；P6.1C-R1、P6.1 与 P6.2 已建立三层 reference；mixed checkpoint 因 910B1 MXFP4 SoC 门退出执行 | P8 不绕过 P6.3 机制对照修改模型路径，也不实现 mixed checkpoint adapter |
 | TP4 容量证据 | checkpoint 为 `300013759966 B ≈ 279.41 GiB`；TP8 no-MTP/MTP 权重加载日志分别为 `38.1255/39.2795 GB per worker`；P6.1C whole-device HBM 峰值为 `61436–61447 MB / 65536 MB` | 足以否定“原命令直接 TP8→TP4”作为参数调整，但不能据此固定需要卸载多少 GB；先做 expert inventory、TP4 mapping 和 runtime reserve 校准 |
@@ -293,14 +293,16 @@ P6 五份汇总交付物均已关闭。原 `p8_baseline_contract.yaml` 继续以
 no-MTP `4096+64` provenance；`p8_official_mtp_baseline_contract.yaml` 与单请求 workload 继续保留为已发布但
 执行前被替代的 tracer provenance。当前 `p8_official_mtp_observe_matrix_contract.yaml` 冻结 P6 已接受的
 `4096/65536/131072+64,c1` 三个 context shape，唯一 workload 为
-`p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml`。13 项 source capability 仍不能整体提升为
-`validated_for_selected_workload`，只有本轮实际观测到的 matrix 字段可在开发机复核后升级。
+`p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml`；其 R1 repair replay 已获开发机 green。13 项 source capability 仍不能整体提升为
+`validated_for_selected_workload`，只有 P8.1-R1 实际观测到的字段可升级。当前 K0 workload 为
+`p8_2_k0_order_balanced_prefix_cache_baseline.yaml`，任务 ID
+`p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717`；它只打开 K0，不打开 K1。
 
 ### P8.1：Observe-only StateObject Trace
 
 目标：在不改变 placement 和 payload 的前提下，生成统一对象和事件流。
 
-首个单请求 tracer 已本地实现并发布，但在服务器执行前按用户要求扩展为当前 bounded matrix：
+首个单请求 tracer 在服务器执行前扩展为 bounded matrix；parent yellow 与 R1 green 均已保存：
 
 ```text
 3 个已冻结的 official MTP P6 reference shape，4096/65536/131072 各 2 个顺序请求
@@ -309,6 +311,9 @@ no-MTP `4096+64` provenance；`p8_official_mtp_baseline_contract.yaml` 与单请
 request_stage + prefix proxy + per-request MTP/health/queue + policy no_op
 same-observation double bundle replay + request/runtime/object join
 trace_validation_errors = 0
+R1 full R2 repair replay: 6/6, shared follower hit=49152, other five hit=0
+developer grade: green_p8_1_r1_official_mtp_observe_only_matrix
+cause_proven_as_unique = false
 ```
 
 本轮仍不扩展：
@@ -591,9 +596,9 @@ benchmarks/deepseek_v4_flash/p8/
 `p8_baseline_contract.yaml` 保留 exact no-MTP cell 的 `frozen_degraded` 历史 runtime
 baseline；single-request official contract/workload 保留为执行前被替代的 provenance，当前
 `p8_official_mtp_observe_matrix_contract.yaml` 冻结三个 accepted context shape。`adapters/vllm_ascend.py`
-只接受机器可读 bounded observation JSONL，不 import runtime、不持有 payload、不执行 placement；P8.1 六请求
-matrix 已下发待执行，只有开发机复核 candidate bundle 后才能关闭 server validation。P6.1C-R1 official、
-P6.1 unprofiled、P6.2 profiled 与 P6.3 已完成并经复核；P8.2 仍不得自动进入。
+只接受机器可读 bounded observation JSONL，不 import runtime、不持有 payload、不执行 placement；P8.1-R1
+已由开发机接受 green。P6.1C-R1 official、P6.1 unprofiled、P6.2 profiled 与 P6.3 已完成并经复核；
+P8.2-K0 已实现并授权 order-balanced baseline，K1 仍不得自动进入。
 MindIE adapter、payload mover 与长期 server collector 仍未创建。
 
 后续每个 vertical slice 必须同时提供：

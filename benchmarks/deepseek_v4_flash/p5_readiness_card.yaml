@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: p6_3b_r4_r1_explicit_prefix_control_matched_ab_developer_accepted_green
+  runtime_status: p8_1_r1_observe_only_developer_accepted_green_p8_2_k0_authorized
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -193,13 +193,17 @@ artifacts:
   official_p8_mtp_baseline_contract: p8/p8_official_mtp_baseline_contract.yaml
   official_p8_mtp_observe_matrix_contract: p8/p8_official_mtp_observe_matrix_contract.yaml
   completed_p8_1_workload: workloads/p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml
-  next_workload: workloads/p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml
-  next_stage_candidate: P8.1-R1_official_mtp_observe_only_r2_repair_replay
-  current_server_handoff_task: p8_1_r1_deepseek_v4_flash_official_mtp_observe_only_matrix_2026_0717
-  current_server_handoff_execution_mode: authorized_p8_1_r1_full_r2_repair_observe_only_six_request_replay
-  current_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
-  current_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
-  current_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
+  completed_p8_1_r1_workload: workloads/p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml
+  next_workload: workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml
+  next_stage_candidate: P8.2-K0_order_balanced_prefix_cache_on_off_baseline
+  current_server_handoff_task: p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717
+  current_server_handoff_execution_mode: authorized_p8_2_k0_order_balanced_prefix_cache_on_off_unprofiled_pilot
+  completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
+  completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
+  completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
+  current_p8_2_k0_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k0_order_balanced_prefix_baseline.sh
+  current_p8_2_k0_mode_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k0_mode.sh
+  current_p8_2_k0_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py
   completed_p6_3b_r4_r1_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_r1_explicit_matched_ab.py
   completed_p6_3b_r4_r1_mode_runner: ../../tools/inference_contracts/run_deepseek_p6_3b_r4_r1_mode.sh
   bounded_mtp_patch: patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
@@ -231,9 +235,10 @@ boundaries:
   - The P6 evidence chain and all five planned consolidated deliverables are complete; this materialization reused accepted repository evidence and did not run a new NPU task.
   - The historical no-MTP baseline and the published official-MTP single-request tracer remain preserved; the latter was superseded before execution by the bounded P8.1 matrix.
   - P8.1 completed as yellow_p8_1_matrix_trace_invalid: all six requests and MTP/health/queue/trace/replay/join gates passed, but the 65536 follower produced Prefix hit 0 instead of the expected 49152.
-  - P8.1-R1 preserves the same six request bodies, order, server argv and observe-only boundary while adding the complete accepted P6.3B-R2 task-local repair, repair diagnostics, resolved Prefix evidence, explicit localhost proxy bypass and retention-interval unset.
-  - Missing R2 is a high-confidence primary diagnosis, not a proven unique cause; R1 must stop for read-only diagnosis if the repaired follower remains zero-hit.
-  - Standing NPU/vLLM consumption authorization is enabled only for that P8.1-R1 six-request repair replay; the server may not add a seventh request or auto-enter P6.3C, P7, P8.2, offload or runtime-upgrade work.
+  - P8.1-R1 completed as green_p8_1_r1_official_mtp_observe_only_matrix: the same six bodies/server argv plus full R2 repair restored the 65536 follower hit to 49152, kept the other five hits at zero and closed MTP/health/queue/trace/replay/join/cleanup.
+  - The R1 replay supports the missing-full-R2 primary diagnosis but cause_proven_as_unique remains false; one aborted pre-request source-gate invocation for editable BASE_VLLM_ROOT plus one formal six-request lifecycle is preserved as provenance, with zero request retry.
+  - P8.2-K0 is the only authorized next task: four fresh lifecycles in frozen off-on/on-off order, twenty 65536+64 requests and six matched measured pairs; K1 KV Cache CPU Offload and all payload movement remain closed.
+  - Standing NPU/vLLM consumption authorization is enabled only for the current P8.2-K0 handoff; the server may not add a fifth lifecycle, twenty-first request, profiler, offload, runtime upgrade or automatic next stage.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
 acceptance:
   source_versions_recorded: true
@@ -247,8 +252,11 @@ acceptance:
   p8_official_mtp_observe_matrix_status: frozen_official
   p8_1_grade: yellow_p8_1_matrix_trace_invalid
   p8_1_execution_authorized: false
-  p8_1_r1_execution_authorized: true
-  p8_2_execution_authorized: false
+  p8_1_r1_grade: green_p8_1_r1_official_mtp_observe_only_matrix
+  p8_1_r1_execution_authorized: false
+  p8_2_execution_authorized: true
+  p8_2_k0_execution_authorized: true
+  p8_2_k1_execution_authorized: false
   official_reference_baseline: true
   highest_stable_context: 131072
   performance_reference_baseline: true
