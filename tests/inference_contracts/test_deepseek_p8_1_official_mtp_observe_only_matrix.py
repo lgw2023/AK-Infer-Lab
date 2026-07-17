@@ -465,32 +465,33 @@ def test_matrix_workload_hashes_every_executable_contract_artifact() -> None:
         assert frozen[key] == hashlib.sha256(path.read_bytes()).hexdigest(), path
 
 
-def test_current_handoff_authorizes_only_k0_r1_offline_refinalization() -> None:
+def test_current_handoff_authorizes_only_k1_read_only_compatibility_review() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-        "task_id: p8_2_k0_r1_offline_refinalization_2026_0717"
+        "task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717"
         in handoff
     )
     assert (
-        "execution_mode: authorized_offline_existing_raw_evidence_refinalization_no_npu"
+        "execution_mode: authorized_read_only_source_import_config_review_no_npu"
         in handoff
     )
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py" in handoff
-    assert "source_evidence_file_count_exact: 29" in handoff
-    assert "source_request_count_exact: 20" in handoff
+    assert "audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py" in handoff
+    assert "source_import_config_review_authorized: true" in handoff
+    assert "task_local_compatibility_patch_authorized: false" in handoff
     assert "49152" in handoff
-    assert "15 个 predicate" in handoff
+    assert "29-file raw evidence" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "不得停止或重启 keep-alive" in handoff
     assert "不得发送模型请求" in handoff
-    assert "不得自动进入 K1" in handoff
-    assert "不得外发" in handoff
+    assert "不得进入 K2" in handoff
+    assert "不要 email" in handoff
+    assert "upload-api" in handoff
     assert "git push origin" not in handoff
     assert "git commit -m" not in handoff

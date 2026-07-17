@@ -1953,25 +1953,25 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_advances_from_p8_2_k0_to_offline_refinalization():
+def test_server_handoff_advances_from_k0_green_to_k1_read_only_review():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K0-R1 既有 raw evidence 离线重分级" in handoff
-    assert "task_id: p8_2_k0_r1_offline_refinalization_2026_0717" in handoff
-    assert "execution_mode: authorized_offline_existing_raw_evidence_refinalization_no_npu" in handoff
-    assert "offline_refinalization_authorized: true" in handoff
+    assert "P8.2-K1 冻结栈源码、导入与配置只读复核" in handoff
+    assert "task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717" in handoff
+    assert "execution_mode: authorized_read_only_source_import_config_review_no_npu" in handoff
+    assert "source_import_config_review_authorized: true" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
-    assert "p8_2_k1_execution_authorized: false" in handoff
+    assert "task_local_compatibility_patch_authorized: false" in handoff
 
 
-def test_server_handoff_keeps_p8_2_k0_r1_offline_and_stops_before_k1():
+def test_server_handoff_keeps_k1_review_read_only_and_stops_before_k2():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
@@ -1979,13 +1979,12 @@ def test_server_handoff_keeps_p8_2_k0_r1_offline_and_stops_before_k1():
     assert "fetch origin main" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "Prefix Cache" in handoff
-    assert "source_request_count_exact: 20" in handoff
     assert "request_count_exact: 0" in handoff
     assert "lifecycle_count_exact: 0" in handoff
-    assert "source_evidence_file_count_exact: 29" in handoff
-    assert "no_k1_k2_k3_k4_p8_3_or_p9: true" in handoff
-    assert "不得自动进入 K1" in handoff
-    assert "不得自动外发" in handoff
+    assert "result_directory_creation_authorized: false" in handoff
+    assert "no_k2_k3_k4_p8_3_or_p9: true" in handoff
+    assert "不得进入 K2" in handoff
+    assert "result_transfer_authorized: false" in handoff
     assert "vllm serve" not in handoff
 
 
@@ -2042,9 +2041,9 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
     assert artifacts["completed_p8_2_k0_workload"] == (
         "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
-    assert artifacts["next_workload"] == "none_pending_k0_r1_refinalization"
+    assert artifacts["next_workload"] == "none_k1_blocked_by_frozen_stack_audit"
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_runtime_complete_finalizer_schema_defect_pending_offline_refinalization"
+        "p8_2_k0_developer_accepted_green_p8_2_k1_frozen_stack_incompatible"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2085,7 +2084,13 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
     assert acceptance["p8_1_r1_execution_authorized"] is False
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_k0_execution_authorized"] is False
-    assert acceptance["p8_2_k0_refinalization_authorized"] is True
+    assert acceptance["p8_2_k0_refinalization_authorized"] is False
+    assert acceptance["p8_2_k0_grade"] == (
+        "green_p8_2_k0_order_balanced_prefix_cache_baseline"
+    )
+    assert acceptance["p8_2_k1_feasibility_grade"] == (
+        "blocked_p8_2_k1_frozen_stack_import_incompatible"
+    )
     assert acceptance["p8_2_k1_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False
 
@@ -2433,22 +2438,22 @@ def test_p6_3b_r1_records_bounded_ready_failure_without_revoking_prior_evidence(
     }
 
 
-def test_server_handoff_executes_only_p8_2_k0_r1_offline_refinalization():
+def test_server_handoff_executes_only_k1_read_only_compatibility_review():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    assert "P8.2-K0-R1 既有 raw evidence 离线重分级" in handoff
-    assert "task_id: p8_2_k0_r1_offline_refinalization_2026_0717" in handoff
+    assert "P8.2-K1 冻结栈源码、导入与配置只读复核" in handoff
+    assert "task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
-    assert "同 R2 repair" in handoff
+    assert "DeepSeek R2 hybrid-KV" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "source_request_count_exact: 20" in handoff
     assert "request_count_exact: 0" in handoff
     assert "lifecycle_count_exact: 0" in handoff
-    assert "p8_2_k1_execution_authorized: false" in handoff
+    assert "task_local_compatibility_patch_authorized: false" in handoff
+    assert "不得进入 K2" in handoff

@@ -673,37 +673,32 @@ def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
     assert "refinalize" in help_result.stdout
 
 
-def test_k0_r1_offline_refinalization_is_the_only_handoff_and_k1_remains_closed():
+def test_k0_is_green_and_k1_read_only_review_is_the_only_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_2_k0_r1_offline_refinalization_2026_0717"
+    task_id = "p8_2_k1_frozen_stack_import_compatibility_review_2026_0717"
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_offline_existing_raw_evidence_"
-        "refinalization_no_npu"
+        "execution_mode: authorized_read_only_source_import_config_review_no_npu"
     ) in handoff
     assert "server_sync_review_authorized: true" in handoff
-    assert "offline_refinalization_authorized: true" in handoff
+    assert "source_import_config_review_authorized: true" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "lifecycle_count_exact: 0" in handoff
     assert "request_count_exact: 0" in handoff
-    assert "source_request_count_exact: 20" in handoff
-    assert "source_evidence_file_count_exact: 29" in handoff
-    assert "original_result_dir_must_remain_unchanged: true" in handoff
-    assert "offload_authorized: false" in handoff
     assert "profiler_authorized: false" in handoff
-    assert "p8_2_k1_execution_authorized: false" in handoff
-    assert "no_k1_k2_k3_k4_p8_3_or_p9: true" in handoff
-    assert "generated_token_count" in handoff
-    assert "streamed_token_count" in handoff
+    assert "offload_runtime_execution_authorized: false" in handoff
+    assert "task_local_compatibility_patch_authorized: false" in handoff
+    assert "no_k2_k3_k4_p8_3_or_p9: true" in handoff
     assert "不得停止或重启 keep-alive" in handoff
     assert "不得启动 vLLM" in handoff
     assert "不得发送模型请求" in handoff
-    assert handoff.count(" refinalize \\") == 1
-    assert "email / upload-api / server-local" in handoff
-    assert "不得自动外发" in handoff
+    assert "runtime-import-probe" in handoff
+    assert "NPUOffloadingSpec" in handoff
+    assert "不得创建 workload" in handoff
+    assert "不得进入 K2" in handoff
 
     readiness = _load_yaml(READINESS)
     artifacts = readiness["artifacts"]
@@ -713,7 +708,7 @@ def test_k0_r1_offline_refinalization_is_the_only_handoff_and_k1_remains_closed(
     assert artifacts["completed_p8_2_k0_workload"].endswith(
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
-    assert artifacts["next_workload"] == "none_pending_k0_r1_refinalization"
+    assert artifacts["next_workload"] == "none_k1_blocked_by_frozen_stack_audit"
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_p8_2_k0_refinalizer"].endswith(
         "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py"
@@ -724,20 +719,29 @@ def test_k0_r1_offline_refinalization_is_the_only_handoff_and_k1_remains_closed(
     )
     assert acceptance["p8_1_r1_execution_authorized"] is False
     assert acceptance["p8_2_k0_grade"] == (
-        "red_p8_2_k0_order_balanced_prefix_baseline_evidence_incomplete"
+        "green_p8_2_k0_order_balanced_prefix_cache_baseline"
     )
     assert acceptance["p8_2_k0_failure_class"] == (
         "finalizer_schema_mismatch_not_runtime_request_failure"
     )
     assert acceptance["p8_2_k0_execution_authorized"] is False
-    assert acceptance["p8_2_k0_refinalization_authorized"] is True
+    assert acceptance["p8_2_k0_refinalization_authorized"] is False
+    assert acceptance["p8_2_k1_feasibility_grade"] == (
+        "blocked_p8_2_k1_frozen_stack_import_incompatible"
+    )
     assert acceptance["p8_2_k1_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False
 
     workload = _load_yaml(K0_WORKLOAD)
     result = workload["execution_result"]
-    assert result["server_grade"] == (
+    assert result["original_server_grade"] == (
         "red_p8_2_k0_order_balanced_prefix_baseline_evidence_incomplete"
+    )
+    assert result["refinalized_server_grade"] == (
+        "candidate_green_p8_2_k0_order_balanced_prefix_cache_baseline"
+    )
+    assert result["developer_grade"] == (
+        "green_p8_2_k0_order_balanced_prefix_cache_baseline"
     )
     assert result["successful_request_count"] == "20_of_20"
     assert result["request_runtime_evidence_passed"] is True
@@ -747,7 +751,10 @@ def test_k0_r1_offline_refinalization_is_the_only_handoff_and_k1_remains_closed(
         "old_finalizer_generated_field": "generated_tokens",
         "old_finalizer_streamed_field": "streamed_tokens",
     }
-    assert workload["offline_refinalization"]["task_id"] == task_id
+    assert workload["offline_refinalization"]["task_id"] == (
+        "p8_2_k0_r1_offline_refinalization_2026_0717"
+    )
+    assert workload["offline_refinalization"]["developer_review"] == "accepted"
     assert workload["offline_refinalization"]["new_model_requests_authorized"] is False
     assert workload["offline_refinalization"]["source_result_must_remain_unchanged"] is True
 
@@ -764,4 +771,5 @@ def test_k0_r1_offline_refinalization_is_the_only_handoff_and_k1_remains_closed(
         text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         assert "P8.2-K0" in text, relative_path
         assert task_id in text, relative_path
+        assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in text, relative_path
         assert "K1" in text, relative_path

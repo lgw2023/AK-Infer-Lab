@@ -86,14 +86,14 @@ def test_r4_r1_workload_is_closed_as_developer_accepted_green():
     }
 
 
-def test_current_handoff_preserves_p6_green_during_p8_2_k0_r1():
+def test_current_handoff_preserves_p6_green_during_k1_read_only_review():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K0-R1 既有 raw evidence 离线重分级" in handoff
-    assert "task_id: p8_2_k0_r1_offline_refinalization_2026_0717" in handoff
-    assert "execution_mode: authorized_offline_existing_raw_evidence_refinalization_no_npu" in handoff
+    assert "P8.2-K1 冻结栈源码、导入与配置只读复核" in handoff
+    assert "task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717" in handoff
+    assert "execution_mode: authorized_read_only_source_import_config_review_no_npu" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
@@ -114,7 +114,7 @@ def test_current_handoff_preserves_p6_green_during_p8_2_k0_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"] == (
-        "none_pending_k0_r1_refinalization"
+        "none_k1_blocked_by_frozen_stack_audit"
     )
     assert readiness["acceptance"]["p6_3b_r4_r1_grade"] == (
         "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"
@@ -125,7 +125,10 @@ def test_current_handoff_preserves_p6_green_during_p8_2_k0_r1():
     assert readiness["acceptance"]["p8_1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_2_k0_refinalization_authorized"] is True
+    assert readiness["acceptance"]["p8_2_k0_refinalization_authorized"] is False
+    assert readiness["acceptance"]["p8_2_k1_feasibility_grade"] == (
+        "blocked_p8_2_k1_frozen_stack_import_incompatible"
+    )
     assert readiness["acceptance"]["p8_2_k1_execution_authorized"] is False
     assert readiness["acceptance"]["next_task_authorized"] is False
     assert (

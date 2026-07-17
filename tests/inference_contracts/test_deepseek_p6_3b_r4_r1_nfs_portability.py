@@ -157,13 +157,13 @@ def test_r4_r1_is_completed_without_erasing_the_blocked_r4_lineage():
     assert historical_r4["execution_state"]["next_task_authorized"] is False
 
 
-def test_r4_r1_closeout_is_preserved_in_the_unique_k0_r1_handoff_and_truth():
+def test_r4_r1_closeout_is_preserved_in_the_unique_k1_review_and_truth():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K0-R1 既有 raw evidence 离线重分级" in handoff
-    assert "task_id: p8_2_k0_r1_offline_refinalization_2026_0717" in handoff
+    assert "P8.2-K1 冻结栈源码、导入与配置只读复核" in handoff
+    assert "task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
@@ -184,7 +184,7 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_k0_r1_handoff_and_truth():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"] == (
-        "none_pending_k0_r1_refinalization"
+        "none_k1_blocked_by_frozen_stack_audit"
     )
     assert readiness["acceptance"]["p6_3b_r4_grade"] == (
         "blocked_p6_3b_r4_source_or_resource_gate"
@@ -196,7 +196,10 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_k0_r1_handoff_and_truth():
     assert readiness["acceptance"]["p6_3b_r4_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
     assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_2_k0_refinalization_authorized"] is True
+    assert readiness["acceptance"]["p8_2_k0_refinalization_authorized"] is False
+    assert readiness["acceptance"]["p8_2_k1_feasibility_grade"] == (
+        "blocked_p8_2_k1_frozen_stack_import_incompatible"
+    )
     assert readiness["acceptance"]["p8_2_k1_execution_authorized"] is False
 
     truth_paths = (

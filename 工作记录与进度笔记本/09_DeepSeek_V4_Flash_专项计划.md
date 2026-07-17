@@ -20,7 +20,7 @@ request=`0/64`，不形成机制证据。P6.3B-R4-R1 随后完成并由开发机
 `green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`：ownership-safe copy、same R2 repair、显式
 `--no-enable-prefix-caching` / `--enable-prefix-caching`、live config 与 token-LCP 门全部通过；64/64 request
 成功，off hit=0，on primary 9/9 正命中且逐请求符合 16K LCM floor。其余 15 条 boundary 仍为零命中，
-故不声明普遍命中或性能收益。P6.3C 已收口为 `blocked_p6_3c_not_strict_single_variable`，P8.1-R1 已接受 green。P8.2-K0 四个 fresh lifecycle/20 request/12 measured/6 matched pair 已完成，6 个 on measured follower 各 hit=49152、off hit=0；旧 finalizer 使用错误 token-count 别名，因此 formal grade 暂留 red。当前独立任务 `p8_2_k0_r1_offline_refinalization_2026_0717` 只读冻结 29 个既有 raw 输入并离线重分级，不启动 vLLM/NPU、不发新请求；K1 KV Cache CPU Offload、profiler、payload move 和收益结论保持关闭。
+故不声明普遍命中或性能收益。P6.3C 已收口为 `blocked_p6_3c_not_strict_single_variable`，P8.1-R1 已接受 green。P8.2-K0 四个 fresh lifecycle/20 request/12 measured/6 matched pair 已完成；K0-R1 在不变 29-file raw evidence 上修正 finalizer 后，15 项 predicate 均为 20/20，开发机已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`，但不接受 performance reference 或 offload evidence。K1 冻结源审计为 `blocked_p8_2_k1_frozen_stack_import_incompatible`；当前独立任务 `p8_2_k1_frozen_stack_import_compatibility_review_2026_0717` 只读核验安装态 source/import/config 与既有 hybrid manager，不启动 vLLM/NPU、不发请求、不创建 workload 或兼容补丁，K2/真实 payload move 和收益结论保持关闭。
 `0.22.1/0.22.1rc1` mixed-checkpoint 四卡诊断已在当前 SoC 的 `customize_dtype`
 能力门收口，W8A8-MTP 保持唯一主对象：
 

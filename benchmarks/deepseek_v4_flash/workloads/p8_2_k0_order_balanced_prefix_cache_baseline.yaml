@@ -199,9 +199,9 @@ stop_policy:
   no_automatic_result_transfer: true
 
 execution_state:
-  status: completed_server_red_pending_offline_refinalization
+  status: completed_developer_accepted_green
   server_handoff: consumed_historical
-  server_result: developer_reviewed_finalizer_contract_defect
+  server_result: developer_reviewed
   npu_execution_authorized: false
   next_task_authorized: false
   result_transfer_authorized: false
@@ -209,9 +209,12 @@ execution_state:
 
 execution_result:
   server_head: db755dec6ca5f00c86f2ce35a2dc8901a2246ca0
-  server_grade: red_p8_2_k0_order_balanced_prefix_baseline_evidence_incomplete
+  refinalization_server_head: e42fd4fe4d07c7aa18b9aab84306d13b4fa1de00
+  original_server_grade: red_p8_2_k0_order_balanced_prefix_baseline_evidence_incomplete
+  refinalized_server_grade: candidate_green_p8_2_k0_order_balanced_prefix_cache_baseline
+  developer_grade: green_p8_2_k0_order_balanced_prefix_cache_baseline
   candidate_file_count: 14
-  candidate_total_bytes: 25620
+  candidate_total_bytes: 35241
   successful_request_count: 20_of_20
   lifecycle_exit_count: 4_of_4
   warmup_request_count: 4
@@ -231,6 +234,12 @@ execution_result:
   on_non_measured_prefix_hit_total: 0
   accepted_token_delta_total: 640
   cleanup: clean
+  request_evidence_predicate_count: 15
+  request_evidence_predicates_all_20_of_20: true
+  first_request_evidence_failure: null
+  source_evidence_file_count: 29
+  source_evidence_inventory_sha256: b71bbc3fedd1bd4124ea1dc1a0f0180303aec63ebe3f77ed1aa4a8f828acd502
+  source_evidence_unchanged: true
   reported_failed_gate: request_evidence_exact
   failure_class: finalizer_schema_mismatch_not_runtime_request_failure
   finalizer_schema_mismatch:
@@ -240,7 +249,7 @@ execution_result:
     old_finalizer_streamed_field: streamed_tokens
   test_fixture_repeated_old_aliases: true
   first_failure_excerpt_was_grade_only: true
-  developer_grade: pending_offline_refinalization_not_green_yet
+  package_sha256_verified_by_developer: true
   performance_reference_accepted: false
   offload_evidence_accepted: false
 
@@ -260,12 +269,16 @@ offline_refinalization:
   keep_alive_mutation_authorized: false
   result_transfer_authorized: false
   candidate_green_requires_external_developer_review: true
+  execution_status: completed
+  offline_refinalization_validation: pass
+  request_evidence_exact_after_refinalization: true
+  developer_review: accepted
 
 boundaries:
   - K0 corrects the fixed-order limitation of P6.3B with a frozen AB/BA lifecycle schedule.
   - K0 is an unprofiled descriptive Prefix Cache baseline, not a new performance reference or optimization claim.
   - K0 does not enable KV Cache CPU Offload, UCM, External KV Cache, payload movement or placement mutation.
   - Negative, zero or positive timing deltas are all valid when the evidence gates are complete.
-  - The received K0 runtime evidence is complete, but formal green remains pending because the original finalizer used two non-producer field aliases.
-  - K0-R1 may only re-finalize the existing raw evidence into a separate derived directory; it may not run vLLM, use NPU or send a new request.
-  - K1 remains closed until the external developer accepts the corrected bounded K0-R1 result package.
+  - The original K0 red is preserved as finalizer-schema provenance; K0-R1 corrected only the producer field names and did not rerun the runtime.
+  - The external developer accepted the corrected bounded K0-R1 package as green after independently checking hashes, counts, pairing, metrics and boundaries.
+  - K1 remains a separate conditional stage and requires its own frozen-source compatibility gate before any NPU workload.

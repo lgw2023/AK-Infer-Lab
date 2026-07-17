@@ -2,9 +2,9 @@
 
 日期：2026-07-10；最后更新：2026-07-17
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_runtime_complete_finalizer_defect / p8_2_k0_r1_offline_authorized / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / tp4_expert_residency_goal_defined`
 
-状态拆分：`local_artifact_state=p8_2_k0_r1_refinalizer_implemented`；`server_execution_state=p8_2_k0_r1_offline_refinalization_authorized`；`real_move_state=closed_by_gate`；`tp4_state=plan_defined_measurements_missing`。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 已接受 `green_p8_1_r1_official_mtp_observe_only_matrix`。P8.2-K0 四 lifecycle/20 requests 已完成，机制、单变量和运行证据通过；旧 finalizer 的 producer-field mismatch 使 formal grade 暂留 red。当前唯一任务 `p8_2_k0_r1_offline_refinalization_2026_0717` 只读冻结 29 个 raw 输入并离线重分级，不启动 vLLM/NPU；它不是 K1 offload 或 real move。
+状态拆分：`local_artifact_state=p8_2_k1_blocked_audit_implemented`；`server_execution_state=p8_2_k1_read_only_compatibility_review_authorized`；`real_move_state=closed_by_frozen_stack_import_gate`；`tp4_state=plan_defined_measurements_missing`。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 已接受 `green_p8_1_r1_official_mtp_observe_only_matrix`。P8.2-K0-R1 保持原 29-file evidence 不变并将 15 项 predicate 修正为 20/20，开发机已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`。K1 冻结源码与 hybrid-group 审计为 `blocked_p8_2_k1_frozen_stack_import_incompatible`；当前唯一任务 `p8_2_k1_frozen_stack_import_compatibility_review_2026_0717` 只做服务器安装态 source/import/config 复核，不启动 vLLM/NPU，也不是 offload real move。
 
 ## 1. P8 的工程定义
 
@@ -24,7 +24,7 @@ P8 还必须关闭一个明确的容量问题：当前 W8A8 不能只把 `TP=8` 
 
 | 项目 | 当前证据 | P8 解释 |
 | --- | --- | --- |
-| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈已完成 W8A8-MTP official 131072 context、unprofiled performance、三个代表性 profiled evidence cell、P8.1-R1 observe-only green 与 P8.2-K0 20/20 runtime | P8.2-K0-R1 只做 finalizer 离线重分级；K1 payload move、offload 和性能收益结论未解锁 |
+| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈已完成 W8A8-MTP official 131072 context、unprofiled performance、三个代表性 profiled evidence cell、P8.1-R1 observe-only green 与 P8.2-K0 green | 冻结 Ascend offload spec 与冻结 vLLM API/import 及 DeepSeek hybrid groups 不兼容；K1 payload move、offload 和性能收益结论未解锁 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
 | DeepSeek-V4-Flash | W8A8-MTP 是项目主对象；P6.1C-R1、P6.1 与 P6.2 已建立三层 reference；mixed checkpoint 因 910B1 MXFP4 SoC 门退出执行 | P8 不绕过 P6.3 机制对照修改模型路径，也不实现 mixed checkpoint adapter |
 | TP4 容量证据 | checkpoint 为 `300013759966 B ≈ 279.41 GiB`；TP8 no-MTP/MTP 权重加载日志分别为 `38.1255/39.2795 GB per worker`；P6.1C whole-device HBM 峰值为 `61436–61447 MB / 65536 MB` | 足以否定“原命令直接 TP8→TP4”作为参数调整，但不能据此固定需要卸载多少 GB；先做 expert inventory、TP4 mapping 和 runtime reserve 校准 |
@@ -295,8 +295,9 @@ no-MTP `4096+64` provenance；`p8_official_mtp_baseline_contract.yaml` 与单请
 `4096/65536/131072+64,c1` 三个 context shape，唯一 workload 为
 `p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml`；其 R1 repair replay 已获开发机 green。13 项 source capability 仍不能整体提升为
 `validated_for_selected_workload`，只有 P8.1-R1 实际观测到的字段可升级。当前 K0 workload 为
-`p8_2_k0_order_balanced_prefix_cache_baseline.yaml`；其实验已完成，但旧 finalizer schema defect 待
-`p8_2_k0_r1_offline_refinalization_2026_0717` 只读重分级。它不打开 K1。
+`p8_2_k0_order_balanced_prefix_cache_baseline.yaml`；K0-R1 已从不变 raw evidence 完成离线修正并获开发机
+green。K1 冻结栈审计为 `blocked_p8_2_k1_frozen_stack_import_incompatible`，当前只允许
+`p8_2_k1_frozen_stack_import_compatibility_review_2026_0717` 的服务器只读复核，不打开真实 offload。
 
 ### P8.1：Observe-only StateObject Trace
 
@@ -598,7 +599,7 @@ baseline；single-request official contract/workload 保留为执行前被替代
 `p8_official_mtp_observe_matrix_contract.yaml` 冻结三个 accepted context shape。`adapters/vllm_ascend.py`
 只接受机器可读 bounded observation JSONL，不 import runtime、不持有 payload、不执行 placement；P8.1-R1
 已由开发机接受 green。P6.1C-R1 official、P6.1 unprofiled、P6.2 profiled 与 P6.3 已完成并经复核；
-P8.2-K0 runtime 已完成；当前仅授权 `p8_2_k0_r1_offline_refinalization_2026_0717`，K1 仍不得自动进入。
+P8.2-K0 已接受 green；当前仅授权 `p8_2_k1_frozen_stack_import_compatibility_review_2026_0717` 的冻结安装态只读复核。K1 正式 workload、兼容补丁、real move 与 K2 仍不得自动进入。
 MindIE adapter、payload mover 与长期 server collector 仍未创建。
 
 后续每个 vertical slice 必须同时提供：

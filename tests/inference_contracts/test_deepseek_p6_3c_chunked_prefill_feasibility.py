@@ -159,7 +159,7 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
     )
 
 
-def test_current_truth_surfaces_keep_p6_3c_blocked_during_k0_r1_refinalization():
+def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1_review():
     readiness = yaml.safe_load(
         (
             REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
@@ -172,10 +172,10 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k0_r1_refinalization()
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"] == (
-        "none_pending_k0_r1_refinalization"
+        "none_k1_blocked_by_frozen_stack_audit"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K0-R1_offline_existing_raw_evidence_refinalization"
+        "P8.2-K1_frozen_stack_import_compatibility_review_only"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
@@ -184,7 +184,10 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k0_r1_refinalization()
     assert readiness["acceptance"]["p8_1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_2_k0_refinalization_authorized"] is True
+    assert readiness["acceptance"]["p8_2_k0_refinalization_authorized"] is False
+    assert readiness["acceptance"]["p8_2_k1_feasibility_grade"] == (
+        "blocked_p8_2_k1_frozen_stack_import_incompatible"
+    )
     assert readiness["acceptance"]["p8_2_k1_execution_authorized"] is False
     assert readiness["acceptance"]["next_task_authorized"] is False
 
@@ -192,11 +195,11 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k0_r1_refinalization()
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_2_k0_r1_offline_refinalization_2026_0717" in handoff
-    assert "execution_mode: authorized_offline_existing_raw_evidence_refinalization_no_npu" in handoff
+    assert "task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717" in handoff
+    assert "execution_mode: authorized_read_only_source_import_config_review_no_npu" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "p8_2_k1_execution_authorized: false" in handoff
+    assert "task_local_compatibility_patch_authorized: false" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "vllm serve" not in handoff
 

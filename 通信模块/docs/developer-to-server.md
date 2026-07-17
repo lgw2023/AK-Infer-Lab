@@ -1,46 +1,52 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K0-R1 既有 raw evidence 离线重分级
+## 当前唯一服务器动作：P8.2-K1 冻结栈源码、导入与配置只读复核
 
 ~~~text
-task_id: p8_2_k0_r1_offline_refinalization_2026_0717
-execution_mode: authorized_offline_existing_raw_evidence_refinalization_no_npu
+task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717
+execution_mode: authorized_read_only_source_import_config_review_no_npu
 server_sync_review_authorized: true
-offline_refinalization_authorized: true
+source_import_config_review_authorized: true
+temporary_audit_workspace_authorized: true
 npu_execution_authorized: false
-next_task_authorized: false
+vllm_server_start_authorized: false
+model_requests_authorized: false
+keep_alive_mutation_authorized: false
+task_local_compatibility_patch_authorized: false
+result_directory_creation_authorized: false
 result_transfer_authorized: false
+next_task_authorized: false
 lifecycle_count_exact: 0
 request_count_exact: 0
-source_request_count_exact: 20
-source_evidence_file_count_exact: 29
-original_result_dir_must_remain_unchanged: true
-new_model_requests_authorized: false
-keep_alive_mutation_authorized: false
 profiler_authorized: false
-offload_authorized: false
-p8_2_k1_execution_authorized: false
-no_k1_k2_k3_k4_p8_3_or_p9: true
+offload_runtime_execution_authorized: false
+no_k2_k3_k4_p8_3_or_p9: true
 standing_npu_and_vllm_consumption_authorization: true
 ~~~
 
-当前任务只修正 P8.2-K0 finalizer 合同并复核既有证据，不是新的 NPU workload。原 K0 在四个
-fresh lifecycle 中已完成 20/20 请求、12/12 measured、6/6 matched pair，AB/BA 顺序、body pairing、
-显式 Prefix Cache 单变量、同 R2 repair、resolved config、MTP/queue、6 个 on follower 各 hit=`49152`、
-off hit total=`0` 与 cleanup 均通过。服务器 red 的直接原因是旧 finalizer 读取了不存在的
-`generated_tokens` / `streamed_tokens`，而真实 request producer 写入 `generated_token_count` /
-`streamed_token_count`；旧单测 fixture 也使用了错误别名。本轮必须从原 raw evidence 只读重算，不能
-启动 vLLM、不能使用 NPU、不能发送模型请求，也不能把 standing 资源许可解释为本任务的占卡许可。
+本任务是 K1 可行性门的服务器只读复核，不是 KV Cache CPU Offload workload。开发机已接受
+P8.2-K0-R1 为 `green_p8_2_k0_order_balanced_prefix_cache_baseline`：原 29-file raw evidence 未变，
+20/20 请求与 15 项逐请求 predicate 均完整，6 个 on measured follower 的 Prefix Cache hit 均为
+`49152`，off hit total=`0`；但 `performance_reference_accepted: false`、
+`offload_evidence_accepted: false` 继续有效。
 
-保留且不撤销的 lineage：P6.3B-R4-R1=`green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`；
-P8.1 parent=`yellow_p8_1_matrix_trace_invalid`；P8.1-R1=
-`green_p8_1_r1_official_mtp_observe_only_matrix` 且 `cause_proven_as_unique: false`；P6.3C=
-`blocked_p6_3c_not_strict_single_variable`。K0-R1 只修 finalizer，不重开上述阶段。
+开发机从冻结 Git object 审计到：vLLM-Ascend 的 `NPUOffloadingSpec` 仍导入
+`vllm.v1.kv_offload.abstract`、`mediums` 与 `spec`，而冻结 vLLM 对应路径不存在，API 已位于
+`vllm.v1.kv_offload.base`；同一 Ascend spec 还两次断言只有一个 GPU block-size group，而已接受的
+DeepSeek R2 hybrid-KV 证据包含 `CompressAttentionManager` 与 `SlidingWindowManager`。因此当前结论为
+`blocked_p8_2_k1_frozen_stack_import_incompatible`。服务器只确认冻结安装态与既有 K0 证据是否吻合；
+不得把 probe 当作 offload runtime 证据，不得创建 workload，不得开发或应用兼容补丁。
+
+保留且不撤销的 lineage：P6.3B-R4-R1=
+`green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`；P6.3C=
+`blocked_p6_3c_not_strict_single_variable`；P8.1 parent=`yellow_p8_1_matrix_trace_invalid`；P8.1-R1=
+`green_p8_1_r1_official_mtp_observe_only_matrix` 且 `cause_proven_as_unique: false`；P8.2-K0 green。
+K1 blocked 不撤销上述结论。
 
 ## 1. 同步门与冻结仓库合同
 
-服务器从自己的干净 `main` 镜像执行普通快进同步；不得使用 reset、stash、rebase、checkout 覆盖、
-`sync.sh`、server commit 或 push。153 个左右服务器本地 `??` 产物可以保留，但 tracked 状态必须干净。
+服务器从自己的干净 `main` 镜像普通快进同步。不得 reset、stash、rebase、用 checkout 覆盖、运行
+`sync.sh`、在服务器 commit 或 push。服务器既有未跟踪运行产物保留，只要求 tracked 状态干净。
 
 ~~~bash
 set -euo pipefail
@@ -60,10 +66,11 @@ from pathlib import Path
 import hashlib
 
 expected = {
-    "tools/inference_contracts/run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py": "6d698a6ebcba8808ffe8ca4117a7dc845aa2ab2162d64586bdb5f523e48f6882",
-    "tests/inference_contracts/test_deepseek_p8_2_k0_order_balanced_prefix_baseline.py": "2680dcec49e516742867335a6f3d908828cf76f79e18a6c8c9707aee8050a3d3",
-    "benchmarks/deepseek_v4_flash/workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml": "f8287d4a0954b03a227fbffaff0f0f70a5f8776ab40bedb85174602d5cc5b796",
-    "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml": "23c0ab2fc7f41f155736f567f2d0d16c146a0d93dadecaf932e7a980e3cce822",
+    "benchmarks/deepseek_v4_flash/workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml": "9a0de8859e1b3772b83155048d3cda9d9b472669509095ac157ae463964ef818",
+    "benchmarks/deepseek_v4_flash/p8_2_k1_kv_cache_cpu_offload_feasibility_audit.yaml": "0649c0f2fd32251cbfadf2a8bee36a21c6b42cd3c89fb3e1e1c4919302a61f70",
+    "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml": "7e432ed6c0984dbcd0bd8a54e6b0d2050194117ce6390c590673c2f4f4aa1804",
+    "tools/inference_contracts/audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py": "e2fc8706ce6e5b360d9bcd0784c28914beb6b0d532736fdd26d2c4d9db221f65",
+    "tests/inference_contracts/test_deepseek_p8_2_k1_kv_cache_cpu_offload_feasibility.py": "f6245b29af6b6fe486fa80c2844c8c4e66f4fdb2bd7701722612cc8ec14b00b6",
 }
 for relative, wanted in expected.items():
     path = Path(relative)
@@ -74,175 +81,256 @@ print("frozen_repo_hash_gate=pass")
 PY
 
 python3 -m pytest \
+  tests/inference_contracts/test_deepseek_p8_2_k1_kv_cache_cpu_offload_feasibility.py \
   tests/inference_contracts/test_deepseek_p8_2_k0_order_balanced_prefix_baseline.py -q
 python3 -m py_compile \
-  tools/inference_contracts/run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py
+  tools/inference_contracts/audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py
+test -z "$(git status --porcelain --untracked-files=no)"
 ~~~
 
-若同步、tracked-clean、四个冻结 hash、定向合同或 compile 任一失败，立即给
-`blocked_p8_2_k0_r1_source_or_contract_gate` 并停止；不得创建派生目录、不得改原结果、不得启动 runtime。
+若同步、tracked-clean、五个冻结 hash、定向合同或 compile 任一失败，给
+`blocked_p8_2_k1_source_or_contract_gate` 并停止；不得继续 probe、不得修改 runtime、不得创建项目结果目录。
 
-## 2. 零资源扰动门与原始证据预检
+## 2. 零资源扰动门与临时审计空间
 
-固定服务器路径：
+本节只读记录 keep-alive marker/PID/PGID、NPU 状态、端口 7000 与 vLLM 进程。任务前后必须保持既有
+keep-alive PID/PGID/进程形态不变。不得停止或重启 keep-alive，不得向任何既有进程发信号，不得清卡，
+不得启动 vLLM，不得绑定端口，不得发送模型请求。standing 资源许可不改变本任务的零资源授权。
 
-~~~text
-SOURCE_RESULT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717_run01
-DERIVED_RESULT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k0_r1_offline_refinalization_2026_0717_run01
-REFINALIZER=/data/node0_disk1/liguowei/AK-Infer-Lab/tools/inference_contracts/run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py
-~~~
-
-本节只读查看 keep-alive 与 NPU 状态。不得停止或重启 keep-alive，不得 `kill` 任意进程，不得清卡，
-不得启动 vLLM，不得发送模型请求。记录 refinalization 前的 marker/PGID/进程数、每卡 HBM、端口 7000；
-端口若被既有无关进程占用也不得处置，因为本任务完全不使用该端口。
+仅允许在 `/tmp/opencode/p8_2_k1_frozen_stack_import_compatibility_review_2026_0717` 写入小型审计 JSON；
+仓库内不得创建结果目录，临时目录必须在本轮开始时不存在。
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-SOURCE_RESULT_DIR="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717_run01"
-DERIVED_RESULT_DIR="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k0_r1_offline_refinalization_2026_0717_run01"
+TMP_AUDIT=/tmp/opencode/p8_2_k1_frozen_stack_import_compatibility_review_2026_0717
 
-test -d "${SOURCE_RESULT_DIR}"
-test ! -e "${DERIVED_RESULT_DIR}"
-ps -eo pid,ppid,pgid,stat,cmd | grep -E 'npu_keep_alive|#0#|#1#|#2#|#3#|#4#|#5#|#6#|#7#' || true
-npu-smi info
-ss -ltnp | grep ':7000' || true
+test ! -e "${TMP_AUDIT}"
+mkdir -p "${TMP_AUDIT}"
+ps -eo pid,ppid,pgid,stat,cmd | grep -E 'npu_keep_alive|#0#|#1#|#2#|#3#|#4#|#5#|#6#|#7#' > "${TMP_AUDIT}/keep_alive_before.txt" || true
+npu-smi info > "${TMP_AUDIT}/npu_before.txt"
+ss -ltnp | grep ':7000' > "${TMP_AUDIT}/port_7000_before.txt" || true
+ps -eo pid,ppid,pgid,stat,cmd | grep -E '[v]llm|[V]LLM' > "${TMP_AUDIT}/vllm_before.txt" || true
+test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
+~~~
 
-python3 - "${SOURCE_RESULT_DIR}" <<'PY'
+只允许记录状态，不得处置任何发现的进程或端口。若 tracked 不干净，给
+`blocked_p8_2_k1_source_or_resource_gate` 并停止。
+
+## 3. 冻结安装态 source-audit 与 runtime-import-probe
+
+固定冻结版本：
+
+~~~text
+vllm_version: 0.22.1+empty
+vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+vllm_ascend_version: 0.22.1rc1
+vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+~~~
+
+使用服务器真实 editable vLLM source checkout 与安装态 vLLM-Ascend package。不得更换版本、安装包、
+编辑源码、复制 overlay、设置 Python path 指向另一版本，或把缺失模块临时补入环境。probe 只做文件
+hash、module resolution、`KVTransferConfig` 对象构造和隔离 import；不会构建 engine 或 connector，
+也不会访问 NPU。
+
+~~~bash
+set -euo pipefail
+
+REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
+TMP_AUDIT=/tmp/opencode/p8_2_k1_frozen_stack_import_compatibility_review_2026_0717
+AUDITOR="${REPO_ROOT}/tools/inference_contracts/audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py"
+RUNTIME_PREFIX="${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1"
+RUNTIME_PYTHON="${RUNTIME_PREFIX}/bin/python"
+VLLM_ROOT=/data/node0_disk1/vllm-0.22.1
+VLLM_ASCEND_ROOT="${RUNTIME_PREFIX}/lib/python3.11/site-packages"
+
+test -x "${RUNTIME_PYTHON}"
+test -d "${VLLM_ROOT}/vllm"
+test -d "${VLLM_ASCEND_ROOT}/vllm_ascend"
+test "$(git -C "${VLLM_ROOT}" rev-parse HEAD)" = 0decac0d96c42b49572498019f0a0e3600f50398
+test -z "$(git -C "${VLLM_ROOT}" status --porcelain --untracked-files=no)"
+
+python3 "${AUDITOR}" installed-source-audit \
+  --vllm-root "${VLLM_ROOT}" \
+  --vllm-ascend-root "${VLLM_ASCEND_ROOT}" \
+  --output "${TMP_AUDIT}/installed_source_audit.json"
+python3 "${AUDITOR}" runtime-import-probe \
+  --runtime-python "${RUNTIME_PYTHON}" \
+  --output "${TMP_AUDIT}/runtime_import_probe.json"
+
+python3 - "${TMP_AUDIT}" <<'PY'
 from pathlib import Path
 import json
 import sys
 
-from tools.inference_contracts import (
-    run_deepseek_p8_2_k0_order_balanced_prefix_baseline as runner,
-)
+root = Path(sys.argv[1])
+source = json.loads((root / "installed_source_audit.json").read_text())
+runtime = json.loads((root / "runtime_import_probe.json").read_text())
 
-source = Path(sys.argv[1])
-inventory = runner.inspect_k0_source_evidence(source)
-print(json.dumps({
-    "source_evidence_file_count": inventory["source_evidence_file_count"],
-    "source_evidence_inventory_sha256": inventory["source_evidence_inventory_sha256"],
-}, sort_keys=True))
-if inventory["source_evidence_file_count"] != 29:
-    raise SystemExit("source evidence count drift")
+assert source["audit_grade"] == "blocked_p8_2_k1_frozen_stack_import_incompatible"
+assert source["source_hash_gate"] is True
+assert source["missing_legacy_modules"] == [
+    "vllm/v1/kv_offload/abstract.py",
+    "vllm/v1/kv_offload/mediums.py",
+    "vllm/v1/kv_offload/spec.py",
+]
+assert source["npu_spec_single_group_assertion_count"] == 2
+assert source["formal_k1_workload_allowed"] is False
+
+probe = runtime["probe"]
+assert runtime["subprocess_exit"] == 0
+assert probe is not None
+for name in (
+    "vllm.v1.kv_offload.abstract",
+    "vllm.v1.kv_offload.mediums",
+    "vllm.v1.kv_offload.spec",
+):
+    assert probe["module_resolution"][name] is None
+assert probe["kv_transfer_config"] == {
+    "kv_connector": "OffloadingConnector",
+    "kv_role": "kv_both",
+    "kv_connector_extra_config": {
+        "num_cpu_blocks": 1000,
+        "block_size": 128,
+        "spec_name": "NPUOffloadingSpec",
+        "spec_module_path": "vllm_ascend.kv_offload.npu",
+    },
+}
+assert probe["npu_spec_import"] == "failed"
+error = probe["npu_spec_import_error"]
+assert error["error_type"] == "ModuleNotFoundError"
+assert "vllm.v1.kv_offload.abstract" in error["error"]
+assert probe["npu_started"] is False
+assert probe["vllm_server_started"] is False
+assert probe["model_request_sent"] is False
+print("frozen_stack_import_compatibility_review=blocked_as_expected")
 PY
 ~~~
 
-预检要求 29 个必需输入全部存在、四个 lifecycle 各 5 行、总计 20 行，并且每行都有真实 producer
-字段 `generated_token_count` 和 `streamed_token_count`。任一缺失、旧别名替代、task identity/count 错误，
-给 `blocked_p8_2_k0_r1_raw_evidence_missing_or_drifted` 并停止；不得静默重跑 K0，不得创建新请求。
+若安装态文件 hash、缺失模块集合、两处单 group assertion、配置字段或 import failure 与冻结审计不同，
+给 `blocked_p8_2_k1_runtime_source_drift`；仍不得修环境、retry、启动 runtime 或创建 workload。
 
-## 3. 离线 refinalization 与双向不变性复核
+## 4. 既有 K0-R1 hybrid 证据交叉检查与 K1 不存在性门
 
-只允许执行一次下面的 `refinalize`。它先冻结 29 个源文件的 relative path/bytes/SHA-256，再创建独立派生
-目录；原 K0 目录只读。不得把 `DERIVED_RESULT_DIR` 改到原目录内，不得覆盖已存在目录，不得 retry。
+只读检查既有 K0-R1 派生目录；不得修改原 K0 或派生目录。确认它仍是 accepted K0 基线，且其 repair
+diagnostic 明确记录 `CompressAttentionManager` 与 `SlidingWindowManager`。这一步只证明选定 DeepSeek
+路径是 hybrid multi-group，不证明 offload 已运行。
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-SOURCE_RESULT_DIR="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717_run01"
-DERIVED_RESULT_DIR="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k0_r1_offline_refinalization_2026_0717_run01"
-REFINALIZER="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py"
+K0_R1_RESULT="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k0_r1_offline_refinalization_2026_0717_run01"
+TMP_AUDIT=/tmp/opencode/p8_2_k1_frozen_stack_import_compatibility_review_2026_0717
 
-set +e
-python3 "${REFINALIZER}" refinalize \
-  --source-artifact-dir "${SOURCE_RESULT_DIR}" \
-  --output-dir "${DERIVED_RESULT_DIR}"
-refinalize_exit=$?
-set -e
-
-test -d "${DERIVED_RESULT_DIR}"
-test -f "${DERIVED_RESULT_DIR}/grading_inputs.json"
-test -f "${DERIVED_RESULT_DIR}/environment_and_hashes.json"
-
-python3 - "${SOURCE_RESULT_DIR}" "${DERIVED_RESULT_DIR}" "${refinalize_exit}" <<'PY'
+test -d "${K0_R1_RESULT}"
+python3 - "${K0_R1_RESULT}" "${TMP_AUDIT}/k0_hybrid_crosscheck.json" <<'PY'
 from pathlib import Path
-import csv
+import json
+import sys
+
+result_dir = Path(sys.argv[1])
+output = Path(sys.argv[2])
+grading = json.loads((result_dir / "grading_inputs.json").read_text())
+repair = json.loads((result_dir / "repair_diagnostic_summary.json").read_text())
+
+assert grading["server_grade"] == "candidate_green_p8_2_k0_order_balanced_prefix_cache_baseline"
+assert grading["successful_request_count"] == 20
+assert grading["request_evidence_exact"] is True
+assert grading["source_evidence_file_count"] == 29
+assert grading["source_evidence_unchanged"] is True
+rendered = json.dumps(repair, sort_keys=True)
+assert "CompressAttentionManager" in rendered
+assert "SlidingWindowManager" in rendered
+summary = {
+    "k0_grade": grading["server_grade"],
+    "successful_request_count": grading["successful_request_count"],
+    "source_evidence_unchanged": grading["source_evidence_unchanged"],
+    "manager_types": ["CompressAttentionManager", "SlidingWindowManager"],
+    "offload_evidence_accepted": False,
+}
+output.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
+print(json.dumps(summary, sort_keys=True))
+PY
+
+test -z "$(find "${REPO_ROOT}/benchmarks/deepseek_v4_flash/workloads" -maxdepth 1 -name 'p8_2_k1*.yaml' -print -quit)"
+test -z "$(find "${REPO_ROOT}/tools/inference_contracts" -maxdepth 1 -name 'run_deepseek_p8_2_k1*' -print -quit)"
+test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
+~~~
+
+若 K0 派生证据缺失或漂移，给 `blocked_p8_2_k1_k0_reference_evidence_drift`。不得重跑 K0，不得因
+交叉检查失败而启动新请求。
+
+## 5. 结束资源不变性、分级与回报
+
+再次只读记录 keep-alive/NPU/端口/vLLM 状态，并逐字节比较任务前后的 keep-alive 进程快照；不得停止或
+重启 keep-alive。仓库 tracked 状态必须仍干净，仓库内不得产生 K1 结果目录或其他新文件。
+
+~~~bash
+set -euo pipefail
+
+REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
+TMP_AUDIT=/tmp/opencode/p8_2_k1_frozen_stack_import_compatibility_review_2026_0717
+
+ps -eo pid,ppid,pgid,stat,cmd | grep -E 'npu_keep_alive|#0#|#1#|#2#|#3#|#4#|#5#|#6#|#7#' > "${TMP_AUDIT}/keep_alive_after.txt" || true
+npu-smi info > "${TMP_AUDIT}/npu_after.txt"
+ss -ltnp | grep ':7000' > "${TMP_AUDIT}/port_7000_after.txt" || true
+ps -eo pid,ppid,pgid,stat,cmd | grep -E '[v]llm|[V]LLM' > "${TMP_AUDIT}/vllm_after.txt" || true
+cmp "${TMP_AUDIT}/keep_alive_before.txt" "${TMP_AUDIT}/keep_alive_after.txt"
+cmp "${TMP_AUDIT}/port_7000_before.txt" "${TMP_AUDIT}/port_7000_after.txt"
+cmp "${TMP_AUDIT}/vllm_before.txt" "${TMP_AUDIT}/vllm_after.txt"
+test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
+
+python3 - "${TMP_AUDIT}" <<'PY'
+from pathlib import Path
 import hashlib
 import json
 import sys
 
-source = Path(sys.argv[1])
-derived = Path(sys.argv[2])
-exit_code = int(sys.argv[3])
-grading = json.loads((derived / "grading_inputs.json").read_text())
-environment = json.loads((derived / "environment_and_hashes.json").read_text())
-request_summary = json.loads((derived / "mtp_queue_health_summary.json").read_text())
-
-assert exit_code == 0, exit_code
-assert grading["server_grade"] == "candidate_green_p8_2_k0_order_balanced_prefix_cache_baseline"
-assert grading["successful_request_count"] == 20
-assert grading["request_evidence_exact"] is True
-assert grading["first_request_evidence_failure"] is None
-assert grading["source_evidence_file_count"] == 29
-assert grading["source_evidence_unchanged"] is True
-assert grading["on_measured_hit_exact_count"] == 6
-assert grading["off_prefix_hit_total"] == 0
-assert grading["cleanup"] == "clean"
-assert environment["execution_mode"] == "offline_existing_raw_evidence_only"
-assert environment["npu_started"] is False
-assert environment["vllm_started"] is False
-assert environment["model_request_sent"] is False
-assert environment["source_evidence_file_count"] == 29
-assert (derived / "request_body_manifest.json").read_bytes() == (source / "request_body_manifest.json").read_bytes()
-
-counts = request_summary["request_evidence_predicate_counts"]
-assert len(counts) == 15, counts
-for predicate, count in counts.items():
-    assert count == {"passed": 20, "total": 20}, (predicate, count)
-
-with (derived / "delivery_candidates.tsv").open(newline="", encoding="utf-8") as handle:
-    candidates = list(csv.DictReader(handle, delimiter="\t"))
-assert len(candidates) == 14
-assert sum(int(row["bytes"]) for row in candidates) <= 71680
-for row in candidates:
-    path = Path(row["path"])
-    assert path.is_file()
-    assert path.stat().st_size == int(row["bytes"])
-    assert hashlib.sha256(path.read_bytes()).hexdigest() == row["sha256"]
-    assert row["sensitivity"] == "bounded_operational_metadata_no_content_or_token_ids"
-
-candidate_text = "\n".join(Path(row["path"]).read_text(errors="replace") for row in candidates)
-for forbidden in ('"prompt":', "generated_content", "returned_token_ids"):
-    assert forbidden not in candidate_text
-print("offline_refinalization_validation=pass")
+root = Path(sys.argv[1])
+rows = []
+for path in sorted(root.iterdir()):
+    if path.is_file():
+        rows.append({
+            "path": str(path),
+            "bytes": path.stat().st_size,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "sensitivity": "bounded_operational_metadata_no_model_content_or_token_ids",
+        })
+summary = {
+    "task_id": "p8_2_k1_frozen_stack_import_compatibility_review_2026_0717",
+    "server_grade": "candidate_blocked_p8_2_k1_frozen_stack_import_incompatible",
+    "files": rows,
+    "total_bytes": sum(row["bytes"] for row in rows),
+    "npu_started": False,
+    "vllm_started": False,
+    "model_request_sent": False,
+    "workload_created": False,
+    "next_task_authorized": False,
+}
+(root / "review_summary.json").write_text(
+    json.dumps(summary, indent=2, sort_keys=True) + "\n"
+)
+print(json.dumps(summary, indent=2, sort_keys=True))
 PY
-
-ps -eo pid,ppid,pgid,stat,cmd | grep -E 'npu_keep_alive|#0#|#1#|#2#|#3#|#4#|#5#|#6#|#7#' || true
-npu-smi info
-ss -ltnp | grep ':7000' || true
-test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 ~~~
 
-离线重算前后 keep-alive marker/PGID/进程形态和每卡 HBM 必须保持观察上一致；不得因 refinalizer 失败而
-停止/恢复 keep-alive。若派生目录已存在、源 inventory 前后不一致、15 个 predicate 非 20/20、candidate
-hash/size/sensitivity 不一致或 tracked 工作区被改动，给 `red_p8_2_k0_r1_offline_refinalization_invalid`
-并停止，不 retry、不重新运行原 workload。
+分级：
 
-## 4. 分级、报告与停止边界
+- 同步、仓库 hash、合同或 compile 失败：`blocked_p8_2_k1_source_or_contract_gate`；
+- 安装态源码或 runtime probe 与冻结审计不同：`blocked_p8_2_k1_runtime_source_drift`；
+- K0 交叉证据缺失或漂移：`blocked_p8_2_k1_k0_reference_evidence_drift`；
+- 全部只读门匹配：服务器只能给
+  `candidate_blocked_p8_2_k1_frozen_stack_import_incompatible`，等待开发机独立复核。
 
-- 同步、仓库 hash、定向合同失败：`blocked_p8_2_k0_r1_source_or_contract_gate`；
-- 原 raw evidence 缺失、canonical fields 不全或 inventory 漂移：
-  `blocked_p8_2_k0_r1_raw_evidence_missing_or_drifted`；
-- refinalizer/派生候选/15 predicate/不变性任一失败：
-  `red_p8_2_k0_r1_offline_refinalization_invalid`；
-- 所有门通过：服务器只能给
-  `candidate_green_p8_2_k0_r1_offline_refinalization`，等待开发机独立复核。
+回报必须包括：同步前后 HEAD/origin/main/tracked 状态、五个仓库 hash、pytest/compile、冻结 source hash
+gate、三个 missing module resolution、`NPUOffloadingSpec` import error type/message、精确
+`KVTransferConfig` 字段、两处 single-group assertion、K0-R1 grade/20 requests/source unchanged/两类 hybrid
+manager、K1 workload/runner 不存在、任务前后 keep-alive/NPU/端口/vLLM 只读快照，以及 `/tmp` 小文件逐项
+path/bytes/SHA-256/sensitivity 与总 bytes。
 
-回报必须包括：同步前后 HEAD/origin/main/tracked 状态、四个冻结仓库 hash、定向 pytest、原始与派生
-结果目录、29-file source inventory hash、refinalize exit、K0 server grade、20/20 请求与 15 项 predicate
-计数、6/6 on hit、off hit total、MTP/queue/repair/resolved/body/order/cleanup、原目录 unchanged 证明、
-refinalization 前后 keep-alive/NPU/端口只读快照，以及派生 14 个候选的逐文件 path/bytes/SHA-256/
-sensitivity 和总 bytes。
-
-raw logs、raw metrics、request bodies、generated content/token IDs 与原实验树继续留服务器。候选总量必须
-不超过 70KB，且 `result_transfer_authorized:false`。外发前先在当前任务通道报告 summary 精确路径、完整
-候选清单、逐文件 bytes/SHA-256/sensitivity、可用 `email / upload-api / server-local` 与一个推荐方法及
-理由；用户对这次完整范围重新选择前不得外发（包括不得自动外发），不得继承旧选择或失败后自动切换。
-
-完成后停止等待开发机复核。不得接受 K0 green、不得自动进入 K1、不得执行 K1/K2/K3/K4、不得运行 profiler/HBM sampler、
-不得启用 KV Cache CPU Offload/UCM/External KV、不得改变 placement/payload/runtime/repair，也不得进入
-P8.3/P9。K0-R1 的 candidate green 只说明原 K0 既有证据经正确 schema 重分级完整，不自动形成通用
-Prefix Cache 性能收益或新 performance reference。
+`/tmp` 输出仅是待复核的 operational metadata；`result_transfer_authorized:false`。不要 email、不要调用
+upload-api、不要复制到仓库结果树。raw package、request bodies、generated content/token IDs 均不得读取或
+外发。本任务没有可接受的 K1 green：不得运行 offload、不得创建 workload、不得应用兼容性 patch、不得进入 K2；
+也不得进入 K3、K4、P8.3 或 P9。完成回报后保持等待。

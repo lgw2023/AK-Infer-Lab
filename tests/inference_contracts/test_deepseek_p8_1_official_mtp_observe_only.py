@@ -261,6 +261,6 @@ def test_single_request_tracer_is_preserved_but_superseded_before_execution() ->
         not in handoff
     )
     assert (
-        "task_id: p8_2_k0_r1_offline_refinalization_2026_0717"
+        "task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717"
         in handoff
     )

@@ -1,0 +1,148 @@
+schema_version: 1
+audit_id: p8_2_k1_kv_cache_cpu_offload_frozen_stack_feasibility_2026_0717
+date: "2026-07-17"
+stage: P8.2-K1
+audit_grade: blocked_p8_2_k1_frozen_stack_import_incompatible
+claim_boundary: frozen_source_import_config_and_hybrid_group_compatibility_only
+
+depends_on:
+  k0_workload: workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml
+  k0_grade: green_p8_2_k0_order_balanced_prefix_cache_baseline
+  k0_claim_boundary: order_balanced_64k_exact_reuse_prefix_cache_on_off_descriptive_baseline_only
+  k0_performance_reference_accepted: false
+  k0_offload_evidence_accepted: false
+  p6_3b_r4_r1_grade: green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
+  p6_3c_grade: blocked_p6_3c_not_strict_single_variable
+
+frozen_runtime:
+  vllm_version: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_version: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+
+source_method:
+  reference_worktree_heads_are_not_evidence: true
+  exact_git_object_reads_required: true
+  command_shape: git_show_frozen_commit_colon_relative_path
+  local_reference_repo_worktrees_modified: false
+  latest_documentation_used_for_decision: false
+
+frozen_source_evidence:
+  - target: vllm
+    path: vllm/config/kv_transfer.py
+    blob_oid: b22af99f703f168c49607f05c2e9610209ea351a
+    bytes: 4447
+    sha256: d661008cfb85fbe0758994ab1970c55199e68abcd3633fd9d12e8b39d99d1652
+    evidence: KVTransferConfig_exposes_connector_role_and_extra_config_but_no_explicit_off_boolean
+  - target: vllm
+    path: vllm/engine/arg_utils.py
+    blob_oid: 79c6e0ae925d9fc9f0f3bcbea0a2f7fedd2c34a7
+    bytes: 111327
+    sha256: ee107df77e59d1ca860d826feda540158bdefbdcaa3a2b786967396d83315d16
+    evidence: cli_accepts_one_kv_transfer_config_json_object
+  - target: vllm
+    path: vllm/v1/kv_offload/base.py
+    blob_oid: de65be1c05e63a7dde07e7047b8c2d3bf23500e3
+    bytes: 13989
+    sha256: af70c723898631e5461cc2873629a3bbd4b75492996e60be573686355d618f2a
+    evidence: frozen_api_uses_base_and_CanonicalKVCaches_and_rejects_explicit_offload_block_size_for_distinct_hybrid_group_sizes
+  - target: vllm
+    path: vllm/v1/kv_offload/factory.py
+    blob_oid: 8b967f771b046e8f4476586b0d28f54b9d1558de
+    bytes: 2252
+    sha256: 2e389bfd245dc41ccc3ddbc03897e09c9b95fab0676850fd73294c1b7a2353f5
+    evidence: spec_module_path_is_imported_during_connector_construction
+  - target: vllm
+    path: vllm/distributed/kv_transfer/kv_connector/v1/offloading_connector.py
+    blob_oid: 6c75bda0c4cf5393383919c086eb4c333f0812e8
+    bytes: 7768
+    sha256: b7e83ac78d50ea8652227eb1f245206c37dbd692597cf08348fef1e6df032025
+    evidence: OffloadingConnector_and_HMA_scheduler_path_exist
+  - target: vllm
+    path: vllm/distributed/kv_transfer/kv_connector/v1/offloading/metrics.py
+    blob_oid: 0839b2727ccc01b4b3cea9e1b69e08093fca81d2
+    bytes: 6195
+    sha256: 5ab3c65af3c0f78b0696bcc60c68ecfe51332c6d5f6684bb2cfa0e0ea9677d73
+    evidence: transfer_bytes_and_time_metrics_exist_but_have_not_run_for_selected_workload
+  - target: vllm_ascend
+    path: vllm_ascend/kv_offload/npu.py
+    blob_oid: 90816ce3abbc4143e8eb2ab1a081cab8d07c0b86
+    bytes: 2699
+    sha256: ab2b86b807f7bd3582d607e597e437c5e113ef9dde4a8198c86353716e17ad55
+    evidence: NPUOffloadingSpec_imports_removed_vllm_modules_and_asserts_one_gpu_block_size_group_twice
+  - target: vllm_ascend
+    path: vllm_ascend/kv_offload/cpu_npu.py
+    blob_oid: 1f9f8391ac12ea88e367458f00e428791324732b
+    bytes: 10307
+    sha256: ff95f78e28d985c43e29f8a2a3dd99fd05794a84223a59809320b9b42c15ab78
+    evidence: Ascend_handler_uses_single_gpu_block_size_and_legacy_tensor_interface
+  - target: vllm_ascend
+    path: docs/source/user_guide/feature_guide/kv_cache_cpu_offload.md
+    blob_oid: 974897e6f3e1ad57bd88a211993e5f859caa2d4a
+    bytes: 4613
+    sha256: c0eb9cf3785f5224136aac5e44ae17352db7fc264be2b8e2ce4e610311a689ad
+    evidence: generic_Qwen_example_documents_NPUOffloadingSpec_num_cpu_blocks_and_block_size_128
+
+compatibility_findings:
+  documented_connector: OffloadingConnector
+  documented_role: kv_both
+  documented_spec_name: NPUOffloadingSpec
+  documented_spec_module_path: vllm_ascend.kv_offload.npu
+  ascend_npu_spec_imports:
+    - vllm.v1.kv_offload.abstract
+    - vllm.v1.kv_offload.mediums
+    - vllm.v1.kv_offload.spec
+  missing_in_frozen_vllm_tree:
+    - vllm/v1/kv_offload/abstract.py
+    - vllm/v1/kv_offload/mediums.py
+    - vllm/v1/kv_offload/spec.py
+  frozen_vllm_replacement_api: vllm.v1.kv_offload.base
+  direct_import_expected_to_fail_before_npu: true
+  expected_first_failure: ModuleNotFoundError_vllm_v1_kv_offload_abstract
+  npu_spec_single_group_assertion_count: 2
+  deepseek_r2_hybrid_group_count_min: 2
+  deepseek_r2_manager_types: [CompressAttentionManager, SlidingWindowManager]
+  documented_block_size_128_valid_for_hybrid: false
+  documented_example_selected_workload: Qwen3_0_6B_not_DeepSeek_V4_Flash
+  connector_source_presence_proves_runtime_compatibility: false
+  metrics_source_presence_proves_real_transfer: false
+
+required_second_changes_if_forced:
+  - port_NPUOffloadingSpec_to_the_frozen_vllm_base_and_CanonicalKVCaches_API
+  - replace_the_single_group_CpuNpuOffloadingHandler_with_multi_group_aware_transfer_layout
+  - define_and_validate_host_memory_budget_without_the_generic_block_size_128_example
+  - add_a_new_task_local_runtime_patch_and_new_source_hashes
+  - create_a_pressure_sequence_that_proves_both_D2H_store_and_H2D_restore
+
+decision:
+  formal_k1_matched_ab_allowed: false
+  k1_workload: none
+  k1_runner: none
+  task_local_compatibility_patch_authorized: false
+  npu_execution_authorized: false
+  model_requests_authorized: false
+  next_stage_authorized: false
+  server_read_only_confirmation_allowed: true
+  reason: frozen_vllm_ascend_offload_spec_cannot_be_imported_or_used_with_the_accepted_DeepSeek_hybrid_runtime_without_a_new_compatibility_implementation
+
+server_confirmation_contract:
+  task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717
+  execution_mode: authorized_read_only_source_import_config_review_no_npu
+  verify_exact_git_objects_and_sha256: true
+  verify_missing_modules_in_tracked_frozen_vllm_tree: true
+  inspect_runtime_module_resolution_without_starting_vllm: true
+  parse_KVTransferConfig_without_constructing_engine: true
+  import_NPUOffloadingSpec_in_isolated_subprocess: true
+  inspect_existing_K0_R2_hybrid_group_summary_read_only: true
+  result_directory_allowed: false
+  keep_alive_mutation_authorized: false
+  npu_execution_authorized: false
+  vllm_server_start_authorized: false
+  model_requests_authorized: false
+  result_transfer_authorized: false
+
+boundaries:
+  - K0 remains green and is not invalidated by K1 incompatibility.
+  - This audit does not prove that KV Cache CPU Offload is generally unsupported on Ascend; it proves only that the frozen pair is not directly usable for the selected DeepSeek hybrid workload.
+  - A future compatibility implementation is a new engineering stage and cannot be smuggled into a matched A/B as an incidental repair.
+  - No K2, K3, K4, P8.3 or P9 action is authorized by this blocked result.
