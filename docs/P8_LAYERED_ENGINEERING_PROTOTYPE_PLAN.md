@@ -2,9 +2,9 @@
 
 日期：2026-07-10；最后更新：2026-07-17
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_simple_cpu_offload_conditional / tp4_expert_residency_goal_defined`
 
-状态拆分：`local_artifact_state=p8_2_k1_blocked_audit_implemented`；`server_execution_state=p8_2_k1_read_only_compatibility_review_authorized`；`real_move_state=closed_by_frozen_stack_import_gate`；`tp4_state=plan_defined_measurements_missing`。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 已接受 `green_p8_1_r1_official_mtp_observe_only_matrix`。P8.2-K0-R1 保持原 29-file evidence 不变并将 15 项 predicate 修正为 20/20，开发机已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`。K1 冻结源码与 hybrid-group 审计为 `blocked_p8_2_k1_frozen_stack_import_incompatible`；当前唯一任务 `p8_2_k1_frozen_stack_import_compatibility_review_2026_0717` 只做服务器安装态 source/import/config 复核，不启动 vLLM/NPU，也不是 offload real move。
+状态拆分：`local_artifact_state=p8_2_k1a_conditional_workload_prepared`；`server_execution_state=p8_2_k1a_single_lifecycle_authorized`；`blocked_legacy_path=OffloadingConnector_NPUOffloadingSpec`；`candidate_real_move_path=SimpleCPUOffloadConnector`；`tp4_state=plan_defined_measurements_missing`。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 和 P8.2-K0 已 green；K1 服务器只读复核已消费并确认 `blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A 不修复旧路径，而是在同一冻结栈内独立审计 `SimpleCPUOffloadConnector`；本地 source grade=`conditional_p8_2_k1a_simple_cpu_offload_source_candidate`，当前唯一服务器任务为 source-gated 6-request D2H store/H2D restore 机制闭环。
 
 ## 1. P8 的工程定义
 
@@ -24,7 +24,7 @@ P8 还必须关闭一个明确的容量问题：当前 W8A8 不能只把 `TP=8` 
 
 | 项目 | 当前证据 | P8 解释 |
 | --- | --- | --- |
-| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈已完成 W8A8-MTP official 131072 context、unprofiled performance、三个代表性 profiled evidence cell、P8.1-R1 observe-only green 与 P8.2-K0 green | 冻结 Ascend offload spec 与冻结 vLLM API/import 及 DeepSeek hybrid groups 不兼容；K1 payload move、offload 和性能收益结论未解锁 |
+| vLLM-Ascend | `0.22.1/0.22.1rc1` 独立栈已完成 W8A8-MTP official 131072 context、unprofiled performance、三个代表性 profiled evidence cell、P8.1-R1 observe-only green 与 P8.2-K0 green | 旧 `NPUOffloadingSpec` 路径 blocked；独立 `SimpleCPUOffloadConnector` 路径只有 source candidate，尚需 DeepSeek 8-worker D2H/H2D runtime 闭环；offload 性能收益未解锁 |
 | MindIE | 同一轮体检为 `mindie_version=unknown`，P1 package inventory 记录 `mindie=missing` | 不能写成当前可执行底座；需单独关闭 availability gate |
 | DeepSeek-V4-Flash | W8A8-MTP 是项目主对象；P6.1C-R1、P6.1 与 P6.2 已建立三层 reference；mixed checkpoint 因 910B1 MXFP4 SoC 门退出执行 | P8 不绕过 P6.3 机制对照修改模型路径，也不实现 mixed checkpoint adapter |
 | TP4 容量证据 | checkpoint 为 `300013759966 B ≈ 279.41 GiB`；TP8 no-MTP/MTP 权重加载日志分别为 `38.1255/39.2795 GB per worker`；P6.1C whole-device HBM 峰值为 `61436–61447 MB / 65536 MB` | 足以否定“原命令直接 TP8→TP4”作为参数调整，但不能据此固定需要卸载多少 GB；先做 expert inventory、TP4 mapping 和 runtime reserve 校准 |
@@ -296,8 +296,11 @@ no-MTP `4096+64` provenance；`p8_official_mtp_baseline_contract.yaml` 与单请
 `p8_1_vllm_ascend_official_mtp_observe_only_matrix.yaml`；其 R1 repair replay 已获开发机 green。13 项 source capability 仍不能整体提升为
 `validated_for_selected_workload`，只有 P8.1-R1 实际观测到的字段可升级。当前 K0 workload 为
 `p8_2_k0_order_balanced_prefix_cache_baseline.yaml`；K0-R1 已从不变 raw evidence 完成离线修正并获开发机
-green。K1 冻结栈审计为 `blocked_p8_2_k1_frozen_stack_import_incompatible`，当前只允许
-`p8_2_k1_frozen_stack_import_compatibility_review_2026_0717` 的服务器只读复核，不打开真实 offload。
+green。K1 冻结栈审计与服务器复核已以 `blocked_p8_2_k1_frozen_stack_import_incompatible`
+关闭旧 `NPUOffloadingSpec` 路径。K1A 对冻结 `SimpleCPUOffloadConnector` 的 exact
+source/registration/HMA/multi-group/NPU-copy 审计为 conditional candidate，当前只打开一个
+六请求 store/pressure/restore 机制 lifecycle；无 8/8 D2H 与 8/8 H2D 完整证据不得升级。
+P8.3 技术路线与此并行，但当前唯一 handoff 不授权 P8.3。
 
 ### P8.1：Observe-only StateObject Trace
 
@@ -340,7 +343,8 @@ cause_proven_as_unique = false
 | 子阶段 | 路径 | 目的 | 不输出 |
 | --- | --- | --- | --- |
 | K0 | Prefix Cache on/off baseline | 复用 P6 固定输出对照 | 不外推为 offload 收益 |
-| K1 | KV Cache CPU Offload | 验证 HBM↔DRAM move、LRU、restore | 不默认 async overlap 成立 |
+| K1 | `OffloadingConnector + NPUOffloadingSpec` | 冻结 import/API/hybrid-group 直达门 | 已 blocked，不修复后写成原 K1 green |
+| K1A | `SimpleCPUOffloadConnector` | 验证 8-worker HBM→DRAM store 与 DRAM→HBM restore | 不默认 pressure 必然触发 restore，不默认 async overlap 成立 |
 | K2 | UCM / External KV Cache，DRAM-first | 验证 external prefix/KV object、hit/miss | 不默认持久化后端更快 |
 | K3 | SSD/NFS/3FS cold persistence | 验证重启恢复和冷层容量 | 不进入逐 token decode 热路径 |
 | K4 | MindIE Prefix/KV Pool 对照 | 仅在 MindIE availability gate 关闭后执行 | 不跨 runtime 做不受控速度比较 |
@@ -599,7 +603,9 @@ baseline；single-request official contract/workload 保留为执行前被替代
 `p8_official_mtp_observe_matrix_contract.yaml` 冻结三个 accepted context shape。`adapters/vllm_ascend.py`
 只接受机器可读 bounded observation JSONL，不 import runtime、不持有 payload、不执行 placement；P8.1-R1
 已由开发机接受 green。P6.1C-R1 official、P6.1 unprofiled、P6.2 profiled 与 P6.3 已完成并经复核；
-P8.2-K0 已接受 green；当前仅授权 `p8_2_k1_frozen_stack_import_compatibility_review_2026_0717` 的冻结安装态只读复核。K1 正式 workload、兼容补丁、real move 与 K2 仍不得自动进入。
+P8.2-K0 已接受 green；K1 旧路径只读复核已完成 blocked。当前仅授权
+`p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717` 的 source-gated 单 lifecycle、
+六请求 K1A 机制闭环；兼容补丁、K2 与技术上并行但未授权的 P8.3 均不得自动进入。
 MindIE adapter、payload mover 与长期 server collector 仍未创建。
 
 后续每个 vertical slice 必须同时提供：

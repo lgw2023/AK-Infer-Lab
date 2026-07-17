@@ -44,7 +44,7 @@ new isolated host conda environment built; W8A8-MTP official context ladder gree
 P8.1 parent 继续保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 已接受为
 `green_p8_1_r1_official_mtp_observe_only_matrix`；二者均不被后续 K0 覆盖。
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 也已接受 green。P8.2-K0 的 off→on/on→off 四 lifecycle、20 个 65536+64 request 与 6 matched pair 已完成；K0-R1 以不变 raw evidence 修正 finalizer 后已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`，仍不是 performance reference 或 offload evidence。K1 冻结源审计为 `blocked_p8_2_k1_frozen_stack_import_incompatible`。当前唯一任务 `p8_2_k1_frozen_stack_import_compatibility_review_2026_0717` 只确认服务器安装态 source/import/config 与既有 hybrid-group 证据，不启动 runtime 或真实 move。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 也已接受 green。P8.2-K0 已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`，仍不是 performance reference 或 offload evidence。K1 旧 `OffloadingConnector + NPUOffloadingSpec` 冻结路径的本地审计与服务器只读复核已关闭为 `blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A 对独立 `SimpleCPUOffloadConnector` 路径的 exact source 审计为 conditional candidate，当前唯一任务是 source-gated 六请求 store/pressure/restore 机制闭环，不得自动进入其他阶段。
 
 ### 3.2 对照路：MindIE
 
@@ -68,7 +68,7 @@ mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门
 p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_sampling_repair_2026_0714
 ```
 
-server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。当前唯一服务器 handoff 是 `p8_2_k1_frozen_stack_import_compatibility_review_2026_0717`，只读复核 K1 的冻结栈不兼容结论，K1 workload 与 K2 仍关闭。
+server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。K1 旧路径为 blocked。当前唯一服务器 handoff 是 `p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717`，只允许一个 K1A 六请求机制 lifecycle；K2/P8.3 等后续任务均未授权。
 
 参考配置：
 

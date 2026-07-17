@@ -329,27 +329,27 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
     subprocess.run(["bash", "-n", str(R1_RUNNER)], cwd=REPO_ROOT, check=True)
 
 
-def test_r1_is_closed_and_k1_review_is_the_only_authorized_handoff() -> None:
-    task_id = "p8_2_k1_frozen_stack_import_compatibility_review_2026_0717"
+def test_r1_is_closed_and_k1a_is_the_only_authorized_handoff() -> None:
+    task_id = "p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717"
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_read_only_source_import_config_review_no_npu"
+        "execution_mode: authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism"
         in handoff
     )
-    assert "npu_execution_authorized: false" in handoff
+    assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "request_count_exact: 0" in handoff
-    assert "lifecycle_count_exact: 0" in handoff
+    assert "request_count_exact: 6" in handoff
+    assert "lifecycle_count_exact: 1" in handoff
     assert "no_k2_k3_k4_p8_3_or_p9: true" in handoff
     assert "yellow_p8_1_matrix_trace_invalid" in handoff
     assert "cause_proven_as_unique: false" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
-    assert "audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py" in handoff
+    assert "audit_deepseek_p8_2_k1a_simple_cpu_offload.py" in handoff
     assert "runtime-import-probe" in handoff
 
     readiness = yaml.safe_load(
@@ -367,7 +367,9 @@ def test_r1_is_closed_and_k1_review_is_the_only_authorized_handoff() -> None:
     assert artifacts["completed_p8_2_k0_workload"].endswith(
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
-    assert artifacts["next_workload"] == "none_k1_blocked_by_frozen_stack_audit"
+    assert artifacts["next_workload"] == (
+        "workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml"
+    )
     assert artifacts["current_server_handoff_task"] == task_id
     acceptance = readiness["acceptance"]
     assert acceptance["p8_1_grade"] == "yellow_p8_1_matrix_trace_invalid"

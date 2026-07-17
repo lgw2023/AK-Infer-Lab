@@ -287,16 +287,16 @@ def test_r2_is_closed_green_and_superseded_by_the_authorized_r3():
     }
 
 
-def test_handoff_preserves_r4_r1_closeout_during_k1_read_only_review():
+def test_handoff_preserves_r4_r1_closeout_during_k1a_mechanism_review():
     handoff = (
         REPO_ROOT / "通信模块/docs/developer-to-server.md"
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1 冻结栈源码、导入与配置只读复核" in handoff
-    assert "task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717" in handoff
-    assert "execution_mode: authorized_read_only_source_import_config_review_no_npu" in handoff
-    assert "npu_execution_authorized: false" in handoff
+    assert "P8.2-K1A SimpleCPUOffload 八卡" in handoff
+    assert "task_id: p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717" in handoff
+    assert "execution_mode: authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism" in handoff
+    assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "DeepSeek R2 hybrid-KV" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
@@ -324,7 +324,9 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert artifacts["completed_p8_2_k0_workload"].endswith(
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
-    assert artifacts["next_workload"] == "none_k1_blocked_by_frozen_stack_audit"
+    assert artifacts["next_workload"] == (
+        "workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml"
+    )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
     )
@@ -340,7 +342,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert acceptance["p6_3b_r4_r1_execution_authorized"] is False
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_developer_accepted_green_p8_2_k1_frozen_stack_incompatible"
+        "p8_2_k0_green_p8_2_k1_blocked_p8_2_k1a_conditional_source_candidate"
     )
 
     surfaces = [

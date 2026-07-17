@@ -1,0 +1,60 @@
+schema_version: 1
+audit_id: p8_2_k1a_simple_cpu_offload_frozen_stack_feasibility_2026_0717
+date: "2026-07-17"
+stage: P8.2-K1A
+audit_grade: conditional_p8_2_k1a_simple_cpu_offload_source_candidate
+claim_boundary: frozen_source_registration_hma_hybrid_group_and_npu_copy_backend_candidate_only
+
+depends_on:
+  k0_grade: green_p8_2_k0_order_balanced_prefix_cache_baseline
+  k0_performance_reference_accepted: false
+  k0_offload_evidence_accepted: false
+  k1_grade: blocked_p8_2_k1_frozen_stack_import_incompatible
+  k1_blocked_path: OffloadingConnector_with_NPUOffloadingSpec
+  k1a_is_a_distinct_connector_path: true
+
+frozen_runtime:
+  vllm_version: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_version: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+
+source_method:
+  exact_git_object_reads_required: true
+  reference_worktree_heads_are_not_evidence: true
+  latest_documentation_used_for_decision: false
+
+candidate_path:
+  upstream_connector: SimpleCPUOffloadConnector
+  ascend_override: AscendSimpleCPUOffloadConnector
+  ascend_worker: SimpleCPUOffloadNPUWorker
+  ascend_copy_backend: NPUDmaCopyBackend
+  npu_copy_primitive: torch.ops._C_ascend.swap_blocks_batch
+  direction_codes: {h2d: 0, d2h: 1}
+  requires_prefix_caching: true
+  supports_hma: true
+  request_finished_all_groups_present: true
+  manager_source_handles: [FullAttentionSpec, SlidingWindowSpec, MambaSpec]
+  per_group_store_cursors_present: true
+  cpu_capacity_inputs: [cpu_bytes_to_use, cpu_bytes_to_use_per_rank]
+  lazy_offload_frozen_value_for_k1a: false
+
+decision:
+  formal_k1a_runtime_allowed_after_server_probe: true
+  server_installed_import_and_registration_probe_required: true
+  deepseek_tp8_ep_mtp_runtime_evidence_accepted: false
+  real_d2h_store_evidence_accepted: false
+  real_h2d_restore_evidence_accepted: false
+  performance_reference_accepted: false
+  source_presence_alone_is_not_green: true
+  task_local_observer_allowed: true
+  task_local_compatibility_repair_allowed: false
+  runtime_or_dependency_upgrade_allowed: false
+
+boundaries:
+  - The prior K1 blocked result remains valid for OffloadingConnector plus NPUOffloadingSpec.
+  - K1A is a distinct frozen connector path, not an import repair for the blocked path.
+  - Source and registration evidence permit only a conditional server workload after an installed-runtime probe.
+  - Candidate green requires real D2H store and H2D restore events for the selected DeepSeek TP8+EP+MTP lifecycle.
+  - Timing is diagnostic only and cannot become a performance reference or optimization claim.
+  - No K2, K3, K4, P8.3 or P9 work is authorized by this source audit.

@@ -141,8 +141,27 @@ server_confirmation_contract:
   model_requests_authorized: false
   result_transfer_authorized: false
 
+server_confirmation_result:
+  execution_status: completed_and_consumed
+  server_grade: candidate_blocked_p8_2_k1_frozen_stack_import_incompatible
+  developer_grade: blocked_p8_2_k1_frozen_stack_import_incompatible
+  installed_source_hash_gate: pass
+  runtime_import_first_error: ModuleNotFoundError_vllm_v1_kv_offload_abstract
+  npu_spec_single_group_assertion_count: 2
+  k0_hybrid_manager_types: [CompressAttentionManager, SlidingWindowManager]
+  local_inbox_package_file_count: 12
+  local_inbox_package_total_bytes: 37084
+  package_inventory_sha256_verified: true
+  npu_started: false
+  vllm_server_started: false
+  model_request_sent: false
+  keep_alive_unchanged: true
+  result_transfer_performed: false
+  handoff_consumed: true
+
 boundaries:
   - K0 remains green and is not invalidated by K1 incompatibility.
   - This audit does not prove that KV Cache CPU Offload is generally unsupported on Ascend; it proves only that the frozen pair is not directly usable for the selected DeepSeek hybrid workload.
   - A future compatibility implementation is a new engineering stage and cannot be smuggled into a matched A/B as an incidental repair.
   - No K2, K3, K4, P8.3 or P9 action is authorized by this blocked result.
+  - The K1 read-only confirmation task is complete and must not be rerun; K1A is a separate SimpleCPUOffloadConnector candidate, not a repair of this blocked path.

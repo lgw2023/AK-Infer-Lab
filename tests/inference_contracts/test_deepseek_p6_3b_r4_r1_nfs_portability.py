@@ -157,14 +157,14 @@ def test_r4_r1_is_completed_without_erasing_the_blocked_r4_lineage():
     assert historical_r4["execution_state"]["next_task_authorized"] is False
 
 
-def test_r4_r1_closeout_is_preserved_in_the_unique_k1_review_and_truth():
+def test_r4_r1_closeout_is_preserved_in_the_unique_k1a_review_and_truth():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1 冻结栈源码、导入与配置只读复核" in handoff
-    assert "task_id: p8_2_k1_frozen_stack_import_compatibility_review_2026_0717" in handoff
-    assert "npu_execution_authorized: false" in handoff
+    assert "P8.2-K1A SimpleCPUOffload 八卡" in handoff
+    assert "task_id: p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717" in handoff
+    assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
@@ -184,7 +184,7 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_k1_review_and_truth():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"] == (
-        "none_k1_blocked_by_frozen_stack_audit"
+        "workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_grade"] == (
         "blocked_p6_3b_r4_source_or_resource_gate"

@@ -103,10 +103,10 @@ def test_k1_frozen_stack_audit_blocks_an_executable_offload_workload():
     assert decision["next_stage_authorized"] is False
 
     assert not list(
-        (REPO_ROOT / "benchmarks/deepseek_v4_flash/workloads").glob("p8_2_k1*.yaml")
+        (REPO_ROOT / "benchmarks/deepseek_v4_flash/workloads").glob("p8_2_k1_*.yaml")
     )
     assert not list(
-        (REPO_ROOT / "tools/inference_contracts").glob("run_deepseek_p8_2_k1*")
+        (REPO_ROOT / "tools/inference_contracts").glob("run_deepseek_p8_2_k1_*")
     )
 
 
@@ -219,42 +219,41 @@ def test_k1_auditor_accepts_hash_verified_installed_source_trees(tmp_path: Path)
     assert result["formal_k1_workload_allowed"] is False
 
 
-def test_k1_read_only_compatibility_review_is_the_only_server_handoff():
-    task_id = "p8_2_k1_frozen_stack_import_compatibility_review_2026_0717"
+def test_k1_block_is_preserved_while_k1a_is_the_only_server_handoff():
+    task_id = "p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717"
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_read_only_source_import_config_review_no_npu"
+        "execution_mode: authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism"
         in handoff
     )
     for field in (
         "server_sync_review_authorized: true",
-        "source_import_config_review_authorized: true",
-        "npu_execution_authorized: false",
-        "vllm_server_start_authorized: false",
-        "model_requests_authorized: false",
-        "keep_alive_mutation_authorized: false",
+        "installed_source_and_import_probe_authorized: true",
+        "npu_execution_authorized: true",
+        "vllm_server_start_authorized: true",
+        "model_requests_authorized: true",
+        "keep_alive_stop_and_restore_authorized: true",
         "task_local_compatibility_patch_authorized: false",
-        "result_directory_creation_authorized: false",
+        "result_directory_creation_authorized: true",
         "result_transfer_authorized: false",
         "next_task_authorized: false",
-        "lifecycle_count_exact: 0",
-        "request_count_exact: 0",
+        "lifecycle_count_exact: 1",
+        "request_count_exact: 6",
     ):
         assert field in handoff
     assert "source-audit" in handoff
     assert "runtime-import-probe" in handoff
     assert "0decac0d96c42b49572498019f0a0e3600f50398" in handoff
     assert "5f6faa0cb8830f667266f3b8121cd1383606f2a1" in handoff
-    assert "vllm.v1.kv_offload.abstract" in handoff
+    assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in handoff
     assert "NPUOffloadingSpec" in handoff
     assert "CompressAttentionManager" in handoff
     assert "SlidingWindowManager" in handoff
-    assert "不得停止或重启 keep-alive" in handoff
-    assert "不得启动 vLLM" in handoff
-    assert "不得创建 workload" in handoff
+    assert "SimpleCPUOffloadConnector" in handoff
+    assert "task_local_compatibility_patch_authorized: false" in handoff
     assert "不得进入 K2" in handoff
 
     readiness = _load_yaml(READINESS)
@@ -265,10 +264,12 @@ def test_k1_read_only_compatibility_review_is_the_only_server_handoff():
     assert artifacts["current_p8_2_k1_auditor"].endswith(
         "audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py"
     )
-    assert artifacts["next_workload"] == "none_k1_blocked_by_frozen_stack_audit"
+    assert artifacts["next_workload"] == (
+        "workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml"
+    )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_server_handoff_execution_mode"] == (
-        "authorized_read_only_source_import_config_review_no_npu"
+        "authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k0_grade"] == (
@@ -279,5 +280,6 @@ def test_k1_read_only_compatibility_review_is_the_only_server_handoff():
         "blocked_p8_2_k1_frozen_stack_import_incompatible"
     )
     assert acceptance["p8_2_k1_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_execution_authorized"] is True
     assert acceptance["server_sync_review_authorized"] is True
     assert acceptance["next_task_authorized"] is False

@@ -1,0 +1,15 @@
+diff --git a/vllm_ascend/distributed/kv_transfer/__init__.py b/vllm_ascend/distributed/kv_transfer/__init__.py
+--- a/vllm_ascend/distributed/kv_transfer/__init__.py
++++ b/vllm_ascend/distributed/kv_transfer/__init__.py
+@@ -77,5 +77,11 @@ def register_connector():
+         KVConnectorFactory.register_connector(
+             "SimpleCPUOffloadConnector",
+             "vllm_ascend.distributed.kv_transfer.kv_pool.simple_cpu_offload.simple_cpu_offload_connector",  # noqa: E501
+             "AscendSimpleCPUOffloadConnector",
+         )
++
++        # P8.2-K1A task-local operational observer. It records transfer
++        # metadata only and does not change scheduling or copy parameters.
++        from p8_2_k1a_simple_cpu_offload_observer import install_p8_2_k1a_simple_cpu_offload_observer
++
++        install_p8_2_k1a_simple_cpu_offload_observer()

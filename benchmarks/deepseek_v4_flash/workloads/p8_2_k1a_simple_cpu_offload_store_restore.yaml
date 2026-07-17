@@ -1,0 +1,186 @@
+schema_version: 1
+workload_id: p8_2_k1a_simple_cpu_offload_store_restore
+date: "2026-07-17"
+purpose: conditionally_prove_real_d2h_store_and_h2d_restore_on_the_frozen_simple_cpu_offload_path
+task_id: p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717
+
+stage_contract:
+  stage: P8.2-K1A
+  mode: conditional_simple_cpu_offload_real_store_restore_mechanism
+  claim_boundary: deepseek_tp8_ep_mtp_single_lifecycle_d2h_store_h2d_restore_mechanism_only
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+
+depends_on:
+  k0_grade: green_p8_2_k0_order_balanced_prefix_cache_baseline
+  k0_offload_evidence_accepted: false
+  k1_grade: blocked_p8_2_k1_frozen_stack_import_incompatible
+  k1_blocked_path: OffloadingConnector_with_NPUOffloadingSpec
+  k1a_audit: ../p8_2_k1a_simple_cpu_offload_feasibility_audit.yaml
+  k1a_audit_grade: conditional_p8_2_k1a_simple_cpu_offload_source_candidate
+  distinct_connector_path_required: true
+
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  visible_devices: "0,1,2,3,4,5,6,7"
+  base_vllm_root: /data/node0_disk1/vllm-0.22.1/vllm
+
+runtime_fixed:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  speculative_method: mtp
+  num_speculative_tokens: 1
+  cudagraph_mode: FULL_DECODE_ONLY
+  kv_connector: SimpleCPUOffloadConnector
+  kv_role: kv_both
+  cpu_bytes_to_use: 274877906944
+  cpu_bytes_to_use_per_rank: 34359738368
+  lazy_offload: false
+
+host_memory_gate:
+  configured_cpu_tier_bytes_total: 274877906944
+  configured_cpu_tier_bytes_per_rank: 34359738368
+  world_size: 8
+  mem_available_bytes_min: 412316860416
+  margin_bytes_above_cpu_tier: 137438953472
+  measurement_source: proc_meminfo_before_vllm_start
+  swap_in_use_allowed: false
+  pressure_or_swap_mutation_authorized: false
+
+request_plan:
+  lifecycle_count: 1
+  request_count: 6
+  output_tokens: 64
+  concurrency: 1
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming_required: true
+  request_retries: 0
+  sequence:
+    - {slot: slot_01, role: warmup, context_tokens: 4096, shared_prefix_ratio_pct: 0}
+    - {slot: slot_02, role: prime, context_tokens: 32768, shared_prefix_ratio_pct: 90}
+    - {slot: slot_03, role: pressure, context_tokens: 131072, shared_prefix_ratio_pct: 0}
+    - {slot: slot_04, role: restore_follower, context_tokens: 32768, shared_prefix_ratio_pct: 90}
+    - {slot: slot_05, role: repeat_follower, context_tokens: 32768, shared_prefix_ratio_pct: 90}
+    - {slot: slot_06, role: isolated_control, context_tokens: 32768, shared_prefix_ratio_pct: 0}
+  prime_restore_repeat_share_one_frozen_prefix: true
+  all_other_cross_group_lcp_less_than_block_size: true
+  body_bytes_tokens_and_sha256_frozen_before_server_start: true
+  generated_text_retained: false
+  generated_token_ids_retained: false
+
+pressure_rationale:
+  prime_tokens: 32768
+  pressure_tokens: 131072
+  pressure_is_intended_to_evict_older_gpu_prefix_blocks: true
+  cpu_tier_is_intended_to_retain_prime_plus_pressure: true
+  pressure_success_is_not_assumed: true
+  no_restore_after_pressure_grade: yellow_p8_2_k1a_store_only_no_restore
+  retry_or_pressure_expansion_allowed: false
+
+source_and_repair_gate:
+  source_payload:
+    server_path: 工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+    prompt_tokens: 4096
+    bytes: 19487
+    sha256: 48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
+  full_p6_3b_r2_task_local_repair_required: true
+  base_environment_or_site_packages_mutation: false
+  task_local_simple_offload_observer_allowed: true
+  observer_changes_scheduler_decision_or_copy_parameters: false
+  task_local_compatibility_repair_allowed: false
+
+evidence_contract:
+  world_size_exact: 8
+  installed_source_hash_gate: true
+  isolated_import_registration_config_probe: true
+  resolved_connector_exact_before_requests: true
+  request_http_token_sse_finish_exact: true
+  request_mtp_health_queue_exact: true
+  d2h_positive_bytes_all_workers: true
+  d2h_completion_all_workers: true
+  h2d_positive_bytes_all_workers: true
+  h2d_completion_all_workers: true
+  restore_follower_cpu_hit_and_load_lifecycle_exact: true
+  prefix_metrics_are_supporting_not_direction_proof: true
+  unprofiled_streaming_metrics_diagnostic_only: true
+  host_memory_before_after_summary: true
+  cleanup_port_process_npu_and_keep_alive_restore: true
+
+acceptance:
+  blocked_source_or_resource_grade: blocked_p8_2_k1a_source_or_resource_gate
+  no_success_grade: red_p8_2_k1a_simple_cpu_offload_no_success
+  partial_grade: yellow_p8_2_k1a_simple_cpu_offload_partial
+  store_only_grade: yellow_p8_2_k1a_store_only_no_restore
+  evidence_incomplete_grade: red_p8_2_k1a_transfer_evidence_incomplete
+  server_candidate_green_grade: candidate_green_p8_2_k1a_simple_cpu_offload_store_restore
+  candidate_green_requires:
+    - six_of_six_requests_first_attempt_success
+    - exact_frozen_connector_registration_and_config
+    - same_r2_hybrid_repair_and_official_mtp
+    - positive_d2h_bytes_and_completion_on_eight_workers
+    - positive_h2d_bytes_and_completion_on_eight_workers
+    - restore_follower_cpu_hit_load_schedule_and_completion
+    - clean_cleanup_and_keep_alive_restore
+  developer_review_required: true
+  green_means_mechanism_evidence_not_performance_gain: true
+
+result_package_policy:
+  max_total_bytes: 71680
+  raw_logs_metrics_request_bodies_generated_output_and_token_ids_remain_server_local: true
+  generated_text_or_token_ids_allowed: false
+  automatic_transfer_allowed: false
+  selection_required_before_any_transfer: true
+  available_methods: [email, upload-api, server-local]
+  bounded_candidates:
+    - result_summary.md
+    - environment_and_hashes.json
+    - request_body_manifest.json
+    - request_summary.tsv
+    - transfer_trace_summary.json
+    - connector_resolution_summary.json
+    - mtp_queue_health_summary.json
+    - host_memory_summary.json
+    - repair_diagnostic_summary.json
+    - grading_inputs.json
+    - cleanup_status.txt
+    - first_failure_excerpt.txt
+
+stop_policy:
+  stop_on_first_request_failure: true
+  no_retry: true
+  no_profiler_or_hbm_sampler: true
+  no_runtime_dependency_or_body_mutation: true
+  no_compatibility_patch: true
+  no_k2_k3_k4_p8_3_p9: true
+  no_automatic_result_transfer: true
+
+execution_state:
+  status: prepared_handoff_pending_server_execution
+  execution_mode: authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism
+  npu_execution_authorized: true
+  vllm_server_start_authorized: true
+  model_requests_authorized: true
+  keep_alive_stop_and_restore_authorized: true
+  result_transfer_authorized: false
+  next_task_authorized: false
+  standing_npu_and_vllm_consumption_authorization: true
+
+boundaries:
+  - K1A does not change or repair the blocked OffloadingConnector plus NPUOffloadingSpec path.
+  - A yellow no-restore result means the frozen pressure sequence did not prove H2D restore; it must not be post-hoc expanded.
+  - Candidate green is limited to one DeepSeek TP8+EP+MTP lifecycle and does not establish speedup, capacity gain or general support.
+  - P6.3B, P8.1-R1 and P8.2-K0 accepted results remain unchanged for every K1A grade.
