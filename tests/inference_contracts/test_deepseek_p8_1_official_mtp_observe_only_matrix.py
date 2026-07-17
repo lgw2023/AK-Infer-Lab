@@ -465,40 +465,32 @@ def test_matrix_workload_hashes_every_executable_contract_artifact() -> None:
         assert frozen[key] == hashlib.sha256(path.read_bytes()).hexdigest(), path
 
 
-def test_current_handoff_authorizes_only_the_p8_2_k0_order_balanced_pilot() -> None:
+def test_current_handoff_authorizes_only_k0_r1_offline_refinalization() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-        "task_id: p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717"
+        "task_id: p8_2_k0_r1_offline_refinalization_2026_0717"
         in handoff
     )
     assert (
-        "execution_mode: authorized_p8_2_k0_order_balanced_prefix_cache_on_off_unprofiled_pilot"
+        "execution_mode: authorized_offline_existing_raw_evidence_refinalization_no_npu"
         in handoff
     )
-    assert "npu_execution_authorized: true" in handoff
-    assert "next_task_authorized: true" in handoff
+    assert "npu_execution_authorized: false" in handoff
+    assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml" in handoff
-    assert "p8_2_k0_order_balanced_prefix_cache_baseline.yaml" in handoff
-    assert "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.sh" in handoff
-    assert "run_deepseek_p8_2_k0_mode.sh" in handoff
     assert "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py" in handoff
-    assert "370f8d2570116da93eca4ec773c98093d8b8e385c27cc32e16785fb2d1824b19" in handoff
-    assert "off→on/on→off" in handoff
-    assert "20 request" in handoff
+    assert "source_evidence_file_count_exact: 29" in handoff
+    assert "source_request_count_exact: 20" in handoff
     assert "49152" in handoff
-    assert "6 matched pair" in handoff
+    assert "15 个 predicate" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in handoff
-    assert "第 21 请求" in handoff
+    assert "不得停止或重启 keep-alive" in handoff
+    assert "不得发送模型请求" in handoff
     assert "不得自动进入 K1" in handoff
     assert "不得外发" in handoff
-    assert "git push" not in handoff
-    assert "git commit" not in handoff
-    assert "git reset" not in handoff
-    assert "git stash" not in handoff
-    assert "sync.sh" not in handoff
+    assert "git push origin" not in handoff
+    assert "git commit -m" not in handoff

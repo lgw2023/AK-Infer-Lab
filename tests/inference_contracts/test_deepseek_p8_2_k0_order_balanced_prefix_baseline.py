@@ -1,4 +1,5 @@
 from pathlib import Path
+import hashlib
 import json
 import os
 import subprocess
@@ -59,10 +60,15 @@ def _green_request_rows(runner) -> list[dict]:
                     "k0_role": role,
                     "request_role": role,
                     "status": "success",
+                    "http_status": 200,
+                    "prompt_tokens": 65536,
                     "context_tokens": 65536,
                     "output_tokens": 64,
-                    "generated_tokens": 64,
-                    "streamed_tokens": 64,
+                    "generated_token_count": 64,
+                    "streamed_token_count": 64,
+                    "finish_reason": "length",
+                    "saw_done": True,
+                    "max_token_chunk_width": 2,
                     "request_body_sha256": f"sha-{pair_slot}",
                     "expected_prefix_hit_tokens": 49152 if role == "measured" else 0,
                     "prefix_queries_delta": 65536,
@@ -82,6 +88,113 @@ def _green_request_rows(runner) -> list[dict]:
                 }
             )
     return rows
+
+
+def _write_green_raw_k0_artifacts(source_dir: Path, runner) -> None:
+    rows = _green_request_rows(runner)
+    source_dir.mkdir(parents=True, exist_ok=True)
+    (source_dir / "request_body_manifest.json").write_text(
+        json.dumps(
+            {
+                "task_id": runner.TASK_ID,
+                "canonical_body_count": 5,
+                "total_request_count": 20,
+                "generated_text_retained": False,
+                "token_ids_retained": False,
+                "canonical_bodies": [
+                    {
+                        "pair_slot": slot,
+                        "request_body_sha256": f"sha-{slot}",
+                        "context_tokens": 65536,
+                        "body_bytes": 123,
+                    }
+                    for slot in (
+                        "warmup",
+                        "prime",
+                        "measured_01",
+                        "measured_02",
+                        "measured_03",
+                    )
+                ],
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    diagnostics = [
+        {
+            "event": "runtime_patch_installed",
+            "retention_interval": None,
+            "source_evidence": {"source": {"match": True}},
+        },
+        {
+            "event": "coordinator_snapshot",
+            "lcm_block_size": 16384,
+            "eagle_group_ids": [1],
+            "attention_groups": [{"group_ids": [0, 1]}],
+            "managers": [
+                {"group_id": 0, "manager_type": "Full", "use_eagle": True},
+                {"group_id": 1, "manager_type": "Compress", "use_eagle": True},
+            ],
+            "prefix_cache_retention_interval": None,
+        },
+        {"event": "eagle_lookahead_cache_target"},
+        {"event": "deferred_import_order_verified"},
+    ]
+    for schedule in runner.LIFECYCLE_SCHEDULE:
+        mode_dir = (
+            source_dir
+            / "lifecycles"
+            / schedule["lifecycle_id"]
+            / "modes"
+            / schedule["mode"]
+        )
+        runtime_dir = mode_dir / "runtime"
+        runtime_dir.mkdir(parents=True)
+        lifecycle_rows = [
+            row
+            for row in rows
+            if row["lifecycle_id"] == schedule["lifecycle_id"]
+        ]
+        (mode_dir / "raw_request_results.jsonl").write_text(
+            "".join(
+                json.dumps(row, separators=(",", ":"), sort_keys=True) + "\n"
+                for row in lifecycle_rows
+            ),
+            encoding="utf-8",
+        )
+        (mode_dir / "cleanup_status.txt").write_text("clean\n", encoding="utf-8")
+        (mode_dir / "repair_identity.tsv").write_text(
+            "repair\tsame-r2\n", encoding="utf-8"
+        )
+        (mode_dir / "server_command_sha256.txt").write_text(
+            runner.EXPECTED_COMMAND_SHA256[schedule["mode"]]
+            + "  server_command.txt\n",
+            encoding="utf-8",
+        )
+        (runtime_dir / "resolved_prefix_cache_config.json").write_text(
+            json.dumps(
+                {
+                    "resolved_enable_prefix_caching": (
+                        schedule["mode"] == "prefix_cache_on"
+                    ),
+                    "server_command_has_expected_flag": True,
+                    "server_command_has_opposite_flag": False,
+                    "process_cmdline_has_expected_flag": True,
+                    "process_cmdline_has_opposite_flag": False,
+                }
+            ),
+            encoding="utf-8",
+        )
+        (runtime_dir / "source_gate_status.txt").write_text(
+            "pass\n", encoding="utf-8"
+        )
+        (runtime_dir / "hybrid_kv_runtime_diagnostic.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in diagnostics),
+            encoding="utf-8",
+        )
 
 
 def test_p8_1_r1_server_result_is_closed_as_developer_accepted_green():
@@ -356,6 +469,51 @@ def test_k0_grading_accepts_only_complete_order_balanced_paired_evidence():
     assert grade["offload_evidence_accepted"] is False
 
 
+def test_k0_grading_reports_the_first_request_evidence_predicate_failure():
+    from tools.inference_contracts import (
+        run_deepseek_p8_2_k0_order_balanced_prefix_baseline as runner,
+    )
+
+    rows = _green_request_rows(runner)
+    rows[7]["finish_reason"] = "stop"
+    grade = runner.grade_k0_evidence(
+        rows,
+        cleanup_by_lifecycle={
+            row["lifecycle_id"]: "clean" for row in runner.LIFECYCLE_SCHEDULE
+        },
+        repair_identity_by_lifecycle={
+            row["lifecycle_id"]: {"repair": "same-r2"}
+            for row in runner.LIFECYCLE_SCHEDULE
+        },
+        resolved_prefix_by_lifecycle={
+            row["lifecycle_id"]: row["mode"] == "prefix_cache_on"
+            for row in runner.LIFECYCLE_SCHEDULE
+        },
+        server_command_sha256_by_lifecycle={
+            row["lifecycle_id"]: runner.EXPECTED_COMMAND_SHA256[row["mode"]]
+            for row in runner.LIFECYCLE_SCHEDULE
+        },
+        diagnostic_ok_by_lifecycle={
+            row["lifecycle_id"]: True for row in runner.LIFECYCLE_SCHEDULE
+        },
+    )
+
+    assert grade["request_evidence_exact"] is False
+    assert grade["request_evidence_predicate_counts"]["finish_reason_length"] == {
+        "passed": 19,
+        "total": 20,
+    }
+    assert grade["first_request_evidence_failure"] == {
+        "request_id": rows[7]["request_id"],
+        "lifecycle_id": rows[7]["lifecycle_id"],
+        "mode": rows[7]["mode"],
+        "pair_slot": rows[7]["pair_slot"],
+        "predicate": "finish_reason_length",
+        "observed": "stop",
+        "expected": "length",
+    }
+
+
 def test_k0_finalizer_writes_only_bounded_sanitized_candidate_evidence(
     tmp_path: Path,
 ):
@@ -363,103 +521,7 @@ def test_k0_finalizer_writes_only_bounded_sanitized_candidate_evidence(
         run_deepseek_p8_2_k0_order_balanced_prefix_baseline as runner,
     )
 
-    rows = _green_request_rows(runner)
-    (tmp_path / "request_body_manifest.json").write_text(
-        json.dumps(
-            {
-                "task_id": runner.TASK_ID,
-                "canonical_body_count": 5,
-                "total_request_count": 20,
-                "generated_text_retained": False,
-                "token_ids_retained": False,
-                "canonical_bodies": [
-                    {
-                        "pair_slot": slot,
-                        "request_body_sha256": f"sha-{slot}",
-                        "context_tokens": 65536,
-                        "body_bytes": 123,
-                    }
-                    for slot in (
-                        "warmup",
-                        "prime",
-                        "measured_01",
-                        "measured_02",
-                        "measured_03",
-                    )
-                ],
-            },
-            separators=(",", ":"),
-            sort_keys=True,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    diagnostics = [
-        {
-            "event": "runtime_patch_installed",
-            "retention_interval": None,
-            "source_evidence": {"source": {"match": True}},
-        },
-        {
-            "event": "coordinator_snapshot",
-            "lcm_block_size": 16384,
-            "eagle_group_ids": [1],
-            "attention_groups": [{"group_ids": [0, 1]}],
-            "managers": [
-                {"group_id": 0, "manager_type": "Full", "use_eagle": True},
-                {"group_id": 1, "manager_type": "Compress", "use_eagle": True},
-            ],
-            "prefix_cache_retention_interval": None,
-        },
-        {"event": "eagle_lookahead_cache_target"},
-        {"event": "deferred_import_order_verified"},
-    ]
-    for schedule in runner.LIFECYCLE_SCHEDULE:
-        lifecycle_dir = tmp_path / "lifecycles" / schedule["lifecycle_id"]
-        mode_dir = lifecycle_dir / "modes" / schedule["mode"]
-        runtime_dir = mode_dir / "runtime"
-        runtime_dir.mkdir(parents=True)
-        lifecycle_rows = [
-            row
-            for row in rows
-            if row["lifecycle_id"] == schedule["lifecycle_id"]
-        ]
-        (mode_dir / "raw_request_results.jsonl").write_text(
-            "".join(
-                json.dumps(row, separators=(",", ":"), sort_keys=True) + "\n"
-                for row in lifecycle_rows
-            ),
-            encoding="utf-8",
-        )
-        (mode_dir / "cleanup_status.txt").write_text("clean\n", encoding="utf-8")
-        (mode_dir / "repair_identity.tsv").write_text(
-            "repair\tsame-r2\n", encoding="utf-8"
-        )
-        (mode_dir / "server_command_sha256.txt").write_text(
-            runner.EXPECTED_COMMAND_SHA256[schedule["mode"]] + "  server_command.txt\n",
-            encoding="utf-8",
-        )
-        (runtime_dir / "resolved_prefix_cache_config.json").write_text(
-            json.dumps(
-                {
-                    "resolved_enable_prefix_caching": (
-                        schedule["mode"] == "prefix_cache_on"
-                    ),
-                    "server_command_has_expected_flag": True,
-                    "server_command_has_opposite_flag": False,
-                    "process_cmdline_has_expected_flag": True,
-                    "process_cmdline_has_opposite_flag": False,
-                }
-            ),
-            encoding="utf-8",
-        )
-        (runtime_dir / "source_gate_status.txt").write_text(
-            "pass\n", encoding="utf-8"
-        )
-        (runtime_dir / "hybrid_kv_runtime_diagnostic.jsonl").write_text(
-            "".join(json.dumps(row) + "\n" for row in diagnostics),
-            encoding="utf-8",
-        )
+    _write_green_raw_k0_artifacts(tmp_path, runner)
 
     grading = runner.finalize_k0_artifacts(tmp_path)
     assert grading["server_grade"] == (
@@ -488,12 +550,70 @@ def test_k0_finalizer_writes_only_bounded_sanitized_candidate_evidence(
     assert grading["candidate_file_count"] == 14
     assert grading["candidate_total_bytes"] <= 71680
     assert grading["candidate_size_gate_pass"] is True
+    request_summary = json.loads(
+        (tmp_path / "mtp_queue_health_summary.json").read_text(encoding="utf-8")
+    )
+    assert request_summary["request_evidence_predicate_counts"][
+        "generated_tokens_exact"
+    ] == {"passed": 20, "total": 20}
+    assert request_summary["request_evidence_predicate_counts"][
+        "finish_reason_length"
+    ] == {"passed": 20, "total": 20}
+    assert request_summary["first_request_evidence_failure"] is None
+    assert (tmp_path / "first_failure_excerpt.txt").read_text(
+        encoding="utf-8"
+    ) == "none\n"
     candidate_text = "\n".join(
         (tmp_path / name).read_text(encoding="utf-8") for name in candidate_names
     )
     assert '"prompt":' not in candidate_text
     assert "generated_content" not in candidate_text
     assert "returned_token_ids" not in candidate_text
+
+
+def test_k0_r1_refinalizes_existing_raw_evidence_without_mutating_source(
+    tmp_path: Path,
+):
+    from tools.inference_contracts import (
+        run_deepseek_p8_2_k0_order_balanced_prefix_baseline as runner,
+    )
+
+    source_dir = tmp_path / "p8_2_k0_run01"
+    output_dir = tmp_path / "p8_2_k0_r1_refinalized"
+    _write_green_raw_k0_artifacts(source_dir, runner)
+    before = {
+        str(path.relative_to(source_dir)): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in source_dir.rglob("*")
+        if path.is_file()
+    }
+
+    grading = runner.refinalize_k0_artifacts(source_dir, output_dir)
+
+    after = {
+        str(path.relative_to(source_dir)): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in source_dir.rglob("*")
+        if path.is_file()
+    }
+    assert after == before
+    assert grading["server_grade"] == (
+        "candidate_green_p8_2_k0_order_balanced_prefix_cache_baseline"
+    )
+    assert grading["request_evidence_exact"] is True
+    assert grading["refinalization_task_id"] == runner.REFINALIZATION_TASK_ID
+    assert grading["source_evidence_file_count"] == 29
+    assert grading["source_evidence_unchanged"] is True
+    environment = json.loads(
+        (output_dir / "environment_and_hashes.json").read_text(encoding="utf-8")
+    )
+    assert environment["execution_mode"] == "offline_existing_raw_evidence_only"
+    assert environment["npu_started"] is False
+    assert environment["vllm_started"] is False
+    assert environment["model_request_sent"] is False
+    assert environment["source_evidence_file_count"] == 29
+    assert len(environment["source_evidence_inventory_sha256"]) == 64
+    assert (output_dir / "request_body_manifest.json").read_bytes() == (
+        source_dir / "request_body_manifest.json"
+    ).read_bytes()
 
 
 def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
@@ -550,38 +670,38 @@ def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
     assert "prepare" in help_result.stdout
     assert "run-mode" in help_result.stdout
     assert "finalize" in help_result.stdout
+    assert "refinalize" in help_result.stdout
 
 
-def test_k0_is_the_only_authorized_handoff_and_k1_remains_closed():
+def test_k0_r1_offline_refinalization_is_the_only_handoff_and_k1_remains_closed():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = (
-        "p8_2_k0_deepseek_v4_flash_order_balanced_"
-        "prefix_cache_baseline_2026_0717"
-    )
+    task_id = "p8_2_k0_r1_offline_refinalization_2026_0717"
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_p8_2_k0_order_balanced_"
-        "prefix_cache_on_off_unprofiled_pilot"
+        "execution_mode: authorized_offline_existing_raw_evidence_"
+        "refinalization_no_npu"
     ) in handoff
-    assert "npu_execution_authorized: true" in handoff
-    assert "next_task_authorized: true" in handoff
+    assert "server_sync_review_authorized: true" in handoff
+    assert "offline_refinalization_authorized: true" in handoff
+    assert "npu_execution_authorized: false" in handoff
+    assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "lifecycle_count_exact: 4" in handoff
-    assert "request_count_exact: 20" in handoff
-    assert "measured_request_count_exact: 12" in handoff
-    assert "matched_measured_pair_count_exact: 6" in handoff
+    assert "lifecycle_count_exact: 0" in handoff
+    assert "request_count_exact: 0" in handoff
+    assert "source_request_count_exact: 20" in handoff
+    assert "source_evidence_file_count_exact: 29" in handoff
+    assert "original_result_dir_must_remain_unchanged: true" in handoff
     assert "offload_authorized: false" in handoff
     assert "profiler_authorized: false" in handoff
     assert "p8_2_k1_execution_authorized: false" in handoff
     assert "no_k1_k2_k3_k4_p8_3_or_p9: true" in handoff
-    assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
-    assert "cause_proven_as_unique: false" in handoff
-    assert "/data/node0_disk1/vllm-0.22.1/vllm" in handoff
-    assert "BASE_VLLM_ROOT" in handoff
-    assert "no_proxy" in handoff and "NO_PROXY" in handoff
-    assert "lifecycle_01" in handoff and "lifecycle_04" in handoff
-    assert handoff.count('bash "${RUNNER}" "${RESULT_DIR}"') == 1
+    assert "generated_token_count" in handoff
+    assert "streamed_token_count" in handoff
+    assert "不得停止或重启 keep-alive" in handoff
+    assert "不得启动 vLLM" in handoff
+    assert "不得发送模型请求" in handoff
+    assert handoff.count(" refinalize \\") == 1
     assert "email / upload-api / server-local" in handoff
     assert "不得自动外发" in handoff
 
@@ -590,21 +710,46 @@ def test_k0_is_the_only_authorized_handoff_and_k1_remains_closed():
     assert artifacts["completed_p8_1_r1_workload"].endswith(
         "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
-    assert artifacts["next_workload"].endswith(
+    assert artifacts["completed_p8_2_k0_workload"].endswith(
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
+    assert artifacts["next_workload"] == "none_pending_k0_r1_refinalization"
     assert artifacts["current_server_handoff_task"] == task_id
-    assert artifacts["current_p8_2_k0_runner"].endswith(
-        "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.sh"
+    assert artifacts["current_p8_2_k0_refinalizer"].endswith(
+        "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_1_r1_grade"] == (
         "green_p8_1_r1_official_mtp_observe_only_matrix"
     )
     assert acceptance["p8_1_r1_execution_authorized"] is False
-    assert acceptance["p8_2_k0_execution_authorized"] is True
+    assert acceptance["p8_2_k0_grade"] == (
+        "red_p8_2_k0_order_balanced_prefix_baseline_evidence_incomplete"
+    )
+    assert acceptance["p8_2_k0_failure_class"] == (
+        "finalizer_schema_mismatch_not_runtime_request_failure"
+    )
+    assert acceptance["p8_2_k0_execution_authorized"] is False
+    assert acceptance["p8_2_k0_refinalization_authorized"] is True
     assert acceptance["p8_2_k1_execution_authorized"] is False
-    assert acceptance["next_task_authorized"] is True
+    assert acceptance["next_task_authorized"] is False
+
+    workload = _load_yaml(K0_WORKLOAD)
+    result = workload["execution_result"]
+    assert result["server_grade"] == (
+        "red_p8_2_k0_order_balanced_prefix_baseline_evidence_incomplete"
+    )
+    assert result["successful_request_count"] == "20_of_20"
+    assert result["request_runtime_evidence_passed"] is True
+    assert result["finalizer_schema_mismatch"] == {
+        "producer_generated_field": "generated_token_count",
+        "producer_streamed_field": "streamed_token_count",
+        "old_finalizer_generated_field": "generated_tokens",
+        "old_finalizer_streamed_field": "streamed_tokens",
+    }
+    assert workload["offline_refinalization"]["task_id"] == task_id
+    assert workload["offline_refinalization"]["new_model_requests_authorized"] is False
+    assert workload["offline_refinalization"]["source_result_must_remain_unchanged"] is True
 
     for relative_path in (
         "README.md",
@@ -617,7 +762,6 @@ def test_k0_is_the_only_authorized_handoff_and_k1_remains_closed():
         "工作记录与进度笔记本/12_P5_P9_后续阶段重排计划.md",
     ):
         text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
-        assert "green_p8_1_r1_official_mtp_observe_only_matrix" in text, relative_path
         assert "P8.2-K0" in text, relative_path
         assert task_id in text, relative_path
         assert "K1" in text, relative_path

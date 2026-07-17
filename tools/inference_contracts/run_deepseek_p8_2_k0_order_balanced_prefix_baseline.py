@@ -36,6 +36,9 @@ TASK_ID = (
     "p8_2_k0_deepseek_v4_flash_order_balanced_"
     "prefix_cache_baseline_2026_0717"
 )
+REFINALIZATION_TASK_ID = (
+    "p8_2_k0_r1_offline_refinalization_2026_0717"
+)
 CONTEXT_TOKENS = 65536
 OUTPUT_TOKENS = 64
 BLOCK_SIZE = 128
@@ -307,6 +310,90 @@ def prepare_k0_artifacts(
     return manifest
 
 
+def _request_evidence_checks(row: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    values = (
+        ("status_success", row.get("status"), "success", row.get("status") == "success"),
+        ("http_200", row.get("http_status"), 200, row.get("http_status") == 200),
+        (
+            "prompt_tokens_exact",
+            int(row.get("prompt_tokens") or 0),
+            CONTEXT_TOKENS,
+            int(row.get("prompt_tokens") or 0) == CONTEXT_TOKENS,
+        ),
+        (
+            "context_tokens_exact",
+            int(row.get("context_tokens") or 0),
+            CONTEXT_TOKENS,
+            int(row.get("context_tokens") or 0) == CONTEXT_TOKENS,
+        ),
+        (
+            "output_tokens_exact",
+            int(row.get("output_tokens") or 0),
+            OUTPUT_TOKENS,
+            int(row.get("output_tokens") or 0) == OUTPUT_TOKENS,
+        ),
+        (
+            "generated_tokens_exact",
+            int(row.get("generated_token_count") or 0),
+            OUTPUT_TOKENS,
+            int(row.get("generated_token_count") or 0) == OUTPUT_TOKENS,
+        ),
+        (
+            "streamed_tokens_exact",
+            int(row.get("streamed_token_count") or 0),
+            OUTPUT_TOKENS,
+            int(row.get("streamed_token_count") or 0) == OUTPUT_TOKENS,
+        ),
+        (
+            "finish_reason_length",
+            row.get("finish_reason"),
+            "length",
+            row.get("finish_reason") == "length",
+        ),
+        ("saw_done", row.get("saw_done"), True, row.get("saw_done") is True),
+        (
+            "token_chunk_width_within_mtp_bound",
+            int(row.get("max_token_chunk_width") or 0),
+            "<=2",
+            0 < int(row.get("max_token_chunk_width") or 0) <= 2,
+        ),
+        (
+            "queue_metrics_ok",
+            row.get("queue_metrics_ok"),
+            True,
+            row.get("queue_metrics_ok") is True,
+        ),
+        (
+            "counter_continuity_ok",
+            row.get("counter_continuity_ok"),
+            True,
+            row.get("counter_continuity_ok") is True,
+        ),
+        (
+            "spec_activity_ok",
+            row.get("spec_activity_ok"),
+            True,
+            row.get("spec_activity_ok") is True,
+        ),
+        (
+            "prefix_evidence_ok",
+            row.get("prefix_evidence_ok"),
+            True,
+            row.get("prefix_evidence_ok") is True,
+        ),
+        (
+            "accepted_token_delta_positive",
+            float(row.get("accepted_token_delta") or 0),
+            ">0",
+            float(row.get("accepted_token_delta") or 0) > 0,
+        ),
+    )
+    return {
+        name: {"observed": observed, "expected": expected, "passed": passed}
+        for name, observed, expected, passed in values
+    }
+
+
 def grade_k0_evidence(
     request_rows: list[dict[str, Any]],
     *,
@@ -439,17 +526,35 @@ def grade_k0_evidence(
     on_non_measured_prefix_hit_total = sum(
         float(row.get("prefix_hits_delta") or 0) for row in on_non_measured
     )
-    request_evidence_exact = bool(request_rows) and all(
-        row.get("queue_metrics_ok") is True
-        and row.get("counter_continuity_ok") is True
-        and row.get("spec_activity_ok") is True
-        and row.get("prefix_evidence_ok") is True
-        and int(row.get("context_tokens") or 0) == CONTEXT_TOKENS
-        and int(row.get("output_tokens") or 0) == OUTPUT_TOKENS
-        and int(row.get("generated_tokens") or 0) == OUTPUT_TOKENS
-        and int(row.get("streamed_tokens") or 0) == OUTPUT_TOKENS
-        and float(row.get("accepted_token_delta") or 0) > 0
-        for row in request_rows
+    request_checks = [_request_evidence_checks(row) for row in request_rows]
+    predicate_names = list(request_checks[0]) if request_checks else []
+    request_evidence_predicate_counts = {
+        name: {
+            "passed": sum(checks[name]["passed"] for checks in request_checks),
+            "total": len(request_rows),
+        }
+        for name in predicate_names
+    }
+    first_request_evidence_failure = None
+    for row, checks in zip(request_rows, request_checks, strict=True):
+        failed_name = next(
+            (name for name, result in checks.items() if not result["passed"]),
+            None,
+        )
+        if failed_name is not None:
+            failed = checks[failed_name]
+            first_request_evidence_failure = {
+                "request_id": row.get("request_id"),
+                "lifecycle_id": row.get("lifecycle_id"),
+                "mode": row.get("mode"),
+                "pair_slot": row.get("pair_slot"),
+                "predicate": failed_name,
+                "observed": failed["observed"],
+                "expected": failed["expected"],
+            }
+            break
+    request_evidence_exact = bool(request_rows) and (
+        first_request_evidence_failure is None
     )
     measured_metrics_complete = bool(by_role["measured"]) and all(
         all(float(row.get(field) or 0) > 0 for field in METRIC_FIELDS)
@@ -515,6 +620,8 @@ def grade_k0_evidence(
         "off_prefix_hit_total": off_prefix_hit_total,
         "on_non_measured_prefix_hit_total": on_non_measured_prefix_hit_total,
         "request_evidence_exact": request_evidence_exact,
+        "request_evidence_predicate_counts": request_evidence_predicate_counts,
+        "first_request_evidence_failure": first_request_evidence_failure,
         "measured_metrics_complete": measured_metrics_complete,
         "cleanup": cleanup,
         "performance_reference_accepted": False,
@@ -776,7 +883,98 @@ def _refresh_candidate_manifest(
     )
 
 
-def finalize_k0_artifacts(artifact_dir: Path) -> dict[str, Any]:
+def _required_k0_source_paths(artifact_dir: Path) -> list[Path]:
+    paths = [artifact_dir / "request_body_manifest.json"]
+    for schedule in LIFECYCLE_SCHEDULE:
+        mode_dir = (
+            artifact_dir
+            / "lifecycles"
+            / schedule["lifecycle_id"]
+            / "modes"
+            / schedule["mode"]
+        )
+        runtime_dir = mode_dir / "runtime"
+        paths.extend(
+            (
+                mode_dir / "raw_request_results.jsonl",
+                mode_dir / "cleanup_status.txt",
+                mode_dir / "repair_identity.tsv",
+                mode_dir / "server_command_sha256.txt",
+                runtime_dir / "resolved_prefix_cache_config.json",
+                runtime_dir / "source_gate_status.txt",
+                runtime_dir / "hybrid_kv_runtime_diagnostic.jsonl",
+            )
+        )
+    return paths
+
+
+def inspect_k0_source_evidence(artifact_dir: Path) -> dict[str, Any]:
+    required = _required_k0_source_paths(artifact_dir)
+    missing = [str(path.relative_to(artifact_dir)) for path in required if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(f"K0 source evidence missing: {missing}")
+    manifest = _read_json(artifact_dir / "request_body_manifest.json")
+    if manifest.get("task_id") != TASK_ID:
+        raise ValueError("K0 source task identity mismatch")
+    if manifest.get("total_request_count") != 20:
+        raise ValueError("K0 source request count mismatch")
+    request_rows: list[dict[str, Any]] = []
+    for schedule in LIFECYCLE_SCHEDULE:
+        raw_path = (
+            artifact_dir
+            / "lifecycles"
+            / schedule["lifecycle_id"]
+            / "modes"
+            / schedule["mode"]
+            / "raw_request_results.jsonl"
+        )
+        rows = _read_jsonl(raw_path)
+        if len(rows) != 5:
+            raise ValueError(f"K0 source lifecycle row count mismatch: {raw_path}")
+        request_rows.extend(rows)
+    canonical_fields = {"generated_token_count", "streamed_token_count"}
+    missing_canonical = [
+        str(row.get("request_id"))
+        for row in request_rows
+        if not canonical_fields.issubset(row)
+    ]
+    if missing_canonical:
+        raise ValueError(
+            "K0 source rows missing canonical producer fields: "
+            + ",".join(missing_canonical)
+        )
+    inventory = [
+        {
+            "relative_path": str(path.relative_to(artifact_dir)),
+            "bytes": path.stat().st_size,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        }
+        for path in required
+    ]
+    canonical = json.dumps(
+        inventory, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
+    return {
+        "source_artifact_dir": str(artifact_dir.resolve()),
+        "source_evidence_file_count": len(inventory),
+        "source_evidence_inventory": inventory,
+        "source_evidence_inventory_sha256": hashlib.sha256(canonical).hexdigest(),
+    }
+
+
+def finalize_k0_artifacts(
+    artifact_dir: Path,
+    *,
+    output_dir: Path | None = None,
+    source_evidence: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    result_dir = output_dir or artifact_dir
+    if output_dir is not None:
+        result_dir.mkdir(parents=True, exist_ok=False)
+        shutil.copyfile(
+            artifact_dir / "request_body_manifest.json",
+            result_dir / "request_body_manifest.json",
+        )
     request_rows: list[dict[str, Any]] = []
     cleanup_by_lifecycle: dict[str, str] = {}
     repair_by_lifecycle: dict[str, dict[str, str]] = {}
@@ -842,7 +1040,7 @@ def finalize_k0_artifacts(artifact_dir: Path) -> dict[str, Any]:
         if all(value == "clean" for value in cleanup_by_lifecycle.values())
         else "incomplete"
     )
-    (artifact_dir / "cleanup_status.txt").write_text(
+    (result_dir / "cleanup_status.txt").write_text(
         cleanup + "\n", encoding="utf-8"
     )
     grading = grade_k0_evidence(
@@ -853,15 +1051,28 @@ def finalize_k0_artifacts(artifact_dir: Path) -> dict[str, Any]:
         server_command_sha256_by_lifecycle=server_hash_by_lifecycle,
         diagnostic_ok_by_lifecycle=diagnostic_ok_by_lifecycle,
     )
+    if source_evidence is not None:
+        grading.update(
+            {
+                "refinalization_task_id": REFINALIZATION_TASK_ID,
+                "source_evidence_file_count": source_evidence[
+                    "source_evidence_file_count"
+                ],
+                "source_evidence_inventory_sha256": source_evidence[
+                    "source_evidence_inventory_sha256"
+                ],
+                "source_evidence_unchanged": True,
+            }
+        )
     _write_result_tables(
-        artifact_dir,
+        result_dir,
         request_rows,
         cleanup_by_lifecycle=cleanup_by_lifecycle,
         resolved_by_lifecycle=resolved_by_lifecycle,
         server_hash_by_lifecycle=server_hash_by_lifecycle,
     )
     _write_json(
-        artifact_dir / "prefix_cache_metrics_summary.json",
+        result_dir / "prefix_cache_metrics_summary.json",
         {
             "on_measured_hit_exact_count": grading[
                 "on_measured_hit_exact_count"
@@ -875,10 +1086,16 @@ def finalize_k0_artifacts(artifact_dir: Path) -> dict[str, Any]:
         },
     )
     _write_json(
-        artifact_dir / "mtp_queue_health_summary.json",
+        result_dir / "mtp_queue_health_summary.json",
         {
             "request_count": len(request_rows),
             "request_evidence_exact": grading["request_evidence_exact"],
+            "request_evidence_predicate_counts": grading[
+                "request_evidence_predicate_counts"
+            ],
+            "first_request_evidence_failure": grading[
+                "first_request_evidence_failure"
+            ],
             "accepted_token_delta_total": sum(
                 float(row.get("accepted_token_delta") or 0)
                 for row in request_rows
@@ -893,7 +1110,7 @@ def finalize_k0_artifacts(artifact_dir: Path) -> dict[str, Any]:
         },
     )
     _write_json(
-        artifact_dir / "repair_diagnostic_summary.json",
+        result_dir / "repair_diagnostic_summary.json",
         {
             "by_lifecycle": diagnostic_summary_by_lifecycle,
             "diagnostic_ok_by_lifecycle": diagnostic_ok_by_lifecycle,
@@ -904,7 +1121,7 @@ def finalize_k0_artifacts(artifact_dir: Path) -> dict[str, Any]:
         },
     )
     _write_json(
-        artifact_dir / "resolved_prefix_cache_config_summary.json",
+        result_dir / "resolved_prefix_cache_config_summary.json",
         {
             "by_lifecycle": resolved_raw_by_lifecycle,
             "resolved_prefix_control_exact": grading[
@@ -929,27 +1146,36 @@ def finalize_k0_artifacts(artifact_dir: Path) -> dict[str, Any]:
         "offload_run": False,
         "payload_or_placement_mutation": False,
     }
-    _write_json(artifact_dir / "environment_and_hashes.json", environment)
+    if source_evidence is not None:
+        environment.update(
+            {
+                **source_evidence,
+                "refinalization_task_id": REFINALIZATION_TASK_ID,
+                "execution_mode": "offline_existing_raw_evidence_only",
+                "npu_started": False,
+                "vllm_started": False,
+                "model_request_sent": False,
+            }
+        )
+    _write_json(result_dir / "environment_and_hashes.json", environment)
     failure = "none"
     if not grading["server_grade"].startswith("candidate_green"):
-        failed = next(
-            (row for row in request_rows if row.get("status") != "success"),
-            None,
-        )
+        request_failure = grading["first_request_evidence_failure"]
         failure = (
-            json.dumps(failed, indent=2, sort_keys=True)[:8192]
-            if failed is not None
+            json.dumps(request_failure, indent=2, sort_keys=True)[:8192]
+            if request_failure is not None
             else grading["server_grade"]
         )
-    (artifact_dir / "first_failure_excerpt.txt").write_text(
+    (result_dir / "first_failure_excerpt.txt").write_text(
         failure + "\n", encoding="utf-8"
     )
-    (artifact_dir / "result_summary.md").write_text(
+    (result_dir / "result_summary.md").write_text(
         "\n".join(
             (
                 "# P8.2-K0 order-balanced Prefix Cache baseline server result",
                 "",
                 f"- task_id: {TASK_ID}",
+                f"- refinalization_task_id: {grading.get('refinalization_task_id', 'none')}",
                 f"- server_grade: {grading['server_grade']}",
                 f"- requests: {grading['successful_request_count']}/20 successful",
                 f"- measured_requests: {grading['measured_request_count']}/12",
@@ -961,6 +1187,8 @@ def finalize_k0_artifacts(artifact_dir: Path) -> dict[str, Any]:
                 f"- same_r2_repair_all_lifecycles: {str(grading['same_r2_repair_all_lifecycles']).lower()}",
                 f"- on_measured_hit_exact_count: {grading['on_measured_hit_exact_count']}/6",
                 f"- off_prefix_hit_total: {grading['off_prefix_hit_total']}",
+                f"- request_evidence_exact: {str(grading['request_evidence_exact']).lower()}",
+                f"- first_request_evidence_failure: {json.dumps(grading['first_request_evidence_failure'], sort_keys=True)}",
                 f"- cleanup: {grading['cleanup']}",
                 "- timing_boundary: descriptive only; no faster/slower conclusion is auto-accepted",
                 "- offload_boundary: K1 and all payload movement remain closed",
@@ -970,10 +1198,31 @@ def finalize_k0_artifacts(artifact_dir: Path) -> dict[str, Any]:
         + "\n",
         encoding="utf-8",
     )
-    _refresh_candidate_manifest(artifact_dir, grading)
-    (artifact_dir / "server_grade.txt").write_text(
+    _refresh_candidate_manifest(result_dir, grading)
+    (result_dir / "server_grade.txt").write_text(
         grading["server_grade"] + "\n", encoding="utf-8"
     )
+    return grading
+
+
+def refinalize_k0_artifacts(
+    source_artifact_dir: Path, output_dir: Path
+) -> dict[str, Any]:
+    source_resolved = source_artifact_dir.resolve()
+    output_resolved = output_dir.resolve()
+    if source_resolved == output_resolved or source_resolved in output_resolved.parents:
+        raise ValueError("K0-R1 output must be outside the source artifact directory")
+    if output_dir.exists():
+        raise FileExistsError(f"K0-R1 output already exists: {output_dir}")
+    before = inspect_k0_source_evidence(source_artifact_dir)
+    grading = finalize_k0_artifacts(
+        source_artifact_dir,
+        output_dir=output_dir,
+        source_evidence=before,
+    )
+    after = inspect_k0_source_evidence(source_artifact_dir)
+    if after != before:
+        raise RuntimeError("K0 source evidence changed during offline refinalization")
     return grading
 
 
@@ -1050,6 +1299,9 @@ def parse_args() -> argparse.Namespace:
     )
     finalize = subparsers.add_parser("finalize")
     finalize.add_argument("--artifact-dir", type=Path, required=True)
+    refinalize = subparsers.add_parser("refinalize")
+    refinalize.add_argument("--source-artifact-dir", type=Path, required=True)
+    refinalize.add_argument("--output-dir", type=Path, required=True)
     return parser.parse_args()
 
 
@@ -1066,6 +1318,16 @@ def main() -> int:
             args.base_url,
             args.server_pid,
             args.mode,
+        )
+    if args.command == "refinalize":
+        grading = refinalize_k0_artifacts(
+            args.source_artifact_dir, args.output_dir
+        )
+        return (
+            0
+            if grading["server_grade"]
+            == "candidate_green_p8_2_k0_order_balanced_prefix_cache_baseline"
+            else 2
         )
     grading = finalize_k0_artifacts(args.artifact_dir)
     return (

@@ -199,17 +199,73 @@ stop_policy:
   no_automatic_result_transfer: true
 
 execution_state:
-  status: prepared_not_executed
-  server_handoff: current
-  server_result: pending
-  npu_execution_authorized: true
-  next_task_authorized: true
+  status: completed_server_red_pending_offline_refinalization
+  server_handoff: consumed_historical
+  server_result: developer_reviewed_finalizer_contract_defect
+  npu_execution_authorized: false
+  next_task_authorized: false
   result_transfer_authorized: false
   standing_npu_and_vllm_consumption_authorization: true
+
+execution_result:
+  server_head: db755dec6ca5f00c86f2ce35a2dc8901a2246ca0
+  server_grade: red_p8_2_k0_order_balanced_prefix_baseline_evidence_incomplete
+  candidate_file_count: 14
+  candidate_total_bytes: 25620
+  successful_request_count: 20_of_20
+  lifecycle_exit_count: 4_of_4
+  warmup_request_count: 4
+  prime_request_count: 4
+  measured_request_count: 12
+  matched_measured_pair_count: 6
+  request_runtime_evidence_passed: true
+  order_balance_exact: true
+  body_pairing_exact: true
+  single_variable_server_argv_exact: true
+  same_r2_repair_all_lifecycles: true
+  diagnostic_ok_all_lifecycles: true
+  resolved_prefix_control_exact: true
+  on_measured_hit_exact_count: 6_of_6
+  on_measured_hit_tokens_each: 49152
+  off_prefix_hit_total: 0
+  on_non_measured_prefix_hit_total: 0
+  accepted_token_delta_total: 640
+  cleanup: clean
+  reported_failed_gate: request_evidence_exact
+  failure_class: finalizer_schema_mismatch_not_runtime_request_failure
+  finalizer_schema_mismatch:
+    producer_generated_field: generated_token_count
+    producer_streamed_field: streamed_token_count
+    old_finalizer_generated_field: generated_tokens
+    old_finalizer_streamed_field: streamed_tokens
+  test_fixture_repeated_old_aliases: true
+  first_failure_excerpt_was_grade_only: true
+  developer_grade: pending_offline_refinalization_not_green_yet
+  performance_reference_accepted: false
+  offload_evidence_accepted: false
+
+offline_refinalization:
+  task_id: p8_2_k0_r1_offline_refinalization_2026_0717
+  execution_mode: authorized_offline_existing_raw_evidence_refinalization_no_npu
+  source_result_dir: 工作记录与进度笔记本/runtime_trace_smokes/p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717_run01
+  derived_result_dir: 工作记录与进度笔记本/runtime_trace_smokes/p8_2_k0_r1_offline_refinalization_2026_0717_run01
+  source_evidence_file_count: 29
+  source_result_must_remain_unchanged: true
+  canonical_request_fields_required: [generated_token_count, streamed_token_count]
+  source_inventory_bytes_sha256_frozen_before_refinalization: true
+  source_inventory_rechecked_after_refinalization: true
+  new_model_requests_authorized: false
+  vllm_start_authorized: false
+  npu_execution_authorized: false
+  keep_alive_mutation_authorized: false
+  result_transfer_authorized: false
+  candidate_green_requires_external_developer_review: true
 
 boundaries:
   - K0 corrects the fixed-order limitation of P6.3B with a frozen AB/BA lifecycle schedule.
   - K0 is an unprofiled descriptive Prefix Cache baseline, not a new performance reference or optimization claim.
   - K0 does not enable KV Cache CPU Offload, UCM, External KV Cache, payload movement or placement mutation.
   - Negative, zero or positive timing deltas are all valid when the evidence gates are complete.
-  - K1 remains closed until the external developer accepts the bounded K0 result package.
+  - The received K0 runtime evidence is complete, but formal green remains pending because the original finalizer used two non-producer field aliases.
+  - K0-R1 may only re-finalize the existing raw evidence into a separate derived directory; it may not run vLLM, use NPU or send a new request.
+  - K1 remains closed until the external developer accepts the corrected bounded K0-R1 result package.

@@ -41,7 +41,10 @@ transformers 5.5.4
 new isolated host conda environment built; W8A8-MTP official context ladder green through 131072+64
 ```
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成，并在后续诊断中关闭插件、allocator 与 ACL 路径问题；mixed 路线最终在 FP4 expert 后处理命中当前 SoC 不支持。W8A8-MTP 已通过 task-local overlay 完成最小请求、4K 长输出和 official context ladder；开发机接受 `green_mtp_official_context_ladder`，最高稳定上下文 131072。P6.1 unprofiled、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache 均已接受 green；P6.3C 以 strict-single-variable blocked 收口，P6 五份汇总交付物已物化。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 则在相同六 body/server argv 上补齐完整 R2 repair 后以 6/6、shared follower hit=49152、其余五条 hit=0 和完整 trace/replay/join 关闭为 `green_p8_1_r1_official_mtp_observe_only_matrix`；该 replay 支持但不唯一证明缺 repair 诊断。当前唯一执行缺口是 P8.2-K0 `p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717`：四个 fresh lifecycle 按 off→on/on→off 执行 20 个 65536+64 request，形成 6 个 matched measured pair 的 unprofiled 描述性基线；K1 KV Cache CPU Offload、profiler 与 real move 仍关闭。
+P8.1 parent 继续保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 已接受为
+`green_p8_1_r1_official_mtp_observe_only_matrix`；二者均不被后续 K0 覆盖。
+
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 也已接受 green。P8.2-K0 的 off→on/on→off 四 lifecycle、20 个 65536+64 request 与 6 matched pair 已完成，Prefix-on measured hit 6/6×49152、off hit=0；其 red 是旧 finalizer 对 `generated_token_count/streamed_token_count` 的 schema mismatch，不是 runtime failure。当前唯一任务 P8.2-K0-R1 `p8_2_k0_r1_offline_refinalization_2026_0717` 只允许对既有 raw evidence 离线重分级并证明原目录不变；K1 KV Cache CPU Offload、profiler 与 real move 仍关闭。
 
 ### 3.2 对照路：MindIE
 

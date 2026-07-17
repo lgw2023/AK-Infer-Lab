@@ -335,15 +335,15 @@ def test_r4_workload_is_preserved_as_blocked_explicit_control_evidence():
     assert workload["stage_contract"]["p6_3c_execution_authorized"] is False
 
 
-def test_r4_r1_closeout_preserves_r3_and_blocked_r4_without_erasing_them():
+def test_r4_r1_closeout_is_preserved_during_k0_r1_offline_refinalization():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "执行 P8.2-K0 order-balanced Prefix Cache on/off baseline" in handoff
-    assert "npu_execution_authorized: true" in handoff
-    assert "next_task_authorized: true" in handoff
-    assert "request_count_exact: 20" in handoff
+    assert "P8.2-K0-R1 既有 raw evidence 离线重分级" in handoff
+    assert "npu_execution_authorized: false" in handoff
+    assert "next_task_authorized: false" in handoff
+    assert "source_request_count_exact: 20" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
 
@@ -376,8 +376,11 @@ def test_r4_r1_closeout_preserves_r3_and_blocked_r4_without_erasing_them():
     assert readiness["artifacts"]["completed_p6_3b_r4_r1_workload"].endswith(
         "p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml"
     )
-    assert readiness["artifacts"]["next_workload"].endswith(
+    assert readiness["artifacts"]["completed_p8_2_k0_workload"].endswith(
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
+    )
+    assert readiness["artifacts"]["next_workload"] == (
+        "none_pending_k0_r1_refinalization"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False
@@ -386,7 +389,8 @@ def test_r4_r1_closeout_preserves_r3_and_blocked_r4_without_erasing_them():
     )
     assert readiness["acceptance"]["p6_3b_r4_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is True
+    assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is False
+    assert readiness["acceptance"]["p8_2_k0_refinalization_authorized"] is True
     assert readiness["acceptance"]["p8_2_k1_execution_authorized"] is False
 
 

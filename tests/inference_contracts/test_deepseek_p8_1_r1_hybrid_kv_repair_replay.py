@@ -329,31 +329,29 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
     subprocess.run(["bash", "-n", str(R1_RUNNER)], cwd=REPO_ROOT, check=True)
 
 
-def test_r1_is_closed_and_k0_is_the_only_authorized_handoff() -> None:
-    task_id = (
-        "p8_2_k0_deepseek_v4_flash_order_balanced_"
-        "prefix_cache_baseline_2026_0717"
-    )
+def test_r1_is_closed_and_k0_r1_is_the_only_authorized_handoff() -> None:
+    task_id = "p8_2_k0_r1_offline_refinalization_2026_0717"
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_p8_2_k0_order_balanced_prefix_cache_on_off_unprofiled_pilot"
+        "execution_mode: authorized_offline_existing_raw_evidence_refinalization_no_npu"
         in handoff
     )
-    assert "npu_execution_authorized: true" in handoff
-    assert "next_task_authorized: true" in handoff
+    assert "npu_execution_authorized: false" in handoff
+    assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "request_count_exact: 20" in handoff
-    assert "lifecycle_count_exact: 4" in handoff
+    assert "source_request_count_exact: 20" in handoff
+    assert "request_count_exact: 0" in handoff
+    assert "lifecycle_count_exact: 0" in handoff
     assert "no_k1_k2_k3_k4_p8_3_or_p9: true" in handoff
     assert "yellow_p8_1_matrix_trace_invalid" in handoff
     assert "cause_proven_as_unique: false" in handoff
-    assert "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml" in handoff
-    assert "p8_2_k0_order_balanced_prefix_cache_baseline.yaml" in handoff
-    assert handoff.count("bash \"${RUNNER}\" \"${RESULT_DIR}\"") == 1
+    assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
+    assert "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py" in handoff
+    assert handoff.count(" refinalize \\") == 1
 
     readiness = yaml.safe_load(
         (REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml").read_text(
@@ -367,9 +365,10 @@ def test_r1_is_closed_and_k0_is_the_only_authorized_handoff() -> None:
     assert artifacts["completed_p8_1_r1_workload"].endswith(
         "p8_1_r1_vllm_ascend_official_mtp_observe_only_matrix.yaml"
     )
-    assert artifacts["next_workload"].endswith(
+    assert artifacts["completed_p8_2_k0_workload"].endswith(
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
+    assert artifacts["next_workload"] == "none_pending_k0_r1_refinalization"
     assert artifacts["current_server_handoff_task"] == task_id
     acceptance = readiness["acceptance"]
     assert acceptance["p8_1_grade"] == "yellow_p8_1_matrix_trace_invalid"
@@ -378,9 +377,10 @@ def test_r1_is_closed_and_k0_is_the_only_authorized_handoff() -> None:
         "green_p8_1_r1_official_mtp_observe_only_matrix"
     )
     assert acceptance["p8_1_r1_execution_authorized"] is False
-    assert acceptance["p8_2_k0_execution_authorized"] is True
+    assert acceptance["p8_2_k0_execution_authorized"] is False
+    assert acceptance["p8_2_k0_refinalization_authorized"] is True
     assert acceptance["p8_2_k1_execution_authorized"] is False
-    assert acceptance["next_task_authorized"] is True
+    assert acceptance["next_task_authorized"] is False
 
     for relative_path in (
         "docs/EXPERIMENT_PLAN.md",

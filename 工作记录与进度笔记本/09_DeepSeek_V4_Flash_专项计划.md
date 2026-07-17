@@ -20,7 +20,7 @@ request=`0/64`，不形成机制证据。P6.3B-R4-R1 随后完成并由开发机
 `green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`：ownership-safe copy、same R2 repair、显式
 `--no-enable-prefix-caching` / `--enable-prefix-caching`、live config 与 token-LCP 门全部通过；64/64 request
 成功，off hit=0，on primary 9/9 正命中且逐请求符合 16K LCM floor。其余 15 条 boundary 仍为零命中，
-故不声明普遍命中或性能收益。P6.3C 已因 frozen `4096 < 135168` 组合使 off 侧无法通过 vLLM validation，收口为 `blocked_p6_3c_not_strict_single_variable`。P6 五份汇总交付物已闭合。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`；P8.1-R1 在完整 R2 repair 下恢复 64K follower hit=49152、其余五条 hit=0，6/6 与全部 trace/replay/join 门通过，开发机接受 `green_p8_1_r1_official_mtp_observe_only_matrix`，但 `cause_proven_as_unique:false`。当前独立任务为 P8.2-K0 `p8_2_k0_deepseek_v4_flash_order_balanced_prefix_cache_baseline_2026_0717`：四个 fresh lifecycle 固定 off→on/on→off，执行 20 个 64K+64 request/12 measured/6 matched pair，建立 unprofiled 描述性 Prefix Cache baseline；K1 KV Cache CPU Offload、profiler、payload move 和收益结论保持关闭。
+故不声明普遍命中或性能收益。P6.3C 已收口为 `blocked_p6_3c_not_strict_single_variable`，P8.1-R1 已接受 green。P8.2-K0 四个 fresh lifecycle/20 request/12 measured/6 matched pair 已完成，6 个 on measured follower 各 hit=49152、off hit=0；旧 finalizer 使用错误 token-count 别名，因此 formal grade 暂留 red。当前独立任务 `p8_2_k0_r1_offline_refinalization_2026_0717` 只读冻结 29 个既有 raw 输入并离线重分级，不启动 vLLM/NPU、不发新请求；K1 KV Cache CPU Offload、profiler、payload move 和收益结论保持关闭。
 `0.22.1/0.22.1rc1` mixed-checkpoint 四卡诊断已在当前 SoC 的 `customize_dtype`
 能力门收口，W8A8-MTP 保持唯一主对象：
 
