@@ -1953,41 +1953,42 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_advances_from_k1_blocked_to_k1a_bounded_runtime():
+def test_server_handoff_advances_from_k1a_red_to_allocator_and_inventory_review():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A SimpleCPUOffload 八卡" in handoff
-    assert "task_id: p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717" in handoff
-    assert "execution_mode: authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism" in handoff
-    assert "installed_source_and_import_probe_authorized: true" in handoff
+    assert "P8.2-K1A-R1 allocator envelope + P8.3-I0 checkpoint inventory" in handoff
+    assert "task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717" in handoff
+    assert "execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope" in handoff
+    assert "p8_3_i0_checkpoint_inventory_authorized: true" in handoff
+    assert "geometry_probe_npu_execution_authorized: true" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
-    assert "task_local_compatibility_patch_authorized: false" in handoff
+    assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in handoff
 
 
-def test_server_handoff_keeps_k1a_bounded_and_stops_before_k2():
+def test_server_handoff_keeps_allocator_and_inventory_bounded():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert "fetch origin main" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "Prefix Cache" in handoff
-    assert "request_count_exact: 6" in handoff
-    assert "lifecycle_count_exact: 1" in handoff
-    assert "request_retry_count_exact: 0" in handoff
+    assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
+    assert "model_request_count_exact: 0" in handoff
+    assert "geometry_probe_lifecycle_count_exact: 1" in handoff
+    assert "formal_model_lifecycle_count_exact: 0" in handoff
+    assert "pinned_allocator_wave_count_max: 4" in handoff
     assert "result_directory_creation_authorized: true" in handoff
-    assert "no_k2_k3_k4_p8_3_or_p9: true" in handoff
-    assert "不得进入 K2" in handoff
+    assert "K2、P8.3-I1、P8.4、P8.5、P9 均禁止自动进入" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "task_local_compatibility_patch_authorized: false" in handoff
+    assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "profiler_authorized: false" in handoff
 
 
@@ -2044,11 +2045,9 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
     assert artifacts["completed_p8_2_k0_workload"] == (
         "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
-    assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml"
-    )
+    assert artifacts["next_workload"] is None
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_p8_2_k1_blocked_p8_2_k1a_conditional_source_candidate"
+        "p8_2_k0_green_p8_2_k1_blocked_p8_2_k1a_red_k1a_r1_allocator_and_p8_3_i0_pending"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2443,13 +2442,13 @@ def test_p6_3b_r1_records_bounded_ready_failure_without_revoking_prior_evidence(
     }
 
 
-def test_server_handoff_executes_only_k1a_bounded_mechanism_review():
+def test_server_handoff_executes_only_k1a_r1_and_p8_3_i0_review():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    assert "P8.2-K1A SimpleCPUOffload 八卡" in handoff
-    assert "task_id: p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717" in handoff
+    assert "P8.2-K1A-R1 allocator envelope + P8.3-I0 checkpoint inventory" in handoff
+    assert "task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
@@ -2458,8 +2457,8 @@ def test_server_handoff_executes_only_k1a_bounded_mechanism_review():
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "request_count_exact: 6" in handoff
-    assert "lifecycle_count_exact: 1" in handoff
-    assert "task_local_compatibility_patch_authorized: false" in handoff
-    assert "不得进入 K2" in handoff
+    assert "model_request_count_exact: 0" in handoff
+    assert "geometry_probe_lifecycle_count_exact: 1" in handoff
+    assert "runtime_or_dependency_mutation_authorized: false" in handoff
+    assert "K2、P8.3-I1、P8.4、P8.5、P9 均禁止自动进入" in handoff
     assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in handoff

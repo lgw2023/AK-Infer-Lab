@@ -673,32 +673,30 @@ def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
     assert "refinalize" in help_result.stdout
 
 
-def test_k0_is_green_and_k1a_bounded_review_is_the_only_handoff():
+def test_k0_is_green_and_k1a_r1_plus_i0_are_the_only_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717"
+    task_id = "p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717"
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope"
     ) in handoff
     assert "server_sync_review_authorized: true" in handoff
-    assert "installed_source_and_import_probe_authorized: true" in handoff
+    assert "p8_3_i0_checkpoint_inventory_authorized: true" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "lifecycle_count_exact: 1" in handoff
-    assert "request_count_exact: 6" in handoff
+    assert "geometry_probe_lifecycle_count_exact: 1" in handoff
+    assert "model_request_count_exact: 0" in handoff
     assert "profiler_authorized: false" in handoff
-    assert "task_local_observer_authorized: true" in handoff
-    assert "task_local_compatibility_patch_authorized: false" in handoff
-    assert "no_k2_k3_k4_p8_3_or_p9: true" in handoff
+    assert "geometry_probe_npu_execution_authorized: true" in handoff
+    assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "keep_alive_stop_and_restore_authorized: true" in handoff
-    assert "vllm_server_start_authorized: true" in handoff
-    assert "model_requests_authorized: true" in handoff
-    assert "runtime-import-probe" in handoff
+    assert "geometry_probe_vllm_start_authorized: true" in handoff
+    assert "model_requests_authorized: false" in handoff
     assert "SimpleCPUOffloadConnector" in handoff
     assert "NPUOffloadingSpec" in handoff
-    assert "不得进入 K2" in handoff
+    assert "K2、P8.3-I1、P8.4、P8.5、P9 均禁止自动进入" in handoff
 
     readiness = _load_yaml(READINESS)
     artifacts = readiness["artifacts"]
@@ -708,9 +706,7 @@ def test_k0_is_green_and_k1a_bounded_review_is_the_only_handoff():
     assert artifacts["completed_p8_2_k0_workload"].endswith(
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
-    assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml"
-    )
+    assert artifacts["next_workload"] is None
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_p8_2_k0_refinalizer"].endswith(
         "run_deepseek_p8_2_k0_order_balanced_prefix_baseline.py"
@@ -773,5 +769,5 @@ def test_k0_is_green_and_k1a_bounded_review_is_the_only_handoff():
         text = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         assert "P8.2-K0" in text, relative_path
         assert task_id in text, relative_path
-        assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in text, relative_path
         assert "K1" in text, relative_path
+        assert "blocked" in text, relative_path

@@ -287,15 +287,15 @@ def test_r2_is_closed_green_and_superseded_by_the_authorized_r3():
     }
 
 
-def test_handoff_preserves_r4_r1_closeout_during_k1a_mechanism_review():
+def test_handoff_preserves_r4_r1_closeout_during_k1a_r1_and_i0_review():
     handoff = (
         REPO_ROOT / "通信模块/docs/developer-to-server.md"
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A SimpleCPUOffload 八卡" in handoff
-    assert "task_id: p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717" in handoff
-    assert "execution_mode: authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism" in handoff
+    assert "P8.2-K1A-R1 allocator envelope + P8.3-I0 checkpoint inventory" in handoff
+    assert "task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717" in handoff
+    assert "execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "DeepSeek R2 hybrid-KV" in handoff
@@ -324,9 +324,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert artifacts["completed_p8_2_k0_workload"].endswith(
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
-    assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml"
-    )
+    assert artifacts["next_workload"] is None
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
     )
@@ -342,7 +340,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert acceptance["p6_3b_r4_r1_execution_authorized"] is False
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_p8_2_k1_blocked_p8_2_k1a_conditional_source_candidate"
+        "p8_2_k0_green_p8_2_k1_blocked_p8_2_k1a_red_k1a_r1_allocator_and_p8_3_i0_pending"
     )
 
     surfaces = [

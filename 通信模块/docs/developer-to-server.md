@@ -1,73 +1,67 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K1A SimpleCPUOffload 八卡 store→pressure→restore 机制闭环
+## 当前唯一服务器动作：P8.2-K1A-R1 allocator envelope + P8.3-I0 checkpoint inventory
 
 ~~~text
-task_id: p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717
-execution_mode: authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism
+task_id: p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717
+execution_mode: authorized_checkpoint_inventory_geometry_only_lifecycle_and_bounded_pinned_envelope
 server_sync_review_authorized: true
-installed_source_and_import_probe_authorized: true
 temporary_audit_workspace_authorized: true
-npu_execution_authorized: true
-vllm_server_start_authorized: true
-model_requests_authorized: true
-keep_alive_stop_and_restore_authorized: true
-task_local_observer_authorized: true
-task_local_compatibility_patch_authorized: false
 result_directory_creation_authorized: true
-result_transfer_authorized: false
-next_task_authorized: false
-lifecycle_count_exact: 1
-request_count_exact: 6
-request_retry_count_exact: 0
+p8_3_i0_checkpoint_inventory_authorized: true
+checkpoint_full_sha256_authorized: true
+keep_alive_stop_and_restore_authorized: true
+geometry_probe_npu_execution_authorized: true
+geometry_probe_vllm_start_authorized: true
+geometry_probe_lifecycle_count_exact: 1
+formal_model_lifecycle_count_exact: 0
+model_request_count_exact: 0
+pinned_allocator_probe_authorized: true
+pinned_allocator_wave_count_max: 4
+pinned_allocator_world_size_exact: 8
+npu_execution_authorized: true
+vllm_formal_workload_authorized: false
+model_requests_authorized: false
 profiler_authorized: false
 hbm_sampler_authorized: false
-runtime_or_dependency_upgrade_authorized: false
-no_k2_k3_k4_p8_3_or_p9: true
+runtime_or_dependency_mutation_authorized: false
+result_transfer_authorized: false
+next_task_authorized: false
 standing_npu_and_vllm_consumption_authorization: true
 ~~~
 
-本任务不重跑 P6、P8.1-R1 或 P8.2-K0，也不修复已 blocked 的
-`OffloadingConnector + NPUOffloadingSpec` 路径。开发机已接受原 K1 只读复核结论
-`blocked_p8_2_k1_frozen_stack_import_incompatible`：该路径的 legacy import 和 single-group
-假设与已接受的 `CompressAttentionManager + SlidingWindowManager` hybrid 双 group 冲突，继续保留，
-不得偷渡成 task-local compatibility patch。
+本任务替换已消费的 K1A 32 GiB/rank 六请求 handoff，不得重跑旧任务。开发机已接受
+`red_p8_2_k1a_simple_cpu_offload_no_success`，但边界只是：冻结 32 GiB/rank 配置在服务就绪前以
+`aclrtMallocHostWithCfg / 207001` 失败，0/6 请求。`/proc/meminfo` 的 1.49 TiB available 不是
+pinned allocator 可用量证据；当前也没有证明唯一 pool/per-allocation/concurrency/fragmentation
+根因，更没有证明 `SimpleCPUOffloadConnector` 全局不支持。
 
-K1A 是同一冻结栈内的独立候选路径：
+本任务有两个彼此独立的 section：
 
-```text
-SimpleCPUOffloadConnector
-  -> AscendSimpleCPUOffloadConnector
-  -> SimpleCPUOffloadNPUWorker
-  -> NPUDmaCopyBackend
-  -> torch.ops._C_ascend.swap_blocks_batch
-```
+1. `P8.3-I0`：只读 checkpoint index/header 和 full shard SHA-256，不占 NPU，生成 expert inventory
+   与 TP4 planning budget。它不证明 TP4 runtime ownership、materialized bytes、hotness 或 offload。
+2. `P8.2-K1A-R1`：一次 geometry-only 八卡初始化在任何 pinned CPU mirror allocation 前记录 exact
+   per-tensor/total bytes per KV block，然后清理 vLLM；再用八个并发、可清理进程执行最多
+   `32/64/96/128` CPU-block shaped pinned allocation waves。128 blocks 对应冻结 16K（`16384`）restore/
+   128-token block 的最低 retention 需求。
 
-精确 Git object 审计已证明该路径在
-vLLM=`0decac0d96c42b49572498019f0a0e3600f50398` /
-vLLM-Ascend=`5f6faa0cb8830f667266f3b8121cd1383606f2a1`
-中存在 Ascend override、`SupportsHMA`、`request_finished_all_groups`、
-`FullAttentionSpec + SlidingWindowSpec + MambaSpec` 与 NPU D2H/H2D backend；但这些只是
-`conditional_p8_2_k1a_simple_cpu_offload_source_candidate`，不是 DeepSeek TP8+EP+MTP 的
-runtime green。服务器必须先完成零 NPU source/import/registration/host-memory 门，然后才可以
-停 keep-alive 并执行一次有界 lifecycle。
+即使 128-block wave 八 rank 全过，本任务也只能给
+`candidate_ready_p8_2_k1a_r1_allocator_capacity`，绝对不得启动正式六请求 K1A lifecycle。
+必须把 geometry/envelope 小结果交回开发机独立复核，再由新 handoff 冻结唯一候选容量。
+K2、P8.3-I1、P8.4、P8.5、P9 均禁止自动进入。
 
-保留且不撤销的 lineage：DeepSeek R2 hybrid-KV repair；P6.3B-R4-R1=
-`green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`；P6.3C=
-`blocked_p6_3c_not_strict_single_variable`；P8.1 parent=
-`yellow_p8_1_matrix_trace_invalid`；P8.1-R1=
-`green_p8_1_r1_official_mtp_observe_only_matrix`；P8.2-K0 green；
-P8.2-K1 frozen path blocked。K1A 任何 blocked/red/yellow 都不撤销这些结论。
-P8.1-R1 对 parent 缺完整 R2 repair 的诊断仍是 `cause_proven_as_unique: false`，K1A 不扩大该因果结论。
+保留 lineage：DeepSeek R2 hybrid-KV 修复下 P6.3B-R4-R1 保持
+`green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`；P6.3C 保持
+`blocked_p6_3c_not_strict_single_variable`；P8.1 parent 保持 `yellow_p8_1_matrix_trace_invalid`，
+P8.1-R1 保持 `green_p8_1_r1_official_mtp_observe_only_matrix`；P8.2-K0 保持
+`green_p8_2_k0_order_balanced_prefix_cache_baseline`；legacy K1
+`OffloadingConnector + NPUOffloadingSpec` 保持 `blocked_p8_2_k1_frozen_stack_import_incompatible`；
+K1A 32 GiB/rank 保持 `red_p8_2_k1a_simple_cpu_offload_no_success`。本任务的任何结果不撤销它们。
 
-本轮 32K restore/repeat 组的冻结 hybrid prefix 期望命中为 `16384` tokens；它只用于逐请求
-结构门，不把 Prefix Cache 命中等同于 H2D restore。H2D 必须由 scheduler load 与八个 worker
-copy-submit/copy-complete trace 独立证明。
+## 1. 同步与冻结仓库门（零 NPU）
 
-## 1. 同步、tracked-clean 与仓库合同门（零 NPU）
-
-从服务器自己的干净 `main` 普通快进同步。不得 reset、stash、rebase、用 checkout 覆盖、
-运行 `sync.sh`、在服务器 commit/push，或删除既有未跟踪运行产物。
+从服务器自己的干净 `main` 普通快进。不得 reset/stash/rebase/checkout 覆盖、运行
+`sync.sh`、在服务器 commit/push，或删除既有未跟踪运行产物。
 
 ~~~bash
 set -euo pipefail
@@ -87,15 +81,17 @@ from pathlib import Path
 import hashlib
 
 expected = {
-    "benchmarks/deepseek_v4_flash/p8_2_k1a_simple_cpu_offload_feasibility_audit.yaml": "51fe967ff093678fdf7f4f208b09288c4ea020062b954d04c32a5925dfa7ba16",
-    "benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml": "4a77f74e1cb841eea865f879a637dbd447ef5d86639f7217c5776f5f62d22979",
-    "tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py": "0a97dfce48678be8d7f3ea1a53f859e5a71e9df155f2a53606ff238c377a41bd",
-    "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py": "b31d212378c8aaed87c872c67a29b8d2ea039fbd7e97e5f7e6c54b29ef99a680",
-    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py": "1059bd55b33463f57dec1d7779104801050df4ec96ad60c33cfb42ee4ec808fc",
-    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh": "d9e7f795f63c82e4fc3a39b7fe83f644de4d4260917d63fad9af71da6e1d57a9",
+    "benchmarks/deepseek_v4_flash/p8_2_k1a_r1_allocator_feasibility_audit.yaml": "c424c5019630472e08315c35fa7337ea7a9ce0845c6a5f343c17af49d15e25e2",
+    "benchmarks/deepseek_v4_flash/p8_3_i0_checkpoint_inventory_contract.yaml": "1d5fd96e90dd6449b61b4cb754795b8b8138ba600833d56e29bfb06b6ff1c56e",
+    "tools/inference_contracts/p8_2_k1a_r1_allocator.py": "166c61b207950aa1c283eac6111619e5b619a0775ce267e74325c4a7d6563ef0",
+    "tools/inference_contracts/p8_2_k1a_r1_geometry_observer.py": "24fb72d1ed74b3ebbbdd19e19486e6b9de9d03fc0994a12b242056235a515854",
+    "tools/inference_contracts/probe_deepseek_p8_2_k1a_r1_pinned_allocator.py": "8ae11b8183c829367ef6ac900fa92eb5c8d9db399c72dc1952dc477ecc29f13c",
+    "tools/inference_contracts/inventory_deepseek_p8_3_i0_checkpoint.py": "50d9120d8740ff23e20e9354c2ea7c54d3372090ccd78a30202ad842982d6b00",
+    "tests/inference_contracts/test_deepseek_p8_2_k1a_r1_allocator_envelope.py": "87450ee40e7492a97e48ff9b636f306cfc5aff8e03d7354f245ba72023a7c203",
+    "tests/inference_contracts/test_deepseek_p8_3_i0_checkpoint_inventory.py": "eeebb2574fab432479a2f46f21827f80bc4c7c89ee05de1018ebb13094213994",
     "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh": "e65c8a11d060579563998667877e67915722b1ab09176ab46ea40514da498670",
+    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh": "d9e7f795f63c82e4fc3a39b7fe83f644de4d4260917d63fad9af71da6e1d57a9",
     "benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch": "5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6",
-    "tests/inference_contracts/test_deepseek_p8_2_k1a_simple_cpu_offload_feasibility.py": "ad775079c9998635eae502346c439d4e4a2024370fbc45bdccad080291398a56",
 }
 for relative, wanted in expected.items():
     got = hashlib.sha256(Path(relative).read_bytes()).hexdigest()
@@ -105,410 +101,369 @@ print("frozen_repo_hash_gate=pass")
 PY
 
 python3 -m pytest \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r1_allocator_envelope.py \
   tests/inference_contracts/test_deepseek_p8_2_k1a_simple_cpu_offload_feasibility.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1_kv_cache_cpu_offload_feasibility.py \
-  tests/inference_contracts/test_deepseek_p8_2_k0_order_balanced_prefix_baseline.py -q
+  tests/inference_contracts/test_deepseek_p8_2_k1_kv_cache_cpu_offload_feasibility.py -q
 python3 -m py_compile \
-  tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py \
-  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py
+  tools/inference_contracts/p8_2_k1a_r1_allocator.py \
+  tools/inference_contracts/p8_2_k1a_r1_geometry_observer.py \
+  tools/inference_contracts/probe_deepseek_p8_2_k1a_r1_pinned_allocator.py \
+  tools/inference_contracts/inventory_deepseek_p8_3_i0_checkpoint.py
 bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh
 bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
-P8_2_K1A_AUDIT_ONLY=1 bash \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh /tmp/not-created \
-  | grep -F 'request_count=6'
-P8_2_K1A_MODE_AUDIT_ONLY=1 bash \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh /tmp/not-created \
-  | grep -F 'observer_mode=observe_only_no_decision_or_copy_mutation'
-test ! -e /tmp/not-created
 test -z "$(git status --porcelain --untracked-files=no)"
 ~~~
 
-本节任一失败，给 `blocked_p8_2_k1a_source_or_contract_gate`，立即停止；不得停 keep-alive、
-不得启动 vLLM/NPU、不得创建项目结果目录。
+本节任一 hash、K1/K1A-R1 合同、compile 或 tracked-clean 失败，给
+`blocked_p8_dual_track_repository_contract_gate`，两个 section 都停止；不得占 NPU。
 
-## 2. 冻结安装态 source/import/registration 复核（零 NPU）
+P8.3-I0 的 Parquet test 需 `pyarrow + safetensors + numpy + PyYAML`。在本节先只做 compile；
+第 2 节会从现有解释器中选一个已安装依赖的运行。不得 pip/conda install。
 
-本节只允许在 `/tmp/opencode/p8_2_k1a_preflight_2026_0717` 写 bounded JSON。使用服务器
-editable vLLM checkout 和安装态 vLLM-Ascend；不得换版本、pip install、修源码、加 shim，
-或把 `NPUOffloadingSpec` 的旧 K1 修复混入 K1A。
+## 2. P8.3-I0 checkpoint-first inventory（零 NPU，keep-alive 保持不动）
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-TMP_AUDIT=/tmp/opencode/p8_2_k1a_preflight_2026_0717
-RUNTIME_PREFIX="${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1"
-RUNTIME_PYTHON="${RUNTIME_PREFIX}/bin/python"
-VLLM_ROOT=/data/node0_disk1/vllm-0.22.1
-VLLM_ASCEND_ROOT="${RUNTIME_PREFIX}/lib/python3.11/site-packages"
-AUDITOR="${REPO_ROOT}/tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py"
+MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+RESULT_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717_run01
+I0_RESULT=${RESULT_ROOT}/p8_3_i0_checkpoint_inventory
+RUNTIME_PYTHON=${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python
+cd "${REPO_ROOT}"
 
-test ! -e "${TMP_AUDIT}"
-mkdir -p "${TMP_AUDIT}"
-test -x "${RUNTIME_PYTHON}"
-test "$(git -C "${VLLM_ROOT}" rev-parse HEAD)" = 0decac0d96c42b49572498019f0a0e3600f50398
-test -z "$(git -C "${VLLM_ROOT}" status --porcelain --untracked-files=no)"
+test ! -e "${RESULT_ROOT}"
+mkdir -p "${RESULT_ROOT}"
+test -f "${MODEL_PATH}/model.safetensors.index.json"
 
-python3 "${AUDITOR}" installed-source-audit \
-  --vllm-root "${VLLM_ROOT}" \
-  --vllm-ascend-root "${VLLM_ASCEND_ROOT}" \
-  --output "${TMP_AUDIT}/installed_source_audit.json"
-python3 "${AUDITOR}" runtime-import-probe \
-  --runtime-python "${RUNTIME_PYTHON}" \
-  --output "${TMP_AUDIT}/runtime_import_probe.json"
+I0_PYTHON=
+for candidate in "${RUNTIME_PYTHON}" python3; do
+  if test -x "$(command -v "${candidate}" 2>/dev/null || true)" && \
+     "${candidate}" -c 'import numpy, pyarrow, safetensors, yaml' >/dev/null 2>&1; then
+    I0_PYTHON=${candidate}
+    break
+  fi
+done
 
-python3 - "${TMP_AUDIT}" <<'PY'
+if test -z "${I0_PYTHON}"; then
+  printf '%s\n' blocked_p8_3_i0_existing_dependency_gate > "${RESULT_ROOT}/p8_3_i0_grade.txt"
+  printf '%s\n' 'No existing interpreter imports numpy, pyarrow, safetensors and yaml; no install authorized.' \
+    > "${RESULT_ROOT}/p8_3_i0_first_failure.txt"
+else
+  set +e
+  "${I0_PYTHON}" -m pytest \
+    tests/inference_contracts/test_deepseek_p8_3_i0_checkpoint_inventory.py -q \
+    > "${RESULT_ROOT}/p8_3_i0_contract_test.txt" 2>&1
+  i0_contract_exit=$?
+  set -e
+  printf '%s\n' "${i0_contract_exit}" > "${RESULT_ROOT}/p8_3_i0_contract_exit_code.txt"
+  if test "${i0_contract_exit}" -ne 0; then
+    printf '%s\n' blocked_p8_3_i0_local_contract_gate > "${RESULT_ROOT}/p8_3_i0_grade.txt"
+  else
+    set +e
+    "${I0_PYTHON}" tools/inference_contracts/inventory_deepseek_p8_3_i0_checkpoint.py \
+      --model-dir "${MODEL_PATH}" \
+      --output-dir "${I0_RESULT}" \
+      --tp-size 4 \
+      --shard-hash-mode full
+    i0_exit=$?
+    set -e
+    printf '%s\n' "${i0_exit}" > "${RESULT_ROOT}/p8_3_i0_exit_code.txt"
+  fi
+  if test "${i0_contract_exit}" -eq 0 && test "${i0_exit}" -eq 0; then
+    "${I0_PYTHON}" - "${I0_RESULT}" <<'PY'
 from pathlib import Path
 import json
 import sys
+import pyarrow.parquet as pq
+import yaml
 
 root = Path(sys.argv[1])
-source = json.loads((root / "installed_source_audit.json").read_text())
-runtime = json.loads((root / "runtime_import_probe.json").read_text())
-assert source["audit_grade"] == "conditional_p8_2_k1a_simple_cpu_offload_source_candidate"
-assert source["source_hash_gate"] is True
-assert len(source["source_inventory"]) == 9
-assert source["ascend_connector_override_present"] is True
-assert source["supports_hma_present"] is True
-assert source["hybrid_multi_group_source_support_present"] is True
-assert source["npu_d2h_h2d_backend_present"] is True
-
-assert runtime["subprocess_exit"] == 0
-probe = runtime["probe"]
-assert probe is not None and "probe_error" not in probe
-assert probe["kv_transfer_config"] == {
-    "kv_connector": "SimpleCPUOffloadConnector",
-    "kv_role": "kv_both",
-    "kv_connector_extra_config": {
-        "cpu_bytes_to_use": 274877906944,
-        "cpu_bytes_to_use_per_rank": 34359738368,
-        "lazy_offload": False,
-    },
+summary = json.loads((root / "inventory_summary.json").read_text())
+manifest = json.loads((root / "inventory_manifest.json").read_text())
+budget = yaml.safe_load((root / "tp4_rank_weight_budget.yaml").read_text())
+table = pq.read_table(root / "expert_weight_inventory.parquet")
+assert summary["indexed_tensor_count"] == summary["header_tensor_count"] == table.num_rows
+assert summary["missing_index_tensor_count"] == 0
+assert summary["duplicate_header_tensor_count"] == 0
+assert summary["unindexed_header_tensor_count"] == 0
+assert summary["wrong_shard_tensor_count"] == 0
+assert summary["materialized_bytes_complete"] is False
+assert summary["formal_tp4_runtime_claim_allowed"] is False
+assert budget["ownership_status"] == "planning_candidate_not_runtime_validated"
+assert budget["formal_tp4_runtime_claim_allowed"] is False
+assert set(manifest["files"]) == {
+    "expert_weight_inventory.parquet",
+    "tp4_rank_weight_budget.yaml",
+    "inventory_summary.json",
 }
-assert probe["registry_module"] == (
-    "vllm_ascend.distributed.kv_transfer.kv_pool."
-    "simple_cpu_offload.simple_cpu_offload_connector"
-)
-assert probe["registry_class"] == "AscendSimpleCPUOffloadConnector"
-assert probe["connector_import"] == "success"
-assert probe["worker_import"] == "success"
-assert probe["copy_backend_import"] == "success"
-assert probe["ascend_connector_inherits_upstream"] is True
-assert probe["npu_started"] is False
-assert probe["vllm_server_started"] is False
-assert probe["model_request_sent"] is False
-print("installed_source_import_registration_gate=pass")
+assert all(row["materialized_bytes"] is None for row in table.to_pylist())
+print("p8_3_i0_inventory_acceptance=pass")
 PY
+    printf '%s\n' candidate_green_p8_3_i0_checkpoint_inventory \
+      > "${RESULT_ROOT}/p8_3_i0_grade.txt"
+  elif test "${i0_contract_exit}" -eq 0; then
+    printf '%s\n' red_p8_3_i0_checkpoint_inventory_invalid > "${RESULT_ROOT}/p8_3_i0_grade.txt"
+  fi
+fi
 ~~~
 
-若 exact installed hash、registry override、class import/inheritance 或 `KVTransferConfig` 任一漂移，给
-`blocked_p8_2_k1a_runtime_source_or_registration_drift`并停止；不得修环境、retry 或占用 NPU。
+I0 失败不得安装依赖、修 checkpoint、删 tensor 或改 owner 规则。它与 K1A-R1 技术独立：
+I0 blocked/red 仍可继续第 3–4 节，但必须保留独立 grade。
 
-## 3. 零扰动资源门与 host-memory 预算
+## 3–4. K1A-R1 geometry-only lifecycle 与八 rank pinned allocator envelope
 
-先只读记录 keep-alive PID/PGID、NPU 0–7、端口 7000、vLLM 进程、model path 和
-`/proc/meminfo`。`MemAvailable` 必须不小于 `412316860416` bytes（配置 256 GiB CPU tier +
-128 GiB margin），且 swap used 必须为 0。这一节仍不得停 keep-alive。
+下面可以占用 NPU，但只允许一次 geometry-only 初始化。该 lifecycle 必须在
+`SimpleCPUOffloadNPUWorker.register_kv_caches` 内、任何 `torch.zeros(... pin_memory=True)` 之前
+写完 8 rank geometry 并抛出专用 sentinel。这是预期主动终止，不是 workload red。
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-TMP_AUDIT=/tmp/opencode/p8_2_k1a_preflight_2026_0717
-MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-
-ps -eo pid,ppid,pgid,stat,cmd | grep -E 'npu_keep_alive|#0#|#1#|#2#|#3#|#4#|#5#|#6#|#7#' \
-  > "${TMP_AUDIT}/keep_alive_before.txt" || true
-npu-smi info > "${TMP_AUDIT}/npu_before.txt"
-ss -ltnp | grep ':7000' > "${TMP_AUDIT}/port_7000_before.txt" || true
-ps -eo pid,ppid,pgid,stat,cmd | grep -E '[v]llm|[V]LLM' > "${TMP_AUDIT}/vllm_before.txt" || true
-cat /proc/meminfo > "${TMP_AUDIT}/meminfo_before.txt"
-test ! -s "${TMP_AUDIT}/port_7000_before.txt"
-test ! -s "${TMP_AUDIT}/vllm_before.txt"
-test -d "${MODEL_PATH}"
-test "$(find "${MODEL_PATH}" -maxdepth 1 -type f | wc -l)" -gt 0
-
-python3 - "${TMP_AUDIT}/meminfo_before.txt" <<'PY'
-from pathlib import Path
-import sys
-
-values = {}
-for line in Path(sys.argv[1]).read_text().splitlines():
-    key, raw = line.split(":", 1)
-    values[key] = int(raw.strip().split()[0]) * 1024
-assert values["MemAvailable"] >= 412316860416, values["MemAvailable"]
-assert values["SwapTotal"] == values["SwapFree"]
-print(f"mem_available_bytes={values['MemAvailable']}")
-print("host_memory_gate=pass")
-PY
-
-test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
-~~~
-
-本节任一失败，给 `blocked_p8_2_k1a_source_or_resource_gate`并停止。不得为过门降低
-CPU tier、减少 context、改 graph/MTP/Prefix/Chunked Prefill/R2 repair，或启用 swap。
-
-## 4. 唯一 NPU lifecycle：安全退 keep-alive、六请求、清理并恢复
-
-只有前三节全 green 才执行。下面是一个整体命令块：先从 marker 反查 keep-alive PGID，
-仅对这些 PGID 发 `SIGTERM`；不得触碰无关进程。一旦开始退 keep-alive，不论 runner
-成功或失败，trap 都必须用用户指定的官方脚本恢复 0–7 卡。
-官方恢复命令的精确形状为 `bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7`。
-
-~~~bash
-set -euo pipefail
-
-REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-TMP_AUDIT=/tmp/opencode/p8_2_k1a_preflight_2026_0717
-RESULT_DIR="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717_run01"
-RUNNER="${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh"
+RESULT_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717_run01
+GEOMETRY_RESULT=${RESULT_ROOT}/p8_2_k1a_r1_geometry_probe
+GEOMETRY_DIR=${GEOMETRY_RESULT}/runtime/geometry
+RUNTIME_PYTHON=${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python
 KEEP_ALIVE_SCRIPT=/data/node0_disk1/Public/npu_keep_alive.sh
-KEEP_ALIVE_STOPPED=0
-RESTORE_EXIT=not_run
-MARKER_COUNT_BEFORE=0
+cd "${REPO_ROOT}"
+
+test -x "${RUNTIME_PYTHON}"
+test -f "${KEEP_ALIVE_SCRIPT}"
+test ! -e "${GEOMETRY_RESULT}"
+test -z "$(ss -ltnp | grep ':7000' || true)"
+test -z "$(ps -eo pid,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' || true)"
+npu-smi info > "${RESULT_ROOT}/npu_before_geometry.txt"
+
+mapfile -t marker_pgids < <(
+  ps -eo pgid=,cmd= | awk '$0 ~ /#[0-7]#/ {gsub(/ /,"",$1); print $1}' | sort -u
+)
+test "${#marker_pgids[@]}" -ge 1
+self_pgid=$(ps -o pgid= -p $$ | tr -d ' ')
+for pgid in "${marker_pgids[@]}"; do
+  test -n "${pgid}"
+  test "${pgid}" != "${self_pgid}"
+  kill -TERM -- "-${pgid}"
+done
+for _ in $(seq 1 60); do
+  marker_count=$(ps -eo cmd= | grep -Ec '#[0-7]#' || true)
+  test "${marker_count}" -eq 0 && break
+  sleep 1
+done
+test "$(ps -eo cmd= | grep -Ec '#[0-7]#' || true)" -eq 0
+sleep 3
+npu-smi info > "${RESULT_ROOT}/npu_after_keep_alive_stop.txt"
+grep -F 'No running processes found' "${RESULT_ROOT}/npu_after_keep_alive_stop.txt" >/dev/null
 
 restore_keep_alive() {
-  if test "${KEEP_ALIVE_STOPPED}" -eq 1; then
-    if bash "${KEEP_ALIVE_SCRIPT}" 0 1 2 3 4 5 6 7 \
-      > "${TMP_AUDIT}/keep_alive_restore_stdout.txt" \
-      2> "${TMP_AUDIT}/keep_alive_restore_stderr.txt"; then
-      RESTORE_EXIT=0
-    else
-      RESTORE_EXIT=$?
-    fi
-    printf '%s\n' "${RESTORE_EXIT}" > "${TMP_AUDIT}/keep_alive_restore_exit_code.txt"
-    sleep 5
-    return "${RESTORE_EXIT}"
+  set +e
+  pkill -TERM -f '[v]llm serve' 2>/dev/null || true
+  for _ in $(seq 1 60); do
+    test -z "$(ss -ltnp | grep ':7000' || true)" && break
+    sleep 1
+  done
+  if test "$(ps -eo cmd= | grep -Ec '#[0-7]#' || true)" -eq 0; then
+    bash "${KEEP_ALIVE_SCRIPT}" 0 1 2 3 4 5 6 7 \
+      > "${RESULT_ROOT}/keep_alive_restore.log" 2>&1
   fi
+  sleep 5
+  ps -eo pid,ppid,pgid,stat,cmd | grep -E '#[0-7]#' \
+    > "${RESULT_ROOT}/keep_alive_after.txt" || true
+  npu-smi info > "${RESULT_ROOT}/npu_final.txt" 2>&1 || true
 }
 trap restore_keep_alive EXIT
 
-test ! -e "${RESULT_DIR}"
-test -f "${KEEP_ALIVE_SCRIPT}"
-
-ps -eo pid=,ppid=,pgid=,stat=,args= \
-  | awk '$0 ~ /#[0-7]#/' \
-  > "${TMP_AUDIT}/keep_alive_markers_before.txt"
-MARKER_COUNT_BEFORE=$(wc -l < "${TMP_AUDIT}/keep_alive_markers_before.txt" | tr -d ' ')
-test "${MARKER_COUNT_BEFORE}" -ge 8
-python3 - "${TMP_AUDIT}/keep_alive_markers_before.txt" <<'PY'
-from pathlib import Path
-import sys
-
-rows = Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()
-assert all(any(f"#{device}#" in row for row in rows) for device in range(8))
-PY
-
-mapfile -t KEEP_ALIVE_PGIDS < <(
-  awk '{print $3}' "${TMP_AUDIT}/keep_alive_markers_before.txt" | sort -n -u
-)
-test "${#KEEP_ALIVE_PGIDS[@]}" -ge 1
-CURRENT_PGID=$(ps -o pgid= -p $$ | tr -d ' ')
-printf '%s\n' "${KEEP_ALIVE_PGIDS[@]}" > "${TMP_AUDIT}/keep_alive_pgids.txt"
-for pgid in "${KEEP_ALIVE_PGIDS[@]}"; do
-  test "${pgid}" != "${CURRENT_PGID}"
-  test "${pgid}" -gt 1
-  kill -TERM -- "-${pgid}"
-done
-KEEP_ALIVE_STOPPED=1
-
-for _ in $(seq 1 30); do
-  survivors=0
-  while read -r pgid; do
-    if ps -eo pgid= | awk -v wanted="${pgid}" '$1 == wanted {found=1} END {exit !found}'; then
-      survivors=$((survivors + 1))
-    fi
-  done < "${TMP_AUDIT}/keep_alive_pgids.txt"
-  test "${survivors}" -eq 0 && break
-  sleep 2
-done
-test "${survivors}" -eq 0
-npu-smi info > "${TMP_AUDIT}/npu_after_keep_alive_stop.txt"
-ss -ltnp | grep ':7000' > "${TMP_AUDIT}/port_7000_after_keep_alive_stop.txt" || true
-test ! -s "${TMP_AUDIT}/port_7000_after_keep_alive_stop.txt"
-
 set +e
-bash "${RUNNER}" "${RESULT_DIR}" \
-  > "${TMP_AUDIT}/runner_stdout.txt" 2> "${TMP_AUDIT}/runner_stderr.txt"
-RUNNER_EXIT=$?
+P8_2_K1A_R1_GEOMETRY_ONLY=1 \
+P8_2_K1A_R1_GEOMETRY_DIR="${GEOMETRY_DIR}" \
+OBSERVER="${REPO_ROOT}/tools/inference_contracts/p8_2_k1a_r1_geometry_observer.py" \
+bash tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh \
+  "${GEOMETRY_RESULT}"
+geometry_exit=$?
 set -e
-printf '%s\n' "${RUNNER_EXIT}" > "${TMP_AUDIT}/runner_exit_code.txt"
+printf '%s\n' "${geometry_exit}" > "${RESULT_ROOT}/geometry_probe_exit_code.txt"
 
-if restore_keep_alive; then
-  RESTORE_EXIT=0
-else
-  RESTORE_EXIT=$?
-fi
-KEEP_ALIVE_STOPPED=0
-trap - EXIT
-test "${RESTORE_EXIT}" -eq 0
+test "${geometry_exit}" -eq 2
+test "$(cat "${GEOMETRY_RESULT}/cleanup_status.txt")" = clean
+test "$(find "${GEOMETRY_DIR}" -maxdepth 1 -name 'geometry.rank.*.json' | wc -l)" -eq 8
+test "$(wc -l < "${GEOMETRY_RESULT}/request_summary.tsv")" -eq 1
+grep -F 'P8_2_K1A_R1_GEOMETRY_PROBE_COMPLETE' \
+  "${GEOMETRY_RESULT}/runtime/vllm_server.log" >/dev/null
 
-MARKER_COUNT_AFTER=0
-for _ in $(seq 1 30); do
-  ps -eo pid=,ppid=,pgid=,stat=,args= \
-    | awk '$0 ~ /#[0-7]#/' \
-    > "${TMP_AUDIT}/keep_alive_after.txt"
-  MARKER_COUNT_AFTER=$(wc -l < "${TMP_AUDIT}/keep_alive_after.txt" | tr -d ' ')
-  test "${MARKER_COUNT_AFTER}" -eq "${MARKER_COUNT_BEFORE}" && break
-  sleep 2
-done
-test "${MARKER_COUNT_AFTER}" -eq "${MARKER_COUNT_BEFORE}"
-python3 - "${TMP_AUDIT}/keep_alive_after.txt" <<'PY'
-from pathlib import Path
-import sys
-
-rows = Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()
-assert all(any(f"#{device}#" in row for row in rows) for device in range(8))
-PY
-printf 'true\n' > "${TMP_AUDIT}/keep_alive_restored_exact.txt"
-npu-smi info > "${TMP_AUDIT}/npu_after.txt"
-ss -ltnp | grep ':7000' > "${TMP_AUDIT}/port_7000_after.txt" || true
-ps -eo pid,ppid,pgid,stat,cmd | grep -E '[v]llm|[V]LLM' > "${TMP_AUDIT}/vllm_after.txt" || true
-test ! -s "${TMP_AUDIT}/port_7000_after.txt"
-test ! -s "${TMP_AUDIT}/vllm_after.txt"
-test "$(cat "${TMP_AUDIT}/keep_alive_restored_exact.txt")" = true
-test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
-printf 'runner_exit=%s\n' "${RUNNER_EXIT}"
-~~~
-
-runner 内部固定且只能执行：
-
-```text
-lifecycle_01
-  1. warmup             4096+64
-  2. prime             32768+64
-  3. pressure         131072+64
-  4. restore_follower  32768+64
-  5. repeat_follower   32768+64
-  6. isolated_control  32768+64
-```
-
-所有请求 `concurrency=1 / temperature=0 / ignore_eos=true / min_tokens=max_tokens=64 /
-streaming=true`；body 在服务启动前冻结 token count/bytes/SHA-256。prime、restore follower、
-repeat follower 共享同一 90% token prefix，其余请求与 primary 的 LCP `<128`。不保存或外发
-generated text/token IDs。
-
-runtime 固定 W8A8、TP8+EP、MTP `num_speculative_tokens=1`、`FULL_DECODE_ONLY`、
-`max_model_len=135168`、`max_num_batched_tokens=4096`、`max_num_seqs=1`、block size=128、
-Chunked Prefill on、Prefix Cache on、完整 R2 hybrid repair。唯一新机制配置是：
-
-```json
-{
-  "kv_connector": "SimpleCPUOffloadConnector",
-  "kv_role": "kv_both",
-  "kv_connector_extra_config": {
-    "cpu_bytes_to_use": 274877906944,
-    "cpu_bytes_to_use_per_rank": 34359738368,
-    "lazy_offload": false
-  }
-}
-```
-
-task-local observer 只记录 scheduler CPU hit/load/store event 和每 worker copy direction/block/bytes/event
-completion 水位；不改 scheduler 返回值、block list、copy direction/bytes、stream 或同步语义。
-不得 retry，不得发第 7 个请求，不得为了触发 restore 而增加 pressure、降低 context、
-改 CPU tier、修 runtime 或执行 reset-prefix-cache。
-
-## 5. 分级、首错与停止边界
-
-- source/hash/import/registration/host-memory/port/model/NPU 资源门失败：
-  `blocked_p8_2_k1a_source_or_resource_gate`。
-- vLLM 启动后 6 个请求一个都未成功：`red_p8_2_k1a_simple_cpu_offload_no_success`。
-- 只有部分请求/结构成功：`yellow_p8_2_k1a_simple_cpu_offload_partial`。
-- 6/6 请求成功，8/8 worker D2H store 完整，但冻结 pressure 后无 8/8 H2D restore：
-  `yellow_p8_2_k1a_store_only_no_restore`。这是有效负结果，不得 retry 或临时改序列。
-- 6/6 请求成功但 request/repair/resolved config/trace/cleanup 任一证据不完整：
-  `red_p8_2_k1a_transfer_evidence_incomplete`。
-- 只有 6/6 首次成功、resolved connector 精确、R2/MTP/health/queue 完整、每个方向均
-  8/8 worker 正 bytes 且 completion、restore follower 有 CPU hit/load schedule/load complete、cleanup clean、
-  `keep_alive_restored_exact=true`
-  时，才给 `candidate_green_p8_2_k1a_simple_cpu_offload_store_restore`。
-
-服务器 candidate green 不是项目 green；必须由开发机独立复核小结果包后才能接受。
-任何 timing 都只是这一 lifecycle 的 diagnostic，不得宣称 speedup、capacity gain、普遍 Ascend
-offload 支持或 hardware bottleneck。不得进入 K2/K3/K4/P8.3/P9。
-
-## 6. bounded 候选结果、灵敏度与禁止自动外发
-
-raw vLLM log、metrics `.prom`、request bodies、逐 PID trace、model output/token IDs 留服务器。
-仅下列候选可进入小结果清单，总量不得超过 `71680 bytes`：
-
-```text
-result_summary.md
-environment_and_hashes.json
-request_body_manifest.json
-request_summary.tsv
-transfer_trace_summary.json
-connector_resolution_summary.json
-mtp_queue_health_summary.json
-host_memory_summary.json
-repair_diagnostic_summary.json
-grading_inputs.json
-cleanup_status.txt
-first_failure_excerpt.txt
-```
-
-运行后在服务器原位生成清单：
-
-~~~bash
-set -euo pipefail
-
-REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_DIR="${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717_run01"
-
-python3 - "${RESULT_DIR}" <<'PY'
+"${RUNTIME_PYTHON}" - "${GEOMETRY_RESULT}" "${REPO_ROOT}" <<'PY'
 from pathlib import Path
 import hashlib
 import json
 import sys
 
+result, repo = map(Path, sys.argv[1:])
+observer = repo / "tools/inference_contracts/p8_2_k1a_r1_geometry_observer.py"
+value = {
+    "execution_scope": "geometry_only_before_pinned_allocation",
+    "observer_override_path": str(observer.relative_to(repo)),
+    "observer_override_sha256": hashlib.sha256(observer.read_bytes()).hexdigest(),
+    "parent_mode_runner_reused": True,
+    "parent_environment_and_hashes_not_formal_result_evidence": True,
+    "model_requests_sent": 0,
+}
+(result / "geometry_probe_provenance.json").write_text(
+    json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+)
+PY
+
+"${RUNTIME_PYTHON}" tools/inference_contracts/p8_2_k1a_r1_allocator.py \
+  summarize-geometry \
+  --geometry-dir "${GEOMETRY_DIR}" \
+  --output "${RESULT_ROOT}/k1a_r1_geometry_summary.json"
+
+ENVELOPE_DIR=${RESULT_ROOT}/p8_2_k1a_r1_pinned_allocator_envelope
+test -f "${RESULT_ROOT}/k1a_r1_geometry_summary.json"
+test ! -e "${ENVELOPE_DIR}"
+test -z "$(ss -ltnp | grep ':7000' || true)"
+test -z "$(ps -eo pid,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' || true)"
+
+set +u
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+source /usr/local/Ascend/nnal/atb/set_env.sh
+set -u
+
+set +e
+"${RUNTIME_PYTHON}" \
+  tools/inference_contracts/probe_deepseek_p8_2_k1a_r1_pinned_allocator.py \
+  envelope \
+  --geometry-summary "${RESULT_ROOT}/k1a_r1_geometry_summary.json" \
+  --output-dir "${ENVELOPE_DIR}" \
+  --wave-timeout-seconds 180
+envelope_exit=$?
+set -e
+printf '%s\n' "${envelope_exit}" > "${RESULT_ROOT}/pinned_allocator_envelope_exit_code.txt"
+test "${envelope_exit}" -eq 0 -o "${envelope_exit}" -eq 2
+test -f "${ENVELOPE_DIR}/pinned_allocator_envelope.json"
+test -z "$(ps -eo pid,cmd | grep -F '[p]robe_deepseek_p8_2_k1a_r1_pinned_allocator.py worker' || true)"
+test -z "$(ss -ltnp | grep ':7000' || true)"
+
+"${RUNTIME_PYTHON}" - "${RESULT_ROOT}" <<'PY'
+from pathlib import Path
+import json
+import sys
+
 root = Path(sys.argv[1])
-names = [
-    "result_summary.md",
-    "environment_and_hashes.json",
-    "request_body_manifest.json",
-    "request_summary.tsv",
-    "transfer_trace_summary.json",
-    "connector_resolution_summary.json",
-    "mtp_queue_health_summary.json",
-    "host_memory_summary.json",
-    "repair_diagnostic_summary.json",
-    "grading_inputs.json",
-    "cleanup_status.txt",
-    "first_failure_excerpt.txt",
-]
-inventory = []
-for name in names:
-    path = root / name
-    if not path.is_file():
-        continue
-    payload = path.read_bytes()
-    inventory.append({
-        "path": str(path),
-        "bytes": len(payload),
-        "sha256": hashlib.sha256(payload).hexdigest(),
-        "sensitivity": "bounded_operational_metadata_no_content_or_token_ids",
-    })
-total = sum(item["bytes"] for item in inventory)
-assert total <= 71680, total
-print(json.dumps({
-    "result_summary_path": str(root / "result_summary.md"),
-    "candidate_file_count": len(inventory),
-    "candidate_total_bytes": total,
-    "candidates": inventory,
-    "available_methods": ["email", "upload-api", "server-local"],
-    "recommended_method": "server-local",
-    "recommendation_reason": "developer should first review mechanism and grading metadata in place before choosing any transfer",
-}, indent=2, sort_keys=True))
+geometry = json.loads((root / "k1a_r1_geometry_summary.json").read_text())
+envelope = json.loads(
+    (root / "p8_2_k1a_r1_pinned_allocator_envelope/pinned_allocator_envelope.json").read_text()
+)
+assert geometry["geometry_gate_ok"] is True
+assert geometry["required_cpu_blocks"] == 128
+assert envelope["formal_lifecycle_allowed"] is False
+assert envelope["formal_lifecycle_requires_new_handoff"] is True
+assert envelope["grade"] in {
+    "candidate_ready_p8_2_k1a_r1_allocator_capacity",
+    "blocked_p8_2_k1a_r1_pinned_capacity_below_restore_requirement",
+}
+if envelope["acl_pinned_host_allocator_gate_ok"]:
+    assert envelope["candidate_cpu_bytes_per_rank"] == geometry["required_capacity_bytes_per_rank"]
+else:
+    assert envelope["candidate_cpu_bytes_per_rank"] is None
+print(envelope["grade"])
 PY
 ~~~
 
-完成回报必须包含：HEAD/origin/main/tracked-clean；section 1–3 门；runner exit 与 server
-grade；6 个 slot 逐请求成功/token/MTP/Prefix 摘要；`d2h_store_complete`、`h2d_restore_complete`、
-8-worker 覆盖、两方向 bytes；host memory 前后；cleanup、端口、vLLM residual、keep-alive 恢复；
-RESULT_DIR 与完整候选清单。
+若 geometry 不是专用 sentinel、8 rank 不齐、出现任何请求或 cleanup 不干净，`set -e`
+会在 allocator 前停止，trap 只恢复 keep-alive，分级为 `red_p8_2_k1a_r1_geometry_probe_invalid`。
+本节 allocator 按 32→64→96→128 blocks 递增，同 wave 8 rank 并发 hold/release；任一 wave 首错即停，
+不 retry、不超过 128 blocks。pass 只证明 shaped pinned allocation capacity candidate，不证明 connector
+registration、D2H store、H2D restore、Prefix hit、MTP、延迟或优化收益。不得启动正式六请求 K1A lifecycle。
 
-`result_transfer_authorized:false`：不得自动外发，不 email、不 upload-api、不复制到其他服务。
-先报告上述精确范围，等用户对该完整范围重新选择 `email / upload-api / server-local`
-之一。完成后保持等待；不得自动进入任何下一任务。
+## 5. 收尾、独立分级与报告
+
+geometry/envelope 结束后让 trap 恢复 keep-alive，然后必须确认：
+
+~~~bash
+set -euo pipefail
+
+REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
+RESULT_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717_run01
+cd "${REPO_ROOT}"
+
+test -z "$(ss -ltnp | grep ':7000' || true)"
+test -z "$(ps -eo pid,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' || true)"
+test "$(ps -eo cmd= | grep -Ec '#[0-7]#' || true)" -eq 16
+for card in 0 1 2 3 4 5 6 7; do
+  grep -F "#${card}#" "${RESULT_ROOT}/keep_alive_after.txt" >/dev/null
+done
+test -z "$(git status --porcelain --untracked-files=no)"
+
+python3 - "${RESULT_ROOT}" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+root = Path(sys.argv[1])
+def text_or(path: Path, fallback: str) -> str:
+    return path.read_text(encoding="utf-8").strip() if path.exists() else fallback
+def json_or(path: Path):
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+i0_grade = text_or(root / "p8_3_i0_grade.txt", "not_completed_p8_3_i0")
+geometry = json_or(root / "k1a_r1_geometry_summary.json")
+envelope = json_or(
+    root / "p8_2_k1a_r1_pinned_allocator_envelope/pinned_allocator_envelope.json"
+)
+k1a_grade = (
+    envelope["grade"] if envelope is not None
+    else "red_p8_2_k1a_r1_geometry_probe_invalid"
+)
+value = {
+    "task_id": "p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717",
+    "task_completion": "complete_with_independent_section_grades",
+    "p8_3_i0_grade": i0_grade,
+    "p8_2_k1a_r1_grade": k1a_grade,
+    "geometry_summary": geometry,
+    "allocator_envelope": envelope,
+    "formal_model_lifecycle_count": 0,
+    "model_request_count": 0,
+    "formal_k1a_authorized": False,
+    "k2_authorized": False,
+    "p8_3_i1_authorized": False,
+    "result_transfer_authorized": False,
+    "claim_boundary": (
+        "checkpoint_inventory_and_tp4_planning_budget_plus_exact_kv_geometry_"
+        "and_eight_rank_pinned_allocator_capacity_only"
+    ),
+}
+(root / "grading_summary.json").write_text(
+    json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+)
+(root / "result_summary.md").write_text(
+    "# P8 dual-track bounded result\n\n"
+    f"- task_id: `{value['task_id']}`\n"
+    f"- P8.3-I0: `{i0_grade}`\n"
+    f"- P8.2-K1A-R1: `{k1a_grade}`\n"
+    "- formal model lifecycle / request: `0 / 0`\n"
+    "- boundary: checkpoint planning inventory and allocator capacity only; "
+    "no runtime offload, TP4, performance or optimization claim.\n",
+    encoding="utf-8",
+)
+PY
+
+git status --short --branch --untracked-files=no
+npu-smi info
+~~~
+
+服务器报告必须分开给出：
+
+- 同步前/后 HEAD、`origin/main`、ahead/behind、tracked clean；
+- P8.3-I0 interpreter/dependency gate、index/shard/tensor 数、full-hash 结果、missing/duplicate/
+  wrong-shard/unclassified bytes、Parquet rows、TP4 四 rank checkpoint-logical budget、
+  `materialized_bytes_complete:false`、独立 grade；
+- geometry lifecycle 是否恰好 1、请求是否恰好 0、sentinel、8 rank coverage、
+  `total_bytes_per_block`、`required_capacity_bytes_per_rank`、cleanup；
+- 每个 allocator wave 的 blocks、bytes/rank、success ranks、首错 error type/message、cleanup，
+  以及最终 K1A-R1 grade；
+- keep-alive 前/停止后/恢复后状态，端口、vLLM 残留和 tracked clean；
+- 明确 `formal_model_lifecycle_count=0 / model_request_count=0 / no K2 or P8.3-I1`。
+
+原始 checkpoint inventory Parquet、full shard hashes 细表、vLLM log、NPU log 和进程级 allocator status
+留服务器。结果不自动外发。如需外发，先报告精确 `RESULT_ROOT`、完整候选清单、
+逐文件 bytes/SHA-256/sensitivity、可用 `email / upload-api / server-local` 与一个推荐理由，
+然后等用户对该完整范围重新选择。本 handoff 不是结果外发授权。

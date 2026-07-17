@@ -1,0 +1,75 @@
+schema_version: p8_3_i0_checkpoint_inventory_contract_v1
+stage: P8.3-I0
+task_family: checkpoint_first_expert_inventory_and_tp4_owner_budget
+model:
+  family: DeepSeek-V4-Flash
+  checkpoint: W8A8-MTP
+  server_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+execution:
+  mode: read_only_checkpoint_inventory_no_npu
+  npu_required: false
+  vllm_server_allowed: false
+  model_requests_allowed: false
+  profiler_allowed: false
+  runtime_mutation_allowed: false
+checkpoint:
+  index: model.safetensors.index.json
+  parser_scope: safetensors_index_and_binary_headers_without_tensor_load
+  shard_hash_mode: full_sha256
+  require_index_header_exactness: true
+  require_no_missing_tensor: true
+  require_no_duplicate_tensor: true
+  require_no_wrong_shard: true
+inventory_fields:
+  - tensor_name
+  - tensor_role
+  - layer_id
+  - expert_id
+  - source_shard
+  - source_shard_bytes
+  - source_shard_sha256
+  - checkpoint_bytes
+  - dtype
+  - shape
+  - layout
+  - is_quantization_metadata
+  - tp8_owner
+  - tp8_owner_reason
+  - candidate_tp4_owner
+  - candidate_owner_status
+  - materialized_bytes
+  - materialized_bytes_reason
+  - provenance
+outputs:
+  inventory: expert_weight_inventory.parquet
+  tp4_budget: tp4_rank_weight_budget.yaml
+  summary: inventory_summary.json
+  manifest: inventory_manifest.json
+ownership:
+  tp8_owner_from_header: false
+  tp8_missing_value: null
+  tp8_missing_reason: checkpoint_header_does_not_encode_runtime_ownership
+  tp4_size: 4
+  routed_expert_candidate_rule: expert_id_modulo_4
+  non_expert_candidate_rule: replicated_all_ranks
+  unclassified_candidate_rule: unresolved_unclassified
+  tp4_status: planning_candidate_not_runtime_validated
+acceptance:
+  unclassified_bytes_must_be_explicit: true
+  materialized_bytes_may_use_checkpoint_bytes: false
+  materialized_bytes_missing_value: null
+  materialized_bytes_missing_reason: not_measured_from_runtime
+  output_manifest_requires_bytes_and_sha256: true
+  generated_content_or_token_ids_allowed: false
+claims:
+  boundary: checkpoint_header_inventory_and_tp4_planning_budget_only
+  tp4_runtime_validated: false
+  expert_hotness_measured: false
+  expert_offload_validated: false
+  performance_reference_accepted: false
+  optimization_claim_accepted: false
+next:
+  p8_3_i1_automatically_authorized: false
+  p8_4_automatically_authorized: false
+  p8_5_automatically_authorized: false
+  p9_automatically_authorized: false

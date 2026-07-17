@@ -1,0 +1,85 @@
+schema_version: p8_2_k1a_r1_allocator_feasibility_audit_v1
+stage: P8.2-K1A-R1
+audit_date: 2026-07-17
+task_family: allocator_aware_geometry_and_eight_rank_pinned_capacity_envelope
+frozen_stack:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  vllm_version: 0.22.1+empty
+  vllm_ascend_version: 0.22.1rc1
+parent:
+  task_id: p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717
+  grade: red_p8_2_k1a_simple_cpu_offload_no_success
+  configured_cpu_bytes_per_rank: 34359738368
+  configured_cpu_bytes_total: 274877906944
+  successful_request_count: 0
+  proc_memavailable_gate_ok: true
+  acl_pinned_host_allocator_gate_ok: false
+  first_failure_api: aclrtMallocHostWithCfg
+  first_failure_error_code: 207001
+  first_failure_scope: before_server_ready_before_any_model_request
+  cleanup: clean
+  interpretation:
+    ordinary_dram_exhaustion_proven: false
+    unique_pinned_pool_limit_proven: false
+    simple_cpu_offload_globally_unsupported_proven: false
+    selected_32_gib_per_rank_capacity_point_failed: true
+  returned_evidence:
+    total_bytes: 7978
+    file_count: 10
+    sensitivity: bounded_operational_metadata_no_content_or_token_ids
+    result_summary_sha256: 023083981bb9cf6a7ebd584fa4aab08a39ebedb0e26e33f64c83900579205ab7
+    host_memory_summary_sha256: ed105c458c31deb7909b60651a06589e42c0a9f634558867d8fe3f73780a0cdc
+    grading_inputs_sha256: 349478d080e36ed789644eee894628cd42145d92f8dccd0aefbcc8a16a107238
+geometry_probe:
+  purpose: measure_exact_per_tensor_and_total_kv_bytes_per_block_before_pinned_allocation
+  reuse_parent_server_argv: true
+  observer_override: tools/inference_contracts/p8_2_k1a_r1_geometry_observer.py
+  geometry_only_sentinel: P8_2_K1A_R1_GEOMETRY_PROBE_COMPLETE
+  geometry_probe_lifecycle_count_exact: 1
+  model_request_count_exact: 0
+  cpu_offload_allocation_attempted: false
+  formal_workload_evidence: false
+  required_rank_coverage: [0, 1, 2, 3, 4, 5, 6, 7]
+  required_rank_geometry_parity:
+    - block_size_tokens
+    - required_restore_tokens
+    - total_bytes_per_block
+    - unique_tensor_count
+    - per_tensor_bytes_per_block
+  fixed_block_size_tokens: 128
+  fixed_restore_tokens: 16384
+  required_cpu_blocks_formula: restore_tokens_div_block_size
+allocator_envelope:
+  execution: eight_concurrent_cleanable_rank_processes_without_vllm_or_model_requests
+  allocation_api_shape: torch_zeros_cpu_pin_memory_true_per_unique_kv_tensor
+  allocation_shape: per_tensor_bytes_per_block_x_cpu_blocks
+  wave_cpu_blocks: [32, 64, 96, 128]
+  wave_order: ascending_first_failure_stop
+  required_wave_cpu_blocks: 128
+  world_size_exact: 8
+  cleanup_required_each_wave: true
+  pass_requirement: all_eight_ranks_allocate_hold_release_and_exit
+  proc_memavailable_is_separate_legacy_gate: true
+  forbidden:
+    - model_load
+    - vllm_server_start
+    - model_request
+    - retry_failed_wave
+    - probe_above_required_restore_wave
+decision:
+  required_wave_pass_grade: candidate_ready_p8_2_k1a_r1_allocator_capacity
+  required_wave_fail_grade: blocked_p8_2_k1a_r1_pinned_capacity_below_restore_requirement
+  formal_lifecycle_authorized: false
+  formal_lifecycle_requires_external_developer_review_and_new_handoff: true
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  p8_4_authorized: false
+  p8_5_authorized: false
+  p9_authorized: false
+claims:
+  boundary: exact_kv_geometry_and_eight_rank_pinned_allocator_capacity_only
+  offload_store_restore_proven: false
+  performance_reference_accepted: false
+  optimization_claim_accepted: false
+  hardware_bottleneck_unique_cause_allowed: false
