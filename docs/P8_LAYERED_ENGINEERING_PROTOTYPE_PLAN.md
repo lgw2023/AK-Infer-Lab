@@ -2,9 +2,9 @@
 
 日期：2026-07-10；最后更新：2026-07-18
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_formal_lifecycle_prepared / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_provenance_blocked / p8_2_k1a_r3_r1_formal_lifecycle_prepared / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 
-状态拆分：`local_artifact_state=k1a_r3_accepted_capacity_formal_lifecycle_prepared`；`server_execution_state=single_six_request_store_pressure_restore_authorized`；`blocked_legacy_path=OffloadingConnector_NPUOffloadingSpec`；`k1a_32gib_state=red_before_server_ready_zero_requests`；`k1a_r1_state=red_probe_invalid_rank_0_2_only`；`k1a_r2_state=developer_ready_128_block_capacity`；`candidate_real_move_path=SimpleCPUOffloadConnector`；`expert_track_state=p8_3_i0_inventory_green_budget_incomplete_i0_r1_taxonomy_green`；`p8_3_technical_dependency_on_k1a=false`；`p8_3_i1_server_execution_authorized=false`；`tp4_state=checkpoint_budget_incomplete_1135_unclassified`。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 和 P8.2-K0 已 green，K1 保留 blocked。K1A-R1 probe-invalid red 保留；K1A-R2 的 same-run 8-rank geometry、128-block capacity 与离线重放已接受 ready。当前 K1A-R3 只在 `430604288 bytes/rank` 上授权一个正式六请求 lifecycle，零 retry；P8.3-I0-R1 taxonomy 已 green但不自动补 TP4 budget。
+状态拆分：`local_artifact_state=k1a_r3_r1_repaired_provenance_formal_lifecycle_prepared`；`server_execution_state=single_six_request_store_pressure_restore_authorized_after_provenance`；`blocked_legacy_path=OffloadingConnector_NPUOffloadingSpec`；`k1a_32gib_state=red_before_server_ready_zero_requests`；`k1a_r1_state=red_probe_invalid_rank_0_2_only`；`k1a_r2_state=developer_ready_128_block_capacity`；`k1a_r3_state=blocked_handoff_schema_zero_npu_zero_requests`；`candidate_real_move_path=SimpleCPUOffloadConnector`；`expert_track_state=p8_3_i0_inventory_green_budget_incomplete_i0_r1_taxonomy_green`；`p8_3_technical_dependency_on_k1a=false`；`p8_3_i1_server_execution_authorized=false`；`tp4_state=checkpoint_budget_incomplete_1135_unclassified`。P8.1 parent 保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 和 P8.2-K0 已 green，K1 保留 blocked。K1A-R1 probe-invalid red 保留；K1A-R2 的 same-run 8-rank geometry、128-block capacity 与离线重放已接受 ready。K1A-R3 仅因 handoff schema gate blocked，当前 K1A-R3-R1 先分别校验 geometry summary/rendezvous marker，再在 `430604288 bytes/rank` 上授权一个正式六请求 lifecycle，零 retry；P8.3-I0-R1 taxonomy 已 green但不自动补 TP4 budget。
 
 ## 1. P8 的工程定义
 
@@ -631,8 +631,10 @@ baseline；single-request official contract/workload 保留为执行前被替代
 已由开发机接受 green。P6.1C-R1 official、P6.1 unprofiled、P6.2 profiled 与 P6.3 已完成并经复核；
 P8.2-K0 已接受 green，K1 旧路径 blocked，K1A 32 GiB/rank 点 red，K1A-R1 probe-invalid red；
 K1A-R2 已接受 128-block capacity ready，P8.3-I0/I0-R1 已在各自窄边界 green但 TP4 budget incomplete。
-当前仅授权 `p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718`：accepted capacity
-上的一个正式六请求 lifecycle，零 retry。兼容补丁、容量搜索、K2 与 P8.3-I1 均不得自动进入。
+K1A-R3 保留 `blocked_p8_2_k1a_r3_source_or_provenance_gate`（零 lifecycle/零请求）。当前仅授权
+`p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718`：先过 repaired provenance，
+再在 accepted capacity 上执行一个正式六请求 lifecycle，零 retry。兼容补丁、容量搜索、K2 与
+P8.3-I1 均不得自动进入。
 MindIE adapter、payload mover 与长期 server collector 仍未创建。
 
 后续每个 vertical slice 必须同时提供：

@@ -673,13 +673,13 @@ def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
     assert "refinalize" in help_result.stdout
 
 
-def test_k0_is_green_and_k1a_r3_is_the_only_handoff():
+def test_k0_is_green_and_k1a_r3_r1_is_the_only_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
+    task_id = "p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_accepted_capacity_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_repaired_provenance_single_lifecycle_six_request_mechanism"
     ) in handoff
     assert "server_sync_review_authorized: true" in handoff
     assert "npu_execution_authorized: true" in handoff

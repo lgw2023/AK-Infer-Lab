@@ -1,0 +1,77 @@
+schema_version: p8_2_k1a_r3_r1_provenance_gate_audit_v1
+stage: P8.2-K1A-R3-R1
+audit_date: "2026-07-18"
+task_family: repaired_r2_provenance_gate_to_same_formal_lifecycle
+
+parent_r3:
+  task_id: p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718
+  server_grade: blocked_p8_2_k1a_r3_source_or_provenance_gate
+  repository_contract_gate: pass
+  accepted_r2_hash_gate: pass
+  first_failure: geometry_summary_world_size_key_error
+  npu_started: false
+  vllm_started: false
+  model_request_count: 0
+  result_directory_created: false
+  keep_alive_disrupted: false
+  interpretation: handoff_schema_contract_defect_not_runtime_or_capacity_failure
+
+repair:
+  public_cli: accepted-capacity-provenance
+  geometry_summary_schema: p8_2_k1a_r2_geometry_summary_v1
+  geometry_summary_sha256: 8430730a583371ebdcc1cb35ff80903376a007cb3f2645ce6a55114bdb9ea6d1
+  rendezvous_marker_schema: p8_2_k1a_r2_geometry_rendezvous_v1
+  rendezvous_marker_sha256: fa258790475303b88a41d4e3f2db684a41a79026b22d434ba9827f0275280796
+  allocator_summary_schema: p8_2_k1a_r2_allocator_envelope_v1
+  allocator_summary_sha256: 99f997a66cb14aeaf1941d34c525729c70dcda0569d45c465a0f1c7f55dfc6b2
+  candidate_manifest_sha256: 5a65d66911ac8f073c1dd939b06d78de2a6f51dd2d5ecd66f60f5ee212cc01e9
+  cross_file_requirements:
+    - exact_schema_versions
+    - same_nonempty_probe_run_id
+    - exact_rank_coverage_0_through_7
+    - geometry_rank_count_8
+    - rendezvous_world_size_8
+    - rendezvous_geometry_parity_exact
+    - allocation_attempted_false
+    - exact_accepted_capacity
+    - allocator_candidate_ready
+    - r2_formal_lifecycle_still_required_new_handoff
+  frozen_evidence_mutation_authorized: false
+  weaker_rank_count_only_fallback_authorized: false
+
+unchanged_runtime:
+  workload: benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
+  formal_lifecycle_request_order:
+    - warmup_4096_plus_64
+    - prime_32768_plus_64
+    - pressure_131072_plus_64
+    - restore_follower_32768_plus_64
+    - repeat_follower_32768_plus_64
+    - isolated_control_32768_plus_64
+  block_size_tokens: 128
+  required_restore_tokens: 16384
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  tensor_parallel_size: 8
+  expert_parallel_enabled: true
+  official_mtp_num_speculative_tokens: 1
+  r2_hybrid_kv_repair: unchanged
+  prefix_cache: enabled
+  chunked_prefill: enabled
+  server_command_sha256: 418d2796ec2dd15ab7504c264a6635a50d064cb7b6425f809cbfba550d2f5bb0
+
+decision:
+  r3_r1_task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718
+  formal_lifecycle_authorized: true
+  formal_lifecycle_count_exact: 1
+  model_request_count_exact: 6
+  request_retry_count_exact: 0
+  capacity_search_authorized: false
+  second_capacity_point_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  result_transfer_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  next_task_authorized: false
+
+claim_boundary: repaired_provenance_gate_then_same_single_lifecycle_store_restore_mechanism_only

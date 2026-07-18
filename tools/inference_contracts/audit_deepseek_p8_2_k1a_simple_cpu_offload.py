@@ -332,6 +332,114 @@ def inspect_runtime_imports(runtime_python: Path) -> dict[str, Any]:
     }
 
 
+def inspect_accepted_capacity_provenance(
+    geometry_summary: Path,
+    rendezvous_marker: Path,
+    allocator_summary: Path,
+) -> dict[str, Any]:
+    geometry = json.loads(geometry_summary.read_text(encoding="utf-8"))
+    rendezvous = json.loads(rendezvous_marker.read_text(encoding="utf-8"))
+    allocator = json.loads(allocator_summary.read_text(encoding="utf-8"))
+    expected_ranks = list(range(8))
+
+    checks = (
+        (
+            geometry.get("schema_version")
+            == "p8_2_k1a_r2_geometry_summary_v1",
+            "geometry summary schema mismatch",
+        ),
+        (
+            rendezvous.get("schema_version")
+            == "p8_2_k1a_r2_geometry_rendezvous_v1",
+            "rendezvous marker schema mismatch",
+        ),
+        (
+            allocator.get("schema_version")
+            == "p8_2_k1a_r2_allocator_envelope_v1",
+            "allocator summary schema mismatch",
+        ),
+        (
+            geometry.get("probe_run_id") == rendezvous.get("probe_run_id")
+            and bool(geometry.get("probe_run_id")),
+            "geometry and rendezvous probe_run_id mismatch",
+        ),
+        (geometry.get("rank_count") == 8, "geometry rank_count mismatch"),
+        (
+            geometry.get("rank_coverage") == expected_ranks,
+            "geometry rank coverage mismatch",
+        ),
+        (
+            rendezvous.get("rank_coverage") == expected_ranks,
+            "rendezvous rank coverage mismatch",
+        ),
+        (rendezvous.get("world_size") == 8, "rendezvous world_size mismatch"),
+        (
+            rendezvous.get("geometry_parity_exact") is True,
+            "rendezvous geometry parity is not exact",
+        ),
+        (
+            geometry.get("geometry_gate_ok") is True
+            and geometry.get("rendezvous_gate_ok") is True,
+            "geometry acceptance gate is not green",
+        ),
+        (
+            geometry.get("allocation_attempted") is False
+            and rendezvous.get("allocation_attempted") is False,
+            "geometry probe attempted allocation",
+        ),
+        (
+            geometry.get("block_size_tokens") == 128
+            and geometry.get("required_restore_tokens") == 16384
+            and geometry.get("required_cpu_blocks") == 128,
+            "accepted restore geometry mismatch",
+        ),
+        (
+            geometry.get("total_bytes_per_block") == 3364096
+            and geometry.get("required_capacity_bytes_per_rank") == 430604288
+            and geometry.get("required_capacity_bytes_total") == 3444834304,
+            "accepted geometry capacity mismatch",
+        ),
+        (
+            allocator.get("acl_pinned_host_allocator_gate_ok") is True
+            and allocator.get("required_cpu_blocks") == 128
+            and allocator.get("highest_eight_rank_clean_blocks") == 128
+            and allocator.get("candidate_cpu_bytes_per_rank") == 430604288
+            and allocator.get("candidate_cpu_bytes_total") == 3444834304
+            and allocator.get("capacity_candidate_ready") is True,
+            "accepted allocator capacity mismatch",
+        ),
+        (
+            allocator.get("grade")
+            == "candidate_ready_p8_2_k1a_r2_allocator_capacity",
+            "allocator grade mismatch",
+        ),
+        (
+            geometry.get("formal_lifecycle_authorized") is False
+            and allocator.get("formal_lifecycle_allowed") is False
+            and allocator.get("formal_lifecycle_requires_new_handoff") is True,
+            "R2 formal lifecycle boundary mismatch",
+        ),
+    )
+    for condition, message in checks:
+        if not condition:
+            raise ValueError(message)
+
+    return {
+        "schema_version": "p8_2_k1a_r3_r1_accepted_capacity_provenance_v1",
+        "accepted_r2_capacity_provenance_gate": "pass",
+        "probe_run_id": geometry["probe_run_id"],
+        "rank_coverage": expected_ranks,
+        "world_size": 8,
+        "geometry_parity_exact": True,
+        "block_size_tokens": 128,
+        "required_restore_tokens": 16384,
+        "required_cpu_blocks": 128,
+        "accepted_capacity_bytes_per_rank": 430604288,
+        "accepted_capacity_bytes_total": 3444834304,
+        "allocation_attempted": False,
+    }
+
+
 def _emit(value: dict[str, Any], output: Path | None) -> None:
     rendered = json.dumps(value, indent=2, sort_keys=True) + "\n"
     if output is not None:
@@ -355,6 +463,11 @@ def parse_args() -> argparse.Namespace:
     runtime = subparsers.add_parser("runtime-import-probe")
     runtime.add_argument("--runtime-python", type=Path, required=True)
     runtime.add_argument("--output", type=Path)
+    provenance = subparsers.add_parser("accepted-capacity-provenance")
+    provenance.add_argument("--geometry-summary", type=Path, required=True)
+    provenance.add_argument("--rendezvous-marker", type=Path, required=True)
+    provenance.add_argument("--allocator-summary", type=Path, required=True)
+    provenance.add_argument("--output", type=Path)
     return parser.parse_args()
 
 
@@ -364,8 +477,14 @@ def main() -> int:
         result = inspect_frozen_sources(args.vllm_repo, args.vllm_ascend_repo)
     elif args.command == "installed-source-audit":
         result = inspect_installed_sources(args.vllm_root, args.vllm_ascend_root)
-    else:
+    elif args.command == "runtime-import-probe":
         result = inspect_runtime_imports(args.runtime_python)
+    else:
+        result = inspect_accepted_capacity_provenance(
+            args.geometry_summary,
+            args.rendezvous_marker,
+            args.allocator_summary,
+        )
     _emit(result, args.output)
     return 0
 

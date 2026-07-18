@@ -1953,15 +1953,15 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_advances_from_r2_ready_to_k1a_r3_formal_lifecycle():
+def test_server_handoff_advances_from_r3_block_to_k1a_r3_r1_lifecycle():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3 accepted-capacity store→pressure→restore" in handoff
-    assert "task_id: p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
-    assert "execution_mode: authorized_accepted_capacity_single_lifecycle_six_request_mechanism" in handoff
+    assert "P8.2-K1A-R3-R1 repaired provenance" in handoff
+    assert "task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
+    assert "execution_mode: authorized_repaired_provenance_single_lifecycle_six_request_mechanism" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "formal_model_lifecycle_count_exact: 1" in handoff
     assert "model_request_count_exact: 6" in handoff
@@ -2050,7 +2050,7 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_authorized_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_authorized_i0_r1_green"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2445,13 +2445,13 @@ def test_p6_3b_r1_records_bounded_ready_failure_without_revoking_prior_evidence(
     }
 
 
-def test_server_handoff_executes_only_k1a_r3_formal_lifecycle():
+def test_server_handoff_executes_only_k1a_r3_r1_formal_lifecycle():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    assert "P8.2-K1A-R3 accepted-capacity store→pressure→restore" in handoff
-    assert "task_id: p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
+    assert "P8.2-K1A-R3-R1 repaired provenance" in handoff
+    assert "task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff

@@ -329,15 +329,15 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
     subprocess.run(["bash", "-n", str(R1_RUNNER)], cwd=REPO_ROOT, check=True)
 
 
-def test_r1_is_closed_and_k1a_r3_is_the_only_authorized_handoff() -> None:
-    task_id = "p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
+def test_r1_is_closed_and_k1a_r3_r1_is_the_only_authorized_handoff() -> None:
+    task_id = "p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_accepted_capacity_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_repaired_provenance_single_lifecycle_six_request_mechanism"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff

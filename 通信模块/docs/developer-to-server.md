@@ -1,10 +1,10 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K1A-R3 accepted-capacity store→pressure→restore
+## 当前唯一服务器动作：P8.2-K1A-R3-R1 repaired provenance + same accepted-capacity lifecycle
 
 ~~~text
-task_id: p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718
-execution_mode: authorized_accepted_capacity_single_lifecycle_six_request_mechanism
+task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718
+execution_mode: authorized_repaired_provenance_single_lifecycle_six_request_mechanism
 server_sync_review_authorized: true
 installed_source_and_import_probe_authorized: true
 accepted_r2_provenance_review_authorized: true
@@ -32,12 +32,18 @@ standing_npu_and_vllm_consumption_authorization: true
 ~~~
 
 本任务替换且禁止重跑已经消费的
-`p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717`。开发机已对服务器 raw evidence、
+`p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718`。该 parent R3 已在三份 R2
+evidence hash 通过后，因为 handoff 错把 geometry summary 当成 rendezvous marker 读取而以
+`KeyError: world_size` 停止；keep-alive 未动，NPU/vLLM/request/result-dir 均为零。该结果只接受为
+`blocked_p8_2_k1a_r3_source_or_provenance_gate`，不是容量或 runtime red。
+
+开发机此前已对服务器 raw evidence、
 既有 12-file candidate package 和 upload-api provenance replay 独立完成交叉验收：
 
 - P8.2-K1A-R2 正式收口为 `ready_p8_2_k1a_r2_allocator_capacity`。8 rank same-run geometry、
   `32/64/96/128` blocks shaped allocator waves 和离线重放全部通过；接受的唯一容量是
-  `128 blocks × 3364096 bytes/block = 430604288 bytes/rank`，TP8 总量为 `3444834304 bytes`。
+  `16384 restore tokens = 128 blocks × 3364096 bytes/block = 430604288 bytes/rank`，TP8 总量为
+  `3444834304 bytes`。
 - P8.3-I0-R1 正式收口为 `green_p8_3_i0_r1_unclassified_taxonomy`。该结果与本任务技术独立，
   本 handoff 不授权 P8.3-I1、TP4 runtime、reclassification 或新 checkpoint 扫描。
 - K1A 旧 `32 GiB/rank` 点继续保留 `red_p8_2_k1a_simple_cpu_offload_no_success`；K1A-R1 继续保留
@@ -54,7 +60,7 @@ standing_npu_and_vllm_consumption_authorization: true
 `green_p8_2_k0_order_balanced_prefix_cache_baseline` 与
 `green_p8_3_i0_r1_unclassified_taxonomy`；P6.3C 保留
 `blocked_p6_3c_not_strict_single_variable`，legacy K1 保留
-`blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A-R3 blocked/red/yellow 不撤销这些结果。
+`blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A-R3/R3-R1 blocked/red/yellow 不撤销这些结果。
 不得进入 K2、K3、K4、P8.3-I1、P8.4、P8.5 或 P9。
 
 ## 1. 同步、tracked-clean 与冻结仓库合同门（零 NPU）
@@ -66,7 +72,7 @@ standing_npu_and_vllm_consumption_authorization: true
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_DIR=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718_run01
+RESULT_DIR=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718_run01
 cd "${REPO_ROOT}"
 
 git status --short --branch --untracked-files=no
@@ -85,15 +91,18 @@ expected = {
     "benchmarks/deepseek_v4_flash/p8_2_k1a_simple_cpu_offload_feasibility_audit.yaml": "51fe967ff093678fdf7f4f208b09288c4ea020062b954d04c32a5925dfa7ba16",
     "benchmarks/deepseek_v4_flash/p8_2_k1a_r2_geometry_rendezvous_audit.yaml": "7553ec2ee67422eacad6f6e4ca1f37da55b46a71706f74db07bc73dba5db9e82",
     "benchmarks/deepseek_v4_flash/p8_2_k1a_r3_formal_lifecycle_audit.yaml": "dc9588d8d71c2742e5831bf6facdd82348b5e6d3ab4f5dd466c1d771d7ffe9dc",
+    "benchmarks/deepseek_v4_flash/p8_2_k1a_r3_r1_provenance_gate_audit.yaml": "3e7f49b82d0d01abd70db895714de0b19fb7603bce94fe1ab22fa2e590ddf967",
     "benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml": "aa87b3b9cf08b1404ac034a132f5dd2db7abc1cb7472d4abc02b4cb01aa5e116",
-    "tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py": "0a97dfce48678be8d7f3ea1a53f859e5a71e9df155f2a53606ff238c377a41bd",
+    "tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py": "d1af39ef7622bee62b6b10f774ef012f306d0bc5b0318666bc6d41df786836e3",
     "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py": "b31d212378c8aaed87c872c67a29b8d2ea039fbd7e97e5f7e6c54b29ef99a680",
     "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py": "1eabe65e103abae117e48a65c7dcedb0451f79d78b404eb2bc6643fdcce24120",
     "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh": "76891fba6c4426a2344f93a9ecab216143bb6da0a03318b265b1e580681eec6c",
     "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh": "e0c27c984403a727dcfb92cf5266372298721a2550d5e66a68cd552b145067eb",
-    "tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh": "97009a98e198dcc3d2ebd868af919a75ecfabe670f588e990f84dccd931a3ea1",
+    "tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh": "b41564b8ef8524df825ac03822a705c842f5ddac56d4cb6fed186fb8291e3252",
+    "tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r1_simple_cpu_offload.sh": "09d9697de12dff6635fa36f0ec787a5774b26cde3aa9b8a56e8e2a330edfa1f9",
     "benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch": "5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6",
-    "tests/inference_contracts/test_deepseek_p8_2_k1a_r3_formal_lifecycle.py": "e31c812a3772c530246cd47116a772b148c9e00810b79b3acc17ec33bdecd467",
+    "tests/inference_contracts/test_deepseek_p8_2_k1a_r3_formal_lifecycle.py": "fd913f4c47a019d935e0b6b6ba8f2b5702742e3f1581703246aec9f86512a389",
+    "tests/inference_contracts/test_deepseek_p8_2_k1a_r3_r1_provenance_gate.py": "6e19af7cfbd86cf77b43e2fbaa4e0488ef34a137584ef0c8ecbba86b2aff8e85",
 }
 for relative, wanted in expected.items():
     got = hashlib.sha256(Path(relative).read_bytes()).hexdigest()
@@ -103,6 +112,7 @@ print("frozen_repo_hash_gate=pass")
 PY
 
 python3 -m pytest \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r3_r1_provenance_gate.py \
   tests/inference_contracts/test_deepseek_p8_2_k1a_r3_formal_lifecycle.py \
   tests/inference_contracts/test_deepseek_p8_2_k1a_simple_cpu_offload_feasibility.py \
   tests/inference_contracts/test_deepseek_p8_2_k1a_r2_geometry_rendezvous.py \
@@ -115,32 +125,33 @@ python3 -m py_compile \
 bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh
 bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
 bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh
+bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r1_simple_cpu_offload.sh
 
 P8_2_K1A_AUDIT_ONLY=1 bash \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh /tmp/p8_k1a_r3_not_created \
-  > /tmp/p8_k1a_r3_contract_audit.txt
-grep -Fx 'task_id=p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718' /tmp/p8_k1a_r3_contract_audit.txt
-grep -Fx 'cpu_bytes_to_use=3444834304' /tmp/p8_k1a_r3_contract_audit.txt
-grep -Fx 'cpu_bytes_to_use_per_rank=430604288' /tmp/p8_k1a_r3_contract_audit.txt
-grep -Fx 'server_command_sha256=418d2796ec2dd15ab7504c264a6635a50d064cb7b6425f809cbfba550d2f5bb0' /tmp/p8_k1a_r3_contract_audit.txt
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r1_simple_cpu_offload.sh /tmp/p8_k1a_r3_r1_not_created \
+  > /tmp/p8_k1a_r3_r1_contract_audit.txt
+grep -Fx 'task_id=p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718' /tmp/p8_k1a_r3_r1_contract_audit.txt
+grep -Fx 'cpu_bytes_to_use=3444834304' /tmp/p8_k1a_r3_r1_contract_audit.txt
+grep -Fx 'cpu_bytes_to_use_per_rank=430604288' /tmp/p8_k1a_r3_r1_contract_audit.txt
+grep -Fx 'server_command_sha256=418d2796ec2dd15ab7504c264a6635a50d064cb7b6425f809cbfba550d2f5bb0' /tmp/p8_k1a_r3_r1_contract_audit.txt
 
 P8_2_K1A_MODE_AUDIT_ONLY=1 bash \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh /tmp/p8_k1a_r3_not_created \
-  > /tmp/p8_k1a_r3_mode_audit.txt
-grep -Fx 'cpu_bytes_to_use=3444834304' /tmp/p8_k1a_r3_mode_audit.txt
-grep -Fx 'cpu_bytes_to_use_per_rank=430604288' /tmp/p8_k1a_r3_mode_audit.txt
-grep -Fx 'observer_mode=observe_only_no_decision_or_copy_mutation' /tmp/p8_k1a_r3_mode_audit.txt
-test ! -e /tmp/p8_k1a_r3_not_created
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r1_simple_cpu_offload.sh /tmp/p8_k1a_r3_r1_not_created \
+  > /tmp/p8_k1a_r3_r1_mode_audit.txt
+grep -Fx 'cpu_bytes_to_use=3444834304' /tmp/p8_k1a_r3_r1_mode_audit.txt
+grep -Fx 'cpu_bytes_to_use_per_rank=430604288' /tmp/p8_k1a_r3_r1_mode_audit.txt
+grep -Fx 'observer_mode=observe_only_no_decision_or_copy_mutation' /tmp/p8_k1a_r3_r1_mode_audit.txt
+test ! -e /tmp/p8_k1a_r3_r1_not_created
 test -z "$(git status --porcelain --untracked-files=no)"
 ~~~
 
 任一 hash、合同、compile、Bash、audit-only、tracked-clean 或 result-dir uniqueness 门失败，给
-`blocked_p8_2_k1a_r3_repository_contract_gate` 并停止。不得停 keep-alive、创建项目结果目录或占 NPU。
+`blocked_p8_2_k1a_r3_r1_repository_contract_gate` 并停止。不得停 keep-alive、创建项目结果目录或占 NPU。
 
 ## 2. R2 accepted-capacity provenance 与冻结安装态 source/import 复核（零 NPU）
 
 只读复核既有 R2 raw evidence 和 accepted summaries；不得重跑 geometry lifecycle 或 allocator waves。
-临时输出只能写新的 `/tmp/opencode/p8_2_k1a_r3_preflight_2026_0718_<unique>`。
+临时输出只能写新的 `/tmp/opencode/p8_2_k1a_r3_r1_preflight_2026_0718_<unique>`。
 
 ~~~bash
 set -euo pipefail
@@ -148,8 +159,9 @@ set -euo pipefail
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 R2_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717_run01
 K1A_R2=${R2_ROOT}/p8_2_k1a_r2_geometry_and_allocator
-TMP_AUDIT=$(mktemp -d /tmp/opencode/p8_2_k1a_r3_preflight_2026_0718_XXXXXX)
-TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_preflight_current_2026_0718.path
+RENDEZVOUS=${K1A_R2}/geometry_probe/runtime/geometry/geometry.rendezvous.complete.json
+TMP_AUDIT=$(mktemp -d /tmp/opencode/p8_2_k1a_r3_r1_preflight_2026_0718_XXXXXX)
+TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_r1_preflight_current_2026_0718.path
 RUNTIME_PREFIX=${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 RUNTIME_PYTHON=${RUNTIME_PREFIX}/bin/python
 VLLM_ROOT=/data/node0_disk1/vllm-0.22.1
@@ -160,38 +172,17 @@ test ! -e "${TMP_AUDIT_POINTER}"
 printf '%s\n' "${TMP_AUDIT}" > "${TMP_AUDIT_POINTER}"
 test -d "${R2_ROOT}"
 test "$(sha256sum "${K1A_R2}/k1a_r2_geometry_summary.json" | awk '{print $1}')" = 8430730a583371ebdcc1cb35ff80903376a007cb3f2645ce6a55114bdb9ea6d1
+test "$(sha256sum "${RENDEZVOUS}" | awk '{print $1}')" = fa258790475303b88a41d4e3f2db684a41a79026b22d434ba9827f0275280796
 test "$(sha256sum "${K1A_R2}/pinned_allocator_envelope_summary.json" | awk '{print $1}')" = 99f997a66cb14aeaf1941d34c525729c70dcda0569d45c465a0f1c7f55dfc6b2
 test "$(sha256sum "${R2_ROOT}/candidate_manifest.server_local.json" | awk '{print $1}')" = 5a65d66911ac8f073c1dd939b06d78de2a6f51dd2d5ecd66f60f5ee212cc01e9
 
-python3 - "${K1A_R2}" <<'PY'
-from pathlib import Path
-import json
-import sys
-
-root = Path(sys.argv[1])
-geometry = json.loads((root / "k1a_r2_geometry_summary.json").read_text())
-allocator = json.loads((root / "pinned_allocator_envelope_summary.json").read_text())
-assert geometry["rank_coverage"] == list(range(8))
-assert geometry["world_size"] == 8
-assert geometry["geometry_gate_ok"] is True
-assert geometry["rendezvous_gate_ok"] is True
-assert geometry["geometry_parity_exact"] is True
-assert geometry["block_size_tokens"] == 128
-assert geometry["required_restore_tokens"] == 16384
-assert geometry["required_cpu_blocks"] == 128
-assert geometry["total_bytes_per_block"] == 3364096
-assert geometry["required_capacity_bytes_per_rank"] == 430604288
-assert geometry["required_capacity_bytes_total"] == 3444834304
-assert allocator["acl_pinned_host_allocator_gate_ok"] is True
-assert allocator["highest_eight_rank_clean_blocks"] == 128
-assert allocator["candidate_cpu_bytes_per_rank"] == 430604288
-assert allocator["candidate_cpu_bytes_total"] == 3444834304
-assert allocator["capacity_candidate_ready"] is True
-assert allocator["grade"] == "candidate_ready_p8_2_k1a_r2_allocator_capacity"
-assert allocator["formal_lifecycle_allowed"] is False
-assert allocator["formal_lifecycle_requires_new_handoff"] is True
-print("accepted_r2_capacity_provenance_gate=pass")
-PY
+python3 "${AUDITOR}" accepted-capacity-provenance \
+  --geometry-summary "${K1A_R2}/k1a_r2_geometry_summary.json" \
+  --rendezvous-marker "${RENDEZVOUS}" \
+  --allocator-summary "${K1A_R2}/pinned_allocator_envelope_summary.json" \
+  --output "${TMP_AUDIT}/accepted_r2_capacity_provenance.json"
+grep -F '"accepted_r2_capacity_provenance_gate": "pass"' \
+  "${TMP_AUDIT}/accepted_r2_capacity_provenance.json"
 
 test -x "${RUNTIME_PYTHON}"
 test "$(git -C "${VLLM_ROOT}" rev-parse HEAD)" = 0decac0d96c42b49572498019f0a0e3600f50398
@@ -235,7 +226,7 @@ PY
 ~~~
 
 任何 R2 accepted summary、安装态 source、registry/import 或 frozen Git 状态漂移，给
-`blocked_p8_2_k1a_r3_source_or_provenance_gate` 并停止；不得修环境、换版本、加 shim 或占 NPU。
+`blocked_p8_2_k1a_r3_r1_source_or_provenance_gate` 并停止；不得修环境、换版本、加 shim 或占 NPU。
 
 ## 3. 零扰动资源门
 
@@ -247,7 +238,7 @@ set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_preflight_current_2026_0718.path
+TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_r1_preflight_current_2026_0718.path
 test -f "${TMP_AUDIT_POINTER}"
 TMP_AUDIT=$(cat "${TMP_AUDIT_POINTER}")
 test -n "${TMP_AUDIT}"
@@ -283,7 +274,7 @@ PY
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 ~~~
 
-本节失败给 `blocked_p8_2_k1a_r3_source_or_resource_gate` 并停止。不得清理未知进程或启动 vLLM。
+本节失败给 `blocked_p8_2_k1a_r3_r1_source_or_resource_gate` 并停止。不得清理未知进程或启动 vLLM。
 
 ## 4. 唯一 NPU lifecycle：安全退 keep-alive、六请求、清理与恢复
 
@@ -294,10 +285,10 @@ test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_DIR=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718_run01
-RUNNER=${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh
+RESULT_DIR=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718_run01
+RUNNER=${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r1_simple_cpu_offload.sh
 KEEP_ALIVE_SCRIPT=/data/node0_disk1/Public/npu_keep_alive.sh
-TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_preflight_current_2026_0718.path
+TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_r1_preflight_current_2026_0718.path
 test -f "${TMP_AUDIT_POINTER}"
 TMP_AUDIT=$(cat "${TMP_AUDIT_POINTER}")
 test -d "${TMP_AUDIT}"
@@ -427,8 +418,8 @@ runner 结束后只读解析结果，不重跑。先验证 exact task/config/req
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_DIR=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718_run01
-TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_preflight_current_2026_0718.path
+RESULT_DIR=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718_run01
+TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_r1_preflight_current_2026_0718.path
 test -f "${TMP_AUDIT_POINTER}"
 TMP_AUDIT=$(cat "${TMP_AUDIT_POINTER}")
 test -d "${RESULT_DIR}"
@@ -449,7 +440,7 @@ host = json.loads((root / "host_memory_summary.json").read_text())
 environment = json.loads((root / "environment_and_hashes.json").read_text())
 rows = list(csv.DictReader((root / "request_summary.tsv").open(), delimiter="\t"))
 
-assert grading["task_id"] == "p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
+assert grading["task_id"] == "p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
 assert grading["cpu_bytes_to_use"] == 3444834304
 assert grading["cpu_bytes_to_use_per_rank"] == 430604288
 assert grading["accepted_capacity_exact"] is True
@@ -493,7 +484,7 @@ for name in candidate_names:
 total = sum(row["bytes"] for row in files.values())
 assert total <= 71680, total
 manifest = {
-    "schema_version": "p8_2_k1a_r3_candidate_manifest_v1",
+    "schema_version": "p8_2_k1a_r3_r1_candidate_manifest_v1",
     "result_root": str(root),
     "files": files,
     "candidate_file_count": len(files),
@@ -516,16 +507,16 @@ PY
 
 分级严格为：
 
-- repository/source/provenance/resource 门失败：`blocked_p8_2_k1a_r3_source_or_resource_gate`；
-- server 启动后 0/6 成功：`red_p8_2_k1a_r3_no_success`；
-- 请求结构不完整或只有部分成功：`yellow_p8_2_k1a_r3_partial`；
+- repository/source/provenance/resource 门失败：`blocked_p8_2_k1a_r3_r1_source_or_resource_gate`；
+- server 启动后 0/6 成功：`red_p8_2_k1a_r3_r1_no_success`；
+- 请求结构不完整或只有部分成功：`yellow_p8_2_k1a_r3_r1_partial`；
 - 6/6 成功且 8/8 D2H store 完整，但没有 8/8 H2D restore：
-  `yellow_p8_2_k1a_r3_store_only_no_restore`；这是有效负结果，不得 retry；
+  `yellow_p8_2_k1a_r3_r1_store_only_no_restore`；这是有效负结果，不得 retry；
 - request/connector/capacity/R2 repair/MTP/health/queue/cleanup 任一证据不完整：
-  `red_p8_2_k1a_r3_transfer_evidence_incomplete`；
+  `red_p8_2_k1a_r3_r1_transfer_evidence_incomplete`；
 - 只有 6/6 首次成功、accepted capacity exact、8/8 worker D2H submit+complete、8/8 worker H2D
   submit+complete、restore scheduler CPU hit/load schedule/load complete、R2/MTP/queue/health/cleanup/keep-alive
-  全过，才给 `candidate_green_p8_2_k1a_r3_simple_cpu_offload_store_restore`。
+  全过，才给 `candidate_green_p8_2_k1a_r3_r1_simple_cpu_offload_store_restore`。
 
 candidate green 也只证明该冻结 lifecycle 的双向机制，不是 performance reference、加速收益、通用支持、
 K2 解锁或硬件归因。服务器只能给 candidate；必须由开发机独立复核小结果包后决定正式等级。

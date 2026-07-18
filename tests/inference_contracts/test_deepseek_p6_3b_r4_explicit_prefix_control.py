@@ -335,12 +335,12 @@ def test_r4_workload_is_preserved_as_blocked_explicit_control_evidence():
     assert workload["stage_contract"]["p6_3c_execution_authorized"] is False
 
 
-def test_r4_r1_closeout_is_preserved_during_k1a_r3_lifecycle():
+def test_r4_r1_closeout_is_preserved_during_k1a_r3_r1_lifecycle():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3 accepted-capacity store→pressure→restore" in handoff
+    assert "P8.2-K1A-R3-R1 repaired provenance" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "model_request_count_exact: 6" in handoff

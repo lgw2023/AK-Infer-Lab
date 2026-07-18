@@ -210,12 +210,12 @@ def test_r2_geometry_summary_direct_file_cli_bootstraps_repo_root() -> None:
     assert "summarize-geometry" in completed.stdout
 
 
-def test_current_handoff_authorizes_only_k1a_r3_after_r2_acceptance() -> None:
+def test_current_handoff_authorizes_only_k1a_r3_r1_after_r3_block() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_"
+        "p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_"
         "2026_0718"
     )
 
@@ -232,10 +232,11 @@ def test_current_handoff_authorizes_only_k1a_r3_after_r2_acceptance() -> None:
         assert field in handoff
     for marker in (
         "ready_p8_2_k1a_r2_allocator_capacity",
+        "blocked_p8_2_k1a_r3_source_or_provenance_gate",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh",
+        "run_deepseek_p8_2_k1a_r3_r1_simple_cpu_offload.sh",
         "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r3_simple_cpu_offload_store_restore",
+        "candidate_green_p8_2_k1a_r3_r1_simple_cpu_offload_store_restore",
         "P8.3-I1",
     ):
         assert marker in handoff
