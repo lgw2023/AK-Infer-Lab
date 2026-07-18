@@ -69,7 +69,7 @@ decision:
   capacity_search_authorized: false
   second_capacity_point_authorized: false
   runtime_or_dependency_mutation_authorized: false
-  result_transfer_authorized: false
+  result_transfer_authorized: true
   k2_authorized: false
   p8_3_i1_authorized: false
   next_task_authorized: false

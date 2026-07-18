@@ -340,7 +340,7 @@ def test_r4_r1_closeout_is_preserved_during_k1a_r3_r1_lifecycle():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R1 repaired provenance" in handoff
+    assert "P8.2-K1A-R3-R2 portable argv identity" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "model_request_count_exact: 6" in handoff

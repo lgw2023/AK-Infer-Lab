@@ -1,0 +1,106 @@
+schema_version: p8_2_k1a_r3_r2_portable_argv_audit_v1
+generated_at: '2026-07-19T00:00:00+08:00'
+stage: P8.2-K1A-R3-R2
+claim_boundary: same_accepted_capacity_single_lifecycle_store_restore_mechanism_repair_only
+
+parent_r3_r1:
+  task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718
+  server_grade: red_p8_2_k1a_r3_r1_no_success
+  failure_class: nonportable_server_command_identity_contract
+  lifecycle_attempted: 1
+  vllm_started: false
+  successful_request_count: 0
+  model_request_count: 0
+  cleanup: clean
+  report_sha256: 37cdc25033fad36c87495f702eeca25bc09c4387a0d094cc6da4035327cbc860
+  accepted_interpretation: repository_contract_red_not_capacity_or_runtime_red
+  missing_runtime_evidence_cannot_be_recovered_by_result_transfer: true
+
+preserved_parents:
+  p8_2_k1a_r2_grade: ready_p8_2_k1a_r2_allocator_capacity
+  accepted_capacity_provenance: pass
+  p8_2_k1a_r3_grade: blocked_p8_2_k1a_r3_source_or_provenance_gate
+  p8_2_k1a_r3_r1_does_not_revoke_r2_capacity: true
+
+repair:
+  identity_schema: ak_infer_lab_server_argv_v1
+  identity_payload: exact_utf8_argv_array_in_canonical_json
+  canonical_server_argv_sha256: 8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6
+  bash_3_2_render_sha256: 418d2796ec2dd15ab7504c264a6635a50d064cb7b6425f809cbfba550d2f5bb0
+  bash_5_1_render_sha256: a65e8e69867e0772c85ccea1b4f8cbdab1957bb04ee77194fdd98a1415d05747
+  shell_rendering_is_diagnostic_only: true
+  shell_rendering_hash_is_not_an_execution_gate: true
+  canonical_argv_file: runtime/server_argv.json
+  canonical_argv_hash_file: runtime/server_argv_sha256.txt
+  rendered_command_file: runtime/server_command.txt
+  rendered_command_hash_file: runtime/server_command_rendered_sha256.txt
+  first_failure_excerpt_preserved: true
+  bounded_candidate_manifest_created_on_prelaunch_failure: true
+
+unchanged_experiment:
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  formal_lifecycle_count_exact: 1
+  model_request_count_exact: 6
+  request_retry_count_exact: 0
+  request_order:
+    - warmup
+    - prime
+    - pressure
+    - restore_follower
+    - repeat_follower
+    - isolated_control
+
+unchanged_runtime:
+  model: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  quantization: ascend_w8a8
+  topology: TP8_EP
+  mtp_num_speculative_tokens: 1
+  graph: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  prefix_cache: enabled
+  chunked_prefill: enabled
+  r2_hybrid_kv_repair: unchanged
+  observer: observe_only_no_decision_or_copy_mutation
+  profiler: disabled
+  hbm_sampler: disabled
+
+result_package_policy:
+  result_transfer_authorized: true
+  automatic_transfer_allowed: false
+  selection_required_before_any_transfer: true
+  methods:
+    - email
+    - upload-api
+    - server-local
+  max_total_bytes: 71680
+  generated_content_or_token_ids_allowed: false
+  raw_logs_or_request_bodies_allowed: false
+
+decision:
+  r3_r2_task_id: p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719
+  formal_lifecycle_authorized: true
+  formal_lifecycle_count_exact: 1
+  model_request_count_exact: 6
+  request_retry_count_exact: 0
+  capacity_search_authorized: false
+  second_capacity_point_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  result_transfer_authorized: true
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  next_task_authorized: false
+
+grading:
+  source_or_resource_gate_failure: blocked_p8_2_k1a_r3_r2_source_or_resource_gate
+  server_started_no_success: red_p8_2_k1a_r3_r2_no_success
+  request_partial: yellow_p8_2_k1a_r3_r2_partial
+  store_only_no_restore: yellow_p8_2_k1a_r3_r2_store_only_no_restore
+  evidence_incomplete: red_p8_2_k1a_r3_r2_evidence_incomplete
+  candidate_green: candidate_green_p8_2_k1a_r3_r2_simple_cpu_offload_store_restore
+  developer_review_required: true
+  performance_reference_accepted: false
+  optimization_claim_accepted: false

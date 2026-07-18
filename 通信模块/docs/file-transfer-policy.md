@@ -6,7 +6,7 @@
 
 ## 1. 核心规则
 
-任务完成后不再默认先发状态邮件。服务器先把正文写入本地 `result_summary.md`，整理有界附件清单，然后只在当前任务会话中请求用户为整个结果包选择 `email` 或 `upload-api`。确认前不得调用 `send_notify.py` 的发送/测试模式，也不得调用 upload-api 预检或上传。
+任务合同中的 `result_transfer_authorized` 默认为 `true`，表示已整理的有界结果包具备外发资格，不再作为额外阻断门。服务器先把正文写入本地 `result_summary.md`，整理有界附件清单，然后在当前任务会话中请求用户为整个结果包选择 `email`、`upload-api` 或 `server-local`。该字段不代表渠道选择；选择前不得调用 `send_notify.py` 的发送/测试模式，也不得调用 upload-api 预检或上传。
 
 ```text
 待传正文：<result_summary.md 服务器绝对路径>

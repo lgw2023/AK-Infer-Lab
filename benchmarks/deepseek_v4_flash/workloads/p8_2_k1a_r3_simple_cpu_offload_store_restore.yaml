@@ -179,7 +179,7 @@ execution_state:
   keep_alive_stop_and_restore_authorized: true
   formal_model_lifecycle_count_exact: 1
   model_request_count_exact: 6
-  result_transfer_authorized: false
+  result_transfer_authorized: true
   next_task_authorized: false
   standing_npu_and_vllm_consumption_authorization: true
 

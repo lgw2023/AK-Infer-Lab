@@ -7,6 +7,7 @@ if test "$#" -ne 1; then
 fi
 
 RESULT_DIR=$1
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 TASK_ID=${P8_2_K1A_TASK_ID:-p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717}
 CPU_BYTES_TO_USE=${P8_2_K1A_CPU_BYTES_TO_USE:-274877906944}
 CPU_BYTES_TO_USE_PER_RANK=${P8_2_K1A_CPU_BYTES_TO_USE_PER_RANK:-34359738368}
@@ -30,6 +31,7 @@ PORT=${PORT:-7000}
 REQUEST_RUNNER=${REQUEST_RUNNER:-${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py}
 AUDITOR=${AUDITOR:-${REPO_ROOT}/tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py}
 OBSERVER=${OBSERVER:-${REPO_ROOT}/tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py}
+ARGV_IDENTITY=${ARGV_IDENTITY:-${SCRIPT_DIR}/canonicalize_server_argv.py}
 RUNTIME_IMPL=${RUNTIME_IMPL:-${REPO_ROOT}/tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py}
 RUNTIME_LOADER=${RUNTIME_LOADER:-${REPO_ROOT}/tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py}
 MTP_PATCH=${MTP_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch}
@@ -41,7 +43,7 @@ OVERLAY_ROOT=${RUNTIME_DIR}/overlay_root
 DIAGNOSTIC_PATH=${RUNTIME_DIR}/hybrid_kv_runtime_diagnostic.jsonl
 TRACE_DIR=${RUNTIME_DIR}/offload_trace
 KV_TRANSFER_JSON=$(printf '{"kv_connector":"SimpleCPUOffloadConnector","kv_role":"kv_both","kv_connector_extra_config":{"cpu_bytes_to_use":%s,"cpu_bytes_to_use_per_rank":%s,"lazy_offload":false}}' "${CPU_BYTES_TO_USE}" "${CPU_BYTES_TO_USE_PER_RANK}")
-EXPECTED_COMMAND_SHA256=${P8_2_K1A_EXPECTED_COMMAND_SHA256:-d4222bef3a1c39dd38297b0523b9df54e3f3cef3ff67e4b970e6fce3f95708a5}
+EXPECTED_COMMAND_SHA256=${P8_2_K1A_EXPECTED_COMMAND_SHA256:-d769e0b0fb9c49759b62167ea3bc07996baa7ade0d8d86633d626ea1f07da134}
 server_pid=
 
 cmd=(
@@ -74,7 +76,9 @@ cmd=(
 )
 
 audit_contract() {
+  local canonical_sha256
   local rendered
+  canonical_sha256=$(python3 "${ARGV_IDENTITY}" -- "${cmd[@]}")
   printf -v rendered '%q ' "${cmd[@]}"
   printf 'task_id=%s\n' "${TASK_ID}"
   printf 'lifecycle_count=1\n'
@@ -84,6 +88,8 @@ audit_contract() {
   printf 'cpu_bytes_to_use_per_rank=%s\n' "${CPU_BYTES_TO_USE_PER_RANK}"
   printf 'lazy_offload=false\n'
   printf 'observer_mode=observe_only_no_decision_or_copy_mutation\n'
+  printf 'server_command_identity_schema=ak_infer_lab_server_argv_v1\n'
+  printf 'server_command_sha256=%s\n' "${canonical_sha256}"
   printf 'server_command=%s\n' "${rendered% }"
 }
 
@@ -230,20 +236,43 @@ unset VLLM_PREFIX_CACHE_RETENTION_INTERVAL
 printf '%s\n' pass > "${RUNTIME_DIR}/source_gate_status.txt"
 export P8_2_K1A_TRANSFER_TRACE_DIR="${TRACE_DIR}"
 
+test -f "${ARGV_IDENTITY}"
 printf '%q ' "${cmd[@]}" > "${RUNTIME_DIR}/server_command.txt"
 printf '\n' >> "${RUNTIME_DIR}/server_command.txt"
-command_sha256=$(sha256sum "${RUNTIME_DIR}/server_command.txt" | awk '{print $1}')
+sha256sum "${RUNTIME_DIR}/server_command.txt" \
+  | awk '{print $1}' > "${RUNTIME_DIR}/server_command_rendered_sha256.txt"
+command_sha256=$("${PYTHON_BIN}" "${ARGV_IDENTITY}" \
+  --output "${RUNTIME_DIR}/server_argv.json" -- "${cmd[@]}")
+printf '%s\n' "${command_sha256}" > "${RUNTIME_DIR}/server_argv_sha256.txt"
 printf '%s\n' "${command_sha256}" > "${RUNTIME_DIR}/server_command_sha256.txt"
-test "${command_sha256}" = "${EXPECTED_COMMAND_SHA256}"
+if test "${command_sha256}" != "${EXPECTED_COMMAND_SHA256}"; then
+  {
+    printf 'server argv identity mismatch\n'
+    printf 'schema=ak_infer_lab_server_argv_v1\n'
+    printf 'expected=%s\n' "${EXPECTED_COMMAND_SHA256}"
+    printf 'actual=%s\n' "${command_sha256}"
+  } > "${RESULT_DIR}/first_failure_excerpt.txt"
+  exit 2
+fi
+rendered_command_sha256=$(cat "${RUNTIME_DIR}/server_command_rendered_sha256.txt")
 
-"${PYTHON_BIN}" - "${RESULT_DIR}/environment_and_hashes.json" "${REPO_ROOT}" "${command_sha256}" "${TASK_ID}" "${CPU_BYTES_TO_USE}" "${CPU_BYTES_TO_USE_PER_RANK}" "${REPO_FILE_LIST}" <<'PY'
+"${PYTHON_BIN}" - "${RESULT_DIR}/environment_and_hashes.json" "${REPO_ROOT}" "${command_sha256}" "${rendered_command_sha256}" "${TASK_ID}" "${CPU_BYTES_TO_USE}" "${CPU_BYTES_TO_USE_PER_RANK}" "${REPO_FILE_LIST}" <<'PY'
 import hashlib
 import importlib.metadata
 import json
 from pathlib import Path
 import sys
 
-output, root, command_sha, task_id, cpu_total, cpu_per_rank, relative_list = sys.argv[1:]
+(
+    output,
+    root,
+    command_sha,
+    rendered_command_sha,
+    task_id,
+    cpu_total,
+    cpu_per_rank,
+    relative_list,
+) = sys.argv[1:]
 root = Path(root)
 relative_paths = tuple(relative_list.split(":"))
 value = {
@@ -252,7 +281,11 @@ value = {
     "vllm_ascend": importlib.metadata.version("vllm-ascend"),
     "vllm_commit": "0decac0d96c42b49572498019f0a0e3600f50398",
     "vllm_ascend_commit": "5f6faa0cb8830f667266f3b8121cd1383606f2a1",
+    "server_command_identity_schema": "ak_infer_lab_server_argv_v1",
     "server_command_sha256": command_sha,
+    "server_argv_sha256": command_sha,
+    "server_command_rendered_sha256": rendered_command_sha,
+    "shell_rendering_is_diagnostic_only": True,
     "cpu_bytes_to_use": int(cpu_total),
     "cpu_bytes_to_use_per_rank": int(cpu_per_rank),
     "repo_file_sha256": {

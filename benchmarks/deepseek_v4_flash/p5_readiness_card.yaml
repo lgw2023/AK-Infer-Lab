@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_authorized_i0_r1_green
+  runtime_status: p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_authorized_i0_r1_green
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -202,13 +202,14 @@ artifacts:
   p8_2_k1a_r2_rendezvous_audit: p8_2_k1a_r2_geometry_rendezvous_audit.yaml
   p8_2_k1a_r3_formal_lifecycle_audit: p8_2_k1a_r3_formal_lifecycle_audit.yaml
   p8_2_k1a_r3_r1_provenance_gate_audit: p8_2_k1a_r3_r1_provenance_gate_audit.yaml
+  p8_2_k1a_r3_r2_portable_argv_audit: p8_2_k1a_r3_r2_portable_argv_audit.yaml
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
   next_workload: benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
-  next_stage_candidate: P8.2-K1A-R3-R1_repaired_provenance_same_formal_store_pressure_restore
-  current_server_handoff_task: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718
-  current_server_handoff_execution_mode: authorized_repaired_provenance_single_lifecycle_six_request_mechanism
+  next_stage_candidate: P8.2-K1A-R3-R2_portable_argv_same_formal_store_pressure_restore
+  current_server_handoff_task: p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719
+  current_server_handoff_execution_mode: authorized_portable_argv_same_accepted_capacity_single_lifecycle_six_request_mechanism
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -223,6 +224,8 @@ artifacts:
   current_p8_2_k1a_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py
   current_p8_2_k1a_r3_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh
   current_p8_2_k1a_r3_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r1_simple_cpu_offload.sh
+  current_p8_2_k1a_r3_r2_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r2_simple_cpu_offload.sh
+  current_server_argv_canonicalizer: ../../tools/inference_contracts/canonicalize_server_argv.py
   current_p8_2_k1a_observer: ../../tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
   current_p8_2_k1a_r1_allocator: ../../tools/inference_contracts/p8_2_k1a_r1_allocator.py
   current_p8_2_k1a_r1_geometry_observer: ../../tools/inference_contracts/p8_2_k1a_r1_geometry_observer.py
@@ -271,7 +274,8 @@ boundaries:
   - P8.2-K1A source/import/registration gates passed, but the selected 32 GiB/rank point failed before server-ready at aclrtMallocHostWithCfg/207001 with 0/6 requests; this is red for that point, not proof of ordinary DRAM exhaustion, a unique pinned-pool cause or global connector incompatibility.
   - P8.2-K1A-R1 completed red_p8_2_k1a_r1_geometry_probe_invalid: only ranks 0 and 2 produced complete geometry because the first worker raised the sentinel before any eight-rank rendezvous; no allocator wave ran, so the partial 430604288-byte/rank diagnostic is not an accepted capacity candidate.
   - P8.2-K1A-R2 is developer-accepted as ready_p8_2_k1a_r2_allocator_capacity after the 8-rank geometry, 32/64/96/128-block envelope and offline provenance replay all passed without source mutation; its accepted capacity is exactly 430604288 bytes/rank and 3444834304 bytes total.
-  - The current K1A-R3 action freezes that accepted 128-block capacity and authorizes exactly one six-request store-pressure-restore lifecycle with zero retry; it does not authorize capacity search, a second lifecycle or K2.
+  - P8.2-K1A-R3-R1 stopped before vLLM start with 0/6 requests because Bash 3.2 and 5.1 rendered printf %q differently; this is a nonportable repository command-identity red, not a capacity or runtime red.
+  - The current K1A-R3-R2 action replaces shell-render hashing with canonical exact-argv identity, freezes the same accepted 128-block capacity and authorizes exactly one six-request store-pressure-restore lifecycle with zero retry; it does not authorize capacity search, a second lifecycle or K2.
   - P8.3 is not technically dependent on K1/K1A. P8.3-I0 is accepted as green_p8_3_i0_checkpoint_inventory for index/header inventory only, while 1135 tensors and 12319364956 checkpoint bytes remain unclassified and the TP4 planning budget remains incomplete.
   - P8.3-I0-R1 is developer-accepted as green_p8_3_i0_r1_unclassified_taxonomy after byte-identical offline replay; it cannot reclassify tensors, refinalize the TP4 budget or authorize P8.3-I1.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
@@ -317,11 +321,19 @@ acceptance:
   p8_2_k1a_r3_model_request_count_exact: 6
   p8_2_k1a_r3_actual_formal_model_lifecycle_count: 0
   p8_2_k1a_r3_actual_model_request_count: 0
-  p8_2_k1a_r3_r1_execution_authorized: true
+  p8_2_k1a_r3_r1_grade: red_p8_2_k1a_r3_r1_no_success
+  p8_2_k1a_r3_r1_failure_class: nonportable_server_command_identity_contract
+  p8_2_k1a_r3_r1_execution_authorized: false
   p8_2_k1a_r3_r1_formal_model_lifecycle_count_exact: 1
   p8_2_k1a_r3_r1_model_request_count_exact: 6
   p8_2_k1a_r3_r1_request_retry_count_exact: 0
-  current_task_scoped_authorization: P8.2-K1A-R3-R1_only
+  p8_2_k1a_r3_r1_actual_formal_model_lifecycle_count: 1
+  p8_2_k1a_r3_r1_actual_model_request_count: 0
+  p8_2_k1a_r3_r2_execution_authorized: true
+  p8_2_k1a_r3_r2_formal_model_lifecycle_count_exact: 1
+  p8_2_k1a_r3_r2_model_request_count_exact: 6
+  p8_2_k1a_r3_r2_request_retry_count_exact: 0
+  current_task_scoped_authorization: P8.2-K1A-R3-R2_only
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory

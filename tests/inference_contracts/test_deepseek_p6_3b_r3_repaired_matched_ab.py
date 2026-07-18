@@ -293,9 +293,9 @@ def test_handoff_preserves_r4_r1_closeout_during_k1a_r3_r1_lifecycle():
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R1 repaired provenance" in handoff
-    assert "task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
-    assert "execution_mode: authorized_repaired_provenance_single_lifecycle_six_request_mechanism" in handoff
+    assert "P8.2-K1A-R3-R2 portable argv identity" in handoff
+    assert "task_id: p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719" in handoff
+    assert "execution_mode: authorized_portable_argv_same_accepted_capacity_single_lifecycle_six_request_mechanism" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "R2 hybrid-KV" in handoff
@@ -342,7 +342,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert acceptance["p6_3b_r4_r1_execution_authorized"] is False
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_authorized_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_authorized_i0_r1_green"
     )
 
     surfaces = [

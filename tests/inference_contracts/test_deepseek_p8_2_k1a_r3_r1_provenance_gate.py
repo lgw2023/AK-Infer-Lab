@@ -220,7 +220,7 @@ def test_r3_r1_runner_changes_only_task_lineage_not_runtime_contract(
     assert audit["cpu_bytes_to_use"] == "3444834304"
     assert audit["cpu_bytes_to_use_per_rank"] == "430604288"
     assert audit["server_command_sha256"] == (
-        "418d2796ec2dd15ab7504c264a6635a50d064cb7b6425f809cbfba550d2f5bb0"
+        "8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6"
     )
 
 
@@ -250,4 +250,5 @@ def test_r3_r1_audit_preserves_parent_block_and_exact_r2_evidence_roles() -> Non
     assert audit["decision"]["formal_lifecycle_count_exact"] == 1
     assert audit["decision"]["model_request_count_exact"] == 6
     assert audit["decision"]["request_retry_count_exact"] == 0
+    assert audit["decision"]["result_transfer_authorized"] is True
     assert audit["decision"]["k2_authorized"] is False

@@ -330,19 +330,19 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
 
 
 def test_r1_is_closed_and_k1a_r3_r1_is_the_only_authorized_handoff() -> None:
-    task_id = "p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
+    task_id = "p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719"
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_repaired_provenance_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_portable_argv_same_accepted_capacity_single_lifecycle_six_request_mechanism"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "result_transfer_authorized: false" in handoff
+    assert "result_transfer_authorized: true" in handoff
     assert "model_request_count_exact: 6" in handoff
     assert "formal_model_lifecycle_count_exact: 1" in handoff
     assert "capacity_search_authorized: false" in handoff

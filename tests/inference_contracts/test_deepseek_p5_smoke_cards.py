@@ -1959,15 +1959,15 @@ def test_server_handoff_advances_from_r3_block_to_k1a_r3_r1_lifecycle():
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R1 repaired provenance" in handoff
-    assert "task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
-    assert "execution_mode: authorized_repaired_provenance_single_lifecycle_six_request_mechanism" in handoff
+    assert "P8.2-K1A-R3-R2 portable argv identity" in handoff
+    assert "task_id: p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719" in handoff
+    assert "execution_mode: authorized_portable_argv_same_accepted_capacity_single_lifecycle_six_request_mechanism" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "formal_model_lifecycle_count_exact: 1" in handoff
     assert "model_request_count_exact: 6" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "result_transfer_authorized: false" in handoff
+    assert "result_transfer_authorized: true" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
@@ -1988,7 +1988,7 @@ def test_server_handoff_keeps_allocator_and_inventory_bounded():
     assert "cpu_bytes_to_use_per_rank=430604288" in handoff
     assert "result_directory_creation_authorized: true" in handoff
     assert "不得进入 K2" in handoff
-    assert "result_transfer_authorized: false" in handoff
+    assert "result_transfer_authorized: true" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "profiler_authorized: false" in handoff
 
@@ -2050,7 +2050,7 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_authorized_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_authorized_i0_r1_green"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2450,11 +2450,11 @@ def test_server_handoff_executes_only_k1a_r3_r1_formal_lifecycle():
         encoding="utf-8"
     )
 
-    assert "P8.2-K1A-R3-R1 repaired provenance" in handoff
-    assert "task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
+    assert "P8.2-K1A-R3-R2 portable argv identity" in handoff
+    assert "task_id: p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "result_transfer_authorized: false" in handoff
+    assert "result_transfer_authorized: true" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
     assert "R2 hybrid-KV" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff

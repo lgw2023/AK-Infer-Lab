@@ -79,10 +79,12 @@ P8 现显式分成两条并行依赖。P8.3-I0-R1 已在 bounded taxonomy 边界
 补全 TP4 budget 或授权 I1。K1A-R1 probe-invalid red 保留；K1A-R2 的 same-run 8-rank geometry、
 `32/64/96/128`-block pinned envelope 与离线 provenance replay 已由开发机接受为
 `ready_p8_2_k1a_r2_allocator_capacity`。P8.2-K1A-R3 因 handoff 混淆 geometry summary 与 rendezvous
-marker schema，在零 NPU/零请求处保留 provenance blocked。当前唯一服务器任务为 P8.2-K1A-R3-R1：
-先以双文件 schema-aware gate 修复该合同，再冻结 `430604288 bytes/rank / 3444834304 bytes total`，只运行
-一次相同正式六请求 store→pressure→restore lifecycle，零 retry；容量搜索、第二 lifecycle、K2 与
-P8.3-I1 均未授权。
+marker schema，在零 NPU/零请求处保留 provenance blocked。P8.2-K1A-R3-R1 随后通过 repaired
+provenance，但其 mode runner 用 Bash `printf %q` 文本做命令身份，因开发机 Bash 3.2 与服务器 Bash 5.1
+转义不同而在 vLLM 启动前停止，0/6 request；该结果只接受为 repository portability contract red，
+不撤销 R2 capacity ready。当前唯一服务器任务为 P8.2-K1A-R3-R2：改用 exact argv canonical JSON
+身份后，在同一 `430604288 bytes/rank / 3444834304 bytes total` 上只运行一次相同正式六请求
+store→pressure→restore lifecycle，零 retry；容量搜索、第二 lifecycle、K2 与 P8.3-I1 均未授权。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 
@@ -103,7 +105,7 @@ P8.3-I1 均未授权。
 ## 最小开工路径
 
 1. P5/P6 runtime、official context、unprofiled/profiled reference 与 matched controls 已关闭；mixed checkpoint 不再参与，P6.3C 保留严格单变量 blocked。
-2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A 32 GiB/rank red，K1A-R1 probe-invalid red，K1A-R2 capacity ready，K1A-R3 provenance blocked；当前只执行 K1A-R3-R1 repaired-provenance + 同一 accepted-capacity 单 lifecycle 六请求机制闭环，K2 不授权。
+2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A 32 GiB/rank red，K1A-R1 probe-invalid red，K1A-R2 capacity ready，K1A-R3 provenance blocked，K1A-R3-R1 portable-argv contract red；当前只执行 K1A-R3-R2 canonical-argv + 同一 accepted-capacity 单 lifecycle 六请求机制闭环，K2 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。
 5. P9：待 P7/P8 的真实 trace、inventory、simulation 与 TP4 closure 证据齐备后，合并 P0/P3 microbench，输出带置信度和软件前提的下一代硬件优先级。

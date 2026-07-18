@@ -154,7 +154,7 @@ python3 通信模块/send_notify.py --test --no-proxy --confirmed-method email
 1. 开发人员清空 `docs/developer-to-server.md` 的旧任务内容，只写当前唯一任务、`execution_codebase` 与完整执行边界。
 2. 开发人员提交并推送仓库。
 3. 服务器只在主镜像工作区执行本地 alias `git pull-remote` 后读取本目录文档；该 alias 指向服务器本地 `server_local/git_pull_remote_wins.sh`，执行 `fetch + reset --hard origin/main`，让主镜像已跟踪文件以远端为准，同时保留未跟踪实验产物、conda 环境和服务器本地脚本。主镜像的 tracked 文件全部只读，包括 `工作记录与进度笔记本/`；服务器执行结果只写入 `server_local/<task_id>/`，受跟踪的工作记录由外部开发机维护。服务器需要长期维护的代码不得放在该主镜像，必须使用独立 `server-local/runtime-adaptations` worktree。
-4. 服务器完成任务后只在服务器本地生成 `result_summary.md`、候选附件和清单；通过当前任务会话请求用户在 `email` 与 `upload-api` 中选择，不调用任何外发命令。
+4. 服务器完成任务后只在服务器本地生成 `result_summary.md`、候选附件和清单；任务合同的 `result_transfer_authorized` 默认为 `true` 且不得作为额外阻断门。通过当前任务会话请求用户为完整清单选择 `email`、`upload-api` 或 `server-local`；该字段不代表已选渠道，选择前不调用任何外发命令。
 5. 用户选择后，服务器只按该方式交付已列明的正文与附件：`email` 把摘要作为正文并附上批准文件；`upload-api` 用一个 `session_name` 和一次多文件请求提交摘要与全部批准附件。不得先发状态邮件、扩展范围或切换通道。
 
 ## 双向协作约束

@@ -261,6 +261,6 @@ def test_single_request_tracer_is_preserved_but_superseded_before_execution() ->
         not in handoff
     )
     assert (
-        "task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
+        "task_id: p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719"
         in handoff
     )

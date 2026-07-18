@@ -74,6 +74,10 @@ EVIDENCE_INCOMPLETE_GRADE = os.environ.get(
     "P8_2_K1A_EVIDENCE_INCOMPLETE_GRADE",
     "red_p8_2_k1a_transfer_evidence_incomplete",
 )
+RESULT_TRANSFER_AUTHORIZED = (
+    os.environ.get("P8_2_K1A_RESULT_TRANSFER_AUTHORIZED", "true").lower()
+    == "true"
+)
 CANDIDATE_NAMES = (
     "result_summary.md",
     "environment_and_hashes.json",
@@ -369,6 +373,36 @@ def _write_request_summary(path: Path, rows: list[dict[str, Any]]) -> None:
         writer.writerows(rows)
 
 
+def write_candidate_manifest(artifact_dir: Path) -> dict[str, Any]:
+    files: dict[str, dict[str, Any]] = {}
+    missing: list[str] = []
+    for name in CANDIDATE_NAMES:
+        path = artifact_dir / name
+        if not path.is_file():
+            missing.append(name)
+            continue
+        files[name] = {
+            "bytes": path.stat().st_size,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "sensitivity": "bounded_operational_metadata_no_content_or_token_ids",
+        }
+    total = sum(row["bytes"] for row in files.values())
+    if total > 71680:
+        raise ValueError(f"candidate package exceeds 70KB: {total}")
+    manifest = {
+        "schema_version": "p8_2_k1a_candidate_manifest_v1",
+        "result_root": str(artifact_dir),
+        "files": files,
+        "missing_candidate_files": missing,
+        "candidate_file_count": len(files),
+        "candidate_total_bytes": total,
+        "max_total_bytes": 71680,
+        "result_transfer_authorized": RESULT_TRANSFER_AUTHORIZED,
+    }
+    _write_json(artifact_dir / "candidate_manifest.server_local.json", manifest)
+    return manifest
+
+
 def finalize_k1a(artifact_dir: Path) -> dict[str, Any]:
     request_path = artifact_dir / "modes/prefix_cache_on/raw_request_results.jsonl"
     rows = _read_jsonl(request_path)
@@ -419,11 +453,14 @@ def finalize_k1a(artifact_dir: Path) -> dict[str, Any]:
         ),
     }
     _write_json(artifact_dir / "mtp_queue_health_summary.json", mtp)
-    (artifact_dir / "first_failure_excerpt.txt").write_text(
-        ("none" if grading["server_grade"] == CANDIDATE_GREEN else grading["server_grade"])
-        + "\n",
-        encoding="utf-8",
+    failure_path = artifact_dir / "first_failure_excerpt.txt"
+    existing_failure = (
+        failure_path.read_text(encoding="utf-8") if failure_path.is_file() else ""
     )
+    if grading["server_grade"] == CANDIDATE_GREEN:
+        failure_path.write_text("none\n", encoding="utf-8")
+    elif not existing_failure.strip():
+        failure_path.write_text(grading["server_grade"] + "\n", encoding="utf-8")
     (artifact_dir / "result_summary.md").write_text(
         "\n".join(
             (
@@ -447,6 +484,7 @@ def finalize_k1a(artifact_dir: Path) -> dict[str, Any]:
     grading["candidate_files_present"] = [
         name for name in CANDIDATE_NAMES if (artifact_dir / name).is_file()
     ]
+    write_candidate_manifest(artifact_dir)
     return grading
 
 

@@ -91,16 +91,16 @@ def test_current_handoff_preserves_p6_green_during_k1a_r3_r1_lifecycle():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R1 repaired provenance" in handoff
-    assert "task_id: p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
-    assert "execution_mode: authorized_repaired_provenance_single_lifecycle_six_request_mechanism" in handoff
+    assert "P8.2-K1A-R3-R2 portable argv identity" in handoff
+    assert "task_id: p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719" in handoff
+    assert "execution_mode: authorized_portable_argv_same_accepted_capacity_single_lifecycle_six_request_mechanism" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "model_request_count_exact: 6" in handoff
-    assert "result_transfer_authorized: false" in handoff
+    assert "result_transfer_authorized: true" in handoff
 
     readiness = yaml.safe_load(
         (

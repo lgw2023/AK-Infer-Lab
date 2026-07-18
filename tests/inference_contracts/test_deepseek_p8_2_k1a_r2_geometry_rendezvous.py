@@ -215,8 +215,8 @@ def test_current_handoff_authorizes_only_k1a_r3_r1_after_r3_block() -> None:
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r3_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_"
-        "2026_0718"
+        "p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_"
+        "2026_0719"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
@@ -226,7 +226,7 @@ def test_current_handoff_authorizes_only_k1a_r3_r1_after_r3_block() -> None:
         "model_request_count_exact: 6",
         "request_retry_count_exact: 0",
         "capacity_search_authorized: false",
-        "result_transfer_authorized: false",
+        "result_transfer_authorized: true",
         "next_task_authorized: false",
     ):
         assert field in handoff
@@ -234,10 +234,10 @@ def test_current_handoff_authorizes_only_k1a_r3_r1_after_r3_block() -> None:
         "ready_p8_2_k1a_r2_allocator_capacity",
         "blocked_p8_2_k1a_r3_source_or_provenance_gate",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r3_r1_simple_cpu_offload.sh",
+        "run_deepseek_p8_2_k1a_r3_r2_simple_cpu_offload.sh",
         "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r3_r1_simple_cpu_offload_store_restore",
+        "candidate_green_p8_2_k1a_r3_r2_simple_cpu_offload_store_restore",
         "P8.3-I1",
     ):
         assert marker in handoff
-    assert "result_transfer_authorized: true" not in handoff
+    assert "result_transfer_authorized: false" not in handoff
