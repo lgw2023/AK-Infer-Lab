@@ -7,7 +7,11 @@ if test "$#" -ne 1; then
 fi
 
 RESULT_DIR=$1
-TASK_ID=p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717
+TASK_ID=${P8_2_K1A_TASK_ID:-p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717}
+CPU_BYTES_TO_USE=${P8_2_K1A_CPU_BYTES_TO_USE:-274877906944}
+CPU_BYTES_TO_USE_PER_RANK=${P8_2_K1A_CPU_BYTES_TO_USE_PER_RANK:-34359738368}
+HOST_MEM_AVAILABLE_MIN=${P8_2_K1A_HOST_MEM_AVAILABLE_MIN:-412316860416}
+REPO_FILE_LIST=${P8_2_K1A_REPO_FILE_LIST:-benchmarks/deepseek_v4_flash/p8_2_k1a_simple_cpu_offload_feasibility_audit.yaml:benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml:tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py:tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py:tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py:tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh:benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch}
 REPO_ROOT=${REPO_ROOT:-/data/node0_disk1/liguowei/AK-Infer-Lab}
 ENV_PREFIX=${ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1}
 PYTHON_BIN=${PYTHON_BIN:-${ENV_PREFIX}/bin/python}
@@ -36,8 +40,8 @@ RUNTIME_DIR=${RESULT_DIR}/runtime
 OVERLAY_ROOT=${RUNTIME_DIR}/overlay_root
 DIAGNOSTIC_PATH=${RUNTIME_DIR}/hybrid_kv_runtime_diagnostic.jsonl
 TRACE_DIR=${RUNTIME_DIR}/offload_trace
-KV_TRANSFER_JSON='{"kv_connector":"SimpleCPUOffloadConnector","kv_role":"kv_both","kv_connector_extra_config":{"cpu_bytes_to_use":274877906944,"cpu_bytes_to_use_per_rank":34359738368,"lazy_offload":false}}'
-EXPECTED_COMMAND_SHA256=d4222bef3a1c39dd38297b0523b9df54e3f3cef3ff67e4b970e6fce3f95708a5
+KV_TRANSFER_JSON=$(printf '{"kv_connector":"SimpleCPUOffloadConnector","kv_role":"kv_both","kv_connector_extra_config":{"cpu_bytes_to_use":%s,"cpu_bytes_to_use_per_rank":%s,"lazy_offload":false}}' "${CPU_BYTES_TO_USE}" "${CPU_BYTES_TO_USE_PER_RANK}")
+EXPECTED_COMMAND_SHA256=${P8_2_K1A_EXPECTED_COMMAND_SHA256:-d4222bef3a1c39dd38297b0523b9df54e3f3cef3ff67e4b970e6fce3f95708a5}
 server_pid=
 
 cmd=(
@@ -76,8 +80,8 @@ audit_contract() {
   printf 'lifecycle_count=1\n'
   printf 'request_count=6\n'
   printf 'kv_connector=SimpleCPUOffloadConnector\n'
-  printf 'cpu_bytes_to_use=274877906944\n'
-  printf 'cpu_bytes_to_use_per_rank=34359738368\n'
+  printf 'cpu_bytes_to_use=%s\n' "${CPU_BYTES_TO_USE}"
+  printf 'cpu_bytes_to_use_per_rank=%s\n' "${CPU_BYTES_TO_USE_PER_RANK}"
   printf 'lazy_offload=false\n'
   printf 'observer_mode=observe_only_no_decision_or_copy_mutation\n'
   printf 'server_command=%s\n' "${rendered% }"
@@ -132,19 +136,20 @@ test -f "${RESULT_DIR}/request_body_manifest.json"
 test ! -e "${RUNTIME_DIR}"
 mkdir -p "${RUNTIME_DIR}" "${OVERLAY_ROOT}" "${TRACE_DIR}"
 
-"${PYTHON_BIN}" - "${RESULT_DIR}/host_memory_summary.json" <<'PY'
+"${PYTHON_BIN}" - "${RESULT_DIR}/host_memory_summary.json" "${CPU_BYTES_TO_USE}" "${CPU_BYTES_TO_USE_PER_RANK}" "${HOST_MEM_AVAILABLE_MIN}" <<'PY'
 import json
 from pathlib import Path
 import sys
 
+output = Path(sys.argv[1])
+cpu_total, cpu_per_rank, minimum = map(int, sys.argv[2:])
 meminfo = {}
 for line in Path("/proc/meminfo").read_text().splitlines():
     key, raw = line.split(":", 1)
     meminfo[key] = int(raw.strip().split()[0]) * 1024
-minimum = 412316860416
 value = {
-    "configured_cpu_tier_bytes_total": 274877906944,
-    "configured_cpu_tier_bytes_per_rank": 34359738368,
+    "configured_cpu_tier_bytes_total": cpu_total,
+    "configured_cpu_tier_bytes_per_rank": cpu_per_rank,
     "preflight_mem_available_bytes": meminfo["MemAvailable"],
     "preflight_swap_used_bytes": meminfo["SwapTotal"] - meminfo["SwapFree"],
     "required_mem_available_bytes_min": minimum,
@@ -153,7 +158,7 @@ value = {
         and meminfo["SwapTotal"] == meminfo["SwapFree"]
     ),
 }
-Path(sys.argv[1]).write_text(
+output.write_text(
     json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8"
 )
 assert value["preflight_gate_ok"]
@@ -231,31 +236,25 @@ command_sha256=$(sha256sum "${RUNTIME_DIR}/server_command.txt" | awk '{print $1}
 printf '%s\n' "${command_sha256}" > "${RUNTIME_DIR}/server_command_sha256.txt"
 test "${command_sha256}" = "${EXPECTED_COMMAND_SHA256}"
 
-"${PYTHON_BIN}" - "${RESULT_DIR}/environment_and_hashes.json" "${REPO_ROOT}" "${command_sha256}" <<'PY'
+"${PYTHON_BIN}" - "${RESULT_DIR}/environment_and_hashes.json" "${REPO_ROOT}" "${command_sha256}" "${TASK_ID}" "${CPU_BYTES_TO_USE}" "${CPU_BYTES_TO_USE_PER_RANK}" "${REPO_FILE_LIST}" <<'PY'
 import hashlib
 import importlib.metadata
 import json
 from pathlib import Path
 import sys
 
-output, root, command_sha = sys.argv[1:]
+output, root, command_sha, task_id, cpu_total, cpu_per_rank, relative_list = sys.argv[1:]
 root = Path(root)
-relative_paths = (
-    "benchmarks/deepseek_v4_flash/p8_2_k1a_simple_cpu_offload_feasibility_audit.yaml",
-    "benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml",
-    "tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py",
-    "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py",
-    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py",
-    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh",
-    "benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch",
-)
+relative_paths = tuple(relative_list.split(":"))
 value = {
-    "task_id": "p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717",
+    "task_id": task_id,
     "vllm": importlib.metadata.version("vllm"),
     "vllm_ascend": importlib.metadata.version("vllm-ascend"),
     "vllm_commit": "0decac0d96c42b49572498019f0a0e3600f50398",
     "vllm_ascend_commit": "5f6faa0cb8830f667266f3b8121cd1383606f2a1",
     "server_command_sha256": command_sha,
+    "cpu_bytes_to_use": int(cpu_total),
+    "cpu_bytes_to_use_per_rank": int(cpu_per_rank),
     "repo_file_sha256": {
         relative: hashlib.sha256((root / relative).read_bytes()).hexdigest()
         for relative in relative_paths
@@ -334,6 +333,14 @@ value = {
         row.get("event") == "observer_installed" for row in observer_rows
     ),
 }
+extra = expected["kv_connector_extra_config"]
+value["cpu_bytes_to_use"] = extra["cpu_bytes_to_use"]
+value["cpu_bytes_to_use_per_rank"] = extra["cpu_bytes_to_use_per_rank"]
+value["resolved_cpu_capacity_exact"] = all((
+    server_config == expected,
+    process_config == expected,
+    extra["cpu_bytes_to_use"] == extra["cpu_bytes_to_use_per_rank"] * 8,
+))
 value["resolved_connector_exact"] = all((
     server_config == expected,
     process_config == expected,
@@ -342,6 +349,7 @@ value["resolved_connector_exact"] = all((
     value["ascend_connector_log_present"],
     value["npu_worker_log_present"],
     value["observer_installed_event_count"] > 0,
+    value["resolved_cpu_capacity_exact"],
 ))
 Path(output_path).write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 assert value["resolved_connector_exact"]

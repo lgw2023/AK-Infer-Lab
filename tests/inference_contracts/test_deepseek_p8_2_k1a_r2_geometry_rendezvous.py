@@ -210,36 +210,33 @@ def test_r2_geometry_summary_direct_file_cli_bootstraps_repo_root() -> None:
     assert "summarize-geometry" in completed.stdout
 
 
-def test_current_handoff_authorizes_only_k1a_r2_and_i0_r1() -> None:
+def test_current_handoff_authorizes_only_k1a_r3_after_r2_acceptance() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     task_id = (
-        "p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717"
+        "p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_"
+        "2026_0718"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "p8_3_i0_r1_existing_inventory_taxonomy_authorized: true",
-        "checkpoint_full_sha256_authorized: false",
-        "geometry_probe_lifecycle_count_exact: 1",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
-        "pinned_allocator_wave_count_max: 4",
+        "formal_model_lifecycle_count_exact: 1",
+        "model_request_count_exact: 6",
+        "request_retry_count_exact: 0",
+        "capacity_search_authorized: false",
         "result_transfer_authorized: false",
         "next_task_authorized: false",
     ):
         assert field in handoff
     for marker in (
-        "quant_model_weights.safetensors.index.json",
-        "P8_2_K1A_R2_PROBE_RUN_ID",
-        "geometry.rendezvous.complete.json",
-        "p8_3_i0_r1_unclassified_taxonomy.json",
-        "32→64→96→128",
-        "不得启动正式六请求 K1A lifecycle",
+        "ready_p8_2_k1a_r2_allocator_capacity",
+        "green_p8_3_i0_r1_unclassified_taxonomy",
+        "run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh",
+        "cpu_bytes_to_use_per_rank=430604288",
+        "candidate_green_p8_2_k1a_r3_simple_cpu_offload_store_restore",
         "P8.3-I1",
     ):
         assert marker in handoff
-    assert "--shard-hash-mode full" not in handoff
     assert "result_transfer_authorized: true" not in handoff

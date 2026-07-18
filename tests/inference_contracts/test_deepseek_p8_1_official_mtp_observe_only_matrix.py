@@ -465,32 +465,30 @@ def test_matrix_workload_hashes_every_executable_contract_artifact() -> None:
         assert frozen[key] == hashlib.sha256(path.read_bytes()).hexdigest(), path
 
 
-def test_current_handoff_authorizes_only_k1a_r2_and_p8_3_i0_r1_review() -> None:
+def test_current_handoff_authorizes_only_k1a_r3_formal_lifecycle() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-        "task_id: p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717"
+        "task_id: p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
         in handoff
     )
     assert (
-        "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope"
+        "execution_mode: authorized_accepted_capacity_single_lifecycle_six_request_mechanism"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
-    assert "p8_2_k1a_r1_allocator.py" in handoff
-    assert "p8_3_i0_r1_existing_inventory_taxonomy_authorized: true" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "16384" in handoff
-    assert "model_request_count_exact: 0" in handoff
+    assert "model_request_count_exact: 6" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "keep_alive_stop_and_restore_authorized: true" in handoff
-    assert "formal_model_lifecycle_count_exact: 0" in handoff
-    assert "禁止自动进入 K2" in handoff
+    assert "formal_model_lifecycle_count_exact: 1" in handoff
+    assert "不得进入 K2" in handoff
     assert "email" in handoff
     assert "upload-api" in handoff
     assert "git push origin" not in handoff

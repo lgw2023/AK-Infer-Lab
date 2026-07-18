@@ -129,7 +129,7 @@ def test_geometry_summary_cli_writes_bounded_json(tmp_path: Path) -> None:
     assert value["formal_lifecycle_authorized"] is False
 
 
-def test_k1a_r1_contract_and_current_handoff_forbid_automatic_formal_rerun() -> None:
+def test_k1a_r1_contract_stays_red_while_r3_has_new_formal_authorization() -> None:
     audit = yaml.safe_load(
         (
             REPO_ROOT
@@ -147,14 +147,14 @@ def test_k1a_r1_contract_and_current_handoff_forbid_automatic_formal_rerun() -> 
     assert audit["allocator_envelope"]["wave_cpu_blocks"] == [32, 64, 96, 128]
     assert audit["decision"]["formal_lifecycle_authorized"] is False
     assert audit["decision"]["k2_authorized"] is False
-    assert "p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717" in handoff
-    assert "geometry_probe_lifecycle_count_exact: 1" in handoff
-    assert "formal_model_lifecycle_count_exact: 0" in handoff
-    assert "model_request_count_exact: 0" in handoff
-    assert "p8_3_i0_r1_existing_inventory_taxonomy_authorized: true" in handoff
+    assert "p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
+    assert "ready_p8_2_k1a_r2_allocator_capacity" in handoff
+    assert "formal_model_lifecycle_count_exact: 1" in handoff
+    assert "model_request_count_exact: 6" in handoff
+    assert "capacity_search_authorized: false" in handoff
     assert "result_transfer_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "不得启动正式六请求 K1A lifecycle" in handoff
+    assert "cpu_bytes_to_use_per_rank=430604288" in handoff
 
 
 def test_pinned_probe_direct_file_cli_bootstraps_repo_root() -> None:

@@ -1,0 +1,71 @@
+schema_version: p8_2_k1a_r3_formal_lifecycle_audit_v1
+stage: P8.2-K1A-R3
+audit_date: "2026-07-18"
+task_family: accepted_allocator_capacity_to_single_formal_store_pressure_restore_lifecycle
+
+frozen_stack:
+  vllm_version: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_version: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+
+parent:
+  task_id: p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717
+  server_head: 67169a6b98b27219b272b1f57da935757d9c81f3
+  server_candidate_grade: candidate_ready_p8_2_k1a_r2_allocator_capacity
+  developer_grade: ready_p8_2_k1a_r2_allocator_capacity
+  offline_provenance_replay: pass
+  offline_replay_task_id: p8_dual_track_k1a_r2_i0_r1_offline_provenance_upload_2026_0718
+  offline_replay_sha256: 1ee490476b741b7eaf73fa9faffc8c2a6fc9a8525bca42202b213c628dd307f0
+  candidate_manifest_sha256: 5a65d66911ac8f073c1dd939b06d78de2a6f51dd2d5ecd66f60f5ee212cc01e9
+  geometry_summary_sha256: 8430730a583371ebdcc1cb35ff80903376a007cb3f2645ce6a55114bdb9ea6d1
+  allocator_summary_sha256: 99f997a66cb14aeaf1941d34c525729c70dcda0569d45c465a0f1c7f55dfc6b2
+  source_evidence_unchanged: true
+  formal_model_lifecycle_count: 0
+  model_request_count: 0
+
+accepted_capacity:
+  block_size_tokens: 128
+  required_restore_tokens: 16384
+  required_cpu_blocks: 128
+  bytes_per_block: 3364096
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  world_size: 8
+
+formal_lifecycle:
+  lifecycle_count_exact: 1
+  request_count_exact: 6
+  request_retries: 0
+  sequence: [warmup, prime, pressure, restore_follower, repeat_follower, isolated_control]
+  same_parent_request_bodies_and_order_required: true
+  same_frozen_server_argv_except_capacity_required: true
+  resolved_capacity_exact_before_requests: true
+  full_r2_hybrid_kv_repair_required: true
+  official_mtp_num_speculative_tokens: 1
+  observe_only_transfer_trace_required: true
+  d2h_store_all_eight_workers_required: true
+  h2d_restore_all_eight_workers_required: true
+  restore_scheduler_lifecycle_required: true
+
+decision:
+  formal_lifecycle_authorized: true
+  capacity_search_authorized: false
+  second_capacity_point_authorized: false
+  compatibility_patch_authorized: false
+  profiler_authorized: false
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  p8_4_authorized: false
+  p8_5_authorized: false
+  p9_authorized: false
+  next_task_authorized: false
+
+claims:
+  boundary: accepted_128_block_capacity_single_deepseek_tp8_ep_mtp_store_pressure_restore_mechanism_only
+  allocator_capacity_revalidated_by_runtime: false
+  offload_store_restore_proven: false
+  performance_reference_accepted: false
+  general_support_claim_allowed: false

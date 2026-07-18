@@ -10,7 +10,11 @@ RESULT_DIR=$1
 REPO_ROOT=${REPO_ROOT:-/data/node0_disk1/liguowei/AK-Infer-Lab}
 ENV_PREFIX=${ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1}
 PYTHON_BIN=${PYTHON_BIN:-${ENV_PREFIX}/bin/python}
-TASK_ID=p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717
+TASK_ID=${P8_2_K1A_TASK_ID:-p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717}
+EXECUTION_MODE=${P8_2_K1A_EXECUTION_MODE:-authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism}
+CPU_BYTES_TO_USE=${P8_2_K1A_CPU_BYTES_TO_USE:-274877906944}
+CPU_BYTES_TO_USE_PER_RANK=${P8_2_K1A_CPU_BYTES_TO_USE_PER_RANK:-34359738368}
+SERVER_COMMAND_SHA256=${P8_2_K1A_EXPECTED_COMMAND_SHA256:-d4222bef3a1c39dd38297b0523b9df54e3f3cef3ff67e4b970e6fce3f95708a5}
 SOURCE_PAYLOAD=${SOURCE_PAYLOAD:-${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json}
 MODEL_NAME=${MODEL_NAME:-deepseek-v4-flash-w8a8-mtp}
 MODE_RUNNER=${MODE_RUNNER:-${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh}
@@ -33,11 +37,13 @@ export NO_PROXY="$(append_no_proxy "${NO_PROXY:-}")"
 
 audit_contract() {
   printf 'task_id=%s\n' "${TASK_ID}"
-  printf 'execution_mode=authorized_simple_cpu_offload_single_lifecycle_six_request_mechanism\n'
+  printf 'execution_mode=%s\n' "${EXECUTION_MODE}"
   printf 'lifecycle_count=1\n'
   printf 'request_count=6\n'
   printf 'request_order=warmup,prime,pressure,restore_follower,repeat_follower,isolated_control\n'
-  printf 'server_command_sha256=d4222bef3a1c39dd38297b0523b9df54e3f3cef3ff67e4b970e6fce3f95708a5\n'
+  printf 'cpu_bytes_to_use=%s\n' "${CPU_BYTES_TO_USE}"
+  printf 'cpu_bytes_to_use_per_rank=%s\n' "${CPU_BYTES_TO_USE_PER_RANK}"
+  printf 'server_command_sha256=%s\n' "${SERVER_COMMAND_SHA256}"
   printf 'npu_execution_authorized=true\n'
   printf 'next_task_authorized=false\n'
 }

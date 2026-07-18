@@ -4,6 +4,7 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 from typing import Any
@@ -24,8 +25,13 @@ from tools.inference_contracts.run_deepseek_p6_3b_prefix_cache_ab import (
 )
 
 
-TASK_ID = (
-    "p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717"
+TASK_ID = os.environ.get(
+    "P8_2_K1A_TASK_ID",
+    "p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717",
+)
+CPU_BYTES_TO_USE = int(os.environ.get("P8_2_K1A_CPU_BYTES_TO_USE", "274877906944"))
+CPU_BYTES_TO_USE_PER_RANK = int(
+    os.environ.get("P8_2_K1A_CPU_BYTES_TO_USE_PER_RANK", "34359738368")
 )
 OUTPUT_TOKENS = 64
 BLOCK_SIZE = 128
@@ -48,7 +54,26 @@ REQUEST_ROLE = {
     "lifecycle_01_repeat_follower": "repeat_follower",
     "lifecycle_01_isolated_control": "isolated_control",
 }
-CANDIDATE_GREEN = "candidate_green_p8_2_k1a_simple_cpu_offload_store_restore"
+CANDIDATE_GREEN = os.environ.get(
+    "P8_2_K1A_CANDIDATE_GREEN",
+    "candidate_green_p8_2_k1a_simple_cpu_offload_store_restore",
+)
+NO_SUCCESS_GRADE = os.environ.get(
+    "P8_2_K1A_NO_SUCCESS_GRADE",
+    "red_p8_2_k1a_simple_cpu_offload_no_success",
+)
+PARTIAL_GRADE = os.environ.get(
+    "P8_2_K1A_PARTIAL_GRADE",
+    "yellow_p8_2_k1a_simple_cpu_offload_partial",
+)
+STORE_ONLY_GRADE = os.environ.get(
+    "P8_2_K1A_STORE_ONLY_GRADE",
+    "yellow_p8_2_k1a_store_only_no_restore",
+)
+EVIDENCE_INCOMPLETE_GRADE = os.environ.get(
+    "P8_2_K1A_EVIDENCE_INCOMPLETE_GRADE",
+    "red_p8_2_k1a_transfer_evidence_incomplete",
+)
 CANDIDATE_NAMES = (
     "result_summary.md",
     "environment_and_hashes.json",
@@ -245,6 +270,7 @@ def grade_k1a_evidence(
     connector_resolution_ok: bool,
     repair_diagnostic_ok: bool,
     host_memory_gate_ok: bool,
+    accepted_capacity_exact: bool = True,
 ) -> dict[str, Any]:
     roles = [
         str(row.get("k1a_role") or REQUEST_ROLE.get(str(row.get("request_id"))))
@@ -261,19 +287,20 @@ def grade_k1a_evidence(
             connector_resolution_ok,
             repair_diagnostic_ok,
             host_memory_gate_ok,
+            accepted_capacity_exact,
             cleanup == "clean",
         )
     )
     store_ok = trace_summary.get("d2h_store_complete") is True
     restore_ok = trace_summary.get("h2d_restore_complete") is True
     if not successful:
-        grade = "red_p8_2_k1a_simple_cpu_offload_no_success"
+        grade = NO_SUCCESS_GRADE
     elif not structural_complete:
-        grade = "yellow_p8_2_k1a_simple_cpu_offload_partial"
+        grade = PARTIAL_GRADE
     elif base_evidence and store_ok and not restore_ok:
-        grade = "yellow_p8_2_k1a_store_only_no_restore"
+        grade = STORE_ONLY_GRADE
     elif not (base_evidence and store_ok and restore_ok):
-        grade = "red_p8_2_k1a_transfer_evidence_incomplete"
+        grade = EVIDENCE_INCOMPLETE_GRADE
     else:
         grade = CANDIDATE_GREEN
     return {
@@ -285,6 +312,9 @@ def grade_k1a_evidence(
         "connector_resolution_ok": connector_resolution_ok,
         "repair_diagnostic_ok": repair_diagnostic_ok,
         "host_memory_gate_ok": host_memory_gate_ok,
+        "accepted_capacity_exact": accepted_capacity_exact,
+        "cpu_bytes_to_use": CPU_BYTES_TO_USE,
+        "cpu_bytes_to_use_per_rank": CPU_BYTES_TO_USE_PER_RANK,
         "cleanup": cleanup,
         "offload_store_evidence_candidate": store_ok,
         "offload_restore_evidence_candidate": restore_ok,
@@ -353,6 +383,15 @@ def finalize_k1a(artifact_dir: Path) -> dict[str, Any]:
     connector = _read_json(artifact_dir / "connector_resolution_summary.json")
     repair = _read_json(artifact_dir / "repair_diagnostic_summary.json")
     host = _read_json(artifact_dir / "host_memory_summary.json")
+    accepted_capacity_exact = all(
+        (
+            connector.get("resolved_cpu_capacity_exact") is True,
+            connector.get("cpu_bytes_to_use") == CPU_BYTES_TO_USE,
+            connector.get("cpu_bytes_to_use_per_rank") == CPU_BYTES_TO_USE_PER_RANK,
+            host.get("configured_cpu_tier_bytes_total") == CPU_BYTES_TO_USE,
+            host.get("configured_cpu_tier_bytes_per_rank") == CPU_BYTES_TO_USE_PER_RANK,
+        )
+    )
     cleanup_path = artifact_dir / "cleanup_status.txt"
     cleanup = cleanup_path.read_text(encoding="utf-8").strip() if cleanup_path.is_file() else "missing"
     grading = grade_k1a_evidence(
@@ -362,6 +401,7 @@ def finalize_k1a(artifact_dir: Path) -> dict[str, Any]:
         connector_resolution_ok=connector.get("resolved_connector_exact") is True,
         repair_diagnostic_ok=repair.get("hybrid_diagnostic_ok") is True,
         host_memory_gate_ok=host.get("preflight_gate_ok") is True,
+        accepted_capacity_exact=accepted_capacity_exact,
     )
     grading["task_id"] = TASK_ID
     grading["trace_summary"] = trace_summary
@@ -392,6 +432,8 @@ def finalize_k1a(artifact_dir: Path) -> dict[str, Any]:
                 f"- task_id: `{TASK_ID}`",
                 f"- server_grade: `{grading['server_grade']}`",
                 f"- successful_request_count: `{grading['successful_request_count']}/6`",
+                f"- accepted_capacity_exact: `{grading['accepted_capacity_exact']}`",
+                f"- cpu_bytes_to_use_per_rank: `{CPU_BYTES_TO_USE_PER_RANK}`",
                 f"- d2h_store_complete: `{trace_summary['d2h_store_complete']}`",
                 f"- h2d_restore_complete: `{trace_summary['h2d_restore_complete']}`",
                 f"- d2h_bytes_total: `{trace_summary['d2h_bytes_total']}`",

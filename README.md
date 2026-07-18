@@ -74,14 +74,13 @@ AK-Infer-Lab/
 
 P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell、P6.3A matched MTP on/off 和 P6.3B-R4-R1 explicit Prefix Cache control。P8.1-R1 已由开发机接受 `green_p8_1_r1_official_mtp_observe_only_matrix`。P8.2-K0-R1 使用不变的 29-file raw evidence 离线修正 finalizer 后，15 项逐请求 predicate 均为 20/20，开发机已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`；该结果仍不是 performance reference 或 offload evidence。K1 `OffloadingConnector + NPUOffloadingSpec` 冻结源路径保持 `blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A 的 source/import/registration 门已过，但冻结 32 GiB/rank 在服务就绪前以 `aclrtMallocHostWithCfg / 207001` 失败，0/6 请求，开发机只接受为该容量点的 `red_p8_2_k1a_simple_cpu_offload_no_success`，不宣判普通 DRAM 不足、唯一 pinned-pool 根因或整个 connector 不支持。P6.3C 继续保持 strict-single-variable blocked。
 
-P8 现显式分成两条并行依赖。P8.3-I0 的 70-shard、`103176/103176` index/header inventory 已在
-checkpoint-planning 边界接受 green，但 `1135` tensor / `12319364956 bytes` 未分类，TP4 budget 仍
-incomplete。K1A-R1 因首 rank 在八 rank 汇合前抛 sentinel、只得到 rank 0/2 记录而保持 probe-invalid red；
-allocator 未运行。当前唯一服务器任务为
-`p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717`：Expert/TP4 track 只读既有
-Parquet 生成 bounded taxonomy、直接解析真实 quant index 且不重跑 shard hash；KV/Prefix track 只运行一次
-atomic same-run 八 rank geometry rendezvous，成功后才执行最多四个 `32/64/96/128`-block allocator waves。
-正式模型 lifecycle/request 均为 0；即使 128-block wave 通过，也须另建 handoff 才能重跑六请求。
+P8 现显式分成两条并行依赖。P8.3-I0-R1 已在 bounded taxonomy 边界接受为
+`green_p8_3_i0_r1_unclassified_taxonomy`，但 `1135` tensor / `12319364956 bytes` 的分类结果不能自动
+补全 TP4 budget 或授权 I1。K1A-R1 probe-invalid red 保留；K1A-R2 的 same-run 8-rank geometry、
+`32/64/96/128`-block pinned envelope 与离线 provenance replay 已由开发机接受为
+`ready_p8_2_k1a_r2_allocator_capacity`。当前唯一服务器任务为 P8.2-K1A-R3：冻结
+`430604288 bytes/rank / 3444834304 bytes total`，只运行一次正式六请求 store→pressure→restore
+lifecycle，零 retry；容量搜索、第二 lifecycle、K2 与 P8.3-I1 均未授权。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 
@@ -102,8 +101,8 @@ atomic same-run 八 rank geometry rendezvous，成功后才执行最多四个 `3
 ## 最小开工路径
 
 1. P5/P6 runtime、official context、unprofiled/profiled reference 与 matched controls 已关闭；mixed checkpoint 不再参与，P6.3C 保留严格单变量 blocked。
-2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A 32 GiB/rank red，K1A-R1 probe-invalid red；当前只执行 K1A-R2 same-run 八 rank geometry + pinned allocator envelope，正式 lifecycle/request 为 0，K2 不授权。
-3. P8 Expert/TP4 线：P8.3-I0 inventory 已在窄边界 green；当前 I0-R1 只读既有 Parquet 补 unclassified taxonomy，不重跑 full shard hash、不自动补 TP4 budget，P8.3-I1 hotness/runtime trace 未授权。
+2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A 32 GiB/rank red，K1A-R1 probe-invalid red，K1A-R2 capacity ready；当前只执行 K1A-R3 accepted-capacity 单 lifecycle 六请求机制闭环，K2 不授权。
+3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。
 5. P9：待 P7/P8 的真实 trace、inventory、simulation 与 TP4 closure 证据齐备后，合并 P0/P3 microbench，输出带置信度和软件前提的下一代硬件优先级。
 

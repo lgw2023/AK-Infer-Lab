@@ -219,34 +219,32 @@ def test_k1_auditor_accepts_hash_verified_installed_source_trees(tmp_path: Path)
     assert result["formal_k1_workload_allowed"] is False
 
 
-def test_k1_block_is_preserved_in_the_k1a_r2_and_i0_r1_server_handoff():
-    task_id = "p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717"
+def test_k1_block_is_preserved_in_the_k1a_r3_server_handoff():
+    task_id = "p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope"
+        "execution_mode: authorized_accepted_capacity_single_lifecycle_six_request_mechanism"
         in handoff
     )
     for field in (
         "server_sync_review_authorized: true",
         "npu_execution_authorized: true",
-        "geometry_probe_vllm_start_authorized: true",
-        "model_requests_authorized: false",
+        "vllm_server_start_authorized: true",
+        "model_requests_authorized: true",
         "keep_alive_stop_and_restore_authorized: true",
         "result_directory_creation_authorized: true",
         "result_transfer_authorized: false",
         "next_task_authorized: false",
-        "geometry_probe_lifecycle_count_exact: 1",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+        "formal_model_lifecycle_count_exact: 1",
+        "model_request_count_exact: 6",
     ):
         assert field in handoff
     assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in handoff
-    assert "NPUOffloadingSpec" in handoff
     assert "SimpleCPUOffloadConnector" in handoff
-    assert "K2" in handoff and "禁止自动进入" in handoff
+    assert "K2" in handoff and "不得进入" in handoff
 
     readiness = _load_yaml(READINESS)
     artifacts = readiness["artifacts"]
@@ -256,10 +254,12 @@ def test_k1_block_is_preserved_in_the_k1a_r2_and_i0_r1_server_handoff():
     assert artifacts["current_p8_2_k1_auditor"].endswith(
         "audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py"
     )
-    assert artifacts["next_workload"] is None
+    assert artifacts["next_workload"].endswith(
+        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
+    )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_server_handoff_execution_mode"] == (
-        "authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope"
+        "authorized_accepted_capacity_single_lifecycle_six_request_mechanism"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k0_grade"] == (
@@ -272,6 +272,7 @@ def test_k1_block_is_preserved_in_the_k1a_r2_and_i0_r1_server_handoff():
     assert acceptance["p8_2_k1_execution_authorized"] is False
     assert acceptance["p8_2_k1a_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r1_allocator_probe_authorized"] is False
-    assert acceptance["p8_2_k1a_r2_allocator_probe_authorized"] is True
+    assert acceptance["p8_2_k1a_r2_allocator_probe_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_execution_authorized"] is True
     assert acceptance["server_sync_review_authorized"] is True
     assert acceptance["next_task_authorized"] is False

@@ -287,15 +287,15 @@ def test_r2_is_closed_green_and_superseded_by_the_authorized_r3():
     }
 
 
-def test_handoff_preserves_r4_r1_closeout_during_k1a_r2_and_i0_r1_review():
+def test_handoff_preserves_r4_r1_closeout_during_k1a_r3_lifecycle():
     handoff = (
         REPO_ROOT / "通信模块/docs/developer-to-server.md"
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R2 八 rank rendezvous + P8.3-I0-R1 taxonomy" in handoff
-    assert "task_id: p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717" in handoff
-    assert "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope" in handoff
+    assert "P8.2-K1A-R3 accepted-capacity store→pressure→restore" in handoff
+    assert "task_id: p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718" in handoff
+    assert "execution_mode: authorized_accepted_capacity_single_lifecycle_six_request_mechanism" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "R2 hybrid-KV" in handoff
@@ -324,7 +324,9 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert artifacts["completed_p8_2_k0_workload"].endswith(
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
-    assert artifacts["next_workload"] is None
+    assert artifacts["next_workload"].endswith(
+        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
+    )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
     )
@@ -340,7 +342,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert acceptance["p6_3b_r4_r1_execution_authorized"] is False
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r1_probe_invalid_k1a_r2_and_i0_r1_authorized"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_authorized_i0_r1_green"
     )
 
     surfaces = [

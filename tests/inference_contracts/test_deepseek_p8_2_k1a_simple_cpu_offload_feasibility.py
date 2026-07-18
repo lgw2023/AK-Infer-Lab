@@ -529,50 +529,54 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
         ]
 
 
-def test_k1a_r2_and_i0_r1_are_the_only_current_server_handoff():
+def test_k1a_r3_is_the_only_current_server_handoff_after_r2_review():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717"
+    task_id = (
+        "p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_"
+        "2026_0718"
+    )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope"
+        "execution_mode: authorized_accepted_capacity_single_lifecycle_six_request_mechanism"
         in handoff
     )
     for field in (
         "server_sync_review_authorized: true",
-        "p8_3_i0_r1_existing_inventory_taxonomy_authorized: true",
         "npu_execution_authorized: true",
-        "geometry_probe_vllm_start_authorized: true",
-        "vllm_formal_workload_authorized: false",
-        "model_requests_authorized: false",
+        "vllm_server_start_authorized: true",
+        "model_requests_authorized: true",
         "keep_alive_stop_and_restore_authorized: true",
         "profiler_authorized: false",
         "result_transfer_authorized: false",
         "next_task_authorized: false",
-        "geometry_probe_lifecycle_count_exact: 1",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+        "formal_model_lifecycle_count_exact: 1",
+        "model_request_count_exact: 6",
+        "request_retry_count_exact: 0",
+        "capacity_search_authorized: false",
     ):
         assert field in handoff
     for marker in (
-        "quant_model_weights.safetensors.index.json",
-        "p8_3_i0_r1_unclassified_taxonomy.json",
-        "P8_2_K1A_R2_GEOMETRY_PROBE_COMPLETE",
-        "run_deepseek_p8_2_k1a_simple_cpu_offload.sh",
-        "32→64→96→128",
-        "candidate_ready_p8_2_k1a_r2_allocator_capacity",
-        "不得启动正式六请求 K1A lifecycle",
+        "ready_p8_2_k1a_r2_allocator_capacity",
+        "green_p8_3_i0_r1_unclassified_taxonomy",
+        "run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh",
+        "cpu_bytes_to_use_per_rank=430604288",
+        "candidate_green_p8_2_k1a_r3_simple_cpu_offload_store_restore",
+        "不得进入 K2",
         "P8.3-I1",
-        "self_pgid",
+        "CURRENT_PGID",
     ):
         assert marker in handoff
-    assert "test \"${pgid}\" != \"${self_pgid}\"" in handoff
+    assert "test \"${pgid}\" != \"${CURRENT_PGID}\"" in handoff
     assert 'bash "${KEEP_ALIVE_SCRIPT}" 0 1 2 3 4 5 6 7' in handoff
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == task_id
-    assert artifacts["next_workload"] is None
+    assert artifacts["next_workload"] == (
+        "benchmarks/deepseek_v4_flash/workloads/"
+        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
+    )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
         "blocked_p8_2_k1_frozen_stack_import_incompatible"
@@ -585,11 +589,15 @@ def test_k1a_r2_and_i0_r1_are_the_only_current_server_handoff():
     )
     assert acceptance["p8_2_k1a_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r1_allocator_probe_authorized"] is False
-    assert acceptance["p8_2_k1a_r2_allocator_probe_authorized"] is True
+    assert acceptance["p8_2_k1a_r2_grade"] == (
+        "ready_p8_2_k1a_r2_allocator_capacity"
+    )
+    assert acceptance["p8_2_k1a_r2_allocator_probe_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_execution_authorized"] is True
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R2_and_P8.3-I0-R1_only"
+        "P8.2-K1A-R3_only"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True
@@ -597,6 +605,9 @@ def test_k1a_r2_and_i0_r1_are_the_only_current_server_handoff():
         "completed_green_inventory_taxonomy_followup_prepared"
     )
     assert acceptance["p8_3_i0_server_checkpoint_inventory_authorized"] is False
-    assert acceptance["p8_3_i0_r1_existing_inventory_taxonomy_authorized"] is True
+    assert acceptance["p8_3_i0_r1_grade"] == (
+        "green_p8_3_i0_r1_unclassified_taxonomy"
+    )
+    assert acceptance["p8_3_i0_r1_existing_inventory_taxonomy_authorized"] is False
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False

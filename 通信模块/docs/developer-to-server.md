@@ -1,71 +1,72 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K1A-R2 八 rank rendezvous + P8.3-I0-R1 taxonomy
+## 当前唯一服务器动作：P8.2-K1A-R3 accepted-capacity store→pressure→restore
 
 ~~~text
-task_id: p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717
-execution_mode: authorized_existing_inventory_taxonomy_and_geometry_rendezvous_allocator_envelope
+task_id: p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718
+execution_mode: authorized_accepted_capacity_single_lifecycle_six_request_mechanism
 server_sync_review_authorized: true
-result_directory_creation_authorized: true
-p8_3_i0_r1_existing_inventory_taxonomy_authorized: true
-p8_3_i0_r1_checkpoint_index_resolution_authorized: true
-checkpoint_full_sha256_authorized: false
-checkpoint_or_inventory_mutation_authorized: false
-keep_alive_stop_and_restore_authorized: true
-geometry_probe_npu_execution_authorized: true
-geometry_probe_vllm_start_authorized: true
-geometry_probe_lifecycle_count_exact: 1
-formal_model_lifecycle_count_exact: 0
-model_request_count_exact: 0
-pinned_allocator_probe_authorized: true
-pinned_allocator_wave_count_max: 4
-pinned_allocator_world_size_exact: 8
+installed_source_and_import_probe_authorized: true
+accepted_r2_provenance_review_authorized: true
+temporary_audit_workspace_authorized: true
 npu_execution_authorized: true
-vllm_formal_workload_authorized: false
-model_requests_authorized: false
+vllm_server_start_authorized: true
+model_requests_authorized: true
+keep_alive_stop_and_restore_authorized: true
+task_local_observer_authorized: true
+task_local_compatibility_patch_authorized: false
+result_directory_creation_authorized: true
+formal_model_lifecycle_count_exact: 1
+model_request_count_exact: 6
+request_retry_count_exact: 0
+capacity_search_authorized: false
+second_capacity_point_authorized: false
 profiler_authorized: false
 hbm_sampler_authorized: false
+runtime_or_dependency_upgrade_authorized: false
 runtime_or_dependency_mutation_authorized: false
 result_transfer_authorized: false
 next_task_authorized: false
+no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true
 standing_npu_and_vllm_consumption_authorization: true
 ~~~
 
-本任务替换且禁止重跑已消费的
-`p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717`。开发机已经独立接受：
+本任务替换且禁止重跑已经消费的
+`p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717`。开发机已对服务器 raw evidence、
+既有 12-file candidate package 和 upload-api provenance replay 独立完成交叉验收：
 
-- P8.3-I0 在 checkpoint inventory 边界为 `green_p8_3_i0_checkpoint_inventory`：70 shard、
-  `103176/103176` indexed/header tensor、missing/duplicate/unindexed/wrong-shard 均为 0；但真实 index
-  basename 是 `quant_model_weights.safetensors.index.json`，旧执行依赖临时 symlink，且仍有
-  `1135` tensor / `12319364956 bytes` 未分类，所以 TP4 budget 继续 incomplete，不能进入 runtime claim。
-- P8.2-K1A-R1 为 `red_p8_2_k1a_r1_geometry_probe_invalid`：只得到 rank 0/2 两份完整记录，allocator
-  未执行。根因是旧 observer 每 rank 写盘后立即抛 sentinel，没有八 rank rendezvous；这不是 pinned
-  allocator 容量失败，partial `430604288 bytes/rank` 也不是已接受容量候选。
+- P8.2-K1A-R2 正式收口为 `ready_p8_2_k1a_r2_allocator_capacity`。8 rank same-run geometry、
+  `32/64/96/128` blocks shaped allocator waves 和离线重放全部通过；接受的唯一容量是
+  `128 blocks × 3364096 bytes/block = 430604288 bytes/rank`，TP8 总量为 `3444834304 bytes`。
+- P8.3-I0-R1 正式收口为 `green_p8_3_i0_r1_unclassified_taxonomy`。该结果与本任务技术独立，
+  本 handoff 不授权 P8.3-I1、TP4 runtime、reclassification 或新 checkpoint 扫描。
+- K1A 旧 `32 GiB/rank` 点继续保留 `red_p8_2_k1a_simple_cpu_offload_no_success`；K1A-R1 继续保留
+  `red_p8_2_k1a_r1_geometry_probe_invalid`。R2 ready 只解锁本次精确容量的一个 formal lifecycle，
+  不撤销旧 red，也不是 store/restore runtime green。
 
-本任务分两个独立 section：I0-R1 只读复用服务器已有 Parquet，不重跑 70 shard hash、不占 NPU；
-K1A-R2 只允许一次 geometry-only 初始化，8 rank 以同一随机 probe run ID 原子写盘，只有全部记录可解析、
-rank/world/parity 完整且 completion marker 已形成后才允许抛专用 sentinel。冻结 DeepSeek R2 hybrid-KV
-的目标 restore geometry 仍为 `16384` token；geometry green 后才运行既有
-`32→64→96→128` blocks 八 rank shaped pinned allocator waves。即使 128-block wave 通过，也只形成
-`candidate_ready_p8_2_k1a_r2_allocator_capacity`，必须回开发机复核并另发 handoff 才能启动正式六请求。
+本轮只回答：冻结 DeepSeek W8A8、TP8+EP、official MTP、完整 R2 hybrid-KV repair 和
+`SimpleCPUOffloadConnector` 在已验收 128-block CPU tier 上，能否在一个固定六请求 lifecycle 内形成
+8/8 worker D2H store 与 8/8 worker H2D restore 机制闭环。任何 timing 仅为 unprofiled diagnostic，
+不是性能 reference、优化收益、普遍容量收益或硬件瓶颈归因。
 
-保留 lineage：P6.3B-R4-R1=`green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`、
-P8.1-R1=`green_p8_1_r1_official_mtp_observe_only_matrix`、P8.2-K0 与 P8.3-I0 继续 green；
-P6.3C=`blocked_p6_3c_not_strict_single_variable`；legacy `NPUOffloadingSpec` K1 继续
-`blocked_p8_2_k1_frozen_stack_import_incompatible`；
-`SimpleCPUOffloadConnector` K1A 32 GiB/rank 与 K1A-R1 各自保留 red。禁止自动进入 K2、P8.3-I1、
-P8.4、P8.5、P9；禁止 profiler、checkpoint/runtime 修改和结果自动外发。
+保留 lineage：`green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`、
+`green_p8_1_r1_official_mtp_observe_only_matrix`、
+`green_p8_2_k0_order_balanced_prefix_cache_baseline` 与
+`green_p8_3_i0_r1_unclassified_taxonomy`；P6.3C 保留
+`blocked_p6_3c_not_strict_single_variable`，legacy K1 保留
+`blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A-R3 blocked/red/yellow 不撤销这些结果。
+不得进入 K2、K3、K4、P8.3-I1、P8.4、P8.5 或 P9。
 
-## 1. 同步与冻结仓库门（零 NPU）
+## 1. 同步、tracked-clean 与冻结仓库合同门（零 NPU）
 
-从服务器自己的干净 `main` 普通快进。不得 reset/stash/rebase、运行 `sync.sh`、在服务器 commit/push，
-或删除既有未跟踪运行产物。
+从服务器自己的干净 `main` 普通快进同步。不得 reset、stash、rebase、checkout 覆盖、运行
+`sync.sh`、在服务器 commit/push，或删除既有未跟踪运行产物。
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717_run01
+RESULT_DIR=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718_run01
 cd "${REPO_ROOT}"
 
 git status --short --branch --untracked-files=no
@@ -74,25 +75,25 @@ git fetch origin main
 git merge --ff-only origin/main
 test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 test -z "$(git status --porcelain --untracked-files=no)"
-test ! -e "${RESULT_ROOT}"
+test ! -e "${RESULT_DIR}"
 
 python3 - <<'PY'
 from pathlib import Path
 import hashlib
 
 expected = {
+    "benchmarks/deepseek_v4_flash/p8_2_k1a_simple_cpu_offload_feasibility_audit.yaml": "51fe967ff093678fdf7f4f208b09288c4ea020062b954d04c32a5925dfa7ba16",
     "benchmarks/deepseek_v4_flash/p8_2_k1a_r2_geometry_rendezvous_audit.yaml": "7553ec2ee67422eacad6f6e4ca1f37da55b46a71706f74db07bc73dba5db9e82",
-    "benchmarks/deepseek_v4_flash/p8_3_i0_r1_inventory_taxonomy_audit.yaml": "09cda890102a46d24b4b8866748937ba9f88f261f0012f0985e5af9deb12ea57",
-    "benchmarks/deepseek_v4_flash/p8_3_i0_checkpoint_inventory_contract.yaml": "6af2a125cc88faafb38e350ea45ffe4906f64c8536b5b3ee01b63c84911f32b6",
-    "tools/inference_contracts/p8_2_k1a_r2_geometry_observer.py": "6d9f3f08c05527107086d79259177044a670495648ff5066a7d7935d017a3ca9",
-    "tools/inference_contracts/p8_2_k1a_r2_allocator.py": "135a95b70e8e73f791ff5a2ea2e79b2fde63e905d40e713b76fb4ee10691048d",
-    "tools/inference_contracts/p8_2_k1a_r1_allocator.py": "c3f6f0ce3ab119f25245710f4d6b7ea05d9316e7b326a0209a6282408fe527c9",
-    "tools/inference_contracts/probe_deepseek_p8_2_k1a_r1_pinned_allocator.py": "8ae11b8183c829367ef6ac900fa92eb5c8d9db399c72dc1952dc477ecc29f13c",
-    "tools/inference_contracts/inventory_deepseek_p8_3_i0_checkpoint.py": "6d6535b9931fb0f7b17ab0bae67a59611d2b9174a532c2b80490f4d397ebd819",
-    "tools/inference_contracts/analyze_deepseek_p8_3_i0_unclassified.py": "30ab89547dab3898d54fb91040d9827a1b2c504fc5d8b3cd8497dd25764f92ef",
-    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh": "e65c8a11d060579563998667877e67915722b1ab09176ab46ea40514da498670",
-    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh": "d9e7f795f63c82e4fc3a39b7fe83f644de4d4260917d63fad9af71da6e1d57a9",
+    "benchmarks/deepseek_v4_flash/p8_2_k1a_r3_formal_lifecycle_audit.yaml": "dc9588d8d71c2742e5831bf6facdd82348b5e6d3ab4f5dd466c1d771d7ffe9dc",
+    "benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml": "aa87b3b9cf08b1404ac034a132f5dd2db7abc1cb7472d4abc02b4cb01aa5e116",
+    "tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py": "0a97dfce48678be8d7f3ea1a53f859e5a71e9df155f2a53606ff238c377a41bd",
+    "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py": "b31d212378c8aaed87c872c67a29b8d2ea039fbd7e97e5f7e6c54b29ef99a680",
+    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py": "1eabe65e103abae117e48a65c7dcedb0451f79d78b404eb2bc6643fdcce24120",
+    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh": "76891fba6c4426a2344f93a9ecab216143bb6da0a03318b265b1e580681eec6c",
+    "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh": "e0c27c984403a727dcfb92cf5266372298721a2550d5e66a68cd552b145067eb",
+    "tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh": "97009a98e198dcc3d2ebd868af919a75ecfabe670f588e990f84dccd931a3ea1",
     "benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch": "5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6",
+    "tests/inference_contracts/test_deepseek_p8_2_k1a_r3_formal_lifecycle.py": "e31c812a3772c530246cd47116a772b148c9e00810b79b3acc17ec33bdecd467",
 }
 for relative, wanted in expected.items():
     got = hashlib.sha256(Path(relative).read_bytes()).hexdigest()
@@ -102,521 +103,442 @@ print("frozen_repo_hash_gate=pass")
 PY
 
 python3 -m pytest \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r3_formal_lifecycle.py \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_simple_cpu_offload_feasibility.py \
   tests/inference_contracts/test_deepseek_p8_2_k1a_r2_geometry_rendezvous.py \
   tests/inference_contracts/test_deepseek_p8_2_k1a_r1_allocator_envelope.py \
-  tests/inference_contracts/test_deepseek_p8_3_i0_checkpoint_inventory.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_simple_cpu_offload_feasibility.py \
   tests/inference_contracts/test_deepseek_p8_2_k1_kv_cache_cpu_offload_feasibility.py -q
 python3 -m py_compile \
-  tools/inference_contracts/p8_2_k1a_r2_geometry_observer.py \
-  tools/inference_contracts/p8_2_k1a_r2_allocator.py \
-  tools/inference_contracts/p8_2_k1a_r1_allocator.py \
-  tools/inference_contracts/probe_deepseek_p8_2_k1a_r1_pinned_allocator.py \
-  tools/inference_contracts/inventory_deepseek_p8_3_i0_checkpoint.py \
-  tools/inference_contracts/analyze_deepseek_p8_3_i0_unclassified.py
+  tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py \
+  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py \
+  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py
 bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh
 bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
+bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh
+
+P8_2_K1A_AUDIT_ONLY=1 bash \
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh /tmp/p8_k1a_r3_not_created \
+  > /tmp/p8_k1a_r3_contract_audit.txt
+grep -Fx 'task_id=p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718' /tmp/p8_k1a_r3_contract_audit.txt
+grep -Fx 'cpu_bytes_to_use=3444834304' /tmp/p8_k1a_r3_contract_audit.txt
+grep -Fx 'cpu_bytes_to_use_per_rank=430604288' /tmp/p8_k1a_r3_contract_audit.txt
+grep -Fx 'server_command_sha256=418d2796ec2dd15ab7504c264a6635a50d064cb7b6425f809cbfba550d2f5bb0' /tmp/p8_k1a_r3_contract_audit.txt
+
+P8_2_K1A_MODE_AUDIT_ONLY=1 bash \
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh /tmp/p8_k1a_r3_not_created \
+  > /tmp/p8_k1a_r3_mode_audit.txt
+grep -Fx 'cpu_bytes_to_use=3444834304' /tmp/p8_k1a_r3_mode_audit.txt
+grep -Fx 'cpu_bytes_to_use_per_rank=430604288' /tmp/p8_k1a_r3_mode_audit.txt
+grep -Fx 'observer_mode=observe_only_no_decision_or_copy_mutation' /tmp/p8_k1a_r3_mode_audit.txt
+test ! -e /tmp/p8_k1a_r3_not_created
 test -z "$(git status --porcelain --untracked-files=no)"
 ~~~
 
-任一 hash、合同、compile、Bash 或 tracked-clean 失败，给
-`blocked_p8_dual_track_r2_repository_contract_gate` 并停止；不得创建结果目录、停止 keep-alive 或占 NPU。
-所有 Python 依赖必须来自既有环境，不得 pip/conda install。
+任一 hash、合同、compile、Bash、audit-only、tracked-clean 或 result-dir uniqueness 门失败，给
+`blocked_p8_2_k1a_r3_repository_contract_gate` 并停止。不得停 keep-alive、创建项目结果目录或占 NPU。
 
-## 2. P8.3-I0-R1：真实 index 与既有 Parquet taxonomy（零 NPU）
+## 2. R2 accepted-capacity provenance 与冻结安装态 source/import 复核（零 NPU）
 
-本节不重新读取 shard header、不重算 70 个 shard SHA-256、不复制或改写 parent inventory。先冻结 parent
-四文件，再直接解析真实 checkpoint 目录的唯一 index；不得再建 symlink workspace。
+只读复核既有 R2 raw evidence 和 accepted summaries；不得重跑 geometry lifecycle 或 allocator waves。
+临时输出只能写新的 `/tmp/opencode/p8_2_k1a_r3_preflight_2026_0718_<unique>`。
+
+~~~bash
+set -euo pipefail
+
+REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
+R2_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717_run01
+K1A_R2=${R2_ROOT}/p8_2_k1a_r2_geometry_and_allocator
+TMP_AUDIT=$(mktemp -d /tmp/opencode/p8_2_k1a_r3_preflight_2026_0718_XXXXXX)
+TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_preflight_current_2026_0718.path
+RUNTIME_PREFIX=${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+RUNTIME_PYTHON=${RUNTIME_PREFIX}/bin/python
+VLLM_ROOT=/data/node0_disk1/vllm-0.22.1
+VLLM_ASCEND_ROOT=${RUNTIME_PREFIX}/lib/python3.11/site-packages
+AUDITOR=${REPO_ROOT}/tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py
+
+test ! -e "${TMP_AUDIT_POINTER}"
+printf '%s\n' "${TMP_AUDIT}" > "${TMP_AUDIT_POINTER}"
+test -d "${R2_ROOT}"
+test "$(sha256sum "${K1A_R2}/k1a_r2_geometry_summary.json" | awk '{print $1}')" = 8430730a583371ebdcc1cb35ff80903376a007cb3f2645ce6a55114bdb9ea6d1
+test "$(sha256sum "${K1A_R2}/pinned_allocator_envelope_summary.json" | awk '{print $1}')" = 99f997a66cb14aeaf1941d34c525729c70dcda0569d45c465a0f1c7f55dfc6b2
+test "$(sha256sum "${R2_ROOT}/candidate_manifest.server_local.json" | awk '{print $1}')" = 5a65d66911ac8f073c1dd939b06d78de2a6f51dd2d5ecd66f60f5ee212cc01e9
+
+python3 - "${K1A_R2}" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+root = Path(sys.argv[1])
+geometry = json.loads((root / "k1a_r2_geometry_summary.json").read_text())
+allocator = json.loads((root / "pinned_allocator_envelope_summary.json").read_text())
+assert geometry["rank_coverage"] == list(range(8))
+assert geometry["world_size"] == 8
+assert geometry["geometry_gate_ok"] is True
+assert geometry["rendezvous_gate_ok"] is True
+assert geometry["geometry_parity_exact"] is True
+assert geometry["block_size_tokens"] == 128
+assert geometry["required_restore_tokens"] == 16384
+assert geometry["required_cpu_blocks"] == 128
+assert geometry["total_bytes_per_block"] == 3364096
+assert geometry["required_capacity_bytes_per_rank"] == 430604288
+assert geometry["required_capacity_bytes_total"] == 3444834304
+assert allocator["acl_pinned_host_allocator_gate_ok"] is True
+assert allocator["highest_eight_rank_clean_blocks"] == 128
+assert allocator["candidate_cpu_bytes_per_rank"] == 430604288
+assert allocator["candidate_cpu_bytes_total"] == 3444834304
+assert allocator["capacity_candidate_ready"] is True
+assert allocator["grade"] == "candidate_ready_p8_2_k1a_r2_allocator_capacity"
+assert allocator["formal_lifecycle_allowed"] is False
+assert allocator["formal_lifecycle_requires_new_handoff"] is True
+print("accepted_r2_capacity_provenance_gate=pass")
+PY
+
+test -x "${RUNTIME_PYTHON}"
+test "$(git -C "${VLLM_ROOT}" rev-parse HEAD)" = 0decac0d96c42b49572498019f0a0e3600f50398
+test -z "$(git -C "${VLLM_ROOT}" status --porcelain --untracked-files=no)"
+python3 "${AUDITOR}" installed-source-audit \
+  --vllm-root "${VLLM_ROOT}" \
+  --vllm-ascend-root "${VLLM_ASCEND_ROOT}" \
+  --output "${TMP_AUDIT}/installed_source_audit.json"
+python3 "${AUDITOR}" runtime-import-probe \
+  --runtime-python "${RUNTIME_PYTHON}" \
+  --output "${TMP_AUDIT}/runtime_import_probe.json"
+
+python3 - "${TMP_AUDIT}" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+root = Path(sys.argv[1])
+source = json.loads((root / "installed_source_audit.json").read_text())
+runtime = json.loads((root / "runtime_import_probe.json").read_text())
+assert source["audit_grade"] == "conditional_p8_2_k1a_simple_cpu_offload_source_candidate"
+assert source["source_hash_gate"] is True
+assert len(source["source_inventory"]) == 9
+assert source["ascend_connector_override_present"] is True
+assert source["supports_hma_present"] is True
+assert source["hybrid_multi_group_source_support_present"] is True
+assert source["npu_d2h_h2d_backend_present"] is True
+assert runtime["subprocess_exit"] == 0
+probe = runtime["probe"]
+assert probe is not None and "probe_error" not in probe
+assert probe["registry_class"] == "AscendSimpleCPUOffloadConnector"
+assert probe["connector_import"] == "success"
+assert probe["worker_import"] == "success"
+assert probe["copy_backend_import"] == "success"
+assert probe["ascend_connector_inherits_upstream"] is True
+assert probe["npu_started"] is False
+assert probe["vllm_server_started"] is False
+assert probe["model_request_sent"] is False
+print("installed_source_import_registration_gate=pass")
+PY
+~~~
+
+任何 R2 accepted summary、安装态 source、registry/import 或 frozen Git 状态漂移，给
+`blocked_p8_2_k1a_r3_source_or_provenance_gate` 并停止；不得修环境、换版本、加 shim 或占 NPU。
+
+## 3. 零扰动资源门
+
+keep-alive 保持运行，只读记录 marker/PID/PGID、NPU 0–7、端口 7000、vLLM 残留、model path、
+`/proc/meminfo`。`MemAvailable >= 412316860416` 且 swap used=0；不得为过门改容量或启用 swap。
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 MODEL_PATH=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-PARENT_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r1_allocator_and_p8_3_i0_inventory_2026_0717_run01
-SOURCE_I0=${PARENT_ROOT}/p8_3_i0_checkpoint_inventory
-RESULT_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717_run01
-I0_R1=${RESULT_ROOT}/p8_3_i0_r1_taxonomy
-RUNTIME_PYTHON=${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python
-cd "${REPO_ROOT}"
+TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_preflight_current_2026_0718.path
+test -f "${TMP_AUDIT_POINTER}"
+TMP_AUDIT=$(cat "${TMP_AUDIT_POINTER}")
+test -n "${TMP_AUDIT}"
+test -d "${TMP_AUDIT}"
 
-test -x "${RUNTIME_PYTHON}"
-"${RUNTIME_PYTHON}" -c 'import numpy, pyarrow, safetensors, yaml'
-test ! -e "${RESULT_ROOT}"
-test -f "${MODEL_PATH}/quant_model_weights.safetensors.index.json"
-test ! -L "${MODEL_PATH}/quant_model_weights.safetensors.index.json"
-test -f "${SOURCE_I0}/expert_weight_inventory.parquet"
-test -f "${SOURCE_I0}/inventory_summary.json"
-test -f "${SOURCE_I0}/tp4_rank_weight_budget.yaml"
-test -f "${SOURCE_I0}/inventory_manifest.json"
-test "$(stat -c '%s' "${SOURCE_I0}/expert_weight_inventory.parquet")" = 339497
-test "$(sha256sum "${SOURCE_I0}/expert_weight_inventory.parquet" | awk '{print $1}')" = 3bba8656de0a2ccf5deccccf84e7010ad28f941a7d255a005b82d5d8d225b17c
-test "$(stat -c '%s' "${SOURCE_I0}/inventory_summary.json")" = 17161
-test "$(sha256sum "${SOURCE_I0}/inventory_summary.json" | awk '{print $1}')" = 90a77c91585278e28f89624d2f767e155939d9e5e7a78d1016a6b10aff93bc0d
-test "$(stat -c '%s' "${SOURCE_I0}/tp4_rank_weight_budget.yaml")" = 1202
-test "$(sha256sum "${SOURCE_I0}/tp4_rank_weight_budget.yaml" | awk '{print $1}')" = e6cb415880d5131e8913a7f6929cdd7f56cc7944c9b22ba0b24621c990d9e097
-test "$(stat -c '%s' "${SOURCE_I0}/inventory_manifest.json")" = 589
-test "$(sha256sum "${SOURCE_I0}/inventory_manifest.json" | awk '{print $1}')" = 347f5aa09712f437fafe76baa7d4689a7061623ee06b17f91575039e33502bd9
-test -z "$(ss -ltnp | grep ':7000' || true)"
-test -z "$(ps -eo pid,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' || true)"
+ps -eo pid,ppid,pgid,stat,cmd | grep -E '#[0-7]#' > "${TMP_AUDIT}/keep_alive_before.txt"
+npu-smi info > "${TMP_AUDIT}/npu_before.txt"
+ss -ltnp | grep ':7000' > "${TMP_AUDIT}/port_7000_before.txt" || true
+ps -eo pid,ppid,pgid,stat,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' > "${TMP_AUDIT}/vllm_before.txt" || true
+cat /proc/meminfo > "${TMP_AUDIT}/meminfo_before.txt"
+test ! -s "${TMP_AUDIT}/port_7000_before.txt"
+test ! -s "${TMP_AUDIT}/vllm_before.txt"
+test -d "${MODEL_PATH}"
+test "$(find "${MODEL_PATH}" -maxdepth 1 -type f | wc -l)" -gt 0
 
-mkdir -p "${I0_R1}"
-ps -eo pid,ppid,pgid,stat,cmd | grep -E '#[0-7]#' > "${I0_R1}/keep_alive_before.txt"
-npu-smi info > "${I0_R1}/npu_before.txt"
-
-"${RUNTIME_PYTHON}" - "${MODEL_PATH}" "${I0_R1}/p8_3_i0_r1_index_resolution.json" <<'PY'
+python3 - "${TMP_AUDIT}/keep_alive_before.txt" "${TMP_AUDIT}/meminfo_before.txt" <<'PY'
 from pathlib import Path
-import hashlib
-import json
 import sys
 
-from tools.inference_contracts.inventory_deepseek_p8_3_i0_checkpoint import resolve_safetensors_index
-
-model, output = map(Path, sys.argv[1:])
-explicit, explicit_mode = resolve_safetensors_index(
-    model, Path("quant_model_weights.safetensors.index.json")
-)
-discovered, discovery_mode = resolve_safetensors_index(model)
-assert explicit == discovered
-assert explicit.name == "quant_model_weights.safetensors.index.json"
-assert not explicit.is_symlink()
-sha = hashlib.sha256(explicit.read_bytes()).hexdigest()
-assert sha == "932abcc237e82bbb52fc044ae52dd7aa9d8af259cd40100ef978e479231164aa"
-value = {
-    "schema_version": "p8_3_i0_r1_index_resolution_v1",
-    "index_basename": explicit.name,
-    "index_bytes": explicit.stat().st_size,
-    "index_sha256": sha,
-    "explicit_resolution": explicit_mode,
-    "discovery_resolution": discovery_mode,
-    "explicit_and_discovered_same_file": True,
-    "index_is_symlink": False,
-    "temporary_workspace_used": False,
-    "checkpoint_mutated": False,
-}
-output.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+markers = Path(sys.argv[1]).read_text().splitlines()
+assert len(markers) >= 8
+assert all(any(f"#{device}#" in row for row in markers) for device in range(8))
+values = {}
+for line in Path(sys.argv[2]).read_text().splitlines():
+    key, raw = line.split(":", 1)
+    values[key] = int(raw.strip().split()[0]) * 1024
+assert values["MemAvailable"] >= 412316860416
+assert values["SwapTotal"] == values["SwapFree"]
+print(f"mem_available_bytes={values['MemAvailable']}")
+print("resource_gate=pass")
 PY
 
-"${RUNTIME_PYTHON}" tools/inference_contracts/analyze_deepseek_p8_3_i0_unclassified.py \
-  --inventory "${SOURCE_I0}/expert_weight_inventory.parquet" \
-  --inventory-summary "${SOURCE_I0}/inventory_summary.json" \
-  --output "${I0_R1}/p8_3_i0_r1_unclassified_taxonomy.json" \
-  --max-groups 256 \
-  --max-output-bytes 32768
-
-"${RUNTIME_PYTHON}" - "${I0_R1}" <<'PY'
-from pathlib import Path
-import hashlib
-import json
-import sys
-
-root = Path(sys.argv[1])
-taxonomy = json.loads((root / "p8_3_i0_r1_unclassified_taxonomy.json").read_text())
-assert taxonomy["unclassified_tensor_count"] == 1135
-assert taxonomy["unclassified_checkpoint_bytes"] == 12319364956
-assert taxonomy["accounted_tensor_count_exact"] is True
-assert taxonomy["accounted_checkpoint_bytes_exact"] is True
-assert taxonomy["formal_reclassification_allowed"] is False
-assert taxonomy["formal_tp4_runtime_claim_allowed"] is False
-grade = (
-    "candidate_green_p8_3_i0_r1_unclassified_taxonomy"
-    if taxonomy["taxonomy_complete"]
-    else "yellow_p8_3_i0_r1_unclassified_taxonomy_truncated"
-)
-(root / "p8_3_i0_r1_grade.txt").write_text(grade + "\n", encoding="utf-8")
-files = {}
-for name in (
-    "p8_3_i0_r1_index_resolution.json",
-    "p8_3_i0_r1_unclassified_taxonomy.json",
-    "p8_3_i0_r1_grade.txt",
-):
-    path = root / name
-    files[name] = {
-        "bytes": path.stat().st_size,
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "sensitivity": "bounded_operational_metadata_no_content_or_token_ids",
-    }
-(root / "p8_3_i0_r1_section_manifest.json").write_text(
-    json.dumps(
-        {
-            "schema_version": "p8_3_i0_r1_section_manifest_v1",
-            "files": files,
-            "source_parquet_copied": False,
-            "full_shard_hash_rerun": False,
-            "checkpoint_mutated": False,
-        },
-        indent=2,
-        sort_keys=True,
-    ) + "\n",
-    encoding="utf-8",
-)
-PY
-
-ps -eo pid,ppid,pgid,stat,cmd | grep -E '#[0-7]#' > "${I0_R1}/keep_alive_after.txt"
-npu-smi info > "${I0_R1}/npu_after.txt"
-cmp "${I0_R1}/keep_alive_before.txt" "${I0_R1}/keep_alive_after.txt"
-test "$(sha256sum "${SOURCE_I0}/expert_weight_inventory.parquet" | awk '{print $1}')" = 3bba8656de0a2ccf5deccccf84e7010ad28f941a7d255a005b82d5d8d225b17c
-test "$(sha256sum "${SOURCE_I0}/inventory_summary.json" | awk '{print $1}')" = 90a77c91585278e28f89624d2f767e155939d9e5e7a78d1016a6b10aff93bc0d
-test -z "$(ss -ltnp | grep ':7000' || true)"
-test -z "$(ps -eo pid,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' || true)"
-test -z "$(git status --porcelain --untracked-files=no)"
+test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 ~~~
 
-本节 `taxonomy_complete=false` 只给 bounded yellow，不得扩大发回文件、自动改 classification rule 或补算
-TP4 budget。任何 parent hash/index 失败给对应 blocked grade；不得修 checkpoint、重跑 parent inventory、
-停止 keep-alive 或进入 I1。本节 raw Parquet 继续留服务器，绝不进入候选小包。
+本节失败给 `blocked_p8_2_k1a_r3_source_or_resource_gate` 并停止。不得清理未知进程或启动 vLLM。
 
-## 3. P8.2-K1A-R2：一次 geometry rendezvous + allocator envelope
+## 4. 唯一 NPU lifecycle：安全退 keep-alive、六请求、清理与恢复
 
-只允许一次 geometry-only 初始化。沿用 parent 的冻结 W8A8/TP8+EP/MTP/R2 repair/server argv，但 observer
-必须换成 R2；它在 pinned CPU mirror allocation 前写 record，并以 bounded filesystem rendezvous 等待
-同一 `P8_2_K1A_R2_PROBE_RUN_ID` 的 8 rank 完整记录。任何 rank/world/parity/timeout 问题都必须在
-allocator 前停止。
+只有前三节全部 green 才执行。仅从真实 `#[0-7]#` marker 反查 keep-alive PGID，并排除当前 shell PGID；
+不得触碰无关进程。无论 runner 成败，trap 都必须使用官方脚本恢复 0–7 卡。
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717_run01
-K1A_R2=${RESULT_ROOT}/p8_2_k1a_r2_geometry_and_allocator
-GEOMETRY_RESULT=${K1A_R2}/geometry_probe
-GEOMETRY_DIR=${GEOMETRY_RESULT}/runtime/geometry
-ENVELOPE_DIR=${K1A_R2}/pinned_allocator_envelope
-RUNTIME_PYTHON=${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python
+RESULT_DIR=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718_run01
+RUNNER=${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh
 KEEP_ALIVE_SCRIPT=/data/node0_disk1/Public/npu_keep_alive.sh
-cd "${REPO_ROOT}"
-
-test -d "${RESULT_ROOT}"
-test ! -e "${K1A_R2}"
-test -x "${RUNTIME_PYTHON}"
-test -f "${KEEP_ALIVE_SCRIPT}"
-test -z "$(ss -ltnp | grep ':7000' || true)"
-test -z "$(ps -eo pid,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' || true)"
-mkdir -p "${K1A_R2}"
-npu-smi info > "${K1A_R2}/npu_before_geometry.txt"
-ps -eo pid,ppid,pgid,stat,cmd | grep -E '#[0-7]#' > "${K1A_R2}/keep_alive_before.txt"
-
-mapfile -t marker_pgids < <(
-  ps -eo pgid=,cmd= | awk '$0 ~ /#[0-7]#/ {gsub(/ /,"",$1); print $1}' | sort -u
-)
-test "${#marker_pgids[@]}" -ge 1
-self_pgid=$(ps -o pgid= -p $$ | tr -d ' ')
-for pgid in "${marker_pgids[@]}"; do
-  test -n "${pgid}"
-  test "${pgid}" != "${self_pgid}"
-  kill -TERM -- "-${pgid}"
-done
-for _ in $(seq 1 60); do
-  marker_count=$(ps -eo cmd= | grep -Ec '#[0-7]#' || true)
-  test "${marker_count}" -eq 0 && break
-  sleep 1
-done
-test "$(ps -eo cmd= | grep -Ec '#[0-7]#' || true)" -eq 0
-sleep 3
-npu-smi info > "${K1A_R2}/npu_after_keep_alive_stop.txt"
-grep -F 'No running processes found' "${K1A_R2}/npu_after_keep_alive_stop.txt" >/dev/null
+TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_preflight_current_2026_0718.path
+test -f "${TMP_AUDIT_POINTER}"
+TMP_AUDIT=$(cat "${TMP_AUDIT_POINTER}")
+test -d "${TMP_AUDIT}"
+KEEP_ALIVE_STOPPED=0
+MARKER_COUNT_BEFORE=0
 
 restore_keep_alive() {
-  set +e
-  pkill -TERM -f '[v]llm serve' 2>/dev/null || true
-  for _ in $(seq 1 60); do
-    test -z "$(ss -ltnp | grep ':7000' || true)" && break
-    sleep 1
-  done
-  if test "$(ps -eo cmd= | grep -Ec '#[0-7]#' || true)" -eq 0; then
+  local restore_exit=0
+  if test "${KEEP_ALIVE_STOPPED}" -eq 1; then
     bash "${KEEP_ALIVE_SCRIPT}" 0 1 2 3 4 5 6 7 \
-      > "${K1A_R2}/keep_alive_restore.log" 2>&1
+      > "${TMP_AUDIT}/keep_alive_restore_stdout.txt" \
+      2> "${TMP_AUDIT}/keep_alive_restore_stderr.txt" || restore_exit=$?
+    printf '%s\n' "${restore_exit}" > "${TMP_AUDIT}/keep_alive_restore_exit_code.txt"
+    sleep 5
   fi
-  sleep 5
-  ps -eo pid,ppid,pgid,stat,cmd | grep -E '#[0-7]#' \
-    > "${K1A_R2}/keep_alive_after.txt" || true
-  npu-smi info > "${K1A_R2}/npu_final.txt" 2>&1 || true
+  return "${restore_exit}"
 }
 trap restore_keep_alive EXIT
 
-PROBE_RUN_ID=$("${RUNTIME_PYTHON}" -c 'import uuid; print(uuid.uuid4().hex)')
-test -n "${PROBE_RUN_ID}"
-printf '%s\n' "${PROBE_RUN_ID}" > "${K1A_R2}/probe_run_id.txt"
+test ! -e "${RESULT_DIR}"
+test -f "${RUNNER}"
+test -f "${KEEP_ALIVE_SCRIPT}"
+ps -eo pid=,ppid=,pgid=,stat=,args= | awk '$0 ~ /#[0-7]#/' > "${TMP_AUDIT}/keep_alive_markers_before.txt"
+MARKER_COUNT_BEFORE=$(wc -l < "${TMP_AUDIT}/keep_alive_markers_before.txt" | tr -d ' ')
+test "${MARKER_COUNT_BEFORE}" -ge 8
+mapfile -t KEEP_ALIVE_PGIDS < <(awk '{print $3}' "${TMP_AUDIT}/keep_alive_markers_before.txt" | sort -n -u)
+test "${#KEEP_ALIVE_PGIDS[@]}" -ge 1
+CURRENT_PGID=$(ps -o pgid= -p $$ | tr -d ' ')
+printf '%s\n' "${KEEP_ALIVE_PGIDS[@]}" > "${TMP_AUDIT}/keep_alive_pgids.txt"
+for pgid in "${KEEP_ALIVE_PGIDS[@]}"; do
+  test "${pgid}" != "${CURRENT_PGID}"
+  test "${pgid}" -gt 1
+  kill -TERM -- "-${pgid}"
+done
+KEEP_ALIVE_STOPPED=1
 
-set +e
-P8_2_K1A_R2_GEOMETRY_ONLY=1 \
-P8_2_K1A_R2_GEOMETRY_DIR="${GEOMETRY_DIR}" \
-P8_2_K1A_R2_PROBE_RUN_ID="${PROBE_RUN_ID}" \
-P8_2_K1A_R2_RENDEZVOUS_TIMEOUT_SECONDS=180 \
-OBSERVER="${REPO_ROOT}/tools/inference_contracts/p8_2_k1a_r2_geometry_observer.py" \
-bash tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh \
-  "${GEOMETRY_RESULT}"
-geometry_exit=$?
-set -e
-printf '%s\n' "${geometry_exit}" > "${K1A_R2}/geometry_probe_exit_code.txt"
-
-test "${geometry_exit}" -eq 2
-test "$(cat "${GEOMETRY_RESULT}/cleanup_status.txt")" = clean
-test "$(wc -l < "${GEOMETRY_RESULT}/request_summary.tsv")" -eq 1
-test "$(find "${GEOMETRY_DIR}" -maxdepth 1 -name 'geometry.rank.*.json' -size +0c | wc -l)" -eq 8
-test -f "${GEOMETRY_DIR}/geometry.rendezvous.complete.json"
-grep -F 'P8_2_K1A_R2_GEOMETRY_PROBE_COMPLETE' \
-  "${GEOMETRY_RESULT}/runtime/vllm_server.log" >/dev/null
-
-"${RUNTIME_PYTHON}" tools/inference_contracts/p8_2_k1a_r2_allocator.py \
-  summarize-geometry \
-  --geometry-dir "${GEOMETRY_DIR}" \
-  --output "${K1A_R2}/k1a_r2_geometry_summary.json"
-
-test ! -e "${ENVELOPE_DIR}"
-test -z "$(ss -ltnp | grep ':7000' || true)"
-test -z "$(ps -eo pid,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' || true)"
-set +u
-source /usr/local/Ascend/ascend-toolkit/set_env.sh
-source /usr/local/Ascend/nnal/atb/set_env.sh
-set -u
-
-set +e
-"${RUNTIME_PYTHON}" tools/inference_contracts/probe_deepseek_p8_2_k1a_r1_pinned_allocator.py \
-  envelope \
-  --geometry-summary "${K1A_R2}/k1a_r2_geometry_summary.json" \
-  --output-dir "${ENVELOPE_DIR}" \
-  --wave-timeout-seconds 180
-envelope_exit=$?
-set -e
-printf '%s\n' "${envelope_exit}" > "${K1A_R2}/pinned_allocator_envelope_exit_code.txt"
-test "${envelope_exit}" -eq 0 -o "${envelope_exit}" -eq 2
-test -f "${ENVELOPE_DIR}/pinned_allocator_envelope.json"
-test -z "$(ps -eo pid,cmd | grep -F '[p]robe_deepseek_p8_2_k1a_r1_pinned_allocator.py worker' || true)"
+for _ in $(seq 1 60); do
+  survivor_count=0
+  while read -r pgid; do
+    if ps -eo pgid= | awk -v wanted="${pgid}" '$1 == wanted {found=1} END {exit !found}'; then
+      survivor_count=$((survivor_count + 1))
+    fi
+  done < "${TMP_AUDIT}/keep_alive_pgids.txt"
+  test "${survivor_count}" -eq 0 && break
+  sleep 1
+done
+test "${survivor_count}" -eq 0
+npu-smi info > "${TMP_AUDIT}/npu_after_keep_alive_stop.txt"
+grep -F 'No running processes found' "${TMP_AUDIT}/npu_after_keep_alive_stop.txt" >/dev/null
 test -z "$(ss -ltnp | grep ':7000' || true)"
 
-"${RUNTIME_PYTHON}" - "${K1A_R2}" <<'PY'
+set +e
+bash "${RUNNER}" "${RESULT_DIR}" > "${TMP_AUDIT}/runner_stdout.txt" 2> "${TMP_AUDIT}/runner_stderr.txt"
+RUNNER_EXIT=$?
+set -e
+printf '%s\n' "${RUNNER_EXIT}" > "${TMP_AUDIT}/runner_exit_code.txt"
+
+restore_keep_alive
+KEEP_ALIVE_STOPPED=0
+trap - EXIT
+test "$(cat "${TMP_AUDIT}/keep_alive_restore_exit_code.txt")" = 0
+
+for _ in $(seq 1 60); do
+  ps -eo pid=,ppid=,pgid=,stat=,args= | awk '$0 ~ /#[0-7]#/' > "${TMP_AUDIT}/keep_alive_after.txt"
+  MARKER_COUNT_AFTER=$(wc -l < "${TMP_AUDIT}/keep_alive_after.txt" | tr -d ' ')
+  test "${MARKER_COUNT_AFTER}" -eq "${MARKER_COUNT_BEFORE}" && break
+  sleep 1
+done
+test "${MARKER_COUNT_AFTER}" -eq "${MARKER_COUNT_BEFORE}"
+python3 - "${TMP_AUDIT}/keep_alive_after.txt" <<'PY'
 from pathlib import Path
-import hashlib
-import json
 import sys
 
-root = Path(sys.argv[1])
-geometry = json.loads((root / "k1a_r2_geometry_summary.json").read_text())
-envelope_path = root / "pinned_allocator_envelope/pinned_allocator_envelope.json"
-envelope = json.loads(envelope_path.read_text())
-assert geometry["stage"] == "P8.2-K1A-R2"
-assert geometry["geometry_gate_ok"] is True
-assert geometry["rendezvous_gate_ok"] is True
-assert geometry["rank_coverage"] == list(range(8))
-assert geometry["required_cpu_blocks"] == 128
-assert envelope["formal_lifecycle_allowed"] is False
-assert envelope["formal_lifecycle_requires_new_handoff"] is True
-assert envelope["grade"] in {
-    "candidate_ready_p8_2_k1a_r2_allocator_capacity",
-    "blocked_p8_2_k1a_r2_pinned_capacity_below_restore_requirement",
-}
-(root / "p8_2_k1a_r2_grade.txt").write_text(envelope["grade"] + "\n", encoding="utf-8")
-
-waves = []
-for wave in envelope["waves"]:
-    failed = next(
-        (row for row in wave.get("rank_status", []) if row.get("success") is not True),
-        None,
-    )
-    waves.append(
-        {
-            "cpu_blocks": wave["cpu_blocks"],
-            "bytes_per_rank": wave["bytes_per_rank"],
-            "rank_status_count": wave.get("rank_status_count", 0),
-            "rank_success_count": wave.get("rank_success_count", 0),
-            "cleanup_ok": wave.get("cleanup_ok"),
-            "not_attempted_reason": wave.get("not_attempted_reason"),
-            "first_failure_error_type": failed.get("error_type") if failed else None,
-            "first_failure_error_message": str(failed.get("error_message", ""))[-512:] if failed else None,
-        }
-    )
-bounded = {
-    key: envelope[key]
-    for key in (
-        "schema_version",
-        "acl_pinned_host_allocator_gate_ok",
-        "required_cpu_blocks",
-        "highest_eight_rank_clean_blocks",
-        "candidate_cpu_bytes_per_rank",
-        "candidate_cpu_bytes_total",
-        "capacity_candidate_ready",
-        "formal_lifecycle_allowed",
-        "formal_lifecycle_requires_new_handoff",
-        "grade",
-    )
-}
-bounded["waves"] = waves
-(root / "pinned_allocator_envelope_summary.json").write_text(
-    json.dumps(bounded, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-)
-
-relative_files = (
-    "probe_run_id.txt",
-    "geometry_probe_exit_code.txt",
-    "k1a_r2_geometry_summary.json",
-    "pinned_allocator_envelope_summary.json",
-    "p8_2_k1a_r2_grade.txt",
-    "geometry_probe/runtime/geometry/geometry.rendezvous.complete.json",
-    "geometry_probe/cleanup_status.txt",
-)
-files = {}
-for relative in relative_files:
-    path = root / relative
-    files[relative] = {
-        "bytes": path.stat().st_size,
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "sensitivity": "bounded_operational_metadata_no_content_or_token_ids",
-    }
-(root / "p8_2_k1a_r2_section_manifest.json").write_text(
-    json.dumps(
-        {
-            "schema_version": "p8_2_k1a_r2_section_manifest_v1",
-            "files": files,
-            "raw_rank_records_remain_server_local": True,
-            "raw_allocator_status_remain_server_local": True,
-            "formal_model_lifecycle_count": 0,
-            "model_request_count": 0,
-        },
-        indent=2,
-        sort_keys=True,
-    ) + "\n",
-    encoding="utf-8",
-)
+rows = Path(sys.argv[1]).read_text().splitlines()
+assert all(any(f"#{device}#" in row for row in rows) for device in range(8))
 PY
+printf 'true\n' > "${TMP_AUDIT}/keep_alive_restored_exact.txt"
+npu-smi info > "${TMP_AUDIT}/npu_after.txt"
+ss -ltnp | grep ':7000' > "${TMP_AUDIT}/port_7000_after.txt" || true
+ps -eo pid,ppid,pgid,stat,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' > "${TMP_AUDIT}/vllm_after.txt" || true
+test ! -s "${TMP_AUDIT}/port_7000_after.txt"
+test ! -s "${TMP_AUDIT}/vllm_after.txt"
+test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
+printf 'runner_exit=%s\n' "${RUNNER_EXIT}"
 ~~~
 
-若 geometry 不是专用 sentinel、8 rank/same-run/parity/marker 不完整、出现请求或 cleanup 不干净，给
-`red_p8_2_k1a_r2_geometry_probe_invalid` 并在 allocator 前停止。allocator 只跑 32→64→96→128；任一
-wave 首错即停、不 retry、不超过 128。不得启动正式六请求 K1A lifecycle。raw vLLM log、rank records、
-NPU log 和逐 rank allocator status 全部留服务器。
+runner 只能执行一个 fresh lifecycle：
 
-## 4. 恢复、独立分级与 bounded candidate manifest
+~~~text
+1. warmup              4096+64
+2. prime              32768+64
+3. pressure          131072+64
+4. restore_follower   32768+64
+5. repeat_follower    32768+64
+6. isolated_control   32768+64
+~~~
 
-第 3 节 shell 退出时 trap 必须恢复 keep-alive。然后执行：
+所有请求固定 `concurrency=1 / temperature=0 / ignore_eos=true / min_tokens=max_tokens=64 /
+streaming=true`，零 retry、不得第 7 请求。body 在 server start 前冻结 token count/bytes/SHA-256，
+不保存或外发 generated text/token IDs。
+
+server argv 固定 W8A8、TP8+EP、MTP `num_speculative_tokens=1`、`FULL_DECODE_ONLY`、
+`max_model_len=135168`、`max_num_batched_tokens=4096`、`max_num_seqs=1`、block size=128、
+Chunked Prefill on、Prefix Cache on、完整 R2 repair。容量配置必须逐字为：
+
+~~~json
+{
+  "kv_connector": "SimpleCPUOffloadConnector",
+  "kv_role": "kv_both",
+  "kv_connector_extra_config": {
+    "cpu_bytes_to_use": 3444834304,
+    "cpu_bytes_to_use_per_rank": 430604288,
+    "lazy_offload": false
+  }
+}
+~~~
+
+不得改成相邻容量、32 GiB/rank、自动 fallback、第二次 lifecycle 或 allocator probe。task-local observer
+只记录 scheduler CPU hit/load/store 和每 worker copy submit/completion，不改 scheduler 决策、block list、
+copy 参数、stream 或同步语义。
+
+## 5. 原位分级、候选清单与停止边界
+
+runner 结束后只读解析结果，不重跑。先验证 exact task/config/request/trace/repair/cleanup：
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717_run01
-I0_R1=${RESULT_ROOT}/p8_3_i0_r1_taxonomy
-K1A_R2=${RESULT_ROOT}/p8_2_k1a_r2_geometry_and_allocator
-cd "${REPO_ROOT}"
+RESULT_DIR=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718_run01
+TMP_AUDIT_POINTER=/tmp/opencode/p8_2_k1a_r3_preflight_current_2026_0718.path
+test -f "${TMP_AUDIT_POINTER}"
+TMP_AUDIT=$(cat "${TMP_AUDIT_POINTER}")
+test -d "${RESULT_DIR}"
+test -d "${TMP_AUDIT}"
 
-test -z "$(ss -ltnp | grep ':7000' || true)"
-test -z "$(ps -eo pid,cmd | grep -E '[v]llm serve|[V]LLM::EngineCore' || true)"
-test "$(ps -eo cmd= | grep -Ec '#[0-7]#' || true)" -eq 16
-for card in 0 1 2 3 4 5 6 7; do
-  grep -F "#${card}#" "${K1A_R2}/keep_alive_after.txt" >/dev/null
-done
-test -z "$(git status --porcelain --untracked-files=no)"
-
-python3 - "${RESULT_ROOT}" <<'PY'
+python3 - "${RESULT_DIR}" "${TMP_AUDIT}" <<'PY'
 from pathlib import Path
+import csv
 import hashlib
 import json
 import sys
 
-root = Path(sys.argv[1])
-i0 = root / "p8_3_i0_r1_taxonomy"
-k1a = root / "p8_2_k1a_r2_geometry_and_allocator"
-i0_grade = (i0 / "p8_3_i0_r1_grade.txt").read_text().strip()
-k1a_grade = (k1a / "p8_2_k1a_r2_grade.txt").read_text().strip()
-geometry = json.loads((k1a / "k1a_r2_geometry_summary.json").read_text())
-envelope = json.loads((k1a / "pinned_allocator_envelope_summary.json").read_text())
-taxonomy = json.loads((i0 / "p8_3_i0_r1_unclassified_taxonomy.json").read_text())
+root, audit = map(Path, sys.argv[1:])
+grading = json.loads((root / "grading_inputs.json").read_text())
+connector = json.loads((root / "connector_resolution_summary.json").read_text())
+trace = json.loads((root / "transfer_trace_summary.json").read_text())
+host = json.loads((root / "host_memory_summary.json").read_text())
+environment = json.loads((root / "environment_and_hashes.json").read_text())
+rows = list(csv.DictReader((root / "request_summary.tsv").open(), delimiter="\t"))
 
-grading = {
-    "schema_version": "p8_dual_track_k1a_r2_i0_r1_grading_v1",
-    "task_id": "p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717",
-    "task_completion": "complete_with_independent_section_grades",
-    "p8_3_i0_parent_grade": "green_p8_3_i0_checkpoint_inventory",
-    "p8_3_i0_r1_grade": i0_grade,
-    "p8_2_k1a_r1_parent_grade": "red_p8_2_k1a_r1_geometry_probe_invalid",
-    "p8_2_k1a_r2_grade": k1a_grade,
-    "taxonomy_complete": taxonomy["taxonomy_complete"],
-    "taxonomy_group_count": taxonomy["taxonomy_group_count"],
-    "reported_taxonomy_group_count": taxonomy["reported_group_count"],
-    "unclassified_tensor_count": taxonomy["unclassified_tensor_count"],
-    "unclassified_checkpoint_bytes": taxonomy["unclassified_checkpoint_bytes"],
-    "geometry_probe_run_id": geometry["probe_run_id"],
-    "geometry_rank_coverage": geometry["rank_coverage"],
-    "total_bytes_per_block": geometry["total_bytes_per_block"],
-    "required_capacity_bytes_per_rank": geometry["required_capacity_bytes_per_rank"],
-    "allocator_gate_ok": envelope["acl_pinned_host_allocator_gate_ok"],
-    "formal_model_lifecycle_count": 0,
-    "model_request_count": 0,
-    "formal_k1a_authorized": False,
-    "p8_3_i1_authorized": False,
-    "k2_authorized": False,
-    "result_transfer_authorized": False,
-    "claim_boundary": "existing_inventory_taxonomy_plus_same_run_eight_rank_geometry_and_allocator_capacity_only",
-}
-(root / "grading_summary.json").write_text(
-    json.dumps(grading, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-)
-(root / "result_summary.md").write_text(
-    "# P8 dual-track R2/I0-R1 bounded result\n\n"
-    f"- task_id: `{grading['task_id']}`\n"
-    f"- P8.3-I0-R1: `{i0_grade}`\n"
-    f"- P8.2-K1A-R2: `{k1a_grade}`\n"
-    "- formal model lifecycle / request: `0 / 0`\n"
-    "- boundary: existing inventory taxonomy and allocator feasibility only; no TP4 runtime, "
-    "offload mechanism, performance or optimization claim.\n",
-    encoding="utf-8",
-)
+assert grading["task_id"] == "p8_2_k1a_r3_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0718"
+assert grading["cpu_bytes_to_use"] == 3444834304
+assert grading["cpu_bytes_to_use_per_rank"] == 430604288
+assert grading["accepted_capacity_exact"] is True
+assert connector["resolved_cpu_capacity_exact"] is True
+assert connector["cpu_bytes_to_use"] == 3444834304
+assert connector["cpu_bytes_to_use_per_rank"] == 430604288
+assert host["configured_cpu_tier_bytes_total"] == 3444834304
+assert host["configured_cpu_tier_bytes_per_rank"] == 430604288
+assert environment["server_command_sha256"] == "418d2796ec2dd15ab7504c264a6635a50d064cb7b6425f809cbfba550d2f5bb0"
+assert len(rows) == 6
+assert [row["k1a_role"] for row in rows] == [
+    "warmup", "prime", "pressure", "restore_follower", "repeat_follower", "isolated_control"
+]
+assert grading["request_count"] == 6
+assert grading["cleanup"] == "clean"
+assert (audit / "keep_alive_restored_exact.txt").read_text().strip() == "true"
 
-candidate_paths = (
-    root / "result_summary.md",
-    root / "grading_summary.json",
-    i0 / "p8_3_i0_r1_index_resolution.json",
-    i0 / "p8_3_i0_r1_unclassified_taxonomy.json",
-    i0 / "p8_3_i0_r1_grade.txt",
-    i0 / "p8_3_i0_r1_section_manifest.json",
-    k1a / "k1a_r2_geometry_summary.json",
-    k1a / "pinned_allocator_envelope_summary.json",
-    k1a / "p8_2_k1a_r2_grade.txt",
-    k1a / "geometry_probe/runtime/geometry/geometry.rendezvous.complete.json",
-    k1a / "geometry_probe/cleanup_status.txt",
-    k1a / "p8_2_k1a_r2_section_manifest.json",
+candidate_names = (
+    "result_summary.md",
+    "environment_and_hashes.json",
+    "request_body_manifest.json",
+    "request_summary.tsv",
+    "transfer_trace_summary.json",
+    "connector_resolution_summary.json",
+    "mtp_queue_health_summary.json",
+    "host_memory_summary.json",
+    "repair_diagnostic_summary.json",
+    "grading_inputs.json",
+    "cleanup_status.txt",
+    "first_failure_excerpt.txt",
 )
 files = {}
-for path in candidate_paths:
-    relative = str(path.relative_to(root))
-    files[relative] = {
-        "bytes": path.stat().st_size,
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "sensitivity": "bounded_operational_metadata_no_content_or_token_ids",
-    }
+for name in candidate_names:
+    path = root / name
+    if path.is_file():
+        files[name] = {
+            "bytes": path.stat().st_size,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "sensitivity": "bounded_operational_metadata_no_content_or_token_ids",
+        }
 total = sum(row["bytes"] for row in files.values())
 assert total <= 71680, total
+manifest = {
+    "schema_version": "p8_2_k1a_r3_candidate_manifest_v1",
+    "result_root": str(root),
+    "files": files,
+    "candidate_file_count": len(files),
+    "candidate_total_bytes": total,
+    "max_total_bytes": 71680,
+    "result_transfer_authorized": False,
+}
 (root / "candidate_manifest.server_local.json").write_text(
-    json.dumps(
-        {
-            "schema_version": "p8_dual_track_r2_candidate_manifest_v1",
-            "result_root": str(root),
-            "files": files,
-            "candidate_file_count": len(files),
-            "candidate_total_bytes": total,
-            "max_total_bytes": 71680,
-            "sensitivity": "bounded_operational_metadata_no_content_or_token_ids",
-            "manifest_is_server_local_not_a_transfer_candidate": True,
-            "result_transfer_authorized": False,
-        },
-        indent=2,
-        sort_keys=True,
-    ) + "\n",
-    encoding="utf-8",
+    json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 )
-print(json.dumps({"i0_grade": i0_grade, "k1a_grade": k1a_grade, "candidate_total_bytes": total}))
+print(json.dumps({
+    "server_grade": grading["server_grade"],
+    "successful_request_count": grading["successful_request_count"],
+    "d2h_worker_count": trace["d2h_worker_count"],
+    "h2d_worker_count": trace["h2d_worker_count"],
+    "candidate_total_bytes": total,
+}, sort_keys=True))
 PY
-
-git status --short --branch --untracked-files=no
-npu-smi info
 ~~~
 
-服务器最终报告必须分 section 给出：同步前后 HEAD/origin/ahead-behind/tracked；I0 parent 四文件 hash、
-真实 index basename/hash/无 symlink、taxonomy group/覆盖/遗漏/count/bytes/grade、source inventory 前后不变；
-K1A probe run ID、8 rank coverage/parity/marker/sentinel、exact geometry、每 wave blocks/bytes/success/首错/
-cleanup、最终 grade；keep-alive、端口、vLLM residual 与 formal lifecycle/request=`0/0`。
+分级严格为：
 
-结果不自动外发。报告精确 `RESULT_ROOT` 与
-`candidate_manifest.server_local.json` 中的完整候选清单、逐文件 bytes/SHA-256/sensitivity、总量、可用
-`email / upload-api / server-local` 及一个推荐理由，等待用户对该完整范围重新选择。不得把 raw Parquet、
-rank records、allocator status、vLLM/NPU log 或 request bodies 放进候选范围；本 handoff 不是外发授权。
+- repository/source/provenance/resource 门失败：`blocked_p8_2_k1a_r3_source_or_resource_gate`；
+- server 启动后 0/6 成功：`red_p8_2_k1a_r3_no_success`；
+- 请求结构不完整或只有部分成功：`yellow_p8_2_k1a_r3_partial`；
+- 6/6 成功且 8/8 D2H store 完整，但没有 8/8 H2D restore：
+  `yellow_p8_2_k1a_r3_store_only_no_restore`；这是有效负结果，不得 retry；
+- request/connector/capacity/R2 repair/MTP/health/queue/cleanup 任一证据不完整：
+  `red_p8_2_k1a_r3_transfer_evidence_incomplete`；
+- 只有 6/6 首次成功、accepted capacity exact、8/8 worker D2H submit+complete、8/8 worker H2D
+  submit+complete、restore scheduler CPU hit/load schedule/load complete、R2/MTP/queue/health/cleanup/keep-alive
+  全过，才给 `candidate_green_p8_2_k1a_r3_simple_cpu_offload_store_restore`。
+
+candidate green 也只证明该冻结 lifecycle 的双向机制，不是 performance reference、加速收益、通用支持、
+K2 解锁或硬件归因。服务器只能给 candidate；必须由开发机独立复核小结果包后决定正式等级。
+
+## 6. 最终报告与传输边界
+
+最终报告必须给出：同步前后 HEAD/origin/ahead-behind/tracked；R2 accepted provenance；安装态 source/import；
+资源门；keep-alive stop/restore；runner/mode/finalize exit；6 个 slot 的 HTTP/token/SSE/MTP/prefix 摘要；
+resolved connector/capacity；D2H/H2D worker/bytes/completion；repair/health/queue；cleanup；最终 grade。
+
+同时报告 `RESULT_DIR` 与 `candidate_manifest.server_local.json` 的完整文件清单、逐文件 bytes/SHA-256/
+sensitivity、总量，以及可用 `email / upload-api / server-local` 和一个推荐理由。当前
+`result_transfer_authorized:false`：不得发送邮件、调用 upload-api、复制到 Inbox 或自动切换渠道。
+raw logs、metrics、trace、request bodies、generated content/token IDs 全部留服务器。
+
+完成后停止等待：`next_task_authorized:false`。不得自动重跑、改变容量、进入 K2/P8.3-I1/P8.4/P8.5/P9。
