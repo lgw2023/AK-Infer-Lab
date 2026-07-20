@@ -532,6 +532,285 @@ RuntimeError: device copy stream failed
     )
 
 
+def test_runtime_log_audit_groups_frozen_worker_and_engine_wrappers_under_known_root(
+    tmp_path: Path,
+) -> None:
+    log_path = tmp_path / "vllm_server.log"
+    log_path.write_text(
+        """Traceback (most recent call last):
+  File "/tmp/overlay/p8_2_k1a_simple_cpu_offload_observer.py", line 132, in observed_launch
+TypeError: NPUDmaCopyBackend.launch_copy() takes 6 positional arguments but 7 were given
+Traceback (most recent call last):
+  File "/opt/vllm/v1/executor/multiproc_executor.py", line 390, in get_response
+RuntimeError: Worker failed with error 'NPUDmaCopyBackend.launch_copy() takes 6 positional arguments but 7 were given', please check the stack trace above for the root cause
+Traceback (most recent call last):
+  File "/opt/vllm/v1/engine/core_client.py", line 1030, in get_output_async
+EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause.
+Traceback (most recent call last):
+  File "/opt/vllm/entrypoints/openai/serving.py", line 305, in completion_stream_generator
+  File "/opt/vllm/v1/engine/core_client.py", line 1030, in get_output_async
+EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause.
+""",
+        encoding="utf-8",
+    )
+    output = tmp_path / "runtime_exception_provenance.json"
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(FORENSICS),
+            "runtime-log-audit",
+            "--log",
+            str(log_path),
+            "--output",
+            str(output),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    audit = json.loads(output.read_text(encoding="utf-8"))
+    assert audit["schema_version"] == (
+        "p8_2_k1a_runtime_exception_causal_provenance_v2"
+    )
+    assert audit["runtime_log_gate"] == (
+        "pass_known_retired_observer_defect_with_deterministic_wrappers"
+    )
+    assert audit["root_known_observer_defect_count"] == 1
+    assert audit["derived_worker_runtime_wrapper_count"] == 1
+    assert audit["derived_engine_dead_wrapper_count"] == 2
+    assert audit["independent_unknown_exception_count"] == 0
+    assert audit["formal_lifecycle_runtime_log_condition"] is True
+    assert audit["exception_record_count_exact"] is True
+    assert sum(group["count"] for group in audit["exception_groups"]) == 4
+    assert {group["causal_role"] for group in audit["exception_groups"]} == {
+        "root_known_observer_defect",
+        "derived_worker_runtime_wrapper",
+        "derived_engine_dead_wrapper",
+    }
+    assert audit["frozen_wrapper_contract"] == {
+        "engine_dead_message_sha256": (
+            "988c82d7efef7bf00a3704ebde56ac21a2909a32bdbd1e13368341b475859130"
+        ),
+        "worker_runtime_message_sha256": (
+            "42d6217fd6e2666b3bc6a403bfb201809cf500353095062c39eed6f113e5fd63"
+        ),
+        "vllm_commit": "0decac0d96c42b49572498019f0a0e3600f50398",
+    }
+
+
+def test_runtime_log_audit_requires_frozen_wrapper_source_templates_when_requested(
+    tmp_path: Path,
+) -> None:
+    vllm_root = tmp_path / "vllm"
+    executor = vllm_root / "v1/executor/multiproc_executor.py"
+    exceptions = vllm_root / "v1/engine/exceptions.py"
+    core_client = vllm_root / "v1/engine/core_client.py"
+    executor.parent.mkdir(parents=True)
+    exceptions.parent.mkdir(parents=True)
+    executor.write_text(
+        """def get_response():
+    if status != WorkerProc.ResponseStatus.SUCCESS:
+        raise RuntimeError(
+            f"Worker failed with error '{result}', please check the"
+            " stack trace above for the root cause"
+        )
+""",
+        encoding="utf-8",
+    )
+    exceptions.write_text(
+        """class EngineDeadError(Exception):
+    def __init__(self):
+        ENGINE_DEAD_MESSAGE = "EngineCore encountered an issue. See stack trace (above) for the root cause."
+        super().__init__(ENGINE_DEAD_MESSAGE)
+""",
+        encoding="utf-8",
+    )
+    core_client.write_text(
+        """async def get_output_async(self) -> EngineCoreOutputs:
+    if isinstance(outputs, Exception):
+        raise self._format_exception(outputs) from None
+""",
+        encoding="utf-8",
+    )
+    log_path = tmp_path / "vllm_server.log"
+    log_path.write_text(
+        """TypeError: NPUDmaCopyBackend.launch_copy() takes 6 positional arguments but 7 were given
+  File "/opt/vllm/v1/executor/multiproc_executor.py", line 390, in get_response
+RuntimeError: Worker failed with error 'NPUDmaCopyBackend.launch_copy() takes 6 positional arguments but 7 were given', please check the stack trace above for the root cause
+  File "/opt/vllm/v1/engine/core_client.py", line 1030, in get_output_async
+EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause.
+""",
+        encoding="utf-8",
+    )
+    output = tmp_path / "runtime_exception_provenance.json"
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(FORENSICS),
+            "runtime-log-audit",
+            "--log",
+            str(log_path),
+            "--vllm-root",
+            str(vllm_root),
+            "--output",
+            str(output),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    audit = json.loads(output.read_text(encoding="utf-8"))
+    source = audit["frozen_wrapper_source_templates"]
+    assert source["gate"] == "pass"
+    assert source["required_file_count"] == 3
+    assert source["matched_file_count"] == 3
+    assert source["multiproc_worker_wrapper_exact"] is True
+    assert source["multiproc_get_response_raise_path_present"] is True
+    assert source["engine_dead_message_exact"] is True
+    assert source["engine_dead_raise_path_present"] is True
+    assert all(len(row["sha256"]) == 64 for row in source["files"].values())
+    assert audit["formal_lifecycle_runtime_log_condition"] is True
+
+
+def test_runtime_log_audit_keeps_parent_scale_counts_exact_beyond_sample_limit(
+    tmp_path: Path,
+) -> None:
+    known = (
+        "TypeError: NPUDmaCopyBackend.launch_copy() takes 6 positional "
+        "arguments but 7 were given\n"
+    )
+    worker = (
+        '  File "/opt/vllm/v1/executor/multiproc_executor.py", line 390, in get_response\n'
+        "RuntimeError: Worker failed with error 'NPUDmaCopyBackend.launch_copy() "
+        "takes 6 positional arguments but 7 were given', please check the stack "
+        "trace above for the root cause\n"
+    )
+    engine = (
+        '  File "/opt/vllm/v1/engine/core_client.py", line 1030, in get_output_async\n'
+        "EngineDeadError: EngineCore encountered an issue. See stack trace "
+        "(above) for the root cause.\n"
+    )
+    log_path = tmp_path / "vllm_server.log"
+    log_path.write_text(known * 16 + worker + engine * 2 + known * 16)
+    output = tmp_path / "runtime_exception_provenance.json"
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(FORENSICS),
+            "runtime-log-audit",
+            "--log",
+            str(log_path),
+            "--output",
+            str(output),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    audit = json.loads(output.read_text(encoding="utf-8"))
+    assert audit["exception_count"] == 35
+    assert audit["root_known_observer_defect_count"] == 32
+    assert audit["derived_worker_runtime_wrapper_count"] == 1
+    assert audit["derived_engine_dead_wrapper_count"] == 2
+    assert audit["independent_unknown_exception_count"] == 0
+    assert audit["exception_records_truncated"] is True
+    assert audit["exception_record_count_exact"] is True
+    assert sum(group["count"] for group in audit["exception_groups"]) == 35
+    assert output.stat().st_size < 71680
+
+
+def test_runtime_log_audit_compact_mode_retains_exact_groups_without_record_samples(
+    tmp_path: Path,
+) -> None:
+    known = (
+        "TypeError: NPUDmaCopyBackend.launch_copy() takes 6 positional "
+        "arguments but 7 were given\n"
+    )
+    worker = (
+        '  File "/opt/vllm/v1/executor/multiproc_executor.py", line 390, in get_response\n'
+        "RuntimeError: Worker failed with error 'NPUDmaCopyBackend.launch_copy() "
+        "takes 6 positional arguments but 7 were given', please check the stack "
+        "trace above for the root cause\n"
+    )
+    engine = (
+        '  File "/opt/vllm/v1/engine/core_client.py", line 1030, in get_output_async\n'
+        "EngineDeadError: EngineCore encountered an issue. See stack trace "
+        "(above) for the root cause.\n"
+    )
+    log_path = tmp_path / "vllm_server.log"
+    log_path.write_text(known * 32 + worker + engine * 2)
+    output = tmp_path / "runtime_exception_provenance.compact.json"
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(FORENSICS),
+            "runtime-log-audit",
+            "--compact",
+            "--log",
+            str(log_path),
+            "--output",
+            str(output),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    audit = json.loads(output.read_text(encoding="utf-8"))
+    assert audit["exception_count"] == 35
+    assert audit["exception_record_count_exact"] is True
+    assert audit["exception_record_samples_included"] is False
+    assert "exceptions" not in audit
+    assert sum(group["count"] for group in audit["exception_groups"]) == 35
+    assert output.stat().st_size < 16384
+
+
+def test_runtime_log_audit_does_not_backlink_wrapper_that_precedes_the_root(
+    tmp_path: Path,
+) -> None:
+    log_path = tmp_path / "vllm_server.log"
+    log_path.write_text(
+        """  File "/opt/vllm/v1/executor/multiproc_executor.py", line 390, in get_response
+RuntimeError: Worker failed with error 'NPUDmaCopyBackend.launch_copy() takes 6 positional arguments but 7 were given', please check the stack trace above for the root cause
+TypeError: NPUDmaCopyBackend.launch_copy() takes 6 positional arguments but 7 were given
+""",
+        encoding="utf-8",
+    )
+    output = tmp_path / "runtime_exception_provenance.json"
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(FORENSICS),
+            "runtime-log-audit",
+            "--log",
+            str(log_path),
+            "--output",
+            str(output),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 2
+    audit = json.loads(output.read_text(encoding="utf-8"))
+    assert audit["derived_worker_runtime_wrapper_count"] == 0
+    assert audit["independent_unknown_exception_count"] == 1
+    assert audit["runtime_log_gate"] == "fail_unknown_runtime_exception"
+
+
 def test_transfer_summary_surfaces_copy_and_poll_exceptions_without_treating_them_as_completion() -> None:
     rows = [
         {

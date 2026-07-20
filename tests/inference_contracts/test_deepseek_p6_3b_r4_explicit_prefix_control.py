@@ -381,7 +381,7 @@ def test_r4_r1_closeout_is_preserved_during_k1a_r3_r2_r2_forensics():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_r1_r1_source_binding_provenance_replay.yaml"
+        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False

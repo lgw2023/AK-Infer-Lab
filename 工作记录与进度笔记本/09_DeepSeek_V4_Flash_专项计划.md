@@ -31,10 +31,12 @@ portable-argv contract red。K1A-R3-R2 已通过 canonical argv 和 R2 provenanc
 `blocked_p8_2_k1a_r3_r2_source_or_resource_gate`。R3-R2-R1 已进入真实 runtime：4K warmup 成功、32K prime
 失败，8 worker 提交 `403691520` D2H bytes 但零 completion，H2D 未启动，cleanup/keep-alive restore
 clean，因此只接受 `yellow_p8_2_k1a_r3_r2_r1_partial`。R3-R2-R2 与 R3-R2-R2-R1 均保留 blocked
-provenance；后者只因旧 AST 未识别 `copy_blocks` 的 ImportFrom binding 而停止，同时其异常报告自相矛盾且缺少
-有界日志证据。当前唯一任务
-`p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_2026_0720` 先在零 NPU 处
-关闭六文件 binding/definition、runtime object identity 和 parent raw-log exception fingerprint；只有无未知异常且
+provenance；R3-R2-R2-R1-R1 已关闭 ImportFrom/source binding 假阴性，但 flat classifier 将 32 个已知根异常的
+1 个 worker wrapper 和 2 个 EngineDead wrapper 计为独立 unknown，因而保留 offline provenance blocked。
+当前唯一任务
+`p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720` 先在零 NPU 处
+精确重放 `35 = 32 root + 1 worker wrapper + 2 engine wrappers + 0 independent unknown`，关闭三文件冻结源模板、
+六文件 binding/definition、runtime object identity 和 raw-log 不变门；只有无 independent unknown 且
 其余 source/import/resource 门全过，才保持 canonical argv/body/R2 repair 并在 `430604288 bytes/rank` 上执行
 最多一个六请求 replay，零 retry。不得自动进入
 K2/P8.3-I1/P8.4/P8.5/P9。
@@ -64,7 +66,7 @@ P6.3B-R4-R1 已关闭的历史合同为
 repair/安装门、resolved false/true、真实 token-LCP、on primary 9/9 positive hit、off hit=0 与 body pairing
 全部通过，其余 15 个 on follower 作为 boundary diagnosis 保留 zero hit。后续 P8.1-R1 handoff 已消费并获
 `green_p8_1_r1_official_mtp_observe_only_matrix`，P8.2-K0 也已 green；该六请求 observe-only 任务不再是
-current。K1A-R3 因 handoff schema 混读在零 NPU/零请求处 provenance blocked；K1A-R3-R1 关闭该门后因非可移植 `%q` 命令身份在 vLLM 前 contract red；K1A-R3-R2 关闭 canonical argv 门后又因未证明 Ascend checkout 路径在零 NPU 处 source-contract blocked。K1A-R3-R2-R1 进入 runtime 后以 1/6 成功、D2H submit 无 completion 保留 partial yellow。R3-R2-R2 与 R3-R2-R2-R1 blocked provenance 保留；当前 handoff 为 R3-R2-R2-R1-R1 source binding + runtime exception provenance + conditional same-capacity replay，最多一个 lifecycle/六请求/零 retry，禁止 profiler、behavior patch、容量搜索、K2/P8.3-I1/P9；结果包需对完整清单单独选渠道。
+current。K1A-R3 因 handoff schema 混读在零 NPU/零请求处 provenance blocked；K1A-R3-R1 关闭该门后因非可移植 `%q` 命令身份在 vLLM 前 contract red；K1A-R3-R2 关闭 canonical argv 门后又因未证明 Ascend checkout 路径在零 NPU 处 source-contract blocked。K1A-R3-R2-R1 进入 runtime 后以 1/6 成功、D2H submit 无 completion 保留 partial yellow。R3-R2-R2、R3-R2-R2-R1 与 R3-R2-R2-R1-R1 blocked provenance 保留；当前 handoff 为 R3-R2-R2-R1-R1-R1 causal exception refinalization + conditional same-capacity replay，最多一个 lifecycle/六请求/零 retry，禁止 profiler、behavior patch、容量搜索、K2/P8.3-I1/P9；结果包需对完整清单单独选渠道。
 
 首轮在仅 NPU 6、7 空闲的条件下以 TP2 做启动诊断，所有请求均未进入推理阶段。`vLLM 0.18.0 / vLLM-Ascend 0.18.0` 先后暴露 `mtp` 不受支持，以及 `DeepseekV4Config` 缺少 `kv_lora_rank` 的架构错配；最终最高成功输入为 `0`，不能形成容量、性能或瓶颈结论。
 

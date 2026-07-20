@@ -68,6 +68,13 @@ SENSITIVE_LINE_MARKERS = (
     "token_arrival_ns",
     "token_ids",
 )
+FROZEN_VLLM_COMMIT = "0decac0d96c42b49572498019f0a0e3600f50398"
+FROZEN_WORKER_RUNTIME_MESSAGE_SHA256 = (
+    "42d6217fd6e2666b3bc6a403bfb201809cf500353095062c39eed6f113e5fd63"
+)
+FROZEN_ENGINE_DEAD_MESSAGE_SHA256 = (
+    "988c82d7efef7bf00a3704ebde56ac21a2909a32bdbd1e13368341b475859130"
+)
 
 
 def first_failed_predicate(row: dict[str, Any]) -> str | None:
@@ -693,7 +700,86 @@ def audit_source_semantics(
     return value
 
 
-def audit_runtime_log(log_path: Path, output: Path) -> dict[str, Any]:
+def _audit_frozen_wrapper_source(vllm_root: Path) -> dict[str, Any]:
+    relative_paths = {
+        "multiproc_executor": Path("v1/executor/multiproc_executor.py"),
+        "engine_exceptions": Path("v1/engine/exceptions.py"),
+        "core_client": Path("v1/engine/core_client.py"),
+    }
+    files: dict[str, dict[str, Any]] = {}
+    text_by_label: dict[str, str] = {}
+    for label, relative in relative_paths.items():
+        path = vllm_root / relative
+        exists = path.is_file()
+        text_by_label[label] = (
+            path.read_text(encoding="utf-8", errors="replace") if exists else ""
+        )
+        files[label] = {
+            "bytes": path.stat().st_size if exists else None,
+            "exists": exists,
+            "relative_path": relative.as_posix(),
+            "sha256": _hash_file(path) if exists else None,
+        }
+    multiproc_text = text_by_label["multiproc_executor"]
+    exceptions_text = text_by_label["engine_exceptions"]
+    core_client_text = text_by_label["core_client"]
+    multiproc_exact = all(
+        token in multiproc_text
+        for token in (
+            "f\"Worker failed with error '{result}', please check the\"",
+            '" stack trace above for the root cause"',
+        )
+    )
+    multiproc_raise_path_present = all(
+        token in multiproc_text
+        for token in (
+            "def get_response()",
+            "if status != WorkerProc.ResponseStatus.SUCCESS:",
+            "raise RuntimeError(",
+        )
+    )
+    engine_message_exact = (
+        'ENGINE_DEAD_MESSAGE = "EngineCore encountered an issue. '
+        'See stack trace (above) for the root cause."'
+        in exceptions_text
+    )
+    engine_raise_present = all(
+        token in core_client_text
+        for token in (
+            "async def get_output_async(self) -> EngineCoreOutputs:",
+            "if isinstance(outputs, Exception):",
+            "raise self._format_exception(outputs) from None",
+        )
+    )
+    matched = sum(row["exists"] for row in files.values())
+    gate_ok = (
+        matched == len(relative_paths)
+        and multiproc_exact
+        and multiproc_raise_path_present
+        and engine_message_exact
+        and engine_raise_present
+    )
+    return {
+        "engine_dead_message_exact": engine_message_exact,
+        "engine_dead_raise_path_present": engine_raise_present,
+        "files": files,
+        "gate": "pass" if gate_ok else "fail",
+        "matched_file_count": matched,
+        "multiproc_get_response_raise_path_present": multiproc_raise_path_present,
+        "multiproc_worker_wrapper_exact": multiproc_exact,
+        "required_file_count": len(relative_paths),
+        "source_mutated": False,
+        "vllm_commit": FROZEN_VLLM_COMMIT,
+    }
+
+
+def audit_runtime_log(
+    log_path: Path,
+    output: Path,
+    *,
+    compact: bool = False,
+    vllm_root: Path | None = None,
+) -> dict[str, Any]:
     if not log_path.is_file():
         raise ValueError(f"runtime log does not exist: {log_path}")
     before = {"bytes": log_path.stat().st_size, "sha256": _hash_file(log_path)}
@@ -751,30 +837,130 @@ def audit_runtime_log(log_path: Path, output: Path) -> dict[str, Any]:
                 ).hexdigest(),
             }
         )
-    known_count = sum(
-        row["known_retired_observer_defect_match"] for row in exceptions
+    known_count = sum(row["known_retired_observer_defect_match"] for row in exceptions)
+    known_root_seen = False
+    worker_wrapper_seen = False
+    for row in exceptions:
+        frames = {
+            (frame["file"], frame["function"])
+            for frame in row["callsite_frames"]
+        }
+        message_sha256 = row["normalized_message_sha256"]
+        if row["known_retired_observer_defect_match"]:
+            causal_role = "root_known_observer_defect"
+            message_pattern = row["message_pattern"]
+            known_root_seen = True
+        elif (
+            known_root_seen
+            and row["exception_type"] == "RuntimeError"
+            and message_sha256 == FROZEN_WORKER_RUNTIME_MESSAGE_SHA256
+            and ("multiproc_executor.py", "get_response") in frames
+        ):
+            causal_role = "derived_worker_runtime_wrapper"
+            message_pattern = "frozen_multiproc_worker_error_wrapper"
+            worker_wrapper_seen = True
+        elif (
+            worker_wrapper_seen
+            and row["exception_type"] == "EngineDeadError"
+            and message_sha256 == FROZEN_ENGINE_DEAD_MESSAGE_SHA256
+            and ("core_client.py", "get_output_async") in frames
+        ):
+            causal_role = "derived_engine_dead_wrapper"
+            message_pattern = "frozen_engine_dead_propagation_wrapper"
+        else:
+            causal_role = "independent_unknown_exception"
+            message_pattern = "unrecognized_runtime_exception"
+        row["causal_role"] = causal_role
+        row["message_pattern"] = message_pattern
+
+    worker_wrapper_count = sum(
+        row["causal_role"] == "derived_worker_runtime_wrapper" for row in exceptions
     )
-    unknown_count = len(exceptions) - known_count
+    engine_wrapper_count = sum(
+        row["causal_role"] == "derived_engine_dead_wrapper"
+        for row in exceptions
+    )
+    independent_unknown_count = sum(
+        row["causal_role"] == "independent_unknown_exception"
+        for row in exceptions
+    )
+    groups: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    for row in exceptions:
+        key = (
+            row["causal_role"],
+            row["exception_type"],
+            row["message_pattern"],
+            row["normalized_message_sha256"],
+        )
+        group = groups.setdefault(
+            key,
+            {
+                "callsite_variants": [],
+                "causal_role": row["causal_role"],
+                "count": 0,
+                "exception_type": row["exception_type"],
+                "line_numbers": [],
+                "message_pattern": row["message_pattern"],
+                "normalized_message_sha256": row["normalized_message_sha256"],
+            },
+        )
+        group["count"] += 1
+        group["line_numbers"].append(row["line_number"])
+        if row["callsite_frames"] not in group["callsite_variants"]:
+            group["callsite_variants"].append(row["callsite_frames"])
+    exception_groups = sorted(
+        groups.values(),
+        key=lambda row: (
+            row["line_numbers"][0],
+            row["causal_role"],
+            row["exception_type"],
+        ),
+    )
     if not exceptions:
         gate = "pass_no_direct_runtime_exception"
-    elif unknown_count == 0:
+    elif independent_unknown_count == 0 and (worker_wrapper_count or engine_wrapper_count):
+        gate = "pass_known_retired_observer_defect_with_deterministic_wrappers"
+    elif independent_unknown_count == 0:
         gate = "pass_known_retired_observer_defect"
     else:
         gate = "fail_unknown_runtime_exception"
     after = {"bytes": log_path.stat().st_size, "sha256": _hash_file(log_path)}
+    source_templates = (
+        _audit_frozen_wrapper_source(vllm_root)
+        if vllm_root is not None
+        else {"gate": "not_requested", "vllm_commit": FROZEN_VLLM_COMMIT}
+    )
+    formal_condition = gate.startswith("pass_") and source_templates["gate"] in {
+        "not_requested",
+        "pass",
+    }
     value = {
-        "schema_version": "p8_2_k1a_runtime_exception_provenance_v1",
+        "schema_version": "p8_2_k1a_runtime_exception_causal_provenance_v2",
         "runtime_log_gate": gate,
-        "formal_lifecycle_runtime_log_condition": gate.startswith("pass_"),
+        "formal_lifecycle_runtime_log_condition": formal_condition,
         "direct_runtime_exception_present": bool(exceptions),
         "exception_count": len(exceptions),
+        "root_known_observer_defect_count": known_count,
+        "derived_worker_runtime_wrapper_count": worker_wrapper_count,
+        "derived_engine_dead_wrapper_count": engine_wrapper_count,
+        "independent_unknown_exception_count": independent_unknown_count,
         "known_retired_observer_wait_event_defect_count": known_count,
-        "unknown_runtime_exception_count": unknown_count,
+        "unknown_runtime_exception_count": independent_unknown_count,
         "traceback_marker_count": sum(
             "Traceback (most recent call last)" in line for line in lines
         ),
-        "exceptions": exceptions[:32],
+        "exception_groups": exception_groups,
+        "exception_record_count_exact": (
+            sum(group["count"] for group in exception_groups) == len(exceptions)
+        ),
+        "exception_record_samples_included": not compact,
         "exception_records_truncated": len(exceptions) > 32,
+        "frozen_wrapper_contract": {
+            "engine_dead_message_sha256": FROZEN_ENGINE_DEAD_MESSAGE_SHA256,
+            "worker_runtime_message_sha256": FROZEN_WORKER_RUNTIME_MESSAGE_SHA256,
+            "vllm_commit": FROZEN_VLLM_COMMIT,
+        },
+        "frozen_wrapper_source_templates": source_templates,
         "source_log_before": before,
         "source_log_after": after,
         "source_log_unchanged": before == after,
@@ -784,6 +970,8 @@ def audit_runtime_log(log_path: Path, output: Path) -> dict[str, Any]:
         "vllm_server_started": False,
         "model_request_sent": False,
     }
+    if not compact:
+        value["exceptions"] = exceptions[:32]
     output.parent.mkdir(parents=True, exist_ok=True)
     _write_json(output, value)
     return value
@@ -800,7 +988,9 @@ def parse_args() -> argparse.Namespace:
     source_audit.add_argument("--vllm-ascend-root", type=Path, required=True)
     source_audit.add_argument("--output", type=Path, required=True)
     runtime_log_audit = subparsers.add_parser("runtime-log-audit")
+    runtime_log_audit.add_argument("--compact", action="store_true")
     runtime_log_audit.add_argument("--log", type=Path, required=True)
+    runtime_log_audit.add_argument("--vllm-root", type=Path)
     runtime_log_audit.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -814,9 +1004,14 @@ def main() -> int:
         print(json.dumps(result, sort_keys=True))
         return 0 if result["source_semantics_gate"] == "pass" else 2
     if args.command == "runtime-log-audit":
-        result = audit_runtime_log(args.log, args.output)
+        result = audit_runtime_log(
+            args.log,
+            args.output,
+            compact=args.compact,
+            vllm_root=args.vllm_root,
+        )
         print(json.dumps(result, sort_keys=True))
-        return 0 if result["runtime_log_gate"].startswith("pass_") else 2
+        return 0 if result["formal_lifecycle_runtime_log_condition"] else 2
     result = extract_existing_evidence(args.source_result_dir, args.output_dir)
     print(json.dumps(result, sort_keys=True))
     return 0

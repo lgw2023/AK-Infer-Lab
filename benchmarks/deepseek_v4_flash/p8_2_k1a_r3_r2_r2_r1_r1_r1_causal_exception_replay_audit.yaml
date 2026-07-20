@@ -1,0 +1,70 @@
+schema_version: deepseek_v4_flash_p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay_v1
+stage: P8.2-K1A-R3-R2-R2-R1-R1-R1
+date: '2026-07-20'
+runtime:
+  vllm_version: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_version: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+parent_r3_r2_r2_r1_r1:
+  task_id: p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_2026_0720
+  server_grade: blocked_p8_2_k1a_r3_r2_r2_r1_r1_offline_provenance_gate
+  server_grade_preserved_as_provenance: true
+  formal_model_lifecycle_count: 0
+  model_request_count: 0
+  npu_started: false
+  vllm_started: false
+  source_semantics_gate: pass
+  installed_source_hash_gate: pass
+  runtime_method_resolution: pass
+  runtime_identity_probe: pass
+  runtime_log_gate: fail_unknown_runtime_exception
+  reported_unknown_runtime_exception_count: 3
+  bounded_evidence_file_count: 15
+  bounded_evidence_total_bytes: 62093
+  bounded_evidence_set_sha256: 9df4b6fc0bee05a05644284a58ff9f29d2af5f1789aeae267251f14ba59d8fa0
+developer_review:
+  parent_grade_rewritten: false
+  flat_exception_classifier_false_block: true
+  independent_new_root_cause_proven: false
+  worker_runtime_wrapper_is_deterministic_propagation: true
+  engine_dead_wrappers_are_deterministic_propagation: true
+  direct_lifecycle_gate_override_allowed: false
+causal_exception_contract:
+  schema_version: p8_2_k1a_runtime_exception_causal_provenance_v2
+  expected_exception_count: 35
+  expected_root_known_observer_defect_count: 32
+  expected_derived_worker_runtime_wrapper_count: 1
+  expected_derived_engine_dead_wrapper_count: 2
+  independent_unknown_exception_count_required: 0
+  exception_record_count_exact_required: true
+  compact_exact_grouping_required: true
+  required_vllm_source_template_file_count: 3
+  frozen_worker_runtime_message_sha256: 42d6217fd6e2666b3bc6a403bfb201809cf500353095062c39eed6f113e5fd63
+  frozen_engine_dead_message_sha256: 988c82d7efef7bf00a3704ebde56ac21a2909a32bdbd1e13368341b475859130
+  allowed_runtime_log_gate: pass_known_retired_observer_defect_with_deterministic_wrappers
+  source_log_must_remain_unchanged: true
+  generated_content_allowed: false
+  token_ids_allowed: false
+decision:
+  offline_causal_refinalization_required: true
+  parent_source_binding_replay_required: true
+  frozen_wrapper_source_template_gate_required: true
+  installed_source_and_runtime_identity_replay_required: true
+  formal_lifecycle_conditionally_authorized: true
+  formal_lifecycle_count_max: 1
+  request_count_max: 6
+  request_retry_count: 0
+  capacity_search_authorized: false
+  runtime_behavior_patch_authorized: false
+  second_lifecycle_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+accepted_capacity:
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  required_cpu_blocks: 128
+  required_restore_tokens: 16384
+  world_size: 8
+claim_boundary: offline_causal_exception_provenance_refinalization_then_conditionally_one_same_capacity_store_pressure_restore_mechanism_lifecycle_only

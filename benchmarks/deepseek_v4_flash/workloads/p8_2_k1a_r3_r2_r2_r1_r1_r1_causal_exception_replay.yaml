@@ -1,0 +1,104 @@
+schema_version: 1
+workload_id: p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay
+date: '2026-07-20'
+purpose: causally_group_known_root_and_deterministic_wrappers_then_conditionally_replay_once
+task_id: p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720
+stage_contract:
+  stage: P8.2-K1A-R3-R2-R2-R1-R1-R1
+  mode: offline_causal_exception_refinalization_then_one_same_capacity_lifecycle
+  claim_boundary: offline_causal_exception_provenance_refinalization_then_conditionally_one_same_capacity_store_pressure_restore_mechanism_lifecycle_only
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  general_support_claim_authorized: false
+depends_on:
+  parent_task_id: p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_2026_0720
+  parent_server_grade: blocked_p8_2_k1a_r3_r2_r2_r1_r1_offline_provenance_gate
+  parent_grade_preserved_as_provenance: true
+  original_runtime_task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720
+  current_audit: ../p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay_audit.yaml
+  original_runtime_workload: p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
+offline_causal_refinalization:
+  parent_bounded_server_path: /data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r3_r2_r2_r1_r1_source_binding_provenance_2026_0720_run01
+  original_runtime_result_server_path: /data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720_run01
+  parent_bounded_file_count: 15
+  parent_bounded_total_bytes: 62093
+  source_log_unchanged_required: true
+  exception_record_count_exact_required: true
+  compact_exact_grouping_required: true
+  frozen_wrapper_source_template_gate_required: true
+  source_binding_replay_required: true
+  runtime_identity_replay_required: true
+  new_output_only: true
+  generated_content_allowed: false
+  token_ids_allowed: false
+causal_gate:
+  expected_exception_count: 35
+  expected_root_known_observer_defect_count: 32
+  expected_derived_worker_runtime_wrapper_count: 1
+  expected_derived_engine_dead_wrapper_count: 2
+  independent_unknown_exception_count_required: 0
+  required_runtime_log_gate: pass_known_retired_observer_defect_with_deterministic_wrappers
+  frozen_vllm_source_template_file_count: 3
+  source_or_runtime_mutation_allowed: false
+conditional_lifecycle:
+  formal_model_lifecycle_count_max: 1
+  model_request_count_max: 6
+  request_retry_count: 0
+  first_failure_stop: true
+  capacity_search_authorized: false
+  second_capacity_point_authorized: false
+  second_lifecycle_authorized: false
+runtime_fixed:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  quantization: ascend_w8a8
+  tensor_parallel_size: 8
+  expert_parallel: true
+  enable_prefix_caching: true
+  enable_chunked_prefill: true
+  num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use: 3444834304
+  server_command_sha256: 8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6
+request_plan:
+  lifecycle_count: 1
+  request_count: 6
+  request_retries: 0
+  sequence:
+    - {role: warmup, context_tokens: 4096, output_tokens: 64}
+    - {role: prime, context_tokens: 32768, output_tokens: 64}
+    - {role: pressure, context_tokens: 131072, output_tokens: 64}
+    - {role: restore_follower, context_tokens: 32768, output_tokens: 64}
+    - {role: repeat_follower, context_tokens: 32768, output_tokens: 64}
+    - {role: isolated_control, context_tokens: 32768, output_tokens: 64}
+async_copy_evidence:
+  copy_thread_started_all_workers: true
+  enqueue_returned_all_workers: true
+  copy_blocks_entered_returned_all_workers: true
+  poll_saw_appended_event_all_workers: true
+  copy_thread_failures_zero: true
+  copy_blocks_failures_zero: true
+  inherited_poll_failures_zero: true
+  d2h_and_h2d_completion_required_for_green: true
+result_contract:
+  generated_content_allowed: false
+  token_ids_allowed: false
+  max_candidate_total_bytes: 71680
+  exact_machine_readable_manifest_required: true
+  sensitivity: bounded_operational_metadata_no_content_or_token_ids
+  automatic_transfer_allowed: false
+  transfer_methods: [email, upload-api, server-local]
+execution_state:
+  npu_execution_authorized: true
+  vllm_server_start_authorized: true
+  model_requests_authorized: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false

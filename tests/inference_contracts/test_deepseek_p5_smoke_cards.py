@@ -2047,10 +2047,10 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_r1_r1_source_binding_provenance_replay.yaml"
+        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_source_gate_blocked_k1a_r3_r2_r1_partial_k1a_r3_r2_r2_blocked_contract_false_negative_k1a_r3_r2_r2_r1_blocked_importfrom_false_negative_k1a_r3_r2_r2_r1_r1_authorized_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_source_gate_blocked_k1a_r3_r2_r1_partial_k1a_r3_r2_r2_blocked_contract_false_negative_k1a_r3_r2_r2_r1_blocked_importfrom_false_negative_k1a_r3_r2_r2_r1_r1_blocked_flat_classifier_k1a_r3_r2_r2_r1_r1_r1_authorized_i0_r1_green"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
