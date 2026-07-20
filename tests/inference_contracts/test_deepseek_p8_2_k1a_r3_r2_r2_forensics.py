@@ -356,11 +356,14 @@ class SimpleCPUOffloadNPUWorker(SimpleCPUOffloadWorker):
     pass
 """,
         ascend_root / "simple_kv_offload/copy_backend.py": """
-def copy_blocks(src_blocks, dst_blocks, params): pass
+from vllm_ascend.simple_kv_offload.npu_mem_ops import copy_blocks
 
 class NPUDmaCopyBackend:
     def _copy_loop(self): pass
     def launch_copy(self, src_blocks, dst_blocks, is_store, event_idx, events_list): pass
+""",
+        ascend_root / "simple_kv_offload/npu_mem_ops.py": """
+def copy_blocks(src_blocks, dst_blocks, params): pass
 """,
         ascend_root
         / "distributed/kv_transfer/kv_pool/simple_cpu_offload/simple_cpu_offload_connector.py": """
@@ -393,8 +396,18 @@ class AscendSimpleCPUOffloadConnector:
     assert completed.returncode == 0, completed.stderr or completed.stdout
     audit = json.loads(output.read_text(encoding="utf-8"))
     assert audit["source_semantics_gate"] == "pass"
-    assert audit["source_file_count"] == 5
+    assert audit["source_file_count"] == 6
     assert audit["required_symbols_present"] is True
+    assert audit["copy_primitive_resolution"] == {
+        "binding_imported_name": "copy_blocks",
+        "binding_kind": "import_from",
+        "binding_local_name": "copy_blocks",
+        "binding_module": "vllm_ascend.simple_kv_offload.npu_mem_ops",
+        "definition_label": "ascend_npu_mem_ops",
+        "definition_present": True,
+        "resolved": True,
+        "symbol": "copy_blocks",
+    }
     assert audit["inheritance_resolution"] == {
         "base_class": "SimpleCPUOffloadWorker",
         "base_method": "SimpleCPUOffloadWorker._poll_stream_events",
@@ -424,6 +437,99 @@ class AscendSimpleCPUOffloadConnector:
         "scheduler_schedule": "SimpleCPUOffloadScheduler.build_connector_meta",
         "worker_completion": "SimpleCPUOffloadNPUWorker._poll_stream_events",
     }
+
+
+def test_runtime_log_audit_accepts_only_the_retired_wait_event_observer_defect(
+    tmp_path: Path,
+) -> None:
+    log_path = tmp_path / "vllm_server.log"
+    log_path.write_text(
+        """Traceback (most recent call last):
+  File "/tmp/overlay/p8_2_k1a_simple_cpu_offload_observer.py", line 132, in observed_launch
+    result = original_launch(self, src, dst, is_store, event_idx, events, wait_event)
+TypeError: NPUDmaCopyBackend.launch_copy() takes 6 positional arguments but 7 were given
+""",
+        encoding="utf-8",
+    )
+    output = tmp_path / "runtime_exception_provenance.json"
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(FORENSICS),
+            "runtime-log-audit",
+            "--log",
+            str(log_path),
+            "--output",
+            str(output),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    audit = json.loads(output.read_text(encoding="utf-8"))
+    assert audit["direct_runtime_exception_present"] is True
+    assert audit["exception_count"] == 1
+    assert audit["known_retired_observer_wait_event_defect_count"] == 1
+    assert audit["unknown_runtime_exception_count"] == 0
+    assert audit["runtime_log_gate"] == "pass_known_retired_observer_defect"
+    assert audit["formal_lifecycle_runtime_log_condition"] is True
+    assert audit["exceptions"][0]["exception_type"] == "TypeError"
+    assert audit["exceptions"][0]["message_pattern"] == (
+        "launch_copy_extra_positional_wait_event"
+    )
+    assert audit["exceptions"][0]["known_retired_observer_defect_match"] is True
+    assert audit["exceptions"][0]["callsite_frames"][-1] == {
+        "file": "p8_2_k1a_simple_cpu_offload_observer.py",
+        "function": "observed_launch",
+        "line": 132,
+    }
+    assert len(audit["exceptions"][0]["normalized_message_sha256"]) == 64
+    assert audit["generated_content_retained"] is False
+    assert audit["token_ids_retained"] is False
+
+
+def test_runtime_log_audit_blocks_an_unrelated_caught_worker_exception(
+    tmp_path: Path,
+) -> None:
+    log_path = tmp_path / "vllm_server.log"
+    log_path.write_text(
+        """Traceback (most recent call last):
+  File "/opt/vllm/multiproc_executor.py", line 91, in run
+    output = worker.execute()
+RuntimeError: device copy stream failed
+""",
+        encoding="utf-8",
+    )
+    output = tmp_path / "runtime_exception_provenance.json"
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(FORENSICS),
+            "runtime-log-audit",
+            "--log",
+            str(log_path),
+            "--output",
+            str(output),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 2
+    audit = json.loads(output.read_text(encoding="utf-8"))
+    assert audit["runtime_log_gate"] == "fail_unknown_runtime_exception"
+    assert audit["formal_lifecycle_runtime_log_condition"] is False
+    assert audit["known_retired_observer_wait_event_defect_count"] == 0
+    assert audit["unknown_runtime_exception_count"] == 1
+    assert audit["exceptions"][0]["exception_type"] == "RuntimeError"
+    assert audit["exceptions"][0]["message_pattern"] == (
+        "unrecognized_runtime_exception"
+    )
 
 
 def test_transfer_summary_surfaces_copy_and_poll_exceptions_without_treating_them_as_completion() -> None:

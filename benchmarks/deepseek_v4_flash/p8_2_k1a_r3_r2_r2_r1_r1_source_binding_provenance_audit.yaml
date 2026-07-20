@@ -1,0 +1,74 @@
+schema_version: deepseek_v4_flash_p8_2_k1a_r3_r2_r2_r1_r1_source_binding_provenance_v1
+stage: P8.2-K1A-R3-R2-R2-R1-R1
+date: '2026-07-20'
+runtime:
+  vllm_version: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_version: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+parent_r3_r2_r2_r1:
+  task_id: p8_2_k1a_r3_r2_r2_r1_deepseek_v4_flash_observer_contract_replay_2026_0720
+  server_grade: blocked_p8_2_k1a_r3_r2_r2_r1_source_or_observer_gate
+  server_grade_preserved_as_provenance: true
+  formal_model_lifecycle_count: 0
+  model_request_count: 0
+  npu_started: false
+  vllm_started: false
+  source_evidence_unchanged: true
+  source_semantics_gate: fail
+  runtime_method_resolution: pass
+  only_reported_source_failure: copy_blocks_import_not_recognized_by_ast
+  bounded_evidence_total_bytes: 21828
+  bounded_evidence_file_count: 11
+developer_review:
+  source_semantics_false_negative: true
+  false_negative_reason: copy_backend_importfrom_binding_was_not_a_direct_function_definition
+  copy_blocks_definition_location: vllm_ascend.simple_kv_offload.npu_mem_ops
+  parent_exception_provenance_incomplete: true
+  contradiction: direct_runtime_exception_false_but_caught_worker_typeerror_reported
+  request_time_log_excerpt_received: false
+  cause_proven_as_unique: false
+  direct_npu_replay_authorized_without_repair: false
+frozen_source_contract:
+  required_source_file_count: 6
+  copy_blocks_binding_kind: import_from
+  copy_blocks_binding_module: vllm_ascend.simple_kv_offload.npu_mem_ops
+  copy_blocks_definition_file: vllm_ascend/simple_kv_offload/npu_mem_ops.py
+  copy_blocks_definition_required: true
+  copy_blocks_runtime_identity_required: true
+  inherited_poll_required: true
+  observer_signature_compatible_required: true
+  source_mutation_allowed: false
+runtime_exception_contract:
+  source_log_must_remain_unchanged: true
+  structured_exception_type_required: true
+  normalized_message_sha256_required: true
+  bounded_callsite_frames_required: true
+  generated_content_allowed: false
+  token_ids_allowed: false
+  allowed_runtime_log_gates:
+    - pass_no_direct_runtime_exception
+    - pass_known_retired_observer_defect
+  known_retired_observer_defect: launch_copy_extra_positional_wait_event
+  unknown_runtime_exception_count_required: 0
+decision:
+  offline_source_binding_audit_required: true
+  runtime_copy_primitive_identity_required: true
+  runtime_exception_provenance_required: true
+  formal_lifecycle_conditionally_authorized: true
+  formal_lifecycle_count_max: 1
+  request_count_max: 6
+  request_retry_count: 0
+  capacity_search_authorized: false
+  runtime_behavior_patch_authorized: false
+  second_lifecycle_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+accepted_capacity:
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  required_cpu_blocks: 128
+  required_restore_tokens: 16384
+  world_size: 8
+claim_boundary: offline_source_binding_and_runtime_exception_provenance_then_conditionally_one_same_capacity_store_pressure_restore_mechanism_lifecycle_only

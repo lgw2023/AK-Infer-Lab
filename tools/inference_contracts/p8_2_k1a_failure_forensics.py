@@ -520,11 +520,14 @@ def audit_source_semantics(
         "ascend_copy_backend": (
             vllm_ascend_root / "simple_kv_offload/copy_backend.py",
             {
-                "copy_blocks",
                 "NPUDmaCopyBackend",
                 "NPUDmaCopyBackend._copy_loop",
                 "NPUDmaCopyBackend.launch_copy",
             },
+        ),
+        "ascend_npu_mem_ops": (
+            vllm_ascend_root / "simple_kv_offload/npu_mem_ops.py",
+            {"copy_blocks"},
         ),
         "ascend_connector": (
             vllm_ascend_root
@@ -592,6 +595,46 @@ def audit_source_semantics(
         ),
         "resolved": inheritance_resolved,
     }
+    copy_binding = {
+        "binding_imported_name": None,
+        "binding_kind": None,
+        "binding_local_name": None,
+        "binding_module": None,
+        "definition_label": "ascend_npu_mem_ops",
+        "definition_present": not files.get("ascend_npu_mem_ops", {}).get(
+            "missing_symbols", ["copy_blocks"]
+        ),
+        "resolved": False,
+        "symbol": "copy_blocks",
+    }
+    copy_backend_tree = parsed_trees.get("ascend_copy_backend")
+    if copy_backend_tree is not None:
+        for node in copy_backend_tree.body:
+            if not isinstance(node, ast.ImportFrom):
+                continue
+            for alias in node.names:
+                local_name = alias.asname or alias.name
+                if local_name != "copy_blocks":
+                    continue
+                copy_binding.update(
+                    {
+                        "binding_imported_name": alias.name,
+                        "binding_kind": "import_from",
+                        "binding_local_name": local_name,
+                        "binding_module": node.module,
+                    }
+                )
+    copy_binding["resolved"] = all(
+        (
+            copy_binding["binding_imported_name"] == "copy_blocks",
+            copy_binding["binding_kind"] == "import_from",
+            copy_binding["binding_local_name"] == "copy_blocks",
+            copy_binding["binding_module"]
+            == "vllm_ascend.simple_kv_offload.npu_mem_ops",
+            copy_binding["definition_present"],
+        )
+    )
+    all_required_present &= copy_binding["resolved"]
     frozen_launch_parameters = _function_parameters(
         parsed_trees.get("ascend_copy_backend", ast.Module(body=[], type_ignores=[])),
         "launch_copy",
@@ -619,11 +662,12 @@ def audit_source_semantics(
         "observer_signature_compatible": observer_signature_compatible,
     }
     value = {
-        "schema_version": "p8_2_k1a_source_semantics_audit_v2",
+        "schema_version": "p8_2_k1a_source_semantics_audit_v3",
         "source_semantics_gate": "pass" if all_required_present else "fail",
         "source_file_count": sum(row.get("exists") is True for row in files.values()),
         "required_symbols_present": all_required_present,
         "inheritance_resolution": inheritance_resolution,
+        "copy_primitive_resolution": copy_binding,
         "frozen_launch_signature": frozen_launch_signature,
         "observer_surface": {
             "scheduler_match": (
@@ -649,6 +693,102 @@ def audit_source_semantics(
     return value
 
 
+def audit_runtime_log(log_path: Path, output: Path) -> dict[str, Any]:
+    if not log_path.is_file():
+        raise ValueError(f"runtime log does not exist: {log_path}")
+    before = {"bytes": log_path.stat().st_size, "sha256": _hash_file(log_path)}
+    lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    exception_pattern = re.compile(
+        r"(?P<type>[A-Za-z_][\w.]*(?:Error|Exception)):\s*(?P<message>.*)$"
+    )
+    frame_pattern = re.compile(
+        r'File "(?P<file>[^"]+)", line (?P<line>\d+), in (?P<function>[^\s]+)'
+    )
+    exceptions: list[dict[str, Any]] = []
+    for index, line in enumerate(lines):
+        match = exception_pattern.search(line)
+        if match is None:
+            continue
+        exception_type = match.group("type").rsplit(".", 1)[-1]
+        message = " ".join(match.group("message").split())
+        lower_message = message.lower()
+        known_wait_event_defect = exception_type == "TypeError" and (
+            (
+                "launch_copy" in lower_message
+                and "takes 6 positional arguments but 7 were given" in lower_message
+            )
+            or (
+                "launch_copy" in lower_message
+                and "unexpected keyword argument" in lower_message
+                and "wait_event" in lower_message
+            )
+        )
+        frame_matches = []
+        for frame_line in lines[max(0, index - 32) : index]:
+            frame = frame_pattern.search(frame_line)
+            if frame is None:
+                continue
+            frame_matches.append(
+                {
+                    "file": Path(frame.group("file")).name,
+                    "function": frame.group("function"),
+                    "line": int(frame.group("line")),
+                }
+            )
+        exceptions.append(
+            {
+                "callsite_frames": frame_matches[-6:],
+                "exception_type": exception_type,
+                "known_retired_observer_defect_match": known_wait_event_defect,
+                "line_number": index + 1,
+                "message_pattern": (
+                    "launch_copy_extra_positional_wait_event"
+                    if known_wait_event_defect
+                    else "unrecognized_runtime_exception"
+                ),
+                "normalized_message_sha256": hashlib.sha256(
+                    message.encode("utf-8")
+                ).hexdigest(),
+            }
+        )
+    known_count = sum(
+        row["known_retired_observer_defect_match"] for row in exceptions
+    )
+    unknown_count = len(exceptions) - known_count
+    if not exceptions:
+        gate = "pass_no_direct_runtime_exception"
+    elif unknown_count == 0:
+        gate = "pass_known_retired_observer_defect"
+    else:
+        gate = "fail_unknown_runtime_exception"
+    after = {"bytes": log_path.stat().st_size, "sha256": _hash_file(log_path)}
+    value = {
+        "schema_version": "p8_2_k1a_runtime_exception_provenance_v1",
+        "runtime_log_gate": gate,
+        "formal_lifecycle_runtime_log_condition": gate.startswith("pass_"),
+        "direct_runtime_exception_present": bool(exceptions),
+        "exception_count": len(exceptions),
+        "known_retired_observer_wait_event_defect_count": known_count,
+        "unknown_runtime_exception_count": unknown_count,
+        "traceback_marker_count": sum(
+            "Traceback (most recent call last)" in line for line in lines
+        ),
+        "exceptions": exceptions[:32],
+        "exception_records_truncated": len(exceptions) > 32,
+        "source_log_before": before,
+        "source_log_after": after,
+        "source_log_unchanged": before == after,
+        "generated_content_retained": False,
+        "token_ids_retained": False,
+        "npu_started": False,
+        "vllm_server_started": False,
+        "model_request_sent": False,
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    _write_json(output, value)
+    return value
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -659,6 +799,9 @@ def parse_args() -> argparse.Namespace:
     source_audit.add_argument("--vllm-root", type=Path, required=True)
     source_audit.add_argument("--vllm-ascend-root", type=Path, required=True)
     source_audit.add_argument("--output", type=Path, required=True)
+    runtime_log_audit = subparsers.add_parser("runtime-log-audit")
+    runtime_log_audit.add_argument("--log", type=Path, required=True)
+    runtime_log_audit.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
 
@@ -670,6 +813,10 @@ def main() -> int:
         )
         print(json.dumps(result, sort_keys=True))
         return 0 if result["source_semantics_gate"] == "pass" else 2
+    if args.command == "runtime-log-audit":
+        result = audit_runtime_log(args.log, args.output)
+        print(json.dumps(result, sort_keys=True))
+        return 0 if result["runtime_log_gate"].startswith("pass_") else 2
     result = extract_existing_evidence(args.source_result_dir, args.output_dir)
     print(json.dumps(result, sort_keys=True))
     return 0

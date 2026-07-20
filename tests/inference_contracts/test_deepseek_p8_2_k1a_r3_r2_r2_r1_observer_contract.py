@@ -24,7 +24,6 @@ RUNNER = (
     / "tools/inference_contracts/"
     "run_deepseek_p8_2_k1a_r3_r2_r2_r1_simple_cpu_offload.sh"
 )
-HANDOFF = REPO_ROOT / "通信模块/docs/developer-to-server.md"
 READINESS = REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
 
 
@@ -113,62 +112,18 @@ def test_r3_r2_r2_r1_repairs_the_observer_contract_before_one_conditional_lifecy
     assert values["request_count"] == "6"
 
 
-def test_current_handoff_is_a_multi_section_conditional_task_not_an_unconditional_rerun() -> None:
-    handoff = HANDOFF.read_text(encoding="utf-8")
-
-    assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert handoff.count("\ntask_id: ") == 1
-    for exact in (
-        "task_id: p8_2_k1a_r3_r2_r2_r1_deepseek_v4_flash_observer_contract_replay_2026_0720",
-        "execution_mode: authorized_offline_refinalization_inheritance_observer_contract_gate_then_one_same_capacity_lifecycle",
-        "npu_execution_authorized: true",
-        "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 6",
-        "request_retry_count_exact: 0",
-        "result_transfer_authorized: true",
-        "transfer_method_selected: false",
-        "next_task_authorized: false",
-        "source_semantics_false_negative",
-        "observer_wait_event_extra_parameter",
-        "request_health_loss_without_direct_exception",
-        "inherited_from_frozen_vllm",
-        "observer_signature_compatible",
-        "copy_thread_started",
-        "copy_blocks_entered",
-        "copy_blocks_returned",
-        "transfer_poll_entered",
-        "device_copy_enqueued",
-        "candidate_manifest.server_local.json",
-        "email / upload-api / server-local",
-        "不得进入 K2",
-        "不得进入 P8.3-I1",
-    ):
-        assert exact in handoff
-    assert "if test \"${FORMAL_LIFECYCLE_ALLOWED}\" = true" in handoff
-    assert "trap cleanup EXIT" in handoff
-    assert "upload_file.py" not in handoff
-    assert "--confirmed-method" not in handoff
-    for forbidden in ("reset --hard", "git stash", "sync.sh", "git push"):
-        assert forbidden not in handoff
-
+def test_observer_contract_task_is_closed_as_blocked_provenance() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
-    assert readiness["artifacts"]["current_server_handoff_task"] == (
-        "p8_2_k1a_r3_r2_r2_r1_deepseek_v4_flash_observer_contract_replay_"
-        "2026_0720"
-    )
-    assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_r1_observer_contract_replay.yaml"
-    )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1a_r3_r2_r2_grade"] == (
         "blocked_p8_2_k1a_r3_r2_r2_deterministic_parent_failure"
     )
-    assert acceptance["p8_2_k1a_r3_r2_r2_r1_execution_authorized"] is True
-    assert acceptance["p8_2_k1a_r3_r2_r2_r1_formal_model_lifecycle_count_max"] == 1
-    assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R3-R2-R2-R1_only"
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_grade"] == (
+        "blocked_p8_2_k1a_r3_r2_r2_r1_source_or_observer_gate"
     )
-    assert acceptance["next_task_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_actual_formal_model_lifecycle_count"] == 0
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_actual_model_request_count"] == 0
 
 
 def test_observer_contract_audit_uses_frozen_inheritance_and_exact_signature() -> None:
