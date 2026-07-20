@@ -436,6 +436,15 @@ def test_k1a_grading_separates_store_only_yellow_from_store_restore_green():
         }
         for index, (role, context_tokens) in enumerate(roles, start=1)
     ]
+    restore = rows[3]
+    restore["status"] = "failed"
+    restore["prefix_evidence_ok"] = False
+    restore["checks"] = {
+        "server_alive": True,
+        "health_after_200": True,
+        "queue_idle_after": True,
+        "prefix_evidence_ok": False,
+    }
     common = {
         "request_rows": rows,
         "cleanup": "clean",
@@ -453,6 +462,10 @@ def test_k1a_grading_separates_store_only_yellow_from_store_restore_green():
         },
     )
     assert store_only["server_grade"] == "yellow_p8_2_k1a_store_only_no_restore"
+    assert store_only["successful_request_count"] == 6
+    assert store_only["request_evidence_exact"] is True
+    assert store_only["request_status_mechanism_coupling_detected"] is True
+    assert store_only["failed_mechanism_predicates"] == ["prefix_evidence_ok"]
     assert store_only["offload_store_evidence_candidate"] is True
     assert store_only["offload_restore_evidence_candidate"] is False
 
@@ -579,54 +592,49 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
         ]
 
 
-def test_k1a_causal_replay_is_the_only_current_server_handoff_after_contract_review():
+def test_k1a_r4_offline_closeout_is_the_only_current_server_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_"
-        "2026_0720"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_offline_causal_exception_refinalization_then_one_same_capacity_lifecycle"
+        "execution_mode: authorized_read_only_offline_store_only_refinalization_"
+        "trace_attribution_and_source_semantics"
         in handoff
     )
     for field in (
         "server_sync_review_authorized: true",
-        "npu_execution_authorized: true",
-        "vllm_server_start_authorized: true",
-        "model_requests_authorized: true",
-        "keep_alive_stop_and_restore_authorized: true",
+        "npu_execution_authorized: false",
+        "vllm_server_start_authorized: false",
+        "model_requests_authorized: false",
+        "keep_alive_stop_authorized: false",
         "profiler_authorized: false",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 6",
-        "request_retry_count_exact: 0",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
         "capacity_search_authorized: false",
     ):
         assert field in handoff
     for marker in (
-        "ready_p8_2_k1a_r2_allocator_capacity",
-        "blocked_p8_2_k1a_r3_source_or_provenance_gate",
-        "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r3_r2_r2_r1_r1_r1_simple_cpu_offload.sh",
-        "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r3_r2_r2_r1_r1_r1_simple_cpu_offload_store_restore",
-        "不得进入 K2",
+        "parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete",
+        "yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore",
+        "run_deepseek_p8_2_k1a_r4_offline_closeout.sh",
+        "candidate_green_p8_2_k1a_r4_offline_store_only_closeout",
+        "formal_h2d_trigger_lifecycle_allowed: false",
+        "K2",
         "P8.3-I1",
-        "CURRENT_PGID",
     ):
         assert marker in handoff
-    assert "test \"${pgid}\" != \"${CURRENT_PGID}\"" in handoff
-    assert 'bash "${KEEP_ALIVE_SCRIPT}" 0 1 2 3 4 5 6 7' in handoff
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
@@ -650,11 +658,13 @@ def test_k1a_causal_replay_is_the_only_current_server_handoff_after_contract_rev
     assert acceptance["p8_2_k1a_r3_r2_r2_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r4_offline_closeout_authorized"] is True
+    assert acceptance["p8_2_k1a_r4_npu_execution_authorized"] is False
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R3-R2-R2-R1-R1-R1_only"
+        "P8.2-K1A-R4_offline_only"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True

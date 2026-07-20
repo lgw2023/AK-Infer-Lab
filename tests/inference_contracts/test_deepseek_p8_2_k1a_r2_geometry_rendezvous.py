@@ -210,21 +210,19 @@ def test_r2_geometry_summary_direct_file_cli_bootstraps_repo_root() -> None:
     assert "summarize-geometry" in completed.stdout
 
 
-def test_current_handoff_authorizes_only_k1a_r3_r2_r2_r1_r1_after_parent_blocks() -> None:
+def test_current_handoff_authorizes_only_k1a_r4_after_parent_blocks() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_"
-        "2026_0720"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 6",
-        "request_retry_count_exact: 0",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
         "capacity_search_authorized: false",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
@@ -232,11 +230,10 @@ def test_current_handoff_authorizes_only_k1a_r3_r2_r2_r1_r1_after_parent_blocks(
         assert field in handoff
     for marker in (
         "ready_p8_2_k1a_r2_allocator_capacity",
-        "blocked_p8_2_k1a_r3_source_or_provenance_gate",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r3_r2_r2_r1_r1_simple_cpu_offload.sh",
+        "run_deepseek_p8_2_k1a_r4_offline_closeout.sh",
         "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r3_r2_r2_r1_r1_simple_cpu_offload_store_restore",
+        "candidate_green_p8_2_k1a_r4_offline_store_only_closeout",
         "P8.3-I1",
     ):
         assert marker in handoff

@@ -277,31 +277,30 @@ def test_r3_r2_audit_preserves_the_failed_run_and_same_experiment_boundary() -> 
     assert audit["decision"]["next_task_authorized"] is False
 
 
-def test_r3_r2_r2_r1_r1_is_the_only_current_handoff_and_preserves_portable_identity() -> None:
+def test_r3_lineage_is_consumed_and_r4_is_the_only_current_read_only_handoff() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_"
-        "2026_0720"
+        "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
     ) in handoff
     for exact in (
-        "execution_mode: authorized_offline_source_binding_exception_"
-        "provenance_gate_then_one_same_capacity_lifecycle",
-        "npu_execution_authorized: true",
-        "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 6",
-        "request_retry_count_exact: 0",
+        "execution_mode: authorized_read_only_offline_store_only_refinalization_"
+        "trace_attribution_and_source_semantics",
+        "npu_execution_authorized: false",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "server_command_sha256=8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6",
-        "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720_run01",
+        "parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete",
+        "parent_d2h_store_complete=true",
+        "parent_h2d_restore_complete=false",
         "不得进入 K2",
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
-    assert "test ! -e \"${RESULT_DIR}\"" in handoff
+    assert "test ! -e \"${RESULT_ROOT}\"" in handoff
     assert "candidate_manifest.server_local.json" in handoff
-    assert "missing_candidate_files" in handoff
+    assert "9 个白名单 bounded metadata" in handoff
     assert "email / upload-api / server-local" in handoff
     assert "result_transfer_authorized: true" in handoff

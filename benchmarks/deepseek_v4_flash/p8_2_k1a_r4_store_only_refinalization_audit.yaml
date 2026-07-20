@@ -1,0 +1,69 @@
+schema_version: 1
+audit_id: p8_2_k1a_r4_store_only_refinalization_audit
+date: '2026-07-20'
+stage: P8.2-K1A-R4
+
+parent_evidence:
+  task_id: p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720
+  received_package_path: /Volumes/SSD1/Inbox/2026-07-20/p8_2_k1a_r3_r2_r2_r1_r1_r1_20260720_run01
+  received_file_count: 22
+  received_total_bytes: 50428
+  payload_file_count: 21
+  payload_total_bytes: 41185
+  manifest_sha256: 6463f2f13e5c7149e6fcbb502caad5edfce1f9b7d82c16c74a72babd64035498
+  manifest_and_payload_hash_gate: pass
+  causal_exception_gate: pass
+  source_binding_and_runtime_identity_gate: pass
+  accepted_capacity_exact: true
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+
+request_refinalization:
+  request_count: 6
+  http_token_sse_mtp_health_queue_success_count: 6
+  producer_status_success_count: 5
+  producer_failed_request_id: lifecycle_01_restore_follower
+  producer_first_failed_predicate: prefix_evidence_ok
+  request_status_mechanism_coupling_detected: true
+  prefix_metrics_are_supporting_not_direction_proof: true
+  request_transport_evidence_exact_after_refinalization: true
+
+mechanism_evidence:
+  d2h_store_complete: true
+  d2h_async_copy_pipeline_exact: true
+  d2h_worker_count: 8
+  d2h_completed_worker_count: 8
+  d2h_bytes_total: 7239534592
+  store_event_completed_count: 41
+  h2d_restore_complete: false
+  h2d_worker_count: 0
+  h2d_bytes_total: 0
+  restore_cpu_hit_tokens_max: 0
+  restore_load_scheduled_count: 0
+  restore_load_completed_count: 0
+
+evidence_interpretation:
+  d2h_bytes_total_semantics: cumulative_submitted_copy_volume
+  unique_cpu_residency_bytes_observed: false
+  configured_cpu_tier_bytes_total: 3444834304
+  lcm_block_size_tokens: 16384
+  scheduler_block_size_tokens: 128
+  restore_miss_then_repeat_gpu_hit_pattern_observed: true
+  pressure_evicted_prime_from_cpu_tier_proven: false
+  prime_remained_gpu_resident_proven: false
+  h2d_absence_cause_proven_as_unique: false
+  source_capacity_churn_hypothesis_requires_frozen_source_audit: true
+
+decision:
+  parent_server_grade_preserved: red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete
+  developer_refinalized_grade: yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore
+  d2h_store_mechanism_accepted: true
+  h2d_restore_mechanism_accepted: false
+  performance_reference_accepted: false
+  optimization_claim_accepted: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  next_task_authorized: false
+  next_action: offline_raw_trace_attribution_and_frozen_cpu_tier_semantics_review
+
+claim_boundary: developer_offline_store_only_refinalization_pending_server_raw_trace_and_source_semantics_closeout_no_runtime_or_performance_claim

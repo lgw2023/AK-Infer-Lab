@@ -1953,19 +1953,19 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_advances_from_parent_partial_to_r3_r2_r2_forensics():
+def test_server_handoff_advances_from_causal_runtime_to_r4_offline_closeout():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R2-R2-R1-R1 source binding" in handoff
-    assert "task_id: p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_2026_0720" in handoff
-    assert "execution_mode: authorized_offline_source_binding_exception_provenance_gate_then_one_same_capacity_lifecycle" in handoff
+    assert "P8.2-K1A-R4 store-only 离线收口" in handoff
+    assert "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720" in handoff
+    assert "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics" in handoff
     assert "capacity_search_authorized: false" in handoff
-    assert "formal_model_lifecycle_count_max: 1" in handoff
-    assert "model_request_count_max: 6" in handoff
-    assert "npu_execution_authorized: true" in handoff
+    assert "formal_model_lifecycle_count_exact: 0" in handoff
+    assert "model_request_count_exact: 0" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
@@ -1982,8 +1982,8 @@ def test_server_handoff_keeps_allocator_and_inventory_bounded():
     assert "fetch origin main" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
-    assert "model_request_count_max: 6" in handoff
-    assert "formal_model_lifecycle_count_max: 1" in handoff
+    assert "model_request_count_exact: 0" in handoff
+    assert "formal_model_lifecycle_count_exact: 0" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "cpu_bytes_to_use_per_rank=430604288" in handoff
     assert "result_directory_creation_authorized: true" in handoff
@@ -2047,10 +2047,10 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_source_gate_blocked_k1a_r3_r2_r1_partial_k1a_r3_r2_r2_blocked_contract_false_negative_k1a_r3_r2_r2_r1_blocked_importfrom_false_negative_k1a_r3_r2_r2_r1_r1_blocked_flat_classifier_k1a_r3_r2_r2_r1_r1_r1_authorized_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_offline_closeout_authorized_i0_r1_green"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2445,14 +2445,14 @@ def test_p6_3b_r1_records_bounded_ready_failure_without_revoking_prior_evidence(
     }
 
 
-def test_server_handoff_executes_only_conditional_k1a_r3_r2_r2_lifecycle():
+def test_server_handoff_executes_only_r4_offline_closeout():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    assert "P8.2-K1A-R3-R2-R2-R1-R1 source binding" in handoff
-    assert "task_id: p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_2026_0720" in handoff
-    assert "npu_execution_authorized: true" in handoff
+    assert "P8.2-K1A-R4 store-only 离线收口" in handoff
+    assert "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
@@ -2460,8 +2460,8 @@ def test_server_handoff_executes_only_conditional_k1a_r3_r2_r2_lifecycle():
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "model_request_count_max: 6" in handoff
-    assert "formal_model_lifecycle_count_max: 1" in handoff
+    assert "model_request_count_exact: 0" in handoff
+    assert "formal_model_lifecycle_count_exact: 0" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "不得进入 K2" in handoff
     assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in handoff

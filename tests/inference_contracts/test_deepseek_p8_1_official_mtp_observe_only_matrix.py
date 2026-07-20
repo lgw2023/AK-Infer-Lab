@@ -465,29 +465,29 @@ def test_matrix_workload_hashes_every_executable_contract_artifact() -> None:
         assert frozen[key] == hashlib.sha256(path.read_bytes()).hexdigest(), path
 
 
-def test_current_handoff_authorizes_only_k1a_r3_r1_formal_lifecycle() -> None:
+def test_current_handoff_authorizes_only_k1a_r4_offline_closeout() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-            "task_id: p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_2026_0720"
+            "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
         in handoff
     )
     assert (
-        "execution_mode: authorized_offline_source_binding_exception_provenance_gate_then_one_same_capacity_lifecycle"
+        "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics"
         in handoff
     )
-    assert "npu_execution_authorized: true" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "16384" in handoff
-    assert "model_request_count_max: 6" in handoff
+    assert "model_request_count_exact: 0" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "keep_alive_stop_and_restore_authorized: true" in handoff
-    assert "formal_model_lifecycle_count_max: 1" in handoff
+    assert "keep_alive_stop_authorized: false" in handoff
+    assert "formal_model_lifecycle_count_exact: 0" in handoff
     assert "不得进入 K2" in handoff
     assert "email" in handoff
     assert "upload-api" in handoff

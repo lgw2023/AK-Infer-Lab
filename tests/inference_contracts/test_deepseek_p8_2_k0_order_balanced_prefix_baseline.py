@@ -673,25 +673,25 @@ def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
     assert "refinalize" in help_result.stdout
 
 
-def test_k0_is_green_and_k1a_r3_r2_r2_is_the_only_handoff():
+def test_k0_is_green_and_k1a_r4_is_the_only_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720"
+    task_id = "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_offline_causal_exception_refinalization_then_one_same_capacity_lifecycle"
+        "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics"
     ) in handoff
     assert "server_sync_review_authorized: true" in handoff
-    assert "npu_execution_authorized: true" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
-    assert "formal_model_lifecycle_count_max: 1" in handoff
-    assert "model_request_count_max: 6" in handoff
+    assert "formal_model_lifecycle_count_exact: 0" in handoff
+    assert "model_request_count_exact: 0" in handoff
     assert "profiler_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
-    assert "keep_alive_stop_and_restore_authorized: true" in handoff
-    assert "vllm_server_start_authorized: true" in handoff
-    assert "model_requests_authorized: true" in handoff
+    assert "keep_alive_stop_authorized: false" in handoff
+    assert "vllm_server_start_authorized: false" in handoff
+    assert "model_requests_authorized: false" in handoff
     assert "SimpleCPUOffloadConnector" in handoff
     assert "不得进入 K2" in handoff
 
@@ -704,7 +704,7 @@ def test_k0_is_green_and_k1a_r3_r2_r2_is_the_only_handoff():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_p8_2_k0_refinalizer"].endswith(

@@ -21,16 +21,14 @@ R3_R2_R1_AUDIT = (
 )
 
 
-def test_current_handoff_preserves_the_frozen_installed_source_gate() -> None:
+def test_current_handoff_preserves_only_the_r4_frozen_source_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_"
-        "2026_0720"
+        "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
     ) in handoff
-    assert "VLLM_ASCEND_SITE=${RUNTIME_PREFIX}/lib/python3.11/site-packages" in handoff
-    assert "VLLM_ASCEND_ROOT=${VLLM_ASCEND_SITE}/vllm_ascend" in handoff
-    assert '--vllm-ascend-root "${VLLM_ASCEND_ROOT}"' in handoff
+    assert "manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b" in handoff
+    assert "block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283" in handoff
     assert "BASE_ASCEND_REPO=" not in handoff
     assert "vllm-ascend-0.22.1rc1" not in handoff
     assert "2a6dc169e9fe0b2fbdad4862697dc3c8b5e66a2f" not in handoff
@@ -149,55 +147,43 @@ def test_r3_r2_r1_audit_preserves_parent_block_and_repair_boundary() -> None:
     assert audit["decision"]["p8_3_i1_authorized"] is False
 
 
-def test_r3_r2_r2_r1_r1_handoff_runs_the_full_bounded_chain() -> None:
+def test_r4_handoff_runs_the_full_bounded_offline_chain() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_offline_source_binding_exception_"
-        "provenance_gate_then_one_same_capacity_lifecycle",
-        "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 6",
-        "request_retry_count_exact: 0",
+        "execution_mode: authorized_read_only_offline_store_only_refinalization_"
+        "trace_attribution_and_source_semantics",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_"
-        "restore_2026_0720_run01",
-        "run_deepseek_p8_2_k1a_r3_r2_r2_r1_r1_simple_cpu_offload.sh",
-        "server_command_sha256=8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6",
-        "formal_lifecycle_allowed",
-        "runtime_method_resolution.json",
+        "run_deepseek_p8_2_k1a_r4_offline_closeout.sh",
+        "offline_refinalization_authorized: true",
+        "raw_trace_attribution_authorized: true",
+        "frozen_source_semantics_audit_authorized: true",
+        "formal_h2d_trigger_lifecycle_allowed: false",
         "candidate_manifest.server_local.json",
-        "missing_candidate_files",
+        "9 个白名单 bounded metadata",
         "email / upload-api / server-local",
-        "candidate_green_p8_2_k1a_r3_r2_r2_r1_r1_simple_cpu_offload_store_restore",
-        "blocked_p8_2_k1a_r3_r2_r2_deterministic_parent_failure",
+        "candidate_green_p8_2_k1a_r4_offline_store_only_closeout",
+        "blocked_p8_2_k1a_r4_offline_closeout_gate",
         "不得进入 K2",
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
-    for parent_hash in (
-        "2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d",
-        "9a18833a9945ed8ef98b95636603cf45f097974c15c069cd4ce96f68c36b0629",
-        "3696c8b348011669e91450fbfe2dd151eacd02208deb1168a5392bbd19532304",
-    ):
-        assert parent_hash in handoff
-    assert 'test ! -e "${RESULT_DIR}"' in handoff
-    assert "CURRENT_PGID" in handoff
-    assert "trap cleanup EXIT" in handoff
-    assert "第二 lifecycle" in handoff
-    assert "第七请求" in handoff
+    assert 'test ! -e "${RESULT_ROOT}"' in handoff
+    assert "trap cleanup EXIT" not in handoff
+    assert "keep_alive_stop_authorized: false" in handoff
 
 
 def test_r3_r2_r1_contract_files_remain_preserved_as_parent_provenance() -> None:
-    handoff = HANDOFF.read_text(encoding="utf-8")
     paths = (
         R3_R2_R1_AUDIT,
         R3_R2_R1_RUNNER,
         Path(__file__),
     )
 
-    assert "test_deepseek_p8_2_k1a_r3_r2_r1_installed_source_gate.py" in handoff
     for path in paths:
         assert path.is_file()
         assert hashlib.sha256(path.read_bytes()).hexdigest()

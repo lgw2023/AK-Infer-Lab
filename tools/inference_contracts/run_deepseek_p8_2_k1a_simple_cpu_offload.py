@@ -97,6 +97,15 @@ CANDIDATE_NAMES = (
     "first_failure_excerpt.txt",
     "failure_diagnostic_summary.json",
 )
+REFINALIZATION_TASK_ID = (
+    "p8_2_k1a_r4_store_only_offline_refinalization_2026_0720"
+)
+STORE_ONLY_REFINALIZATION_FILES = (
+    "result_summary.md",
+    "offline_refinalization.json",
+    "corrected_request_summary.tsv",
+    "source_evidence_provenance.json",
+)
 
 
 def _plan_row(
@@ -247,12 +256,11 @@ def prepare_k1a_artifacts(
     return manifest
 
 
-def _request_evidence_exact(row: dict[str, Any]) -> bool:
+def _request_transport_evidence_exact(row: dict[str, Any]) -> bool:
     role = str(row.get("k1a_role") or REQUEST_ROLE.get(str(row.get("request_id"))))
     expected_context = ROLE_CONTEXT.get(role)
     return all(
         (
-            row.get("status") == "success",
             row.get("http_status") == 200,
             int(row.get("prompt_tokens") or 0) == expected_context,
             int(row.get("context_tokens") or 0) == expected_context,
@@ -271,6 +279,10 @@ def _request_evidence_exact(row: dict[str, Any]) -> bool:
     )
 
 
+def _request_evidence_exact(row: dict[str, Any]) -> bool:
+    return _request_transport_evidence_exact(row)
+
+
 def grade_k1a_evidence(
     *,
     request_rows: list[dict[str, Any]],
@@ -285,7 +297,23 @@ def grade_k1a_evidence(
         str(row.get("k1a_role") or REQUEST_ROLE.get(str(row.get("request_id"))))
         for row in request_rows
     ]
-    successful = [row for row in request_rows if row.get("status") == "success"]
+    transport_successful = [
+        row for row in request_rows if _request_transport_evidence_exact(row)
+    ]
+    producer_status_successful = [
+        row for row in request_rows if row.get("status") == "success"
+    ]
+    supporting_mechanism_predicates = {"prefix_evidence_ok"}
+    failed_mechanism_predicates = sorted(
+        {
+            str(name)
+            for row in transport_successful
+            if row.get("status") != "success"
+            for name, passed in (row.get("checks") or {}).items()
+            if passed is not True and name in supporting_mechanism_predicates
+        }
+    )
+    status_mechanism_coupling_detected = bool(failed_mechanism_predicates)
     structural_complete = len(request_rows) == 6 and roles == list(ROLE_ORDER)
     request_evidence_exact = structural_complete and all(
         _request_evidence_exact(row) for row in request_rows
@@ -306,7 +334,7 @@ def grade_k1a_evidence(
         trace_summary.get("d2h_async_copy_pipeline_exact") is True
     )
     runtime_evidence_exact = trace_summary.get("runtime_evidence_exact") is True
-    if not successful:
+    if not transport_successful:
         grade = NO_SUCCESS_GRADE
     elif not structural_complete:
         grade = PARTIAL_GRADE
@@ -320,10 +348,17 @@ def grade_k1a_evidence(
         grade = CANDIDATE_GREEN
     return {
         "server_grade": grade,
-        "successful_request_count": len(successful),
+        "successful_request_count": len(transport_successful),
+        "producer_status_success_count": len(producer_status_successful),
         "request_count": len(request_rows),
         "request_order_exact": structural_complete,
         "request_evidence_exact": request_evidence_exact,
+        "request_transport_evidence_exact": request_evidence_exact,
+        "request_status_mechanism_coupling_detected": (
+            status_mechanism_coupling_detected
+        ),
+        "failed_mechanism_predicates": failed_mechanism_predicates,
+        "prefix_metrics_are_supporting_not_direction_proof": True,
         "connector_resolution_ok": connector_resolution_ok,
         "repair_diagnostic_ok": repair_diagnostic_ok,
         "host_memory_gate_ok": host_memory_gate_ok,
@@ -396,6 +431,291 @@ def _write_request_summary(path: Path, rows: list[dict[str, Any]]) -> None:
             {**row, "first_failed_predicate": first_failed_predicate(row)}
             for row in rows
         )
+
+
+def _hash_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _validate_bounded_manifest(
+    source_dir: Path,
+) -> tuple[dict[str, Any], dict[str, Path]]:
+    manifest_path = source_dir / "candidate_manifest.server_local.json"
+    manifest = _read_json(manifest_path)
+    if manifest.get("schema_version") != "p8_2_k1a_bounded_candidate_manifest_v1":
+        raise ValueError("unexpected K1A bounded manifest schema")
+    entries = manifest.get("files")
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("K1A bounded manifest has no payload files")
+    seen: set[str] = set()
+    payload_paths: dict[str, Path] = {}
+    payload_bytes = 0
+    for entry in entries:
+        name = Path(str(entry.get("absolute_path") or "")).name
+        if not name or name in seen:
+            raise ValueError("K1A bounded manifest basename is missing or duplicated")
+        seen.add(name)
+        local_path = source_dir / name
+        absolute_path = Path(str(entry.get("absolute_path") or ""))
+        path = local_path if local_path.is_file() else absolute_path
+        if not path.is_file():
+            raise ValueError(f"K1A bounded payload missing: {name}")
+        payload_paths[name] = path
+        size = path.stat().st_size
+        payload_bytes += size
+        if size != int(entry.get("bytes") or -1):
+            raise ValueError(f"K1A bounded payload byte drift: {name}")
+        if _hash_file(path) != entry.get("sha256"):
+            raise ValueError(f"K1A bounded payload hash drift: {name}")
+        if entry.get("sensitivity") != (
+            "bounded_operational_metadata_no_content_or_token_ids"
+        ):
+            raise ValueError(f"K1A bounded payload sensitivity drift: {name}")
+    if len(entries) != int(manifest.get("payload_file_count") or -1):
+        raise ValueError("K1A bounded manifest payload count drift")
+    if payload_bytes != int(manifest.get("payload_total_bytes") or -1):
+        raise ValueError("K1A bounded manifest payload bytes drift")
+    if manifest.get("generated_content_retained") is not False:
+        raise ValueError("generated content is not allowed in K1A bounded evidence")
+    if manifest.get("token_ids_retained") is not False:
+        raise ValueError("token IDs are not allowed in K1A bounded evidence")
+    return manifest, payload_paths
+
+
+def _inventory_manifest_evidence(
+    manifest_path: Path, payload_paths: dict[str, Path]
+) -> dict[str, Any]:
+    records = [
+        {
+            "name": manifest_path.name,
+            "bytes": manifest_path.stat().st_size,
+            "sha256": _hash_file(manifest_path),
+        }
+    ]
+    records.extend(
+        {
+            "name": name,
+            "bytes": path.stat().st_size,
+            "sha256": _hash_file(path),
+        }
+        for name, path in sorted(payload_paths.items())
+    )
+    canonical = json.dumps(records, separators=(",", ":"), sort_keys=True).encode()
+    return {
+        "file_count": len(records),
+        "total_bytes": sum(row["bytes"] for row in records),
+        "inventory_sha256": hashlib.sha256(canonical).hexdigest(),
+        "files": records,
+    }
+
+
+def _read_bounded_request_summary(path: Path) -> list[dict[str, Any]]:
+    boolean_fields = {
+        "saw_done",
+        "queue_metrics_ok",
+        "counter_continuity_ok",
+        "spec_activity_ok",
+    }
+    integer_fields = {
+        "http_status",
+        "context_tokens",
+        "output_tokens",
+        "prompt_tokens",
+        "generated_token_count",
+        "streamed_token_count",
+        "max_token_chunk_width",
+    }
+    float_fields = {"prefix_hits_delta", "accepted_token_delta"}
+    with path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    for row in rows:
+        for name in boolean_fields:
+            row[name] = str(row.get(name)).lower() == "true"
+        for name in integer_fields:
+            row[name] = int(row.get(name) or 0)
+        for name in float_fields:
+            row[name] = float(row.get(name) or 0)
+        predicate = str(row.get("first_failed_predicate") or "")
+        row["prefix_evidence_ok"] = predicate != "prefix_evidence_ok"
+        row["checks"] = {predicate: False} if predicate else {}
+    return rows
+
+
+def _write_corrected_request_summary(
+    path: Path, rows: list[dict[str, Any]]
+) -> None:
+    fields = (
+        "request_id",
+        "k1a_role",
+        "producer_status",
+        "request_transport_status",
+        "mechanism_observation",
+        "http_status",
+        "context_tokens",
+        "generated_token_count",
+        "streamed_token_count",
+        "prefix_hits_delta",
+        "first_failed_predicate",
+        "request_body_sha256",
+    )
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, delimiter="\t")
+        writer.writeheader()
+        for row in rows:
+            transport_ok = _request_transport_evidence_exact(row)
+            writer.writerow(
+                {
+                    "request_id": row.get("request_id"),
+                    "k1a_role": row.get("k1a_role"),
+                    "producer_status": row.get("status"),
+                    "request_transport_status": (
+                        "success" if transport_ok else "failed"
+                    ),
+                    "mechanism_observation": (
+                        "h2d_restore_not_observed"
+                        if row.get("k1a_role") == "restore_follower"
+                        and row.get("prefix_evidence_ok") is False
+                        else "no_request_level_mechanism_failure"
+                    ),
+                    "http_status": row.get("http_status"),
+                    "context_tokens": row.get("context_tokens"),
+                    "generated_token_count": row.get("generated_token_count"),
+                    "streamed_token_count": row.get("streamed_token_count"),
+                    "prefix_hits_delta": row.get("prefix_hits_delta"),
+                    "first_failed_predicate": row.get("first_failed_predicate"),
+                    "request_body_sha256": row.get("request_body_sha256"),
+                }
+            )
+
+
+def refinalize_k1a_bounded_evidence(
+    source_dir: Path, output_dir: Path
+) -> dict[str, Any]:
+    source_resolved = source_dir.resolve()
+    output_resolved = output_dir.resolve()
+    if source_resolved == output_resolved or source_resolved in output_resolved.parents:
+        raise ValueError("K1A-R4 output must be outside the source evidence directory")
+    if output_dir.exists():
+        raise FileExistsError(f"K1A-R4 output already exists: {output_dir}")
+    manifest, payload_paths = _validate_bounded_manifest(source_dir)
+    manifest_path = source_dir / "candidate_manifest.server_local.json"
+    before = _inventory_manifest_evidence(manifest_path, payload_paths)
+    rows = _read_bounded_request_summary(payload_paths["request_summary.tsv"])
+    source_grading = _read_json(payload_paths["grading_inputs.json"])
+    trace_summary = _read_json(payload_paths["transfer_trace_summary.json"])
+    if source_grading.get("trace_summary") != trace_summary:
+        raise ValueError("K1A bounded trace summary drift")
+    cleanup = payload_paths["cleanup_status.txt"].read_text(encoding="utf-8").strip()
+    grading = grade_k1a_evidence(
+        request_rows=rows,
+        trace_summary=trace_summary,
+        cleanup=cleanup,
+        connector_resolution_ok=source_grading.get("connector_resolution_ok") is True,
+        repair_diagnostic_ok=source_grading.get("repair_diagnostic_ok") is True,
+        host_memory_gate_ok=source_grading.get("host_memory_gate_ok") is True,
+        accepted_capacity_exact=source_grading.get("accepted_capacity_exact") is True,
+    )
+    source_grade = str(source_grading.get("server_grade") or "")
+    task_grade = payload_paths["task_grade.txt"].read_text(encoding="utf-8").strip()
+    if task_grade != source_grade:
+        raise ValueError("K1A bounded source grade drift")
+    repair = _read_json(payload_paths["repair_diagnostic_summary.json"])
+    refinalized = {
+        **grading,
+        "refinalization_task_id": REFINALIZATION_TASK_ID,
+        "source_task_id": manifest.get("task_id"),
+        "source_server_grade": source_grade,
+        "source_server_grade_preserved": True,
+        "refinalized_grade": grading["server_grade"],
+        "cpu_bytes_to_use": int(
+            source_grading.get("cpu_bytes_to_use") or CPU_BYTES_TO_USE
+        ),
+        "cpu_bytes_to_use_per_rank": int(
+            source_grading.get("cpu_bytes_to_use_per_rank")
+            or CPU_BYTES_TO_USE_PER_RANK
+        ),
+        "failure_classification": "h2d_restore_not_observed",
+        "cause_proven_as_unique": False,
+        "d2h_bytes_total": int(trace_summary.get("d2h_bytes_total") or 0),
+        "d2h_bytes_total_semantics": "cumulative_submitted_copy_volume",
+        "unique_cpu_residency_bytes_observed": False,
+        "configured_cpu_tier_bytes_total": int(
+            source_grading.get("cpu_bytes_to_use") or CPU_BYTES_TO_USE
+        ),
+        "lcm_block_sizes": repair.get("lcm_block_sizes"),
+        "scheduler_block_size_tokens": BLOCK_SIZE,
+        "generated_content_retained": False,
+        "token_ids_retained": False,
+        "new_model_requests_sent": False,
+        "npu_started": False,
+        "vllm_started": False,
+        "performance_reference_accepted": False,
+        "k2_authorized": False,
+        "p8_3_i1_authorized": False,
+    }
+    output_dir.mkdir(parents=True)
+    _write_json(output_dir / "offline_refinalization.json", refinalized)
+    _write_corrected_request_summary(
+        output_dir / "corrected_request_summary.tsv", rows
+    )
+    after = _inventory_manifest_evidence(manifest_path, payload_paths)
+    unchanged = before == after
+    provenance = {
+        "source_evidence_before": before,
+        "source_evidence_after": after,
+        "source_evidence_unchanged": unchanged,
+    }
+    _write_json(output_dir / "source_evidence_provenance.json", provenance)
+    refinalized["source_evidence_unchanged"] = unchanged
+    _write_json(output_dir / "offline_refinalization.json", refinalized)
+    (output_dir / "result_summary.md").write_text(
+        "\n".join(
+            (
+                "# P8.2-K1A-R4 offline refinalization",
+                "",
+                f"- source_server_grade: `{source_grade}` (preserved)",
+                f"- refinalized_grade: `{grading['server_grade']}`",
+                f"- request_transport_success: `{grading['successful_request_count']}/6`",
+                f"- producer_status_success: `{grading['producer_status_success_count']}/6`",
+                "- D2H store pipeline: complete; byte total is cumulative submitted copy volume, not unique CPU residency.",
+                "- H2D restore pipeline: not observed; cause is not proven unique.",
+                "- boundary: offline bounded-evidence refinalization only; no new model request, performance claim, K2 or P8.3-I1 authorization.",
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    candidate_entries = []
+    for name in STORE_ONLY_REFINALIZATION_FILES:
+        path = output_dir / name
+        candidate_entries.append(
+            {
+                "absolute_path": str(path.resolve()),
+                "bytes": path.stat().st_size,
+                "sha256": _hash_file(path),
+                "sensitivity": (
+                    "bounded_operational_metadata_no_content_or_token_ids"
+                ),
+            }
+        )
+    total = sum(row["bytes"] for row in candidate_entries)
+    if total > 71680:
+        raise ValueError(f"K1A-R4 candidate package exceeds 70KB: {total}")
+    _write_json(
+        output_dir / "candidate_manifest.server_local.json",
+        {
+            "schema_version": "p8_2_k1a_r4_candidate_manifest_v1",
+            "task_id": REFINALIZATION_TASK_ID,
+            "files": candidate_entries,
+            "payload_file_count": len(candidate_entries),
+            "payload_total_bytes": total,
+            "result_transfer_authorized": True,
+            "transfer_method_selected": False,
+            "generated_content_retained": False,
+            "token_ids_retained": False,
+        },
+    )
+    return refinalized
 
 
 def write_candidate_manifest(artifact_dir: Path) -> dict[str, Any]:
@@ -532,6 +852,9 @@ def parse_args() -> argparse.Namespace:
     execute.add_argument("--server-pid", type=int, required=True)
     finalize = subparsers.add_parser("finalize")
     finalize.add_argument("--artifact-dir", type=Path, required=True)
+    refinalize = subparsers.add_parser("refinalize-bounded")
+    refinalize.add_argument("--source-dir", type=Path, required=True)
+    refinalize.add_argument("--output-dir", type=Path, required=True)
     return parser.parse_args()
 
 
@@ -551,6 +874,10 @@ def main() -> int:
             "prefix_cache_on",
             positive_hit_required_group_ids={PRIMARY_GROUP},
         )
+    if args.command == "refinalize-bounded":
+        result = refinalize_k1a_bounded_evidence(args.source_dir, args.output_dir)
+        print(json.dumps(result, sort_keys=True))
+        return 0 if result["refinalized_grade"] == STORE_ONLY_GRADE else 2
     result = finalize_k1a(args.artifact_dir)
     print(json.dumps(result, sort_keys=True))
     return 0 if result["server_grade"] == CANDIDATE_GREEN else 2

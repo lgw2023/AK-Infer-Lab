@@ -334,22 +334,20 @@ def test_r3_finalizer_requires_exact_capacity_and_closes_store_restore(
     assert grading["runtime_evidence_exact"] is True
 
 
-def test_causal_replay_is_the_only_current_server_handoff_and_keeps_next_stages_closed() -> None:
+def test_causal_replay_is_consumed_and_r4_is_the_only_current_server_handoff() -> None:
     task_id = (
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_"
-        "2026_0720"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
     )
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "execution_mode: authorized_offline_causal_exception_refinalization_then_one_same_capacity_lifecycle",
-        "npu_execution_authorized: true",
-        "vllm_server_start_authorized: true",
-        "model_requests_authorized: true",
-        "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 6",
-        "request_retry_count_exact: 0",
+        "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics",
+        "npu_execution_authorized: false",
+        "vllm_server_start_authorized: false",
+        "model_requests_authorized: false",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
         "capacity_search_authorized: false",
         "profiler_authorized: false",
         "result_transfer_authorized: true",
@@ -357,13 +355,13 @@ def test_causal_replay_is_the_only_current_server_handoff_and_keeps_next_stages_
     ):
         assert field in handoff
     for marker in (
-        "ready_p8_2_k1a_r2_allocator_capacity",
-        "blocked_p8_2_k1a_r3_source_or_provenance_gate",
-        "green_p8_3_i0_r1_unclassified_taxonomy",
-        "cpu_bytes_to_use_per_rank=430604288",
-        "cpu_bytes_to_use=3444834304",
-        "run_deepseek_p8_2_k1a_r3_r2_r2_r1_r1_r1_simple_cpu_offload.sh",
-        "candidate_green_p8_2_k1a_r3_r2_r2_r1_r1_r1_simple_cpu_offload_store_restore",
+        "parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete",
+        "yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore",
+        "parent_transport_success_count_after_developer_refinalization=6",
+        "parent_d2h_store_complete=true",
+        "parent_h2d_restore_complete=false",
+        "run_deepseek_p8_2_k1a_r4_offline_closeout.sh",
+        "candidate_green_p8_2_k1a_r4_offline_store_only_closeout",
         "不得进入 K2",
         "P8.3-I1",
     ):
@@ -375,7 +373,7 @@ def test_causal_replay_is_the_only_current_server_handoff_and_keeps_next_stages_
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
     )
     assert acceptance["p8_2_k1a_r2_grade"] == (
         "ready_p8_2_k1a_r2_allocator_capacity"
@@ -401,18 +399,26 @@ def test_causal_replay_is_the_only_current_server_handoff_and_keeps_next_stages_
     assert acceptance["p8_2_k1a_r3_r2_r2_model_request_count_max"] == 6
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_grade"] == (
+        "red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete"
+    )
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_developer_refinalized_grade"] == (
+        "yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore"
+    )
+    assert acceptance["p8_2_k1a_r4_offline_closeout_authorized"] is True
+    assert acceptance["p8_2_k1a_r4_npu_execution_authorized"] is False
     assert acceptance["p8_3_i0_r1_grade"] == (
         "green_p8_3_i0_r1_unclassified_taxonomy"
     )
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R3-R2-R2-R1-R1-R1_only"
+        "P8.2-K1A-R4_offline_only"
     )
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False
 
 
-def test_causal_replay_handoff_freezes_all_direct_contract_inputs_without_placeholders() -> None:
+def test_r4_handoff_freezes_all_direct_contract_inputs_without_placeholders() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert "__R3_" not in handoff
     assert "__REQUEST_" not in handoff
@@ -421,14 +427,14 @@ def test_causal_replay_handoff_freezes_all_direct_contract_inputs_without_placeh
 
     frozen_paths = (
         "benchmarks/deepseek_v4_flash/"
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay_audit.yaml",
+        "p8_2_k1a_r4_store_only_refinalization_audit.yaml",
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml",
-        "tools/inference_contracts/p8_2_k1a_failure_forensics.py",
-        "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py",
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml",
         "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py",
-        "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r3_r2_r2_r1_r1_r1_simple_cpu_offload.sh",
+        "tools/inference_contracts/p8_2_k1a_trace_attribution.py",
+        "tools/inference_contracts/run_deepseek_p8_2_k1a_r4_offline_closeout.sh",
+        "tests/inference_contracts/"
+        "test_deepseek_p8_2_k1a_r4_store_only_refinalization.py",
     )
     for relative in frozen_paths:
         expected = hashlib.sha256((REPO_ROOT / relative).read_bytes()).hexdigest()

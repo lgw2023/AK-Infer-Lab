@@ -219,27 +219,27 @@ def test_k1_auditor_accepts_hash_verified_installed_source_trees(tmp_path: Path)
     assert result["formal_k1_workload_allowed"] is False
 
 
-def test_k1_block_is_preserved_in_the_k1a_causal_replay_server_handoff():
-    task_id = "p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720"
+def test_k1_block_is_preserved_in_the_k1a_r4_server_handoff():
+    task_id = "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_offline_causal_exception_refinalization_then_one_same_capacity_lifecycle"
+        "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics"
         in handoff
     )
     for field in (
         "server_sync_review_authorized: true",
-        "npu_execution_authorized: true",
-        "vllm_server_start_authorized: true",
-        "model_requests_authorized: true",
-        "keep_alive_stop_and_restore_authorized: true",
+        "npu_execution_authorized: false",
+        "vllm_server_start_authorized: false",
+        "model_requests_authorized: false",
+        "keep_alive_stop_authorized: false",
         "result_directory_creation_authorized: true",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 6",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
     ):
         assert field in handoff
     assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in handoff
@@ -255,11 +255,11 @@ def test_k1_block_is_preserved_in_the_k1a_causal_replay_server_handoff():
         "audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_server_handoff_execution_mode"] == (
-        "authorized_offline_causal_exception_refinalization_then_one_same_capacity_lifecycle"
+        "authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k0_grade"] == (
@@ -279,6 +279,8 @@ def test_k1_block_is_preserved_in_the_k1a_causal_replay_server_handoff():
     assert acceptance["p8_2_k1a_r3_r2_r2_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r4_offline_closeout_authorized"] is True
+    assert acceptance["p8_2_k1a_r4_npu_execution_authorized"] is False
     assert acceptance["server_sync_review_authorized"] is True
     assert acceptance["next_task_authorized"] is False

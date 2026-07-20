@@ -329,22 +329,22 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
     subprocess.run(["bash", "-n", str(R1_RUNNER)], cwd=REPO_ROOT, check=True)
 
 
-def test_r1_is_closed_and_k1a_r3_r2_r2_is_the_only_authorized_handoff() -> None:
-    task_id = "p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720"
+def test_r1_is_closed_and_k1a_r4_is_the_only_authorized_handoff() -> None:
+    task_id = "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_offline_causal_exception_refinalization_then_one_same_capacity_lifecycle"
+        "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics"
         in handoff
     )
-    assert "npu_execution_authorized: true" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
-    assert "model_request_count_max: 6" in handoff
-    assert "formal_model_lifecycle_count_max: 1" in handoff
+    assert "model_request_count_exact: 0" in handoff
+    assert "formal_model_lifecycle_count_exact: 0" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "P8.3-I0" in handoff
@@ -366,7 +366,7 @@ def test_r1_is_closed_and_k1a_r3_r2_r2_is_the_only_authorized_handoff() -> None:
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     acceptance = readiness["acceptance"]

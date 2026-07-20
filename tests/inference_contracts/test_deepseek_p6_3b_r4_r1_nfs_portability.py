@@ -157,14 +157,14 @@ def test_r4_r1_is_completed_without_erasing_the_blocked_r4_lineage():
     assert historical_r4["execution_state"]["next_task_authorized"] is False
 
 
-def test_r4_r1_closeout_is_preserved_in_the_unique_k1a_r3_r2_r2_task():
+def test_r4_r1_closeout_is_preserved_in_the_unique_k1a_r4_task():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R2-R2-R1-R1 source binding" in handoff
-    assert "task_id: p8_2_k1a_r3_r2_r2_r1_r1_deepseek_v4_flash_source_binding_provenance_replay_2026_0720" in handoff
-    assert "npu_execution_authorized: true" in handoff
+    assert "P8.2-K1A-R4 store-only 离线收口" in handoff
+    assert "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
@@ -184,7 +184,7 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_k1a_r3_r2_r2_task():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_grade"] == (
         "blocked_p6_3b_r4_source_or_resource_gate"

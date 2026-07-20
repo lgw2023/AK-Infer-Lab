@@ -1,0 +1,106 @@
+schema_version: 1
+workload_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution
+date: '2026-07-20'
+task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720
+purpose: close_the_store_only_grade_and_attribute_existing_raw_transfer_evidence_without_npu_replay
+
+stage_contract:
+  stage: P8.2-K1A-R4
+  mode: offline_bounded_refinalization_raw_trace_attribution_and_frozen_source_semantics
+  claim_boundary: offline_store_only_refinalization_raw_trace_attribution_and_frozen_source_semantics_only_no_runtime_replay_or_unique_cause_claim
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  unique_root_cause_claim_authorized: false
+
+source_gate:
+  parent_task_id: p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720
+  parent_manifest_server_path: /data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_2026_0720_run01/candidate_manifest.server_local.json
+  parent_manifest_sha256: 6463f2f13e5c7149e6fcbb502caad5edfce1f9b7d82c16c74a72babd64035498
+  parent_payload_file_count: 21
+  parent_payload_total_bytes: 41185
+  parent_combined_file_count: 22
+  parent_combined_total_bytes: 50428
+  raw_result_server_path: /data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720_run01
+  frozen_vllm_root: /data/node0_disk1/vllm-0.22.1/vllm
+  frozen_vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  frozen_manager_sha256: fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
+  frozen_block_pool_sha256: 36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283
+  source_evidence_unchanged_required: true
+
+offline_sections:
+  - exact_parent_manifest_and_payload_replay_across_server_result_roots
+  - request_transport_and_mechanism_evidence_refinalization
+  - raw_trace_request_window_and_inter_request_attribution
+  - d2h_h2d_event_index_and_cumulative_copy_volume_aggregation
+  - frozen_cpu_match_eager_store_and_block_pool_eviction_semantics_audit
+  - bounded_joint_grade_and_manifest
+
+refinalization_contract:
+  parent_server_grade_preserved: red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete
+  expected_refinalized_grade: yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore
+  request_transport_success_count_exact: 6
+  producer_status_success_count_exact: 5
+  request_status_mechanism_coupling_predicate: prefix_evidence_ok
+  d2h_store_complete_required: true
+  h2d_restore_complete_expected: false
+
+trace_attribution_contract:
+  request_window_source: raw_metrics_before_after_file_mtime_ns
+  request_windows_exact_and_non_overlapping_required: true
+  include_inter_request_gaps: true
+  aggregate_by_role_direction_event_and_event_idx: true
+  cumulative_copy_bytes_not_unique_residency: true
+  cpu_tier_eviction_event_instrumented: false
+  actual_prime_eviction_must_remain_unproven: true
+  unique_h2d_absence_cause_must_remain_unproven: true
+
+source_semantics_contract:
+  cpu_match_uses_find_longest_cache_hit_required: true
+  eager_store_allocates_from_cpu_block_pool_required: true
+  block_pool_allocation_may_evict_cached_hash_required: true
+  capacity_churn_is_hypothesis_not_parent_runtime_fact: true
+
+execution_state:
+  execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics
+  server_sync_review_authorized: true
+  parent_raw_evidence_read_authorized: true
+  result_directory_creation_authorized: true
+  npu_execution_authorized: false
+  keep_alive_stop_authorized: false
+  vllm_server_start_authorized: false
+  model_requests_authorized: false
+  profiler_authorized: false
+  hbm_sampler_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  formal_h2d_trigger_lifecycle_allowed: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+acceptance:
+  candidate_green_grade: candidate_green_p8_2_k1a_r4_offline_store_only_closeout
+  blocked_grade: blocked_p8_2_k1a_r4_offline_closeout_gate
+  candidate_green_is_offline_closeout_not_store_restore_runtime_green: true
+  developer_review_required: true
+
+result_contract:
+  max_candidate_total_bytes: 71680
+  sensitivity: bounded_operational_metadata_no_content_or_token_ids
+  generated_content_allowed: false
+  token_ids_allowed: false
+  raw_logs_metrics_traces_and_request_bodies_remain_server_local: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  transfer_methods: [email, upload-api, server-local]
+
+stop_policy:
+  stop_on_first_contract_or_source_gate_failure: true
+  no_npu_or_vllm: true
+  no_keep_alive_disruption: true
+  no_runtime_replay: true
+  no_capacity_or_request_body_change: true
+  no_h2d_trigger_lifecycle_without_new_handoff: true
+  no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true

@@ -105,38 +105,33 @@ def test_causal_exception_contract_preserves_parent_and_allows_only_one_conditio
     assert values["request_count"] == "6"
 
 
-def test_current_handoff_is_causal_refinalization_plus_substantial_conditional_lifecycle() -> None:
+def test_causal_lifecycle_is_consumed_and_r4_offline_closeout_is_current() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "task_id: p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720",
-        "execution_mode: authorized_offline_causal_exception_refinalization_then_one_same_capacity_lifecycle",
-        "npu_execution_authorized: true",
-        "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 6",
-        "request_retry_count_exact: 0",
+        "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720",
+        "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics",
+        "npu_execution_authorized: false",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "next_task_authorized: false",
-        "root_known_observer_defect_count=32",
-        "derived_worker_runtime_wrapper_count=1",
-        "derived_engine_dead_wrapper_count=2",
-        "independent_unknown_exception_count=0",
-        "pass_known_retired_observer_defect_with_deterministic_wrappers",
-        "--compact",
-        "--vllm-root",
-        "exception_record_count_exact",
-        "frozen_wrapper_source_templates",
+        "offline_refinalization_authorized: true",
+        "raw_trace_attribution_authorized: true",
+        "frozen_source_semantics_audit_authorized: true",
+        "parent_transport_success_count_after_developer_refinalization=6",
+        "parent_d2h_store_complete=true",
+        "parent_h2d_restore_complete=false",
         "candidate_manifest.server_local.json",
         "email / upload-api / server-local",
         "不得进入 K2",
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
-    assert 'if test "${FORMAL_LIFECYCLE_ALLOWED}" = true' in handoff
-    assert "trap cleanup EXIT" in handoff
+    assert "trap cleanup EXIT" not in handoff
     assert "upload_file.py" not in handoff
     assert "--confirmed-method" not in handoff
     for forbidden in ("reset --hard", "git stash", "sync.sh", "git push"):
@@ -145,22 +140,28 @@ def test_current_handoff_is_causal_refinalization_plus_substantial_conditional_l
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_"
-        "exception_replay_2026_0720"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml"
+        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_grade"] == (
         "blocked_p8_2_k1a_r3_r2_r2_r1_r1_offline_provenance_gate"
     )
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_grade"] == (
+        "red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete"
+    )
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_r1_developer_refinalized_grade"] == (
+        "yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore"
+    )
+    assert acceptance["p8_2_k1a_r4_offline_closeout_authorized"] is True
     assert acceptance[
         "p8_2_k1a_r3_r2_r2_r1_r1_r1_formal_model_lifecycle_count_max"
     ] == 1
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R3-R2-R2-R1-R1-R1_only"
+        "P8.2-K1A-R4_offline_only"
     )
     assert acceptance["next_task_authorized"] is False

@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_source_gate_blocked_k1a_r3_r2_r1_partial_k1a_r3_r2_r2_blocked_contract_false_negative_k1a_r3_r2_r2_r1_blocked_importfrom_false_negative_k1a_r3_r2_r2_r1_r1_blocked_flat_classifier_k1a_r3_r2_r2_r1_r1_r1_authorized_i0_r1_green
+  runtime_status: p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_offline_closeout_authorized_i0_r1_green
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -208,13 +208,14 @@ artifacts:
   p8_2_k1a_r3_r2_r2_r1_observer_contract_audit: p8_2_k1a_r3_r2_r2_r1_observer_contract_audit.yaml
   p8_2_k1a_r3_r2_r2_r1_r1_source_binding_provenance_audit: p8_2_k1a_r3_r2_r2_r1_r1_source_binding_provenance_audit.yaml
   p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay_audit: p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay_audit.yaml
+  p8_2_k1a_r4_store_only_refinalization_audit: p8_2_k1a_r4_store_only_refinalization_audit.yaml
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay.yaml
-  next_stage_candidate: P8.2-K1A-R3-R2-R2-R1-R1-R1_offline_causal_exception_refinalization_and_conditional_same_capacity_replay
-  current_server_handoff_task: p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720
-  current_server_handoff_execution_mode: authorized_offline_causal_exception_refinalization_then_one_same_capacity_lifecycle
+  next_workload: benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml
+  next_stage_candidate: P8.2-K1A-R4_offline_store_only_refinalization_raw_trace_attribution_and_frozen_source_semantics
+  current_server_handoff_task: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720
+  current_server_handoff_execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -235,6 +236,8 @@ artifacts:
   current_p8_2_k1a_r3_r2_r2_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r2_r2_r1_simple_cpu_offload.sh
   current_p8_2_k1a_r3_r2_r2_r1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r2_r2_r1_r1_simple_cpu_offload.sh
   current_p8_2_k1a_r3_r2_r2_r1_r1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r3_r2_r2_r1_r1_r1_simple_cpu_offload.sh
+  current_p8_2_k1a_r4_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r4_offline_closeout.sh
+  current_p8_2_k1a_trace_attribution: ../../tools/inference_contracts/p8_2_k1a_trace_attribution.py
   current_p8_2_k1a_failure_forensics: ../../tools/inference_contracts/p8_2_k1a_failure_forensics.py
   current_server_argv_canonicalizer: ../../tools/inference_contracts/canonicalize_server_argv.py
   current_p8_2_k1a_observer: ../../tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
@@ -291,7 +294,9 @@ boundaries:
   - P8.2-K1A-R3-R2-R2 stopped with blocked_p8_2_k1a_r3_r2_r2_deterministic_parent_failure after zero-NPU forensics. Its server grade is preserved as provenance, but developer review found that the static audit ignored the inherited upstream _poll_stream_events method and that server_alive=true plus health_after_200=false with no direct exception does not prove a unique process failure.
   - P8.2-K1A-R3-R2-R2-R1 stopped at blocked_p8_2_k1a_r3_r2_r2_r1_source_or_observer_gate with zero lifecycle and zero requests. Its only reported source failure was a tracked-auditor false negative: copy_backend imports copy_blocks from npu_mem_ops, but the old AST gate accepted only direct definitions; the returned package also lacked the bounded raw-log excerpt needed to reconcile direct_runtime_exception_present=false with the reported caught worker TypeError.
   - P8.2-K1A-R3-R2-R2-R1-R1 stopped at blocked_p8_2_k1a_r3_r2_r2_r1_r1_offline_provenance_gate with zero lifecycle and zero requests. Its six-file source semantics, nine-file installed-source hash, runtime method resolution and copy primitive identity passed; the flat log classifier reported 32 known retired observer TypeErrors plus one exact frozen multiprocess RuntimeError wrapper and two exact EngineDeadError propagation wrappers as three independent unknowns.
-  - The current R3-R2-R2-R1-R1-R1 task replays the same immutable raw log with compact exact root/derived/independent grouping and three frozen vLLM source-template files. One unchanged 430604288-byte/rank, six-request lifecycle is conditionally allowed only when all 35 records reconcile as 32 known roots, one worker wrapper, two engine wrappers and zero independent unknowns, with source binding/import/identity/resource gates also passing.
+  - The consumed R3-R2-R2-R1-R1-R1 task replayed the immutable raw log and passed its causal/source/resource gates before its single accepted-capacity lifecycle; it is no longer an execution authorization.
+  - P8.2-K1A-R3-R2-R2-R1-R1-R1 completed the causal/source/resource gates and one accepted-capacity lifecycle. All six requests were HTTP/token/SSE/MTP/health/queue valid; the producer marked restore_follower failed only because Prefix hit was zero. D2H completed on eight workers with 41 scheduler store completions, while CPU hit/load/H2D remained zero. The original red grade is preserved, and developer refinalization accepts yellow store-only evidence, not bidirectional store-restore green.
+  - The current P8.2-K1A-R4 handoff is zero-NPU: it replays the exact bounded manifest across the two server result roots, formally separates request transport from mechanism evidence, attributes existing raw transfer events to six request windows and inter-request gaps, and audits frozen CPU-pool allocation/eviction semantics. Cumulative D2H bytes are not unique CPU residency; actual prime eviction and the unique cause of absent H2D must remain unproven.
   - P8.3 is not technically dependent on K1/K1A. P8.3-I0 is accepted as green_p8_3_i0_checkpoint_inventory for index/header inventory only, while 1135 tensors and 12319364956 checkpoint bytes remain unclassified and the TP4 planning budget remains incomplete.
   - P8.3-I0-R1 is developer-accepted as green_p8_3_i0_r1_unclassified_taxonomy after byte-identical offline replay; it cannot reclassify tensors, refinalize the TP4 budget or authorize P8.3-I1.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
@@ -387,12 +392,23 @@ acceptance:
   p8_2_k1a_r3_r2_r2_r1_r1_request_retry_count_exact: 0
   p8_2_k1a_r3_r2_r2_r1_r1_actual_formal_model_lifecycle_count: 0
   p8_2_k1a_r3_r2_r2_r1_r1_actual_model_request_count: 0
-  p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized: true
+  p8_2_k1a_r3_r2_r2_r1_r1_r1_grade: red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete
+  p8_2_k1a_r3_r2_r2_r1_r1_r1_developer_refinalized_grade: yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore
+  p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized: false
   p8_2_k1a_r3_r2_r2_r1_r1_r1_offline_causal_refinalization_authorized: true
   p8_2_k1a_r3_r2_r2_r1_r1_r1_formal_model_lifecycle_count_max: 1
   p8_2_k1a_r3_r2_r2_r1_r1_r1_model_request_count_max: 6
   p8_2_k1a_r3_r2_r2_r1_r1_r1_request_retry_count_exact: 0
-  current_task_scoped_authorization: P8.2-K1A-R3-R2-R2-R1-R1-R1_only
+  p8_2_k1a_r3_r2_r2_r1_r1_r1_actual_formal_model_lifecycle_count: 1
+  p8_2_k1a_r3_r2_r2_r1_r1_r1_actual_model_request_count: 6
+  p8_2_k1a_r3_r2_r2_r1_r1_r1_actual_transport_successful_request_count: 6
+  p8_2_k1a_r3_r2_r2_r1_r1_r1_d2h_store_complete: true
+  p8_2_k1a_r3_r2_r2_r1_r1_r1_h2d_restore_complete: false
+  p8_2_k1a_r4_offline_closeout_authorized: true
+  p8_2_k1a_r4_npu_execution_authorized: false
+  p8_2_k1a_r4_model_requests_authorized: false
+  p8_2_k1a_r4_formal_h2d_trigger_lifecycle_allowed: false
+  current_task_scoped_authorization: P8.2-K1A-R4_offline_only
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory
