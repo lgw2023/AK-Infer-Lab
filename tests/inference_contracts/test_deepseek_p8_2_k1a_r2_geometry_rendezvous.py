@@ -215,7 +215,7 @@ def test_current_handoff_authorizes_only_k1a_r3_r2_r2_after_parent_partial() -> 
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_"
+        "p8_2_k1a_r3_r2_r2_r1_deepseek_v4_flash_observer_contract_replay_"
         "2026_0720"
     )
 
@@ -234,9 +234,9 @@ def test_current_handoff_authorizes_only_k1a_r3_r2_r2_after_parent_partial() -> 
         "ready_p8_2_k1a_r2_allocator_capacity",
         "blocked_p8_2_k1a_r3_source_or_provenance_gate",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r3_r2_r2_simple_cpu_offload.sh",
+        "run_deepseek_p8_2_k1a_r3_r2_r2_r1_simple_cpu_offload.sh",
         "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r3_r2_r2_simple_cpu_offload_store_restore",
+        "candidate_green_p8_2_k1a_r3_r2_r2_r1_simple_cpu_offload_store_restore",
         "P8.3-I1",
     ):
         assert marker in handoff

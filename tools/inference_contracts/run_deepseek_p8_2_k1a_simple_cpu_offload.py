@@ -302,13 +302,19 @@ def grade_k1a_evidence(
     )
     store_ok = trace_summary.get("d2h_store_complete") is True
     restore_ok = trace_summary.get("h2d_restore_complete") is True
+    store_pipeline_exact = (
+        trace_summary.get("d2h_async_copy_pipeline_exact") is True
+    )
+    runtime_evidence_exact = trace_summary.get("runtime_evidence_exact") is True
     if not successful:
         grade = NO_SUCCESS_GRADE
     elif not structural_complete:
         grade = PARTIAL_GRADE
-    elif base_evidence and store_ok and not restore_ok:
+    elif base_evidence and store_ok and store_pipeline_exact and not restore_ok:
         grade = STORE_ONLY_GRADE
-    elif not (base_evidence and store_ok and restore_ok):
+    elif not (
+        base_evidence and store_ok and restore_ok and runtime_evidence_exact
+    ):
         grade = EVIDENCE_INCOMPLETE_GRADE
     else:
         grade = CANDIDATE_GREEN

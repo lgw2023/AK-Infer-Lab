@@ -1,0 +1,111 @@
+schema_version: 1
+workload_id: p8_2_k1a_r3_r2_r2_r1_observer_contract_replay
+date: '2026-07-20'
+purpose: correct_inheritance_and_observer_signature_contract_refinalize_parent_and_conditionally_replay_once
+task_id: p8_2_k1a_r3_r2_r2_r1_deepseek_v4_flash_observer_contract_replay_2026_0720
+stage_contract:
+  stage: P8.2-K1A-R3-R2-R2-R1
+  mode: offline_refinalization_inheritance_observer_contract_gate_then_one_same_capacity_lifecycle
+  claim_boundary: offline_observer_contract_correction_and_conditionally_reproduced_same_capacity_store_pressure_restore_mechanism_only
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  general_support_claim_authorized: false
+depends_on:
+  parent_task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720
+  parent_server_grade: blocked_p8_2_k1a_r3_r2_r2_deterministic_parent_failure
+  parent_grade_preserved_as_provenance: true
+  parent_runtime_task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720
+  current_audit: ../p8_2_k1a_r3_r2_r2_r1_observer_contract_audit.yaml
+  original_runtime_workload: p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
+offline_refinalization:
+  existing_parent_forensics_server_path: /data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r3_r2_r2_parent_forensics_2026_0720_run01
+  original_runtime_result_server_path: /data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720_run01
+  new_output_only: true
+  source_evidence_unchanged_required: true
+  request_time_fields_required: [request_start_ns, request_end_ns]
+  corrected_failure_classification: request_health_loss_without_direct_exception
+  cause_proven_as_unique: false
+  generated_content_allowed: false
+  token_ids_allowed: false
+source_and_observer_gate:
+  required_source_file_count: 5
+  frozen_installed_source_file_count: 9
+  inherited_poll_required: true
+  poll_method_origin_required: vllm.v1.simple_kv_offload.worker.SimpleCPUOffloadWorker._poll_stream_events
+  frozen_launch_signature_exact: [self, src_blocks, dst_blocks, is_store, event_idx, events_list]
+  observer_extra_parameters: []
+  observer_signature_compatible_required: true
+  launch_copy_enqueue_only: true
+  background_copy_loop_required: true
+  runtime_callable_resolution_required: true
+  runtime_signature_resolution_required: true
+  source_or_observer_mutation_allowed: false
+conditional_lifecycle:
+  allowed_failure_classes:
+    - request_health_loss_without_direct_exception
+    - transfer_completion_absent_without_direct_exception
+    - insufficient_parent_evidence
+  stop_failure_classes:
+    - server_process_exit
+    - http_or_client_error
+    - offload_runtime_exception
+  formal_model_lifecycle_count_max: 1
+  model_request_count_max: 6
+  request_retry_count: 0
+  first_failure_stop: true
+  capacity_search_authorized: false
+  second_capacity_point_authorized: false
+  second_lifecycle_authorized: false
+runtime_fixed:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  quantization: ascend_w8a8
+  tensor_parallel_size: 8
+  expert_parallel: true
+  enable_prefix_caching: true
+  enable_chunked_prefill: true
+  num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use: 3444834304
+  server_command_sha256: 8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6
+request_plan:
+  lifecycle_count: 1
+  request_count: 6
+  request_retries: 0
+  sequence:
+    - {role: warmup, context_tokens: 4096, output_tokens: 64}
+    - {role: prime, context_tokens: 32768, output_tokens: 64}
+    - {role: pressure, context_tokens: 131072, output_tokens: 64}
+    - {role: restore_follower, context_tokens: 32768, output_tokens: 64}
+    - {role: repeat_follower, context_tokens: 32768, output_tokens: 64}
+    - {role: isolated_control, context_tokens: 32768, output_tokens: 64}
+async_copy_evidence:
+  copy_thread_started_all_workers: true
+  enqueue_returned_all_workers: true
+  copy_blocks_entered_returned_all_workers: true
+  poll_saw_appended_event_all_workers: true
+  copy_thread_failures_zero: true
+  copy_blocks_failures_zero: true
+  inherited_poll_failures_zero: true
+  d2h_and_h2d_completion_required_for_green: true
+result_contract:
+  generated_content_allowed: false
+  token_ids_allowed: false
+  max_candidate_total_bytes: 71680
+  sensitivity: bounded_operational_metadata_no_content_or_token_ids
+  automatic_transfer_allowed: false
+  transfer_methods: [email, upload-api, server-local]
+execution_state:
+  npu_execution_authorized: true
+  vllm_server_start_authorized: true
+  model_requests_authorized: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false

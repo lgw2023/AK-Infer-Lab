@@ -302,6 +302,8 @@ def test_offline_extractor_preserves_parent_evidence_and_builds_a_bounded_packag
     )
     assert sanitized["request_id"] == "lifecycle_01_prime"
     assert sanitized["first_failed_predicate"] == "http_200"
+    assert sanitized["request_start_ns"] == 100
+    assert sanitized["request_end_ns"] == 200
     assert "token_arrival_ns" not in sanitized
     assert "bounded_error_server_path" not in sanitized
 
@@ -343,13 +345,22 @@ class SimpleCPUOffloadScheduler:
     def build_connector_meta(self): pass
     def update_connector_output(self): pass
 """,
+        vllm_root / "v1/simple_kv_offload/worker.py": """
+class SimpleCPUOffloadWorker:
+    def _poll_stream_events(self, is_store): pass
+""",
         ascend_root / "simple_kv_offload/worker.py": """
-class SimpleCPUOffloadNPUWorker:
-    def _poll_stream_events(self): pass
+from vllm.v1.simple_kv_offload.worker import SimpleCPUOffloadWorker
+
+class SimpleCPUOffloadNPUWorker(SimpleCPUOffloadWorker):
+    pass
 """,
         ascend_root / "simple_kv_offload/copy_backend.py": """
+def copy_blocks(src_blocks, dst_blocks, params): pass
+
 class NPUDmaCopyBackend:
-    def launch_copy(self): pass
+    def _copy_loop(self): pass
+    def launch_copy(self, src_blocks, dst_blocks, is_store, event_idx, events_list): pass
 """,
         ascend_root
         / "distributed/kv_transfer/kv_pool/simple_cpu_offload/simple_cpu_offload_connector.py": """
@@ -382,10 +393,32 @@ class AscendSimpleCPUOffloadConnector:
     assert completed.returncode == 0, completed.stderr or completed.stdout
     audit = json.loads(output.read_text(encoding="utf-8"))
     assert audit["source_semantics_gate"] == "pass"
-    assert audit["source_file_count"] == 4
+    assert audit["source_file_count"] == 5
     assert audit["required_symbols_present"] is True
+    assert audit["inheritance_resolution"] == {
+        "base_class": "SimpleCPUOffloadWorker",
+        "base_method": "SimpleCPUOffloadWorker._poll_stream_events",
+        "derived_class": "SimpleCPUOffloadNPUWorker",
+        "derived_class_inherits_base": True,
+        "method_resolution": "inherited_from_frozen_vllm",
+        "resolved": True,
+    }
+    assert audit["frozen_launch_signature"] == {
+        "parameters": [
+            "self",
+            "src_blocks",
+            "dst_blocks",
+            "is_store",
+            "event_idx",
+            "events_list",
+        ],
+        "observer_extra_parameters": [],
+        "observer_signature_compatible": True,
+    }
     assert audit["observer_surface"] == {
-        "copy_backend": "NPUDmaCopyBackend.launch_copy",
+        "copy_backend_enqueue": "NPUDmaCopyBackend.launch_copy",
+        "copy_backend_worker_loop": "NPUDmaCopyBackend._copy_loop",
+        "copy_primitive": "copy_blocks",
         "scheduler_completion": "SimpleCPUOffloadScheduler.update_connector_output",
         "scheduler_match": "SimpleCPUOffloadScheduler.get_num_new_matched_tokens",
         "scheduler_schedule": "SimpleCPUOffloadScheduler.build_connector_meta",
@@ -429,6 +462,48 @@ def test_transfer_summary_surfaces_copy_and_poll_exceptions_without_treating_the
     assert summary["runtime_evidence_exact"] is False
 
 
+def test_transfer_summary_distinguishes_enqueue_from_background_copy_and_poll() -> None:
+    rows: list[dict[str, object]] = []
+    for pid in (100, 101):
+        rows.extend(
+            [
+                {"event": "copy_thread_started", "pid": pid},
+                {
+                    "event": "device_copy_submitted",
+                    "direction": "d2h",
+                    "pid": pid,
+                    "byte_count": 1024,
+                },
+                {"event": "device_copy_enqueued", "direction": "d2h", "pid": pid},
+                {"event": "copy_blocks_entered", "direction": "d2h", "pid": pid},
+                {"event": "copy_blocks_returned", "direction": "d2h", "pid": pid},
+                {
+                    "event": "transfer_poll_entered",
+                    "direction": "d2h",
+                    "pid": pid,
+                    "pending_event_count": 1,
+                    "copy_thread_alive": True,
+                },
+                {"event": "transfer_poll_returned", "direction": "d2h", "pid": pid},
+                {"event": "transfer_completed", "direction": "d2h", "pid": pid},
+            ]
+        )
+    rows.append({"event": "store_event_completed", "direction": "d2h", "pid": 90})
+
+    summary = summarize_trace_rows(
+        rows, expected_world_size=2, restore_request_suffix="restore_follower"
+    )
+
+    assert summary["d2h_enqueued_worker_count"] == 2
+    assert summary["d2h_copy_blocks_entered_worker_count"] == 2
+    assert summary["d2h_copy_blocks_returned_worker_count"] == 2
+    assert summary["d2h_poll_event_visible_worker_count"] == 2
+    assert summary["copy_thread_started_worker_count"] == 2
+    assert summary["copy_thread_failed_count"] == 0
+    assert summary["d2h_async_copy_pipeline_exact"] is True
+    assert summary["async_copy_failure_event_count"] == 0
+
+
 def test_bounded_client_exception_blocks_replay_even_without_an_http_status(
     tmp_path: Path,
 ) -> None:
@@ -460,3 +535,38 @@ def test_bounded_client_exception_blocks_replay_even_without_an_http_status(
     assert diagnostic["failure_classification"] == "http_or_client_error"
     assert diagnostic["cause_proven_as_unique"] is False
     assert "TimeoutError" in excerpt
+
+
+def test_health_probe_loss_with_a_live_server_is_not_a_unique_process_failure(
+    tmp_path: Path,
+) -> None:
+    rows = [
+        {
+            "request_id": "lifecycle_01_prime",
+            "status": "failed",
+            "http_status": 200,
+            "checks": {
+                "server_alive": True,
+                "http_200": True,
+                "health_after_200": False,
+                "queue_idle_after": False,
+            },
+        }
+    ]
+
+    diagnostic, _ = build_failure_diagnostic(
+        tmp_path,
+        rows,
+        {
+            "d2h_worker_count": 8,
+            "d2h_completed_worker_count": 0,
+            "transfer_failure_event_count": 0,
+        },
+    )
+
+    assert diagnostic["failure_classification"] == (
+        "request_health_loss_without_direct_exception"
+    )
+    assert diagnostic["server_alive"] is True
+    assert diagnostic["health_after_200"] is False
+    assert diagnostic["cause_proven_as_unique"] is False

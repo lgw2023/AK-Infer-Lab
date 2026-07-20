@@ -282,12 +282,12 @@ def test_r3_r2_r2_is_the_only_current_handoff_and_preserves_portable_identity() 
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_"
+        "task_id: p8_2_k1a_r3_r2_r2_r1_deepseek_v4_flash_observer_contract_replay_"
         "2026_0720"
     ) in handoff
     for exact in (
-        "execution_mode: authorized_parent_forensics_source_semantics_and_"
-        "conditional_same_capacity_single_lifecycle",
+        "execution_mode: authorized_offline_refinalization_inheritance_"
+        "observer_contract_gate_then_one_same_capacity_lifecycle",
         "npu_execution_authorized: true",
         "formal_model_lifecycle_count_max: 1",
         "model_request_count_max: 6",

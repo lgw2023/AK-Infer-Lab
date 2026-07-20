@@ -293,9 +293,9 @@ def test_handoff_preserves_r4_r1_closeout_during_k1a_r3_r2_r2_forensics():
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R2-R2 parent forensics" in handoff
-    assert "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720" in handoff
-    assert "execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle" in handoff
+    assert "P8.2-K1A-R3-R2-R2-R1 observer-contract" in handoff
+    assert "task_id: p8_2_k1a_r3_r2_r2_r1_deepseek_v4_flash_observer_contract_replay_2026_0720" in handoff
+    assert "execution_mode: authorized_offline_refinalization_inheritance_observer_contract_gate_then_one_same_capacity_lifecycle" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "R2 hybrid-KV" in handoff
@@ -325,7 +325,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml"
+        "p8_2_k1a_r3_r2_r2_r1_observer_contract_replay.yaml"
     )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
@@ -342,7 +342,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert acceptance["p6_3b_r4_r1_execution_authorized"] is False
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_source_gate_blocked_k1a_r3_r2_r1_partial_k1a_r3_r2_r2_authorized_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_source_gate_blocked_k1a_r3_r2_r1_partial_k1a_r3_r2_r2_blocked_contract_false_negative_k1a_r3_r2_r2_r1_authorized_i0_r1_green"
     )
 
     surfaces = [

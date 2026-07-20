@@ -25,7 +25,7 @@ def test_current_handoff_preserves_the_frozen_installed_source_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_"
+        "task_id: p8_2_k1a_r3_r2_r2_r1_deepseek_v4_flash_observer_contract_replay_"
         "2026_0720"
     ) in handoff
     assert "VLLM_ASCEND_SITE=${RUNTIME_PREFIX}/lib/python3.11/site-packages" in handoff
@@ -154,8 +154,8 @@ def test_r3_r2_r2_handoff_runs_the_full_bounded_chain() -> None:
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_parent_forensics_source_semantics_and_"
-        "conditional_same_capacity_single_lifecycle",
+        "execution_mode: authorized_offline_refinalization_inheritance_"
+        "observer_contract_gate_then_one_same_capacity_lifecycle",
         "formal_model_lifecycle_count_max: 1",
         "model_request_count_max: 6",
         "request_retry_count_exact: 0",
@@ -163,14 +163,14 @@ def test_r3_r2_r2_handoff_runs_the_full_bounded_chain() -> None:
         "next_task_authorized: false",
         "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_"
         "restore_2026_0720_run01",
-        "run_deepseek_p8_2_k1a_r3_r2_r2_simple_cpu_offload.sh",
+        "run_deepseek_p8_2_k1a_r3_r2_r2_r1_simple_cpu_offload.sh",
         "server_command_sha256=8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6",
-        "source_semantics_gate=pass",
+        "formal_lifecycle_allowed",
         "runtime_import_probe.json",
         "candidate_manifest.server_local.json",
         "missing_candidate_files",
         "email / upload-api / server-local",
-        "candidate_green_p8_2_k1a_r3_r2_r2_simple_cpu_offload_store_restore",
+        "candidate_green_p8_2_k1a_r3_r2_r2_r1_simple_cpu_offload_store_restore",
         "blocked_p8_2_k1a_r3_r2_r2_deterministic_parent_failure",
         "不得进入 K2",
         "不得进入 P8.3-I1",

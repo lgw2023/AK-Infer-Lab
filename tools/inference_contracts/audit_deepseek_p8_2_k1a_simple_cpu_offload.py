@@ -238,6 +238,7 @@ def inspect_installed_sources(
 
 
 RUNTIME_PROBE = r'''
+import inspect
 import json
 
 result = {}
@@ -264,6 +265,12 @@ try:
     from vllm_ascend.simple_kv_offload.worker import SimpleCPUOffloadNPUWorker
     from vllm_ascend.simple_kv_offload.copy_backend import NPUDmaCopyBackend
 
+    poll_method_owner = next(
+        cls.__module__ + "." + cls.__name__
+        for cls in SimpleCPUOffloadNPUWorker.__mro__
+        if "_poll_stream_events" in cls.__dict__
+    )
+
     result.update({
         "kv_transfer_config": {
             "kv_connector": config.kv_connector,
@@ -280,6 +287,16 @@ try:
         ),
         "copy_backend_import": (
             "success" if NPUDmaCopyBackend.__name__ else "failed"
+        ),
+        "poll_method_callable": callable(
+            getattr(SimpleCPUOffloadNPUWorker, "_poll_stream_events", None)
+        ),
+        "poll_method_owner": poll_method_owner,
+        "poll_method_parameters": list(
+            inspect.signature(SimpleCPUOffloadNPUWorker._poll_stream_events).parameters
+        ),
+        "launch_copy_parameters": list(
+            inspect.signature(NPUDmaCopyBackend.launch_copy).parameters
         ),
         "ascend_connector_inherits_upstream": issubclass(
             AscendSimpleCPUOffloadConnector, SimpleCPUOffloadConnector

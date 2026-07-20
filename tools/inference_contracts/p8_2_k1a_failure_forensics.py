@@ -48,6 +48,8 @@ TRACE_FIELDS = (
     "request_id",
     "num_new_tokens",
     "is_async",
+    "pending_event_count",
+    "copy_thread_alive",
     "error_type",
     "error_message",
 )
@@ -137,12 +139,14 @@ def _classify_failure(
 ) -> str:
     checks = row.get("checks") or {}
     http_status = row.get("http_status")
-    if checks.get("server_alive") is False or checks.get("health_after_200") is False:
-        return "server_process_or_health_loss"
+    if checks.get("server_alive") is False:
+        return "server_process_exit"
     if int(trace_summary.get("transfer_failure_event_count") or 0) > 0:
         return "offload_runtime_exception"
     if (http_status is not None and http_status != 200) or error_excerpt:
         return "http_or_client_error"
+    if checks.get("health_after_200") is False:
+        return "request_health_loss_without_direct_exception"
     if (
         int(trace_summary.get("d2h_worker_count") or 0) > 0
         and int(trace_summary.get("d2h_completed_worker_count") or 0) == 0
@@ -266,6 +270,8 @@ def _sanitize_request_row(row: dict[str, Any]) -> dict[str, Any]:
         "saw_done",
         "max_token_chunk_width",
         "request_body_sha256",
+        "request_start_ns",
+        "request_end_ns",
         "ttft_ms",
         "tpot_ms",
         "e2el_ms",
@@ -347,6 +353,33 @@ def _write_json(path: Path, value: Any) -> None:
     )
 
 
+def _function_parameters(
+    tree: ast.AST,
+    function_name: str,
+    *,
+    class_name: str | None = None,
+) -> list[str]:
+    nodes: list[ast.AST] = list(ast.walk(tree))
+    if class_name is not None:
+        classes = [
+            node
+            for node in nodes
+            if isinstance(node, ast.ClassDef) and node.name == class_name
+        ]
+        nodes = list(ast.walk(classes[0])) if classes else []
+    for node in nodes:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == function_name:
+            return [
+                argument.arg
+                for argument in (
+                    list(node.args.posonlyargs)
+                    + list(node.args.args)
+                    + list(node.args.kwonlyargs)
+                )
+            ]
+    return []
+
+
 def extract_existing_evidence(source_result_dir: Path, output_dir: Path) -> dict[str, Any]:
     if not source_result_dir.is_dir():
         raise ValueError(f"source result directory does not exist: {source_result_dir}")
@@ -373,6 +406,7 @@ def extract_existing_evidence(source_result_dir: Path, output_dir: Path) -> dict
         source_result_dir, rows, trace_summary
     )
     allowed_classes = {
+        "request_health_loss_without_direct_exception",
         "transfer_completion_absent_without_direct_exception",
         "insufficient_parent_evidence",
     }
@@ -472,16 +506,25 @@ def audit_source_semantics(
                 "SimpleCPUOffloadScheduler.update_connector_output",
             },
         ),
+        "vllm_worker": (
+            vllm_root / "v1/simple_kv_offload/worker.py",
+            {
+                "SimpleCPUOffloadWorker",
+                "SimpleCPUOffloadWorker._poll_stream_events",
+            },
+        ),
         "ascend_worker": (
             vllm_ascend_root / "simple_kv_offload/worker.py",
-            {
-                "SimpleCPUOffloadNPUWorker",
-                "SimpleCPUOffloadNPUWorker._poll_stream_events",
-            },
+            {"SimpleCPUOffloadNPUWorker"},
         ),
         "ascend_copy_backend": (
             vllm_ascend_root / "simple_kv_offload/copy_backend.py",
-            {"NPUDmaCopyBackend", "NPUDmaCopyBackend.launch_copy"},
+            {
+                "copy_blocks",
+                "NPUDmaCopyBackend",
+                "NPUDmaCopyBackend._copy_loop",
+                "NPUDmaCopyBackend.launch_copy",
+            },
         ),
         "ascend_connector": (
             vllm_ascend_root
@@ -491,6 +534,7 @@ def audit_source_semantics(
         ),
     }
     files: dict[str, Any] = {}
+    parsed_trees: dict[str, ast.Module] = {}
     all_required_present = True
     for label, (path, required) in definitions.items():
         if not path.is_file():
@@ -498,6 +542,7 @@ def audit_source_semantics(
             all_required_present = False
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        parsed_trees[label] = tree
         symbols: set[str] = set()
         for node in tree.body:
             if not isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -519,11 +564,67 @@ def audit_source_semantics(
             "required_symbols": sorted(required),
             "missing_symbols": missing,
         }
+
+    ascend_worker_tree = parsed_trees.get("ascend_worker")
+    derived_bases: set[str] = set()
+    if ascend_worker_tree is not None:
+        for node in ascend_worker_tree.body:
+            if isinstance(node, ast.ClassDef) and node.name == "SimpleCPUOffloadNPUWorker":
+                derived_bases.update(
+                    base.id
+                    for base in node.bases
+                    if isinstance(base, ast.Name)
+                )
+    inheritance_resolved = all(
+        (
+            "SimpleCPUOffloadWorker" in derived_bases,
+            not files.get("vllm_worker", {}).get("missing_symbols"),
+        )
+    )
+    all_required_present &= inheritance_resolved
+    inheritance_resolution = {
+        "base_class": "SimpleCPUOffloadWorker",
+        "base_method": "SimpleCPUOffloadWorker._poll_stream_events",
+        "derived_class": "SimpleCPUOffloadNPUWorker",
+        "derived_class_inherits_base": "SimpleCPUOffloadWorker" in derived_bases,
+        "method_resolution": (
+            "inherited_from_frozen_vllm" if inheritance_resolved else "unresolved"
+        ),
+        "resolved": inheritance_resolved,
+    }
+    frozen_launch_parameters = _function_parameters(
+        parsed_trees.get("ascend_copy_backend", ast.Module(body=[], type_ignores=[])),
+        "launch_copy",
+        class_name="NPUDmaCopyBackend",
+    )
+    observer_tree = ast.parse(
+        (
+            REPO_ROOT
+            / "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py"
+        ).read_text(encoding="utf-8")
+    )
+    observer_launch_parameters = _function_parameters(
+        observer_tree, "observed_launch"
+    )
+    observer_extra_parameters = sorted(
+        set(observer_launch_parameters) - set(frozen_launch_parameters)
+    )
+    observer_signature_compatible = (
+        observer_launch_parameters == frozen_launch_parameters
+    )
+    all_required_present &= observer_signature_compatible
+    frozen_launch_signature = {
+        "parameters": frozen_launch_parameters,
+        "observer_extra_parameters": observer_extra_parameters,
+        "observer_signature_compatible": observer_signature_compatible,
+    }
     value = {
-        "schema_version": "p8_2_k1a_source_semantics_audit_v1",
+        "schema_version": "p8_2_k1a_source_semantics_audit_v2",
         "source_semantics_gate": "pass" if all_required_present else "fail",
         "source_file_count": sum(row.get("exists") is True for row in files.values()),
         "required_symbols_present": all_required_present,
+        "inheritance_resolution": inheritance_resolution,
+        "frozen_launch_signature": frozen_launch_signature,
         "observer_surface": {
             "scheduler_match": (
                 "SimpleCPUOffloadScheduler.get_num_new_matched_tokens"
@@ -532,7 +633,9 @@ def audit_source_semantics(
             "scheduler_completion": (
                 "SimpleCPUOffloadScheduler.update_connector_output"
             ),
-            "copy_backend": "NPUDmaCopyBackend.launch_copy",
+            "copy_backend_enqueue": "NPUDmaCopyBackend.launch_copy",
+            "copy_backend_worker_loop": "NPUDmaCopyBackend._copy_loop",
+            "copy_primitive": "copy_blocks",
             "worker_completion": "SimpleCPUOffloadNPUWorker._poll_stream_events",
         },
         "files": files,

@@ -31,7 +31,7 @@ def _emit(event: str, **fields: Any) -> None:
         handle.write(json.dumps(row, separators=(",", ":"), sort_keys=True) + "\n")
 
 
-def _bounded_error_fields(error: Exception) -> dict[str, str]:
+def _bounded_error_fields(error: BaseException) -> dict[str, str]:
     return {
         "error_type": type(error).__name__,
         "error_message": str(error).replace("\n", " ")[:1024],
@@ -40,6 +40,7 @@ def _bounded_error_fields(error: Exception) -> dict[str, str]:
 
 def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
     from vllm.v1.simple_kv_offload.manager import SimpleCPUOffloadScheduler
+    from vllm_ascend.simple_kv_offload import copy_backend as copy_backend_module
     from vllm_ascend.simple_kv_offload.copy_backend import NPUDmaCopyBackend
     from vllm_ascend.simple_kv_offload.worker import SimpleCPUOffloadNPUWorker
 
@@ -129,6 +130,57 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
             )
         return result
 
+    original_copy_blocks = copy_backend_module.copy_blocks
+
+    @wraps(original_copy_blocks)
+    def observed_copy_blocks(src_blocks, dst_blocks, params):
+        direction = (
+            "d2h"
+            if params.direction == copy_backend_module.DIRECTION_D2H
+            else "h2d"
+        )
+        _emit(
+            "copy_blocks_entered",
+            component="npu_copy_primitive",
+            direction=direction,
+            block_count=len(src_blocks),
+            byte_count=sum(int(value) for value in params.bpb) * len(src_blocks),
+            sub_tensor_count=params.num_sub_tensors,
+        )
+        try:
+            result = original_copy_blocks(src_blocks, dst_blocks, params)
+        except BaseException as error:
+            _emit(
+                "copy_blocks_failed",
+                component="npu_copy_primitive",
+                direction=direction,
+                **_bounded_error_fields(error),
+            )
+            raise
+        _emit(
+            "copy_blocks_returned",
+            component="npu_copy_primitive",
+            direction=direction,
+        )
+        return result
+
+    original_copy_loop = NPUDmaCopyBackend._copy_loop
+
+    @wraps(original_copy_loop)
+    def observed_copy_loop(self):
+        _emit("copy_thread_started", component="npu_copy_backend")
+        try:
+            return original_copy_loop(self)
+        except BaseException as error:
+            _emit(
+                "copy_thread_failed",
+                component="npu_copy_backend",
+                **_bounded_error_fields(error),
+            )
+            raise
+        finally:
+            _emit("copy_thread_exited", component="npu_copy_backend")
+
     original_launch = NPUDmaCopyBackend.launch_copy
 
     @wraps(original_launch)
@@ -139,7 +191,6 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
         is_store,
         event_idx,
         events_list,
-        wait_event=None,
     ):
         params = self._store_params if is_store else self._load_params
         bytes_per_block = (
@@ -162,7 +213,6 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 is_store,
                 event_idx,
                 events_list,
-                wait_event,
             )
         except Exception as error:
             _emit(
@@ -173,6 +223,12 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 **_bounded_error_fields(error),
             )
             raise
+        _emit(
+            "device_copy_enqueued",
+            component="npu_copy_backend",
+            direction="d2h" if is_store else "h2d",
+            event_idx=event_idx,
+        )
         _emit(
             "device_copy_launch_returned",
             component="npu_copy_backend",
@@ -186,6 +242,18 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
     @wraps(original_poll)
     def observed_poll(self, is_store):
         before = self._store_hwm if is_store else self._load_hwm
+        events = self._store_events if is_store else self._load_events
+        copy_thread = getattr(self._backend, "_thread", None)
+        _emit(
+            "transfer_poll_entered",
+            component="npu_worker",
+            direction="d2h" if is_store else "h2d",
+            pending_event_count=len(events),
+            event_idx=(events[0][0] if events else None),
+            copy_thread_alive=(
+                copy_thread.is_alive() if copy_thread is not None else False
+            ),
+        )
         try:
             hwm = original_poll(self, is_store)
         except Exception as error:
@@ -196,6 +264,12 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 **_bounded_error_fields(error),
             )
             raise
+        _emit(
+            "transfer_poll_returned",
+            component="npu_worker",
+            direction="d2h" if is_store else "h2d",
+            event_hwm=hwm,
+        )
         if hwm > before:
             _emit(
                 "transfer_completed",
@@ -209,6 +283,8 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
     SimpleCPUOffloadScheduler.update_state_after_alloc = observed_update
     SimpleCPUOffloadScheduler.build_connector_meta = observed_build
     SimpleCPUOffloadScheduler.update_connector_output = observed_output
+    copy_backend_module.copy_blocks = observed_copy_blocks
+    NPUDmaCopyBackend._copy_loop = observed_copy_loop
     NPUDmaCopyBackend.launch_copy = observed_launch
     SimpleCPUOffloadNPUWorker._poll_stream_events = observed_poll
     SimpleCPUOffloadScheduler._p8_2_k1a_observer_installed = True
@@ -240,6 +316,44 @@ def summarize_trace_rows(
         ]
         for direction in ("d2h", "h2d")
     }
+    enqueued = {
+        direction: [
+            row
+            for row in rows
+            if row.get("event") == "device_copy_enqueued"
+            and row.get("direction") == direction
+        ]
+        for direction in ("d2h", "h2d")
+    }
+    copy_entered = {
+        direction: [
+            row
+            for row in rows
+            if row.get("event") == "copy_blocks_entered"
+            and row.get("direction") == direction
+        ]
+        for direction in ("d2h", "h2d")
+    }
+    copy_returned = {
+        direction: [
+            row
+            for row in rows
+            if row.get("event") == "copy_blocks_returned"
+            and row.get("direction") == direction
+        ]
+        for direction in ("d2h", "h2d")
+    }
+    poll_event_visible = {
+        direction: [
+            row
+            for row in rows
+            if row.get("event") == "transfer_poll_entered"
+            and row.get("direction") == direction
+            and int(row.get("pending_event_count") or 0) > 0
+            and row.get("copy_thread_alive") is True
+        ]
+        for direction in ("d2h", "h2d")
+    }
     submitted_pids = {
         direction: {int(row["pid"]) for row in values}
         for direction, values in submitted.items()
@@ -247,6 +361,27 @@ def summarize_trace_rows(
     completed_pids = {
         direction: {int(row["pid"]) for row in values}
         for direction, values in completed.items()
+    }
+    enqueued_pids = {
+        direction: {int(row["pid"]) for row in values}
+        for direction, values in enqueued.items()
+    }
+    copy_entered_pids = {
+        direction: {int(row["pid"]) for row in values}
+        for direction, values in copy_entered.items()
+    }
+    copy_returned_pids = {
+        direction: {int(row["pid"]) for row in values}
+        for direction, values in copy_returned.items()
+    }
+    poll_event_visible_pids = {
+        direction: {int(row["pid"]) for row in values}
+        for direction, values in poll_event_visible.items()
+    }
+    copy_thread_started_pids = {
+        int(row["pid"])
+        for row in rows
+        if row.get("event") == "copy_thread_started"
     }
     cpu_hits = [
         row
@@ -277,6 +412,33 @@ def summarize_trace_rows(
     poll_failures = [
         row for row in rows if row.get("event") == "transfer_poll_failed"
     ]
+    copy_thread_failures = [
+        row for row in rows if row.get("event") == "copy_thread_failed"
+    ]
+    copy_blocks_failures = [
+        row for row in rows if row.get("event") == "copy_blocks_failed"
+    ]
+    async_failure_events = (
+        copy_failures
+        + poll_failures
+        + copy_thread_failures
+        + copy_blocks_failures
+    )
+    async_pipeline_exact = {
+        direction: bool(submitted_pids[direction])
+        and all(
+            pids == submitted_pids[direction]
+            for pids in (
+                enqueued_pids[direction],
+                copy_entered_pids[direction],
+                copy_returned_pids[direction],
+                poll_event_visible_pids[direction],
+            )
+        )
+        and submitted_pids[direction].issubset(copy_thread_started_pids)
+        and not async_failure_events
+        for direction in ("d2h", "h2d")
+    }
     d2h_store_complete = all(
         (
             len(submitted_pids["d2h"]) == expected_world_size,
@@ -300,6 +462,15 @@ def summarize_trace_rows(
         "h2d_worker_count": len(submitted_pids["h2d"]),
         "d2h_completed_worker_count": len(completed_pids["d2h"]),
         "h2d_completed_worker_count": len(completed_pids["h2d"]),
+        "d2h_enqueued_worker_count": len(enqueued_pids["d2h"]),
+        "h2d_enqueued_worker_count": len(enqueued_pids["h2d"]),
+        "d2h_copy_blocks_entered_worker_count": len(copy_entered_pids["d2h"]),
+        "h2d_copy_blocks_entered_worker_count": len(copy_entered_pids["h2d"]),
+        "d2h_copy_blocks_returned_worker_count": len(copy_returned_pids["d2h"]),
+        "h2d_copy_blocks_returned_worker_count": len(copy_returned_pids["h2d"]),
+        "d2h_poll_event_visible_worker_count": len(poll_event_visible_pids["d2h"]),
+        "h2d_poll_event_visible_worker_count": len(poll_event_visible_pids["h2d"]),
+        "copy_thread_started_worker_count": len(copy_thread_started_pids),
         "d2h_bytes_total": sum(
             int(row.get("byte_count") or 0) for row in submitted["d2h"]
         ),
@@ -315,8 +486,18 @@ def summarize_trace_rows(
         "restore_load_completed_count": len(load_completed),
         "device_copy_launch_failed_count": len(copy_failures),
         "transfer_poll_failed_count": len(poll_failures),
-        "transfer_failure_event_count": len(copy_failures) + len(poll_failures),
+        "copy_thread_failed_count": len(copy_thread_failures),
+        "copy_blocks_failed_count": len(copy_blocks_failures),
+        "async_copy_failure_event_count": len(async_failure_events),
+        "transfer_failure_event_count": len(async_failure_events),
+        "d2h_async_copy_pipeline_exact": async_pipeline_exact["d2h"],
+        "h2d_async_copy_pipeline_exact": async_pipeline_exact["h2d"],
         "d2h_store_complete": d2h_store_complete,
         "h2d_restore_complete": h2d_restore_complete,
-        "runtime_evidence_exact": d2h_store_complete and h2d_restore_complete,
+        "runtime_evidence_exact": (
+            d2h_store_complete
+            and h2d_restore_complete
+            and async_pipeline_exact["d2h"]
+            and async_pipeline_exact["h2d"]
+        ),
     }

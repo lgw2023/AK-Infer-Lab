@@ -120,47 +120,15 @@ def test_r3_r2_r2_contract_accepts_parent_yellow_and_gates_one_forensic_replay(
     assert runner_audit["next_task_authorized"] == "false"
 
 
-def test_current_handoff_runs_parent_forensics_source_audit_and_only_then_one_replay() -> None:
+def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
-    for exact in (
-        "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720",
-        "execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle",
-        "parent_offline_forensics_authorized: true",
-        "source_semantics_audit_authorized: true",
-        "npu_execution_authorized: true",
-        "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 6",
-        "request_retry_count_exact: 0",
-        "runtime_behavior_patch_authorized: false",
-        "result_transfer_authorized: true",
-        "transfer_method_selected: false",
-        "next_task_authorized: false",
-        "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720_run01",
-        "p8_2_k1a_failure_forensics.py",
-        "source-audit",
-        "installed-source-audit",
-        "installed_source_hash_gate=pass",
-        "source_evidence_unchanged",
-        "formal_replay_allowed",
-        "transfer_completion_absent_without_direct_exception",
-        "insufficient_parent_evidence",
-        "http_or_client_error",
-        "server_process_or_health_loss",
-        "offload_runtime_exception",
-        "run_deepseek_p8_2_k1a_r3_r2_r2_simple_cpu_offload.sh",
-        "candidate_manifest.server_local.json",
-        "email / upload-api / server-local",
-        "不得进入 K2",
-        "不得进入 P8.3-I1",
-    ):
-        assert exact in handoff
-    assert 'test ! -e "${FORENSICS_ROOT}"' in handoff
+    assert "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720" not in handoff
+    assert "parent_server_grade=blocked_p8_2_k1a_r3_r2_r2_deterministic_parent_failure" in handoff
     assert 'test ! -e "${RESULT_DIR}"' in handoff
-    assert "if test \"${FORMAL_REPLAY_ALLOWED}\" = true" in handoff
-    assert "KEEP_ALIVE_STOPPED=0" in handoff
+    assert "if test \"${FORMAL_LIFECYCLE_ALLOWED}\" = true" in handoff
     assert "trap cleanup EXIT" in handoff
     assert "upload_file.py" not in handoff
     assert "--confirmed-method" not in handoff
@@ -170,20 +138,20 @@ def test_current_handoff_runs_parent_forensics_source_audit_and_only_then_one_re
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     acceptance = readiness["acceptance"]
-    assert artifacts["current_server_handoff_task"] == workload_task_id()
+    assert artifacts["current_server_handoff_task"] != workload_task_id()
     assert artifacts["next_workload"] == (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml"
+        "p8_2_k1a_r3_r2_r2_r1_observer_contract_replay.yaml"
     )
     assert acceptance["p8_2_k1a_r3_r2_r1_grade"] == (
         "yellow_p8_2_k1a_r3_r2_r1_partial"
     )
     assert acceptance["p8_2_k1a_r3_r2_r1_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r3_r2_r2_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_r2_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r3_r2_r2_formal_model_lifecycle_count_max"] == 1
     assert acceptance["p8_2_k1a_r3_r2_r2_model_request_count_max"] == 6
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R3-R2-R2_only"
+        "P8.2-K1A-R3-R2-R2-R1_only"
     )
     assert acceptance["next_task_authorized"] is False
 

@@ -195,11 +195,14 @@ def test_k1a_runtime_probe_is_import_registration_and_config_only(tmp_path: Path
     source = AUDITOR.read_text(encoding="utf-8")
     for marker in (
         "KVTransferConfig",
+        "inspect.signature",
         "register_connector()",
         "KVConnectorFactory.get_connector_class_by_name",
         "AscendSimpleCPUOffloadConnector",
         "SimpleCPUOffloadNPUWorker",
         "NPUDmaCopyBackend",
+        '"poll_method_owner"',
+        '"launch_copy_parameters"',
     ):
         assert marker in source
 
@@ -215,12 +218,26 @@ def test_k1a_trace_summary_requires_real_store_and_restore_on_every_worker():
         rows.extend(
             [
                 {
+                    "event": "copy_thread_started",
+                    "pid": pid,
+                },
+                {
                     "event": "device_copy_submitted",
                     "direction": "d2h",
                     "pid": pid,
                     "event_idx": 3,
                     "block_count": 8,
                     "byte_count": 4096,
+                },
+                {"event": "device_copy_enqueued", "direction": "d2h", "pid": pid},
+                {"event": "copy_blocks_entered", "direction": "d2h", "pid": pid},
+                {"event": "copy_blocks_returned", "direction": "d2h", "pid": pid},
+                {
+                    "event": "transfer_poll_entered",
+                    "direction": "d2h",
+                    "pid": pid,
+                    "pending_event_count": 1,
+                    "copy_thread_alive": True,
                 },
                 {
                     "event": "transfer_completed",
@@ -235,6 +252,16 @@ def test_k1a_trace_summary_requires_real_store_and_restore_on_every_worker():
                     "event_idx": 1,
                     "block_count": 4,
                     "byte_count": 2048,
+                },
+                {"event": "device_copy_enqueued", "direction": "h2d", "pid": pid},
+                {"event": "copy_blocks_entered", "direction": "h2d", "pid": pid},
+                {"event": "copy_blocks_returned", "direction": "h2d", "pid": pid},
+                {
+                    "event": "transfer_poll_entered",
+                    "direction": "h2d",
+                    "pid": pid,
+                    "pending_event_count": 1,
+                    "copy_thread_alive": True,
                 },
                 {
                     "event": "transfer_completed",
@@ -291,12 +318,31 @@ def test_k1a_trace_summary_requires_real_store_and_restore_on_every_worker():
     assert summary["runtime_evidence_exact"] is True
 
 
-def test_k1a_observer_preserves_the_frozen_wait_event_launch_signature():
+def test_k1a_observer_preserves_the_frozen_launch_signature_without_wait_event():
     source = OBSERVER.read_text(encoding="utf-8")
     observed_launch = source[source.index("def observed_launch(") :]
     observed_launch = observed_launch[: observed_launch.index("original_poll =")]
-    assert "wait_event=None" in observed_launch
-    assert "events_list,\n                wait_event," in observed_launch
+    assert "wait_event" not in observed_launch
+    assert "events_list,\n            )" in observed_launch
+
+
+def test_k1a_observer_covers_the_background_copy_pipeline_without_swallowing_errors():
+    source = OBSERVER.read_text(encoding="utf-8")
+    for marker in (
+        "copy_thread_started",
+        "copy_thread_failed",
+        "copy_thread_exited",
+        "device_copy_enqueued",
+        "copy_blocks_entered",
+        "copy_blocks_returned",
+        "copy_blocks_failed",
+        "transfer_poll_entered",
+        "transfer_poll_returned",
+        "copy_backend_module.copy_blocks = observed_copy_blocks",
+        "NPUDmaCopyBackend._copy_loop = observed_copy_loop",
+    ):
+        assert marker in source
+    assert source.count("raise\n") >= 4
 
 
 def test_k1a_workload_freezes_one_six_request_store_pressure_restore_lifecycle():
@@ -400,8 +446,9 @@ def test_k1a_grading_separates_store_only_yellow_from_store_restore_green():
     store_only = grade_k1a_evidence(
         **common,
         trace_summary={
-            "d2h_store_complete": True,
-            "h2d_restore_complete": False,
+                "d2h_store_complete": True,
+                "d2h_async_copy_pipeline_exact": True,
+                "h2d_restore_complete": False,
             "runtime_evidence_exact": False,
         },
     )
@@ -532,16 +579,16 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
         ]
 
 
-def test_k1a_r3_r2_r2_is_the_only_current_server_handoff_after_parent_partial():
+def test_k1a_r3_r2_r2_r1_is_the_only_current_server_handoff_after_contract_review():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_"
+        "p8_2_k1a_r3_r2_r2_r1_deepseek_v4_flash_observer_contract_replay_"
         "2026_0720"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle"
+        "execution_mode: authorized_offline_refinalization_inheritance_observer_contract_gate_then_one_same_capacity_lifecycle"
         in handoff
     )
     for field in (
@@ -563,9 +610,9 @@ def test_k1a_r3_r2_r2_is_the_only_current_server_handoff_after_parent_partial():
         "ready_p8_2_k1a_r2_allocator_capacity",
         "blocked_p8_2_k1a_r3_source_or_provenance_gate",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r3_r2_r2_simple_cpu_offload.sh",
+        "run_deepseek_p8_2_k1a_r3_r2_r2_r1_simple_cpu_offload.sh",
         "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r3_r2_r2_simple_cpu_offload_store_restore",
+        "candidate_green_p8_2_k1a_r3_r2_r2_r1_simple_cpu_offload_store_restore",
         "不得进入 K2",
         "P8.3-I1",
         "CURRENT_PGID",
@@ -579,7 +626,7 @@ def test_k1a_r3_r2_r2_is_the_only_current_server_handoff_after_parent_partial():
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml"
+        "p8_2_k1a_r3_r2_r2_r1_observer_contract_replay.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
@@ -600,11 +647,12 @@ def test_k1a_r3_r2_r2_is_the_only_current_server_handoff_after_parent_partial():
     assert acceptance["p8_2_k1a_r3_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r3_r2_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r3_r2_r1_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r3_r2_r2_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_r2_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_r2_r2_r1_execution_authorized"] is True
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R3-R2-R2_only"
+        "P8.2-K1A-R3-R2-R2-R1_only"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True
