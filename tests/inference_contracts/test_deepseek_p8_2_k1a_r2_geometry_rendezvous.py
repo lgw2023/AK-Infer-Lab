@@ -215,8 +215,8 @@ def test_current_handoff_authorizes_only_k1a_r3_r1_after_r3_block() -> None:
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_"
-        "2026_0719"
+        "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_"
+        "2026_0720"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
@@ -236,7 +236,7 @@ def test_current_handoff_authorizes_only_k1a_r3_r1_after_r3_block() -> None:
         "green_p8_3_i0_r1_unclassified_taxonomy",
         "run_deepseek_p8_2_k1a_r3_r2_simple_cpu_offload.sh",
         "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r3_r2_simple_cpu_offload_store_restore",
+        "candidate_green_p8_2_k1a_r3_r2_r1_simple_cpu_offload_store_restore",
         "P8.3-I1",
     ):
         assert marker in handoff

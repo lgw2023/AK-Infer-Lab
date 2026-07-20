@@ -1,0 +1,70 @@
+schema_version: deepseek_v4_flash_p8_2_k1a_r3_r2_r1_installed_source_gate_v1
+stage: P8.2-K1A-R3-R2-R1
+date: '2026-07-20'
+runtime:
+  vllm_version: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_version: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+parent_r3_r2:
+  task_id: p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719
+  server_grade: blocked_p8_2_k1a_r3_r2_source_or_resource_gate
+  failure_class: unverified_vllm_ascend_checkout_path_contract
+  portable_argv_contract_gate: pass
+  accepted_r2_capacity_provenance_gate: pass
+  vllm_started: false
+  npu_started: false
+  successful_request_count: 0
+  model_request_count: 0
+  keep_alive_disrupted: false
+  evidence:
+    root: /Volumes/SSD1/Inbox/2026-07-20/p8_2_k1a_r3_r2_20260719_run01
+    total_bytes: 11542
+    files:
+      result_summary.md:
+        bytes: 7444
+        sha256: 74439fceb5c502dfbe84ec72e30b28cbefec2512fd0421acf16404116604b6de
+      first_failure_excerpt.txt:
+        bytes: 1241
+        sha256: 301cb52d2c6b439e71f43f50314e5cec4aee5d950a2f6446b170c5f9100139b7
+      accepted_r2_capacity_provenance.json:
+        bytes: 533
+        sha256: bf2a5282910d267247c9345cb11a8a152e1c256450bad1515a38f03ced8983a2
+      section1_top_audit.txt:
+        bytes: 514
+        sha256: bdc8a073f6557104779d6925ee7ecff7ca0630a96b6437fa032b958a6b8c3e56
+      section1_mode_audit.txt:
+        bytes: 1810
+        sha256: 70e8ae52b0d9559bbef913b5759288367e292a2da866db1e6d23cd111089b098
+repair:
+  remove_unverified_checkout_gate: true
+  installed_vllm_ascend_root: ${RUNTIME_PREFIX}/lib/python3.11/site-packages
+  installed_content_hash_gate: true
+  runtime_import_registration_gate: true
+  frozen_vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  alternate_checkout_commit_accepted: false
+unchanged_experiment:
+  canonical_server_argv_sha256: 8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  formal_lifecycle_count_exact: 1
+  model_request_count_exact: 6
+  request_retry_count_exact: 0
+  request_order:
+  - warmup
+  - prime
+  - pressure
+  - restore_follower
+  - repeat_follower
+  - isolated_control
+decision:
+  formal_r3_r2_r1_workload_allowed: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  p8_4_authorized: false
+  p8_5_authorized: false
+  p9_authorized: false
+claim_boundary: installed_source_gate_repair_and_same_accepted_capacity_single_lifecycle_store_pressure_restore_mechanism_only

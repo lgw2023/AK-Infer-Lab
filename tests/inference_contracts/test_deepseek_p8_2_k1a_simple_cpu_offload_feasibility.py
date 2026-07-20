@@ -535,13 +535,13 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
 def test_k1a_r3_r1_is_the_only_current_server_handoff_after_r3_block():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_"
-        "2026_0719"
+        "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_"
+        "2026_0720"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_portable_argv_same_accepted_capacity_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism"
         in handoff
     )
     for field in (
@@ -565,7 +565,7 @@ def test_k1a_r3_r1_is_the_only_current_server_handoff_after_r3_block():
         "green_p8_3_i0_r1_unclassified_taxonomy",
         "run_deepseek_p8_2_k1a_r3_r2_simple_cpu_offload.sh",
         "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r3_r2_simple_cpu_offload_store_restore",
+        "candidate_green_p8_2_k1a_r3_r2_r1_simple_cpu_offload_store_restore",
         "不得进入 K2",
         "P8.3-I1",
         "CURRENT_PGID",
@@ -598,11 +598,12 @@ def test_k1a_r3_r1_is_the_only_current_server_handoff_after_r3_block():
     )
     assert acceptance["p8_2_k1a_r2_allocator_probe_authorized"] is False
     assert acceptance["p8_2_k1a_r3_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r3_r2_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_r2_r1_execution_authorized"] is True
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R3-R2_only"
+        "P8.2-K1A-R3-R2-R1_only"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True

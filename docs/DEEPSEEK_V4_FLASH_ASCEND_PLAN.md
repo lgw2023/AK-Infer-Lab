@@ -44,7 +44,7 @@ new isolated host conda environment built; W8A8-MTP official context ladder gree
 P8.1 parent 继续保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 已接受为
 `green_p8_1_r1_official_mtp_observe_only_matrix`；二者均不被后续 K0 覆盖。
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 也已接受 green。P8.2-K0 已接受 green，仍不是 performance reference 或 offload evidence。K1 旧路径 blocked，K1A 32 GiB/rank 点 red，K1A-R1 probe-invalid red；K1A-R2 的 8-rank geometry、128-block pinned capacity 与离线重放已接受为 ready。P8.3-I0-R1 taxonomy 已在窄边界 green，但 TP4 budget incomplete。K1A-R3 因 handoff schema 混读在零 NPU provenance gate blocked；K1A-R3-R1 修复 provenance 后又因 Bash 3.2/5.1 的 `printf %q` 转义差异在 vLLM 启动前 contract red、0/6 request。当前唯一任务为 K1A-R3-R2：用 canonical exact argv 身份修复同一命令门，再在 `430604288 bytes/rank` 上执行一个正式六请求 store→pressure→restore lifecycle，零 retry。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 也已接受 green。P8.2-K0 已接受 green，仍不是 performance reference 或 offload evidence。K1 旧路径 blocked，K1A 32 GiB/rank 点 red，K1A-R1 probe-invalid red；K1A-R2 的 8-rank geometry、128-block pinned capacity 与离线重放已接受为 ready。P8.3-I0-R1 taxonomy 已在窄边界 green，但 TP4 budget incomplete。K1A-R3 因 handoff schema 混读在零 NPU provenance gate blocked；K1A-R3-R1 修复 provenance 后又因 Bash 3.2/5.1 的 `printf %q` 转义差异在 vLLM 启动前 contract red、0/6 request。K1A-R3-R2 已关闭 canonical argv 与 R2 provenance，但因新增不存在的 vLLM-Ascend checkout 路径在零 NPU/零请求处 source-contract blocked。当前唯一任务为 K1A-R3-R2-R1：恢复已验证的安装态 source/import gate，再在 `430604288 bytes/rank` 上执行同一个正式六请求 store→pressure→restore lifecycle，零 retry。
 
 ### 3.2 对照路：MindIE
 
@@ -68,7 +68,7 @@ mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门
 p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_sampling_repair_2026_0714
 ```
 
-server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。K1 旧路径 blocked，K1A 32 GiB/rank red，K1A-R1 probe-invalid red；K1A-R2 capacity ready，K1A-R3 provenance blocked，K1A-R3-R1 portable-command-identity contract red，P8.3-I0-R1 taxonomy green但 budget incomplete。当前唯一服务器 handoff 是 `p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719`：先过 canonical exact-argv gate，只允许 accepted capacity 上一个正式 lifecycle、六请求、零 retry；K2/P8.3-I1 均未授权。
+server-local Git 管理最终验收已完成。P6.1C-R1 正式五档均首次成功，P6.1 unprofiled 18-cell matrix、P6.2 三个 profiled cell、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 均已由开发机接受为 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。K1 旧路径 blocked，K1A 32 GiB/rank red，K1A-R1 probe-invalid red；K1A-R2 capacity ready，K1A-R3 provenance blocked，K1A-R3-R1 portable-command-identity contract red，K1A-R3-R2 source-contract blocked，P8.3-I0-R1 taxonomy green但 budget incomplete。当前唯一服务器 handoff 是 `p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720`：先以 frozen installed-content hash + runtime import 恢复 source gate，只允许 accepted capacity 上同一个正式 lifecycle、六请求、零 retry；K2/P8.3-I1 均未授权。
 
 参考配置：
 
@@ -279,6 +279,6 @@ boundaries:
 ## 10. 当前下一步
 
 1. P6.1C-R1 official、P6.1 unprofiled performance、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache control 已完成并验收。
-2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A-R2 capacity 与 P8.3-I0-R1 taxonomy 已在各自边界闭合。K1 旧路径 blocked；K1A 32 GiB/rank red，K1A-R1 probe-invalid red，K1A-R3 provenance blocked，K1A-R3-R1 portable-command-identity contract red。当前 handoff 只授权 K1A-R3-R2 canonical-argv 修复后的同一 accepted-capacity 单 lifecycle 六请求，`request_retry_count_exact:0`、`next_task_authorized:false`、`result_transfer_authorized:true`；外发时仍需对完整文件清单选择单一渠道。
+2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A-R2 capacity 与 P8.3-I0-R1 taxonomy 已在各自边界闭合。K1 旧路径 blocked；K1A 32 GiB/rank red，K1A-R1 probe-invalid red，K1A-R3 provenance blocked，K1A-R3-R1 portable-command-identity contract red，K1A-R3-R2 source-contract blocked。当前 handoff 只授权 K1A-R3-R2-R1 installed-source gate 修复后的同一 accepted-capacity 单 lifecycle 六请求，`request_retry_count_exact:0`、`next_task_authorized:false`、`result_transfer_authorized:true`；外发时仍需对完整文件清单选择单一渠道。
 3. P6.3C Chunked Prefill on/off 已完成冻结源码审计：显式双布尔 CLI 存在，但 `4096 < 135168` 使 off 侧在 resolved config 前失败，结论为 `blocked_p6_3c_not_strict_single_variable`。
 4. P8.3-I0/I0-R1 已完成 inventory/taxonomy 窄边界；P8.3-I1 hotness/runtime trace、P7 与 P9 均需新授权。

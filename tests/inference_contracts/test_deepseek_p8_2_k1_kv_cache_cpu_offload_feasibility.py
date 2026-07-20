@@ -220,13 +220,13 @@ def test_k1_auditor_accepts_hash_verified_installed_source_trees(tmp_path: Path)
 
 
 def test_k1_block_is_preserved_in_the_k1a_r3_r1_server_handoff():
-    task_id = "p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719"
+    task_id = "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720"
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_portable_argv_same_accepted_capacity_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism"
         in handoff
     )
     for field in (
@@ -259,7 +259,7 @@ def test_k1_block_is_preserved_in_the_k1a_r3_r1_server_handoff():
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_server_handoff_execution_mode"] == (
-        "authorized_portable_argv_same_accepted_capacity_single_lifecycle_six_request_mechanism"
+        "authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k0_grade"] == (
@@ -274,6 +274,7 @@ def test_k1_block_is_preserved_in_the_k1a_r3_r1_server_handoff():
     assert acceptance["p8_2_k1a_r1_allocator_probe_authorized"] is False
     assert acceptance["p8_2_k1a_r2_allocator_probe_authorized"] is False
     assert acceptance["p8_2_k1a_r3_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r3_r2_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_r2_r1_execution_authorized"] is True
     assert acceptance["server_sync_review_authorized"] is True
     assert acceptance["next_task_authorized"] is False

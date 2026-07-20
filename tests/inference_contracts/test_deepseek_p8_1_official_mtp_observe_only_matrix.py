@@ -472,11 +472,11 @@ def test_current_handoff_authorizes_only_k1a_r3_r1_formal_lifecycle() -> None:
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-        "task_id: p8_2_k1a_r3_r2_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0719"
+            "task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720"
         in handoff
     )
     assert (
-        "execution_mode: authorized_portable_argv_same_accepted_capacity_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
