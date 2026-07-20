@@ -4,12 +4,15 @@
 interface comparison, trace-schema study, and simulator calibration. It is not
 the implementation directory of AK-Infer-Lab.
 
-Refresh date: **2026-07-10 (Asia/Shanghai)**.
+Inventory verified through: **2026-07-20 (Asia/Shanghai)**.
 
 ## Refresh result
 
-- The collection now has **24 shallow Git checkouts plus 1 verified source
+- The collection now has **25 shallow Git checkouts plus 1 verified source
   archive snapshot**.
+- `vllm-moet/` was added on 2026-07-20 at upstream `main@66c65f3` as an
+  NVIDIA Blackwell SM120 comparison reference. No submodules or model weights
+  were downloaded.
 - Of the 23 Git checkouts that already existed, 13 fast-forwarded and 10 were
   already at their configured upstream tips. `unified-cache-management/` was
   added. A temporary `vllm-ascend-v0.18.0/` checkout was subsequently removed;
@@ -37,6 +40,7 @@ Refresh date: **2026-07-10 (Asia/Shanghai)**.
 | `lmcache/` | [LMCache/LMCache](https://github.com/LMCache/LMCache), `dev` | `622e146` | KV reuse, CPU/storage tiers, connectors, events, and control-plane reference. |
 | `ktransformers/` | [kvcache-ai/ktransformers](https://github.com/kvcache-ai/ktransformers), `main` | `7c021b4` | Heterogeneous CPU/accelerator execution, expert placement, and memory-tiering reference. |
 | `finemoe-eurosys26/` | [IntelliSys-Lab/FineMoE-EuroSys26](https://github.com/IntelliSys-Lab/FineMoE-EuroSys26), `master` | `5c58468` | Fine-grained MoE expert trace, offload, prefetch, and cache policy reference. |
+| `vllm-moet/` | [kacper-daftcode/vllm-Moet](https://github.com/kacper-daftcode/vllm-Moet), `main` | `66c65f3`; generated vLLM fork source `0fd0e14` | Sign-symmetric routed-expert W2, FP4 delta/confidence recovery, GPU/DRAM/NVMe expert tiering, batched miss restore, graph replay, and cache KPI reference. Apache-2.0; author-reported Blackwell results only, not an Ascend implementation or independently reproduced benchmark. |
 | `neo/` | [NEO-MLSys25/NEO](https://github.com/NEO-MLSys25/NEO), `master` | `33e4a0f` | CPU offload for decode attention/KV and heterogeneous pipeline scheduling. |
 
 Each vLLM repository has one working tree on current `main`. The target release
