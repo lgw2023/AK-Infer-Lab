@@ -673,20 +673,20 @@ def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
     assert "refinalize" in help_result.stdout
 
 
-def test_k0_is_green_and_k1a_r3_r1_is_the_only_handoff():
+def test_k0_is_green_and_k1a_r3_r2_r2_is_the_only_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720"
+    task_id = "p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720"
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle"
     ) in handoff
     assert "server_sync_review_authorized: true" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
-    assert "formal_model_lifecycle_count_exact: 1" in handoff
-    assert "model_request_count_exact: 6" in handoff
+    assert "formal_model_lifecycle_count_max: 1" in handoff
+    assert "model_request_count_max: 6" in handoff
     assert "profiler_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "keep_alive_stop_and_restore_authorized: true" in handoff
@@ -704,7 +704,7 @@ def test_k0_is_green_and_k1a_r3_r1_is_the_only_handoff():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
+        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_p8_2_k0_refinalizer"].endswith(

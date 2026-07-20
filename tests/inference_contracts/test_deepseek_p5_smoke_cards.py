@@ -1953,18 +1953,18 @@ def test_p6_1c_returns_only_bounded_structured_evidence_after_a_new_transfer_cho
     assert package["handoff_contains_transfer_command"] is False
 
 
-def test_server_handoff_advances_from_r3_block_to_k1a_r3_r1_lifecycle():
+def test_server_handoff_advances_from_parent_partial_to_r3_r2_r2_forensics():
     handoff = (REPO_ROOT / "通信模块" / "docs" / "developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R2-R1 installed-source gate repair" in handoff
-    assert "task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720" in handoff
-    assert "execution_mode: authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism" in handoff
+    assert "P8.2-K1A-R3-R2-R2 parent forensics" in handoff
+    assert "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720" in handoff
+    assert "execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle" in handoff
     assert "capacity_search_authorized: false" in handoff
-    assert "formal_model_lifecycle_count_exact: 1" in handoff
-    assert "model_request_count_exact: 6" in handoff
+    assert "formal_model_lifecycle_count_max: 1" in handoff
+    assert "model_request_count_max: 6" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
@@ -1982,8 +1982,8 @@ def test_server_handoff_keeps_allocator_and_inventory_bounded():
     assert "fetch origin main" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
-    assert "model_request_count_exact: 6" in handoff
-    assert "formal_model_lifecycle_count_exact: 1" in handoff
+    assert "model_request_count_max: 6" in handoff
+    assert "formal_model_lifecycle_count_max: 1" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "cpu_bytes_to_use_per_rank=430604288" in handoff
     assert "result_directory_creation_authorized: true" in handoff
@@ -2047,10 +2047,10 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
+        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_source_gate_blocked_k1a_r3_r2_r1_authorized_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_k1a_r3_provenance_blocked_k1a_r3_r1_portable_argv_contract_red_k1a_r3_r2_source_gate_blocked_k1a_r3_r2_r1_partial_k1a_r3_r2_r2_authorized_i0_r1_green"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2445,13 +2445,13 @@ def test_p6_3b_r1_records_bounded_ready_failure_without_revoking_prior_evidence(
     }
 
 
-def test_server_handoff_executes_only_k1a_r3_r1_formal_lifecycle():
+def test_server_handoff_executes_only_conditional_k1a_r3_r2_r2_lifecycle():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    assert "P8.2-K1A-R3-R2-R1 installed-source gate repair" in handoff
-    assert "task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720" in handoff
+    assert "P8.2-K1A-R3-R2-R2 parent forensics" in handoff
+    assert "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
@@ -2460,8 +2460,8 @@ def test_server_handoff_executes_only_k1a_r3_r1_formal_lifecycle():
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "model_request_count_exact: 6" in handoff
-    assert "formal_model_lifecycle_count_exact: 1" in handoff
+    assert "model_request_count_max: 6" in handoff
+    assert "formal_model_lifecycle_count_max: 1" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "不得进入 K2" in handoff
     assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in handoff

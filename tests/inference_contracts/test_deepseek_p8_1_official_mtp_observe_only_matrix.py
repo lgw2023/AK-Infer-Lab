@@ -472,11 +472,11 @@ def test_current_handoff_authorizes_only_k1a_r3_r1_formal_lifecycle() -> None:
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-            "task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720"
+            "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720"
         in handoff
     )
     assert (
-        "execution_mode: authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
@@ -484,10 +484,10 @@ def test_current_handoff_authorizes_only_k1a_r3_r1_formal_lifecycle() -> None:
     assert "result_transfer_authorized: true" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "16384" in handoff
-    assert "model_request_count_exact: 6" in handoff
+    assert "model_request_count_max: 6" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "keep_alive_stop_and_restore_authorized: true" in handoff
-    assert "formal_model_lifecycle_count_exact: 1" in handoff
+    assert "formal_model_lifecycle_count_max: 1" in handoff
     assert "不得进入 K2" in handoff
     assert "email" in handoff
     assert "upload-api" in handoff

@@ -277,26 +277,24 @@ def test_r3_r2_audit_preserves_the_failed_run_and_same_experiment_boundary() -> 
     assert audit["decision"]["next_task_authorized"] is False
 
 
-def test_r3_r2_r1_is_the_only_current_handoff_and_preserves_portable_identity() -> None:
+def test_r3_r2_r2_is_the_only_current_handoff_and_preserves_portable_identity() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_"
-        "store_restore_2026_0720"
+        "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_"
+        "2026_0720"
     ) in handoff
     for exact in (
-        "execution_mode: authorized_installed_source_gate_repair_same_accepted_"
-        "capacity_single_lifecycle_six_request_mechanism",
+        "execution_mode: authorized_parent_forensics_source_semantics_and_"
+        "conditional_same_capacity_single_lifecycle",
         "npu_execution_authorized: true",
-        "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 6",
+        "formal_model_lifecycle_count_max: 1",
+        "model_request_count_max: 6",
         "request_retry_count_exact: 0",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "server_command_identity_schema=ak_infer_lab_server_argv_v1",
         "server_command_sha256=8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6",
-        "P8_2_K1A_EXPECTED_COMMAND_SHA256=8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6",
         "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720_run01",
         "不得进入 K2",
         "不得进入 P8.3-I1",
@@ -306,4 +304,4 @@ def test_r3_r2_r1_is_the_only_current_handoff_and_preserves_portable_identity() 
     assert "candidate_manifest.server_local.json" in handoff
     assert "missing_candidate_files" in handoff
     assert "email / upload-api / server-local" in handoff
-    assert "当前 `result_transfer_authorized:true`" in handoff
+    assert "result_transfer_authorized: true" in handoff

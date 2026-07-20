@@ -17,6 +17,10 @@ if str(REPO_ROOT) not in sys.path:
 from tools.inference_contracts.p8_2_k1a_simple_cpu_offload_observer import (
     summarize_trace_rows,
 )
+from tools.inference_contracts.p8_2_k1a_failure_forensics import (
+    build_failure_diagnostic,
+    first_failed_predicate,
+)
 from tools.inference_contracts.run_deepseek_p6_3b_prefix_cache_ab import (
     _common_prefix_length,
     _read_jsonl,
@@ -91,6 +95,7 @@ CANDIDATE_NAMES = (
     "grading_inputs.json",
     "cleanup_status.txt",
     "first_failure_excerpt.txt",
+    "failure_diagnostic_summary.json",
 )
 
 
@@ -359,10 +364,21 @@ def _write_request_summary(path: Path, rows: list[dict[str, Any]]) -> None:
         "request_id",
         "k1a_role",
         "status",
+        "http_status",
         "context_tokens",
         "output_tokens",
+        "prompt_tokens",
+        "generated_token_count",
+        "streamed_token_count",
+        "finish_reason",
+        "saw_done",
+        "max_token_chunk_width",
         "prefix_hits_delta",
         "accepted_token_delta",
+        "queue_metrics_ok",
+        "counter_continuity_ok",
+        "spec_activity_ok",
+        "first_failed_predicate",
         "ttft_ms",
         "e2el_ms",
         "request_body_sha256",
@@ -370,7 +386,10 @@ def _write_request_summary(path: Path, rows: list[dict[str, Any]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields, delimiter="\t", extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows(
+            {**row, "first_failed_predicate": first_failed_predicate(row)}
+            for row in rows
+        )
 
 
 def write_candidate_manifest(artifact_dir: Path) -> dict[str, Any]:
@@ -439,6 +458,12 @@ def finalize_k1a(artifact_dir: Path) -> dict[str, Any]:
     )
     grading["task_id"] = TASK_ID
     grading["trace_summary"] = trace_summary
+    failure_diagnostic, failure_excerpt = build_failure_diagnostic(
+        artifact_dir, rows, trace_summary
+    )
+    _write_json(
+        artifact_dir / "failure_diagnostic_summary.json", failure_diagnostic
+    )
     _write_json(artifact_dir / "grading_inputs.json", grading)
     _write_request_summary(artifact_dir / "request_summary.tsv", rows)
     mtp = {
@@ -459,8 +484,8 @@ def finalize_k1a(artifact_dir: Path) -> dict[str, Any]:
     )
     if grading["server_grade"] == CANDIDATE_GREEN:
         failure_path.write_text("none\n", encoding="utf-8")
-    elif not existing_failure.strip():
-        failure_path.write_text(grading["server_grade"] + "\n", encoding="utf-8")
+    elif not existing_failure.strip() or existing_failure.strip() == grading["server_grade"]:
+        failure_path.write_text(failure_excerpt, encoding="utf-8")
     (artifact_dir / "result_summary.md").write_text(
         "\n".join(
             (

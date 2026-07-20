@@ -84,9 +84,12 @@ provenance，但其 mode runner 用 Bash `printf %q` 文本做命令身份，因
 转义不同而在 vLLM 启动前停止，0/6 request；该结果只接受为 repository portability contract red，
 不撤销 R2 capacity ready。P8.2-K1A-R3-R2 已证明 exact argv canonical JSON 与 R2 provenance
 均通过，但 handoff 新增了服务器不存在的 vLLM-Ascend checkout 路径，故在零 NPU/零请求处保留
-source-contract blocked。当前唯一服务器任务为 P8.2-K1A-R3-R2-R1：恢复 R3-R1 已验证的安装态
-source/content/import gate，在同一 `430604288 bytes/rank / 3444834304 bytes total` 上只运行一次相同正式
-六请求 store→pressure→restore lifecycle，零 retry；容量搜索、第二 lifecycle、K2 与 P8.3-I1 均未授权。
+source-contract blocked。P8.2-K1A-R3-R2-R1 已进入真实 runtime：4K warmup 成功，32K prime 失败后首错停止，
+8 worker 提交 `403691520` D2H bytes 但零 completion，H2D 未启动，cleanup/keep-alive restore clean。开发机只接受
+`yellow_p8_2_k1a_r3_r2_r1_partial`，不接受 store/restore green。当前唯一服务器任务为 P8.2-K1A-R3-R2-R2：
+先在零 NPU 处回收 parent raw request/error/log/trace/metrics 并复核 frozen source semantics，只在未证明直接的
+source/config/resource/runtime 首错时，才在同一 `430604288 bytes/rank / 3444834304 bytes total` 上执行最多一次
+增强观测的六请求 replay，零 retry；容量搜索、行为 patch、第二 lifecycle、K2 与 P8.3-I1 均未授权。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 
@@ -107,7 +110,7 @@ source/content/import gate，在同一 `430604288 bytes/rank / 3444834304 bytes 
 ## 最小开工路径
 
 1. P5/P6 runtime、official context、unprofiled/profiled reference 与 matched controls 已关闭；mixed checkpoint 不再参与，P6.3C 保留严格单变量 blocked。
-2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A 32 GiB/rank red，K1A-R1 probe-invalid red，K1A-R2 capacity ready，K1A-R3 provenance blocked，K1A-R3-R1 portable-argv contract red，K1A-R3-R2 source-contract blocked；当前只执行 K1A-R3-R2-R1 installed-source gate repair + 同一 accepted-capacity 单 lifecycle 六请求机制闭环，K2 不授权。
+2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A 32 GiB/rank red，K1A-R1 probe-invalid red，K1A-R2 capacity ready，K1A-R3 provenance blocked，K1A-R3-R1 portable-argv contract red，K1A-R3-R2 source-contract blocked，K1A-R3-R2-R1 runtime partial yellow；当前执行 R3-R2-R2 parent forensics + source semantics + conditional same-capacity replay，K2 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。
 5. P9：待 P7/P8 的真实 trace、inventory、simulation 与 TP4 closure 证据齐备后，合并 P0/P3 microbench，输出带置信度和软件前提的下一代硬件优先级。

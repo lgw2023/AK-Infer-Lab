@@ -31,6 +31,13 @@ def _emit(event: str, **fields: Any) -> None:
         handle.write(json.dumps(row, separators=(",", ":"), sort_keys=True) + "\n")
 
 
+def _bounded_error_fields(error: Exception) -> dict[str, str]:
+    return {
+        "error_type": type(error).__name__,
+        "error_message": str(error).replace("\n", " ")[:1024],
+    }
+
+
 def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
     from vllm.v1.simple_kv_offload.manager import SimpleCPUOffloadScheduler
     from vllm_ascend.simple_kv_offload.copy_backend import NPUDmaCopyBackend
@@ -147,22 +154,48 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
             byte_count=bytes_per_block * len(src_blocks),
             sub_tensor_count=(params.num_sub_tensors if params is not None else 0),
         )
-        return original_launch(
-            self,
-            src_blocks,
-            dst_blocks,
-            is_store,
-            event_idx,
-            events_list,
-            wait_event,
+        try:
+            result = original_launch(
+                self,
+                src_blocks,
+                dst_blocks,
+                is_store,
+                event_idx,
+                events_list,
+                wait_event,
+            )
+        except Exception as error:
+            _emit(
+                "device_copy_launch_failed",
+                component="npu_copy_backend",
+                direction="d2h" if is_store else "h2d",
+                event_idx=event_idx,
+                **_bounded_error_fields(error),
+            )
+            raise
+        _emit(
+            "device_copy_launch_returned",
+            component="npu_copy_backend",
+            direction="d2h" if is_store else "h2d",
+            event_idx=event_idx,
         )
+        return result
 
     original_poll = SimpleCPUOffloadNPUWorker._poll_stream_events
 
     @wraps(original_poll)
     def observed_poll(self, is_store):
         before = self._store_hwm if is_store else self._load_hwm
-        hwm = original_poll(self, is_store)
+        try:
+            hwm = original_poll(self, is_store)
+        except Exception as error:
+            _emit(
+                "transfer_poll_failed",
+                component="npu_worker",
+                direction="d2h" if is_store else "h2d",
+                **_bounded_error_fields(error),
+            )
+            raise
         if hwm > before:
             _emit(
                 "transfer_completed",
@@ -238,6 +271,12 @@ def summarize_trace_rows(
     store_completed = [
         row for row in rows if row.get("event") == "store_event_completed"
     ]
+    copy_failures = [
+        row for row in rows if row.get("event") == "device_copy_launch_failed"
+    ]
+    poll_failures = [
+        row for row in rows if row.get("event") == "transfer_poll_failed"
+    ]
     d2h_store_complete = all(
         (
             len(submitted_pids["d2h"]) == expected_world_size,
@@ -274,6 +313,9 @@ def summarize_trace_rows(
         ),
         "restore_load_scheduled_count": len(load_scheduled),
         "restore_load_completed_count": len(load_completed),
+        "device_copy_launch_failed_count": len(copy_failures),
+        "transfer_poll_failed_count": len(poll_failures),
+        "transfer_failure_event_count": len(copy_failures) + len(poll_failures),
         "d2h_store_complete": d2h_store_complete,
         "h2d_restore_complete": h2d_restore_complete,
         "runtime_evidence_exact": d2h_store_complete and h2d_restore_complete,

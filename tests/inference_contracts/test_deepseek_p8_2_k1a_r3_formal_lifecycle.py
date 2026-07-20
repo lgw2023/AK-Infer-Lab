@@ -313,21 +313,21 @@ def test_r3_finalizer_requires_exact_capacity_and_closes_store_restore(
     assert grading["runtime_evidence_exact"] is True
 
 
-def test_r3_r2_r1_is_the_only_current_server_handoff_and_keeps_next_stages_closed() -> None:
+def test_r3_r2_r2_is_the_only_current_server_handoff_and_keeps_next_stages_closed() -> None:
     task_id = (
-        "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_"
+        "p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_"
         "2026_0720"
     )
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "execution_mode: authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism",
+        "execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle",
         "npu_execution_authorized: true",
         "vllm_server_start_authorized: true",
         "model_requests_authorized: true",
-        "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 6",
+        "formal_model_lifecycle_count_max: 1",
+        "model_request_count_max: 6",
         "request_retry_count_exact: 0",
         "capacity_search_authorized: false",
         "profiler_authorized: false",
@@ -341,8 +341,8 @@ def test_r3_r2_r1_is_the_only_current_server_handoff_and_keeps_next_stages_close
         "green_p8_3_i0_r1_unclassified_taxonomy",
         "cpu_bytes_to_use_per_rank=430604288",
         "cpu_bytes_to_use=3444834304",
-        "run_deepseek_p8_2_k1a_r3_r2_r1_simple_cpu_offload.sh",
-        "candidate_green_p8_2_k1a_r3_r2_r1_simple_cpu_offload_store_restore",
+        "run_deepseek_p8_2_k1a_r3_r2_r2_simple_cpu_offload.sh",
+        "candidate_green_p8_2_k1a_r3_r2_r2_simple_cpu_offload_store_restore",
         "不得进入 K2",
         "P8.3-I1",
     ):
@@ -354,7 +354,7 @@ def test_r3_r2_r1_is_the_only_current_server_handoff_and_keeps_next_stages_close
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
+        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml"
     )
     assert acceptance["p8_2_k1a_r2_grade"] == (
         "ready_p8_2_k1a_r2_allocator_capacity"
@@ -372,20 +372,23 @@ def test_r3_r2_r1_is_the_only_current_server_handoff_and_keeps_next_stages_close
     assert acceptance["p8_2_k1a_r3_r2_grade"] == (
         "blocked_p8_2_k1a_r3_r2_source_or_resource_gate"
     )
-    assert acceptance["p8_2_k1a_r3_r2_r1_execution_authorized"] is True
-    assert acceptance["p8_2_k1a_r3_r2_r1_formal_model_lifecycle_count_exact"] == 1
-    assert acceptance["p8_2_k1a_r3_r2_r1_model_request_count_exact"] == 6
+    assert acceptance["p8_2_k1a_r3_r2_r1_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_r2_r1_actual_formal_model_lifecycle_count"] == 1
+    assert acceptance["p8_2_k1a_r3_r2_r1_actual_model_request_count"] == 2
+    assert acceptance["p8_2_k1a_r3_r2_r2_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_r2_formal_model_lifecycle_count_max"] == 1
+    assert acceptance["p8_2_k1a_r3_r2_r2_model_request_count_max"] == 6
     assert acceptance["p8_3_i0_r1_grade"] == (
         "green_p8_3_i0_r1_unclassified_taxonomy"
     )
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R3-R2-R1_only"
+        "P8.2-K1A-R3-R2-R2_only"
     )
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False
 
 
-def test_r3_r2_handoff_freezes_all_direct_contract_inputs_without_placeholders() -> None:
+def test_r3_r2_r2_handoff_freezes_all_direct_contract_inputs_without_placeholders() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert "__R3_" not in handoff
     assert "__REQUEST_" not in handoff
@@ -393,23 +396,15 @@ def test_r3_r2_handoff_freezes_all_direct_contract_inputs_without_placeholders()
     assert "__TOP_" not in handoff
 
     frozen_paths = (
-        "benchmarks/deepseek_v4_flash/p8_2_k1a_r3_formal_lifecycle_audit.yaml",
         "benchmarks/deepseek_v4_flash/"
-        "p8_2_k1a_r3_r1_provenance_gate_audit.yaml",
-        "benchmarks/deepseek_v4_flash/"
-        "p8_2_k1a_r3_r2_portable_argv_audit.yaml",
+        "p8_2_k1a_r3_r2_r2_forensic_replay_audit.yaml",
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml",
+        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml",
+        "tools/inference_contracts/p8_2_k1a_failure_forensics.py",
+        "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py",
         "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py",
-        "tools/inference_contracts/canonicalize_server_argv.py",
-        "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh",
-        "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh",
-        "tools/inference_contracts/run_deepseek_p8_2_k1a_r3_simple_cpu_offload.sh",
         "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r3_r2_simple_cpu_offload.sh",
-        "tests/inference_contracts/test_deepseek_p8_2_k1a_r3_formal_lifecycle.py",
-        "tests/inference_contracts/"
-        "test_deepseek_p8_2_k1a_r3_r2_portable_argv.py",
+        "run_deepseek_p8_2_k1a_r3_r2_r2_simple_cpu_offload.sh",
     )
     for relative in frozen_paths:
         expected = hashlib.sha256((REPO_ROOT / relative).read_bytes()).hexdigest()

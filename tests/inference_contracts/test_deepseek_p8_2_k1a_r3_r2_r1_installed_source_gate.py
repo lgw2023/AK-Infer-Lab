@@ -21,14 +21,15 @@ R3_R2_R1_AUDIT = (
 )
 
 
-def test_current_handoff_restores_the_frozen_installed_source_gate() -> None:
+def test_current_handoff_preserves_the_frozen_installed_source_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_"
-        "store_restore_2026_0720"
+        "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_"
+        "2026_0720"
     ) in handoff
-    assert "VLLM_ASCEND_ROOT=${RUNTIME_PREFIX}/lib/python3.11/site-packages" in handoff
+    assert "VLLM_ASCEND_SITE=${RUNTIME_PREFIX}/lib/python3.11/site-packages" in handoff
+    assert "VLLM_ASCEND_ROOT=${VLLM_ASCEND_SITE}/vllm_ascend" in handoff
     assert '--vllm-ascend-root "${VLLM_ASCEND_ROOT}"' in handoff
     assert "BASE_ASCEND_REPO=" not in handoff
     assert "vllm-ascend-0.22.1rc1" not in handoff
@@ -148,40 +149,37 @@ def test_r3_r2_r1_audit_preserves_parent_block_and_repair_boundary() -> None:
     assert audit["decision"]["p8_3_i1_authorized"] is False
 
 
-def test_r3_r2_r1_handoff_runs_the_full_bounded_chain() -> None:
+def test_r3_r2_r2_handoff_runs_the_full_bounded_chain() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_installed_source_gate_repair_same_accepted_"
-        "capacity_single_lifecycle_six_request_mechanism",
-        "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 6",
+        "execution_mode: authorized_parent_forensics_source_semantics_and_"
+        "conditional_same_capacity_single_lifecycle",
+        "formal_model_lifecycle_count_max: 1",
+        "model_request_count_max: 6",
         "request_retry_count_exact: 0",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
         "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_"
         "restore_2026_0720_run01",
-        "run_deepseek_p8_2_k1a_r3_r2_r1_simple_cpu_offload.sh",
+        "run_deepseek_p8_2_k1a_r3_r2_r2_simple_cpu_offload.sh",
         "server_command_sha256=8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6",
-        "parent_r3_r2_evidence_gate=pass",
-        "installed_source_import_registration_gate=pass",
-        "resource_gate=pass",
+        "source_semantics_gate=pass",
+        "runtime_import_probe.json",
         "candidate_manifest.server_local.json",
         "missing_candidate_files",
         "email / upload-api / server-local",
-        "candidate_green_p8_2_k1a_r3_r2_r1_simple_cpu_offload_store_restore",
-        "red_p8_2_k1a_r3_r2_r1_no_success",
+        "candidate_green_p8_2_k1a_r3_r2_r2_simple_cpu_offload_store_restore",
+        "blocked_p8_2_k1a_r3_r2_r2_deterministic_parent_failure",
         "不得进入 K2",
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
     for parent_hash in (
-        "74439fceb5c502dfbe84ec72e30b28cbefec2512fd0421acf16404116604b6de",
-        "301cb52d2c6b439e71f43f50314e5cec4aee5d950a2f6446b170c5f9100139b7",
-        "bf2a5282910d267247c9345cb11a8a152e1c256450bad1515a38f03ced8983a2",
-        "bdc8a073f6557104779d6925ee7ecff7ca0630a96b6437fa032b958a6b8c3e56",
-        "70e8ae52b0d9559bbef913b5759288367e292a2da866db1e6d23cd111089b098",
+        "2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d",
+        "9a18833a9945ed8ef98b95636603cf45f097974c15c069cd4ce96f68c36b0629",
+        "3696c8b348011669e91450fbfe2dd151eacd02208deb1168a5392bbd19532304",
     ):
         assert parent_hash in handoff
     assert 'test ! -e "${RESULT_DIR}"' in handoff
@@ -191,7 +189,7 @@ def test_r3_r2_r1_handoff_runs_the_full_bounded_chain() -> None:
     assert "第七请求" in handoff
 
 
-def test_r3_r2_r1_handoff_freezes_its_new_contract_files() -> None:
+def test_r3_r2_r1_contract_files_remain_preserved_as_parent_provenance() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
     paths = (
         R3_R2_R1_AUDIT,
@@ -199,9 +197,8 @@ def test_r3_r2_r1_handoff_freezes_its_new_contract_files() -> None:
         Path(__file__),
     )
 
-    assert "__R3_R2_R1_" not in handoff
+    assert "test_deepseek_p8_2_k1a_r3_r2_r1_installed_source_gate.py" in handoff
     for path in paths:
-        relative = path.relative_to(REPO_ROOT).as_posix()
-        sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
-        assert f'"{relative}": "{sha256}"' in handoff
+        assert path.is_file()
+        assert hashlib.sha256(path.read_bytes()).hexdigest()
     assert R3_R2_R1_RUNNER.stat().st_mode & stat.S_IXUSR

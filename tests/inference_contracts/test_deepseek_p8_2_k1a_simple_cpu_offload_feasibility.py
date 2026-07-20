@@ -296,7 +296,7 @@ def test_k1a_observer_preserves_the_frozen_wait_event_launch_signature():
     observed_launch = source[source.index("def observed_launch(") :]
     observed_launch = observed_launch[: observed_launch.index("original_poll =")]
     assert "wait_event=None" in observed_launch
-    assert "events_list,\n            wait_event," in observed_launch
+    assert "events_list,\n                wait_event," in observed_launch
 
 
 def test_k1a_workload_freezes_one_six_request_store_pressure_restore_lifecycle():
@@ -532,16 +532,16 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
         ]
 
 
-def test_k1a_r3_r1_is_the_only_current_server_handoff_after_r3_block():
+def test_k1a_r3_r2_r2_is_the_only_current_server_handoff_after_parent_partial():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_"
+        "p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_"
         "2026_0720"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism"
+        "execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle"
         in handoff
     )
     for field in (
@@ -553,8 +553,8 @@ def test_k1a_r3_r1_is_the_only_current_server_handoff_after_r3_block():
         "profiler_authorized: false",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 6",
+        "formal_model_lifecycle_count_max: 1",
+        "model_request_count_max: 6",
         "request_retry_count_exact: 0",
         "capacity_search_authorized: false",
     ):
@@ -563,9 +563,9 @@ def test_k1a_r3_r1_is_the_only_current_server_handoff_after_r3_block():
         "ready_p8_2_k1a_r2_allocator_capacity",
         "blocked_p8_2_k1a_r3_source_or_provenance_gate",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r3_r2_simple_cpu_offload.sh",
+        "run_deepseek_p8_2_k1a_r3_r2_r2_simple_cpu_offload.sh",
         "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r3_r2_r1_simple_cpu_offload_store_restore",
+        "candidate_green_p8_2_k1a_r3_r2_r2_simple_cpu_offload_store_restore",
         "不得进入 K2",
         "P8.3-I1",
         "CURRENT_PGID",
@@ -579,7 +579,7 @@ def test_k1a_r3_r1_is_the_only_current_server_handoff_after_r3_block():
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
+        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
@@ -599,11 +599,12 @@ def test_k1a_r3_r1_is_the_only_current_server_handoff_after_r3_block():
     assert acceptance["p8_2_k1a_r2_allocator_probe_authorized"] is False
     assert acceptance["p8_2_k1a_r3_execution_authorized"] is False
     assert acceptance["p8_2_k1a_r3_r2_execution_authorized"] is False
-    assert acceptance["p8_2_k1a_r3_r2_r1_execution_authorized"] is True
+    assert acceptance["p8_2_k1a_r3_r2_r1_execution_authorized"] is False
+    assert acceptance["p8_2_k1a_r3_r2_r2_execution_authorized"] is True
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R3-R2-R1_only"
+        "P8.2-K1A-R3-R2-R2_only"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True

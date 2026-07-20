@@ -1,0 +1,462 @@
+from __future__ import annotations
+
+import csv
+import json
+import os
+from pathlib import Path
+import subprocess
+
+from tools.inference_contracts.p8_2_k1a_simple_cpu_offload_observer import (
+    summarize_trace_rows,
+)
+from tools.inference_contracts.p8_2_k1a_failure_forensics import (
+    build_failure_diagnostic,
+)
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+REQUEST_RUNNER = (
+    REPO_ROOT
+    / "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py"
+)
+FORENSICS = (
+    REPO_ROOT / "tools/inference_contracts/p8_2_k1a_failure_forensics.py"
+)
+
+
+def _write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value) + "\n", encoding="utf-8")
+
+
+def test_finalizer_promotes_the_first_failed_request_into_bounded_diagnostics(
+    tmp_path: Path,
+) -> None:
+    artifact = tmp_path / "artifact"
+    request_root = artifact / "modes/prefix_cache_on"
+    request_root.mkdir(parents=True)
+    rows = [
+        {
+            "request_id": "lifecycle_01_warmup",
+            "status": "success",
+            "http_status": 200,
+            "prompt_tokens": 4096,
+            "context_tokens": 4096,
+            "output_tokens": 64,
+            "generated_token_count": 64,
+            "streamed_token_count": 64,
+            "finish_reason": "length",
+            "saw_done": True,
+            "max_token_chunk_width": 2,
+            "queue_metrics_ok": True,
+            "counter_continuity_ok": True,
+            "spec_activity_ok": True,
+            "accepted_token_delta": 32,
+            "request_body_sha256": "1" * 64,
+            "checks": {"http_200": True},
+        },
+        {
+            "request_id": "lifecycle_01_prime",
+            "status": "failed",
+            "http_status": 500,
+            "prompt_tokens": None,
+            "context_tokens": 32768,
+            "output_tokens": 64,
+            "generated_token_count": None,
+            "streamed_token_count": 0,
+            "finish_reason": None,
+            "saw_done": False,
+            "max_token_chunk_width": 0,
+            "queue_metrics_ok": False,
+            "counter_continuity_ok": True,
+            "spec_activity_ok": False,
+            "accepted_token_delta": -32,
+            "request_body_sha256": "2" * 64,
+            "bounded_error_server_path": str(
+                artifact / "request_errors/lifecycle_01_prime.body"
+            ),
+            "checks": {
+                "server_alive": True,
+                "http_200": False,
+                "prompt_tokens_exact": False,
+                "generated_tokens_exact": False,
+                "streamed_tokens_exact": False,
+                "finish_reason_length": False,
+                "saw_done": False,
+                "health_after_200": True,
+                "queue_idle_after": False,
+            },
+        },
+    ]
+    (request_root / "raw_request_results.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8"
+    )
+    _write_json(
+        artifact / "request_errors/lifecycle_01_prime.body",
+        {
+            "error": {
+                "message": "NPU copy failed",
+                "prompt": [1, 2, 3],
+                "token_ids": [4, 5],
+            }
+        },
+    )
+    trace_root = artifact / "runtime/offload_trace"
+    trace_root.mkdir(parents=True)
+    (trace_root / "trace.test.jsonl").write_text(
+        "".join(
+            json.dumps(
+                {
+                    "event": "device_copy_submitted",
+                    "direction": "d2h",
+                    "pid": pid,
+                    "event_idx": 1,
+                    "block_count": 15,
+                    "byte_count": 50461440,
+                }
+            )
+            + "\n"
+            for pid in range(100, 108)
+        ),
+        encoding="utf-8",
+    )
+    _write_json(
+        artifact / "connector_resolution_summary.json",
+        {
+            "resolved_connector_exact": True,
+            "resolved_cpu_capacity_exact": True,
+            "cpu_bytes_to_use": 3444834304,
+            "cpu_bytes_to_use_per_rank": 430604288,
+        },
+    )
+    _write_json(
+        artifact / "repair_diagnostic_summary.json", {"hybrid_diagnostic_ok": True}
+    )
+    _write_json(
+        artifact / "host_memory_summary.json",
+        {
+            "preflight_gate_ok": True,
+            "configured_cpu_tier_bytes_total": 3444834304,
+            "configured_cpu_tier_bytes_per_rank": 430604288,
+        },
+    )
+    (artifact / "cleanup_status.txt").write_text("clean\n", encoding="utf-8")
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "P8_2_K1A_TASK_ID": "p8_2_k1a_r3_r2_r2_forensic_replay_2026_0720",
+            "P8_2_K1A_CPU_BYTES_TO_USE": "3444834304",
+            "P8_2_K1A_CPU_BYTES_TO_USE_PER_RANK": "430604288",
+            "P8_2_K1A_CANDIDATE_GREEN": "candidate_green_test",
+            "P8_2_K1A_PARTIAL_GRADE": "yellow_partial_test",
+        }
+    )
+    completed = subprocess.run(
+        [
+            "python3",
+            str(REQUEST_RUNNER),
+            "finalize",
+            "--artifact-dir",
+            str(artifact),
+        ],
+        cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 2
+    diagnostic = json.loads(
+        (artifact / "failure_diagnostic_summary.json").read_text(encoding="utf-8")
+    )
+    assert diagnostic["failed_request_id"] == "lifecycle_01_prime"
+    assert diagnostic["first_failed_predicate"] == "http_200"
+    assert diagnostic["failure_classification"] == "http_or_client_error"
+    assert diagnostic["cause_proven_as_unique"] is False
+    excerpt = (artifact / "first_failure_excerpt.txt").read_text(encoding="utf-8")
+    assert "lifecycle_01_prime" in excerpt
+    assert "http_200" in excerpt
+    assert "NPU copy failed" in excerpt
+    assert "prompt" not in excerpt
+    assert "token_ids" not in excerpt
+
+    with (artifact / "request_summary.tsv").open(encoding="utf-8") as handle:
+        summary_rows = list(csv.DictReader(handle, delimiter="\t"))
+    prime = summary_rows[1]
+    assert prime["http_status"] == "500"
+    assert prime["generated_token_count"] == ""
+    assert prime["streamed_token_count"] == "0"
+    assert prime["finish_reason"] == ""
+    assert prime["saw_done"] == "False"
+    assert prime["first_failed_predicate"] == "http_200"
+    assert "bounded_error_server_path" not in prime
+
+    manifest = json.loads(
+        (artifact / "candidate_manifest.server_local.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert "failure_diagnostic_summary.json" in manifest["files"]
+    assert manifest["candidate_total_bytes"] <= 71680
+
+
+def test_offline_extractor_preserves_parent_evidence_and_builds_a_bounded_package(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "parent_result"
+    output = tmp_path / "forensics"
+    request_root = source / "modes/prefix_cache_on"
+    request_root.mkdir(parents=True)
+    failed = {
+        "request_id": "lifecycle_01_prime",
+        "status": "failed",
+        "http_status": None,
+        "context_tokens": 32768,
+        "output_tokens": 64,
+        "generated_token_count": None,
+        "streamed_token_count": 0,
+        "finish_reason": None,
+        "saw_done": False,
+        "max_token_chunk_width": 0,
+        "request_body_sha256": "2" * 64,
+        "request_start_ns": 100,
+        "request_end_ns": 200,
+        "token_arrival_ns": [123],
+        "metrics_before": {
+            "num_requests_running": 0,
+            "num_requests_waiting": 0,
+            "num_accepted_tokens": 32,
+        },
+        "metrics_after": {
+            "num_requests_running": 0,
+            "num_requests_waiting": 1,
+            "num_accepted_tokens": 0,
+        },
+        "checks": {
+            "server_alive": True,
+            "http_200": False,
+            "health_after_200": True,
+            "queue_idle_after": False,
+        },
+    }
+    (request_root / "raw_request_results.jsonl").write_text(
+        json.dumps(failed) + "\n", encoding="utf-8"
+    )
+    trace_root = source / "runtime/offload_trace"
+    trace_root.mkdir(parents=True)
+    (trace_root / "trace.test.jsonl").write_text(
+        "".join(
+            json.dumps(
+                {
+                    "event": "device_copy_submitted",
+                    "component": "npu_copy_backend",
+                    "direction": "d2h",
+                    "pid": pid,
+                    "rank": str(pid - 100),
+                    "timestamp_ns": pid,
+                    "event_idx": 1,
+                    "block_count": 15,
+                    "byte_count": 50461440,
+                    "secret": "must-not-leak",
+                }
+            )
+            + "\n"
+            for pid in range(100, 108)
+        ),
+        encoding="utf-8",
+    )
+    log_path = source / "runtime/vllm_server.log"
+    log_path.write_text(
+        "INFO server ready\n"
+        "ERROR SimpleCPUOffload D2H completion timeout\n"
+        "Traceback: worker copy wait failed\n",
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(FORENSICS),
+            "extract",
+            "--source-result-dir",
+            str(source),
+            "--output-dir",
+            str(output),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    provenance = json.loads(
+        (output / "source_evidence_provenance.json").read_text(encoding="utf-8")
+    )
+    assert provenance["source_evidence_unchanged"] is True
+    assert provenance["before"] == provenance["after"]
+    assert provenance["before"]["file_count"] == 3
+
+    sanitized = json.loads(
+        (output / "failed_request_sanitized.json").read_text(encoding="utf-8")
+    )
+    assert sanitized["request_id"] == "lifecycle_01_prime"
+    assert sanitized["first_failed_predicate"] == "http_200"
+    assert "token_arrival_ns" not in sanitized
+    assert "bounded_error_server_path" not in sanitized
+
+    timeline = json.loads(
+        (output / "transfer_trace_timeline.json").read_text(encoding="utf-8")
+    )
+    assert timeline["event_count"] == 8
+    assert all("secret" not in row for row in timeline["events"])
+    diagnostic = json.loads(
+        (output / "failure_diagnostic_summary.json").read_text(encoding="utf-8")
+    )
+    assert diagnostic["failure_classification"] == "transfer_completion_absent_without_direct_exception"
+    assert diagnostic["formal_replay_allowed"] is True
+    assert diagnostic["cause_proven_as_unique"] is False
+
+    excerpt = (output / "vllm_first_failure_excerpt.txt").read_bytes()
+    assert len(excerpt) <= 16384
+    assert b"D2H completion timeout" in excerpt
+    manifest = json.loads(
+        (output / "candidate_manifest.server_local.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert manifest["candidate_total_bytes"] <= 71680
+    assert manifest["result_transfer_authorized"] is True
+    assert manifest["transfer_method_selected"] is False
+    assert manifest["missing_candidate_files"] == []
+
+
+def test_source_audit_closes_the_exact_scheduler_worker_copy_surfaces(
+    tmp_path: Path,
+) -> None:
+    vllm_root = tmp_path / "vllm"
+    ascend_root = tmp_path / "vllm_ascend"
+    sources = {
+        vllm_root / "v1/simple_kv_offload/manager.py": """
+class SimpleCPUOffloadScheduler:
+    def get_num_new_matched_tokens(self): pass
+    def build_connector_meta(self): pass
+    def update_connector_output(self): pass
+""",
+        ascend_root / "simple_kv_offload/worker.py": """
+class SimpleCPUOffloadNPUWorker:
+    def _poll_stream_events(self): pass
+""",
+        ascend_root / "simple_kv_offload/copy_backend.py": """
+class NPUDmaCopyBackend:
+    def launch_copy(self): pass
+""",
+        ascend_root
+        / "distributed/kv_transfer/kv_pool/simple_cpu_offload/simple_cpu_offload_connector.py": """
+class AscendSimpleCPUOffloadConnector:
+    pass
+""",
+    }
+    for path, source in sources.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source, encoding="utf-8")
+    output = tmp_path / "source_semantics.json"
+
+    completed = subprocess.run(
+        [
+            "python3",
+            str(FORENSICS),
+            "source-audit",
+            "--vllm-root",
+            str(vllm_root),
+            "--vllm-ascend-root",
+            str(ascend_root),
+            "--output",
+            str(output),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    audit = json.loads(output.read_text(encoding="utf-8"))
+    assert audit["source_semantics_gate"] == "pass"
+    assert audit["source_file_count"] == 4
+    assert audit["required_symbols_present"] is True
+    assert audit["observer_surface"] == {
+        "copy_backend": "NPUDmaCopyBackend.launch_copy",
+        "scheduler_completion": "SimpleCPUOffloadScheduler.update_connector_output",
+        "scheduler_match": "SimpleCPUOffloadScheduler.get_num_new_matched_tokens",
+        "scheduler_schedule": "SimpleCPUOffloadScheduler.build_connector_meta",
+        "worker_completion": "SimpleCPUOffloadNPUWorker._poll_stream_events",
+    }
+
+
+def test_transfer_summary_surfaces_copy_and_poll_exceptions_without_treating_them_as_completion() -> None:
+    rows = [
+        {
+            "event": "device_copy_submitted",
+            "direction": "d2h",
+            "pid": 100,
+            "byte_count": 1024,
+        },
+        {
+            "event": "device_copy_launch_failed",
+            "direction": "d2h",
+            "pid": 100,
+            "error_type": "RuntimeError",
+            "error_message": "copy failed",
+        },
+        {
+            "event": "transfer_poll_failed",
+            "direction": "d2h",
+            "pid": 101,
+            "error_type": "TimeoutError",
+            "error_message": "event not ready",
+        },
+    ]
+
+    summary = summarize_trace_rows(
+        rows, expected_world_size=8, restore_request_suffix="restore_follower"
+    )
+
+    assert summary["transfer_failure_event_count"] == 2
+    assert summary["device_copy_launch_failed_count"] == 1
+    assert summary["transfer_poll_failed_count"] == 1
+    assert summary["d2h_completed_worker_count"] == 0
+    assert summary["d2h_store_complete"] is False
+    assert summary["runtime_evidence_exact"] is False
+
+
+def test_bounded_client_exception_blocks_replay_even_without_an_http_status(
+    tmp_path: Path,
+) -> None:
+    artifact = tmp_path / "artifact"
+    error = artifact / "request_errors/lifecycle_01_prime.txt"
+    error.parent.mkdir(parents=True)
+    error.write_text("TimeoutError: remote end closed connection\n", encoding="utf-8")
+    rows = [
+        {
+            "request_id": "lifecycle_01_prime",
+            "k1a_role": "prime",
+            "status": "failed",
+            "http_status": None,
+            "bounded_error_server_path": str(error),
+            "checks": {
+                "server_alive": True,
+                "http_200": False,
+                "health_after_200": True,
+            },
+        }
+    ]
+
+    diagnostic, excerpt = build_failure_diagnostic(
+        artifact,
+        rows,
+        {"d2h_worker_count": 8, "d2h_completed_worker_count": 0},
+    )
+
+    assert diagnostic["failure_classification"] == "http_or_client_error"
+    assert diagnostic["cause_proven_as_unique"] is False
+    assert "TimeoutError" in excerpt

@@ -1,0 +1,185 @@
+schema_version: 1
+workload_id: p8_2_k1a_r3_r2_r2_forensic_replay
+date: '2026-07-20'
+purpose: recover_parent_prime_failure_evidence_audit_frozen_offload_semantics_and_conditionally_replay_once
+task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720
+
+stage_contract:
+  stage: P8.2-K1A-R3-R2-R2
+  mode: parent_offline_forensics_source_semantics_and_conditional_same_capacity_replay
+  claim_boundary: parent_failure_forensics_and_conditionally_reproduced_same_capacity_store_pressure_restore_mechanism_only
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  general_support_claim_authorized: false
+
+depends_on:
+  parent_task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720
+  parent_grade: yellow_p8_2_k1a_r3_r2_r1_partial
+  parent_audit: ../p8_2_k1a_r3_r2_r1_installed_source_gate_audit.yaml
+  current_audit: ../p8_2_k1a_r3_r2_r2_forensic_replay_audit.yaml
+  original_runtime_workload: p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
+  k1a_r2_grade: ready_p8_2_k1a_r2_allocator_capacity
+
+parent_forensics:
+  server_result_dir: /data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720_run01
+  offline_only: true
+  source_evidence_unchanged_required: true
+  required_inputs:
+    - modes/prefix_cache_on/raw_request_results.jsonl
+    - request_errors/lifecycle_01_prime.body_or_txt
+    - runtime/vllm_server.log
+    - runtime/offload_trace/trace.*.jsonl
+    - modes/prefix_cache_on/raw_metrics/lifecycle_01_prime_before.prom
+    - modes/prefix_cache_on/raw_metrics/lifecycle_01_prime_after.prom
+  generated_content_allowed: false
+  token_ids_allowed: false
+  raw_request_body_allowed: false
+  max_diagnostic_package_bytes: 71680
+
+source_semantics_gate:
+  audit_only: true
+  required_file_count: 4
+  frozen_installed_source_hash_gate_required: true
+  frozen_installed_source_file_count: 9
+  required_surfaces:
+    - SimpleCPUOffloadScheduler.get_num_new_matched_tokens
+    - SimpleCPUOffloadScheduler.build_connector_meta
+    - SimpleCPUOffloadScheduler.update_connector_output
+    - SimpleCPUOffloadNPUWorker._poll_stream_events
+    - NPUDmaCopyBackend.launch_copy
+    - AscendSimpleCPUOffloadConnector
+  source_mutation_authorized: false
+  runtime_import_probe_authorized: true
+  npu_use_authorized: false
+
+conditional_replay:
+  allowed_failure_classes:
+    - transfer_completion_absent_without_direct_exception
+    - insufficient_parent_evidence
+  stop_failure_classes:
+    - http_or_client_error
+    - server_process_or_health_loss
+    - offload_runtime_exception
+  source_semantics_gate_must_pass: true
+  frozen_installed_source_hash_gate_must_pass: true
+  source_evidence_unchanged_must_be_true: true
+  formal_model_lifecycle_count_max: 1
+  model_request_count_max: 6
+  request_retry_count: 0
+  stop_on_first_request_failure: true
+  second_lifecycle_authorized: false
+  capacity_search_authorized: false
+
+runtime_environment:
+  conda_prefix: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  visible_devices: '0,1,2,3,4,5,6,7'
+  base_vllm_root: /data/node0_disk1/vllm-0.22.1/vllm
+
+runtime_fixed:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size: 128
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  quantization: ascend
+  enable_chunked_prefill: true
+  enable_prefix_caching: true
+  speculative_method: mtp
+  num_speculative_tokens: 1
+  cudagraph_mode: FULL_DECODE_ONLY
+  kv_connector: SimpleCPUOffloadConnector
+  kv_role: kv_both
+  cpu_bytes_to_use: 3444834304
+  cpu_bytes_to_use_per_rank: 430604288
+  lazy_offload: false
+  canonical_server_argv_sha256: 8301f4c4c4f203e42f7954e4e4c9b961b55725b132dcbd6fb4b8625bc271bde6
+
+request_plan:
+  lifecycle_count_max: 1
+  request_count_max: 6
+  output_tokens: 64
+  concurrency: 1
+  temperature: 0.0
+  ignore_eos: true
+  streaming_required: true
+  request_retries: 0
+  sequence:
+    - {slot: slot_01, role: warmup, context_tokens: 4096}
+    - {slot: slot_02, role: prime, context_tokens: 32768}
+    - {slot: slot_03, role: pressure, context_tokens: 131072}
+    - {slot: slot_04, role: restore_follower, context_tokens: 32768}
+    - {slot: slot_05, role: repeat_follower, context_tokens: 32768}
+    - {slot: slot_06, role: isolated_control, context_tokens: 32768}
+  body_bytes_tokens_and_sha256_unchanged_from_parent: true
+
+observer_contract:
+  observe_only: true
+  scheduler_decision_mutation: false
+  copy_parameter_mutation: false
+  exception_handling_mutation: false
+  original_exception_rethrown: true
+  added_events:
+    - device_copy_launch_returned
+    - device_copy_launch_failed
+    - transfer_poll_failed
+
+evidence_contract:
+  parent_tree_inventory_before_after_exact: true
+  failed_request_http_token_sse_predicates: true
+  bounded_request_error_excerpt: true
+  parent_health_queue_mtp_before_after: true
+  parent_trace_timeline: true
+  parent_vllm_failure_log_window: true
+  frozen_source_hashes_and_symbols: true
+  runtime_request_summary_keeps_diagnostics: true
+  runtime_first_failure_is_not_grade_only: true
+  cleanup_port_process_npu_and_keep_alive_restore: true
+
+acceptance:
+  parent_evidence_blocked_grade: blocked_p8_2_k1a_r3_r2_r2_parent_evidence_gate
+  deterministic_parent_failure_grade: blocked_p8_2_k1a_r3_r2_r2_deterministic_parent_failure
+  source_or_resource_blocked_grade: blocked_p8_2_k1a_r3_r2_r2_source_or_resource_gate
+  no_success_grade: red_p8_2_k1a_r3_r2_r2_no_success
+  partial_grade: yellow_p8_2_k1a_r3_r2_r2_partial
+  store_only_grade: yellow_p8_2_k1a_r3_r2_r2_store_only_no_restore
+  evidence_incomplete_grade: red_p8_2_k1a_r3_r2_r2_evidence_incomplete
+  server_candidate_green_grade: candidate_green_p8_2_k1a_r3_r2_r2_simple_cpu_offload_store_restore
+  developer_review_required: true
+
+result_package_policy:
+  max_total_bytes: 71680
+  generated_text_or_token_ids_allowed: false
+  raw_logs_metrics_traces_and_request_bodies_remain_server_local: true
+  result_transfer_authorized: true
+  automatic_transfer_allowed: false
+  transfer_method_selected: false
+  selection_required_before_any_transfer: true
+  available_methods: [email, upload-api, server-local]
+
+execution_state:
+  status: authorized_for_server_execution
+  execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle
+  parent_offline_forensics_authorized: true
+  source_semantics_audit_authorized: true
+  npu_execution_authorized: true
+  keep_alive_stop_and_restore_authorized: true
+  vllm_server_start_authorized: true
+  model_requests_authorized: true
+  formal_model_lifecycle_count_max: 1
+  model_request_count_max: 6
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  standing_npu_and_vllm_consumption_authorization: true
+
+boundaries:
+  - Parent R3-R2-R1 remains yellow even if a conditional replay later passes.
+  - A direct deterministic parent failure stops before keep-alive or NPU disruption.
+  - The replay preserves the accepted capacity, canonical argv, request bodies and request order.
+  - No behavior repair, capacity search, retry, profiler, K2, P8.3-I1, P8.4, P8.5 or P9 is authorized.

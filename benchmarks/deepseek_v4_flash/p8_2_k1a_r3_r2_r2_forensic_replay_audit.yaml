@@ -1,0 +1,73 @@
+schema_version: deepseek_v4_flash_p8_2_k1a_r3_r2_r2_forensic_replay_v1
+stage: P8.2-K1A-R3-R2-R2
+date: '2026-07-20'
+runtime:
+  vllm_version: 0.22.1+empty
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_version: 0.22.1rc1
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+parent_r3_r2_r1:
+  task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720
+  server_grade: yellow_p8_2_k1a_r3_r2_r1_partial
+  developer_grade: yellow_p8_2_k1a_r3_r2_r1_partial
+  planned_request_count: 6
+  request_count: 2
+  successful_request_count: 1
+  first_failed_request: lifecycle_01_prime
+  d2h_worker_count: 8
+  d2h_completed_worker_count: 0
+  d2h_bytes_total: 403691520
+  h2d_worker_count: 0
+  h2d_completed_worker_count: 0
+  cleanup: clean
+  keep_alive_restored: true
+  performance_reference_accepted: false
+  offload_store_evidence_accepted: false
+  offload_restore_evidence_accepted: false
+  received_evidence:
+    root: /Volumes/SSD1/Inbox/2026-07-20/p8_2_k1a_r3_r2_r1_20260720_run01
+    total_bytes: 17813
+    files:
+      cleanup_status.txt: {bytes: 6, sha256: 2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d}
+      connector_resolution_summary.json: {bytes: 1130, sha256: beb0044755e48b13c27f9d00a5dce063cefca43c93396f8d23bbf46a6acab4e0}
+      environment_and_hashes.json: {bytes: 3310, sha256: 9af109a372343aaff6e7b9a8b59003706e21ab85aced0de0da79d0675748fd85}
+      first_failure_excerpt.txt: {bytes: 33, sha256: 9543720eababea9fbb0c64ff3df8cc381c8843841c11ab1d890a537b803c2183}
+      grading_inputs.json: {bytes: 1379, sha256: 5aa2a0ba0697ed0934c75ebefc798defd479430eb070e54fbe58a32ffa3289d9}
+      host_memory_summary.json: {bytes: 358, sha256: 9a6f7496cdc1d6c24d89889335d34721e61a19b1d770501398b542f4f5c6036f}
+      mtp_queue_health_summary.json: {bytes: 160, sha256: 2c6469c2c947510516394ff82f9964c6943112db22aae00b897405ac6307ec10}
+      repair_diagnostic_summary.json: {bytes: 611, sha256: 459d0f9aa71587d5359a23aabdb44741d4b41195c6cd56a8e8775fc7d1ae1862}
+      request_body_manifest.json: {bytes: 3526, sha256: bce2e272c2d6d3fc1c59a999ebd435f704562d3d8edcfa754f2d21c67c207b7d}
+      request_summary.tsv: {bytes: 408, sha256: 9a18833a9945ed8ef98b95636603cf45f097974c15c069cd4ce96f68c36b0629}
+      result_summary.md: {bytes: 6414, sha256: 3696c8b348011669e91450fbfe2dd151eacd02208deb1168a5392bbd19532304}
+      transfer_trace_summary.json: {bytes: 478, sha256: 934071445789c2079f90ecc080f9ecd8236c37e17606a164815b0820cb61255b}
+evidence_gap:
+  first_failure_excerpt_contains_only_grade: true
+  request_summary_omits_http_token_sse_and_error_fields: true
+  raw_parent_evidence_required: true
+  current_package_sufficient_for_yellow_grade: true
+  current_package_sufficient_for_root_cause: false
+accepted_capacity:
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  required_cpu_blocks: 128
+  required_restore_tokens: 16384
+  world_size: 8
+decision:
+  offline_parent_forensics_authorized: true
+  source_semantics_audit_authorized: true
+  frozen_installed_source_hash_gate_required: true
+  frozen_installed_source_file_count: 9
+  formal_replay_conditionally_authorized: true
+  formal_lifecycle_count_max: 1
+  request_count_max: 6
+  request_retry_count: 0
+  capacity_search_authorized: false
+  runtime_behavior_patch_authorized: false
+  observer_extension_authorized: true
+  observer_mode: observe_only_rethrow_original_exceptions
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+claim_boundary: parent_failure_forensics_and_conditionally_reproduced_same_capacity_store_pressure_restore_mechanism_only

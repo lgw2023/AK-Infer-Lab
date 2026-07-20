@@ -86,20 +86,20 @@ def test_r4_r1_workload_is_closed_as_developer_accepted_green():
     }
 
 
-def test_current_handoff_preserves_p6_green_during_k1a_r3_r1_lifecycle():
+def test_current_handoff_preserves_p6_green_during_k1a_r3_r2_r2_forensics():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R2-R1 installed-source gate repair" in handoff
-    assert "task_id: p8_2_k1a_r3_r2_r1_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0720" in handoff
-    assert "execution_mode: authorized_installed_source_gate_repair_same_accepted_capacity_single_lifecycle_six_request_mechanism" in handoff
+    assert "P8.2-K1A-R3-R2-R2 parent forensics" in handoff
+    assert "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720" in handoff
+    assert "execution_mode: authorized_parent_forensics_source_semantics_and_conditional_same_capacity_single_lifecycle" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
-    assert "model_request_count_exact: 6" in handoff
+    assert "model_request_count_max: 6" in handoff
     assert "result_transfer_authorized: true" in handoff
 
     readiness = yaml.safe_load(
@@ -114,7 +114,7 @@ def test_current_handoff_preserves_p6_green_during_k1a_r3_r1_lifecycle():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
+        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_r1_grade"] == (
         "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"

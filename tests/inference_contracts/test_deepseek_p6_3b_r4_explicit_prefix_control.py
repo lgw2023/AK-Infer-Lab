@@ -335,15 +335,15 @@ def test_r4_workload_is_preserved_as_blocked_explicit_control_evidence():
     assert workload["stage_contract"]["p6_3c_execution_authorized"] is False
 
 
-def test_r4_r1_closeout_is_preserved_during_k1a_r3_r1_lifecycle():
+def test_r4_r1_closeout_is_preserved_during_k1a_r3_r2_r2_forensics():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R3-R2-R1 installed-source gate repair" in handoff
+    assert "P8.2-K1A-R3-R2-R2 parent forensics" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "model_request_count_exact: 6" in handoff
+    assert "model_request_count_max: 6" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
@@ -381,7 +381,7 @@ def test_r4_r1_closeout_is_preserved_during_k1a_r3_r1_lifecycle():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml"
+        "p8_2_k1a_r3_r2_r2_forensic_replay.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False
