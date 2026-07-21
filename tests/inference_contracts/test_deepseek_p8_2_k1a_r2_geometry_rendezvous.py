@@ -215,14 +215,14 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_after_parent_blocks() -> None
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
+        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+        "formal_model_lifecycle_count_max: 1",
+        "model_request_count_max: 8",
         "capacity_search_authorized: false",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
@@ -231,7 +231,7 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_after_parent_blocks() -> None
     for marker in (
         "ready_p8_2_k1a_r2_allocator_capacity",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh",
+        "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh",
         "cpu_bytes_to_use_per_rank=430604288",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
         "P8.3-I1",

@@ -20,6 +20,10 @@ MODEL_NAME=${MODEL_NAME:-deepseek-v4-flash-w8a8-mtp}
 MODE_RUNNER=${MODE_RUNNER:-${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh}
 REQUEST_RUNNER=${REQUEST_RUNNER:-${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py}
 export REQUEST_RUNNER
+REQUEST_COUNT_MIN=${P8_2_K1A_REQUEST_COUNT_MIN:-6}
+REQUEST_COUNT_MAX=${P8_2_K1A_REQUEST_COUNT_MAX:-6}
+PRESSURE_REQUEST_COUNT_MAX=${P8_2_K1A_PRESSURE_REQUEST_COUNT_MAX:-1}
+REQUEST_ORDER=${P8_2_K1A_REQUEST_ORDER:-warmup,prime,pressure,restore_follower,repeat_follower,isolated_control}
 
 append_no_proxy() {
   local value=$1
@@ -39,8 +43,14 @@ audit_contract() {
   printf 'task_id=%s\n' "${TASK_ID}"
   printf 'execution_mode=%s\n' "${EXECUTION_MODE}"
   printf 'lifecycle_count=1\n'
-  printf 'request_count=6\n'
-  printf 'request_order=warmup,prime,pressure,restore_follower,repeat_follower,isolated_control\n'
+  if test "${REQUEST_COUNT_MIN}" = "${REQUEST_COUNT_MAX}"; then
+    printf 'request_count=%s\n' "${REQUEST_COUNT_MIN}"
+  else
+    printf 'request_count_min=%s\n' "${REQUEST_COUNT_MIN}"
+    printf 'request_count_max=%s\n' "${REQUEST_COUNT_MAX}"
+    printf 'pressure_request_count_max=%s\n' "${PRESSURE_REQUEST_COUNT_MAX}"
+  fi
+  printf 'request_order=%s\n' "${REQUEST_ORDER}"
   printf 'cpu_bytes_to_use=%s\n' "${CPU_BYTES_TO_USE}"
   printf 'cpu_bytes_to_use_per_rank=%s\n' "${CPU_BYTES_TO_USE_PER_RANK}"
   printf 'server_command_sha256=%s\n' "${SERVER_COMMAND_SHA256}"
@@ -68,6 +78,11 @@ test -f "${REQUEST_RUNNER}"
 set +e
 bash "${MODE_RUNNER}" "${RESULT_DIR}"
 mode_exit=$?
+if test "${P8_2_K1A_DEFER_FINALIZE:-0}" = 1; then
+  set -e
+  printf '%s\n' "${mode_exit}" > "${RESULT_DIR}/mode_exit_code.txt"
+  exit "${mode_exit}"
+fi
 "${PYTHON_BIN}" "${REQUEST_RUNNER}" finalize --artifact-dir "${RESULT_DIR}"
 finalize_exit=$?
 set -e

@@ -126,10 +126,10 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720" not in handoff
-    assert "parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete" in handoff
+    assert "candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility" in handoff
     assert 'test ! -e "${RESULT_ROOT}"' in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "trap cleanup EXIT" not in handoff
+    assert "npu_execution_authorized: true" in handoff
+    assert "cleanup_status.txt=clean" in handoff
     assert "upload_file.py" not in handoff
     assert "--confirmed-method" not in handoff
     for forbidden in ("reset --hard", "git stash", "bash sync.sh", "git push origin"):
@@ -140,7 +140,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] != workload_task_id()
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
+        "workloads/p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle.yaml"
     )
     assert acceptance["p8_2_k1a_r3_r2_r1_grade"] == (
         "yellow_p8_2_k1a_r3_r2_r1_partial"
@@ -150,7 +150,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     assert acceptance["p8_2_k1a_r3_r2_r2_formal_model_lifecycle_count_max"] == 1
     assert acceptance["p8_2_k1a_r3_r2_r2_model_request_count_max"] == 6
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F0_zero_resource_feasibility_only"
+        "P8.2-K1A-R5-L1_one_lazy_dynamic_pressure_lifecycle_only"
     )
     assert acceptance["next_task_authorized"] is False
 

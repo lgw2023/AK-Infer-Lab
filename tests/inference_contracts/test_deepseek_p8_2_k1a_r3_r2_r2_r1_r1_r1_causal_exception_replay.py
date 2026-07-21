@@ -111,17 +111,16 @@ def test_causal_lifecycle_is_consumed_and_r5_f0_feasibility_is_current() -> None
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721",
-        "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_trigger_feasibility_no_npu",
-        "npu_execution_authorized: false",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+            "task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721",
+            "execution_mode: authorized_accepted_capacity_single_lazy_dynamic_pressure_h2d_trigger_lifecycle",
+            "npu_execution_authorized: true",
+            "formal_model_lifecycle_count_max: 1",
+            "model_request_count_max: 8",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "next_task_authorized: false",
-        "parent_bounded_evidence_read_authorized: true",
-        "r2_geometry_provenance_read_authorized: true",
-        "frozen_source_semantics_audit_authorized: true",
+            "parent_r5_f0_and_r2_provenance_read_authorized: true",
+            "frozen_source_and_installed_runtime_audit_authorized: true",
         "parent_transport_success_count_after_developer_refinalization=6",
         "parent_d2h_store_complete=true",
         "parent_h2d_restore_complete=false",
@@ -140,10 +139,10 @@ def test_causal_lifecycle_is_consumed_and_r5_f0_feasibility_is_current() -> None
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
+        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
+        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_r1_grade"] == (
@@ -162,6 +161,6 @@ def test_causal_lifecycle_is_consumed_and_r5_f0_feasibility_is_current() -> None
         "p8_2_k1a_r3_r2_r2_r1_r1_r1_formal_model_lifecycle_count_max"
     ] == 1
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F0_zero_resource_feasibility_only"
+        "P8.2-K1A-R5-L1_one_lazy_dynamic_pressure_lifecycle_only"
     )
     assert acceptance["next_task_authorized"] is False

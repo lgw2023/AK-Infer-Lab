@@ -13,8 +13,22 @@ import weakref
 TRACE_ENV = "P8_2_K1A_TRANSFER_TRACE_DIR"
 TARGET_SUFFIX_ENV = "P8_2_K1A_H2D_TARGET_REQUEST_SUFFIX"
 RESTORE_SUFFIX_ENV = "P8_2_K1A_H2D_RESTORE_REQUEST_SUFFIX"
+TARGET_BLOCK_COUNT_ENV = "P8_2_K1A_H2D_TARGET_BLOCK_COUNT"
+ACTIVE_ROLE_PATH_ENV = "P8_2_K1A_H2D_ACTIVE_ROLE_PATH"
 _POOL_TIERS: dict[int, str] = {}
 _POOL_SCHEDULERS: dict[int, weakref.ReferenceType[Any]] = {}
+
+
+def _active_contract_role() -> str | None:
+    raw_path = os.environ.get(ACTIVE_ROLE_PATH_ENV)
+    if not raw_path:
+        return None
+    try:
+        value = json.loads(Path(raw_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return None
+    role = value.get("role") if isinstance(value, dict) else None
+    return str(role) if role else None
 
 
 def _emit(event: str, **fields: Any) -> None:
@@ -93,15 +107,21 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
 
     target_suffix = os.environ.get(TARGET_SUFFIX_ENV, "target_prime")
     restore_suffix = os.environ.get(RESTORE_SUFFIX_ENV, "restore_follower")
+    target_block_count = int(os.environ.get(TARGET_BLOCK_COUNT_ENV, "64"))
 
     original_finished = SimpleCPUOffloadScheduler.request_finished_all_groups
 
     @wraps(original_finished)
     def observed_finished(self, request, block_ids):
         _register_pools(self)
-        if str(request.request_id).endswith(target_suffix):
+        contract_role = _active_contract_role()
+        if contract_role == "target_prime" or str(request.request_id).endswith(
+            target_suffix
+        ):
             gpu_pool = self._gpu_block_pool
-            fa_group = block_ids[self.fa_gidx] if block_ids else []
+            fa_group = (
+                block_ids[self.fa_gidx] if block_ids else []
+            )[:target_block_count]
             target_hashes = tuple(
                 gpu_pool.blocks[block_id].block_hash
                 for block_id in fa_group
@@ -113,6 +133,7 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
                 "target_hashes_captured",
                 component="scheduler",
                 request_id=request.request_id,
+                contract_role=contract_role,
                 target_block_count=len(target_hashes),
                 raw_hash_values_retained=False,
             )
@@ -124,7 +145,10 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     @wraps(original_match)
     def observed_match(self, request, num_computed_tokens):
         _register_pools(self)
-        if str(request.request_id).endswith(restore_suffix):
+        contract_role = _active_contract_role()
+        if contract_role == "restore_follower" or str(request.request_id).endswith(
+            restore_suffix
+        ):
             _emit_residency_snapshot(self, reason="before_restore_match")
         return original_match(self, request, num_computed_tokens)
 
@@ -134,7 +158,10 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     def observed_update(self, request, blocks, num_external_tokens):
         result = original_update(self, request, blocks, num_external_tokens)
         _register_pools(self)
-        if str(request.request_id).endswith(restore_suffix):
+        contract_role = _active_contract_role()
+        if contract_role == "restore_follower" or str(request.request_id).endswith(
+            restore_suffix
+        ):
             _emit_residency_snapshot(self, reason="after_restore_alloc")
         return result
 
@@ -201,6 +228,71 @@ def observer_self_test_contract() -> dict[str, Any]:
         "scheduling_or_copy_arguments_mutated": False,
         "raw_hash_values_emitted": False,
         "generated_content_or_token_ids_emitted": False,
+        "target_block_count_is_explicit_and_bounded": True,
+        "request_identity_source": "controller_role_marker_not_server_request_id",
+    }
+
+
+def _read_trace_dir(trace_dir: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for path in sorted(trace_dir.glob("h2d-residency.*.jsonl")):
+        rows.extend(
+            json.loads(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line
+        )
+    return rows
+
+
+def build_residency_gate(
+    rows: list[dict[str, Any]], *, target_block_count: int
+) -> dict[str, Any]:
+    captures = [
+        row
+        for row in rows
+        if row.get("event") == "target_hashes_captured"
+        and int(row.get("target_block_count") or 0) == target_block_count
+    ]
+    snapshots = [
+        row
+        for row in rows
+        if row.get("event") == "target_residency_snapshot"
+        and int(row.get("target_block_count") or 0) == target_block_count
+    ]
+    cpu_evictions = [
+        row
+        for row in rows
+        if row.get("event") == "target_cache_evicted"
+        and row.get("tier") == "cpu"
+        and int(row.get("target_evicted_count") or 0) > 0
+    ]
+    latest = snapshots[-1] if snapshots else {}
+    cpu_count = int(latest.get("cpu_target_block_count") or 0)
+    gpu_count = int(latest.get("gpu_target_block_count") or 0)
+    cpu_was_complete = any(
+        int(row.get("cpu_target_block_count") or 0) == target_block_count
+        for row in snapshots
+    )
+
+    if not captures or not snapshots:
+        decision = "unobservable"
+    elif cpu_evictions or (cpu_was_complete and cpu_count < target_block_count):
+        decision = "cpu_target_lost"
+    elif cpu_count == target_block_count and gpu_count == 0:
+        decision = "trigger_ready"
+    else:
+        decision = "continue_pressure"
+    return {
+        "schema_version": "p8_2_k1a_r5_l1_residency_gate_v1",
+        "decision": decision,
+        "restore_allowed": decision == "trigger_ready",
+        "target_hashes_captured_exact": bool(captures),
+        "target_block_count": target_block_count,
+        "latest_cpu_target_block_count": cpu_count,
+        "latest_gpu_target_block_count": gpu_count,
+        "target_cpu_only_residency_observed": decision == "trigger_ready",
+        "cpu_target_eviction_observed": bool(cpu_evictions),
+        "raw_hash_values_retained": False,
     }
 
 
@@ -236,14 +328,20 @@ def summarize_h2d_trigger_rows(
         row
         for row in rows
         if row.get("event") == "cpu_hit_matched"
-        and str(row.get("request_id", "")).endswith("restore_follower")
+        and (
+            row.get("contract_role") == "restore_follower"
+            or str(row.get("request_id", "")).endswith("restore_follower")
+        )
         and int(row.get("num_new_tokens") or 0) == restore_tokens
     ]
     load_scheduled = [
         row
         for row in rows
         if row.get("event") == "load_scheduled"
-        and str(row.get("request_id", "")).endswith("restore_follower")
+        and (
+            row.get("contract_role") == "restore_follower"
+            or str(row.get("request_id", "")).endswith("restore_follower")
+        )
         and int(row.get("block_count") or 0) > 0
     ]
     h2d_workers = {
@@ -256,7 +354,10 @@ def summarize_h2d_trigger_rows(
         row
         for row in rows
         if row.get("event") == "load_request_completed"
-        and str(row.get("request_id", "")).endswith("restore_follower")
+        and (
+            row.get("contract_role") == "restore_follower"
+            or str(row.get("request_id", "")).endswith("restore_follower")
+        )
     ]
     value = {
         "schema_version": "p8_2_k1a_h2d_residency_summary_v1",
@@ -305,6 +406,10 @@ def _parser() -> argparse.ArgumentParser:
     summarize.add_argument("--expected-world-size", type=int, required=True)
     self_test = subparsers.add_parser("self-test")
     self_test.add_argument("--output", type=Path, required=True)
+    gate = subparsers.add_parser("gate")
+    gate.add_argument("--trace-dir", type=Path, required=True)
+    gate.add_argument("--output", type=Path, required=True)
+    gate.add_argument("--target-block-count", type=int, required=True)
     return parser
 
 
@@ -325,6 +430,17 @@ def main() -> int:
     if args.command == "self-test":
         _write_json(args.output, observer_self_test_contract())
         return 0
+    if args.command == "gate":
+        value = build_residency_gate(
+            _read_trace_dir(args.trace_dir),
+            target_block_count=args.target_block_count,
+        )
+        _write_json(args.output, value)
+        if value["decision"] == "trigger_ready":
+            return 0
+        if value["decision"] == "continue_pressure":
+            return 3
+        return 4
     raise AssertionError(args.command)
 
 

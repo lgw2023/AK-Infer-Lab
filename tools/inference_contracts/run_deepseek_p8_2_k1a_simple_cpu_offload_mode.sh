@@ -11,6 +11,11 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 TASK_ID=${P8_2_K1A_TASK_ID:-p8_2_k1a_deepseek_v4_flash_simple_cpu_offload_store_restore_2026_0717}
 CPU_BYTES_TO_USE=${P8_2_K1A_CPU_BYTES_TO_USE:-274877906944}
 CPU_BYTES_TO_USE_PER_RANK=${P8_2_K1A_CPU_BYTES_TO_USE_PER_RANK:-34359738368}
+LAZY_OFFLOAD=${P8_2_K1A_LAZY_OFFLOAD:-false}
+ENABLE_H2D_RESIDENCY_OBSERVER=${P8_2_K1A_ENABLE_H2D_RESIDENCY_OBSERVER:-0}
+REQUEST_COUNT_MIN=${P8_2_K1A_REQUEST_COUNT_MIN:-6}
+REQUEST_COUNT_MAX=${P8_2_K1A_REQUEST_COUNT_MAX:-6}
+PRESSURE_REQUEST_COUNT_MAX=${P8_2_K1A_PRESSURE_REQUEST_COUNT_MAX:-1}
 HOST_MEM_AVAILABLE_MIN=${P8_2_K1A_HOST_MEM_AVAILABLE_MIN:-412316860416}
 REPO_FILE_LIST=${P8_2_K1A_REPO_FILE_LIST:-benchmarks/deepseek_v4_flash/p8_2_k1a_simple_cpu_offload_feasibility_audit.yaml:benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_simple_cpu_offload_store_restore.yaml:tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py:tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py:tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py:tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh:benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch}
 REPO_ROOT=${REPO_ROOT:-/data/node0_disk1/liguowei/AK-Infer-Lab}
@@ -31,6 +36,7 @@ PORT=${PORT:-7000}
 REQUEST_RUNNER=${REQUEST_RUNNER:-${REPO_ROOT}/tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py}
 AUDITOR=${AUDITOR:-${REPO_ROOT}/tools/inference_contracts/audit_deepseek_p8_2_k1a_simple_cpu_offload.py}
 OBSERVER=${OBSERVER:-${REPO_ROOT}/tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py}
+H2D_RESIDENCY_OBSERVER=${P8_2_K1A_H2D_RESIDENCY_OBSERVER:-${REPO_ROOT}/tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py}
 ARGV_IDENTITY=${ARGV_IDENTITY:-${SCRIPT_DIR}/canonicalize_server_argv.py}
 RUNTIME_IMPL=${RUNTIME_IMPL:-${REPO_ROOT}/tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py}
 RUNTIME_LOADER=${RUNTIME_LOADER:-${REPO_ROOT}/tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py}
@@ -42,7 +48,12 @@ RUNTIME_DIR=${RESULT_DIR}/runtime
 OVERLAY_ROOT=${RUNTIME_DIR}/overlay_root
 DIAGNOSTIC_PATH=${RUNTIME_DIR}/hybrid_kv_runtime_diagnostic.jsonl
 TRACE_DIR=${RUNTIME_DIR}/offload_trace
-KV_TRANSFER_JSON=$(printf '{"kv_connector":"SimpleCPUOffloadConnector","kv_role":"kv_both","kv_connector_extra_config":{"cpu_bytes_to_use":%s,"cpu_bytes_to_use_per_rank":%s,"lazy_offload":false}}' "${CPU_BYTES_TO_USE}" "${CPU_BYTES_TO_USE_PER_RANK}")
+ACTIVE_ROLE_PATH=${RUNTIME_DIR}/request_control/active_role.json
+case "${LAZY_OFFLOAD}" in
+  true|false) ;;
+  *) echo "P8_2_K1A_LAZY_OFFLOAD must be true or false" >&2; exit 64 ;;
+esac
+KV_TRANSFER_JSON=$(printf '{"kv_connector":"SimpleCPUOffloadConnector","kv_role":"kv_both","kv_connector_extra_config":{"cpu_bytes_to_use":%s,"cpu_bytes_to_use_per_rank":%s,"lazy_offload":%s}}' "${CPU_BYTES_TO_USE}" "${CPU_BYTES_TO_USE_PER_RANK}" "${LAZY_OFFLOAD}")
 EXPECTED_COMMAND_SHA256=${P8_2_K1A_EXPECTED_COMMAND_SHA256:-d769e0b0fb9c49759b62167ea3bc07996baa7ade0d8d86633d626ea1f07da134}
 server_pid=
 
@@ -82,12 +93,22 @@ audit_contract() {
   printf -v rendered '%q ' "${cmd[@]}"
   printf 'task_id=%s\n' "${TASK_ID}"
   printf 'lifecycle_count=1\n'
-  printf 'request_count=6\n'
+  if test "${REQUEST_COUNT_MIN}" = "${REQUEST_COUNT_MAX}"; then
+    printf 'request_count=%s\n' "${REQUEST_COUNT_MIN}"
+  else
+    printf 'request_count_min=%s\n' "${REQUEST_COUNT_MIN}"
+    printf 'request_count_max=%s\n' "${REQUEST_COUNT_MAX}"
+    printf 'pressure_request_count_max=%s\n' "${PRESSURE_REQUEST_COUNT_MAX}"
+  fi
   printf 'kv_connector=SimpleCPUOffloadConnector\n'
   printf 'cpu_bytes_to_use=%s\n' "${CPU_BYTES_TO_USE}"
   printf 'cpu_bytes_to_use_per_rank=%s\n' "${CPU_BYTES_TO_USE_PER_RANK}"
-  printf 'lazy_offload=false\n'
-  printf 'observer_mode=observe_only_no_decision_or_copy_mutation\n'
+  printf 'lazy_offload=%s\n' "${LAZY_OFFLOAD}"
+  if test "${ENABLE_H2D_RESIDENCY_OBSERVER}" = 1; then
+    printf 'observer_mode=observe_only_with_controller_role_marker_no_runtime_decision_or_copy_mutation\n'
+  else
+    printf 'observer_mode=observe_only_no_decision_or_copy_mutation\n'
+  fi
   printf 'server_command_identity_schema=ak_infer_lab_server_argv_v1\n'
   printf 'server_command_sha256=%s\n' "${canonical_sha256}"
   printf 'server_command=%s\n' "${rendered% }"
@@ -140,7 +161,7 @@ trap cleanup_mode EXIT
 test -f "${RESULT_DIR}/run_plan.json"
 test -f "${RESULT_DIR}/request_body_manifest.json"
 test ! -e "${RUNTIME_DIR}"
-mkdir -p "${RUNTIME_DIR}" "${OVERLAY_ROOT}" "${TRACE_DIR}"
+mkdir -p "${RUNTIME_DIR}" "${OVERLAY_ROOT}" "${TRACE_DIR}" "${RUNTIME_DIR}/request_control"
 
 "${PYTHON_BIN}" - "${RESULT_DIR}/host_memory_summary.json" "${CPU_BYTES_TO_USE}" "${CPU_BYTES_TO_USE_PER_RANK}" "${HOST_MEM_AVAILABLE_MIN}" <<'PY'
 import json
@@ -193,6 +214,10 @@ cp -a --no-preserve=ownership "${BASE_PLUGIN_ROOT}" "${OVERLAY_ROOT}/vllm_ascend
 cp "${RUNTIME_IMPL}" "${OVERLAY_ROOT}/p6_3b_hybrid_kv_runtime_impl.py"
 cp "${RUNTIME_LOADER}" "${OVERLAY_ROOT}/p6_3b_r2_hybrid_kv_runtime_patch.py"
 cp "${OBSERVER}" "${OVERLAY_ROOT}/p8_2_k1a_simple_cpu_offload_observer.py"
+if test "${ENABLE_H2D_RESIDENCY_OBSERVER}" = 1; then
+  test -f "${H2D_RESIDENCY_OBSERVER}"
+  cp "${H2D_RESIDENCY_OBSERVER}" "${OVERLAY_ROOT}/p8_2_k1a_h2d_residency_observer.py"
+fi
 patch -p1 -d "${OVERLAY_ROOT}" --dry-run < "${MTP_PATCH}" > "${RUNTIME_DIR}/mtp_patch_dry_run.txt"
 patch -p1 -d "${OVERLAY_ROOT}" < "${MTP_PATCH}" > "${RUNTIME_DIR}/mtp_patch_apply.txt"
 patch -p1 -d "${OVERLAY_ROOT}" --dry-run < "${HYBRID_PATCH}" > "${RUNTIME_DIR}/hybrid_patch_dry_run.txt"
@@ -235,6 +260,9 @@ unset VLLM_PREFIX_CACHE_RETENTION_INTERVAL
 "${PYTHON_BIN}" -c 'import vllm_ascend.patch.platform.patch_kv_cache_interface; import p6_3b_r2_hybrid_kv_runtime_patch as repair; assert repair.PATCH_INSTALLED; assert all(repair.require_ascend_manager_resolution().values()); from vllm_ascend.distributed.kv_transfer import register_connector; register_connector(); from vllm.distributed.kv_transfer.kv_connector.factory import KVConnectorFactory; cls = KVConnectorFactory.get_connector_class_by_name("SimpleCPUOffloadConnector"); assert cls.__name__ == "AscendSimpleCPUOffloadConnector"' > "${RUNTIME_DIR}/runtime_patch_self_test.txt" 2>&1
 printf '%s\n' pass > "${RUNTIME_DIR}/source_gate_status.txt"
 export P8_2_K1A_TRANSFER_TRACE_DIR="${TRACE_DIR}"
+export P8_2_K1A_ENABLE_H2D_RESIDENCY_OBSERVER="${ENABLE_H2D_RESIDENCY_OBSERVER}"
+export P8_2_K1A_H2D_ACTIVE_ROLE_PATH="${ACTIVE_ROLE_PATH}"
+export P8_2_K1A_H2D_TARGET_BLOCK_COUNT=64
 
 test -f "${ARGV_IDENTITY}"
 printf '%q ' "${cmd[@]}" > "${RUNTIME_DIR}/server_command.txt"
@@ -261,6 +289,7 @@ import hashlib
 import importlib.metadata
 import json
 from pathlib import Path
+import subprocess
 import sys
 
 (
@@ -275,8 +304,28 @@ import sys
 ) = sys.argv[1:]
 root = Path(root)
 relative_paths = tuple(relative_list.split(":"))
+head = subprocess.check_output(
+    ["git", "rev-parse", "HEAD"], cwd=root, text=True
+).strip()
+origin_main = subprocess.check_output(
+    ["git", "rev-parse", "origin/main"], cwd=root, text=True
+).strip()
+ahead_behind = subprocess.check_output(
+    ["git", "rev-list", "--left-right", "--count", "HEAD...origin/main"],
+    cwd=root,
+    text=True,
+).strip().split()
+tracked_status = subprocess.check_output(
+    ["git", "status", "--porcelain", "--untracked-files=no"],
+    cwd=root,
+    text=True,
+)
 value = {
     "task_id": task_id,
+    "head": head,
+    "origin_main": origin_main,
+    "ahead_behind": [int(part) for part in ahead_behind],
+    "tracked_worktree_clean": tracked_status == "",
     "vllm": importlib.metadata.version("vllm"),
     "vllm_ascend": importlib.metadata.version("vllm-ascend"),
     "vllm_commit": "0decac0d96c42b49572498019f0a0e3600f50398",
@@ -330,13 +379,21 @@ do
   grep -F "${metric}" "${RUNTIME_DIR}/live_metrics_preflight.prom" >/dev/null
 done
 
-"${PYTHON_BIN}" - "${RUNTIME_DIR}/server_command.txt" "/proc/${server_pid}/cmdline" "${RUNTIME_DIR}/vllm_server.log" "${TRACE_DIR}" "${RESULT_DIR}/connector_resolution_summary.json" "${KV_TRANSFER_JSON}" <<'PY'
+"${PYTHON_BIN}" - "${RUNTIME_DIR}/server_command.txt" "/proc/${server_pid}/cmdline" "${RUNTIME_DIR}/vllm_server.log" "${TRACE_DIR}" "${RESULT_DIR}/connector_resolution_summary.json" "${KV_TRANSFER_JSON}" "${ENABLE_H2D_RESIDENCY_OBSERVER}" <<'PY'
 import json
 from pathlib import Path
 import shlex
 import sys
 
-command_path, process_path, log_path, trace_dir, output_path, expected_json = sys.argv[1:]
+(
+    command_path,
+    process_path,
+    log_path,
+    trace_dir,
+    output_path,
+    expected_json,
+    require_h2d_observer,
+) = sys.argv[1:]
 server_args = shlex.split(Path(command_path).read_text(encoding="utf-8"))
 process_args = [
     value.decode("utf-8", errors="replace")
@@ -354,6 +411,11 @@ for path in Path(trace_dir).glob("trace.*.jsonl"):
     observer_rows.extend(
         json.loads(line) for line in path.read_text().splitlines() if line
     )
+residency_rows = []
+for path in Path(trace_dir).glob("h2d-residency.*.jsonl"):
+    residency_rows.extend(
+        json.loads(line) for line in path.read_text().splitlines() if line
+    )
 value = {
     "expected_config": expected,
     "server_command_config": server_config,
@@ -365,6 +427,10 @@ value = {
     "observer_installed_event_count": sum(
         row.get("event") == "observer_installed" for row in observer_rows
     ),
+    "h2d_residency_observer_installed_event_count": sum(
+        row.get("event") == "h2d_residency_observer_installed"
+        for row in residency_rows
+    ),
 }
 extra = expected["kv_connector_extra_config"]
 value["cpu_bytes_to_use"] = extra["cpu_bytes_to_use"]
@@ -374,6 +440,14 @@ value["resolved_cpu_capacity_exact"] = all((
     process_config == expected,
     extra["cpu_bytes_to_use"] == extra["cpu_bytes_to_use_per_rank"] * 8,
 ))
+value["resolved_lazy_offload_exact"] = (
+    extra.get("lazy_offload") is expected["kv_connector_extra_config"]["lazy_offload"]
+)
+value["h2d_residency_observer_required"] = require_h2d_observer == "1"
+value["h2d_residency_observer_resolution_ok"] = (
+    not value["h2d_residency_observer_required"]
+    or value["h2d_residency_observer_installed_event_count"] > 0
+)
 value["resolved_connector_exact"] = all((
     server_config == expected,
     process_config == expected,
@@ -383,6 +457,8 @@ value["resolved_connector_exact"] = all((
     value["npu_worker_log_present"],
     value["observer_installed_event_count"] > 0,
     value["resolved_cpu_capacity_exact"],
+    value["resolved_lazy_offload_exact"],
+    value["h2d_residency_observer_resolution_ok"],
 ))
 Path(output_path).write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 assert value["resolved_connector_exact"]

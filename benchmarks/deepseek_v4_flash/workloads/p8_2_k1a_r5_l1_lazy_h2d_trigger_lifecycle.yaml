@@ -1,0 +1,158 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle
+date: '2026-07-21'
+task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721
+purpose: prove_one_dynamic_lazy_cpu_only_trigger_and_real_d2h_h2d_restore_chain_at_the_accepted_capacity
+
+stage_contract:
+  stage: P8.2-K1A-R5-L1
+  mode: accepted_capacity_single_lazy_lifecycle_dynamic_pressure_cpu_only_trigger
+  claim_boundary: accepted_capacity_single_lazy_lifecycle_cpu_only_trigger_and_d2h_h2d_mechanism_candidate_only
+  candidate_server_grade_is_not_developer_green: true
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  unique_root_cause_claim_authorized: false
+
+parent_gate:
+  r5_f0_task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721
+  r5_f0_grade: candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility
+  r5_f0_manifest_sha256: d9b5c157ff2ef0804a3cbc01bbb8ab17c6897600efaf484a47dbd6c6bfe1d0b8
+  r5_f0_file_count: 9
+  r5_f0_total_bytes: 7122
+  r4_r1_grade: candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout
+  r2_capacity_grade: ready_p8_2_k1a_r2_allocator_capacity
+
+runtime_config:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  served_model_name: deepseek-v4-flash-w8a8-mtp
+  quantization: ascend
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size_tokens: 128
+  chunked_prefill: true
+  prefix_caching: true
+  kv_connector: SimpleCPUOffloadConnector
+  kv_role: kv_both
+  lazy_offload: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  server_command_identity_schema: ak_infer_lab_server_argv_v1
+  server_command_sha256: 89a9a105da5a04a3207c638b6999858ed32bff0f438c2cfb617b03905d1efe2f
+
+dynamic_request_plan:
+  lifecycle_count_exact: 1
+  request_count_min: 4
+  request_count_max: 8
+  fixed_roles: [warmup, target_prime, restore_follower]
+  pressure_roles: [pressure_01, pressure_02, pressure_03, pressure_04, pressure_05]
+  pressure_request_count_max: 5
+  pressure_count_is_candidate_not_fixed_runtime_fact: true
+  request_retries: 0
+  concurrency: 1
+  output_tokens: 64
+  temperature: 0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming: true
+  warmup_context_tokens: 4096
+  target_and_restore_context_tokens: 32768
+  target_restore_lcp_tokens: 16384
+  observed_target_prefix_tokens: 8192
+  observed_target_prefix_blocks: 64
+  pressure_context_tokens: 131072
+  pressure_bodies_mutually_isolated: true
+  all_bodies_frozen_before_server_start: true
+  all_body_bytes_sizes_and_sha256_frozen: true
+  restore_body_prepared_but_conditionally_sent: true
+  restore_requires_cpu_present_gpu_absent: true
+
+controller_and_observer:
+  controller_role_marker: runtime/request_control/active_role.json
+  controller_role_marker_contains_raw_hash_or_token_values: false
+  server_request_id_is_diagnostic_only: true
+  target_hashes_held_in_engine_memory_only: true
+  target_hash_values_emitted: false
+  target_residency_counts_emitted: true
+  observer_changes_scheduler_decisions: false
+  observer_changes_request_order: false
+  observer_changes_copy_arguments: false
+  target_cpu_eviction_is_terminal: true
+  residency_unobservable_is_terminal: true
+  pressure_max_without_trigger_is_terminal: true
+
+evidence_contract:
+  source_and_repo_hash_gate_before_keep_alive_stop: true
+  resolved_lazy_connector_capacity_and_argv_before_requests: true
+  request_http_prompt_generated_streamed_finish_sse_exact: true
+  request_mtp_health_queue_counter_exact: true
+  target_hash_capture_exact_64_without_value_emission: true
+  target_gpu_eviction_observed: true
+  target_cpu_only_residency_before_restore: true
+  restore_cpu_hit_tokens_exact: 16384
+  d2h_and_h2d_worker_count_exact: 8
+  d2h_and_h2d_enqueue_copy_enter_return_poll_complete_exact: true
+  restore_load_request_completed: true
+  cleanup_port_process_npu_and_keep_alive_restore: true
+  unprofiled_timing_diagnostic_only: true
+
+grading:
+  source_or_resource_blocked: blocked_p8_2_k1a_r5_l1_source_or_resource_gate
+  no_success: red_p8_2_k1a_r5_l1_lazy_h2d_no_success
+  cpu_target_lost: red_p8_2_k1a_r5_l1_cpu_target_lost
+  trigger_not_reached: yellow_p8_2_k1a_r5_l1_trigger_not_reached
+  evidence_incomplete: red_p8_2_k1a_r5_l1_h2d_evidence_incomplete
+  candidate_green: candidate_green_p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle
+  stop_on_first_request_or_observer_failure: true
+  developer_review_required: true
+
+result_contract:
+  candidate_payload_file_count_max: 15
+  transfer_file_count_including_manifest_max: 16
+  max_transfer_total_bytes: 71680
+  sensitivity: bounded_operational_metadata_no_content_or_token_ids
+  generated_content_allowed: false
+  token_ids_allowed: false
+  raw_hash_values_allowed: false
+  raw_logs_metrics_request_bodies_and_trace_remain_server_local: true
+  environment_and_sync_provenance_required: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  transfer_methods: [email, upload-api, server-local]
+
+execution_state:
+  execution_mode: authorized_accepted_capacity_single_lazy_dynamic_pressure_h2d_trigger_lifecycle
+  server_sync_review_authorized: true
+  npu_execution_authorized: true
+  keep_alive_stop_and_restore_authorized: true
+  vllm_server_start_authorized: true
+  model_requests_authorized: true
+  formal_model_lifecycle_count_max: 1
+  model_request_count_min: 4
+  model_request_count_max: 8
+  runtime_overlay_authorized: true
+  runtime_behavior_patch_authorized: false
+  capacity_search_authorized: false
+  profiler_authorized: false
+  hbm_sampler_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true
+
+stop_policy:
+  no_request_retry: true
+  no_capacity_or_runtime_tuning: true
+  no_eager_fallback: true
+  no_second_lifecycle: true
+  no_restore_without_runtime_cpu_only_trigger: true
+  no_automatic_result_transfer: true

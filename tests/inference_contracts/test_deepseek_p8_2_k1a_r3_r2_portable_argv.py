@@ -282,14 +282,14 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
+        "task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
     ) in handoff
     for exact in (
-        "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_"
-        "trigger_feasibility_no_npu",
-        "npu_execution_authorized: false",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+            "execution_mode: authorized_accepted_capacity_single_lazy_dynamic_"
+            "pressure_h2d_trigger_lifecycle",
+            "npu_execution_authorized: true",
+        "formal_model_lifecycle_count_max: 1",
+        "model_request_count_max: 8",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
         "parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete",
@@ -301,6 +301,6 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
         assert exact in handoff
     assert "test ! -e \"${RESULT_ROOT}\"" in handoff
     assert "candidate_manifest.server_local.json" in handoff
-    assert "正式有界 payload 必须恰好 8 个，加 manifest 共 9 个" in handoff
+    assert "16 files（15 payload + manifest" in handoff
     assert "email / upload-api / server-local" in handoff
     assert "result_transfer_authorized: true" in handoff

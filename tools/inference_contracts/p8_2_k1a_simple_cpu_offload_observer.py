@@ -9,6 +9,19 @@ from typing import Any
 
 
 TRACE_ENV = "P8_2_K1A_TRANSFER_TRACE_DIR"
+ACTIVE_ROLE_PATH_ENV = "P8_2_K1A_H2D_ACTIVE_ROLE_PATH"
+
+
+def _active_contract_role() -> str | None:
+    raw_path = os.environ.get(ACTIVE_ROLE_PATH_ENV)
+    if not raw_path:
+        return None
+    try:
+        value = json.loads(Path(raw_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return None
+    role = value.get("role") if isinstance(value, dict) else None
+    return str(role) if role else None
 
 
 def _emit(event: str, **fields: Any) -> None:
@@ -59,6 +72,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 component="scheduler",
                 direction="h2d",
                 request_id=request.request_id,
+                contract_role=_active_contract_role(),
                 num_new_tokens=num_new_tokens,
                 is_async=bool(is_async),
             )
@@ -77,6 +91,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 component="scheduler",
                 direction="h2d",
                 request_id=request.request_id,
+                contract_role=_active_contract_role(),
                 block_count=len(transfer.gpu_block_ids),
                 num_external_tokens=num_external_tokens,
             )
@@ -127,6 +142,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 component="scheduler",
                 direction="h2d",
                 request_id=request_id,
+                contract_role=_active_contract_role(),
             )
         return result
 
@@ -289,6 +305,12 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
     SimpleCPUOffloadNPUWorker._poll_stream_events = observed_poll
     SimpleCPUOffloadScheduler._p8_2_k1a_observer_installed = True
     _emit("observer_installed", component="runtime_patch", mutation="observe_only")
+    if os.environ.get("P8_2_K1A_ENABLE_H2D_RESIDENCY_OBSERVER") == "1":
+        from p8_2_k1a_h2d_residency_observer import (
+            install_p8_2_k1a_h2d_residency_observer,
+        )
+
+        install_p8_2_k1a_h2d_residency_observer()
 
 
 def summarize_trace_rows(
@@ -387,21 +409,30 @@ def summarize_trace_rows(
         row
         for row in rows
         if row.get("event") == "cpu_hit_matched"
-        and str(row.get("request_id", "")).endswith(restore_request_suffix)
+        and (
+            row.get("contract_role") == "restore_follower"
+            or str(row.get("request_id", "")).endswith(restore_request_suffix)
+        )
         and int(row.get("num_new_tokens") or 0) > 0
     ]
     load_scheduled = [
         row
         for row in rows
         if row.get("event") == "load_scheduled"
-        and str(row.get("request_id", "")).endswith(restore_request_suffix)
+        and (
+            row.get("contract_role") == "restore_follower"
+            or str(row.get("request_id", "")).endswith(restore_request_suffix)
+        )
         and int(row.get("block_count") or 0) > 0
     ]
     load_completed = [
         row
         for row in rows
         if row.get("event") == "load_request_completed"
-        and str(row.get("request_id", "")).endswith(restore_request_suffix)
+        and (
+            row.get("contract_role") == "restore_follower"
+            or str(row.get("request_id", "")).endswith(restore_request_suffix)
+        )
     ]
     store_completed = [
         row for row in rows if row.get("event") == "store_event_completed"

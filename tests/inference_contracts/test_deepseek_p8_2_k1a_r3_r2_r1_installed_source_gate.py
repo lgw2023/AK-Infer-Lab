@@ -25,7 +25,7 @@ def test_current_handoff_preserves_the_r4_r1_source_and_r5_f0_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
+        "task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
     ) in handoff
     assert "manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b" in handoff
     assert "block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283" in handoff
@@ -147,34 +147,33 @@ def test_r3_r2_r1_audit_preserves_parent_block_and_repair_boundary() -> None:
     assert audit["decision"]["p8_3_i1_authorized"] is False
 
 
-def test_r5_f0_handoff_runs_the_full_bounded_offline_chain() -> None:
+def test_r5_l1_handoff_runs_the_full_bounded_single_lifecycle_chain() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_"
-        "trigger_feasibility_no_npu",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+        "execution_mode: authorized_accepted_capacity_single_lazy_dynamic_"
+        "pressure_h2d_trigger_lifecycle",
+        "formal_model_lifecycle_count_max: 1",
+        "model_request_count_min: 4",
+        "model_request_count_max: 8",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh",
-        "parent_bounded_evidence_read_authorized: true",
-        "r2_geometry_provenance_read_authorized: true",
-        "frozen_source_semantics_audit_authorized: true",
-        "formal_h2d_trigger_lifecycle_allowed: false",
+        "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh",
+        "parent_r5_f0_and_r2_provenance_read_authorized: true",
+        "frozen_source_and_installed_runtime_audit_authorized: true",
+        "pressure_request_count_max: 5",
         "candidate_manifest.server_local.json",
-        "正式有界 payload 必须恰好 8 个，加 manifest 共 9 个",
         "email / upload-api / server-local",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
-        "blocked_p8_2_k1a_r5_f0_source_or_provenance_gate",
+        "blocked_p8_2_k1a_r5_l1_source_or_resource_gate",
         "不得进入 K2",
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
     assert 'test ! -e "${RESULT_ROOT}"' in handoff
-    assert "trap cleanup EXIT" not in handoff
-    assert "keep_alive_stop_authorized: false" in handoff
+    assert "cleanup_status.txt=clean" in handoff
+    assert "keep_alive_stop_and_restore_authorized: true" in handoff
 
 
 def test_r3_r2_r1_contract_files_remain_preserved_as_parent_provenance() -> None:

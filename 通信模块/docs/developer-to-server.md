@@ -1,23 +1,24 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K1A-R5-F0 H2D trigger 零资源可行性与观测合同复核
+## 当前唯一服务器动作：P8.2-K1A-R5-L1 accepted-capacity lazy H2D trigger 单生命周期
 
 ~~~text
-task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721
-execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_trigger_feasibility_no_npu
+task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721
+execution_mode: authorized_accepted_capacity_single_lazy_dynamic_pressure_h2d_trigger_lifecycle
 server_sync_review_authorized: true
-parent_bounded_evidence_read_authorized: true
-r2_geometry_provenance_read_authorized: true
-frozen_source_semantics_audit_authorized: true
-installed_runtime_import_and_method_resolution_authorized: true
+parent_r5_f0_and_r2_provenance_read_authorized: true
+frozen_source_and_installed_runtime_audit_authorized: true
 result_directory_creation_authorized: true
-npu_execution_authorized: false
-keep_alive_stop_authorized: false
-vllm_server_start_authorized: false
-model_requests_authorized: false
-formal_model_lifecycle_count_exact: 0
-model_request_count_exact: 0
-runtime_overlay_authorized: false
+npu_execution_authorized: true
+keep_alive_stop_and_restore_authorized: true
+vllm_server_start_authorized: true
+model_requests_authorized: true
+formal_model_lifecycle_count_max: 1
+model_request_count_min: 4
+model_request_count_max: 8
+pressure_request_count_max: 5
+request_retry_count_exact: 0
+runtime_overlay_authorized: true
 runtime_behavior_patch_authorized: false
 capacity_search_authorized: false
 profiler_authorized: false
@@ -25,21 +26,21 @@ hbm_sampler_authorized: false
 runtime_or_dependency_mutation_authorized: false
 result_transfer_authorized: true
 transfer_method_selected: false
+automatic_transfer_allowed: false
 next_task_authorized: false
-formal_h2d_trigger_lifecycle_allowed: false
 k2_authorized: false
 p8_3_i1_authorized: false
 no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true
 standing_npu_and_vllm_consumption_authorization: true
 ~~~
 
-`standing_npu_and_vllm_consumption_authorization:true` 不是本任务的 NPU 执行许可。本任务从开始到结束都不得停止
-keep-alive、启动 vLLM、占用新的 NPU 资源或发送模型请求。任何前门失败都在零资源处停止，不得把
-`result_transfer_authorized:true` 当作自动外发命令。
+这是一次完整但有界的正式机制实验，不是简单 smoke。任务同时关闭 repository/source/provenance、运行时
+身份、资源、安全清理、动态 trigger、D2H/H2D 八 worker 链和 bounded package 七类证据门；仍只允许一个
+model lifecycle。`result_transfer_authorized:true` 只表示小结果包可以进入渠道选择，不是自动上传或发邮件的命令。
 
-## 0. 已接受事实、开放问题与本轮产物
+## 0. 已接受事实、实验问题和不可变边界
 
-以下历史门只作 provenance，不重跑、不撤销：
+以下历史事实只作 provenance，不重跑、不撤销：
 
 ~~~text
 green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
@@ -50,54 +51,46 @@ blocked_p8_2_k1_frozen_stack_import_incompatible
 ready_p8_2_k1a_r2_allocator_capacity
 green_p8_3_i0_checkpoint_inventory
 green_p8_3_i0_r1_unclassified_taxonomy
-red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete
-yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore
-blocked_p8_2_k1a_r4_offline_closeout_gate
 candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout
+candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility
 ~~~
 
-R4-R1 已接受的父证据声明保持不变：
+R5-L1 继承但不改写的直接 parent/source provenance：
 
 ~~~text
 parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete
+parent_developer_grade=yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore
 parent_transport_success_count_after_developer_refinalization=6
 parent_d2h_store_complete=true
 parent_h2d_restore_complete=false
-cpu_bytes_to_use_per_rank=430604288
+manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
+block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283
 ~~~
 
-开发机已独立接受 R4-R1，但只接受以下窄边界：
+R5-L1 在正式 lifecycle 前先精确重放 R4-R1 bounded package，并精确重放 R2 geometry/rendezvous/allocator。
+R5-F0 已由开发机独立复核：下载包为 `9 files / 7122 bytes`；eager path 因 accepted CPU tier 的
+capacity churn 被拒绝；lazy path 只形成 runtime candidate。R5-L1 仅回答：在冻结的 W8A8、TP8+EP、MTP、
+R2 repair、Prefix Cache/Chunked Prefill enabled、`430604288 bytes/rank` 下，能否先观测 target
+`CPU-present + GPU-absent`，再完成真实 CPU hit/load 和 8-worker H2D restore。
 
-- R4-R1 的 9 payload + manifest 为 `10 files / 32546 bytes`，逐文件 hash/size 与 manifest 一致；
-- 同一原始证据的 D2H store-only 离线收口成立；旧 R4 blocked grade 保留；
-- `popleft_n` source matcher 假阴性已修复，source 支持 capacity churn 作为候选机制；
-- actual CPU eviction、CPU hit/load、H2D restore、unique cause、performance 全部仍未证明；
-- R4-R1 不是 store→restore runtime green，也不授权 K2。
+本任务明确采用 `P8.2-K1A-R5-L1`：`F0` 是 feasibility，`L1` 是首个 formal lazy lifecycle。禁止把
+`5` 个 pressure request 当成固定运行事实；它只是上限。controller 每次只发送一个独立 pressure，读取
+observe-only residency gate 后再决定继续或停止。target 从 CPU tier 丢失、状态不可判、请求失败，或到
+`pressure_05` 仍未形成 trigger 时，均不发送 restore。
 
-R5-F0 只回答“能否为下一次 `SimpleCPUOffloadConnector` H2D trigger lifecycle 写出可审计合同”。它一次完成：
+candidate green 仍只是服务器候选。开发机必须独立复核结果包后才能接受 H2D mechanism green；它不形成
+性能 reference、优化收益、唯一根因、K2 或 P8.3-I1 授权。
 
-1. 精确重放 R4-R1 bounded package；
-2. 精确重放 R2 geometry/rendezvous/allocator；
-3. 审计 frozen vLLM scheduler 与 block-pool source semantics；
-4. 证明 accepted `128 CPU blocks/rank` 下 eager pressure 为什么不能保住 target；
-5. 计算 lazy path 的 candidate trigger geometry，但不把 `5` 个 pressure request 当 runtime 事实；
-6. 自检 observe-only CPU/GPU target residency/eviction observer；
-7. 只读解析 frozen runtime 方法 owner/signature；
-8. 生成 bounded plan、grade、manifest 和零资源前后对照。
+## 1. 同步、tracked-clean 与冻结仓库合同
 
-candidate ready 仍只表示下一次 lifecycle 可以由开发机另行设计和授权。本任务自身 lifecycle/request 必须为 `0/0`。
-
-## 1. 同步门、仓库冻结合同与唯一任务
-
-服务器从当前干净 `main` 普通 fast-forward；不得 reset、stash、rebase、cherry-pick、server commit、push 或运行
-`sync.sh`。未跟踪服务器产物只在 `--untracked-files=no` 边界保留，不删除。
+服务器只允许从干净 `main` 普通 fast-forward。不得 reset、stash、rebase、cherry-pick、运行 `sync.sh`、
+server commit 或 push；未跟踪服务器产物在 `--untracked-files=no` 边界保留，不删除。
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 cd "${REPO_ROOT}"
-
 git fetch origin main
 git merge --ff-only origin/main
 test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
@@ -108,294 +101,247 @@ git rev-list --left-right --count HEAD...origin/main
 git status --short --branch --untracked-files=no
 ~~~
 
-同步后逐项核对以下 tracked 文件。这里的 hash 必须从拉取后的文档逐字执行，任一不匹配立即停止为
-`blocked_p8_2_k1a_r5_f0_repository_contract_gate`，不得创建正式结果根。
+同步后，先执行下列仓库合同；正式结果根此时必须尚不存在。任一失败定级
+`blocked_p8_2_k1a_r5_l1_repository_contract_gate`，不得停止 keep-alive。
+
+~~~bash
+set -euo pipefail
+
+REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
+RESULT_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721_run01
+cd "${REPO_ROOT}"
+test ! -e "${RESULT_ROOT}"
+
+python3 -m pytest \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r4_r1_source_semantics_replay.py \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.py \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_l1_lazy_h2d_lifecycle.py -q
+
+python3 -m py_compile \
+  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py \
+  tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py \
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
+bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh
+bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
+bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh
+
+P8_2_K1A_AUDIT_ONLY=1 \
+  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh \
+  "${RESULT_ROOT}" > /tmp/opencode/p8_2_k1a_r5_l1_top_audit.txt
+P8_2_K1A_MODE_AUDIT_ONLY=1 \
+  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh \
+  "${RESULT_ROOT}" > /tmp/opencode/p8_2_k1a_r5_l1_mode_audit.txt
+
+grep -Fx 'task_id=p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721' /tmp/opencode/p8_2_k1a_r5_l1_top_audit.txt
+grep -Fx 'lifecycle_count=1' /tmp/opencode/p8_2_k1a_r5_l1_top_audit.txt
+grep -Fx 'request_count_min=4' /tmp/opencode/p8_2_k1a_r5_l1_top_audit.txt
+grep -Fx 'request_count_max=8' /tmp/opencode/p8_2_k1a_r5_l1_top_audit.txt
+grep -Fx 'npu_execution_authorized=true' /tmp/opencode/p8_2_k1a_r5_l1_top_audit.txt
+grep -Fx 'lazy_offload=true' /tmp/opencode/p8_2_k1a_r5_l1_mode_audit.txt
+grep -Fx 'server_command_sha256=89a9a105da5a04a3207c638b6999858ed32bff0f438c2cfb617b03905d1efe2f' /tmp/opencode/p8_2_k1a_r5_l1_mode_audit.txt
+grep -Fx 'observer_mode=observe_only_with_controller_role_marker_no_runtime_decision_or_copy_mutation' /tmp/opencode/p8_2_k1a_r5_l1_mode_audit.txt
+~~~
+
+冻结 repo 文件 SHA-256 由本次发布最终值填写在这里，服务器必须逐项验证后再进入 Section 2：
 
 ~~~json
 {
-  "benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f0_h2d_trigger_feasibility_audit.yaml": "f597dc91c1ec842f6fac7ab249980fbc28a98ca98477c01f65fda4cc05c6e6fd",
-  "benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml": "349fcc4347987f795da3cf1f823a9151b8d0c4bb6ecbdf8a005b20a44d86ab62",
-  "tools/inference_contracts/p8_2_k1a_h2d_trigger_feasibility.py": "dec26e965a40fe0bbfcfbb2b2f91bbc8746640732d1237c227fd23eec3df0885",
-  "tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py": "29fb97b23bad852b5630f71a961077540a05989a82ec6838d5ae53b61e108504",
-  "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh": "b357ee1e3d48208bea6725ca8aacfcb899128dc23194b1c56e4c83f4390ad668",
-  "tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.py": "2fc62089e1a3ef7a468d11297d5ac712b5d616b15d512cf79d19c924182a1c96"
+  "benchmarks/deepseek_v4_flash/p8_2_k1a_r5_l1_lazy_h2d_lifecycle_audit.yaml": "a53876a6daa3d754c56bb8d26963e4bf6c4dc3d8a9c9f2b537bfb6a54b890642",
+  "benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle.yaml": "816b4945ebb35c3df7e93f1f4b39290fa8db9e13f53ef3d5c023debe0ed6f454",
+  "tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py": "0c7a4ae499d64c1e40abbaa0f869e9ccbe9147ad4d11182e7a0c0ef701f4ab01",
+  "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py": "b63c02e92c7f6d9ff4a161e3a418199eff8938c8ebcc8d9535c10ab38d125ee2",
+  "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py": "81bd77401c74037220d1dff3582888761802df8e55c96cc97f3ab50ace9af0aa",
+  "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh": "60aa6ad5f01e8c574b7497f48382b23fa1b10ef03a078b818e08f812491a6486",
+  "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py": "2707099971bf71cbec4add841907d864360e60d3e9eac0586ea3eb0c1c5f5ae7",
+  "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh": "0d190d51ad15d321fa25db94b82b0c0c6c5f7bbc271a0b6c739fd2d22d36999d",
+  "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh": "d1c874110847d927f832b2675f12642e704bab8bff5b5f16b2b82c1a37c6d0dd",
+  "tests/inference_contracts/test_deepseek_p8_2_k1a_r5_l1_lazy_h2d_lifecycle.py": "f3d7317bf45235afda77890214c6496ec05504f3fa321d29121b5866211125be",
+  "benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch": "5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6"
 }
 ~~~
 
-执行仓库合同：
+## 2. 零 NPU provenance/source/import/observer 前门
+
+本节仍不得停止 keep-alive、启动 vLLM 或发请求。先验证：
+
+1. server-local R5-F0 根存在，manifest SHA-256 为
+   `d9b5c157ff2ef0804a3cbc01bbb8ab17c6897600efaf484a47dbd6c6bfe1d0b8`，grade 为
+   `candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility`，9 文件总量 7122 bytes；
+2. R2 geometry/rendezvous/allocator 的三个既有 SHA-256 仍分别为
+   `8430730a...`、`fa258790...`、`99f997a6...`，且 world/rank/capacity 闭合；
+3. frozen vLLM commit=`0decac0d96c42b49572498019f0a0e3600f50398`，安装态 vLLM-Ascend 内容仍通过既有
+   9-file source hash gate；不得要求不存在的 Ascend checkout；
+4. `SimpleCPUOffloadConnector` registration、Ascend connector override、worker/copy backend import、R2 hybrid
+   multi-group repair 和 MTP overlay 的只读 probe 全过；
+5. H2D observer self-test 必须声明原 return/exception 保留、不改变 scheduler decision/request order/copy args，
+   不输出 raw hash、generated content 或 token IDs；
+6. controller role marker 只含 `role/schema/timestamp`。服务端随机 request ID 仅作诊断，不作为
+   target/restore 合同身份。
+
+用服务器现有 R2 hash-first resolver 查找三份唯一 evidence；零个或多个匹配都 fail closed。R5-F0 package、
+R2 evidence 和 frozen source 全部只读，不得修改旧结果根、checkpoint、site-packages 或 source checkout。
+
+本节任一失败定级 `blocked_p8_2_k1a_r5_l1_source_or_provenance_gate`，保持 keep-alive 原样并停止。
+
+## 3. 资源前门、keep-alive 安全暂退与恢复责任
+
+先记录：tracked HEAD/status、7000 端口、vLLM process、8 卡健康/HBM、系统 MemAvailable/swap，以及 keep-alive
+所有 marker PID/PGID/设备号。资源门要求 model path 可读、端口空闲、无残留 vLLM、8 卡健康、
+MemAvailable 不低于既有 `384 GiB` 门且 swap 未用。
+
+只允许终止已确认完全属于官方 keep-alive 的 process group。必须先证明其 marker 覆盖 `#0#..#7#`、没有
+混入未知命令；若 provenance 不完整，定级 `blocked_p8_2_k1a_r5_l1_source_or_resource_gate`，不得发送信号。
+不得触碰 unattended-upgrades 或任何无关进程。
+
+安全暂退后必须确认 16 个 marker 归零、8 卡均显示无运行进程、AICore 0、7000 端口空闲，然后才允许
+唯一 lifecycle。无论后续成功或失败，都必须在退出前运行：
+
+~~~bash
+set -euo pipefail
+bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
+~~~
+
+恢复后要求 16 marker、设备 `#0#..#7#`、8 卡健康、7000 空闲、vLLM residual=0、tracked clean；写入
+`${RESULT_ROOT}/resource_recovery_summary.json`，字段至少包含：
+
+~~~json
+{
+  "keep_alive_restored_exact": true,
+  "port_7000_free": true,
+  "vllm_residual_process_count": 0,
+  "all_eight_npu_healthy": true,
+  "tracked_worktree_clean": true
+}
+~~~
+
+## 4. 唯一 formal lifecycle：lazy + 动态 pressure + 条件式 restore
+
+本任务固定 `lazy_offload=true`、`cpu_bytes_to_use=3444834304`、
+`cpu_bytes_to_use_per_rank=430604288`。其余 server argv 与已接受主线相同：W8A8、TP8+EP、MTP
+`num_speculative_tokens=1`、`FULL_DECODE_ONLY`、`max_model_len=135168`、
+`max_num_batched_tokens=4096`、`max_num_seqs=1`、block size 128、Prefix Cache 与 Chunked Prefill enabled、
+同 R2 hybrid-KV repair。禁止调参、eager fallback、容量搜索、第二 patch、第二 lifecycle 或 retry。
+
+先准备全部 8 个冻结 body：warmup、target prime、pressure_01..pressure_05、restore follower。每个 body 的
+token count/bytes/SHA-256 在 server 启动前冻结；pressure bodies 与 target 不共享 cacheable block；restore 与
+target 的实际 LCP 保持 16384 tokens。generated text/token IDs 不写入结果。
+
+执行 wrapper 一次。wrapper 只准备 body、启动唯一 server lifecycle 并运行动态 controller；finalize 被刻意延后到
+keep-alive 恢复以后：
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
+RESULT_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721_run01
 cd "${REPO_ROOT}"
-
-python3 -m pytest \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r4_store_only_refinalization.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r4_r1_source_semantics_replay.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.py -q
-
-python3 -m py_compile \
-  tools/inference_contracts/p8_2_k1a_h2d_trigger_feasibility.py \
-  tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py
-bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh
-
-P8_2_K1A_R5_F0_AUDIT_ONLY=1 \
-  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh \
-  > /tmp/opencode/p8_2_k1a_r5_f0_audit_only.txt
-grep -Fx 'task_id=p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721' /tmp/opencode/p8_2_k1a_r5_f0_audit_only.txt
-grep -Fx 'npu_execution_authorized=false' /tmp/opencode/p8_2_k1a_r5_f0_audit_only.txt
-grep -Fx 'formal_model_lifecycle_count=0' /tmp/opencode/p8_2_k1a_r5_f0_audit_only.txt
-grep -Fx 'model_request_count=0' /tmp/opencode/p8_2_k1a_r5_f0_audit_only.txt
-grep -Fx 'formal_h2d_trigger_lifecycle_allowed=false' /tmp/opencode/p8_2_k1a_r5_f0_audit_only.txt
-grep -Fx 'result_transfer_authorized=true' /tmp/opencode/p8_2_k1a_r5_f0_audit_only.txt
-grep -Fx 'next_task_authorized=false' /tmp/opencode/p8_2_k1a_r5_f0_audit_only.txt
-~~~
-
-## 2. 零资源前门与不可扰动证明
-
-在任何证据读取前记录下列状态，任务完成后用同一命令再次记录并比较：
-
-- keep-alive marker PID、PGID、device marker 数量；
-- 8 卡健康、HBM 与已有 keep-alive 占用；
-- 7000 端口；
-- vLLM 推理服务进程；
-- tracked Git status。
-
-本节只读。若 keep-alive 当前不存在，也只报告事实，不得由本任务启动、停止或恢复它。不得向任何进程发送信号。
-
-~~~bash
-set -euo pipefail
-
-mkdir -p /tmp/opencode/p8_2_k1a_r5_f0
-ps -eo pid=,pgid=,args= > /tmp/opencode/p8_2_k1a_r5_f0/process_before.txt
-npu-smi info > /tmp/opencode/p8_2_k1a_r5_f0/npu_before.txt
-ss -ltnp '( sport = :7000 )' > /tmp/opencode/p8_2_k1a_r5_f0/port_7000_before.txt
-git status --porcelain --untracked-files=no > /tmp/opencode/p8_2_k1a_r5_f0/tracked_before.txt
-~~~
-
-若检测到本任务自己即将启动 NPU/vLLM/request 的路径，立即停止为
-`blocked_p8_2_k1a_r5_f0_resource_contract_gate`。现有 keep-alive 不是失败条件，必须原样保留。
-
-## 3. R4-R1 package 与 R2 geometry 的 hash-first resolver
-
-R4-R1 根固定为：
-
-~~~text
-R4_R1_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721_run01
-manifest_sha256=008f753135f087201c0e8f0f53662dede1124691a2a551064f89e65a7a23ddde
-grade=candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout
-payload_file_count=9
-payload_total_bytes=28190
-transfer_file_count=10
-transfer_total_bytes=32546
-~~~
-
-不得修改旧 R4-R1 目录。runner 会验证 manifest 及全部 payload 的 relative path/bytes/SHA-256/sensitivity，
-并拒绝 actual CPU eviction、H2D restore 或 performance 被改写成 true 的 package。
-
-R2 证据不得依赖一个未经验证的手写子目录。只在既有双轨结果根下按 SHA-256 找到唯一文件；零个或多个匹配都
-fail closed，不得选“看起来像”的文件：
-
-~~~bash
-set -euo pipefail
-
-REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-R2_SEARCH_ROOT=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p8_dual_track_k1a_r2_rendezvous_and_p8_3_i0_r1_taxonomy_2026_0717_run01
-
-mapfile -t GEOMETRY_MATCHES < <(find "${R2_SEARCH_ROOT}" -type f -name k1a_r2_geometry_summary.json -exec sha256sum {} + | awk '$1=="8430730a583371ebdcc1cb35ff80903376a007cb3f2645ce6a55114bdb9ea6d1" {print $2}')
-mapfile -t RENDEZVOUS_MATCHES < <(find "${R2_SEARCH_ROOT}" -type f -name geometry.rendezvous.complete.json -exec sha256sum {} + | awk '$1=="fa258790475303b88a41d4e3f2db684a41a79026b22d434ba9827f0275280796" {print $2}')
-mapfile -t ALLOCATOR_MATCHES < <(find "${R2_SEARCH_ROOT}" -type f -name pinned_allocator_envelope_summary.json -exec sha256sum {} + | awk '$1=="99f997a66cb14aeaf1941d34c525729c70dcda0569d45c465a0f1c7f55dfc6b2" {print $2}')
-
-test "${#GEOMETRY_MATCHES[@]}" -eq 1
-test "${#RENDEZVOUS_MATCHES[@]}" -eq 1
-test "${#ALLOCATOR_MATCHES[@]}" -eq 1
-
-export P8_2_K1A_R5_F0_GEOMETRY_SUMMARY=${GEOMETRY_MATCHES[0]}
-export P8_2_K1A_R5_F0_RENDEZVOUS_SUMMARY=${RENDEZVOUS_MATCHES[0]}
-export P8_2_K1A_R5_F0_ALLOCATOR_SUMMARY=${ALLOCATOR_MATCHES[0]}
-~~~
-
-三份证据必须闭合：同一 `probe_run_id=819f2670c2a24d95a8f04d2a5ef75be3`、rank `0..7`、
-world size `8`、geometry parity true、`5048 GPU blocks/rank`、`128 CPU blocks/rank`、
-`required_restore_tokens=16384`、`3364096 bytes/block`、`430604288 bytes/rank`、`3444834304 bytes total`，且 allocator 只保留
-capacity ready、不自动授权 lifecycle。
-
-## 4. Frozen source semantics 与 runtime method-resolution
-
-冻结 vLLM source：
-
-~~~text
-root=/data/node0_disk1/vllm-0.22.1/vllm
-commit=0decac0d96c42b49572498019f0a0e3600f50398
-v1/simple_kv_offload/manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
-v1/core/block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283
-~~~
-
-只读核对 commit、tracked clean 和两个 source hash。不得 checkout、patch 或写入该 source tree。随后让 analyzer 验证：
-
-- CPU lookup：`find_longest_cache_hit` → pending CPU hit → `_reqs_to_load` → `load_event`；
-- eager store 会从包含 cached blocks 的 free queue 继续 `get_new_blocks`，所以压力 store 可先淘汰 CPU target；
-- lazy store 的 cursor/free-queue 路径存在，但其动态到达点不能仅由静态 `5` 个 pressure request 证明；
-- `BlockPool.get_new_blocks()` 使用 `popleft_n` 并调用 `_maybe_evict_cached_block`，后者移除 cached hash；
-- source 支持候选机制不等于 parent lifecycle 已发生 eviction/H2D。
-
-再用冻结运行环境只读解析方法 owner/signature，不安装 observer、不实例化 scheduler、不初始化设备：
-
-~~~bash
-set -euo pipefail
-
-PYTHON_BIN=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python
-OBSERVER=/data/node0_disk1/liguowei/AK-Infer-Lab/tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py
-
-"${PYTHON_BIN}" "${OBSERVER}" self-test \
-  --output /tmp/opencode/p8_2_k1a_r5_f0/observer_self_test.json
-
-"${PYTHON_BIN}" - <<'PY' > /tmp/opencode/p8_2_k1a_r5_f0/runtime_method_resolution.json
-import inspect
-import json
-from vllm.v1.core.block_pool import BlockPool
-from vllm.v1.simple_kv_offload.manager import SimpleCPUOffloadScheduler
-
-value = {
-    "schema_version": "p8_2_k1a_r5_f0_runtime_method_resolution_v1",
-    "scheduler_methods": {
-        name: str(inspect.signature(getattr(SimpleCPUOffloadScheduler, name)))
-        for name in (
-            "request_finished_all_groups",
-            "get_num_new_matched_tokens",
-            "update_state_after_alloc",
-            "build_connector_meta",
-        )
-    },
-    "block_pool_methods": {
-        "_maybe_evict_cached_block": str(
-            inspect.signature(BlockPool._maybe_evict_cached_block)
-        )
-    },
-    "runtime_method_resolution": "pass",
-    "observer_installed": False,
-    "npu_initialized": False,
-}
-print(json.dumps(value, indent=2, sort_keys=True))
-PY
-~~~
-
-若 import 本身触发设备初始化、方法缺失/owner 漂移或 signature 无法解析，停止为
-`blocked_p8_2_k1a_r5_f0_source_or_provenance_gate`。不得为通过 probe 修改 site-packages。
-
-## 5. 运行 R5-F0 analyzer（仍为零 NPU）
-
-只有第 1–4 节全部通过才创建一个 fresh 结果根。若同名目录已存在，停止并换新任务，不覆盖、不复用。
-
-~~~bash
-set -euo pipefail
-
-REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721_run01
 test ! -e "${RESULT_ROOT}"
 
-export P8_2_K1A_R5_F0_R4_R1_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721_run01
-export P8_2_K1A_R5_F0_VLLM_ROOT=/data/node0_disk1/vllm-0.22.1/vllm
+set +e
+bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh "${RESULT_ROOT}"
+MODE_OR_CONTROLLER_EXIT=$?
+set -e
+printf '%s\n' "${MODE_OR_CONTROLLER_EXIT}" > "${RESULT_ROOT}/initial_runner_exit_code.txt"
+~~~
 
+controller 顺序严格为：
+
+~~~text
+warmup
+target_prime
+pressure_01
+读取 residency gate
+若 target CPU-present + GPU-absent -> restore_follower
+否则依次 pressure_02 ... pressure_05，每次只发一个并重新读取 gate
+若 CPU target lost / unobservable / request failure / pressure_05 后仍未 trigger -> 停止，不发 restore
+~~~
+
+controller role marker 是测试控制面，不是 runtime 决策 patch；observer 仍不改变 scheduler、request order 或 copy
+参数。target hash 值只留在 engine 内存，不写文件；输出只含 64-block count 和 CPU/GPU residency count。
+
+每个已发送请求必须 HTTP 200、prompt/generated/streamed token 精确、finish reason=`length`、SSE done、MTP
+activity、health/queue/counter continuity 全过。任一请求失败首错停止，无 retry。
+
+## 5. 延后 finalization、分级与首错保留
+
+mode runner 的 trap 必须先停止 vLLM、释放 7000 并写 `cleanup_status.txt=clean`；随后按 Section 3 恢复
+keep-alive 并写 `resource_recovery_summary.json`。最后才运行一次正式 finalizer：
+
+~~~bash
+set -euo pipefail
+
+REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
+RESULT_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721_run01
+PYTHON_BIN=${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python
 cd "${REPO_ROOT}"
-bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh "${RESULT_ROOT}"
 
-test "$(cat "${RESULT_ROOT}/task_grade.txt")" = candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility
-test -f "${RESULT_ROOT}/candidate_manifest.server_local.json"
+set +e
+"${PYTHON_BIN}" tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py \
+  finalize --artifact-dir "${RESULT_ROOT}"
+FINALIZE_EXIT=$?
+set -e
+printf '%s\n' "${FINALIZE_EXIT}" > "${RESULT_ROOT}/finalize_exit_code.txt"
 ~~~
 
-trigger plan 的候选计算必须固定：
+分级：
 
-~~~text
-gpu_blocks_per_rank=5048
-cpu_blocks_per_rank=128
-block_size_tokens=128
-target_prefix_tokens=8192
-target_prefix_blocks=64
-target_cpu_capacity_margin_blocks=64
-pressure_context_tokens=131072
-pressure_blocks_per_request=1024
-minimum_pressure_request_count_to_exceed_gpu_pool=5
-eager_mode_can_preserve_target_cpu_residency=false
-lazy_mode_requires_runtime_residency_observer=true
-fixed_pressure_count_is_candidate_not_runtime_fact=true
-formal_h2d_trigger_lifecycle_allowed=false
-~~~
+- provenance/source/resource 前门失败：`blocked_p8_2_k1a_r5_l1_source_or_resource_gate`；
+- 无成功请求：`red_p8_2_k1a_r5_l1_lazy_h2d_no_success`；
+- target 从 CPU tier 丢失：`red_p8_2_k1a_r5_l1_cpu_target_lost`；
+- 到 pressure 上限仍未触发：`yellow_p8_2_k1a_r5_l1_trigger_not_reached`；
+- 请求可用但 D2H/H2D/residency/cleanup 任一链不完整：`red_p8_2_k1a_r5_l1_h2d_evidence_incomplete`；
+- 只有所有实际请求首次成功、restore 严格晚于 CPU-only trigger、target GPU eviction、16K CPU hit/load、
+  D2H/H2D 8-worker submit/enqueue/copy-enter/copy-return/poll/complete、load completion、repair/health/queue、
+  cleanup 与 keep-alive restore 全过，才给
+  `candidate_green_p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle`。
 
-`5` 只由 accepted geometry 计算得到 GPU oversubscription candidate；它不证明真实 scheduler 在第五个请求后已形成
-`CPU present + GPU absent`。下一 lifecycle 必须以 target residency observer 的实际状态为门，不能只数请求。
+candidate green 不证明 CPU tier 自身发生 eviction，也不证明唯一根因或性能收益。服务器不得自行接受 developer
+green，不得继续 K2/P8.3-I1。
 
-## 6. 分级与停止规则
+## 6. 小结果包、完整清单和传输停点
 
-允许的最终 grade 只有：
-
-- `candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility`：R4-R1、R2、frozen source、observer self-test、
-  runtime method-resolution 与 trigger plan 全过；仍为零 NPU candidate；
-- `blocked_p8_2_k1a_r5_f0_repository_contract_gate`：repo hash/test/audit-only 失败；
-- `blocked_p8_2_k1a_r5_f0_source_or_provenance_gate`：parent/R2/source/observer/runtime method 任一失败；
-- `blocked_p8_2_k1a_r5_f0_resource_contract_gate`：检测到本任务会扰动 keep-alive/NPU/vLLM/request。
-
-candidate ready 必须同时声明：
-
-~~~text
-npu_started=false
-vllm_started=false
-model_request_sent=false
-keep_alive_disrupted=false
-formal_model_lifecycle_count=0
-model_request_count=0
-r4_r1_offline_closeout_accepted=true
-store_only_refinalization_accepted=true
-eager_mode_can_preserve_target_cpu_residency=false
-lazy_mode_trigger_is_candidate_only=true
-actual_cpu_eviction_proven=false
-h2d_restore_mechanism_accepted=false
-cause_proven_as_unique=false
-performance_reference_accepted=false
-formal_h2d_trigger_lifecycle_allowed=false
-k2_authorized=false
-p8_3_i1_authorized=false
-next_task_authorized=false
-~~~
-
-本任务不得在任何 grade 下追加 NPU lifecycle、模型请求、容量 wave、runtime overlay、profiler 或下一阶段动作。
-不得进入 K2；不得进入 P8.3-I1；不得进入 K3/K4/P8.4/P8.5/P9。
-
-## 7. 零资源收尾、结果范围与报告
-
-重复第 2 节只读命令，要求：tracked clean；7000 状态不变；无本任务 vLLM；keep-alive PID/PGID/marker 不变；
-8 卡健康/HBM 不因本任务变化。把 before/after 对照写进报告，但不把整份 `npu-smi`/process dump 放入传输候选。
-
-正式有界 payload 必须恰好 8 个，加 manifest 共 9 个：
+raw vLLM log、metrics、request bodies、raw trace、active role marker、generated output/token IDs 留服务器。候选范围最多
+16 files（15 payload + manifest；第 15 个 payload 只可能是失败摘要），含 manifest 的总量必须不超过 71680 bytes，全部标记
+`bounded_operational_metadata_no_content_or_token_ids`。候选 payload 可包括：
 
 ~~~text
 result_summary.md
+environment_and_hashes.json
+request_body_manifest.json
+request_summary.tsv
+residency_gate_timeline.json
+h2d_trigger_summary.json
+transfer_trace_summary.json
+connector_resolution_summary.json
+mtp_queue_health_summary.json
+repair_diagnostic_summary.json
+host_memory_summary.json
 grading_summary.json
-task_grade.txt
-r4_r1_acceptance_replay.json
-geometry_provenance.json
-frozen_source_semantics.json
-observer_contract_probe.json
-trigger_geometry_plan.json
-candidate_manifest.server_local.json
+cleanup_status.txt
+resource_recovery_summary.json
+first_failure_excerpt.txt（仅失败时）
+candidate_manifest.server_local.json（控制文件）
 ~~~
 
-总量必须 `<=71680 bytes`；全部 sensitivity 为
-`bounded_operational_metadata_no_content_or_token_ids`。source 文件、raw logs、process/NPU dumps、request bodies、
-generated content、token IDs、hash objects 留服务器，不进入候选。
+`environment_and_hashes.json` 必须实际记录 task_id、HEAD、origin/main、ahead/behind、tracked-clean、版本/commit、
+canonical argv SHA、repo file hashes 和 source hashes，避免聊天表格丢字段。
 
-完成后先在聊天中报告：
+任务完成后只报告：精确 RESULT_ROOT、grade、首错、实际 pressure/request 数、每项机制门、清理恢复状态，以及
+完整候选清单的逐文件 relative path/bytes/SHA-256/sensitivity 和总量。然后列出
+`email / upload-api / server-local` 三种方法并推荐一种；在用户针对这份完整范围明确选择前，不得外发。不得预先执行 upload-api、
+不得发状态邮件、不得失败后自动换渠道。
 
-1. task_id、同步前后 HEAD/origin/ahead-behind/tracked；
-2. 各 section pass/fail 与第一个失败点；
-3. R4-R1、R2、source hash 与 runtime method-resolution；
-4. eager reject 与 lazy candidate 的精确 geometry；
-5. observer self-test 与 raw-hash/content 边界；
-6. candidate/blocked grade 与全部 required declarations；
-7. RESULT_ROOT；
-8. 9 文件完整清单：相对/绝对路径、bytes、SHA-256、sensitivity、总量；
-9. `email / upload-api / server-local` 三种可用方式和推荐理由。
+## 7. 完成后的等待状态
 
-`result_transfer_authorized:true` 只表示这 9 文件可供用户选择。报告清单后必须等待用户明确选一个方法；当前 handoff
-没有选择方法，不得 email、不得调用 upload-api、不得自动改用另一渠道。完成报告后保持等待，不进入下一任务。
+报告完成后保持：
+
+~~~text
+next_task_authorized=false
+k2_authorized=false
+p8_3_i1_authorized=false
+performance_reference_accepted=false
+cause_proven_as_unique=false
+~~~
+
+不得进入 K2，不得进入 P8.3-I1。不要因为 R5-L1 blocked/red/yellow 撤销 P6.3B-R4-R1、P8.1-R1、P8.2-K0、R2 capacity、R4-R1
+store-only 或 R5-F0 feasibility 的既有窄边界结论。

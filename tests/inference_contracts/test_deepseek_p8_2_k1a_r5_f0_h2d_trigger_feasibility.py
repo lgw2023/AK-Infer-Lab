@@ -456,7 +456,7 @@ def test_h2d_residency_observer_self_test_is_observe_only(tmp_path: Path) -> Non
     assert result["raw_hash_values_emitted"] is False
 
 
-def test_r5_f0_is_the_only_current_zero_resource_server_contract() -> None:
+def test_r5_f0_is_preserved_as_the_accepted_parent_of_current_r5_l1() -> None:
     import yaml
 
     audit = yaml.safe_load(AUDIT.read_text(encoding="utf-8"))
@@ -509,38 +509,25 @@ def test_r5_f0_is_the_only_current_zero_resource_server_contract() -> None:
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    assert artifacts["current_server_handoff_task"] == task_id
-    assert artifacts["next_workload"].endswith(WORKLOAD.name)
+    assert artifacts["current_server_handoff_task"] == (
+        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
+    )
+    assert artifacts["next_workload"].endswith(
+        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle.yaml"
+    )
     assert artifacts["current_p8_2_k1a_r5_f0_runner"].endswith(RUNNER.name)
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
-    assert f"task_id: {task_id}" in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "keep_alive_stop_authorized: false" in handoff
-    assert "vllm_server_start_authorized: false" in handoff
-    assert "model_requests_authorized: false" in handoff
+    assert "candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility" in handoff
+    assert "task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
+    assert "npu_execution_authorized: true" in handoff
+    assert "keep_alive_stop_and_restore_authorized: true" in handoff
+    assert "vllm_server_start_authorized: true" in handoff
+    assert "model_requests_authorized: true" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "transfer_method_selected: false" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "kill -TERM" not in handoff
-    assert "vllm serve" not in handoff
-    assert "curl " not in handoff
-
-    frozen_match = re.search(r"~~~json\n(\{.*?\})\n~~~", handoff, re.DOTALL)
-    assert frozen_match is not None
-    frozen_hashes = json.loads(frozen_match.group(1))
-    expected_frozen_paths = (
-        AUDIT,
-        WORKLOAD,
-        TOOL,
-        OBSERVER,
-        RUNNER,
-        Path(__file__),
-    )
-    assert set(frozen_hashes) == {
-        str(path.relative_to(ROOT)) for path in expected_frozen_paths
-    }
-    for path in expected_frozen_paths:
-        assert frozen_hashes[str(path.relative_to(ROOT))] == _sha256(path)
+    assert "pressure_request_count_max: 5" in handoff
+    assert "CPU-present + GPU-absent" in handoff
