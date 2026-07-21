@@ -595,35 +595,35 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
 def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_corrected_observable_gate_single_lazy_"
-        "dynamic_pressure_h2d_trigger_lifecycle"
+        "execution_mode: authorized_offline_raw_pressure_window_then_"
+        "conditional_one_fixed_lifecycle"
         in handoff
     )
     for field in (
         "server_sync_review_authorized: true",
-        "npu_execution_authorized: true",
-        "vllm_server_start_authorized: true",
-        "model_requests_authorized: true",
-        "keep_alive_stop_and_restore_authorized: true",
+        "npu_execution_authorized: conditional",
+        "vllm_server_start_authorized: conditional",
+        "model_requests_authorized: conditional",
+        "keep_alive_stop_and_restore_authorized: conditional",
         "profiler_authorized: false",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
         "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 8",
+        "model_request_count_max: 4",
         "capacity_search_authorized: false",
     ):
         assert field in handoff
     for marker in (
-        "parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete",
-        "yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore",
-        "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh",
+        "parent_server_grade=red_p8_2_k1a_r5_l1_r1_cpu_target_lost",
+        "parent_successful_request_count=3",
+        "run_deepseek_p8_2_k1a_r5_f1_pressure_window.sh",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
-        "pressure_request_count_max: 5",
+        "pressure_request_count_exact: 1",
         "K2",
         "P8.3-I1",
     ):
@@ -633,7 +633,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
+        "workloads/p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
@@ -663,7 +663,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-L1-R1_one_corrected_lazy_lifecycle_only"
+        "P8.2-K1A-R5-F1_offline_first_then_at_most_one_fixed_non_search_lifecycle"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True

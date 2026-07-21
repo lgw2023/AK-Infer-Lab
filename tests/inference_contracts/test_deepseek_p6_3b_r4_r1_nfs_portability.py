@@ -162,9 +162,9 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_r5_f0_task():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-L1-R1 corrected observable-gate lazy H2D 单生命周期" in handoff
-    assert "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
-    assert "npu_execution_authorized: true" in handoff
+    assert "P8.2-K1A-R5-F1 raw pressure-window 归因与条件式 L2" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721" in handoff
+    assert "npu_execution_authorized: conditional" in handoff
     assert "next_task_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
@@ -184,7 +184,7 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_r5_f0_task():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_grade"] == (
         "blocked_p6_3b_r4_source_or_resource_gate"

@@ -335,17 +335,17 @@ def test_r3_finalizer_requires_exact_capacity_and_closes_store_restore(
 
 
 def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> None:
-    task_id = "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+    task_id = "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "execution_mode: authorized_corrected_observable_gate_single_lazy_dynamic_pressure_h2d_trigger_lifecycle",
-        "npu_execution_authorized: true",
-        "vllm_server_start_authorized: true",
-        "model_requests_authorized: true",
+        "execution_mode: authorized_offline_raw_pressure_window_then_conditional_one_fixed_lifecycle",
+        "npu_execution_authorized: conditional",
+        "vllm_server_start_authorized: conditional",
+        "model_requests_authorized: conditional",
         "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 8",
+        "model_request_count_max: 4",
         "capacity_search_authorized: false",
         "profiler_authorized: false",
         "result_transfer_authorized: true",
@@ -353,9 +353,9 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
     ):
         assert field in handoff
     for marker in (
-        "parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete",
-        "yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore",
-        "parent_transport_success_count_after_developer_refinalization=6",
+        "parent_server_grade=red_p8_2_k1a_r5_l1_r1_cpu_target_lost",
+        "parent_request_count=3",
+        "parent_successful_request_count=3",
         "parent_d2h_store_complete=true",
         "parent_h2d_restore_complete=false",
         "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh",
@@ -370,7 +370,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
+        "workloads/p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
     )
     assert acceptance["p8_2_k1a_r2_grade"] == (
         "ready_p8_2_k1a_r2_allocator_capacity"
@@ -409,13 +409,13 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
         "green_p8_3_i0_r1_unclassified_taxonomy"
     )
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-L1-R1_one_corrected_lazy_lifecycle_only"
+        "P8.2-K1A-R5-F1_offline_first_then_at_most_one_fixed_non_search_lifecycle"
     )
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False
 
 
-def test_r5_l1_handoff_freezes_all_direct_contract_inputs_without_placeholders() -> None:
+def test_r5_f1_handoff_freezes_all_direct_contract_inputs_without_placeholders() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert "__R3_" not in handoff
     assert "__REQUEST_" not in handoff
@@ -424,21 +424,20 @@ def test_r5_l1_handoff_freezes_all_direct_contract_inputs_without_placeholders()
 
     frozen_paths = (
         "benchmarks/deepseek_v4_flash/"
-        "p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle_audit.yaml",
+        "p8_2_k1a_r5_f1_pressure_window_audit.yaml",
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml",
+        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml",
+        "tools/inference_contracts/p8_2_k1a_r5_f1_pressure_window.py",
+        "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_pressure_window.sh",
+        "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l2_fixed_pressure.sh",
         "tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py",
         "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py",
         "tools/inference_contracts/"
         "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py",
         "tools/inference_contracts/"
         "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh",
-        "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r5_l1_r1_lazy_h2d.sh",
         "tests/inference_contracts/"
-        "test_deepseek_p8_2_k1a_r5_l1_lazy_h2d_lifecycle.py",
-        "tests/inference_contracts/"
-        "test_deepseek_p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle.py",
+        "test_deepseek_p8_2_k1a_r5_f1_pressure_window.py",
     )
     for relative in frozen_paths:
         expected = hashlib.sha256((REPO_ROOT / relative).read_bytes()).hexdigest()

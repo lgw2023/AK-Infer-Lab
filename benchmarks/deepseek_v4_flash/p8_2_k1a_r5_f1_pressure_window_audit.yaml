@@ -1,0 +1,79 @@
+schema_version: 1
+audit_id: p8_2_k1a_r5_f1_pressure_window_audit
+date: '2026-07-21'
+stage: P8.2-K1A-R5-F1
+
+received_r5_l1_r1_package:
+  task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721
+  path: /Volumes/SSD1/Inbox/2026-07-21/p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_20260721_run01
+  server_grade: red_p8_2_k1a_r5_l1_r1_cpu_target_lost
+  file_count: 15
+  payload_file_count: 14
+  payload_bytes: 15788
+  manifest_bytes: 3578
+  total_bytes: 19366
+  manifest_sha256: 1209e22dc67aa1c15e80efcd26b453d7303665a5cd1a982ca2c41152334bb022
+  grading_sha256: 84aa010b1577277ec05426ebb8e5637e5e702e2b22f371a6767115e0da056e5b
+  residency_timeline_sha256: 09c5a883dd1984d9c3b0a12d19007c68745dca10d3b17fde611a47d359a70fe5
+  transfer_summary_sha256: 1ad205cbd01af9ad5935f055162fe148e74a00456c2d90233b1d31436bdeebf0
+  inventory_bytes_and_sha256_verified: true
+  successful_request_count: 3
+  request_evidence_exact: true
+  d2h_completed_worker_count: 8
+  d2h_store_complete: true
+  d2h_bytes_total: 6270674944
+  pressure_request_count_executed: 1
+  target_after_prime_cpu_blocks: 0
+  target_after_prime_gpu_blocks: 64
+  target_terminal_cpu_blocks: 0
+  target_terminal_gpu_blocks: 0
+  restore_sent: false
+  cleanup: clean
+  actual_cpu_eviction_proven: false
+  generated_content_or_token_ids_retained: false
+
+developer_decision:
+  parent_grade_preserved: true
+  r1_controller_fix_accepted: true
+  parent_request_transport_accepted: true
+  parent_d2h_store_mechanism_accepted: true
+  parent_h2d_restore_mechanism_accepted: false
+  terminal_target_loss_is_observation_not_full_cpu_eviction_proof: true
+  raw_trace_pressure_window_attribution_required: true
+  blind_pressure_context_change_allowed: false
+  one_conditional_fixed_lifecycle_allowed: true
+  performance_reference_accepted: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+pressure_window_gate:
+  source_result_tree_must_remain_byte_identical: true
+  target_hash_values_may_be_emitted: false
+  target_block_count_exact: 64
+  target_prime_terminal_state: {cpu_blocks: 0, gpu_blocks: 64}
+  exact_window_state: {cpu_blocks: 64, gpu_blocks: 0}
+  exact_window_must_precede_first_cpu_target_eviction: true
+  gpu_free_block_delta_must_be_positive_and_unique: true
+  fixed_context_formula: pressure_total_blocks_x_128_minus_64_output_tokens
+  search_or_sweep_allowed: false
+  ambiguous_or_missing_window_grade: blocked_p8_2_k1a_r5_f1_no_exact_pressure_window
+  ready_grade: candidate_ready_p8_2_k1a_r5_f1_exact_pressure_window
+
+conditional_lifecycle_boundary:
+  requires_ready_grade: true
+  same_accepted_capacity: true
+  same_runtime_server_argv_r2_repair_and_mtp: true
+  one_fixed_pressure_body_prepared_and_hashed_before_server_start: true
+  pressure_request_count_exact: 1
+  request_count_min: 3
+  request_count_max: 4
+  request_count_exact_if_trigger_observed: 4
+  terminal_pre_restore_request_count: 3
+  request_retry_count: 0
+  second_lifecycle_allowed: false
+  capacity_search_allowed: false
+  runtime_behavior_patch_allowed: false
+  restore_requires_runtime_cpu_64_gpu_0: true
+  candidate_green_is_server_candidate_only: true
+
+claim_boundary: offline_existing_raw_trace_and_frozen_source_pressure_window_provenance_then_at_most_one_fixed_non_search_lifecycle

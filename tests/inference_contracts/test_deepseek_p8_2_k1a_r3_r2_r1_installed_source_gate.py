@@ -25,7 +25,7 @@ def test_current_handoff_preserves_the_r4_r1_source_and_r5_f0_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
     ) in handoff
     assert "manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b" in handoff
     assert "block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283" in handoff
@@ -152,28 +152,28 @@ def test_r5_l1_handoff_runs_the_full_bounded_single_lifecycle_chain() -> None:
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_corrected_observable_gate_single_lazy_"
-        "dynamic_pressure_h2d_trigger_lifecycle",
+        "execution_mode: authorized_offline_raw_pressure_window_then_"
+        "conditional_one_fixed_lifecycle",
         "formal_model_lifecycle_count_max: 1",
-        "model_request_count_min: 4",
-        "model_request_count_max: 8",
+        "model_request_count_min: 3",
+        "model_request_count_max: 4",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "run_deepseek_p8_2_k1a_r5_l1_r1_lazy_h2d.sh",
-        "parent_r5_l1_package_replay_authorized: true",
+        "run_deepseek_p8_2_k1a_r5_f1_pressure_window.sh",
+        "parent_r5_l1_r1_bounded_and_raw_replay_authorized: true",
         "frozen_source_and_installed_runtime_audit_authorized: true",
-        "pressure_request_count_max: 5",
+        "pressure_request_count_exact: 1",
         "candidate_manifest.server_local.json",
         "email / upload-api / server-local",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
-        "blocked_p8_2_k1a_r5_l1_r1_source_or_resource_gate",
+        "blocked_p8_2_k1a_r5_f1_source_or_provenance_gate",
         "不得进入 K2",
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
-    assert 'test ! -e "${RESULT_ROOT}"' in handoff
-    assert "cleanup_status.txt=clean" in handoff
-    assert "keep_alive_stop_and_restore_authorized: true" in handoff
+    assert 'test ! -e "${ANALYSIS_ROOT}"' in handoff
+    assert "cleanup clean" in handoff
+    assert "keep_alive_stop_and_restore_authorized: conditional" in handoff
 
 
 def test_r3_r2_r1_contract_files_remain_preserved_as_parent_provenance() -> None:

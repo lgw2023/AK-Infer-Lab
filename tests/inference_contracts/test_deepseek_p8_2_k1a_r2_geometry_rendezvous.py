@@ -215,14 +215,14 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_after_parent_blocks() -> None
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
         "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 8",
+        "model_request_count_max: 4",
         "capacity_search_authorized: false",
         "result_transfer_authorized: true",
         "next_task_authorized: false",

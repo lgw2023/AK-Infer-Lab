@@ -261,6 +261,6 @@ def test_single_request_tracer_is_preserved_but_superseded_before_execution() ->
         not in handoff
     )
     assert (
-            "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+            "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
         in handoff
     )

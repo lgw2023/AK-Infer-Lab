@@ -754,24 +754,24 @@ def test_r5_l1_contract_is_preserved_as_parent_of_current_r1() -> None:
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     assert readiness["artifacts"]["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
     )
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
         in handoff
     )
     for field in (
-        "npu_execution_authorized: true",
+        "npu_execution_authorized: conditional",
         "formal_model_lifecycle_count_max: 1",
-        "model_request_count_min: 4",
-        "model_request_count_max: 8",
+        "model_request_count_min: 3",
+        "model_request_count_max: 4",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "next_task_authorized: false",
@@ -780,11 +780,11 @@ def test_r5_l1_contract_is_preserved_as_parent_of_current_r1() -> None:
     ):
         assert field in handoff
     for marker in (
-        "CPU-present + GPU-absent",
+        "CPU=64/GPU=0",
         "pressure_01",
-        "pressure_05",
-        "controller role marker",
-        "environment_and_hashes.json",
+        "pressure_request_count_exact=1",
+        "raw pressure-window",
+        "grading_summary.json",
         "candidate_manifest.server_local.json",
         "upload-api",
     ):

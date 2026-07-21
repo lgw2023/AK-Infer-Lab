@@ -293,12 +293,12 @@ def test_handoff_preserves_r4_r1_closeout_during_r5_f0_feasibility():
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-L1-R1 corrected observable-gate lazy H2D 单生命周期" in handoff
-    assert "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
-    assert "execution_mode: authorized_corrected_observable_gate_single_lazy_dynamic_pressure_h2d_trigger_lifecycle" in handoff
-    assert "npu_execution_authorized: true" in handoff
+    assert "P8.2-K1A-R5-F1 raw pressure-window 归因与条件式 L2" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721" in handoff
+    assert "execution_mode: authorized_offline_raw_pressure_window_then_conditional_one_fixed_lifecycle" in handoff
+    assert "npu_execution_authorized: conditional" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "精确重放 R4-R1 bounded package" in handoff
+    assert "R5-L1-R1 的有界包" in handoff
     assert "精确重放 R2 geometry/rendezvous/allocator" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
@@ -326,7 +326,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
     )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
@@ -343,7 +343,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert acceptance["p6_3b_r4_r1_execution_authorized"] is False
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_blocked_k1a_r4_r1_offline_store_only_green_k1a_r5_f0_ready_k1a_r5_l1_d2h_green_controller_red_k1a_r5_l1_r1_current_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_blocked_k1a_r4_r1_offline_store_only_green_k1a_r5_f0_ready_k1a_r5_l1_d2h_green_controller_red_k1a_r5_l1_r1_target_lost_red_k1a_r5_f1_offline_current_l2_conditional_i0_r1_green"
     )
 
     surfaces = [

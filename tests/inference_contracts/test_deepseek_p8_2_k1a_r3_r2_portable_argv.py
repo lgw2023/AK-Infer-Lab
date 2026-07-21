@@ -282,25 +282,25 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
     ) in handoff
     for exact in (
-            "execution_mode: authorized_corrected_observable_gate_single_lazy_"
-            "dynamic_pressure_h2d_trigger_lifecycle",
-            "npu_execution_authorized: true",
+            "execution_mode: authorized_offline_raw_pressure_window_then_"
+            "conditional_one_fixed_lifecycle",
+            "npu_execution_authorized: conditional",
         "formal_model_lifecycle_count_max: 1",
-        "model_request_count_max: 8",
+        "model_request_count_max: 4",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete",
+        "parent_server_grade=red_p8_2_k1a_r5_l1_r1_cpu_target_lost",
         "parent_d2h_store_complete=true",
         "parent_h2d_restore_complete=false",
         "不得进入 K2",
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
-    assert "test ! -e \"${RESULT_ROOT}\"" in handoff
+    assert 'test ! -e "${ANALYSIS_ROOT}"' in handoff
     assert "candidate_manifest.server_local.json" in handoff
-    assert "16 files（15 payload + manifest" in handoff
+    assert "payload_file_count" in handoff
     assert "email / upload-api / server-local" in handoff
     assert "result_transfer_authorized: true" in handoff

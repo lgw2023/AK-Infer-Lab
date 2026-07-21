@@ -85,7 +85,7 @@ def test_r5_l1_r1_contract_preserves_valid_observation_and_restore_gate() -> Non
     assert state["p8_3_i1_authorized"] is False
 
 
-def test_r5_l1_r1_runner_and_handoff_are_the_only_current_task(
+def test_r5_l1_r1_runner_is_preserved_while_f1_is_the_current_task(
     tmp_path: Path,
 ) -> None:
     env = os.environ.copy()
@@ -106,19 +106,25 @@ def test_r5_l1_r1_runner_and_handoff_are_the_only_current_task(
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    assert artifacts["current_server_handoff_task"] == TASK_ID
-    assert artifacts["next_workload"].endswith(WORKLOAD.name)
-    assert artifacts["current_p8_2_k1a_r5_l1_r1_runner"].endswith(RUNNER.name)
+    current_task_id = "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
+    assert artifacts["current_server_handoff_task"] == current_task_id
+    assert artifacts["next_workload"].endswith(
+        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
+    )
+    assert artifacts["completed_p8_2_k1a_r5_l1_r1_runner"].endswith(RUNNER.name)
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
-    assert f"task_id: {TASK_ID}" in handoff
+    assert f"parent_task_id={TASK_ID}" in handoff
+    assert f"task_id: {current_task_id}" in handoff
     for field in (
-        "npu_execution_authorized: true",
+        "offline_first: true",
+        "npu_execution_authorized: conditional",
         "formal_model_lifecycle_count_max: 1",
-        "model_request_count_min: 4",
-        "model_request_count_max: 8",
+        "model_request_count_min: 3",
+        "model_request_count_max: 4",
+        "model_request_count_exact_if_trigger_observed: 4",
         "request_retry_count_exact: 0",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
@@ -128,12 +134,11 @@ def test_r5_l1_r1_runner_and_handoff_are_the_only_current_task(
     ):
         assert field in handoff
     for marker in (
-        "observable-not-ready",
-        "after_connector_output",
-        "D2H store complete",
-        "CPU-present + GPU-absent",
+        "raw pressure-window",
+        "candidate_ready_p8_2_k1a_r5_f1_exact_pressure_window",
+        "CPU=64/GPU=0",
         "pressure_01",
-        "pressure_05",
+        "pressure_request_count_exact=1",
         "candidate_manifest.server_local.json",
         "upload-api",
     ):

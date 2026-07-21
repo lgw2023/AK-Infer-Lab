@@ -172,10 +172,10 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K1A-R5-L1-R1_corrected_observable_gate_single_lazy_lifecycle"
+        "P8.2-K1A-R5-F1_offline_pressure_window_then_conditional_fixed_L2"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
@@ -207,13 +207,13 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
-    assert "execution_mode: authorized_corrected_observable_gate_single_lazy_dynamic_pressure_h2d_trigger_lifecycle" in handoff
-    assert "npu_execution_authorized: true" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721" in handoff
+    assert "execution_mode: authorized_offline_raw_pressure_window_then_conditional_one_fixed_lifecycle" in handoff
+    assert "npu_execution_authorized: conditional" in handoff
     assert "next_task_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
-    assert "model_request_count_max: 8" in handoff
+    assert "model_request_count_max: 4" in handoff
 
     truth_paths = (
         REPO_ROOT / "docs/EXPERIMENT_PLAN.md",
