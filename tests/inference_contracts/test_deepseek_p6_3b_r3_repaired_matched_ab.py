@@ -287,18 +287,19 @@ def test_r2_is_closed_green_and_superseded_by_the_authorized_r3():
     }
 
 
-def test_handoff_preserves_r4_r1_closeout_during_k1a_r4_offline_closeout():
+def test_handoff_preserves_r4_r1_closeout_during_r5_f0_feasibility():
     handoff = (
         REPO_ROOT / "通信模块/docs/developer-to-server.md"
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R4-R1 修复 source binding 假阴性" in handoff
-    assert "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721" in handoff
-    assert "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay" in handoff
+    assert "P8.2-K1A-R5-F0 H2D trigger 零资源可行性与观测合同复核" in handoff
+    assert "task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721" in handoff
+    assert "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_trigger_feasibility_no_npu" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "R2 hybrid-KV" in handoff
+    assert "精确重放 R4-R1 bounded package" in handoff
+    assert "精确重放 R2 geometry/rendezvous/allocator" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
 
@@ -325,7 +326,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
     )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
@@ -342,7 +343,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
     assert acceptance["p6_3b_r4_r1_execution_authorized"] is False
     assert acceptance["p6_3c_execution_authorized"] is False
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_offline_closeout_authorized_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_blocked_k1a_r4_r1_offline_store_only_green_k1a_r5_f0_zero_resource_feasibility_current_i0_r1_green"
     )
 
     surfaces = [

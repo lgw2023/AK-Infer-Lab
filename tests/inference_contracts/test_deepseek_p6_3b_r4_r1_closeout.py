@@ -86,14 +86,14 @@ def test_r4_r1_workload_is_closed_as_developer_accepted_green():
     }
 
 
-def test_current_handoff_preserves_p6_green_during_k1a_r4_offline_closeout():
+def test_current_handoff_preserves_p6_green_during_r5_f0_feasibility():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R4-R1 修复 source binding 假阴性" in handoff
-    assert "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721" in handoff
-    assert "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay" in handoff
+    assert "P8.2-K1A-R5-F0 H2D trigger 零资源可行性与观测合同复核" in handoff
+    assert "task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721" in handoff
+    assert "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_trigger_feasibility_no_npu" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
@@ -114,7 +114,7 @@ def test_current_handoff_preserves_p6_green_during_k1a_r4_offline_closeout():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_r1_grade"] == (
         "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"

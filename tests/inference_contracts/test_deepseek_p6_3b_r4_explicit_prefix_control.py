@@ -335,12 +335,12 @@ def test_r4_workload_is_preserved_as_blocked_explicit_control_evidence():
     assert workload["stage_contract"]["p6_3c_execution_authorized"] is False
 
 
-def test_r4_r1_closeout_is_preserved_during_k1a_r4_offline_closeout():
+def test_r4_r1_closeout_is_preserved_during_r5_f0_feasibility():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R4-R1 修复 source binding 假阴性" in handoff
+    assert "P8.2-K1A-R5-F0 H2D trigger 零资源可行性与观测合同复核" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "model_request_count_exact: 0" in handoff
@@ -381,7 +381,7 @@ def test_r4_r1_closeout_is_preserved_during_k1a_r4_offline_closeout():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-            "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+            "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False

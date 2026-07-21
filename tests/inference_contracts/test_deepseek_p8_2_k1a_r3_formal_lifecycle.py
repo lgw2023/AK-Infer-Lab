@@ -334,15 +334,13 @@ def test_r3_finalizer_requires_exact_capacity_and_closes_store_restore(
     assert grading["runtime_evidence_exact"] is True
 
 
-def test_causal_replay_is_consumed_and_r4_is_the_only_current_server_handoff() -> None:
-    task_id = (
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
-    )
+def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> None:
+    task_id = "p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay",
+        "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_trigger_feasibility_no_npu",
         "npu_execution_authorized: false",
         "vllm_server_start_authorized: false",
         "model_requests_authorized: false",
@@ -360,7 +358,7 @@ def test_causal_replay_is_consumed_and_r4_is_the_only_current_server_handoff() -
         "parent_transport_success_count_after_developer_refinalization=6",
         "parent_d2h_store_complete=true",
         "parent_h2d_restore_complete=false",
-        "run_deepseek_p8_2_k1a_r4_r1_offline_closeout.sh",
+        "run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
         "不得进入 K2",
         "P8.3-I1",
@@ -372,8 +370,7 @@ def test_causal_replay_is_consumed_and_r4_is_the_only_current_server_handoff() -
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+        "workloads/p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
     )
     assert acceptance["p8_2_k1a_r2_grade"] == (
         "ready_p8_2_k1a_r2_allocator_capacity"
@@ -412,13 +409,13 @@ def test_causal_replay_is_consumed_and_r4_is_the_only_current_server_handoff() -
         "green_p8_3_i0_r1_unclassified_taxonomy"
     )
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R4-R1_offline_only"
+        "P8.2-K1A-R5-F0_zero_resource_feasibility_only"
     )
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False
 
 
-def test_r4_handoff_freezes_all_direct_contract_inputs_without_placeholders() -> None:
+def test_r5_f0_handoff_freezes_all_direct_contract_inputs_without_placeholders() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert "__R3_" not in handoff
     assert "__REQUEST_" not in handoff
@@ -427,16 +424,15 @@ def test_r4_handoff_freezes_all_direct_contract_inputs_without_placeholders() ->
 
     frozen_paths = (
         "benchmarks/deepseek_v4_flash/"
-        "p8_2_k1a_r4_r1_source_semantics_replay_audit.yaml",
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility_audit.yaml",
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml",
-        "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py",
-        "tools/inference_contracts/p8_2_k1a_trace_attribution.py",
-        "tools/inference_contracts/run_deepseek_p8_2_k1a_r4_r1_offline_closeout.sh",
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml",
+        "tools/inference_contracts/p8_2_k1a_h2d_trigger_feasibility.py",
+        "tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py",
+        "tools/inference_contracts/"
+        "run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh",
         "tests/inference_contracts/"
-        "test_deepseek_p8_2_k1a_r4_store_only_refinalization.py",
-        "tests/inference_contracts/"
-        "test_deepseek_p8_2_k1a_r4_r1_source_semantics_replay.py",
+        "test_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.py",
     )
     for relative in frozen_paths:
         expected = hashlib.sha256((REPO_ROOT / relative).read_bytes()).hexdigest()

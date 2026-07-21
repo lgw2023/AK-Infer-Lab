@@ -277,16 +277,16 @@ def test_r3_r2_audit_preserves_the_failed_run_and_same_experiment_boundary() -> 
     assert audit["decision"]["next_task_authorized"] is False
 
 
-def test_r3_lineage_is_consumed_and_r4_is_the_only_current_read_only_handoff() -> None:
+def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+        "task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
     ) in handoff
     for exact in (
-        "execution_mode: authorized_read_only_r4_parent_validation_and_same_"
-        "evidence_offline_source_semantics_replay",
+        "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_"
+        "trigger_feasibility_no_npu",
         "npu_execution_authorized: false",
         "formal_model_lifecycle_count_exact: 0",
         "model_request_count_exact: 0",
@@ -301,6 +301,6 @@ def test_r3_lineage_is_consumed_and_r4_is_the_only_current_read_only_handoff() -
         assert exact in handoff
     assert "test ! -e \"${RESULT_ROOT}\"" in handoff
     assert "candidate_manifest.server_local.json" in handoff
-    assert "9 个白名单 bounded metadata" in handoff
+    assert "正式有界 payload 必须恰好 8 个，加 manifest 共 9 个" in handoff
     assert "email / upload-api / server-local" in handoff
     assert "result_transfer_authorized: true" in handoff

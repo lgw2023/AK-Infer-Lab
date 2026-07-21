@@ -329,15 +329,15 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
     subprocess.run(["bash", "-n", str(R1_RUNNER)], cwd=REPO_ROOT, check=True)
 
 
-def test_r1_is_closed_and_k1a_r4_is_the_only_authorized_handoff() -> None:
-    task_id = "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+def test_r1_is_closed_and_k1a_r5_f0_is_the_only_authorized_handoff() -> None:
+    task_id = "p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay"
+        "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_trigger_feasibility_no_npu"
         in handoff
     )
     assert "npu_execution_authorized: false" in handoff
@@ -347,7 +347,7 @@ def test_r1_is_closed_and_k1a_r4_is_the_only_authorized_handoff() -> None:
     assert "formal_model_lifecycle_count_exact: 0" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
-    assert "P8.3-I0" in handoff
+    assert "green_p8_3_i0_checkpoint_inventory" in handoff
     assert "cpu_bytes_to_use_per_rank=430604288" in handoff
 
     readiness = yaml.safe_load(
@@ -366,7 +366,7 @@ def test_r1_is_closed_and_k1a_r4_is_the_only_authorized_handoff() -> None:
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     acceptance = readiness["acceptance"]

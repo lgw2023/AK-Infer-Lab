@@ -55,11 +55,14 @@ def test_r4_r1_audit_matches_received_r4_package_and_preserves_claim_boundary() 
     assert audit["decision"]["next_task_authorized"] is False
 
 
-def test_r4_r1_is_the_only_current_zero_npu_server_contract() -> None:
+def test_r4_r1_contract_is_preserved_while_r5_f0_is_current() -> None:
     workload = yaml.safe_load(WORKLOAD.read_text(encoding="utf-8"))
-    task_id = "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+    historical_task_id = (
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+    )
+    current_task_id = "p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
 
-    assert workload["task_id"] == task_id
+    assert workload["task_id"] == historical_task_id
     assert workload["source_gate"]["parent_r4_grade"] == (
         "blocked_p8_2_k1a_r4_offline_closeout_gate"
     )
@@ -81,13 +84,15 @@ def test_r4_r1_is_the_only_current_zero_npu_server_contract() -> None:
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    assert artifacts["next_workload"].endswith(WORKLOAD.name)
-    assert artifacts["current_server_handoff_task"] == task_id
+    assert artifacts["next_workload"].endswith(
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
+    )
+    assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["current_p8_2_k1a_r4_r1_runner"].endswith(RUNNER.name)
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("当前唯一服务器动作") == 1
-    assert f"task_id: {task_id}" in handoff
+    assert f"task_id: {current_task_id}" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "keep_alive_stop_authorized: false" in handoff
     assert "vllm_server_start_authorized: false" in handoff
@@ -95,7 +100,7 @@ def test_r4_r1_is_the_only_current_zero_npu_server_contract() -> None:
     assert "result_transfer_authorized: true" in handoff
     assert "transfer_method_selected: false" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "payload + candidate_manifest.server_local.json" in handoff
+    assert "candidate_manifest.server_local.json" in handoff
     assert "kill -TERM" not in handoff
     assert "vllm serve" not in handoff
     assert "curl " not in handoff
@@ -108,7 +113,7 @@ def test_r4_r1_is_the_only_current_zero_npu_server_contract() -> None:
         capture_output=True,
         env={"P8_2_K1A_R4_R1_AUDIT_ONLY": "1"},
     ).stdout
-    assert f"task_id={task_id}" in audit_only
+    assert f"task_id={historical_task_id}" in audit_only
     assert "expected_dequeue_method=popleft_n" in audit_only
     assert "npu_execution_authorized=false" in audit_only
     assert "model_requests_authorized=false" in audit_only

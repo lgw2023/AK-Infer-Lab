@@ -673,13 +673,13 @@ def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
     assert "refinalize" in help_result.stdout
 
 
-def test_k0_is_green_and_k1a_r4_is_the_only_handoff():
+def test_k0_is_green_and_k1a_r5_f0_is_the_only_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+    task_id = "p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay"
+        "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_trigger_feasibility_no_npu"
     ) in handoff
     assert "server_sync_review_authorized: true" in handoff
     assert "npu_execution_authorized: false" in handoff
@@ -704,7 +704,7 @@ def test_k0_is_green_and_k1a_r4_is_the_only_handoff():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_p8_2_k0_refinalizer"].endswith(

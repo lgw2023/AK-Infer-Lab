@@ -592,16 +592,16 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
         ]
 
 
-def test_k1a_r4_offline_closeout_is_the_only_current_server_handoff():
+def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_read_only_r4_parent_validation_and_same_"
-        "evidence_offline_source_semantics_replay"
+        "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_"
+        "trigger_feasibility_no_npu"
         in handoff
     )
     for field in (
@@ -621,7 +621,7 @@ def test_k1a_r4_offline_closeout_is_the_only_current_server_handoff():
     for marker in (
         "parent_server_grade=red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete",
         "yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore",
-        "run_deepseek_p8_2_k1a_r4_r1_offline_closeout.sh",
+        "run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
         "formal_h2d_trigger_lifecycle_allowed: false",
         "K2",
@@ -633,8 +633,7 @@ def test_k1a_r4_offline_closeout_is_the_only_current_server_handoff():
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+        "workloads/p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
@@ -664,7 +663,7 @@ def test_k1a_r4_offline_closeout_is_the_only_current_server_handoff():
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R4-R1_offline_only"
+        "P8.2-K1A-R5-F0_zero_resource_feasibility_only"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True

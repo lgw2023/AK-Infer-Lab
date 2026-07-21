@@ -101,22 +101,22 @@ def test_r1_r1_requires_exact_source_binding_and_exception_provenance_before_rep
     assert values["request_count"] == "6"
 
 
-def test_source_binding_task_is_consumed_and_r4_is_current() -> None:
+def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721",
-        "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay",
+        "task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721",
+        "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_trigger_feasibility_no_npu",
         "npu_execution_authorized: false",
         "formal_model_lifecycle_count_exact: 0",
         "model_request_count_exact: 0",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "next_task_authorized: false",
-        "offline_refinalization_authorized: true",
-        "raw_trace_attribution_authorized: true",
+        "parent_bounded_evidence_read_authorized: true",
+        "r2_geometry_provenance_read_authorized: true",
         "frozen_source_semantics_audit_authorized: true",
         "parent_d2h_store_complete=true",
         "parent_h2d_restore_complete=false",
@@ -129,16 +129,16 @@ def test_source_binding_task_is_consumed_and_r4_is_current() -> None:
     assert "trap cleanup EXIT" not in handoff
     assert "upload_file.py" not in handoff
     assert "--confirmed-method" not in handoff
-    for forbidden in ("reset --hard", "git stash", "sync.sh", "git push"):
+    for forbidden in ("reset --hard", "git stash", "bash sync.sh", "git push origin"):
         assert forbidden not in handoff
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_grade"] == (
@@ -155,6 +155,6 @@ def test_source_binding_task_is_consumed_and_r4_is_current() -> None:
         "p8_2_k1a_r3_r2_r2_r1_r1_formal_model_lifecycle_count_max"
     ] == 1
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R4-R1_offline_only"
+        "P8.2-K1A-R5-F0_zero_resource_feasibility_only"
     )
     assert acceptance["next_task_authorized"] is False

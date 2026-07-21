@@ -210,12 +210,12 @@ def test_r2_geometry_summary_direct_file_cli_bootstraps_repo_root() -> None:
     assert "summarize-geometry" in completed.stdout
 
 
-def test_current_handoff_authorizes_only_k1a_r4_after_parent_blocks() -> None:
+def test_current_handoff_authorizes_only_k1a_r5_f0_after_parent_blocks() -> None:
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
@@ -231,7 +231,7 @@ def test_current_handoff_authorizes_only_k1a_r4_after_parent_blocks() -> None:
     for marker in (
         "ready_p8_2_k1a_r2_allocator_capacity",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r4_r1_offline_closeout.sh",
+        "run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh",
         "cpu_bytes_to_use_per_rank=430604288",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
         "P8.3-I1",

@@ -172,10 +172,10 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+        "p8_2_k1a_r5_f0_h2d_trigger_feasibility.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K1A-R4-R1_repaired_source_binding_same_evidence_offline_closeout"
+        "P8.2-K1A-R5-F0_zero_resource_h2d_trigger_feasibility"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
@@ -207,8 +207,8 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721" in handoff
-    assert "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay" in handoff
+    assert "task_id: p8_2_k1a_r5_f0_h2d_trigger_feasibility_2026_0721" in handoff
+    assert "execution_mode: authorized_read_only_r4_r1_r2_source_observer_and_trigger_feasibility_no_npu" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
