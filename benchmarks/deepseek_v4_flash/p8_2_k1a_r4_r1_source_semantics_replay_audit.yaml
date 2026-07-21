@@ -1,0 +1,78 @@
+schema_version: 1
+audit_id: p8_2_k1a_r4_r1_source_semantics_replay_audit
+date: '2026-07-21'
+stage: P8.2-K1A-R4-R1
+
+received_r4_package:
+  task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720
+  path: /Volumes/SSD1/Inbox/2026-07-21/p8_2_k1a_r4_store_only_20260720_run01
+  file_count: 9
+  total_bytes: 27943
+  files:
+    corrected_request_summary.tsv: f01be9c56fa2335c71bc57c154768cf54743138a50ef1aef8f72b60daed0ca9a
+    cpu_tier_source_semantics.json: bc645ae1c4ebf23d728741d6ac1ed1df71c1a012a3fc79d6faae97cf9ebdf52d
+    grading_summary.json: 1952b907e8d74523fce8395e8699040851f1379f249081cf3eb5247b8ca719c7
+    offline_refinalization.json: b521c91f42e0beb16d316e02e67abde39855a61a012f39c156e7c0abf0cd88f5
+    result_summary.md: 9097474ffff377713f4877eb14aeeb4c0e27f0282c8ae5ec38eb0f8b47e2de06
+    source_evidence_provenance.json: 39c36f167e504daaf54d3f2a24bab0fedda6e5299bd3e8be91075367f31ef743
+    task_grade.txt: e1db6c388f400d3a556c15bf85ced1cdb0b778229aa648c179251cef07cfe94b
+    trace_attribution_summary.json: 38e60f9d0bb151c1584de00f6425c6abf2fb121520eb2e80c8a07643f4dcd8a9
+    trace_source_provenance.json: f75509cfa8ffdc615296db65b01adede2f0ba81f57511e366e2cdee632759c94
+  candidate_manifest_received: false
+  manifest_omission_blocks_bug_diagnosis: false
+  manifest_omission_must_be_repaired_in_r4_r1_transfer_scope: true
+
+r4_review:
+  server_grade_preserved: blocked_p8_2_k1a_r4_offline_closeout_gate
+  refinalized_runtime_grade: yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore
+  store_only_refinalization_accepted: true
+  trace_attribution_gate: pass
+  source_semantics_gate: fail
+  source_semantics_false_negative: popleft_n_not_recognized_by_popleft_only_matcher
+  frozen_manager_hash_exact: true
+  frozen_block_pool_hash_exact: true
+  frozen_block_pool_dequeue_method: popleft_n
+  frozen_block_pool_calls_maybe_evict_cached_block: true
+  frozen_eviction_removes_cached_hash_entry: true
+  source_evidence_unchanged: true
+  request_transport_success_count: 6
+  producer_status_success_count: 5
+  d2h_store_complete: true
+  h2d_restore_complete: false
+  restore_cpu_hit_count: 0
+  restore_load_scheduled_count: 0
+  repeat_follower_gpu_prefix_hit_tokens: 16384
+
+evidence_interpretation:
+  d2h_bytes_total_semantics: cumulative_submitted_copy_volume
+  unique_cpu_residency_bytes_observed: false
+  cpu_tier_eviction_events_instrumented: false
+  restore_recomputed_then_repeat_gpu_hit_supported: true
+  pressure_evicted_prime_from_cpu_tier_proven: false
+  prime_blocks_resident_at_restore_proven: false
+  h2d_absence_cause_proven_as_unique: false
+  capacity_churn_supported_by_frozen_source_after_matcher_repair: true
+  capacity_churn_proven_for_parent_lifecycle: false
+
+fix_contract:
+  accepted_dequeue_calls: [popleft, popleft_n]
+  broad_popleft_prefix_match_allowed: false
+  exact_real_source_shaped_regression_fixture_required: true
+  structured_dequeue_method_required: popleft_n
+  runtime_or_dependency_patch_allowed: false
+
+decision:
+  parent_r4_server_grade_preserved: true
+  expected_r4_r1_candidate_grade: candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout
+  blocked_grade: blocked_p8_2_k1a_r4_r1_offline_closeout_gate
+  actual_cpu_eviction_proven: false
+  h2d_restore_mechanism_accepted: false
+  performance_reference_accepted: false
+  optimization_claim_accepted: false
+  formal_h2d_trigger_lifecycle_allowed: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  next_task_authorized: false
+  next_action: rerun_same_offline_closeout_with_repaired_source_binding_and_no_npu
+
+claim_boundary: repaired_frozen_source_binding_and_same_evidence_offline_store_only_closeout_only_no_runtime_replay_eviction_h2d_or_performance_claim

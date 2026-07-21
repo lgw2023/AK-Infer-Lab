@@ -1,12 +1,12 @@
 # P8 分层工程原型实施计划
 
-日期：2026-07-10；最后更新：2026-07-20
+日期：2026-07-10；最后更新：2026-07-21
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_provenance_blocked / p8_2_k1a_r3_r1_portable_argv_contract_red / p8_2_k1a_r3_r2_source_contract_blocked / p8_2_k1a_r3_r2_r1_runtime_partial_yellow / p8_2_k1a_r3_r2_r2_forensic_blocked / p8_2_k1a_r3_r2_r2_r1_source_or_observer_blocked / p8_2_k1a_r3_r2_r2_r1_r1_offline_provenance_blocked / p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow / p8_2_k1a_r4_offline_closeout_authorized / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_provenance_blocked / p8_2_k1a_r3_r1_portable_argv_contract_red / p8_2_k1a_r3_r2_source_contract_blocked / p8_2_k1a_r3_r2_r1_runtime_partial_yellow / p8_2_k1a_r3_r2_r2_forensic_blocked / p8_2_k1a_r3_r2_r2_r1_source_or_observer_blocked / p8_2_k1a_r3_r2_r2_r1_r1_offline_provenance_blocked / p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow / p8_2_k1a_r4_source_matcher_blocked / p8_2_k1a_r4_r1_same_evidence_replay_authorized / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 
 P8.1 parent grade 保留为 `yellow_p8_1_matrix_trace_invalid`。
 
-状态拆分：`local_artifact_state=k1a_r4_offline_closeout_prepared`；`server_execution_state=read_only_offline_refinalization_trace_attribution_and_source_semantics`；`blocked_legacy_path=OffloadingConnector_NPUOffloadingSpec`；`k1a_32gib_state=red_before_server_ready_zero_requests`；`k1a_r1_state=red_probe_invalid_rank_0_2_only`；`k1a_r2_state=developer_ready_128_block_capacity`；`k1a_r3_state=blocked_handoff_schema_zero_npu_zero_requests`；`k1a_r3_r1_state=red_nonportable_command_identity_before_vllm_zero_requests`；`k1a_r3_r2_state=blocked_unverified_ascend_checkout_path_zero_npu_zero_requests`；`k1a_r3_r2_r1_state=runtime_partial_yellow_one_of_six_success_d2h_no_completion`；`k1a_r3_r2_r2_state=blocked_forensic_false_negative_preserved`；`k1a_r3_r2_r2_r1_state=blocked_importfrom_false_negative_exception_provenance_incomplete`；`k1a_r3_r2_r2_r1_r1_state=blocked_flat_classifier_counted_deterministic_wrappers_as_unknown`；`k1a_r3_r2_r2_r1_r1_r1_state=developer_yellow_store_only_no_restore`；`candidate_real_move_path=SimpleCPUOffloadConnector`；`expert_track_state=p8_3_i0_inventory_green_budget_incomplete_i0_r1_taxonomy_green`；`p8_3_technical_dependency_on_k1a=false`；`p8_3_i1_server_execution_authorized=false`；`tp4_state=checkpoint_budget_incomplete_1135_unclassified`。P8.1 parent 保留 yellow，P8.1-R1 和 P8.2-K0 已 green，K1 保留 blocked，K1A-R2 accepted capacity ready。完整 R3 lineage 不改写。R3-R2-R2-R1-R1-R1 已执行唯一 accepted-capacity lifecycle：6/6 transport 成功，D2H store 闭合，CPU hit/load/H2D 为零；原 red 保留、开发机只接受 store-only yellow。当前 R4 只离线重放 bounded package、raw trace 时窗和冻结 CPU-tier source semantics，不授权新 lifecycle。P8.3-I0-R1 taxonomy 已 green 但不自动补 TP4 budget。
+状态拆分：`local_artifact_state=k1a_r4_r1_source_binding_replay_prepared`；`server_execution_state=read_only_parent_r4_validation_and_same_evidence_source_semantics_replay`；`blocked_legacy_path=OffloadingConnector_NPUOffloadingSpec`；`k1a_32gib_state=red_before_server_ready_zero_requests`；`k1a_r1_state=red_probe_invalid_rank_0_2_only`；`k1a_r2_state=developer_ready_128_block_capacity`；`k1a_r3_state=blocked_handoff_schema_zero_npu_zero_requests`；`k1a_r3_r1_state=red_nonportable_command_identity_before_vllm_zero_requests`；`k1a_r3_r2_state=blocked_unverified_ascend_checkout_path_zero_npu_zero_requests`；`k1a_r3_r2_r1_state=runtime_partial_yellow_one_of_six_success_d2h_no_completion`；`k1a_r3_r2_r2_state=blocked_forensic_false_negative_preserved`；`k1a_r3_r2_r2_r1_state=blocked_importfrom_false_negative_exception_provenance_incomplete`；`k1a_r3_r2_r2_r1_r1_state=blocked_flat_classifier_counted_deterministic_wrappers_as_unknown`；`k1a_r3_r2_r2_r1_r1_r1_state=developer_yellow_store_only_no_restore`；`k1a_r4_state=blocked_popleft_n_source_matcher_false_negative_store_only_and_trace_pass`；`candidate_real_move_path=SimpleCPUOffloadConnector`；`expert_track_state=p8_3_i0_inventory_green_budget_incomplete_i0_r1_taxonomy_green`；`p8_3_technical_dependency_on_k1a=false`；`p8_3_i1_server_execution_authorized=false`；`tp4_state=checkpoint_budget_incomplete_1135_unclassified`。P8.1 parent 保留 yellow，P8.1-R1 和 P8.2-K0 已 green，K1 保留 blocked，K1A-R2 accepted capacity ready。完整 R3 lineage 不改写。R3-R2-R2-R1-R1-R1 已执行唯一 accepted-capacity lifecycle：6/6 transport 成功，D2H store 闭合，CPU hit/load/H2D 为零；原 red 保留、开发机只接受 store-only yellow。当前 R4-R1 只验证旧 R4 package 并以修复后的 exact `popleft_n` binding 重放同一 bounded/raw/source evidence，不授权新 lifecycle。P8.3-I0-R1 taxonomy 已 green 但不自动补 TP4 budget。
 
 ## 1. P8 的工程定义
 
@@ -109,15 +109,15 @@ hybrid-group 不兼容而 blocked；K1A 只有 source candidate，真实 D2H/H2D
 
 ```text
 P8.1-R1 observe-only green
-├─ KV/Prefix track: K0 green -> legacy K1 blocked -> K1A 32GiB red -> K1A-R1 probe-invalid red -> K1A-R2 capacity ready -> full R3 provenance -> R3-R2-R2-R1-R1-R1 store-only yellow -> K1A-R4 offline closeout authorized
+├─ KV/Prefix track: K0 green -> legacy K1 blocked -> K1A 32GiB red -> K1A-R1 probe-invalid red -> K1A-R2 capacity ready -> full R3 provenance -> R3-R2-R2-R1-R1-R1 store-only yellow -> K1A-R4 matcher-blocked -> K1A-R4-R1 same-evidence replay authorized
 └─ Expert/TP4 track: P8.3-I0 inventory green -> I0-R1 taxonomy green (budget incomplete) -> P8.3-I1 separately authorized -> P8.4 simulation
                                                    -> P8.5A mover -> P8.5B TP4 closure
 ```
 
 K1/K1A 只控制 KV warm-tier 的真实迁移门，不是 P8.3 的技术前置。K1A 若成功，可为后续成本模型提供
 同平台 D2H/H2D 机制证据；若失败，也不阻止 checkpoint-first expert inventory、候选 TP4 owner mapping
-或离线 schema/fixture 开发。执行授权必须单列：当前 handoff 只授权 P8.2-K1A-R4 零 NPU的 bounded
-package 重分级、raw trace 请求时窗归因和冻结 CPU-tier source semantics；不得执行新 lifecycle。后续 H2D-trigger
+或离线 schema/fixture 开发。执行授权必须单列：当前 handoff 只授权 P8.2-K1A-R4-R1 零 NPU的
+parent-R4 validation 与同证据 source-binding closeout；不得执行新 lifecycle。后续 H2D-trigger
 lifecycle 与 P8.3-I1 hotness/route trace 都必须另建 handoff。P8.3-I0 已在 index/header inventory 边界 green，I0-R1 taxonomy
 也已在既有 inventory 的 bounded offline 边界 green，但 `1135` tensor / `12319364956 bytes` 仍未形成
 可用的 TP4 placement 分类，且缺失 runtime materialized bytes，因此 budget 继续 incomplete；I0-R1 不是
@@ -639,6 +639,7 @@ benchmarks/deepseek_v4_flash/
   p8_2_k1a_r3_r2_r2_r1_r1_source_binding_provenance_audit.yaml
   p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay_audit.yaml
   p8_2_k1a_r4_store_only_refinalization_audit.yaml
+  p8_2_k1a_r4_r1_source_semantics_replay_audit.yaml
   p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_inventory_taxonomy_audit.yaml
 
@@ -654,6 +655,7 @@ tools/inference_contracts/
   run_deepseek_p8_2_k1a_r3_r2_r2_r1_r1_simple_cpu_offload.sh
   p8_2_k1a_trace_attribution.py
   run_deepseek_p8_2_k1a_r4_offline_closeout.sh
+  run_deepseek_p8_2_k1a_r4_r1_offline_closeout.sh
   inventory_deepseek_p8_3_i0_checkpoint.py
   analyze_deepseek_p8_3_i0_unclassified.py
 ```
@@ -670,7 +672,7 @@ P8.2-K0 已接受 green，K1 旧路径 blocked，K1A 32 GiB/rank 点 red，K1A-R
 K1A-R2 已接受 128-block capacity ready，P8.3-I0/I0-R1 已在各自窄边界 green但 TP4 budget incomplete。
 K1A-R3 保留 `blocked_p8_2_k1a_r3_source_or_provenance_gate`（零 lifecycle/零请求）；K1A-R3-R1 保留
 `red_p8_2_k1a_r3_r1_no_success`（一次 lifecycle 尝试、vLLM 未启动、0/6 请求），首错仅为非可移植命令身份。
-当前仅授权 `p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720`：对已执行 causal lifecycle 的 22-file bounded package 做离线重分级，对 raw trace 做六请求 window/gap 归因，并对冻结 CPU-tier source 做 exact-hash semantics audit。R3-R2-R2-R1-R1-R1 原 red 保留，developer 只接受 6/6 transport + D2H store-only、无 H2D 的 yellow。K1A-R3-R2 保留 source blocked，K1A-R3-R2-R1 保留 partial yellow，R3-R2-R2、R3-R2-R2-R1 与 R3-R2-R2-R1-R1 保留 blocked provenance。兼容补丁、容量搜索、新 lifecycle、K2 与
+当前仅授权 `p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721`：先验证已执行 R4 的 blocked package，再对同一 causal bounded package、raw request windows 和 exact-hash frozen source 做修复后的 `popleft_n` binding 重放，并要求不受影响的 refinalization/trace 五项逐字节一致。R4 的 store-only/trace pass 与 source matcher blocked 均保留，R3-R2-R2-R1-R1-R1 原 red 保留，developer 只接受 6/6 transport + D2H store-only、无 H2D 的 yellow。K1A-R3-R2 保留 source blocked，K1A-R3-R2-R1 保留 partial yellow，R3-R2-R2、R3-R2-R2-R1 与 R3-R2-R2-R1-R1 保留 blocked provenance。兼容补丁、容量搜索、新 lifecycle、K2 与
 P8.3-I1 均不得自动进入。
 MindIE adapter、payload mover 与长期 server collector 仍未创建。
 

@@ -6,11 +6,11 @@ P8_PLAN = REPO_ROOT / "docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md"
 P5_P9_PLAN = REPO_ROOT / "工作记录与进度笔记本/12_P5_P9_后续阶段重排计划.md"
 
 
-def test_current_plans_route_only_r4_offline_closeout_and_keep_expert_budget_open() -> None:
+def test_current_plans_route_only_r4_r1_offline_replay_and_keep_expert_budget_open() -> None:
     p8_plan = P8_PLAN.read_text(encoding="utf-8")
     p5_p9_plan = P5_P9_PLAN.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
     )
 
     assert task_id in p8_plan
@@ -22,7 +22,8 @@ def test_current_plans_route_only_r4_offline_closeout_and_keep_expert_budget_ope
     assert "K1A-R3-R2-R1 runtime partial yellow" in p5_p9_plan
     assert "K1A-R3-R2-R2-R1 source/observer gate blocked" in p5_p9_plan
     assert "K1A-R3-R2-R2-R1-R1-R1 store-only yellow" in p5_p9_plan
-    assert "K1A-R4 offline closeout authorized" in p5_p9_plan
+    assert "K1A-R4 source-matcher blocked" in p5_p9_plan
+    assert "K1A-R4-R1 same-evidence replay authorized" in p5_p9_plan
     assert "P8.3-I0/I0-R1 已在窄边界 green且 budget incomplete" in p5_p9_plan
     assert "P8.3-I1 Level-A hotness trace 必须另行授权" in p5_p9_plan
     for artifact in (
@@ -33,6 +34,7 @@ def test_current_plans_route_only_r4_offline_closeout_and_keep_expert_budget_ope
         "p8_2_k1a_r3_r2_r2_r1_r1_source_binding_provenance_audit.yaml",
         "p8_2_k1a_r3_r2_r2_r1_r1_r1_causal_exception_replay_audit.yaml",
         "p8_2_k1a_r4_store_only_refinalization_audit.yaml",
+        "p8_2_k1a_r4_r1_source_semantics_replay_audit.yaml",
         "p8_3_i0_r1_inventory_taxonomy_audit.yaml",
         "canonicalize_server_argv.py",
         "p8_2_k1a_trace_attribution.py",

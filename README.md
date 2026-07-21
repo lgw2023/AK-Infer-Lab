@@ -93,8 +93,10 @@ ImportFrom/source-binding 与异常 provenance 门，并执行同一 accepted ca
 HTTP/token/SSE/MTP/health/queue 成功，D2H 8-worker 与 41 次 store completion 闭合，但 CPU hit/load/H2D
 均为零。服务器原 grade=`red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete` 保留；开发机只接受
 `yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore`，不接受双向 offload green。
-当前唯一服务器任务为零 NPU 的 P8.2-K1A-R4：精确重放 22-file bounded package，按六请求时窗归因
-raw transfer，并审计冻结 CPU tier 分配/淘汰语义。累计 D2H bytes 不等于唯一 CPU 驻留量；实际 prime
+P8.2-K1A-R4 已完成同证据离线重放，但因审计器只识别 `.popleft(`、未识别冻结源码真实
+`.popleft_n(` 而保留 `blocked_p8_2_k1a_r4_offline_closeout_gate`。当前唯一服务器任务前移到零 NPU
+的 P8.2-K1A-R4-R1：验证旧 R4 package，使用修复后的 exact dequeue binding 重放同一 bounded/raw
+证据，并要求 refinalization/trace 五项逐字节不变。累计 D2H bytes 不等于唯一 CPU 驻留量；实际 prime
 eviction、H2D 缺失唯一根因、K2 与 P8.3-I1 均未解锁。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
@@ -116,7 +118,7 @@ eviction、H2D 缺失唯一根因、K2 与 P8.3-I1 均未解锁。
 ## 最小开工路径
 
 1. P5/P6 runtime、official context、unprofiled/profiled reference 与 matched controls 已关闭；mixed checkpoint 不再参与，P6.3C 保留严格单变量 blocked。
-2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-R2 capacity ready，完整 R3 lineage 保留；R3-R2-R2-R1-R1-R1 已得到 6/6 transport 与 D2H store-only、无 H2D 的 developer yellow。当前执行 R4 零 NPU 离线收口、raw trace 时窗归因与冻结 source semantics，K2 不授权。
+2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-R2 capacity ready，完整 R3 lineage 保留；R3-R2-R2-R1-R1-R1 已得到 6/6 transport 与 D2H store-only、无 H2D 的 developer yellow。R4 trace/store-only 门通过但 source matcher 假阴性 blocked；当前执行 R4-R1 零 NPU同证据 source-binding 修复重放，K2 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。
 5. P9：待 P7/P8 的真实 trace、inventory、simulation 与 TP4 closure 证据齐备后，合并 P0/P3 microbench，输出带置信度和软件前提的下一代硬件优先级。

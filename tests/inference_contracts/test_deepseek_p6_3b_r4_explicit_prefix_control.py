@@ -340,7 +340,7 @@ def test_r4_r1_closeout_is_preserved_during_k1a_r4_offline_closeout():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R4 store-only 离线收口" in handoff
+    assert "P8.2-K1A-R4-R1 修复 source binding 假阴性" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "model_request_count_exact: 0" in handoff
@@ -381,7 +381,7 @@ def test_r4_r1_closeout_is_preserved_during_k1a_r4_offline_closeout():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-            "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
+            "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False

@@ -220,13 +220,13 @@ def test_k1_auditor_accepts_hash_verified_installed_source_trees(tmp_path: Path)
 
 
 def test_k1_block_is_preserved_in_the_k1a_r4_server_handoff():
-    task_id = "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
+    task_id = "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics"
+        "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay"
         in handoff
     )
     for field in (
@@ -255,11 +255,11 @@ def test_k1_block_is_preserved_in_the_k1a_r4_server_handoff():
         "audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_server_handoff_execution_mode"] == (
-        "authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics"
+        "authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k0_grade"] == (

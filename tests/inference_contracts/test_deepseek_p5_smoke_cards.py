@@ -1959,9 +1959,9 @@ def test_server_handoff_advances_from_causal_runtime_to_r4_offline_closeout():
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R4 store-only 离线收口" in handoff
-    assert "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720" in handoff
-    assert "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics" in handoff
+    assert "P8.2-K1A-R4-R1 修复 source binding 假阴性" in handoff
+    assert "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721" in handoff
+    assert "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "formal_model_lifecycle_count_exact: 0" in handoff
     assert "model_request_count_exact: 0" in handoff
@@ -2047,7 +2047,7 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
         "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_offline_closeout_authorized_i0_r1_green"
@@ -2450,8 +2450,8 @@ def test_server_handoff_executes_only_r4_offline_closeout():
         encoding="utf-8"
     )
 
-    assert "P8.2-K1A-R4 store-only 离线收口" in handoff
-    assert "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720" in handoff
+    assert "P8.2-K1A-R4-R1 修复 source binding 假阴性" in handoff
+    assert "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff

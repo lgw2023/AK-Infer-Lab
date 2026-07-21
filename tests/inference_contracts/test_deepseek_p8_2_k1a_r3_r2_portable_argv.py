@@ -282,11 +282,11 @@ def test_r3_lineage_is_consumed_and_r4_is_the_only_current_read_only_handoff() -
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
+        "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
     ) in handoff
     for exact in (
-        "execution_mode: authorized_read_only_offline_store_only_refinalization_"
-        "trace_attribution_and_source_semantics",
+        "execution_mode: authorized_read_only_r4_parent_validation_and_same_"
+        "evidence_offline_source_semantics_replay",
         "npu_execution_authorized: false",
         "formal_model_lifecycle_count_exact: 0",
         "model_request_count_exact: 0",

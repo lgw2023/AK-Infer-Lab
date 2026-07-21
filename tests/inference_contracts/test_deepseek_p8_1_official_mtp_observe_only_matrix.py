@@ -472,11 +472,11 @@ def test_current_handoff_authorizes_only_k1a_r4_offline_closeout() -> None:
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-            "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
+            "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
         in handoff
     )
     assert (
-        "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics"
+        "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay"
         in handoff
     )
     assert "npu_execution_authorized: false" in handoff

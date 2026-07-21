@@ -141,7 +141,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     assert artifacts["current_server_handoff_task"] != workload_task_id()
     assert artifacts["next_workload"] == (
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
     )
     assert acceptance["p8_2_k1a_r3_r2_r1_grade"] == (
         "yellow_p8_2_k1a_r3_r2_r1_partial"
@@ -151,7 +151,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     assert acceptance["p8_2_k1a_r3_r2_r2_formal_model_lifecycle_count_max"] == 1
     assert acceptance["p8_2_k1a_r3_r2_r2_model_request_count_max"] == 6
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R4_offline_only"
+        "P8.2-K1A-R4-R1_offline_only"
     )
     assert acceptance["next_task_authorized"] is False
 

@@ -24,8 +24,9 @@ P6.3C 已因 `4096 < 135168` 的 frozen validation 约束收口为
 `blocked_p6_3c_not_strict_single_variable`，未创建 executable workload。P8.1-R1 与 P8.2-K0
 已 green，K1A-R2 accepted capacity 已 ready。R3-R2-R2-R1-R1-R1 已完成同容量唯一 lifecycle：
 6/6 transport 成功、D2H store 闭合、CPU hit/load/H2D 为零。原 red 保留，开发机只接受 store-only yellow。
-当前唯一 handoff 为 `p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720`，只在服务器
-原位离线重放 bounded package、raw trace 请求时窗与冻结 CPU-tier source semantics，不碰 NPU。
+R4 离线 store-only/trace 已通过，但 source matcher 未识别冻结 `popleft_n` 而保留 blocked。当前唯一
+handoff 为 `p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721`，只验证旧 R4 package 并用
+修复后的 exact dequeue binding 重放同一 bounded/raw/source evidence，不碰 NPU。
 K1A 双向 green、K2、P8.3-I1 和 P9 不自动进入。
 
 ## 当前范围

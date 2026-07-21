@@ -107,8 +107,8 @@ def test_source_binding_task_is_consumed_and_r4_is_current() -> None:
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720",
-        "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics",
+        "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721",
+        "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay",
         "npu_execution_authorized: false",
         "formal_model_lifecycle_count_exact: 0",
         "model_request_count_exact: 0",
@@ -135,10 +135,10 @@ def test_source_binding_task_is_consumed_and_r4_is_current() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_grade"] == (
@@ -155,6 +155,6 @@ def test_source_binding_task_is_consumed_and_r4_is_current() -> None:
         "p8_2_k1a_r3_r2_r2_r1_r1_formal_model_lifecycle_count_max"
     ] == 1
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R4_offline_only"
+        "P8.2-K1A-R4-R1_offline_only"
     )
     assert acceptance["next_task_authorized"] is False

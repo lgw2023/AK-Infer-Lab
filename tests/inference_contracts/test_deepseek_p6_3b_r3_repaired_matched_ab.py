@@ -293,9 +293,9 @@ def test_handoff_preserves_r4_r1_closeout_during_k1a_r4_offline_closeout():
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R4 store-only 离线收口" in handoff
-    assert "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720" in handoff
-    assert "execution_mode: authorized_read_only_offline_store_only_refinalization_trace_attribution_and_source_semantics" in handoff
+    assert "P8.2-K1A-R4-R1 修复 source binding 假阴性" in handoff
+    assert "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721" in handoff
+    assert "execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay" in handoff
     assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "R2 hybrid-KV" in handoff
@@ -325,7 +325,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution.yaml"
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
     )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"

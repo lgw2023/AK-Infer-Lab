@@ -1,0 +1,125 @@
+schema_version: 1
+workload_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay
+date: '2026-07-21'
+task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721
+purpose: repair_the_popleft_n_source_binding_false_negative_and_replay_the_same_offline_closeout_without_npu
+
+stage_contract:
+  stage: P8.2-K1A-R4-R1
+  mode: read_only_parent_r4_validation_same_evidence_refinalization_trace_and_repaired_source_semantics
+  claim_boundary: repaired_frozen_source_binding_and_same_evidence_offline_store_only_closeout_only_no_runtime_replay_eviction_h2d_or_performance_claim
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  unique_root_cause_claim_authorized: false
+
+source_gate:
+  parent_r4_task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720
+  parent_r4_result_root: /data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720_run01
+  parent_r4_grade: blocked_p8_2_k1a_r4_offline_closeout_gate
+  parent_r4_payload_file_count: 9
+  parent_r4_payload_total_bytes: 27943
+  parent_r4_trace_attribution_gate: pass
+  parent_r4_store_only_refinalization_accepted: true
+  parent_r4_source_semantics_gate: fail
+  parent_r4_source_false_negative: popleft_n_not_recognized_by_popleft_only_matcher
+  causal_parent_manifest_sha256: 6463f2f13e5c7149e6fcbb502caad5edfce1f9b7d82c16c74a72babd64035498
+  causal_parent_payload_file_count: 21
+  causal_parent_payload_total_bytes: 41185
+  causal_parent_combined_file_count: 22
+  causal_parent_combined_total_bytes: 50428
+  raw_result_server_path: /data/node0_disk1/liguowei/AK-Infer-Lab/工作记录与进度笔记本/runtime_trace_smokes/p8_2_k1a_r3_r2_r2_r1_r1_r1_deepseek_v4_flash_causal_exception_replay_2026_0720_run01
+  frozen_vllm_root: /data/node0_disk1/vllm-0.22.1/vllm
+  frozen_vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  frozen_manager_sha256: fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
+  frozen_block_pool_sha256: 36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283
+  frozen_block_pool_dequeue_method: popleft_n
+  source_evidence_unchanged_required: true
+
+offline_sections:
+  - exact_parent_r4_manifest_payload_and_grade_validation
+  - real_source_shaped_popleft_n_regression_and_structured_binding_audit
+  - same_causal_parent_bounded_package_refinalization
+  - same_raw_trace_request_window_attribution
+  - repaired_frozen_source_semantics_audit
+  - byte_identity_comparison_for_unaffected_r4_outputs
+  - bounded_r4_r1_joint_grade_manifest_and_zero_resource_report
+
+source_semantics_contract:
+  cpu_match_uses_find_longest_cache_hit_required: true
+  eager_store_allocates_from_cpu_block_pool_required: true
+  free_block_queue_dequeue_method_exact: popleft_n
+  accepted_dequeue_calls: [popleft, popleft_n]
+  broad_prefix_match_allowed: false
+  get_new_blocks_calls_maybe_evict_cached_block_required: true
+  maybe_evict_removes_cached_hash_required: true
+  capacity_churn_is_source_hypothesis_not_runtime_fact: true
+
+replay_contract:
+  parent_server_grade_preserved: red_p8_2_k1a_r3_r2_r2_r1_r1_r1_evidence_incomplete
+  refinalized_runtime_grade_exact: yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore
+  request_transport_success_count_exact: 6
+  producer_status_success_count_exact: 5
+  d2h_store_complete_required: true
+  h2d_restore_complete_expected: false
+  trace_event_count_exact: 3060
+  repeat_follower_gpu_prefix_hit_tokens_exact: 16384
+  actual_prime_eviction_must_remain_unproven: true
+  unique_h2d_absence_cause_must_remain_unproven: true
+  unaffected_r4_outputs_must_be_byte_identical: true
+
+execution_state:
+  execution_mode: authorized_read_only_r4_parent_validation_and_same_evidence_offline_source_semantics_replay
+  server_sync_review_authorized: true
+  parent_bounded_evidence_read_authorized: true
+  parent_raw_evidence_read_authorized: true
+  frozen_source_semantics_audit_authorized: true
+  result_directory_creation_authorized: true
+  npu_execution_authorized: false
+  keep_alive_stop_authorized: false
+  vllm_server_start_authorized: false
+  model_requests_authorized: false
+  formal_model_lifecycle_count_exact: 0
+  model_request_count_exact: 0
+  runtime_overlay_authorized: false
+  runtime_behavior_patch_authorized: false
+  capacity_search_authorized: false
+  profiler_authorized: false
+  hbm_sampler_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  formal_h2d_trigger_lifecycle_allowed: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+acceptance:
+  candidate_green_grade: candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout
+  blocked_repository_grade: blocked_p8_2_k1a_r4_r1_repository_contract_gate
+  blocked_parent_grade: blocked_p8_2_k1a_r4_r1_parent_r4_gate
+  blocked_closeout_grade: blocked_p8_2_k1a_r4_r1_offline_closeout_gate
+  candidate_green_is_offline_closeout_not_store_restore_runtime_green: true
+  developer_review_required: true
+
+result_contract:
+  payload_file_count_exact: 9
+  transfer_file_count_including_manifest: 10
+  manifest_is_transfer_control_file: true
+  max_transfer_total_bytes: 71680
+  sensitivity: bounded_operational_metadata_no_content_or_token_ids
+  generated_content_allowed: false
+  token_ids_allowed: false
+  raw_logs_metrics_traces_and_request_bodies_remain_server_local: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  transfer_methods: [email, upload-api, server-local]
+
+stop_policy:
+  stop_on_first_contract_parent_source_or_provenance_failure: true
+  no_npu_or_vllm: true
+  no_keep_alive_disruption: true
+  no_runtime_replay: true
+  no_capacity_or_request_body_change: true
+  no_h2d_trigger_lifecycle_without_new_handoff: true
+  no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true

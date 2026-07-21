@@ -25,7 +25,7 @@ def test_current_handoff_preserves_only_the_r4_frozen_source_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
+        "task_id: p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
     ) in handoff
     assert "manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b" in handoff
     assert "block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283" in handoff
@@ -152,13 +152,13 @@ def test_r4_handoff_runs_the_full_bounded_offline_chain() -> None:
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_read_only_offline_store_only_refinalization_"
-        "trace_attribution_and_source_semantics",
+        "execution_mode: authorized_read_only_r4_parent_validation_and_same_"
+        "evidence_offline_source_semantics_replay",
         "formal_model_lifecycle_count_exact: 0",
         "model_request_count_exact: 0",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "run_deepseek_p8_2_k1a_r4_offline_closeout.sh",
+        "run_deepseek_p8_2_k1a_r4_r1_offline_closeout.sh",
         "offline_refinalization_authorized: true",
         "raw_trace_attribution_authorized: true",
         "frozen_source_semantics_audit_authorized: true",
@@ -166,8 +166,8 @@ def test_r4_handoff_runs_the_full_bounded_offline_chain() -> None:
         "candidate_manifest.server_local.json",
         "9 个白名单 bounded metadata",
         "email / upload-api / server-local",
-        "candidate_green_p8_2_k1a_r4_offline_store_only_closeout",
-        "blocked_p8_2_k1a_r4_offline_closeout_gate",
+        "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
+        "blocked_p8_2_k1a_r4_r1_offline_closeout_gate",
         "不得进入 K2",
         "不得进入 P8.3-I1",
     ):

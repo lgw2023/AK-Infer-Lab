@@ -215,7 +215,7 @@ def test_current_handoff_authorizes_only_k1a_r4_after_parent_blocks() -> None:
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
@@ -231,9 +231,9 @@ def test_current_handoff_authorizes_only_k1a_r4_after_parent_blocks() -> None:
     for marker in (
         "ready_p8_2_k1a_r2_allocator_capacity",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r4_offline_closeout.sh",
+        "run_deepseek_p8_2_k1a_r4_r1_offline_closeout.sh",
         "cpu_bytes_to_use_per_rank=430604288",
-        "candidate_green_p8_2_k1a_r4_offline_store_only_closeout",
+        "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
         "P8.3-I1",
     ):
         assert marker in handoff

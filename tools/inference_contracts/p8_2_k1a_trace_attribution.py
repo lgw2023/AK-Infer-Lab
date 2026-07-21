@@ -39,6 +39,13 @@ EVENT_NAMES = (
     "load_scheduled",
     "load_request_completed",
 )
+DEFAULT_CLOSEOUT_TASK_ID = (
+    "p8_2_k1a_r4_store_only_refinalization_and_trace_attribution_2026_0720"
+)
+DEFAULT_CANDIDATE_GREEN_GRADE = (
+    "candidate_green_p8_2_k1a_r4_offline_store_only_closeout"
+)
+DEFAULT_BLOCKED_GRADE = "blocked_p8_2_k1a_r4_offline_closeout_gate"
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -102,9 +109,18 @@ def audit_cpu_tier_source_semantics(
         marker in eager_store_source
         for marker in (".get_num_free_blocks(", ".get_new_blocks(")
     )
+    free_block_dequeue_method = next(
+        (
+            method
+            for method in ("popleft_n", "popleft")
+            if f".{method}(" in allocation_source
+        ),
+        None,
+    )
+    free_block_dequeue = free_block_dequeue_method is not None
     cached_eviction = all(
         (
-            ".popleft(" in allocation_source,
+            free_block_dequeue,
             "._maybe_evict_cached_block(" in allocation_source,
             ".cached_block_hash_to_block.pop(" in eviction_source,
         )
@@ -134,6 +150,7 @@ def audit_cpu_tier_source_semantics(
         "block_pool_hash_exact": block_pool_hash_exact,
         "cpu_match_uses_find_longest_cache_hit": cpu_match,
         "eager_store_allocates_from_cpu_block_pool": eager_allocation,
+        "free_block_queue_dequeue_method": free_block_dequeue_method,
         "cpu_pool_allocation_may_evict_cached_hash_entry": cached_eviction,
         "capacity_churn_hypothesis_supported": (
             eager_allocation and cached_eviction
@@ -358,7 +375,13 @@ def build_trace_attribution(
     return result
 
 
-def finalize_r4_offline_closeout(result_root: Path) -> dict[str, Any]:
+def finalize_r4_offline_closeout(
+    result_root: Path,
+    *,
+    task_id: str = DEFAULT_CLOSEOUT_TASK_ID,
+    candidate_green_grade: str = DEFAULT_CANDIDATE_GREEN_GRADE,
+    blocked_grade: str = DEFAULT_BLOCKED_GRADE,
+) -> dict[str, Any]:
     refinalization = json.loads(
         (result_root / "refinalization/offline_refinalization.json").read_text(
             encoding="utf-8"
@@ -406,10 +429,11 @@ def finalize_r4_offline_closeout(result_root: Path) -> dict[str, Any]:
     task_green = store_only_accepted and trace_gate and source_gate
     result = {
         "schema_version": "p8_2_k1a_r4_offline_closeout_v1",
+        "task_id": task_id,
         "task_grade": (
-            "candidate_green_p8_2_k1a_r4_offline_store_only_closeout"
+            candidate_green_grade
             if task_green
-            else "blocked_p8_2_k1a_r4_offline_closeout_gate"
+            else blocked_grade
         ),
         "parent_runtime_grade": refinalization.get("source_server_grade"),
         "parent_runtime_grade_preserved": (
@@ -447,6 +471,7 @@ def finalize_r4_offline_closeout(result_root: Path) -> dict[str, Any]:
             (
                 "# P8.2-K1A-R4 offline closeout",
                 "",
+                f"- task_id: `{result['task_id']}`",
                 f"- task_grade: `{result['task_grade']}`",
                 f"- parent_runtime_grade: `{result['parent_runtime_grade']}` (preserved)",
                 f"- refinalized_runtime_grade: `{result['refinalized_runtime_grade']}`",
@@ -495,6 +520,8 @@ def finalize_r4_offline_closeout(result_root: Path) -> dict[str, Any]:
             "files": files,
             "payload_file_count": len(files),
             "payload_total_bytes": total,
+            "manifest_is_transfer_control_file": True,
+            "transfer_file_count_including_manifest": len(files) + 1,
             "max_total_bytes": 71680,
             "result_transfer_authorized": True,
             "transfer_method_selected": False,
@@ -518,6 +545,11 @@ def parse_args() -> argparse.Namespace:
     source.add_argument("--expected-block-pool-sha256")
     finalize = commands.add_parser("finalize-closeout")
     finalize.add_argument("--result-root", type=Path, required=True)
+    finalize.add_argument("--task-id", default=DEFAULT_CLOSEOUT_TASK_ID)
+    finalize.add_argument(
+        "--candidate-green-grade", default=DEFAULT_CANDIDATE_GREEN_GRADE
+    )
+    finalize.add_argument("--blocked-grade", default=DEFAULT_BLOCKED_GRADE)
     return parser.parse_args()
 
 
@@ -533,12 +565,15 @@ def main() -> int:
             expected_block_pool_sha256=args.expected_block_pool_sha256,
         )
     else:
-        result = finalize_r4_offline_closeout(args.result_root)
+        result = finalize_r4_offline_closeout(
+            args.result_root,
+            task_id=args.task_id,
+            candidate_green_grade=args.candidate_green_grade,
+            blocked_grade=args.blocked_grade,
+        )
     print(json.dumps(result, sort_keys=True))
     if args.command == "finalize-closeout":
-        return 0 if result.get("task_grade") == (
-            "candidate_green_p8_2_k1a_r4_offline_store_only_closeout"
-        ) else 2
+        return 0 if result.get("task_grade") == args.candidate_green_grade else 2
     return 0 if result.get("source_semantics_gate") != "fail" else 2
 
 

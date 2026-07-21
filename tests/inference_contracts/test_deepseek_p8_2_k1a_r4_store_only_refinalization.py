@@ -326,9 +326,10 @@ class SimpleCPUOffloadScheduler:
         """
 class BlockPool:
     def get_new_blocks(self, num_blocks):
-        block = self.free_block_queue.popleft()
-        self._maybe_evict_cached_block(block)
-        return [block]
+        blocks = self.free_block_queue.popleft_n(num_blocks)
+        for block in blocks:
+            self._maybe_evict_cached_block(block)
+        return blocks
 
     def _maybe_evict_cached_block(self, block):
         return self.cached_block_hash_to_block.pop(block.block_hash, block.block_id)
@@ -342,6 +343,7 @@ class BlockPool:
     assert result["source_semantics_gate"] == "pass"
     assert result["cpu_match_uses_find_longest_cache_hit"] is True
     assert result["eager_store_allocates_from_cpu_block_pool"] is True
+    assert result["free_block_queue_dequeue_method"] == "popleft_n"
     assert result["cpu_pool_allocation_may_evict_cached_hash_entry"] is True
     assert result["capacity_churn_hypothesis_supported"] is True
     assert result["pressure_evicted_prime_from_cpu_tier_proven"] is False
@@ -409,11 +411,19 @@ def test_r4_composes_refinalization_trace_and_source_gates_into_offline_green(
         },
     )
 
-    result = finalize_r4_offline_closeout(result_root)
+    task_id = "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+    result = finalize_r4_offline_closeout(
+        result_root,
+        task_id=task_id,
+        candidate_green_grade=(
+            "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout"
+        ),
+    )
 
     assert result["task_grade"] == (
-        "candidate_green_p8_2_k1a_r4_offline_store_only_closeout"
+        "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout"
     )
+    assert result["task_id"] == task_id
     assert result["parent_runtime_grade_preserved"] is True
     assert result["store_only_refinalization_accepted"] is True
     assert result["trace_attribution_gate"] == "pass"
@@ -422,7 +432,17 @@ def test_r4_composes_refinalization_trace_and_source_gates_into_offline_green(
     assert result["npu_started"] is False
     assert result["model_request_sent"] is False
     assert result["next_task_authorized"] is False
-    assert (result_root / "candidate_manifest.server_local.json").is_file()
+    manifest = json.loads(
+        (result_root / "candidate_manifest.server_local.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert manifest["payload_file_count"] == 9
+    assert manifest["manifest_is_transfer_control_file"] is True
+    assert manifest["transfer_file_count_including_manifest"] == 10
+    assert f"- task_id: `{task_id}`" in (
+        result_root / "result_summary.md"
+    ).read_text(encoding="utf-8")
 
 
 def test_r4_finalize_cli_returns_nonzero_for_a_blocked_joint_grade(
@@ -433,7 +453,7 @@ def test_r4_finalize_cli_returns_nonzero_for_a_blocked_joint_grade(
     monkeypatch.setattr(
         tool,
         "finalize_r4_offline_closeout",
-        lambda _result_root: {
+        lambda _result_root, **_kwargs: {
             "task_grade": "blocked_p8_2_k1a_r4_offline_closeout_gate",
             "source_semantics_gate": "pass",
         },
@@ -447,7 +467,47 @@ def test_r4_finalize_cli_returns_nonzero_for_a_blocked_joint_grade(
     assert tool.main() == 2
 
 
-def test_r4_contract_is_read_only_and_is_the_only_current_server_handoff() -> None:
+def test_r4_finalize_cli_accepts_r4_r1_task_and_grade_identity(monkeypatch) -> None:
+    from tools.inference_contracts import p8_2_k1a_trace_attribution as tool
+
+    captured = {}
+    candidate_grade = (
+        "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout"
+    )
+
+    def fake_finalize(_result_root, **kwargs):
+        captured.update(kwargs)
+        return {"task_grade": candidate_grade}
+
+    monkeypatch.setattr(tool, "finalize_r4_offline_closeout", fake_finalize)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "p8_2_k1a_trace_attribution.py",
+            "finalize-closeout",
+            "--result-root",
+            "/tmp/r4-r1",
+            "--task-id",
+            "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721",
+            "--candidate-green-grade",
+            candidate_grade,
+            "--blocked-grade",
+            "blocked_p8_2_k1a_r4_r1_offline_closeout_gate",
+        ],
+    )
+
+    assert tool.main() == 0
+    assert captured == {
+        "task_id": (
+            "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
+        ),
+        "candidate_green_grade": candidate_grade,
+        "blocked_grade": "blocked_p8_2_k1a_r4_r1_offline_closeout_gate",
+    }
+
+
+def test_r4_contract_is_read_only_and_preserved_as_historical_provenance() -> None:
     audit = yaml.safe_load(R4_AUDIT.read_text(encoding="utf-8"))
     workload = yaml.safe_load(R4_WORKLOAD.read_text(encoding="utf-8"))
     assert audit["decision"]["parent_server_grade_preserved"] == (
@@ -484,17 +544,13 @@ def test_r4_contract_is_read_only_and_is_the_only_current_server_handoff() -> No
     assert artifacts["p8_2_k1a_r4_store_only_refinalization_audit"].endswith(
         R4_AUDIT.name
     )
-    assert artifacts["next_workload"].endswith(R4_WORKLOAD.name)
-    assert artifacts["current_server_handoff_task"] == task_id
+    assert artifacts["next_workload"].endswith(
+        "p8_2_k1a_r4_r1_store_only_source_semantics_replay.yaml"
+    )
+    assert artifacts["current_server_handoff_task"] != task_id
     assert artifacts["current_p8_2_k1a_r4_runner"].endswith(R4_RUNNER.name)
     handoff = HANDOFF.read_text(encoding="utf-8")
-    assert handoff.count("当前唯一服务器动作") == 1
-    assert f"task_id: {task_id}" in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "vllm_server_start_authorized: false" in handoff
-    assert "model_requests_authorized: false" in handoff
-    assert "result_transfer_authorized: true" in handoff
-    assert "next_task_authorized: false" in handoff
+    assert f"task_id: {task_id}" not in handoff
     assert "kill -TERM" not in handoff
     assert "vllm serve" not in handoff
     assert "curl " not in handoff
