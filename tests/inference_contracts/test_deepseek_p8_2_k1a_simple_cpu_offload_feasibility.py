@@ -595,13 +595,13 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
 def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_accepted_capacity_single_lazy_dynamic_"
-        "pressure_h2d_trigger_lifecycle"
+        "execution_mode: authorized_corrected_observable_gate_single_lazy_"
+        "dynamic_pressure_h2d_trigger_lifecycle"
         in handoff
     )
     for field in (
@@ -633,7 +633,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle.yaml"
+        "workloads/p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
@@ -663,7 +663,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-L1_one_lazy_dynamic_pressure_lifecycle_only"
+        "P8.2-K1A-R5-L1-R1_one_corrected_lazy_lifecycle_only"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True

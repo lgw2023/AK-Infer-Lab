@@ -54,7 +54,7 @@ target_runtime:
   vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
   vllm_ascend_version: 0.22.1rc1
   vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
-  runtime_status: p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_blocked_k1a_r4_r1_offline_store_only_green_k1a_r5_f0_zero_resource_feasibility_current_i0_r1_green
+  runtime_status: p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_blocked_k1a_r4_r1_offline_store_only_green_k1a_r5_f0_ready_k1a_r5_l1_d2h_green_controller_red_k1a_r5_l1_r1_current_i0_r1_green
 prior_eight_card_result:
   task_id: p5_deepseek_v4_flash_w8a8_8card_context_smoke_v0221rc1_2026_0712
   task_status: red_deterministic_mtp_dsa_cp_graph_capture
@@ -212,13 +212,14 @@ artifacts:
   p8_2_k1a_r4_r1_source_semantics_replay_audit: p8_2_k1a_r4_r1_source_semantics_replay_audit.yaml
   p8_2_k1a_r5_f0_h2d_trigger_feasibility_audit: p8_2_k1a_r5_f0_h2d_trigger_feasibility_audit.yaml
   p8_2_k1a_r5_l1_lazy_h2d_lifecycle_audit: p8_2_k1a_r5_l1_lazy_h2d_lifecycle_audit.yaml
+  p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle_audit: p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle_audit.yaml
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle.yaml
-  next_stage_candidate: P8.2-K1A-R5-L1_single_lazy_dynamic_pressure_h2d_trigger_lifecycle
-  current_server_handoff_task: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721
-  current_server_handoff_execution_mode: authorized_accepted_capacity_single_lazy_dynamic_pressure_h2d_trigger_lifecycle
+  next_workload: workloads/p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml
+  next_stage_candidate: P8.2-K1A-R5-L1-R1_corrected_observable_gate_single_lazy_lifecycle
+  current_server_handoff_task: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721
+  current_server_handoff_execution_mode: authorized_corrected_observable_gate_single_lazy_dynamic_pressure_h2d_trigger_lifecycle
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -243,6 +244,7 @@ artifacts:
   current_p8_2_k1a_r4_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r4_r1_offline_closeout.sh
   current_p8_2_k1a_r5_f0_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh
   current_p8_2_k1a_r5_l1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh
+  current_p8_2_k1a_r5_l1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_r1_lazy_h2d.sh
   current_p8_2_k1a_r5_l1_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
   current_p8_2_k1a_trace_attribution: ../../tools/inference_contracts/p8_2_k1a_trace_attribution.py
   current_p8_2_k1a_failure_forensics: ../../tools/inference_contracts/p8_2_k1a_failure_forensics.py
@@ -307,8 +309,8 @@ boundaries:
   - P8.2-K1A-R4 completed zero-NPU store-only refinalization and 3060-event trace attribution, but retained blocked_p8_2_k1a_r4_offline_closeout_gate because its source matcher recognized popleft but not the frozen popleft_n call.
   - P8.2-K1A-R4-R1 is developer-accepted as candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout after the same evidence replay fixed only that source matcher. It accepts D2H store-only evidence; cumulative D2H bytes remain non-unique residency, and actual CPU eviction, CPU hit/load, H2D restore, unique cause and performance remain unproven.
   - P8.2-K1A-R5-F0 is developer-accepted as candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility after its 9-file/7122-byte package, R4-R1/R2 replay, frozen source semantics, method resolution, observer self-test and trigger geometry all passed. It is zero-resource feasibility evidence, not runtime H2D evidence.
-  - The current P8.2-K1A-R5-L1 handoff authorizes exactly one accepted-capacity lazy lifecycle. It sends one to five isolated 131072-token pressure requests dynamically and sends the prepared restore follower only after the observe-only controller sees the 64-block target present in CPU and absent from GPU. Server request IDs are diagnostic only; a bounded controller role marker supplies contract identity without raw hashes or token values.
-  - R5-L1 candidate green requires request transport plus exact target GPU eviction, CPU-only residency, 16384-token CPU hit, 8-worker D2H/H2D enqueue-copy-poll-completion and clean recovery. It remains a mechanism candidate requiring developer review and does not authorize K2, P8.3-I1 or a performance claim.
+  - P8.2-K1A-R5-L1 completed one accepted-capacity lazy lifecycle with 2/2 request transport and exact 8-worker D2H store, then stopped before pressure because the controller overwrote a valid CPU=0/GPU=64 continue_pressure snapshot as unobservable at timeout. Its red grade is preserved; this is a controller stop, not a proven H2D runtime failure.
+  - The current P8.2-K1A-R5-L1-R1 handoff authorizes exactly one corrected lifecycle. A valid observable-not-ready state may advance to pressure only after D2H store completion; restore still requires exact CPU=64/GPU=0. The observer also snapshots immediately after connector output completion. K2, P8.3-I1, a second lifecycle, capacity tuning and performance claims remain closed.
   - P8.3 is not technically dependent on K1/K1A. P8.3-I0 is accepted as green_p8_3_i0_checkpoint_inventory for index/header inventory only, while 1135 tensors and 12319364956 checkpoint bytes remain unclassified and the TP4 planning budget remains incomplete.
   - P8.3-I0-R1 is developer-accepted as green_p8_3_i0_r1_unclassified_taxonomy after byte-identical offline replay; it cannot reclassify tensors, refinalize the TP4 budget or authorize P8.3-I1.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
@@ -434,14 +436,22 @@ acceptance:
   p8_2_k1a_r5_f0_formal_model_lifecycle_count_exact: 0
   p8_2_k1a_r5_f0_model_request_count_exact: 0
   p8_2_k1a_r5_f0_formal_h2d_trigger_lifecycle_allowed: false
-  p8_2_k1a_r5_l1_grade: pending_server_formal_lazy_lifecycle
-  p8_2_k1a_r5_l1_execution_authorized: true
-  p8_2_k1a_r5_l1_npu_execution_authorized: true
+  p8_2_k1a_r5_l1_grade: red_p8_2_k1a_r5_l1_h2d_evidence_incomplete
+  p8_2_k1a_r5_l1_execution_authorized: false
+  p8_2_k1a_r5_l1_npu_execution_authorized: false
   p8_2_k1a_r5_l1_formal_model_lifecycle_count_max: 1
-  p8_2_k1a_r5_l1_model_request_count_min: 4
-  p8_2_k1a_r5_l1_model_request_count_max: 8
+  p8_2_k1a_r5_l1_model_request_count_actual: 2
+  p8_2_k1a_r5_l1_d2h_store_complete: true
+  p8_2_k1a_r5_l1_h2d_restore_complete: false
   p8_2_k1a_r5_l1_k2_authorized: false
-  current_task_scoped_authorization: P8.2-K1A-R5-L1_one_lazy_dynamic_pressure_lifecycle_only
+  p8_2_k1a_r5_l1_r1_grade: pending_corrected_observable_gate_lifecycle
+  p8_2_k1a_r5_l1_r1_execution_authorized: true
+  p8_2_k1a_r5_l1_r1_npu_execution_authorized: true
+  p8_2_k1a_r5_l1_r1_formal_model_lifecycle_count_max: 1
+  p8_2_k1a_r5_l1_r1_model_request_count_min: 4
+  p8_2_k1a_r5_l1_r1_model_request_count_max: 8
+  p8_2_k1a_r5_l1_r1_k2_authorized: false
+  current_task_scoped_authorization: P8.2-K1A-R5-L1-R1_one_corrected_lazy_lifecycle_only
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory

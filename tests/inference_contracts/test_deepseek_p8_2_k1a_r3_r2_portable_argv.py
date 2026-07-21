@@ -282,11 +282,11 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
     ) in handoff
     for exact in (
-            "execution_mode: authorized_accepted_capacity_single_lazy_dynamic_"
-            "pressure_h2d_trigger_lifecycle",
+            "execution_mode: authorized_corrected_observable_gate_single_lazy_"
+            "dynamic_pressure_h2d_trigger_lifecycle",
             "npu_execution_authorized: true",
         "formal_model_lifecycle_count_max: 1",
         "model_request_count_max: 8",

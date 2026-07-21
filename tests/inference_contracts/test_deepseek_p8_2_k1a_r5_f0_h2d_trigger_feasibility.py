@@ -446,6 +446,7 @@ def test_h2d_residency_observer_self_test_is_observe_only(tmp_path: Path) -> Non
         "get_num_new_matched_tokens",
         "update_state_after_alloc",
         "build_connector_meta",
+        "update_connector_output",
     ]
     assert result["wrapped_block_pool_methods"] == [
         "_maybe_evict_cached_block"
@@ -456,7 +457,7 @@ def test_h2d_residency_observer_self_test_is_observe_only(tmp_path: Path) -> Non
     assert result["raw_hash_values_emitted"] is False
 
 
-def test_r5_f0_is_preserved_as_the_accepted_parent_of_current_r5_l1() -> None:
+def test_r5_f0_is_preserved_in_the_current_r5_l1_r1_lineage() -> None:
     import yaml
 
     audit = yaml.safe_load(AUDIT.read_text(encoding="utf-8"))
@@ -510,10 +511,10 @@ def test_r5_f0_is_preserved_as_the_accepted_parent_of_current_r5_l1() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle.yaml"
+        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
     )
     assert artifacts["current_p8_2_k1a_r5_f0_runner"].endswith(RUNNER.name)
 
@@ -521,7 +522,7 @@ def test_r5_f0_is_preserved_as_the_accepted_parent_of_current_r5_l1() -> None:
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert "candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility" in handoff
-    assert "task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
+    assert "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "keep_alive_stop_and_restore_authorized: true" in handoff
     assert "vllm_server_start_authorized: true" in handoff

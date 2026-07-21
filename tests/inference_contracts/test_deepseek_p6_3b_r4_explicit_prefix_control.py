@@ -340,7 +340,7 @@ def test_r4_r1_closeout_is_preserved_during_r5_f0_feasibility():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-L1 accepted-capacity lazy H2D trigger 单生命周期" in handoff
+    assert "P8.2-K1A-R5-L1-R1 corrected observable-gate lazy H2D 单生命周期" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "model_request_count_max: 8" in handoff
@@ -381,7 +381,7 @@ def test_r4_r1_closeout_is_preserved_during_r5_f0_feasibility():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-            "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle.yaml"
+            "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False

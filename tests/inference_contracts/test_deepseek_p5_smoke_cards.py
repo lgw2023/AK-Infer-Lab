@@ -1959,9 +1959,9 @@ def test_server_handoff_advances_from_r4_r1_closeout_to_r5_f0_feasibility():
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-L1 accepted-capacity lazy H2D trigger 单生命周期" in handoff
-    assert "task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
-    assert "execution_mode: authorized_accepted_capacity_single_lazy_dynamic_pressure_h2d_trigger_lifecycle" in handoff
+    assert "P8.2-K1A-R5-L1-R1 corrected observable-gate lazy H2D 单生命周期" in handoff
+    assert "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
+    assert "execution_mode: authorized_corrected_observable_gate_single_lazy_dynamic_pressure_h2d_trigger_lifecycle" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "formal_model_lifecycle_count_max: 1" in handoff
     assert "model_request_count_min: 4" in handoff
@@ -2048,10 +2048,10 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle.yaml"
+        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
-        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_blocked_k1a_r4_r1_offline_store_only_green_k1a_r5_f0_zero_resource_feasibility_current_i0_r1_green"
+        "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_blocked_k1a_r4_r1_offline_store_only_green_k1a_r5_f0_ready_k1a_r5_l1_d2h_green_controller_red_k1a_r5_l1_r1_current_i0_r1_green"
     )
     assert acceptance["official_reference_baseline"] is True
     assert acceptance["highest_stable_context"] == 131072
@@ -2451,8 +2451,8 @@ def test_server_handoff_executes_only_r5_f0_zero_resource_feasibility():
         encoding="utf-8"
     )
 
-    assert "P8.2-K1A-R5-L1 accepted-capacity lazy H2D trigger 单生命周期" in handoff
-    assert "task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
+    assert "P8.2-K1A-R5-L1-R1 corrected observable-gate lazy H2D 单生命周期" in handoff
+    assert "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff

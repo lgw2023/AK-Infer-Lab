@@ -215,7 +215,7 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_after_parent_blocks() -> None
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
+        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1

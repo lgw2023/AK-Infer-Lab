@@ -174,6 +174,15 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
         _emit_residency_snapshot(self, reason="after_connector_meta")
         return result
 
+    original_output = SimpleCPUOffloadScheduler.update_connector_output
+
+    @wraps(original_output)
+    def observed_output(self, connector_output):
+        result = original_output(self, connector_output)
+        _register_pools(self)
+        _emit_residency_snapshot(self, reason="after_connector_output")
+        return result
+
     original_evict = BlockPool._maybe_evict_cached_block
 
     @wraps(original_evict)
@@ -202,6 +211,7 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     SimpleCPUOffloadScheduler.get_num_new_matched_tokens = observed_match
     SimpleCPUOffloadScheduler.update_state_after_alloc = observed_update
     SimpleCPUOffloadScheduler.build_connector_meta = observed_build
+    SimpleCPUOffloadScheduler.update_connector_output = observed_output
     BlockPool._maybe_evict_cached_block = observed_evict
     setattr(SimpleCPUOffloadScheduler, marker, True)
     _emit(
@@ -221,6 +231,7 @@ def observer_self_test_contract() -> dict[str, Any]:
             "get_num_new_matched_tokens",
             "update_state_after_alloc",
             "build_connector_meta",
+            "update_connector_output",
         ],
         "wrapped_block_pool_methods": ["_maybe_evict_cached_block"],
         "original_return_values_preserved": True,

@@ -266,6 +266,128 @@ def test_controller_never_sends_restore_before_the_runtime_trigger(
     )
 
 
+def test_controller_preserves_observable_not_ready_after_wait_timeout(
+    tmp_path: Path,
+) -> None:
+    trace_dir = tmp_path / "trace"
+    trace_dir.mkdir()
+    trace = trace_dir / "h2d-residency.123.jsonl"
+    trace.write_text(
+        "".join(
+            json.dumps(row) + "\n"
+            for row in (
+                {
+                    "event": "target_hashes_captured",
+                    "target_block_count": 64,
+                    "raw_hash_values_retained": False,
+                },
+                {
+                    "event": "target_residency_snapshot",
+                    "reason": "target_request_finished",
+                    "target_block_count": 64,
+                    "cpu_target_block_count": 0,
+                    "gpu_target_block_count": 64,
+                },
+                {"event": "store_event_completed", "event_idx": 1},
+                *(
+                    event
+                    for rank in range(8)
+                    for event in (
+                        {
+                            "event": "device_copy_submitted",
+                            "direction": "d2h",
+                            "pid": 1000 + rank,
+                            "byte_count": 1024,
+                        },
+                        {
+                            "event": "transfer_completed",
+                            "direction": "d2h",
+                            "pid": 1000 + rank,
+                        },
+                    )
+                ),
+            )
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "wait.json"
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(RUNNER),
+            "wait-for-residency",
+            "--trace-dir",
+            str(trace_dir),
+            "--timeout-seconds",
+            "0.01",
+            "--output",
+            str(output),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 3, completed.stderr or completed.stdout
+    value = json.loads(output.read_text(encoding="utf-8"))
+    assert value["decision"] == "continue_pressure"
+    assert value["restore_allowed"] is False
+    assert value["target_hashes_captured_exact"] is True
+    assert value["latest_cpu_target_block_count"] == 0
+    assert value["latest_gpu_target_block_count"] == 64
+
+
+def test_controller_does_not_apply_pressure_before_target_store_completion(
+    tmp_path: Path,
+) -> None:
+    trace_dir = tmp_path / "trace"
+    trace_dir.mkdir()
+    (trace_dir / "h2d-residency.123.jsonl").write_text(
+        "".join(
+            json.dumps(row) + "\n"
+            for row in (
+                {
+                    "event": "target_hashes_captured",
+                    "target_block_count": 64,
+                },
+                {
+                    "event": "target_residency_snapshot",
+                    "reason": "target_request_finished",
+                    "target_block_count": 64,
+                    "cpu_target_block_count": 0,
+                    "gpu_target_block_count": 64,
+                },
+            )
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "wait.json"
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(RUNNER),
+            "wait-for-residency",
+            "--trace-dir",
+            str(trace_dir),
+            "--timeout-seconds",
+            "0.01",
+            "--output",
+            str(output),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 4
+    value = json.loads(output.read_text(encoding="utf-8"))
+    assert value["decision"] == "unobservable"
+    assert value["d2h_store_complete_before_pressure"] is False
+    assert value["restore_allowed"] is False
+
+
 def test_finalize_accepts_only_the_complete_dynamic_h2d_chain(
     tmp_path: Path,
 ) -> None:
@@ -593,7 +715,7 @@ def test_mode_audit_freezes_lazy_connector_and_dynamic_request_bounds(
     assert "--enable-chunked-prefill" in argv
 
 
-def test_r5_l1_is_the_only_current_authorized_server_lifecycle() -> None:
+def test_r5_l1_contract_is_preserved_as_parent_of_current_r1() -> None:
     audit = yaml.safe_load(AUDIT.read_text(encoding="utf-8"))
     workload = yaml.safe_load(WORKLOAD.read_text(encoding="utf-8"))
     task_id = "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
@@ -631,13 +753,20 @@ def test_r5_l1_is_the_only_current_authorized_server_lifecycle() -> None:
     assert state["p8_3_i1_authorized"] is False
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
-    assert readiness["artifacts"]["current_server_handoff_task"] == task_id
-    assert readiness["artifacts"]["next_workload"].endswith(WORKLOAD.name)
+    assert readiness["artifacts"]["current_server_handoff_task"] == (
+        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+    )
+    assert readiness["artifacts"]["next_workload"].endswith(
+        "p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml"
+    )
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
-    assert f"task_id: {task_id}" in handoff
+    assert (
+        "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
+        in handoff
+    )
     for field in (
         "npu_execution_authorized: true",
         "formal_model_lifecycle_count_max: 1",

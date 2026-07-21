@@ -472,11 +472,11 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_feasibility() -> None:
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-            "task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
+            "task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721"
         in handoff
     )
     assert (
-        "execution_mode: authorized_accepted_capacity_single_lazy_dynamic_pressure_h2d_trigger_lifecycle"
+        "execution_mode: authorized_corrected_observable_gate_single_lazy_dynamic_pressure_h2d_trigger_lifecycle"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff

@@ -34,7 +34,31 @@ from tools.inference_contracts.p8_2_k1a_simple_cpu_offload_observer import (
 )
 
 
-TASK_ID = "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721"
+TASK_ID = os.environ.get(
+    "P8_2_K1A_TASK_ID",
+    "p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721",
+)
+STAGE_LABEL = os.environ.get("P8_2_K1A_STAGE_LABEL", "P8.2-K1A-R5-L1")
+CANDIDATE_GREEN = os.environ.get(
+    "P8_2_K1A_CANDIDATE_GREEN",
+    "candidate_green_p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle",
+)
+NO_SUCCESS_GRADE = os.environ.get(
+    "P8_2_K1A_NO_SUCCESS_GRADE",
+    "red_p8_2_k1a_r5_l1_lazy_h2d_no_success",
+)
+CPU_TARGET_LOST_GRADE = os.environ.get(
+    "P8_2_K1A_CPU_TARGET_LOST_GRADE",
+    "red_p8_2_k1a_r5_l1_cpu_target_lost",
+)
+TRIGGER_NOT_REACHED_GRADE = os.environ.get(
+    "P8_2_K1A_PARTIAL_GRADE",
+    "yellow_p8_2_k1a_r5_l1_trigger_not_reached",
+)
+EVIDENCE_INCOMPLETE_GRADE = os.environ.get(
+    "P8_2_K1A_EVIDENCE_INCOMPLETE_GRADE",
+    "red_p8_2_k1a_r5_l1_h2d_evidence_incomplete",
+)
 OUTPUT_TOKENS = 64
 BLOCK_SIZE_TOKENS = 128
 TARGET_PREFIX_TOKENS = 8192
@@ -361,28 +385,42 @@ def _execute_one_request(
     return row, metrics_after
 
 
-def _current_residency_gate(trace_dir: Path) -> dict[str, Any]:
-    return build_residency_gate(
-        _read_trace_rows(trace_dir), target_block_count=TARGET_PREFIX_BLOCKS
-    )
-
-
 def _wait_for_target_cpu_presence(
     trace_dir: Path, *, timeout_seconds: float
 ) -> dict[str, Any]:
     deadline = time.monotonic() + timeout_seconds
     last: dict[str, Any] = {}
     while time.monotonic() < deadline:
-        last = _current_residency_gate(trace_dir)
+        trace_rows = _read_trace_rows(trace_dir)
+        last = build_residency_gate(
+            trace_rows, target_block_count=TARGET_PREFIX_BLOCKS
+        )
+        transfer = summarize_trace_rows(
+            trace_rows,
+            expected_world_size=8,
+            restore_request_suffix="restore_follower",
+        )
+        last = {
+            **last,
+            "d2h_store_complete_before_pressure": transfer[
+                "d2h_store_complete"
+            ],
+        }
         if last.get("decision") == "cpu_target_lost":
             return last
         if (
-            last.get("target_hashes_captured_exact") is True
+            last["d2h_store_complete_before_pressure"] is True
+            and last.get("target_hashes_captured_exact") is True
             and int(last.get("latest_cpu_target_block_count") or 0)
             == TARGET_PREFIX_BLOCKS
         ):
             return last
         time.sleep(1)
+    if (
+        last.get("decision") == "continue_pressure"
+        and last.get("d2h_store_complete_before_pressure") is True
+    ):
+        return last
     return {**last, "decision": "unobservable", "restore_allowed": False}
 
 
@@ -725,11 +763,11 @@ def finalize_lazy_h2d_artifacts(artifact_dir: Path) -> int:
         ),
     }
     if not successful_count:
-        grade = "red_p8_2_k1a_r5_l1_lazy_h2d_no_success"
+        grade = NO_SUCCESS_GRADE
     elif timeline.get("terminal_decision") == "cpu_target_lost":
-        grade = "red_p8_2_k1a_r5_l1_cpu_target_lost"
+        grade = CPU_TARGET_LOST_GRADE
     elif timeline.get("terminal_decision") == "trigger_not_reached":
-        grade = "yellow_p8_2_k1a_r5_l1_trigger_not_reached"
+        grade = TRIGGER_NOT_REACHED_GRADE
     elif not all(
         (
             request_evidence_exact,
@@ -742,9 +780,9 @@ def finalize_lazy_h2d_artifacts(artifact_dir: Path) -> int:
             cleanup == "clean",
         )
     ):
-        grade = "red_p8_2_k1a_r5_l1_h2d_evidence_incomplete"
+        grade = EVIDENCE_INCOMPLETE_GRADE
     else:
-        grade = "candidate_green_p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle"
+        grade = CANDIDATE_GREEN
 
     grading = {
         "schema_version": "p8_2_k1a_r5_l1_grading_v1",
@@ -791,7 +829,7 @@ def finalize_lazy_h2d_artifacts(artifact_dir: Path) -> int:
     )
     _write_json(artifact_dir / "grading_summary.json", grading)
     (artifact_dir / "result_summary.md").write_text(
-        "# P8.2-K1A-R5-L1 lazy H2D trigger lifecycle\n\n"
+        f"# {STAGE_LABEL} lazy H2D trigger lifecycle\n\n"
         f"- grade: `{grade}`\n"
         f"- requests: `{successful_count}/{len(request_rows)}`\n"
         f"- pressure requests executed: `{pressure_count}`\n"
@@ -826,6 +864,10 @@ def _parser() -> argparse.ArgumentParser:
     decide.add_argument("--gate", type=Path, required=True)
     decide.add_argument("--pressure-count", type=int, required=True)
     decide.add_argument("--output", type=Path, required=True)
+    wait = subparsers.add_parser("wait-for-residency")
+    wait.add_argument("--trace-dir", type=Path, required=True)
+    wait.add_argument("--timeout-seconds", type=float, required=True)
+    wait.add_argument("--output", type=Path, required=True)
     finalize = subparsers.add_parser("finalize")
     finalize.add_argument("--artifact-dir", type=Path, required=True)
     execute = subparsers.add_parser("execute")
@@ -851,6 +893,16 @@ def main() -> int:
         )
         _write_json(args.output, value)
         return exit_code
+    if args.command == "wait-for-residency":
+        value = _wait_for_target_cpu_presence(
+            args.trace_dir, timeout_seconds=args.timeout_seconds
+        )
+        _write_json(args.output, value)
+        if value.get("decision") == "trigger_ready":
+            return 0
+        if value.get("decision") == "continue_pressure":
+            return 3
+        return 4
     if args.command == "finalize":
         return finalize_lazy_h2d_artifacts(args.artifact_dir)
     if args.command == "execute":

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if test "$#" -ne 1; then
+  echo "usage: $0 RESULT_DIR" >&2
+  exit 64
+fi
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+export P8_2_K1A_TASK_ID=p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721
+export P8_2_K1A_STAGE_LABEL=P8.2-K1A-R5-L1-R1
+export P8_2_K1A_EXECUTION_MODE=authorized_corrected_observable_gate_single_lazy_dynamic_pressure_h2d_trigger_lifecycle
+export P8_2_K1A_REPO_FILE_LIST=benchmarks/deepseek_v4_flash/p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle_audit.yaml:benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle.yaml:tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py:tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py:tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py:tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh:tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_r1_lazy_h2d.sh:tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py:tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh:tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh:tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.py:tests/inference_contracts/test_deepseek_p8_2_k1a_r5_l1_lazy_h2d_lifecycle.py:tests/inference_contracts/test_deepseek_p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle.py:benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch
+export P8_2_K1A_CANDIDATE_GREEN=candidate_green_p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle
+export P8_2_K1A_NO_SUCCESS_GRADE=red_p8_2_k1a_r5_l1_r1_lazy_h2d_no_success
+export P8_2_K1A_CPU_TARGET_LOST_GRADE=red_p8_2_k1a_r5_l1_r1_cpu_target_lost
+export P8_2_K1A_PARTIAL_GRADE=yellow_p8_2_k1a_r5_l1_r1_trigger_not_reached
+export P8_2_K1A_EVIDENCE_INCOMPLETE_GRADE=red_p8_2_k1a_r5_l1_r1_h2d_evidence_incomplete
+
+exec bash "${SCRIPT_DIR}/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh" "$1"

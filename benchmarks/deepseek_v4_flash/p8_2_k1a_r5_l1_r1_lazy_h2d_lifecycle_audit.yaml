@@ -1,0 +1,101 @@
+schema_version: 1
+audit_id: p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle_audit
+date: '2026-07-21'
+stage: P8.2-K1A-R5-L1-R1
+
+received_r5_l1_package:
+  task_id: p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_2026_0721
+  path: /Volumes/SSD1/Inbox/2026-07-21/p8_2_k1a_r5_l1_lazy_h2d_trigger_lifecycle_20260721_run01
+  server_grade: red_p8_2_k1a_r5_l1_h2d_evidence_incomplete
+  file_count: 15
+  payload_file_count: 14
+  payload_bytes: 14291
+  manifest_bytes: 3577
+  total_bytes: 17868
+  manifest_sha256: a80231f8268c239016f7b2ed1d8b2a7521e250b52728e9e123f8d344eddf1725
+  grading_sha256: 4fb1afbcd2b2dd82a324517f87d4abea10c70ddf0de086bf3244c03728258edd
+  residency_timeline_sha256: 92ea9fbee361c93a11c3719040a14de558a2b3e1b10c4d08a78c245b0804f423
+  transfer_summary_sha256: 1b5862a91b5d36bedb1e291310bac34edd16ee54323f59bc9bb51813f7cf7f11
+  inventory_bytes_and_sha256_verified: true
+  successful_request_count: 2
+  request_evidence_exact: true
+  d2h_completed_worker_count: 8
+  d2h_store_complete: true
+  d2h_bytes_total: 2206846976
+  latest_cpu_target_block_count: 0
+  latest_gpu_target_block_count: 64
+  pressure_request_count_executed: 0
+  restore_sent: false
+  cleanup: clean
+  generated_content_or_token_ids_retained: false
+
+developer_diagnosis:
+  parent_reported_no_snapshot_conflicts_with_latest_gpu_count: true
+  valid_residency_snapshot_present: true
+  valid_snapshot_decision_before_timeout: continue_pressure
+  controller_wait_required_cpu_full_before_return: true
+  controller_timeout_overwrote_valid_continue_pressure: true
+  observer_snapshot_missing_after_connector_output: true
+  parent_runtime_or_server_failure_proven: false
+  h2d_restore_failure_proven: false
+  cause_proven_as_unique: false
+
+developer_decision:
+  parent_grade_preserved: true
+  parent_request_transport_accepted: true
+  parent_d2h_store_mechanism_accepted: true
+  parent_h2d_restore_mechanism_accepted: false
+  controller_timeout_overwrite_defect_confirmed: true
+  corrected_controller_contract_required: true
+  one_corrected_lifecycle_allowed: true
+  same_capacity_and_runtime_required: true
+  second_lifecycle_allowed: false
+  capacity_search_allowed: false
+  performance_reference_accepted: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+corrected_controller_contract:
+  observable_not_ready_is_continue_pressure: true
+  truly_unobservable_is_terminal: true
+  wait_timeout_may_overwrite_valid_gate: false
+  snapshot_after_connector_output: true
+  pressure_requires_d2h_store_complete: true
+  restore_requires_target_cpu_present_and_gpu_absent: true
+  target_cpu_eviction_is_terminal: true
+  request_retry_count: 0
+  pressure_request_count_max: 5
+
+accepted_geometry:
+  cpu_blocks_per_rank: 128
+  block_size_tokens: 128
+  target_prefix_tokens: 8192
+  target_prefix_blocks: 64
+  restore_match_tokens_required: 16384
+  pressure_context_tokens: 131072
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+
+runtime_identity:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  same_r2_hybrid_kv_repair: true
+  same_mtp_overlay: true
+  same_server_argv_as_parent_l1: true
+  runtime_behavior_patch_authorized: false
+
+acceptance_boundary:
+  candidate_green_requires:
+    - all_executed_requests_http_token_sse_mtp_health_queue_exact
+    - d2h_store_complete_before_first_pressure
+    - observable_not_ready_advances_to_pressure_without_restore
+    - target_gpu_eviction_and_cpu_only_residency_before_restore
+    - restore_cpu_hit_exact_16384_tokens
+    - d2h_and_h2d_eight_worker_enqueue_copy_poll_and_completion
+    - cleanup_clean_and_keep_alive_restored
+  candidate_grade: candidate_green_p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle
+  candidate_is_not_developer_green: true
+  performance_reference_accepted: false
+  next_task_authorized: false
+
+claim_boundary: corrected_observable_gate_single_lazy_lifecycle_d2h_h2d_mechanism_candidate_only
