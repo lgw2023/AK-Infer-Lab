@@ -340,10 +340,10 @@ def test_r4_r1_closeout_is_preserved_during_r5_f0_feasibility():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-F1-R1 请求级压力进度校准与条件式 L2" in handoff
-    assert "npu_execution_authorized: conditional" in handoff
+    assert "P8.2-K1A-R5-F1-R2 原始轨迹时序对齐（零 NPU）" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "model_request_count_max: 4" in handoff
+    assert "model_request_count_exact: 0" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "blocked_p6_3c_not_strict_single_variable" in handoff
@@ -381,7 +381,7 @@ def test_r4_r1_closeout_is_preserved_during_r5_f0_feasibility():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-            "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
+            "p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False

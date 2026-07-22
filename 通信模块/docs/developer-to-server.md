@@ -1,41 +1,29 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K1A-R5-F1-R1 请求级压力进度校准与条件式 L2
+## 当前唯一服务器动作：P8.2-K1A-R5-F1-R2 原始轨迹时序对齐（零 NPU）
 
 ~~~text
-task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722
-execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2
+task_id: p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722
+execution_mode: authorized_server_local_read_only_trace_alignment_no_npu
 server_sync_review_authorized: true
 offline_first: true
-parent_r5_l1_r1_bounded_and_raw_replay_authorized: true
-parent_f1_pool_delta_gate_fail_closed: true
-request_local_progress_analysis_authorized: true
-calibration_lifecycle_authorized: conditional
-fixed_l2_lifecycle_authorized: conditional
+server_local_raw_trace_read_authorized: true
+source_result_mutation_authorized: false
 result_directory_creation_authorized: true
-npu_execution_authorized: conditional
-conditional_calibration_gate: candidate_requires_p8_2_k1a_r5_f1_r1_instrumented_calibration_only
-conditional_fixed_l2_gate: candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure_only
-keep_alive_stop_and_restore_authorized: conditional
-vllm_server_start_authorized: conditional
-model_requests_authorized: conditional
-formal_model_lifecycle_count_min: 0
-formal_model_lifecycle_count_max: 2
-calibration_lifecycle_count_max: 1
-fixed_l2_lifecycle_count_max: 1
-pressure_request_count_exact: 1
-model_request_count_min: 3
-model_request_count_max: 4
-model_request_count_exact_if_trigger_observed: 4
+npu_execution_authorized: false
+keep_alive_stop_authorized: false
+vllm_server_start_authorized: false
+model_requests_authorized: false
+formal_model_lifecycle_count_exact: 0
+model_request_count_exact: 0
 request_retry_count_exact: 0
-runtime_overlay_authorized: true
-runtime_behavior_patch_authorized: false
-task_local_diagnostic_mode_patch_authorized: true
+context_change_authorized: false
 capacity_search_authorized: false
 pressure_search_or_sweep_authorized: false
+runtime_overlay_authorized: false
+runtime_or_dependency_mutation_authorized: false
 profiler_authorized: false
 hbm_sampler_authorized: false
-runtime_or_dependency_mutation_authorized: false
 result_transfer_authorized: true
 transfer_method_selected: false
 automatic_transfer_allowed: false
@@ -43,96 +31,104 @@ next_task_authorized: false
 k2_authorized: false
 p8_3_i1_authorized: false
 no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true
-standing_npu_and_vllm_consumption_authorization: true
 ~~~
 
-旧 F1 已永久 fail-closed：即使存在 `CPU=64/GPU=0` exact window，`gpu_free_block_count` 净差也不是
-request-local 分配证据，不得再解锁 L2。本任务改为只读 observer 记录单请求
-`num_computed_tokens(before/after)` 与 `num_scheduled_tokens`；只有连续、单请求、从 `before=0`
-起步且第一个 exact window 后仍保留至少 4096-token 安全余量时，才推导唯一 fixed context。
+本任务只读取已经完成的 F1-R1 calibration、calibration analysis 与 fixed L2 服务器本地产物，
+对齐 `pressure_01` 起点后的 scheduler/residency/CPU target eviction 与请求结束后的 gate 结论。
+不得启动新 vLLM、不得发模型请求、不得改变 36800 context、不得做 sweep，也不得把任一分析结论
+自动解释为 H2D、性能收益或唯一根因。
 
-最多两个正式 NPU lifecycle：一次 observe-only calibration + 一次条件式 fixed L2。任一前门失败则减为
-0 或 1，不得补跑、不得第二 calibration、不得 context sweep。`result_transfer_authorized:true` 只表示
-最终有界包可进入渠道选择，不是自动外发授权。
+不得进入 K2。不得进入 P8.3-I1。本轮结束后只回报证据和有界包，不得自动开始下一任务。
 
 ## 固定 NPU 占卡程序规则（每份服务器任务必须保留）
 
-内部昇腾服务器上有低优先级 NPU 占卡程序在运行。任何需要使用 NPU 的任务都可以只停掉实际要使用的卡，
-但无论任务成功、失败、中断或提前退出，任务结束后都必须在完全相同的卡号上重新拉起占卡程序。
-末尾数字是卡号，应按实际需要删减；不使用 NPU 的分支不得停卡。本任务若进入 Section 3 或 Section 4，
-将使用全部 8 卡，因此停卡与恢复命令分别为：
+内部昇腾服务器上有低优先级 NPU 占卡程序在运行。本任务不使用 NPU，因此必须保持它运行，
+不得停掉任何卡上的占卡程序。下面两条是项目固定命令，只用于说明统一规则，本任务严禁执行：
 
 ~~~bash
-# 停掉本任务实际使用的 0–7 卡上的低优先级占卡程序。
+# 仅 NPU 任务可在实际需要的卡上执行；本任务不得执行。
 bash /data/node0_disk1/Public/npu_stop.sh 0 1 2 3 4 5 6 7
 
-# 任务结束后，在完全相同的 0–7 卡上恢复占卡程序。
+# 仅在同一 NPU 任务退出时恢复完全相同的卡集；本任务不得执行。
 bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ~~~
 
-最终回报必须列出实际停卡卡号、实际恢复卡号与恢复状态。若 Section 3/4 均未启动，必须报告未停卡且占卡程序保持运行。
+最终回报必须写明：本任务实际停卡集合为空、实际恢复集合为空、keep-alive 全程保持运行。
+命令末尾数字是卡号。未来任务若使用 NPU，只能停止实际需要的卡，并在成功、失败、中断或提前退出后
+恢复完全相同的卡集，并回报实际停卡卡号、实际恢复卡号与恢复状态。
 
-## 0. 已关闭门、parent 结论与本轮唯一问题
+## 0. 已接受 parent 与本轮唯一问题
 
-以下结论保留，不重跑、不撤销：
+以下 parent 事实保持不变，不重跑：
 
 ~~~text
-green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
 green_p8_1_r1_official_mtp_observe_only_matrix
-green_p8_2_k0_order_balanced_prefix_cache_baseline
+green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
 blocked_p6_3c_not_strict_single_variable
 blocked_p8_2_k1_frozen_stack_import_incompatible
 ready_p8_2_k1a_r2_allocator_capacity
 candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout
 candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility
-red_p8_2_k1a_r5_l1_h2d_evidence_incomplete
-red_p8_2_k1a_r5_l1_r1_cpu_target_lost
 green_p8_3_i0_checkpoint_inventory
 green_p8_3_i0_r1_unclassified_taxonomy
-~~~
-
-本任务仍以 R5-L1-R1 的有界包与 raw tree 为不可变 parent 证据。R5-L1-R1 parent 必须原样保留：
-
-~~~text
+candidate_real_move_path=SimpleCPUOffloadConnector
+cpu_bytes_to_use_per_rank=430604288
+parent_target_prefix_tokens=16384
 parent_task_id=p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721
-parent_head=b2c23ef5b151d130ff0fbbfaa50257c3136f519c
 parent_server_grade=red_p8_2_k1a_r5_l1_r1_cpu_target_lost
-parent_manifest_sha256=1209e22dc67aa1c15e80efcd26b453d7303665a5cd1a982ca2c41152334bb022
-parent_payload_file_count=14
-parent_payload_bytes=15788
-parent_manifest_bytes=3578
-parent_total_bytes=19366
 parent_request_count=3
 parent_successful_request_count=3
 parent_d2h_store_complete=true
-parent_d2h_completed_worker_count=8
-parent_restore_sent=false
 parent_h2d_restore_complete=false
-parent_cleanup=clean
+parent_f1_pool_delta_gate_fail_closed: true
+parent_r5_l1_r1_bounded_and_raw_replay_authorized: true
+parent_request_local_progress_analysis_authorized: true
+parent_pressure_request_count_exact=1
+parent_cleanup_status.txt=clean
+consumed_parent_runner=tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh
+consumed_f1_r1_runner=tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh
+parent_candidate_manifest=candidate_manifest.server_local.json
+accepted_installed_source_manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
+accepted_installed_source_block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283
+calibration_root=server_local/p8_2_k1a_r5_f1_r1_calibration_2026_0722_run01
+calibration_analysis_root=server_local/p8_2_k1a_r5_f1_r1_calibration_analysis_2026_0722_run01
+calibration_grade=candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure
+calibration_context_tokens=131072
+calibration_candidate_context_tokens=36800
+calibration_progress_event_count=64
+calibration_exact_cpu_only_progress_event_count=56
+fixed_l2_root=server_local/p8_2_k1a_r5_f1_r1_fixed_l2_2026_0722_run01
+fixed_l2_grade=red_p8_2_k1a_r5_f1_r1_fixed_pressure_target_lost
+fixed_l2_request_count=3
+fixed_l2_successful_request_count=3
+fixed_l2_endpoint_cpu_target_block_count=54
+fixed_l2_endpoint_gpu_target_block_count=0
+fixed_l2_restore_sent=false
+fixed_l2_cleanup=clean
 ~~~
 
-旧 F1 pool-delta 门永久 fail-closed，不得再用 net GPU-free delta 解锁 L2。
+R5-L1-R1 的有界包及上述早期 lineage 只作为已接受 parent，不授权重跑其脚本或生命周期。
+已精确重放 R2 geometry/rendezvous/allocator；F1-R1 request-local 观察结果同样只作为 parent。
 
-固定 runtime/capacity 常量如下；这些值不得因离线候选而改变：
+当前有界包能证明 calibration 的请求中途 `CPU=64/GPU=0` 窗口和 fixed L2 请求结束后的
+`CPU=54/GPU=0` target-lost；不能证明 L2 中途是否也出现过完整 CPU-only 窗口，也不能独立复核
+服务器报告中的“4096-token chunks”描述。
 
-~~~text
-kv_connector=SimpleCPUOffloadConnector
-cpu_blocks_per_rank=128
-cpu_bytes_to_use_per_rank=430604288
-cpu_bytes_to_use_total=3444834304
-required_restore_tokens=16384
-block_size_tokens=128
-lazy_offload=true
-~~~
+本任务只回答：
 
-本轮只回答：legacy/calibration 的 request-local progress 能否推导一个带 4096-token 余量的固定 context；
-若 legacy 缺直接进度，只允许一次 131072-context、无 restore 的 observe-only calibration；只有
-`candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure` 才允许一个 fixed L2。
+1. calibration raw trace 的实际 `num_scheduled_tokens` 分布是什么；
+2. fixed L2 在 `pressure_01` 起点后是否出现过 `CPU=64/GPU=0` residency snapshot；
+3. 若出现，是否早于首个 CPU target eviction，并与 post-request endpoint target-lost 形成观测点错位；
+4. 若未出现，是否能在现有证据下明确归为“全过程没有完整窗口”，否则必须 blocked。
 
-## 1. 同步、tracked-clean、仓库合同与冻结 hash
+`request_start` 角色标记和 observer trace 都使用 `time.time_ns`；客户端 request timing 使用
+`time.monotonic_ns`，且现有 trace 没有 request-end event。因此不得伪造精确 request-end timestamp；
+请求完成在 endpoint gate 之前的顺序只从已冻结 controller 合同和 `residency_gate_timeline.json` 接受。
 
-只允许从干净 `main` 普通 fast-forward。不得 reset、stash、rebase、cherry-pick、运行 `sync.sh`、server commit
-或 push。未跟踪服务器产物在 `--untracked-files=no` 边界保留。
+## 1. 同步、tracked-clean 与仓库合同
+
+只允许从干净 `main` 普通 fast-forward。不得 reset、stash、rebase、cherry-pick、运行 `sync.sh`、
+server commit 或 push。未跟踪服务器产物在 `--untracked-files=no` 边界保留。
 
 ~~~bash
 set -euo pipefail
@@ -149,7 +145,7 @@ git rev-list --left-right --count HEAD...origin/main
 git status --short --branch --untracked-files=no
 ~~~
 
-同步后必须先运行：
+同步后运行本轮定向合同：
 
 ~~~bash
 set -euo pipefail
@@ -157,98 +153,52 @@ REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 cd "${REPO_ROOT}"
 
 python3 -m pytest \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_l1_lazy_h2d_lifecycle.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_pressure_window.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.py -q
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.py \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r2_trace_alignment.py -q
 
 python3 -m py_compile \
   tools/inference_contracts/p8_2_k1a_r5_f1_r1_request_local_pressure.py \
-  tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
+  tools/inference_contracts/p8_2_k1a_r5_f1_r2_trace_alignment.py
 
-bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh
-bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_calibration.sh
-bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_fixed_pressure_l2.sh
-bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh
-bash -n tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
+bash -n \
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r2_trace_alignment.sh
 
-P8_2_K1A_F1_R1_AUDIT_ONLY=1 \
-  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh \
-  /tmp/opencode/p8_2_k1a_r5_f1_r1_unused_result \
-  > /tmp/opencode/p8_2_k1a_r5_f1_r1_audit.txt
-
-P8_2_K1A_F1_R1_CALIBRATION_AUDIT_ONLY=1 \
-  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_calibration.sh \
-  /tmp/opencode/p8_2_k1a_r5_f1_r1_cal_unused \
-  > /tmp/opencode/p8_2_k1a_r5_f1_r1_cal_audit.txt
-
-grep -Fx 'task_id=p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722' /tmp/opencode/p8_2_k1a_r5_f1_r1_audit.txt
-grep -Fx 'formal_model_lifecycle_count_max=2' /tmp/opencode/p8_2_k1a_r5_f1_r1_audit.txt
-grep -Fx 'net_gpu_free_delta_may_unlock_l2=false' /tmp/opencode/p8_2_k1a_r5_f1_r1_audit.txt
-grep -Fx 'task_id=p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722' /tmp/opencode/p8_2_k1a_r5_f1_r1_cal_audit.txt
-grep -Fx 'calibration_only=true' /tmp/opencode/p8_2_k1a_r5_f1_r1_cal_audit.txt
-grep -Fx 'restore_request_authorized=false' /tmp/opencode/p8_2_k1a_r5_f1_r1_cal_audit.txt
+P8_2_K1A_F1_R2_AUDIT_ONLY=1 \
+  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r2_trace_alignment.sh \
+  /tmp/opencode/p8_2_k1a_r5_f1_r2_unused
 ~~~
 
-冻结 repo 文件 SHA-256 必须逐项匹配后才能进入 Section 2：
+audit-only 输出必须逐项包含：
 
-~~~json
-{
-  "benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r1_request_local_pressure_audit.yaml": "9f4219c37fd7d989084f2a172e808135919b1f44cd7782d6d64af425fa5a1dc4",
-  "benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml": "0c84fdbb42718f38e2335ea618726be4d4097b859537eff0f961a67977c8a093",
-  "benchmarks/deepseek_v4_flash/patches/p8_2_k1a_r5_f1_r1_shared_diagnostic_mode.patch": "5435592911e388daa047fe6d976cc351ab41b8b34de1bee990cc010f66fa3055",
-  "tools/inference_contracts/p8_2_k1a_r5_f1_r1_request_local_pressure.py": "553785959e81611e60377bce937beb6538a802fcc6bbd3aea7bfdf0e33600ff2",
-  "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh": "e85893554920353837e8f72984e0fba3c4c1bb76a890e14b9bb8b60f5bc895fc",
-  "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_calibration.sh": "9a6e899e80cdc4bf7f18ff94261366f9306f287fe6322a763d245fb6a776f80e",
-  "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_fixed_pressure_l2.sh": "8c0f20d22458507e105e3ab08ee20d3fe714b234cd06e3dc279fb288371adb3e",
-  "tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py": "e6579e4e41b5e87e0a3c2716e0800e4ecfe307d21168c00c8ca898fb111b2f44",
-  "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py": "59d6552904fb677be2102549f2448d582ea11d4fc543a756aa99de6c275de08b",
-  "tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh": "04cce2dc5a6a632c06b9c35f1cbed4f268fa9854d9462fc0d1caec6bb0f0e0b7",
-  "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh": "ff038cf51ac79d8eec4fa5b9d926178d494efa630265dafe3e8ade8ea06ce8b1",
-  "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py": "b63c02e92c7f6d9ff4a161e3a418199eff8938c8ebcc8d9535c10ab38d125ee2",
-  "tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.py": "7d18595eba161263741721eabc1fd7d571e6651fafb1e2a05bc5061d686019b7"
-}
+~~~text
+task_id=p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722
+execution_mode=authorized_server_local_read_only_trace_alignment_no_npu
+npu_execution_authorized=false
+vllm_server_start_authorized=false
+model_requests_authorized=false
+keep_alive_action=leave_running
+context_change_authorized=false
+pressure_search_or_sweep_authorized=false
+result_transfer_authorized=true
+transfer_method_selected=false
+next_task_authorized=false
 ~~~
 
-Section 1 任一失败：`blocked_p8_2_k1a_r5_f1_r1_repository_contract_gate`；不得停 keep-alive。
+以下 repo 文件 SHA-256 必须匹配后才能继续：
 
-## 2. Parent legacy request-local 归因（零 NPU）
-
-parent bounded 与 raw 必须来自同一个已完成 R1 结果根；不得复制、改写、删除或重生 raw 证据。
-
-~~~bash
-set -euo pipefail
-
-REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-PARENT_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721_run01
-LEGACY_ANALYSIS_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_parent_legacy_2026_0722_run01
-cd "${REPO_ROOT}"
-
-test -d "${PARENT_ROOT}"
-test -n "$(find "${PARENT_ROOT}/runtime/offload_trace" -name 'h2d-residency.*.jsonl' -print -quit)"
-test ! -e "${LEGACY_ANALYSIS_ROOT}"
-test "$(sha256sum "${PARENT_ROOT}/candidate_manifest.server_local.json" | awk '{print $1}')" = 1209e22dc67aa1c15e80efcd26b453d7303665a5cd1a982ca2c41152334bb022
-
-P8_2_K1A_F1_R1_ANALYSIS_MODE=parent_legacy \
-P8_2_K1A_F1_R1_SOURCE_RESULT_ROOT="${PARENT_ROOT}" \
-P8_2_K1A_F1_R1_TRACE_DIR="${PARENT_ROOT}/runtime/offload_trace" \
-  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh \
-  "${LEGACY_ANALYSIS_ROOT}"
-
-cat "${LEGACY_ANALYSIS_ROOT}/task_grade.txt"
+~~~text
+4964b3f6450c4982ac7fc88b67997002f6e2e12d9463eef0a3171dabd4a817e4  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r2_trace_alignment_audit.yaml
+183dc450c583cf64910897447738569114e8c522029cb1758ad65ef202062be2  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r2_trace_alignment.yaml
+b091e9144324240599a524ede3c23316264a396f215d7754af87ef625f02e42f  tools/inference_contracts/p8_2_k1a_r5_f1_r2_trace_alignment.py
+019ca6bec0bcb3295d9aecb9d764189f02be1e8b7707f24863bdb583252d44fb  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r2_trace_alignment.sh
+0d46912518b7e5cec62e3834b81ae54ca181e1f573593e96c0606ef13b305b91  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r2_trace_alignment.py
 ~~~
 
-预期：legacy 无 `request_local_pressure_progress` 时输出
-`candidate_requires_p8_2_k1a_r5_f1_r1_instrumented_calibration`，再进入 Section 3。
-若为 `blocked_p8_2_k1a_r5_f1_r1_request_local_pressure_gate`：零 NPU 停止，不得停卡。
-若意外得到 ready grade：跳过 Section 3，将该 analysis root 作为 Section 4 输入。
-Section 2 不得停 keep-alive。
+Section 1 任一失败：报告 `blocked_p8_2_k1a_r5_f1_r2_repository_contract_gate` 并停止；不得执行停卡命令。
 
-## 3. 唯一 observe-only calibration lifecycle（仅 calibration_required）
+## 2. Parent 原始证据前门（零 NPU）
 
-先执行 `npu_stop.sh 0 1 2 3 4 5 6 7`，确认 8 卡空闲后只允许一次：
+所有源目录必须已存在且保持不可变。不得复制、改写、删除、压缩或重生 raw trace。
 
 ~~~bash
 set -euo pipefail
@@ -256,177 +206,109 @@ set -euo pipefail
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 CALIBRATION_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_calibration_2026_0722_run01
 CALIBRATION_ANALYSIS_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_calibration_analysis_2026_0722_run01
-cd "${REPO_ROOT}"
-test ! -e "${CALIBRATION_ROOT}"
-test ! -e "${CALIBRATION_ANALYSIS_ROOT}"
+L2_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_fixed_l2_2026_0722_run01
 
-set +e
-bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_calibration.sh \
-  "${CALIBRATION_ROOT}"
-CAL_EXIT=$?
-set -e
-printf '%s\n' "${CAL_EXIT}" > "${CALIBRATION_ROOT}/initial_runner_exit_code.txt"
-
-# 无论成败，先恢复占卡，再做离线分析。
-bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
-
+test -d "${CALIBRATION_ROOT}"
+test -d "${CALIBRATION_ANALYSIS_ROOT}"
+test -d "${L2_ROOT}"
 test -n "$(find "${CALIBRATION_ROOT}/runtime/offload_trace" -name 'h2d-residency.*.jsonl' -print -quit)"
+test -n "$(find "${L2_ROOT}/runtime/offload_trace" -name 'h2d-residency.*.jsonl' -print -quit)"
+test -f "${CALIBRATION_ROOT}/runtime/request_control/active_role.json"
+test -f "${L2_ROOT}/runtime/request_control/active_role.json"
+test -f "${L2_ROOT}/runtime/request_control/residency_gate_timeline.json"
 
-P8_2_K1A_F1_R1_ANALYSIS_MODE=calibration \
-P8_2_K1A_F1_R1_SOURCE_RESULT_ROOT="${CALIBRATION_ROOT}" \
-P8_2_K1A_F1_R1_TRACE_DIR="${CALIBRATION_ROOT}/runtime/offload_trace" \
-  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh \
-  "${CALIBRATION_ANALYSIS_ROOT}"
-
-cat "${CALIBRATION_ANALYSIS_ROOT}/task_grade.txt"
+test "$(sha256sum "${CALIBRATION_ANALYSIS_ROOT}/grading_summary.json" | awk '{print $1}')" = \
+  9e06344bcb38f182009f731fb356635480e20d4ff52a50cef5d6590a6cb2dedb
+test "$(sha256sum "${CALIBRATION_ANALYSIS_ROOT}/pressure_candidate.json" | awk '{print $1}')" = \
+  af10135cf79d582c34fb2329f8115f6c1d9065791db837c2d79eefc2b183dc41
+test "$(sha256sum "${L2_ROOT}/grading_summary.json" | awk '{print $1}')" = \
+  118ceaebbfcbe83ebb8fb4780eebab1c84a3ae070f32cb1a1f131372f5791dd4
+test "$(sha256sum "${L2_ROOT}/runtime/request_control/residency_gate_timeline.json" | awk '{print $1}')" = \
+  952ca9f900f85dcd51906497bd7283bf47bbe13d9b41bc656944b8452fc9b745
 ~~~
 
-calibration 合同：`warmup -> target_prime -> pressure_01`；pressure context=131072（只观测，不搜索）；
-3/3 请求；restore 明确禁止；request-local observer 开启；task-local diagnostic mode patch=`0660`；
-零 retry。runner 即使以 parent-like target-lost/yellow 退出，也要保留 raw trace 并允许离线 analyzer 复核，
-不得把预期校准终态误当 shell 崩溃。
+Section 2 任一失败：报告 `blocked_p8_2_k1a_r5_f1_r2_parent_evidence_gate` 并停止；不得猜测替代路径、
+不得寻找相邻 run、不得重跑模型。
 
-只有 `candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure` 才进入 Section 4。
-禁止第二 calibration、禁止手工填 context、禁止 sweep。
+## 3. 唯一只读分析
 
-随后在 keep-alive 仍运行时验证：
-
-- 精确重放 R2 geometry/rendezvous/allocator，确认 8-rank parity、128 CPU blocks/rank、
-  `430604288 bytes/rank / 3444834304 bytes total`；
-- vLLM commit=`0decac0d96c42b49572498019f0a0e3600f50398`；
-- vLLM-Ascend commit=`5f6faa0cb8830f667266f3b8121cd1383606f2a1`；
-- `manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b`；
-- `block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283`；
-- installed source/import/connector/worker/copy backend、R2 hybrid repair 与 observer method resolution 全过；
-- model path 可读、7000 端口空闲、无 vLLM 残留、8 卡健康、MemAvailable 不低于 384 GiB、swap 未用；
-- keep-alive marker 精确覆盖 `#0#..#7#`，只能终止完全属于官方 keep-alive 的 process group。
-
-任一前门失败：`blocked_p8_2_k1a_r5_f1_r1_source_or_provenance_gate`，保持 keep-alive 不变并停止。
-
-## 4. 条件式 fixed L2（仅 ready）
-
-先再次执行 `npu_stop.sh 0 1 2 3 4 5 6 7`（Section 3 已恢复过 keep-alive）。
-若从 Section 2 直接 ready 跳过 Section 3，则此处首次停卡。
+结果目录必须是新目录；存在即停止，不得覆盖或换成 run02 重试。
 
 ~~~bash
 set -euo pipefail
 
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-ANALYSIS_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_calibration_analysis_2026_0722_run01
+CALIBRATION_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_calibration_2026_0722_run01
+CALIBRATION_ANALYSIS_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_calibration_analysis_2026_0722_run01
 L2_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_fixed_l2_2026_0722_run01
+RESULT_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722_run01
 cd "${REPO_ROOT}"
 
-test "$(cat "${ANALYSIS_ROOT}/task_grade.txt")" = candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure
-FIXED_CONTEXT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["candidate_pressure_context_tokens"])' "${ANALYSIS_ROOT}/pressure_candidate.json")
-test "${FIXED_CONTEXT}" -gt 0
-test ! -e "${L2_ROOT}"
+test ! -e "${RESULT_ROOT}"
+P8_2_K1A_F1_R2_CALIBRATION_ROOT="${CALIBRATION_ROOT}" \
+P8_2_K1A_F1_R2_CALIBRATION_ANALYSIS_ROOT="${CALIBRATION_ANALYSIS_ROOT}" \
+P8_2_K1A_F1_R2_L2_ROOT="${L2_ROOT}" \
+  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r2_trace_alignment.sh \
+  "${RESULT_ROOT}"
 
-export P8_2_K1A_FIXED_PRESSURE_CONTEXT_TOKENS=${FIXED_CONTEXT}
-export P8_2_K1A_F1_R1_ANALYSIS_ROOT=${ANALYSIS_ROOT}
-
-set +e
-bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_fixed_pressure_l2.sh "${L2_ROOT}"
-L2_EXIT=$?
-set -e
-printf '%s\n' "${L2_EXIT}" > "${L2_ROOT}/initial_runner_exit_code.txt"
+cat "${RESULT_ROOT}/task_grade.txt"
 ~~~
 
-server argv/capacity/runtime 必须与 R1 相同，canonical server argv SHA 仍为
-`89a9a105da5a04a3207c638b6999858ed32bff0f438c2cfb617b03905d1efe2f`。唯一改变是 signed candidate 的
-pressure context；禁止手填、取整或搜索。
+只允许以下三个机器 grade：
 
 ~~~text
-request_order=warmup,target_prime,fixed_pressure,restore_follower_if_trigger
-request_count_min=3
-request_count_max=4
-request_count_exact_if_trigger_observed=4
-terminal_pre_restore_request_count=3
-pressure_request_count_exact=1
-request_retry_count_exact=0
+candidate_p8_2_k1a_r5_f1_r2_mid_request_window_endpoint_mismatch
+candidate_p8_2_k1a_r5_f1_r2_no_l2_cpu_only_window
+blocked_p8_2_k1a_r5_f1_r2_trace_alignment_incomplete
 ~~~
 
-只有本 lifecycle 自身再次观测 `CPU=64/GPU=0` 才发 restore；否则 3 请求合规停止。无第五请求、无第三 lifecycle。
+第一种只证明 fixed L2 中途完整 CPU-only 窗口与 post-request target-lost endpoint 的观测点错位；
+不证明它是唯一根因。第二种只证明当前 L2 raw snapshot 中未见完整窗口。第三种保持证据不足。
+三种都不授权新 lifecycle、context 调整、sweep、restore、H2D、性能、K2 或 P8.3-I1。
 
-## 5. Cleanup、keep-alive 恢复与 L2 finalization
+## 4. 有界包验证、回报与传输暂停
 
-只要 Section 3 或 4 曾启动，无论成败都必须先停 vLLM、释放 7000、确认 residual=0 和 cleanup clean，再恢复：
-
-~~~bash
-bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
-~~~
-
-若执行了 Section 4，恢复后确认 16 markers、`#0#..#7#`、8 卡健康、7000 空闲、无 vLLM residual、tracked clean，
-且 `cleanup_status.txt=clean`，再 finalization：
-
-~~~bash
-set -euo pipefail
-
-REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-ANALYSIS_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_calibration_analysis_2026_0722_run01
-L2_ROOT=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r1_fixed_l2_2026_0722_run01
-PYTHON_BIN=${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python
-cd "${REPO_ROOT}"
-
-export P8_2_K1A_TASK_ID=p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722
-export P8_2_K1A_STAGE_LABEL=P8.2-K1A-R5-F1-R1-L2
-export P8_2_K1A_PRESSURE_CONTEXT_TOKENS=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["candidate_pressure_context_tokens"])' "${ANALYSIS_ROOT}/pressure_candidate.json")
-export P8_2_K1A_PRESSURE_REQUEST_COUNT_MAX=1
-export P8_2_K1A_CANDIDATE_GREEN=candidate_green_p8_2_k1a_r5_f1_r1_fixed_pressure_h2d_trigger
-export P8_2_K1A_NO_SUCCESS_GRADE=red_p8_2_k1a_r5_f1_r1_fixed_pressure_no_success
-export P8_2_K1A_CPU_TARGET_LOST_GRADE=red_p8_2_k1a_r5_f1_r1_fixed_pressure_target_lost
-export P8_2_K1A_PARTIAL_GRADE=red_p8_2_k1a_r5_f1_r1_fixed_pressure_trigger_not_reached
-export P8_2_K1A_EVIDENCE_INCOMPLETE_GRADE=red_p8_2_k1a_r5_f1_r1_fixed_pressure_evidence_incomplete
-
-set +e
-"${PYTHON_BIN}" tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py \
-  finalize --artifact-dir "${L2_ROOT}"
-FINALIZE_EXIT=$?
-set -e
-printf '%s\n' "${FINALIZE_EXIT}" > "${L2_ROOT}/finalize_exit_code.txt"
-~~~
-
-## 6. 分级与停止边界
-
-- repository 合同失败：`blocked_p8_2_k1a_r5_f1_r1_repository_contract_gate`；
-- parent/raw/source provenance 失败：`blocked_p8_2_k1a_r5_f1_r1_source_or_provenance_gate`；
-- legacy 缺直接进度：`candidate_requires_p8_2_k1a_r5_f1_r1_instrumented_calibration`；
-- progress gap / 余量不足：`blocked_p8_2_k1a_r5_f1_r1_request_local_pressure_gate`；
-- request-local 候选就绪：`candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure`；
-- calibration capture 相关：`candidate_green_..._calibration_capture` /
-  `yellow_..._calibration_target_lost_after_capture` /
-  `yellow_..._calibration_window_not_reached` /
-  `red_..._calibration_no_success` /
-  `red_..._calibration_evidence_incomplete`；
-- L2：`candidate_green_p8_2_k1a_r5_f1_r1_fixed_pressure_h2d_trigger` 或对应 red grades。
-
-candidate green 仍只是服务器候选，不证明唯一根因、性能收益或 K2 就绪。
-
-## 7. 小结果包、完整清单与传输停点
-
-raw vLLM log、raw metrics、request bodies、raw trace、active-role marker、generated output/token IDs/request IDs
-全部留服务器。
-
-- Section 2 only：报告 legacy analysis 6 payload + manifest；
-- 进入 Section 3：另报 calibration raw 保留路径 + calibration analysis package；
-- 进入 Section 4：再报 L2 bounded package；
-- 所有拟传文件合计不得超过 71680 bytes，每项含 path/bytes/SHA-256/sensitivity；
-- sensitivity 只能为 `bounded_operational_metadata_no_content_or_token_ids`；
-- manifest 自身计入完整传输范围。
-
-完成后先报告 task id、HEAD/origin/tracked、各 section pass/fail、首错、legacy/calibration/L2 grades（见 grading_summary.json）、
-固定 context、实际 lifecycle/request 数、停卡/恢复卡号与状态，以及完整候选清单。然后列出
-`email / upload-api / server-local` 三种方法并推荐一种；用户未对该完整范围选择唯一渠道前，
-不得外发、不得预先 upload-api、不得发状态邮件、失败后不得自动换渠道。不得继承上一轮 upload-api 选择。
-
-## 8. 完成后等待
+成功生成时必须只有 5 个 payload 加 1 个 manifest 控制文件：
 
 ~~~text
-next_task_authorized=false
-k2_authorized=false
-p8_3_i1_authorized=false
-performance_reference_accepted=false
-cause_proven_as_unique=false
+grading_summary.json
+result_summary.md
+source_evidence_provenance.json
+task_grade.txt
+trace_alignment_summary.json
+candidate_manifest.server_local.json
 ~~~
 
-本任务 blocked/red/yellow 不撤销任何既有 P6/P8 窄边界结论。不得进入 K2。不得进入 P8.3-I1。
-不得自行进入下一任务。
+`candidate_manifest.server_local.json` 必须同时给出 payload 与完整 transfer 口径：
+`payload_file_count=5`、`transfer_file_count=6`，`transfer_total_bytes` 必须包含 manifest 自身且不超过
+`71680`。逐文件 bytes/SHA-256 必须匹配；raw trace 内容、request ID、token ID、生成内容和 raw hash
+不得进入有界包。
+
+最终回报必须包含：
+
+1. 同步后的 HEAD、`origin/main`、ahead/behind、tracked-clean；
+2. source 三个根、四个 parent 文件 SHA-256 与 raw trace 文件数；
+3. task grade、calibration scheduled-token histogram、L2 snapshot reason/state histogram；
+4. L2 是否在首个 CPU target eviction 前出现完整 `CPU=64/GPU=0`；
+5. endpoint `CPU/GPU/decision`、request-end timestamp 不可精确对齐的限制、claim boundary；
+6. `npu_started=false`、`vllm_started=false`、`model_requests_sent=0`；
+7. 实际停卡集合为空、实际恢复集合为空、keep-alive 全程保持运行；
+8. 精确 `result_summary.md` 路径，以及完整 6 文件的文件名、bytes、SHA-256（manifest 自身可只报 bytes 与其现场 SHA-256）、sensitivity；
+9. 可选方法 `email` / `upload-api` / `server-local`（即 email / upload-api / server-local 三选一），推荐 `server-local`，理由是本轮结果已经位于服务器且在用户选择前无需移动任何文件。
+
+`result_transfer_authorized:true` 只表示完整有界包具备渠道选择资格，不表示已经选择渠道。
+回报上述完整清单后暂停，等待用户对同一完整范围明确选择 `email`、`upload-api` 或 `server-local`；
+不得先发状态邮件、不得自动上传、不得拆分发送、不得失败后自动换渠道。
+
+## 5. 禁止事项与停止条件
+
+- 不执行 `npu_stop.sh` 或 `npu_keep_alive.sh`；keep-alive 全程运行。
+- 不启动 vLLM/NPU，不发任何模型请求，不接触 7000 端口服务。
+- 不更改 36800/131072 context，不搜索、不 sweep、不补跑 calibration/L2。
+- 不修改 runtime、依赖、overlay、observer 或 parent source/result tree。
+- 不把 mid-request/endpoint mismatch 写成 H2D restore、性能收益或唯一根因。
+- 不进入 K2、P8.3-I1、P8.4、P8.5 或 P9。
+- 任一前门失败只报告第一失败点，不改路径、不换 run、不 retry。
+- 不 commit、不 push、不清理服务器未跟踪产物。
+
+任务完成不代表下一轮已授权；`next_task_authorized:false` 必须保持。

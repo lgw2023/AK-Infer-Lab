@@ -60,7 +60,7 @@ def test_r4_r1_contract_is_preserved_while_r5_f0_is_current() -> None:
     historical_task_id = (
         "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
     )
-    current_task_id = "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
+    current_task_id = "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
 
     assert workload["task_id"] == historical_task_id
     assert workload["source_gate"]["parent_r4_grade"] == (
@@ -85,7 +85,7 @@ def test_r4_r1_contract_is_preserved_while_r5_f0_is_current() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
     )
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["current_p8_2_k1a_r4_r1_runner"].endswith(RUNNER.name)
@@ -93,10 +93,10 @@ def test_r4_r1_contract_is_preserved_while_r5_f0_is_current() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {current_task_id}" in handoff
-    assert "npu_execution_authorized: conditional" in handoff
-    assert "keep_alive_stop_and_restore_authorized: conditional" in handoff
-    assert "vllm_server_start_authorized: conditional" in handoff
-    assert "model_requests_authorized: conditional" in handoff
+    assert "npu_execution_authorized: false" in handoff
+    assert "keep_alive_stop_authorized: false" in handoff
+    assert "vllm_server_start_authorized: false" in handoff
+    assert "model_requests_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "transfer_method_selected: false" in handoff
     assert "next_task_authorized: false" in handoff

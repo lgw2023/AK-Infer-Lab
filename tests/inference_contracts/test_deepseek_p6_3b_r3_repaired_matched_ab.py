@@ -293,10 +293,10 @@ def test_handoff_preserves_r4_r1_closeout_during_r5_f0_feasibility():
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-F1-R1 请求级压力进度校准与条件式 L2" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722" in handoff
-    assert "execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2" in handoff
-    assert "npu_execution_authorized: conditional" in handoff
+    assert "P8.2-K1A-R5-F1-R2 原始轨迹时序对齐（零 NPU）" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722" in handoff
+    assert "execution_mode: authorized_server_local_read_only_trace_alignment_no_npu" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "R5-L1-R1 的有界包" in handoff
     assert "精确重放 R2 geometry/rendezvous/allocator" in handoff
@@ -326,7 +326,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
     )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"

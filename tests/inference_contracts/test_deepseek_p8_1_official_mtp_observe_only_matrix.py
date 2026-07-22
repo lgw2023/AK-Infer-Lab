@@ -472,22 +472,22 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_feasibility() -> None:
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-            "task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
+            "task_id: p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
         in handoff
     )
     assert (
-        "execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2"
+        "execution_mode: authorized_server_local_read_only_trace_alignment_no_npu"
         in handoff
     )
-    assert "npu_execution_authorized: conditional" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "16384" in handoff
-    assert "model_request_count_max: 4" in handoff
+    assert "model_request_count_exact: 0" in handoff
     assert "merge --ff-only origin/main" in handoff
-    assert "keep_alive_stop_and_restore_authorized: conditional" in handoff
-    assert "formal_model_lifecycle_count_max: 2" in handoff
+    assert "keep_alive_stop_authorized: false" in handoff
+    assert "formal_model_lifecycle_count_exact: 0" in handoff
     assert "不得进入 K2" in handoff
     assert "email" in handoff
     assert "upload-api" in handoff

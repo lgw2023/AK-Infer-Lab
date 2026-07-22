@@ -754,24 +754,24 @@ def test_r5_l1_contract_is_preserved_as_parent_of_current_r1() -> None:
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     assert readiness["artifacts"]["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
+        "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
     )
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
+        "task_id: p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
         in handoff
     )
     for field in (
-        "npu_execution_authorized: conditional",
-        "formal_model_lifecycle_count_max: 2",
-        "model_request_count_min: 3",
-        "model_request_count_max: 4",
+        "npu_execution_authorized: false",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
+        "model_request_count_exact: 0",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "next_task_authorized: false",

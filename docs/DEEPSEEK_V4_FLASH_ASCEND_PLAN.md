@@ -44,7 +44,7 @@ new isolated host conda environment built; W8A8-MTP official context ladder gree
 P8.1 parent 继续保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 已接受为
 `green_p8_1_r1_official_mtp_observe_only_matrix`；二者均不被后续 K0 覆盖。
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 与 P8.2-K0 已接受 green。K1 旧路径与完整 K1A R3 lineage 保留；K1A-R2 8-rank/128-block capacity ready。R3-R2-R2-R1-R1-R1 已完成一个 accepted-capacity lifecycle：6/6 transport 成功、D2H store 闭合、CPU hit/load/H2D 为零；原 red 保留，开发机只接受 store-only yellow。K1A-R4 store-only/trace 门通过但冻结 `popleft_n` 被旧 matcher 假阴性拒绝；R4-R1 已修复该假阴性并接受 offline store-only closeout green。R5-F0 零资源 feasibility 已 candidate ready；R5-L1 已完成 D2H 8/8 但因 controller 误停保留 red。R5-L1-R1 corrected lifecycle 以 3/3 request、D2H 8/8、`CPU=0/GPU=0` target 终态保留 red。当前唯一任务 `p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722` 先做零 NPU request-local 归因，缺进度则一次 calibration，只有 F1-R1 ready 才运行一个 fixed-pressure L2。P8.3-I0-R1 taxonomy 已在窄边界 green，但 TP4 budget incomplete。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 与 P8.2-K0 已接受 green。K1 旧路径与完整 K1A R3 lineage 保留；K1A-R2 8-rank/128-block capacity ready。R4-R1 offline store-only closeout green、R5-F0 candidate ready、R5-L1 controller-red 与 R5-L1-R1 target-lost red 均保留。F1-R1 已完成 131072 calibration 与 36800 fixed L2；后者 3/3 请求和 D2H 8/8 成功，但 endpoint `CPU=54/GPU=0`，保留 fixed-pressure target-lost red，restore 未发送。当前唯一任务 `p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722` 只在服务器原位零 NPU 对齐 calibration/L2 raw trace，不运行模型。P8.3-I0-R1 taxonomy 已在窄边界 green，但 TP4 budget incomplete。
 
 ### 3.2 对照路：MindIE
 
@@ -68,7 +68,7 @@ mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门
 p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_sampling_repair_2026_0714
 ```
 
-server-local Git 管理最终验收已完成。P6.1C-R1、P6.1、P6.2、P6.3A 与 P6.3B-R4-R1 均 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。K1/K1A 旧 lineage 保留，K1A-R2 capacity ready，P8.3-I0-R1 taxonomy green 但 budget incomplete。R3-R2-R2-R1-R1-R1 已执行且只接受 store-only yellow。R4 因 source matcher 假阴性 blocked，R4-R1 offline store-only closeout 已 green；R5-F0 feasibility 已 candidate ready，R5-L1/R1 red 保留。当前唯一服务器 handoff 是 `p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722`：request-local ready 才允许一个 fixed-pressure、3–4 请求的条件式 L2；K2 和 P8.3-I1 均未授权。
+server-local Git 管理最终验收已完成。P6.1C-R1、P6.1、P6.2、P6.3A 与 P6.3B-R4-R1 均 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。K1/K1A 旧 lineage 保留，K1A-R2 capacity ready，P8.3-I0-R1 taxonomy green 但 budget incomplete。R4-R1 offline store-only closeout 已 green；R5-F0 feasibility ready，R5-L1/R1 red 保留；F1-R1 以 fixed-L2 target-lost red 收口。当前唯一服务器 handoff 是 `p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722`：零 NPU、零请求原位分析 raw trace；K2 和 P8.3-I1 均未授权。
 
 参考配置：
 

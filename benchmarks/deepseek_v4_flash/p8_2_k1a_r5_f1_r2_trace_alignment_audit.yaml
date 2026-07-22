@@ -1,0 +1,62 @@
+schema_version: 1
+audit_id: p8_2_k1a_r5_f1_r2_trace_alignment_audit
+date: '2026-07-22'
+stage: P8.2-K1A-R5-F1-R2
+task_id: p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722
+
+accepted_parent_results:
+  calibration_grade: candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure
+  calibration_context_tokens: 131072
+  calibration_candidate_context_tokens: 36800
+  calibration_progress_event_count: 64
+  calibration_exact_cpu_only_progress_event_count: 56
+  fixed_l2_grade: red_p8_2_k1a_r5_f1_r1_fixed_pressure_target_lost
+  fixed_l2_request_count: 3
+  fixed_l2_successful_request_count: 3
+  fixed_l2_endpoint_cpu_target_block_count: 54
+  fixed_l2_endpoint_gpu_target_block_count: 0
+  fixed_l2_restore_sent: false
+  fixed_l2_cleanup: clean
+
+developer_evidence_boundary:
+  bounded_package_proves_calibration_mid_request_window: true
+  bounded_package_proves_fixed_l2_endpoint_target_loss: true
+  bounded_package_proves_causal_explanation: false
+  bounded_package_independently_proves_4096_token_chunks: false
+  raw_trace_alignment_required_before_any_new_lifecycle: true
+
+alignment_contract:
+  calibration_pressure_start_source: runtime/request_control/active_role.json
+  fixed_l2_pressure_start_source: runtime/request_control/active_role.json
+  pressure_start_timestamp_clock: time.time_ns
+  observer_trace_timestamp_clock: time.time_ns
+  request_end_client_clock: time.monotonic_ns
+  request_end_trace_event_present: false
+  request_end_timestamp_alignment_exact: false
+  endpoint_order_source: controller_contract_and_residency_gate_timeline
+  calibration_progress_source: request_local_pressure_progress
+  fixed_l2_residency_source: target_residency_snapshot
+  cpu_target_eviction_source: target_cache_evicted
+  target_block_count: 64
+  output_tokens: 64
+
+possible_grades:
+  mid_request_endpoint_mismatch: candidate_p8_2_k1a_r5_f1_r2_mid_request_window_endpoint_mismatch
+  no_fixed_l2_cpu_only_window: candidate_p8_2_k1a_r5_f1_r2_no_l2_cpu_only_window
+  evidence_incomplete: blocked_p8_2_k1a_r5_f1_r2_trace_alignment_incomplete
+
+authorization:
+  server_local_read_only_analysis_authorized: true
+  npu_execution_authorized: false
+  vllm_server_start_authorized: false
+  model_requests_authorized: false
+  keep_alive_must_remain_running: true
+  context_change_authorized: false
+  context_search_or_sweep_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  new_npu_lifecycle_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  next_task_authorized: false
+
+claim_boundary: server_local_raw_trace_timing_alignment_only_no_new_runtime_h2d_performance_or_unique_cause_claim

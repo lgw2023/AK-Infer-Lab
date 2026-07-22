@@ -1,0 +1,76 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_f1_r2_trace_alignment
+date: '2026-07-22'
+task_id: p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722
+purpose: compare_calibration_and_fixed_l2_raw_residency_timing_without_npu
+
+stage_contract:
+  stage: P8.2-K1A-R5-F1-R2
+  mode: immutable_server_local_raw_trace_alignment
+  parent_calibration_grade: candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure
+  parent_fixed_l2_grade: red_p8_2_k1a_r5_f1_r1_fixed_pressure_target_lost
+  parent_grades_preserved: true
+  claim_boundary: observation_point_alignment_only
+
+source_contract:
+  calibration_root: server_local/p8_2_k1a_r5_f1_r1_calibration_2026_0722_run01
+  calibration_analysis_root: server_local/p8_2_k1a_r5_f1_r1_calibration_analysis_2026_0722_run01
+  fixed_l2_root: server_local/p8_2_k1a_r5_f1_r1_fixed_l2_2026_0722_run01
+  trace_pattern: runtime/offload_trace/h2d-residency.*.jsonl
+  active_role_path: runtime/request_control/active_role.json
+  endpoint_timeline_path: runtime/request_control/residency_gate_timeline.json
+  selected_source_files_before_after_sha256_exact: true
+  source_tree_mutation_allowed: false
+
+analysis_contract:
+  calibration_candidate_context_tokens: 36800
+  target_block_count: 64
+  pressure_role: pressure_01
+  calibration_scheduled_token_histogram_required: true
+  fixed_l2_residency_reason_histogram_required: true
+  fixed_l2_residency_state_histogram_required: true
+  complete_cpu_only_window: {cpu_target_block_count: 64, gpu_target_block_count: 0}
+  cpu_only_must_precede_first_cpu_target_eviction: true
+  endpoint_gate_must_match_parent_target_lost: true
+  request_end_timestamp_alignment_exact: false
+  unique_cause_claim_authorized: false
+
+grading:
+  mid_request_endpoint_mismatch: candidate_p8_2_k1a_r5_f1_r2_mid_request_window_endpoint_mismatch
+  no_fixed_l2_cpu_only_window: candidate_p8_2_k1a_r5_f1_r2_no_l2_cpu_only_window
+  evidence_incomplete: blocked_p8_2_k1a_r5_f1_r2_trace_alignment_incomplete
+
+result_contract:
+  payload_file_count: 5
+  transfer_file_count_with_manifest: 6
+  max_transfer_total_bytes: 71680
+  complete_transfer_total_bytes_includes_manifest: true
+  sensitivity: bounded_operational_metadata_no_content_or_token_ids
+  raw_trace_content_allowed: false
+  generated_content_allowed: false
+  token_ids_allowed: false
+  request_ids_allowed: false
+  raw_hash_values_allowed: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  transfer_methods: [email, upload-api, server-local]
+
+authorization:
+  offline_analysis_authorized: true
+  npu_execution_authorized: false
+  vllm_server_start_authorized: false
+  model_requests_authorized: false
+  keep_alive_stop_authorized: false
+  keep_alive_must_remain_running: true
+  formal_model_lifecycle_count: 0
+  model_request_count: 0
+  context_change_authorized: false
+  pressure_search_or_sweep_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true

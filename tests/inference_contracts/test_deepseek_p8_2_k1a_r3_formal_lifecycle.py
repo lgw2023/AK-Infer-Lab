@@ -335,17 +335,17 @@ def test_r3_finalizer_requires_exact_capacity_and_closes_store_restore(
 
 
 def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> None:
-    task_id = "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
+    task_id = "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2",
-        "npu_execution_authorized: conditional",
-        "vllm_server_start_authorized: conditional",
-        "model_requests_authorized: conditional",
-        "formal_model_lifecycle_count_max: 2",
-        "model_request_count_max: 4",
+        "execution_mode: authorized_server_local_read_only_trace_alignment_no_npu",
+        "npu_execution_authorized: false",
+        "vllm_server_start_authorized: false",
+        "model_requests_authorized: false",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
         "capacity_search_authorized: false",
         "profiler_authorized: false",
         "result_transfer_authorized: true",
@@ -370,7 +370,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
+        "workloads/p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
     )
     assert acceptance["p8_2_k1a_r2_grade"] == (
         "ready_p8_2_k1a_r2_allocator_capacity"
@@ -409,7 +409,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
         "green_p8_3_i0_r1_unclassified_taxonomy"
     )
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R1_parent_legacy_then_at_most_one_calibration_plus_one_fixed_l2"
+        "P8.2-K1A-R5-F1-R2_server_local_read_only_trace_alignment_no_npu"
     )
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False
@@ -424,29 +424,17 @@ def test_r5_f1_handoff_freezes_all_direct_contract_inputs_without_placeholders()
 
     frozen_paths = (
         "benchmarks/deepseek_v4_flash/"
-        "p8_2_k1a_r5_f1_r1_request_local_pressure_audit.yaml",
+        "p8_2_k1a_r5_f1_r2_trace_alignment_audit.yaml",
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml",
+        "p8_2_k1a_r5_f1_r2_trace_alignment.yaml",
         "tools/inference_contracts/"
-        "p8_2_k1a_r5_f1_r1_request_local_pressure.py",
+        "p8_2_k1a_r5_f1_r2_trace_alignment.py",
         "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh",
-        "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r5_f1_r1_request_local_calibration.sh",
-        "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r5_f1_r1_fixed_pressure_l2.sh",
-        "tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py",
-        "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py",
-        "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py",
-        "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh",
-        "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r2_trace_alignment.sh",
         "tests/inference_contracts/"
-        "test_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.py",
+        "test_deepseek_p8_2_k1a_r5_f1_r2_trace_alignment.py",
     )
     for relative in frozen_paths:
         expected = hashlib.sha256((REPO_ROOT / relative).read_bytes()).hexdigest()
-        pattern = rf'"{re.escape(relative)}": "{expected}"'
+        pattern = rf"{expected}\s+{re.escape(relative)}"
         assert re.search(pattern, handoff), relative

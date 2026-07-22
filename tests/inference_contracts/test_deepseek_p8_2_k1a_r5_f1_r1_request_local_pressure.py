@@ -663,8 +663,12 @@ def test_f1_r1_contract_is_offline_first_with_at_most_two_lifecycles(
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    assert artifacts["current_server_handoff_task"] == TASK_ID
-    assert artifacts["next_workload"].endswith(WORKLOAD.name)
+    assert artifacts["current_server_handoff_task"] == (
+        "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
+    )
+    assert artifacts["next_workload"].endswith(
+        "p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
+    )
     assert artifacts["current_p8_2_k1a_r5_f1_r1_runner"].endswith(
         OFFLINE_RUNNER.name
     )
@@ -675,36 +679,12 @@ def test_f1_r1_contract_is_offline_first_with_at_most_two_lifecycles(
         CALIBRATION_RUNNER.name
     )
 
-    handoff = HANDOFF.read_text(encoding="utf-8")
-    assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert handoff.count("\ntask_id: ") == 1
-    assert f"task_id: {TASK_ID}" in handoff
-    for field in (
-        "offline_first: true",
-        "npu_execution_authorized: conditional",
-        "formal_model_lifecycle_count_max: 2",
-        "pressure_request_count_exact: 1",
-        "model_request_count_min: 3",
-        "model_request_count_max: 4",
-        "request_retry_count_exact: 0",
-        "result_transfer_authorized: true",
-        "transfer_method_selected: false",
-        "next_task_authorized: false",
-        "k2_authorized: false",
-        "p8_3_i1_authorized: false",
-    ):
-        assert field in handoff
-    for marker in (
-        "request-local",
-        READY_GRADE,
-        CALIBRATION_REQUIRED_GRADE,
-        "CPU=64/GPU=0",
-        "npu_stop.sh 0 1 2 3 4 5 6 7",
-        "npu_keep_alive.sh 0 1 2 3 4 5 6 7",
-        "upload-api",
-    ):
-        assert marker in handoff
-    assert "automatic_transfer_allowed: false" in handoff
+    acceptance = readiness["acceptance"]
+    assert acceptance["p8_2_k1a_r5_f1_r1_grade"] == (
+        "red_p8_2_k1a_r5_f1_r1_fixed_pressure_target_lost"
+    )
+    assert acceptance["p8_2_k1a_r5_f1_r1_formal_model_lifecycle_count_actual"] == 2
+    assert acceptance["p8_2_k1a_r5_f1_r1_conditional_npu_execution_authorized"] is False
 
 
 def test_f1_r1_l2_wrapper_requires_the_exact_ready_analysis_candidate(
@@ -825,4 +805,3 @@ def test_f1_r1_l2_wrapper_rejects_legacy_f1_ready_grade(tmp_path: Path) -> None:
         capture_output=True,
     )
     assert completed.returncode != 0
-

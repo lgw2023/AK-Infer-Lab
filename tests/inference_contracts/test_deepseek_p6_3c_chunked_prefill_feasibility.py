@@ -172,10 +172,10 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K1A-R5-F1-R1_request_local_progress_then_conditional_fixed_L2"
+        "P8.2-K1A-R5-F1-R2_server_local_raw_trace_alignment"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
@@ -207,13 +207,13 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722" in handoff
-    assert "execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2" in handoff
-    assert "npu_execution_authorized: conditional" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722" in handoff
+    assert "execution_mode: authorized_server_local_read_only_trace_alignment_no_npu" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
-    assert "model_request_count_max: 4" in handoff
+    assert "model_request_count_exact: 0" in handoff
 
     truth_paths = (
         REPO_ROOT / "docs/EXPERIMENT_PLAN.md",

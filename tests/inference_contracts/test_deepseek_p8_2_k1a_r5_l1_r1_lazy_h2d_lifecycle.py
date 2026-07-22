@@ -106,10 +106,10 @@ def test_r5_l1_r1_runner_is_preserved_while_f1_is_the_current_task(
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    current_task_id = "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
+    current_task_id = "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
     )
     assert artifacts["completed_p8_2_k1a_r5_l1_r1_runner"].endswith(RUNNER.name)
 
@@ -120,10 +120,10 @@ def test_r5_l1_r1_runner_is_preserved_while_f1_is_the_current_task(
     assert f"task_id: {current_task_id}" in handoff
     for field in (
         "offline_first: true",
-        "npu_execution_authorized: conditional",
-        "formal_model_lifecycle_count_max: 2",
-        "model_request_count_min: 3",
-        "model_request_count_max: 4",
+        "npu_execution_authorized: false",
+        "formal_model_lifecycle_count_exact: 0",
+        "model_request_count_exact: 0",
+        "model_request_count_exact: 0",
                 "request_retry_count_exact: 0",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
