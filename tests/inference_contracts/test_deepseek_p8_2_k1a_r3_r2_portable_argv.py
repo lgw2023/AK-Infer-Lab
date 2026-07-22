@@ -282,13 +282,13 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
+        "task_id: p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
     ) in handoff
     for exact in (
-            "execution_mode: authorized_server_local_read_only_trace_alignment_no_npu",
-            "npu_execution_authorized: false",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+            "execution_mode: authorized_single_lifecycle_inflight_trigger_abort_idle_restore",
+            "npu_execution_authorized: true",
+        "formal_model_lifecycle_count_exact: 1",
+        "model_request_count_exact: 4",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
         "parent_server_grade=red_p8_2_k1a_r5_l1_r1_cpu_target_lost",

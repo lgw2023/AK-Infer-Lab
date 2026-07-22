@@ -1,0 +1,53 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R3
+date: '2026-07-22'
+task_id: p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722
+
+received_f1_r2_package:
+  server_grade: candidate_p8_2_k1a_r5_f1_r2_mid_request_window_endpoint_mismatch
+  transfer_file_count: 6
+  transfer_total_bytes: 24760
+  manifest_sha256: 9a4b5c43501f5fa441e397feffb398aadaf67f8d5292f5854fe9452701d1ddaa
+  calibration_candidate_context_tokens: 36800
+  fixed_l2_cpu_only_before_first_cpu_eviction: true
+  fixed_l2_cpu_only_first_offset_ns: 2952631690
+  fixed_l2_first_cpu_target_eviction_offset_ns: 20898026629
+  fixed_l2_cpu_only_window_lead_ns: 17945394939
+  fixed_l2_endpoint_cpu_target_block_count: 54
+  fixed_l2_endpoint_gpu_target_block_count: 0
+  fixed_l2_endpoint_decision: cpu_target_lost
+  unique_cause_proven: false
+  h2d_restore_mechanism_accepted: false
+
+developer_decision:
+  fixed_context_preserved: 36800
+  context_search_or_sweep_authorized: false
+  next_controller_protocol: inflight_request_local_trigger_then_abort_then_idle_then_conditional_restore
+  formal_model_lifecycle_count_exact: 1
+  pressure_request_count_exact: 1
+  model_request_count_exact: 4
+  completed_request_count_exact: 3
+  intentional_pressure_abort_count_exact: 1
+  request_retry_count_exact: 0
+  max_num_seqs_preserved: 1
+  concurrent_restore_while_pressure_active_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  observer_mutation_authorized: false
+  performance_reference_authorized: false
+  unique_root_cause_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+fail_closed_gates:
+  - request_local_progress_missing_or_ambiguous
+  - cpu_target_eviction_observed_before_abort
+  - pressure_request_completed_before_trigger_abort
+  - pressure_client_abort_not_confirmed
+  - engine_not_idle_after_abort
+  - cpu_only_window_lost_after_abort
+  - restore_request_failure
+  - d2h_or_h2d_pipeline_evidence_incomplete
+  - cleanup_or_keep_alive_recovery_incomplete
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_inflight_trigger_abort_idle_and_conditional_restore_h2d_mechanism_candidate_only

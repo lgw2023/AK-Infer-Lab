@@ -1,0 +1,1046 @@
+from __future__ import annotations
+
+import argparse
+import csv
+from dataclasses import dataclass, field
+import hashlib
+import http.client
+import json
+import os
+from pathlib import Path
+import socket
+import sys
+import threading
+import time
+from typing import Any
+from urllib.parse import urlsplit
+
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from tools.inference_contracts.p8_2_k1a_h2d_residency_observer import (
+    build_residency_gate,
+    summarize_h2d_trigger_rows,
+)
+from tools.inference_contracts.p8_2_k1a_simple_cpu_offload_observer import (
+    summarize_trace_rows,
+)
+from tools.inference_contracts.run_deepseek_p6_1_unprofiled_baseline import (
+    calculate_request_metrics,
+)
+from tools.inference_contracts.run_deepseek_p6_3b_prefix_cache_ab import (
+    _get,
+    _process_alive,
+    _wait_for_idle,
+    _write_jsonl,
+)
+from tools.inference_contracts.run_deepseek_p8_2_k1a_r5_l1_lazy_h2d import (
+    BLOCK_SIZE_TOKENS,
+    OUTPUT_TOKENS,
+    RESTORE_MATCH_TOKENS,
+    TARGET_PREFIX_BLOCKS,
+    _execute_one_request,
+    _read_json,
+    _read_jsonl,
+    _read_trace_rows,
+    _request_evidence_exact,
+    _wait_for_target_cpu_presence,
+    _write_active_role,
+    _write_json,
+    prepare_lazy_h2d_artifacts,
+)
+from tools.inference_contracts import (
+    run_deepseek_p8_2_k1a_r5_l1_lazy_h2d as lazy_h2d_runner,
+)
+
+
+TASK_ID = "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
+STAGE_LABEL = "P8.2-K1A-R5-F1-R3"
+PRESSURE_CONTEXT_TOKENS = 36800
+PRESSURE_ROLE = "pressure_01"
+TRIGGER_POLL_SECONDS = float(
+    os.environ.get("P8_2_K1A_INFLIGHT_TRIGGER_POLL_SECONDS", "0.02")
+)
+TRIGGER_TIMEOUT_SECONDS = float(
+    os.environ.get("P8_2_K1A_INFLIGHT_TRIGGER_TIMEOUT_SECONDS", "120")
+)
+ABORT_JOIN_TIMEOUT_SECONDS = float(
+    os.environ.get("P8_2_K1A_PRESSURE_ABORT_JOIN_TIMEOUT_SECONDS", "30")
+)
+IDLE_TIMEOUT_SECONDS = float(
+    os.environ.get("P8_2_K1A_PRESSURE_ABORT_IDLE_TIMEOUT_SECONDS", "60")
+)
+CANDIDATE_GREEN = (
+    "candidate_green_p8_2_k1a_r5_f1_r3_inflight_abort_restore"
+)
+
+BOUNDED_CANDIDATE_FILES = (
+    "result_summary.md",
+    "request_summary.tsv",
+    "residency_gate_timeline.json",
+    "h2d_trigger_summary.json",
+    "transfer_trace_summary.json",
+    "connector_resolution_summary.json",
+    "mtp_queue_health_summary.json",
+    "repair_diagnostic_summary.json",
+    "host_memory_summary.json",
+    "grading_summary.json",
+    "cleanup_status.txt",
+    "resource_recovery_summary.json",
+)
+
+
+def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "timestamp_ns": int(row.get("timestamp_ns") or 0),
+        "contract_role": str(row.get("contract_role") or ""),
+        "scheduled_request_count": int(row.get("scheduled_request_count") or 0),
+        "request_local_progress_exact": row.get("request_local_progress_exact")
+        is True,
+        "num_computed_tokens_before_schedule": row.get(
+            "num_computed_tokens_before_schedule"
+        ),
+        "num_scheduled_tokens": row.get("num_scheduled_tokens"),
+        "num_computed_tokens_after_schedule": row.get(
+            "num_computed_tokens_after_schedule"
+        ),
+        "target_block_count": int(row.get("target_block_count") or 0),
+        "cpu_target_block_count": int(row.get("cpu_target_block_count") or 0),
+        "gpu_target_block_count": int(row.get("gpu_target_block_count") or 0),
+        "request_id_retained": False,
+        "token_ids_retained": False,
+        "generated_content_retained": False,
+    }
+
+
+def build_inflight_trigger_state(
+    rows: list[dict[str, Any]], *, pressure_start_timestamp_ns: int
+) -> dict[str, Any]:
+    current = [
+        row
+        for row in rows
+        if int(row.get("timestamp_ns") or 0) >= pressure_start_timestamp_ns
+    ]
+    pressure_progress = [
+        row
+        for row in current
+        if row.get("event") == "request_local_pressure_progress"
+        and row.get("contract_role") == PRESSURE_ROLE
+    ]
+    ambiguous = [
+        row
+        for row in pressure_progress
+        if row.get("request_local_progress_exact") is not True
+        or int(row.get("scheduled_request_count") or 0) != 1
+    ]
+    cpu_evictions = [
+        row
+        for row in current
+        if row.get("event") == "target_cache_evicted"
+        and row.get("tier") == "cpu"
+        and int(row.get("target_evicted_count") or 0) > 0
+    ]
+    exact_cpu_only = [
+        row
+        for row in pressure_progress
+        if row.get("request_local_progress_exact") is True
+        and int(row.get("scheduled_request_count") or 0) == 1
+        and int(row.get("target_block_count") or 0) == TARGET_PREFIX_BLOCKS
+        and int(row.get("cpu_target_block_count") or 0) == TARGET_PREFIX_BLOCKS
+        and int(row.get("gpu_target_block_count") or 0) == 0
+    ]
+
+    if ambiguous:
+        decision = "request_local_progress_ambiguous"
+    elif cpu_evictions:
+        decision = "cpu_target_lost"
+    elif exact_cpu_only:
+        decision = "trigger_ready"
+    else:
+        decision = "continue_pressure"
+
+    trigger = _sanitized_trigger(exact_cpu_only[0]) if exact_cpu_only else None
+    return {
+        "schema_version": "p8_2_k1a_r5_f1_r3_inflight_trigger_state_v1",
+        "decision": decision,
+        "abort_allowed": decision == "trigger_ready",
+        "pressure_start_timestamp_ns": pressure_start_timestamp_ns,
+        "pressure_progress_event_count": len(pressure_progress),
+        "ambiguous_progress_event_count": len(ambiguous),
+        "cpu_target_eviction_event_count": len(cpu_evictions),
+        "exact_cpu_only_progress_event_count": len(exact_cpu_only),
+        "trigger": trigger,
+        "raw_hash_values_retained": False,
+        "request_ids_retained": False,
+        "token_ids_retained": False,
+        "generated_content_retained": False,
+    }
+
+
+@dataclass
+class AbortableRequestHandle:
+    abort_event: threading.Event = field(default_factory=threading.Event)
+    finished_event: threading.Event = field(default_factory=threading.Event)
+    lock: threading.Lock = field(default_factory=threading.Lock)
+    connection: http.client.HTTPConnection | None = None
+    response: http.client.HTTPResponse | None = None
+    row: dict[str, Any] | None = None
+    abort_requested_monotonic_ns: int | None = None
+
+    def bind_connection(self, connection: http.client.HTTPConnection) -> None:
+        with self.lock:
+            self.connection = connection
+
+    def bind_response(self, response: http.client.HTTPResponse) -> None:
+        with self.lock:
+            self.response = response
+
+    def abort(self) -> None:
+        self.abort_requested_monotonic_ns = time.monotonic_ns()
+        self.abort_event.set()
+        with self.lock:
+            connection = self.connection
+            response = self.response
+        sock = connection.sock if connection is not None else None
+        if sock is not None:
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+        if response is not None:
+            try:
+                response.close()
+            except OSError:
+                pass
+        if connection is not None:
+            connection.close()
+
+
+def _stream_abortable_request(
+    *,
+    handle: AbortableRequestHandle,
+    artifact_dir: Path,
+    base_url: str,
+    server_pid: int,
+    batch: dict[str, Any],
+    request_item: dict[str, Any],
+) -> None:
+    body_path = artifact_dir / str(request_item["body_relative_path"])
+    body = body_path.read_bytes()
+    body_sha256 = hashlib.sha256(body).hexdigest()
+    expected_hash = str(request_item["request_body_sha256"])
+    payload = json.loads(body)
+    expected_prompt = int(batch["context_tokens"])
+    expected_output = int(batch["output_tokens"])
+    if body_sha256 != expected_hash:
+        raise ValueError(f"body hash drift for {request_item['request_id']}")
+    if len(payload["prompt"]) != expected_prompt:
+        raise ValueError(f"prompt length drift for {request_item['request_id']}")
+
+    parsed = urlsplit(base_url)
+    if parsed.scheme != "http" or not parsed.hostname:
+        raise ValueError("abortable controller requires an explicit http base URL")
+    connection = http.client.HTTPConnection(
+        parsed.hostname,
+        parsed.port or 80,
+        timeout=7200,
+    )
+    handle.bind_connection(connection)
+    token_arrival_ns: list[int] = []
+    usage: dict[str, Any] = {}
+    finish_reason: str | None = None
+    saw_done = False
+    http_status: int | None = None
+    max_token_chunk_width = 0
+    unexpected_error: str | None = None
+    request_start_ns = time.monotonic_ns()
+    request_start_timestamp_ns = time.time_ns()
+    try:
+        endpoint = (parsed.path.rstrip("/") if parsed.path else "") + "/v1/completions"
+        connection.request(
+            "POST",
+            endpoint,
+            body=body,
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream",
+            },
+        )
+        response = connection.getresponse()
+        handle.bind_response(response)
+        http_status = int(response.status)
+        while True:
+            raw_line = response.readline()
+            if not raw_line:
+                break
+            now_ns = time.monotonic_ns()
+            line = raw_line.decode("utf-8", errors="replace").strip()
+            if not line.startswith("data:"):
+                continue
+            data = line[5:].strip()
+            if data == "[DONE]":
+                saw_done = True
+                continue
+            item = json.loads(data)
+            if isinstance(item.get("usage"), dict):
+                usage = item["usage"]
+            for choice in item.get("choices") or []:
+                token_ids = choice.get("token_ids") or []
+                max_token_chunk_width = max(max_token_chunk_width, len(token_ids))
+                token_arrival_ns.extend([now_ns] * len(token_ids))
+                if choice.get("finish_reason") is not None:
+                    finish_reason = str(choice["finish_reason"])
+    except Exception as error:  # the expected socket shutdown also arrives here
+        if not handle.abort_event.is_set():
+            unexpected_error = f"{type(error).__name__}: {str(error)[:2048]}"
+    finally:
+        connection.close()
+
+    request_end_ns = time.monotonic_ns()
+    generated_tokens = usage.get("completion_tokens")
+    aborted_on_trigger = all(
+        (
+            handle.abort_event.is_set(),
+            not saw_done,
+            generated_tokens != expected_output,
+            len(token_arrival_ns) != expected_output,
+        )
+    )
+    if unexpected_error is not None:
+        error_path = (
+            artifact_dir
+            / "request_errors"
+            / f"{request_item['request_id']}.txt"
+        )
+        error_path.parent.mkdir(parents=True, exist_ok=True)
+        error_path.write_text(unexpected_error + "\n", encoding="utf-8")
+    else:
+        error_path = None
+    status = (
+        "aborted_on_trigger"
+        if aborted_on_trigger
+        else "success"
+        if all(
+            (
+                http_status == 200,
+                usage.get("prompt_tokens") == expected_prompt,
+                generated_tokens == expected_output,
+                len(token_arrival_ns) == expected_output,
+                finish_reason == "length",
+                saw_done,
+            )
+        )
+        else "failed"
+    )
+    handle.row = {
+        "request_id": request_item["request_id"],
+        "batch_id": batch["batch_id"],
+        "phase": batch["phase"],
+        "k1a_role": request_item["k1a_role"],
+        "group_id": request_item["group_id"],
+        "context_tokens": expected_prompt,
+        "output_tokens": expected_output,
+        "concurrency": 1,
+        "repeat_index": int(request_item["repeat_index"]),
+        "request_index": 1,
+        "request_body_sha256": body_sha256,
+        "status": status,
+        "http_status": http_status,
+        "prompt_tokens": usage.get("prompt_tokens"),
+        "generated_token_count": generated_tokens,
+        "streamed_token_count": len(token_arrival_ns),
+        "finish_reason": finish_reason,
+        "saw_done": saw_done,
+        "max_token_chunk_width": max_token_chunk_width,
+        "request_start_ns": request_start_ns,
+        "request_start_timestamp_ns": request_start_timestamp_ns,
+        "request_end_ns": request_end_ns,
+        "abort_requested": handle.abort_event.is_set(),
+        "abort_requested_monotonic_ns": handle.abort_requested_monotonic_ns,
+        "abort_confirmed_by_client_exit": aborted_on_trigger,
+        "full_response_observed": saw_done,
+        "server_alive_after_client_exit": _process_alive(server_pid),
+        **calculate_request_metrics(
+            request_start_ns=request_start_ns,
+            token_arrival_ns=token_arrival_ns,
+            request_end_ns=request_end_ns,
+        ),
+        "bounded_error_server_path": str(error_path) if error_path else None,
+        "generated_text_retained": False,
+        "token_ids_retained": False,
+    }
+    handle.finished_event.set()
+
+
+def _counter_delta(
+    before: dict[str, Any], after: dict[str, Any]
+) -> dict[str, float]:
+    return {
+        name: float(after.get(name) or 0.0) - float(before.get(name) or 0.0)
+        for name in (
+            "prefix_queries",
+            "prefix_hits",
+            "num_drafts",
+            "num_draft_tokens",
+            "num_accepted_tokens",
+        )
+    }
+
+
+def _finish_pressure_row(
+    *,
+    handle: AbortableRequestHandle,
+    base_url: str,
+    control_dir: Path,
+    item: dict[str, Any],
+    metrics_before: dict[str, Any],
+    previous_after: dict[str, Any] | None,
+) -> tuple[dict[str, Any], dict[str, Any], bool]:
+    row = dict(handle.row or {**item, "status": "client_thread_missing_result"})
+    health_after, _ = _get(base_url, "/health", timeout=5)
+    idle_after, metrics_after = _wait_for_idle(
+        base_url,
+        control_dir / "raw_metrics" / f"{item['request_id']}_after.prom",
+        timeout_seconds=IDLE_TIMEOUT_SECONDS,
+    )
+    delta = _counter_delta(metrics_before, metrics_after)
+    continuity_ok = previous_after is None or all(
+        float(metrics_before.get(name) or 0.0)
+        >= float(previous_after.get(name) or 0.0)
+        for name in delta
+    )
+    queue_ok = all(
+        (
+            metrics_before.get("queue_metrics_present") is True,
+            metrics_after.get("queue_metrics_present") is True,
+            idle_after,
+        )
+    )
+    row.update(
+        {
+            "metrics_before": metrics_before,
+            "metrics_after": metrics_after,
+            "prefix_hits_delta": delta["prefix_hits"],
+            "accepted_token_delta": delta["num_accepted_tokens"],
+            "queue_metrics_ok": queue_ok,
+            "counter_continuity_ok": continuity_ok,
+            "spec_activity_ok": delta["num_drafts"] >= 0,
+            "prefix_evidence_ok": delta["prefix_queries"] >= 0,
+            "health_after_200": health_after == 200,
+            "queue_idle_after_abort": idle_after,
+        }
+    )
+    return row, metrics_after, idle_after
+
+
+def prepare_inflight_abort_restore_artifacts(
+    source_payload: Path, artifact_dir: Path, model_name: str
+) -> dict[str, Any]:
+    previous_context = lazy_h2d_runner.PRESSURE_CONTEXT_TOKENS
+    previous_count = lazy_h2d_runner.PRESSURE_REQUEST_COUNT_MAX
+    lazy_h2d_runner.PRESSURE_CONTEXT_TOKENS = PRESSURE_CONTEXT_TOKENS
+    lazy_h2d_runner.PRESSURE_REQUEST_COUNT_MAX = 1
+    try:
+        manifest = prepare_lazy_h2d_artifacts(
+            source_payload, artifact_dir, model_name
+        )
+    finally:
+        lazy_h2d_runner.PRESSURE_CONTEXT_TOKENS = previous_context
+        lazy_h2d_runner.PRESSURE_REQUEST_COUNT_MAX = previous_count
+    if int(manifest["pressure_request_count_max"]) != 1:
+        raise ValueError("F1-R3 requires exactly one prepared pressure request")
+    if int(manifest["pressure_context_tokens"]) != PRESSURE_CONTEXT_TOKENS:
+        raise ValueError("F1-R3 pressure context must remain fixed at 36800")
+    manifest.update(
+        {
+            "schema_version": "p8_2_k1a_r5_f1_r3_request_body_manifest_v1",
+            "task_id": TASK_ID,
+            "fixed_request_count": 4,
+            "request_count_max": 4,
+            "request_order_contract": [
+                "warmup",
+                "target_prime",
+                "pressure_01_abort_on_request_local_cpu_only_trigger",
+                "restore_follower_after_abort_and_idle_if_window_still_valid",
+            ],
+            "pressure_request_count_is_runtime_fact": True,
+            "pressure_request_abort_is_conditional": True,
+            "pressure_request_must_not_complete_before_abort": True,
+            "restore_requires_abort_confirmed_idle_and_window_still_valid": True,
+        }
+    )
+    (artifact_dir / "request_body_manifest.json").write_text(
+        json.dumps(manifest, separators=(",", ":"), sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return manifest
+
+
+def execute_inflight_abort_restore(
+    artifact_dir: Path, base_url: str, server_pid: int
+) -> int:
+    plan = json.loads((artifact_dir / "run_plan.json").read_text(encoding="utf-8"))
+    by_role = {str(row["k1a_role"]): row for row in plan}
+    if set(by_role) != {"warmup", "target_prime", PRESSURE_ROLE, "restore_follower"}:
+        raise ValueError("F1-R3 run plan must contain exactly four fixed roles")
+    control_dir = artifact_dir / "runtime/request_control"
+    trace_dir = artifact_dir / "runtime/offload_trace"
+    control_dir.mkdir(parents=True, exist_ok=True)
+    role_path = Path(
+        os.environ.get(
+            "P8_2_K1A_H2D_ACTIVE_ROLE_PATH",
+            str(control_dir / "active_role.json"),
+        )
+    )
+    rows: list[dict[str, Any]] = []
+    previous_after: dict[str, Any] | None = None
+    timeline: dict[str, Any] = {
+        "schema_version": "p8_2_k1a_r5_f1_r3_residency_gate_timeline_v1",
+        "pressure_request_count_executed": 0,
+        "pressure_request_count_max": 1,
+        "trigger_poll_seconds": TRIGGER_POLL_SECONDS,
+        "restore_sent": False,
+        "trigger_observed_before_abort": False,
+        "pressure_abort_requested": False,
+        "pressure_abort_confirmed": False,
+        "pressure_idle_after_abort": False,
+        "window_valid_after_abort": False,
+        "raw_hash_values_retained": False,
+        "request_ids_retained": False,
+        "token_ids_retained": False,
+        "generated_content_retained": False,
+    }
+
+    def persist_timeline(terminal: str) -> int:
+        timeline["terminal_decision"] = terminal
+        _write_json(control_dir / "residency_gate_timeline.json", timeline)
+        return 0 if terminal == "restore_request_completed" else 3
+
+    def run_success_role(role: str) -> bool:
+        nonlocal previous_after
+        _write_active_role(role_path, role)
+        row, previous_after = _execute_one_request(
+            artifact_dir=artifact_dir,
+            control_dir=control_dir,
+            base_url=base_url,
+            server_pid=server_pid,
+            item=by_role[role],
+            previous_after=previous_after,
+        )
+        rows.append(row)
+        _write_jsonl(control_dir / "raw_request_results.jsonl", rows)
+        return row.get("status") == "success"
+
+    for role in ("warmup", "target_prime"):
+        if not run_success_role(role):
+            return persist_timeline(f"{role}_request_failure")
+
+    initial_gate = _wait_for_target_cpu_presence(
+        trace_dir,
+        timeout_seconds=float(
+            os.environ.get("P8_2_K1A_H2D_RESIDENCY_TIMEOUT_SECONDS", "180")
+        ),
+    )
+    timeline["initial_gate"] = initial_gate
+    if initial_gate.get("d2h_store_complete_before_pressure") is not True:
+        return persist_timeline("d2h_store_incomplete_before_pressure")
+    if initial_gate.get("target_hashes_captured_exact") is not True:
+        return persist_timeline("target_capture_unobservable_before_pressure")
+
+    pressure = by_role[PRESSURE_ROLE]
+    request_id = str(pressure["request_id"])
+    health_before, _ = _get(base_url, "/health", timeout=5)
+    idle_before, metrics_before = _wait_for_idle(
+        base_url,
+        control_dir / "raw_metrics" / f"{request_id}_before.prom",
+    )
+    if not all(
+        (
+            _process_alive(server_pid),
+            health_before == 200,
+            idle_before,
+            metrics_before.get("queue_metrics_present") is True,
+            metrics_before.get("spec_metrics_present") is True,
+            metrics_before.get("prefix_metrics_present") is True,
+        )
+    ):
+        rows.append({**pressure, "status": "failed_pre_request_gate"})
+        _write_jsonl(control_dir / "raw_request_results.jsonl", rows)
+        return persist_timeline("pressure_pre_request_gate_failure")
+
+    _write_active_role(role_path, PRESSURE_ROLE)
+    pressure_start_timestamp_ns = time.time_ns()
+    batch = {
+        "batch_id": request_id,
+        "phase": pressure["request_role"],
+        "cell_id": pressure["group_id"],
+        "context_tokens": pressure["context_tokens"],
+        "output_tokens": pressure["output_tokens"],
+        "concurrency": 1,
+        "repeat_index": pressure["repeat_index"],
+        "requests": [{**pressure, "request_index": 1}],
+    }
+    handle = AbortableRequestHandle()
+    thread = threading.Thread(
+        target=_stream_abortable_request,
+        kwargs={
+            "handle": handle,
+            "artifact_dir": artifact_dir,
+            "base_url": base_url,
+            "server_pid": server_pid,
+            "batch": batch,
+            "request_item": batch["requests"][0],
+        },
+        name="p8_2_k1a_f1_r3_pressure_01",
+        daemon=True,
+    )
+    thread.start()
+    timeline["pressure_request_count_executed"] = 1
+    timeline["pressure_start_timestamp_ns"] = pressure_start_timestamp_ns
+    timeline["pressure_start_monotonic_ns"] = time.monotonic_ns()
+    deadline = time.monotonic() + TRIGGER_TIMEOUT_SECONDS
+    state: dict[str, Any] = {}
+    while time.monotonic() < deadline and thread.is_alive():
+        state = build_inflight_trigger_state(
+            _read_trace_rows(trace_dir),
+            pressure_start_timestamp_ns=pressure_start_timestamp_ns,
+        )
+        if state["decision"] != "continue_pressure":
+            break
+        time.sleep(TRIGGER_POLL_SECONDS)
+    trigger_timed_out_while_running = (
+        time.monotonic() >= deadline
+        and thread.is_alive()
+        and state.get("decision", "continue_pressure") == "continue_pressure"
+    )
+    if not state:
+        state = build_inflight_trigger_state(
+            _read_trace_rows(trace_dir),
+            pressure_start_timestamp_ns=pressure_start_timestamp_ns,
+        )
+    timeline["inflight_trigger_state"] = state
+
+    if state.get("decision") != "trigger_ready" or not thread.is_alive():
+        if thread.is_alive():
+            handle.abort()
+            timeline["cleanup_abort_requested_without_restore"] = True
+        thread.join(timeout=ABORT_JOIN_TIMEOUT_SECONDS)
+        pressure_row, previous_after, _ = _finish_pressure_row(
+            handle=handle,
+            base_url=base_url,
+            control_dir=control_dir,
+            item=pressure,
+            metrics_before=metrics_before,
+            previous_after=previous_after,
+        )
+        rows.append(pressure_row)
+        _write_jsonl(control_dir / "raw_request_results.jsonl", rows)
+        terminal = (
+            str(state.get("decision"))
+            if state.get("decision") != "continue_pressure"
+            else "inflight_trigger_timeout"
+            if trigger_timed_out_while_running
+            else "pressure_completed_without_trigger"
+            if not thread.is_alive()
+            else "inflight_trigger_state_incomplete"
+        )
+        return persist_timeline(terminal)
+
+    timeline["trigger_observed_before_abort"] = True
+    timeline["trigger"] = state.get("trigger")
+    timeline["trigger_latched_monotonic_ns"] = time.monotonic_ns()
+    handle.abort()
+    timeline["pressure_abort_requested"] = True
+    timeline["pressure_abort_requested_monotonic_ns"] = (
+        handle.abort_requested_monotonic_ns
+    )
+    thread.join(timeout=ABORT_JOIN_TIMEOUT_SECONDS)
+    timeline["pressure_abort_confirmed"] = not thread.is_alive()
+    if not thread.is_alive():
+        timeline["pressure_client_exit_observed_monotonic_ns"] = (
+            time.monotonic_ns()
+        )
+    pressure_row, previous_after, idle_after = _finish_pressure_row(
+        handle=handle,
+        base_url=base_url,
+        control_dir=control_dir,
+        item=pressure,
+        metrics_before=metrics_before,
+        previous_after=previous_after,
+    )
+    rows.append(pressure_row)
+    _write_jsonl(control_dir / "raw_request_results.jsonl", rows)
+    timeline["pressure_idle_after_abort"] = idle_after
+    if idle_after:
+        timeline["engine_idle_confirmed_monotonic_ns"] = time.monotonic_ns()
+    if thread.is_alive() or pressure_row.get("status") != "aborted_on_trigger":
+        return persist_timeline("pressure_abort_not_confirmed")
+    if not idle_after:
+        return persist_timeline("pressure_not_idle_after_abort")
+
+    post_abort_gate = build_residency_gate(
+        _read_trace_rows(trace_dir), target_block_count=TARGET_PREFIX_BLOCKS
+    )
+    timeline["post_abort_gate_checked_monotonic_ns"] = time.monotonic_ns()
+    timeline["post_abort_gate"] = post_abort_gate
+    timeline["window_valid_after_abort"] = (
+        post_abort_gate.get("decision") == "trigger_ready"
+        and post_abort_gate.get("restore_allowed") is True
+    )
+    if timeline["window_valid_after_abort"] is not True:
+        return persist_timeline("window_lost_after_abort")
+
+    timeline["restore_sent"] = True
+    timeline["restore_dispatched_monotonic_ns"] = time.monotonic_ns()
+    restore_ok = run_success_role("restore_follower")
+    timeline["restore_request_completed"] = restore_ok
+    timeline["restore_completed_monotonic_ns"] = time.monotonic_ns()
+    return persist_timeline(
+        "restore_request_completed" if restore_ok else "restore_request_failure"
+    )
+
+
+def _pressure_abort_evidence_exact(row: dict[str, Any]) -> bool:
+    return all(
+        (
+            row.get("k1a_role") == PRESSURE_ROLE,
+            row.get("status") == "aborted_on_trigger",
+            row.get("http_status") == 200,
+            int(row.get("context_tokens") or 0) == PRESSURE_CONTEXT_TOKENS,
+            int(row.get("output_tokens") or 0) == OUTPUT_TOKENS,
+            row.get("abort_requested") is True,
+            row.get("abort_confirmed_by_client_exit") is True,
+            row.get("full_response_observed") is False,
+            row.get("queue_idle_after_abort") is True,
+            row.get("queue_metrics_ok") is True,
+            row.get("counter_continuity_ok") is True,
+            row.get("health_after_200") is True,
+            len(str(row.get("request_body_sha256") or "")) == 64,
+        )
+    )
+
+
+def _timeline_order_exact(timeline: dict[str, Any]) -> bool:
+    timestamp_fields = (
+        "pressure_start_monotonic_ns",
+        "trigger_latched_monotonic_ns",
+        "pressure_abort_requested_monotonic_ns",
+        "pressure_client_exit_observed_monotonic_ns",
+        "engine_idle_confirmed_monotonic_ns",
+        "post_abort_gate_checked_monotonic_ns",
+        "restore_dispatched_monotonic_ns",
+        "restore_completed_monotonic_ns",
+    )
+    timestamps = [timeline.get(field) for field in timestamp_fields]
+    timestamps_exact = all(
+        type(value) is int and value > 0 for value in timestamps
+    ) and all(
+        int(before) <= int(after)
+        for before, after in zip(timestamps, timestamps[1:])
+    )
+    return all(
+        (
+            timeline.get("terminal_decision") == "restore_request_completed",
+            timeline.get("trigger_observed_before_abort") is True,
+            timeline.get("pressure_abort_requested") is True,
+            timeline.get("pressure_abort_confirmed") is True,
+            timeline.get("pressure_idle_after_abort") is True,
+            timeline.get("window_valid_after_abort") is True,
+            timeline.get("restore_sent") is True,
+            timeline.get("restore_request_completed") is True,
+            timestamps_exact,
+        )
+    )
+
+
+def _write_bounded_request_summary(
+    path: Path, rows: list[dict[str, Any]]
+) -> None:
+    fields = (
+        "k1a_role",
+        "status",
+        "http_status",
+        "context_tokens",
+        "output_tokens",
+        "generated_token_count",
+        "streamed_token_count",
+        "finish_reason",
+        "saw_done",
+        "abort_requested",
+        "abort_confirmed_by_client_exit",
+        "full_response_observed",
+        "queue_idle_after_abort",
+        "prefix_hits_delta",
+        "accepted_token_delta",
+        "queue_metrics_ok",
+        "counter_continuity_ok",
+        "spec_activity_ok",
+        "ttft_ms",
+        "e2el_ms",
+    )
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle, fieldnames=fields, delimiter="\t", extrasaction="ignore"
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _build_inflight_candidate_manifest(
+    artifact_dir: Path,
+) -> dict[str, Any]:
+    files: dict[str, dict[str, Any]] = {}
+    total = 0
+    for name in BOUNDED_CANDIDATE_FILES:
+        path = artifact_dir / name
+        if not path.is_file():
+            continue
+        size = path.stat().st_size
+        total += size
+        files[name] = {
+            "bytes": size,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "sensitivity": (
+                "bounded_operational_metadata_no_content_or_token_ids"
+            ),
+        }
+    return {
+        "schema_version": (
+            "p8_2_k1a_r5_f1_r3_bounded_candidate_manifest_v1"
+        ),
+        "files": files,
+        "payload_file_count": len(files),
+        "transfer_file_count_including_manifest": len(files) + 1,
+        "payload_file_count_max": 15,
+        "transfer_file_count_including_manifest_max": 16,
+        "candidate_total_bytes": total,
+        "max_transfer_total_bytes": 71680,
+        "generated_content_retained": False,
+        "token_ids_retained": False,
+        "request_ids_retained": False,
+        "raw_request_or_trace_hash_values_retained": False,
+        "manifest_integrity_digests_only": True,
+        "result_transfer_authorized": True,
+        "transfer_method_selected": False,
+        "automatic_transfer_allowed": False,
+    }
+
+
+def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
+    control_dir = artifact_dir / "runtime/request_control"
+    request_rows = _read_jsonl(control_dir / "raw_request_results.jsonl")
+    timeline = _read_json(control_dir / "residency_gate_timeline.json")
+    trace_rows = _read_trace_rows(artifact_dir / "runtime/offload_trace")
+    trigger_summary = summarize_h2d_trigger_rows(
+        trace_rows,
+        target_block_count=TARGET_PREFIX_BLOCKS,
+        restore_tokens=RESTORE_MATCH_TOKENS,
+        expected_world_size=8,
+    )
+    transfer_summary = summarize_trace_rows(
+        trace_rows,
+        expected_world_size=8,
+        restore_request_suffix="restore_follower",
+    )
+    connector = _read_json(artifact_dir / "connector_resolution_summary.json")
+    repair = _read_json(artifact_dir / "repair_diagnostic_summary.json")
+    host = _read_json(artifact_dir / "host_memory_summary.json")
+    recovery = _read_json(artifact_dir / "resource_recovery_summary.json")
+    cleanup = (
+        (artifact_dir / "cleanup_status.txt").read_text(encoding="utf-8").strip()
+        if (artifact_dir / "cleanup_status.txt").is_file()
+        else "missing"
+    )
+    by_role = {str(row.get("k1a_role") or ""): row for row in request_rows}
+    roles_exact = [str(row.get("k1a_role") or "") for row in request_rows] == [
+        "warmup",
+        "target_prime",
+        PRESSURE_ROLE,
+        "restore_follower",
+    ]
+    completed_roles_exact = all(
+        _request_evidence_exact(by_role.get(role, {}))
+        for role in ("warmup", "target_prime", "restore_follower")
+    )
+    pressure_abort_exact = _pressure_abort_evidence_exact(
+        by_role.get(PRESSURE_ROLE, {})
+    )
+    timeline_exact = _timeline_order_exact(timeline)
+    connector_ok = all(
+        (
+            connector.get("resolved_connector_exact") is True,
+            connector.get("resolved_lazy_offload_exact") is True,
+        )
+    )
+    repair_ok = repair.get("hybrid_diagnostic_ok") is True or repair.get(
+        "all_required_managers_resolved"
+    ) is True
+    recovery_ok = all(
+        (
+            recovery.get("keep_alive_restored_exact") is True,
+            recovery.get("port_7000_free") is True,
+            recovery.get("vllm_residual_process_count") == 0,
+            recovery.get("all_eight_npu_healthy") is True,
+            recovery.get("tracked_worktree_clean") is True,
+        )
+    )
+    mechanism_ok = all(
+        (
+            trigger_summary["h2d_restore_mechanism_candidate"] is True,
+            transfer_summary["d2h_store_complete"] is True,
+            transfer_summary["h2d_restore_complete"] is True,
+            transfer_summary["d2h_async_copy_pipeline_exact"] is True,
+            transfer_summary["h2d_async_copy_pipeline_exact"] is True,
+        )
+    )
+    evidence_exact = all(
+        (
+            roles_exact,
+            completed_roles_exact,
+            pressure_abort_exact,
+            timeline_exact,
+            connector_ok,
+            repair_ok,
+            host.get("preflight_gate_ok") is True,
+            recovery_ok,
+            cleanup == "clean",
+            mechanism_ok,
+        )
+    )
+    terminal = str(timeline.get("terminal_decision") or "missing")
+    if cleanup != "clean" or not recovery_ok:
+        grade = "red_p8_2_k1a_r5_f1_r3_cleanup_or_recovery_incomplete"
+    elif terminal in {
+        "request_local_progress_ambiguous",
+        "cpu_target_lost",
+        "pressure_completed_without_trigger",
+        "inflight_trigger_timeout",
+    }:
+        grade = f"red_p8_2_k1a_r5_f1_r3_{terminal}"
+    elif terminal in {
+        "pressure_abort_not_confirmed",
+        "pressure_not_idle_after_abort",
+        "window_lost_after_abort",
+    }:
+        grade = f"red_p8_2_k1a_r5_f1_r3_{terminal}"
+    elif not evidence_exact:
+        grade = "red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete"
+    else:
+        grade = CANDIDATE_GREEN
+
+    grading = {
+        "schema_version": "p8_2_k1a_r5_f1_r3_grading_v1",
+        "server_grade": grade,
+        "request_count": len(request_rows),
+        "successful_request_count": sum(
+            _request_evidence_exact(row) for row in request_rows
+        ),
+        "pressure_request_count_executed": int(
+            timeline.get("pressure_request_count_executed") or 0
+        ),
+        "roles_exact": roles_exact,
+        "completed_roles_exact": completed_roles_exact,
+        "pressure_abort_evidence_exact": pressure_abort_exact,
+        "trigger_abort_idle_restore_order_exact": timeline_exact,
+        "window_valid_after_abort": timeline.get("window_valid_after_abort") is True,
+        "h2d_restore_mechanism_candidate": mechanism_ok,
+        "resolved_connector_and_lazy_mode_exact": connector_ok,
+        "repair_diagnostic_ok": repair_ok,
+        "host_memory_gate_ok": host.get("preflight_gate_ok") is True,
+        "resource_recovery_exact": recovery_ok,
+        "cleanup": cleanup,
+        "context_search_or_sweep_used": False,
+        "pressure_context_tokens": PRESSURE_CONTEXT_TOKENS,
+        "actual_cpu_eviction_proven": False,
+        "cause_proven_as_unique": False,
+        "performance_reference_accepted": False,
+        "k2_authorized": False,
+        "p8_3_i1_authorized": False,
+        "next_task_authorized": False,
+        "developer_review_required": True,
+        "claim_boundary": (
+            "accepted_capacity_single_lifecycle_inflight_trigger_abort_idle_and_"
+            "conditional_restore_h2d_mechanism_candidate_only"
+        ),
+    }
+    mtp_queue_health = {
+        "schema_version": "p8_2_k1a_r5_f1_r3_mtp_queue_health_v1",
+        "request_count": len(request_rows),
+        "completed_request_count": sum(
+            _request_evidence_exact(row) for row in request_rows
+        ),
+        "intentional_pressure_abort_count": sum(
+            _pressure_abort_evidence_exact(row) for row in request_rows
+        ),
+        "queue_idle_after_abort": timeline.get("pressure_idle_after_abort") is True,
+        "counter_continuity_ok_all": bool(request_rows)
+        and all(row.get("counter_continuity_ok") is True for row in request_rows),
+    }
+    _write_bounded_request_summary(
+        artifact_dir / "request_summary.tsv", request_rows
+    )
+    _write_json(artifact_dir / "residency_gate_timeline.json", timeline)
+    _write_json(artifact_dir / "h2d_trigger_summary.json", trigger_summary)
+    _write_json(artifact_dir / "transfer_trace_summary.json", transfer_summary)
+    _write_json(artifact_dir / "mtp_queue_health_summary.json", mtp_queue_health)
+    _write_json(artifact_dir / "grading_summary.json", grading)
+    (artifact_dir / "result_summary.md").write_text(
+        f"# {STAGE_LABEL} in-flight abort and restore\n\n"
+        f"- grade: `{grade}`\n"
+        f"- requests: `3 completed + 1 intentional pressure abort / {len(request_rows)}`\n"
+        f"- fixed pressure context: `{PRESSURE_CONTEXT_TOKENS}`\n"
+        "- claim: one accepted-capacity in-flight trigger/abort/idle/restore "
+        "H2D mechanism candidate only.\n"
+        "- no performance, unique-cause, K2, or P8.3-I1 claim.\n",
+        encoding="utf-8",
+    )
+    manifest = _build_inflight_candidate_manifest(artifact_dir)
+    manifest_path = artifact_dir / "candidate_manifest.server_local.json"
+    _write_json(manifest_path, manifest)
+    transfer_total_bytes = manifest["candidate_total_bytes"] + manifest_path.stat().st_size
+    bounded = all(
+        (
+            manifest["payload_file_count"] <= 15,
+            manifest["transfer_file_count_including_manifest"] <= 16,
+            transfer_total_bytes <= 71680,
+        )
+    )
+    return 0 if grade == CANDIDATE_GREEN and bounded else 2
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    prepare = subparsers.add_parser("prepare")
+    prepare.add_argument("--source-payload", type=Path, required=True)
+    prepare.add_argument("--artifact-dir", type=Path, required=True)
+    prepare.add_argument("--model-name", required=True)
+    execute = subparsers.add_parser("execute")
+    execute.add_argument("--artifact-dir", type=Path, required=True)
+    execute.add_argument("--base-url", required=True)
+    execute.add_argument("--server-pid", type=int, required=True)
+    finalize = subparsers.add_parser("finalize")
+    finalize.add_argument("--artifact-dir", type=Path, required=True)
+    return parser
+
+
+def main() -> int:
+    args = _parser().parse_args()
+    if args.command == "prepare":
+        prepare_inflight_abort_restore_artifacts(
+            args.source_payload, args.artifact_dir, args.model_name
+        )
+        return 0
+    if args.command == "execute":
+        return execute_inflight_abort_restore(
+            args.artifact_dir, args.base_url, args.server_pid
+        )
+    if args.command == "finalize":
+        return finalize_inflight_abort_restore(args.artifact_dir)
+    raise AssertionError(args.command)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

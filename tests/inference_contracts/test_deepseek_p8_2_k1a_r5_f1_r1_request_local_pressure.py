@@ -664,10 +664,10 @@ def test_f1_r1_contract_is_offline_first_with_at_most_two_lifecycles(
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
+        "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
+        "p8_2_k1a_r5_f1_r3_inflight_abort_restore.yaml"
     )
     assert artifacts["current_p8_2_k1a_r5_f1_r1_runner"].endswith(
         OFFLINE_RUNNER.name

@@ -595,25 +595,25 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
 def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
+        "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_server_local_read_only_trace_alignment_no_npu"
+        "execution_mode: authorized_single_lifecycle_inflight_trigger_abort_idle_restore"
         in handoff
     )
     for field in (
         "server_sync_review_authorized: true",
-        "npu_execution_authorized: false",
-        "vllm_server_start_authorized: false",
-        "model_requests_authorized: false",
-        "keep_alive_stop_authorized: false",
+        "npu_execution_authorized: true",
+        "vllm_server_start_authorized: true",
+        "model_requests_authorized: true",
+        "keep_alive_stop_authorized: true",
         "profiler_authorized: false",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+        "formal_model_lifecycle_count_exact: 1",
+        "model_request_count_exact: 4",
         "capacity_search_authorized: false",
     ):
         assert field in handoff
@@ -622,7 +622,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
         "parent_successful_request_count=3",
         "run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
-        "model_request_count_exact: 0",
+        "model_request_count_exact: 4",
         "K2",
         "P8.3-I1",
     ):
@@ -632,7 +632,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
+        "workloads/p8_2_k1a_r5_f1_r3_inflight_abort_restore.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
@@ -662,7 +662,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R2_server_local_read_only_trace_alignment_no_npu"
+        "P8.2-K1A-R5-F1-R3_single_lifecycle_inflight_trigger_abort_idle_restore"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True

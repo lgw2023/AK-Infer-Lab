@@ -220,26 +220,26 @@ def test_k1_auditor_accepts_hash_verified_installed_source_trees(tmp_path: Path)
 
 
 def test_k1_block_is_preserved_in_the_k1a_r5_f0_server_handoff():
-    task_id = "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
+    task_id = "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_server_local_read_only_trace_alignment_no_npu"
+        "execution_mode: authorized_single_lifecycle_inflight_trigger_abort_idle_restore"
         in handoff
     )
     for field in (
         "server_sync_review_authorized: true",
-        "npu_execution_authorized: false",
-        "vllm_server_start_authorized: false",
-        "model_requests_authorized: false",
-        "keep_alive_stop_authorized: false",
+        "npu_execution_authorized: true",
+        "vllm_server_start_authorized: true",
+        "model_requests_authorized: true",
+        "keep_alive_stop_authorized: true",
         "result_directory_creation_authorized: true",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+        "formal_model_lifecycle_count_exact: 1",
+        "model_request_count_exact: 4",
     ):
         assert field in handoff
     assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in handoff
@@ -255,11 +255,11 @@ def test_k1_block_is_preserved_in_the_k1a_r5_f0_server_handoff():
         "audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r2_trace_alignment.yaml"
+        "p8_2_k1a_r5_f1_r3_inflight_abort_restore.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_server_handoff_execution_mode"] == (
-        "authorized_server_local_read_only_trace_alignment_no_npu"
+        "authorized_single_lifecycle_inflight_trigger_abort_idle_restore"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k0_grade"] == (

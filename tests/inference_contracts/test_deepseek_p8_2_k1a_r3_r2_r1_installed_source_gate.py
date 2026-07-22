@@ -25,7 +25,7 @@ def test_current_handoff_preserves_the_r4_r1_source_and_r5_f0_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
+        "task_id: p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
     ) in handoff
     assert "manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b" in handoff
     assert "block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283" in handoff
@@ -152,9 +152,9 @@ def test_r5_l1_handoff_runs_the_full_bounded_single_lifecycle_chain() -> None:
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_server_local_read_only_trace_alignment_no_npu",
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+        "execution_mode: authorized_single_lifecycle_inflight_trigger_abort_idle_restore",
+        "formal_model_lifecycle_count_exact: 1",
+        "model_request_count_exact: 4",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
         "run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh",
@@ -170,7 +170,7 @@ def test_r5_l1_handoff_runs_the_full_bounded_single_lifecycle_chain() -> None:
         assert exact in handoff
     assert 'test ! -e "${RESULT_ROOT}"' in handoff
     assert "fixed_l2_cleanup=clean" in handoff
-    assert "keep_alive_stop_authorized: false" in handoff
+    assert "keep_alive_stop_authorized: true" in handoff
 
 
 def test_r3_r2_r1_contract_files_remain_preserved_as_parent_provenance() -> None:

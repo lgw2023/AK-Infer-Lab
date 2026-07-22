@@ -215,14 +215,14 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_after_parent_blocks() -> None
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
+        "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "formal_model_lifecycle_count_exact: 0",
-        "model_request_count_exact: 0",
+        "formal_model_lifecycle_count_exact: 1",
+        "model_request_count_exact: 4",
         "capacity_search_authorized: false",
         "result_transfer_authorized: true",
         "next_task_authorized: false",

@@ -27,7 +27,8 @@ P6.3C 已因 `4096 < 135168` 的 frozen validation 约束收口为
 R4-R1 offline store-only closeout 已 green，R5-F0 ready，R5-L1/R1 red 保留。F1-R1 calibration
 得到 36800 candidate，但 fixed L2 3/3 请求和 D2H 8/8 后 endpoint 为 `CPU=54/GPU=0`，保留
 target-lost red、未发送 restore。当前唯一 handoff 为
-`p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722`，只在服务器原位零 NPU 对齐 calibration/L2 raw trace；
+`p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722`，固定 36800 在运行中锁存 CPU-only 窗口，
+中止 pressure、等待 engine idle 并复核窗口后只发送一次 restore follower；
 不调 context、不做 sweep。K1A 双向 green、K2、P8.3-I1 和 P9 不自动进入。
 
 ## 当前范围

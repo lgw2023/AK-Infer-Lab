@@ -9,7 +9,7 @@ P5_P9_PLAN = REPO_ROOT / "工作记录与进度笔记本/12_P5_P9_后续阶段�
 def test_current_plans_route_only_r5_l1_and_keep_later_stages_closed() -> None:
     p8_plan = P8_PLAN.read_text(encoding="utf-8")
     p5_p9_plan = P5_P9_PLAN.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722"
+    task_id = "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
 
     assert task_id in p8_plan
     assert task_id in p5_p9_plan

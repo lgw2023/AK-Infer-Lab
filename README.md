@@ -95,12 +95,12 @@ HTTP/token/SSE/MTP/health/queue 成功，D2H 8-worker 与 41 次 store completio
 `yellow_p8_2_k1a_r3_r2_r2_r1_r1_r1_store_only_no_restore`，不接受双向 offload green。
 P8.2-K1A-R4-R1 已关闭同证据离线 store-only source-binding 门，R5-F0 feasibility ready、R5-L1
 controller-red 与 R5-L1-R1 target-lost red 均保留。F1-R1 随后执行一次 131072 calibration 和一次
-36800 fixed L2：calibration 在请求中途得到 request-local `CPU=64/GPU=0` 窗口；fixed L2 3/3 请求和
-D2H 8/8 成功，但请求结束 gate 为 `CPU=54/GPU=0`，保留
-`red_p8_2_k1a_r5_f1_r1_fixed_pressure_target_lost`，未发送 restore。当前唯一服务器任务是零 NPU 的
-F1-R2 原始轨迹时序对齐：只判断 fixed L2 中途是否也出现完整 CPU-only 窗口，以及是否存在
-“中途 observer 窗口→请求终点 gate”的观测点错位。不得调 context、做 sweep 或启动新 lifecycle；
-实际 H2D、性能、唯一根因、K2 与 P8.3-I1 均未解锁。
+36800 fixed L2；F1-R2 raw trace 已确认 fixed L2 在 pressure 后约 2.953s 出现 69 个完整
+`CPU=64/GPU=0` snapshot，约 17.945s 后才发生首个 CPU target eviction，而旧 controller 只在请求结束后
+采到 `CPU=54/GPU=0`。因此接受 observation-point mismatch，不接受唯一根因或 H2D。当前唯一服务器任务
+F1-R3 固定 36800：运行中锁存 request-local CPU-only 窗口，中止 pressure，等待 engine idle 并复核窗口，
+随后只允许一个 restore follower。不得 sweep、retry、并发 restore 或启动第二 lifecycle；性能、K2 与
+P8.3-I1 仍未解锁。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 
@@ -121,7 +121,7 @@ F1-R2 原始轨迹时序对齐：只判断 fixed L2 中途是否也出现完整 
 ## 最小开工路径
 
 1. P5/P6 runtime、official context、unprofiled/profiled reference 与 matched controls 已关闭；mixed checkpoint 不再参与，P6.3C 保留严格单变量 blocked。
-2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-R2 capacity ready，完整 R3 lineage 保留；R4-R1 offline store-only closeout green，R5-F0 ready，R5-L1/R1 red。F1-R1 fixed L2 以 `CPU=54/GPU=0` target-lost 收口；当前只执行 F1-R2 服务器原位零 NPU raw-trace 对齐，K2 不授权。
+2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-R2 capacity ready，完整 R3 lineage 保留；R4-R1 offline store-only closeout green，R5-F0 ready，R5-L1/R1 red。F1-R2 已证明 fixed 36800 的中途 CPU-only 窗口与 post-request gate 错位；当前只执行一次 F1-R3 in-flight trigger→abort→idle→restore lifecycle，K2 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。
 5. P9：待 P7/P8 的真实 trace、inventory、simulation 与 TP4 closure 证据齐备后，合并 P0/P3 microbench，输出带置信度和软件前提的下一代硬件优先级。

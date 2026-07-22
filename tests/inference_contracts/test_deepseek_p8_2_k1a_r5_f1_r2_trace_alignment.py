@@ -285,7 +285,7 @@ def test_analyzer_writes_a_complete_bounded_package(tmp_path: Path) -> None:
     assert provenance["raw_trace_content_retained"] is False
 
 
-def test_runner_audit_and_contract_surfaces_are_zero_npu() -> None:
+def test_completed_runner_and_contract_surfaces_remain_zero_npu() -> None:
     completed = subprocess.run(
         ["bash", str(RUNNER), "/tmp/unused"],
         cwd=ROOT,
@@ -307,15 +307,10 @@ def test_runner_audit_and_contract_surfaces_are_zero_npu() -> None:
     assert workload["authorization"]["npu_execution_authorized"] is False
     assert workload["authorization"]["model_requests_authorized"] is False
     assert workload["authorization"]["next_task_authorized"] is False
-    assert readiness["artifacts"]["current_server_handoff_task"] == TASK_ID
-
-    handoff = HANDOFF.read_text(encoding="utf-8")
-    assert f"task_id: {TASK_ID}" in handoff
-    assert "npu_execution_authorized: false" in handoff
-    assert "model_requests_authorized: false" in handoff
-    assert "不得停掉" in handoff
-    assert "npu_stop.sh 0 1 2 3 4 5 6 7" in handoff
-    assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in handoff
-    assert "result_transfer_authorized: true" in handoff
-    assert "transfer_method_selected: false" in handoff
-    assert "next_task_authorized: false" in handoff
+    assert readiness["artifacts"]["current_server_handoff_task"] != TASK_ID
+    assert readiness["artifacts"]["completed_p8_2_k1a_r5_f1_r2_runner"].endswith(
+        RUNNER.name
+    )
+    assert readiness["acceptance"]["p8_2_k1a_r5_f1_r2_grade"] == (
+        "candidate_p8_2_k1a_r5_f1_r2_mid_request_window_endpoint_mismatch"
+    )
