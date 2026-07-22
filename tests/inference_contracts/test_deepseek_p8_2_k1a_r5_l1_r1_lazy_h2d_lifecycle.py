@@ -106,25 +106,24 @@ def test_r5_l1_r1_runner_is_preserved_while_f1_is_the_current_task(
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    current_task_id = "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
+    current_task_id = "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r3_inflight_abort_restore.yaml"
+        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
     )
     assert artifacts["completed_p8_2_k1a_r5_l1_r1_runner"].endswith(RUNNER.name)
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
-    assert f"lineage_r5_l1_r1_task_id={TASK_ID}" in handoff
+    assert "parent_task_id=p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722" in handoff
     assert f"task_id: {current_task_id}" in handoff
     for field in (
-        "offline_first: true",
+        "offline_parent_gate_required: true",
         "npu_execution_authorized: true",
         "formal_model_lifecycle_count_exact: 1",
         "model_request_count_exact: 4",
-        "model_request_count_exact: 4",
-                "request_retry_count_exact: 0",
+        "request_retry_count_exact: 0",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "next_task_authorized: false",
@@ -134,10 +133,10 @@ def test_r5_l1_r1_runner_is_preserved_while_f1_is_the_current_task(
         assert field in handoff
     for marker in (
         "request-local",
-        "candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure",
-        "CPU=64/GPU=0",
+        "required_restore_block_count_exact: 128",
+        "CPU=128/GPU=0",
         "pressure_01",
-        "pressure_request_count_exact=1",
+        "pressure_request_count_exact: 1",
         "candidate_manifest.server_local.json",
         "upload-api",
     ):

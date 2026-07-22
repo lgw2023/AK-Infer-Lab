@@ -401,21 +401,26 @@ def test_f1_r3_contract_and_audit_only_are_bounded(tmp_path: Path) -> None:
         assert line in completed.stdout
 
 
-def test_f1_r3_is_the_only_current_server_handoff() -> None:
+def test_f1_r4_is_the_only_current_server_handoff() -> None:
+    current_task_id = (
+        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+    )
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    assert artifacts["current_server_handoff_task"] == TASK_ID
+    assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r3_inflight_abort_restore.yaml"
+        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
     )
-    assert artifacts["current_p8_2_k1a_r5_f1_r3_runner"].endswith(LIFECYCLE.name)
+    assert artifacts["current_p8_2_k1a_r5_f1_r4_runner"].endswith(
+        "run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh"
+    )
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
-    assert f"task_id: {TASK_ID}" in handoff
+    assert f"task_id: {current_task_id}" in handoff
     for marker in (
-        "CPU=64/GPU=0",
+        "CPU=128/GPU=0",
         "36800",
         "pressure_01",
         "aborted_on_trigger",

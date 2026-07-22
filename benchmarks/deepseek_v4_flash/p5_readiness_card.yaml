@@ -217,13 +217,14 @@ artifacts:
   p8_2_k1a_r5_f1_r1_request_local_pressure_audit: p8_2_k1a_r5_f1_r1_request_local_pressure_audit.yaml
   p8_2_k1a_r5_f1_r2_trace_alignment_audit: p8_2_k1a_r5_f1_r2_trace_alignment_audit.yaml
   p8_2_k1a_r5_f1_r3_inflight_abort_restore_audit: p8_2_k1a_r5_f1_r3_inflight_abort_restore_audit.yaml
+  p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_audit: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_audit.yaml
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p8_2_k1a_r5_f1_r3_inflight_abort_restore.yaml
-  next_stage_candidate: P8.2-K1A-R5-F1-R3_inflight_abort_restore
-  current_server_handoff_task: p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722
-  current_server_handoff_execution_mode: authorized_single_lifecycle_inflight_trigger_abort_idle_restore
+  next_workload: workloads/p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml
+  next_stage_candidate: P8.2-K1A-R5-F1-R4_restore_eligibility_alignment
+  current_server_handoff_task: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722
+  current_server_handoff_execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -260,6 +261,8 @@ artifacts:
   completed_p8_2_k1a_r5_f1_r2_analyzer: ../../tools/inference_contracts/p8_2_k1a_r5_f1_r2_trace_alignment.py
   current_p8_2_k1a_r5_f1_r3_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.sh
   current_p8_2_k1a_r5_f1_r3_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py
+  current_p8_2_k1a_r5_f1_r4_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh
+  current_p8_2_k1a_r5_f1_r4_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.py
   current_p8_2_k1a_r5_l1_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
   current_p8_2_k1a_trace_attribution: ../../tools/inference_contracts/p8_2_k1a_trace_attribution.py
   current_p8_2_k1a_failure_forensics: ../../tools/inference_contracts/p8_2_k1a_failure_forensics.py
@@ -326,7 +329,9 @@ boundaries:
   - P8.2-K1A-R5-F0 is developer-accepted as candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility after its 9-file/7122-byte package, R4-R1/R2 replay, frozen source semantics, method resolution, observer self-test and trigger geometry all passed. It is zero-resource feasibility evidence, not runtime H2D evidence.
   - P8.2-K1A-R5-L1 completed one accepted-capacity lazy lifecycle with 2/2 request transport and exact 8-worker D2H store, then stopped before pressure because the controller overwrote a valid CPU=0/GPU=64 continue_pressure snapshot as unobservable at timeout. Its red grade is preserved; this is a controller stop, not a proven H2D runtime failure.
   - P8.2-K1A-R5-L1-R1 completed one corrected accepted-capacity lifecycle with 3/3 request transport and D2H 8/8. The controller correctly advanced CPU=0/GPU=64 to pressure_01, after which the observed target terminal state was CPU=0/GPU=0 and restore was not sent. Its red_p8_2_k1a_r5_l1_r1_cpu_target_lost grade is preserved; this terminal observation does not prove full CPU-tier eviction.
-  - P8.2-K1A-R5-F1-R2 is developer-accepted as candidate_p8_2_k1a_r5_f1_r2_mid_request_window_endpoint_mismatch after zero-NPU raw-trace alignment proved that fixed 36800 L2 contained 69 complete CPU=64/GPU=0 snapshots starting about 2.953 seconds after pressure start, around 17.945 seconds before the first CPU target eviction, while the old controller sampled only the post-request CPU=54/GPU=0 endpoint. The mismatch is not a unique-cause or H2D claim. The current F1-R3 handoff authorizes exactly one fixed-context lifecycle to latch the request-local window, abort pressure, wait for engine idle, revalidate the window and only then send one restore follower; no retry, context change, sweep, performance, K2 or P8.3-I1 is authorized.
+  - P8.2-K1A-R5-F1-R2 is developer-accepted as candidate_p8_2_k1a_r5_f1_r2_mid_request_window_endpoint_mismatch after zero-NPU raw-trace alignment proved that fixed 36800 L2 contained 69 complete CPU=64/GPU=0 snapshots starting about 2.953 seconds after pressure start, around 17.945 seconds before the first CPU target eviction, while the old controller sampled only the post-request CPU=54/GPU=0 endpoint. The mismatch is not a unique-cause or H2D claim.
+  - P8.2-K1A-R5-F1-R3 completed the single in-flight trigger, intentional abort, client exit, engine-idle confirmation, post-abort revalidation and one restore request. D2H completed on 8 workers with 4548257792 bytes, but restore produced prefix_hits_delta=0, restore_cpu_hit_exact=false, no load schedule and zero H2D workers/bytes, so the accepted grade is red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete. The completed restore is not evidence that Prefix Cache served it. The 64-block observer covered only 8192 tokens while the required restore match is 16384 tokens/128 blocks, and it observed only one FA group; this is an eligibility-observation gap, not a unique root-cause proof.
+  - The current F1-R4 handoff preserves accepted capacity at exactly 128 CPU blocks/rank and pressure context 36800, but derives the monitored target from the 16384-token restore match and requires bounded availability counts across every relevant KV group. It watches the complete pressure lifetime and must not stop on the first near miss. Restore is authorized only for exact request-local CPU=128/GPU=0 plus all-group eligibility, followed by abort, idle and post-abort revalidation; no retry, capacity change, context sweep, performance, K2 or P8.3-I1 is authorized.
   - P8.3 is not technically dependent on K1/K1A. P8.3-I0 is accepted as green_p8_3_i0_checkpoint_inventory for index/header inventory only, while 1135 tensors and 12319364956 checkpoint bytes remain unclassified and the TP4 planning budget remains incomplete.
   - P8.3-I0-R1 is developer-accepted as green_p8_3_i0_r1_unclassified_taxonomy after byte-identical offline replay; it cannot reclassify tensors, refinalize the TP4 budget or authorize P8.3-I1.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
@@ -505,8 +510,8 @@ acceptance:
   p8_2_k1a_r5_f1_r2_l2_cpu_only_before_first_cpu_eviction: true
   p8_2_k1a_r5_f1_r2_l2_cpu_only_window_lead_ns: 17945394939
   p8_2_k1a_r5_f1_r2_unique_cause_proven: false
-  p8_2_k1a_r5_f1_r3_grade: pending_single_lifecycle_inflight_abort_restore
-  p8_2_k1a_r5_f1_r3_npu_execution_authorized: true
+  p8_2_k1a_r5_f1_r3_grade: red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete
+  p8_2_k1a_r5_f1_r3_npu_execution_authorized: false
   p8_2_k1a_r5_f1_r3_formal_model_lifecycle_count_exact: 1
   p8_2_k1a_r5_f1_r3_model_request_count_exact: 4
   p8_2_k1a_r5_f1_r3_completed_request_count_exact: 3
@@ -514,7 +519,21 @@ acceptance:
   p8_2_k1a_r5_f1_r3_pressure_context_tokens: 36800
   p8_2_k1a_r5_f1_r3_request_retry_count_exact: 0
   p8_2_k1a_r5_f1_r3_next_task_authorized: false
-  current_task_scoped_authorization: P8.2-K1A-R5-F1-R3_single_lifecycle_inflight_trigger_abort_idle_restore
+  p8_2_k1a_r5_f1_r3_d2h_store_complete: true
+  p8_2_k1a_r5_f1_r3_h2d_restore_complete: false
+  p8_2_k1a_r5_f1_r3_restore_cpu_hit_exact: false
+  p8_2_k1a_r5_f1_r3_restore_load_scheduled: false
+  p8_2_k1a_r5_f1_r4_grade: pending_single_lifecycle_full_restore_eligibility_alignment
+  p8_2_k1a_r5_f1_r4_npu_execution_authorized: true
+  p8_2_k1a_r5_f1_r4_formal_model_lifecycle_count_exact: 1
+  p8_2_k1a_r5_f1_r4_model_request_count_exact: 4
+  p8_2_k1a_r5_f1_r4_completed_request_count_exact: 3
+  p8_2_k1a_r5_f1_r4_intentional_pressure_abort_count_exact: 1
+  p8_2_k1a_r5_f1_r4_pressure_context_tokens: 36800
+  p8_2_k1a_r5_f1_r4_required_restore_block_count: 128
+  p8_2_k1a_r5_f1_r4_request_retry_count_exact: 0
+  p8_2_k1a_r5_f1_r4_next_task_authorized: false
+  current_task_scoped_authorization: P8.2-K1A-R5-F1-R4_single_lifecycle_full_restore_eligibility_alignment
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory

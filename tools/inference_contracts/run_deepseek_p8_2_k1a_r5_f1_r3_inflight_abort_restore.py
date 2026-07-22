@@ -21,6 +21,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tools.inference_contracts.p8_2_k1a_h2d_residency_observer import (
+    build_restore_eligibility_gate,
     build_residency_gate,
     summarize_h2d_trigger_rows,
 )
@@ -46,7 +47,6 @@ from tools.inference_contracts.run_deepseek_p8_2_k1a_r5_l1_lazy_h2d import (
     _read_jsonl,
     _read_trace_rows,
     _request_evidence_exact,
-    _wait_for_target_cpu_presence,
     _write_active_role,
     _write_json,
     prepare_lazy_h2d_artifacts,
@@ -56,8 +56,26 @@ from tools.inference_contracts import (
 )
 
 
-TASK_ID = "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
-STAGE_LABEL = "P8.2-K1A-R5-F1-R3"
+TASK_ID = os.environ.get(
+    "P8_2_K1A_TASK_ID",
+    "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722",
+)
+STAGE_LABEL = os.environ.get("P8_2_K1A_STAGE_LABEL", "P8.2-K1A-R5-F1-R3")
+CONTRACT_SCHEMA_TAG = os.environ.get(
+    "P8_2_K1A_F1_SCHEMA_TAG", "p8_2_k1a_r5_f1_r3"
+)
+GRADE_PREFIX = os.environ.get(
+    "P8_2_K1A_F1_GRADE_PREFIX", "red_p8_2_k1a_r5_f1_r3"
+)
+ELIGIBILITY_TARGET_BLOCKS = int(
+    os.environ.get("P8_2_K1A_H2D_TARGET_BLOCK_COUNT", str(TARGET_PREFIX_BLOCKS))
+)
+REQUIRE_RESTORE_GROUP_ELIGIBILITY = (
+    os.environ.get("P8_2_K1A_REQUIRE_RESTORE_GROUP_ELIGIBILITY", "0") == "1"
+)
+STOP_ON_FIRST_CPU_TARGET_EVICTION = (
+    os.environ.get("P8_2_K1A_STOP_ON_FIRST_CPU_TARGET_EVICTION", "1") == "1"
+)
 PRESSURE_CONTEXT_TOKENS = 36800
 PRESSURE_ROLE = "pressure_01"
 TRIGGER_POLL_SECONDS = float(
@@ -72,8 +90,9 @@ ABORT_JOIN_TIMEOUT_SECONDS = float(
 IDLE_TIMEOUT_SECONDS = float(
     os.environ.get("P8_2_K1A_PRESSURE_ABORT_IDLE_TIMEOUT_SECONDS", "60")
 )
-CANDIDATE_GREEN = (
-    "candidate_green_p8_2_k1a_r5_f1_r3_inflight_abort_restore"
+CANDIDATE_GREEN = os.environ.get(
+    "P8_2_K1A_CANDIDATE_GREEN",
+    "candidate_green_p8_2_k1a_r5_f1_r3_inflight_abort_restore",
 )
 
 BOUNDED_CANDIDATE_FILES = (
@@ -93,7 +112,7 @@ BOUNDED_CANDIDATE_FILES = (
 
 
 def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
-    return {
+    value = {
         "timestamp_ns": int(row.get("timestamp_ns") or 0),
         "contract_role": str(row.get("contract_role") or ""),
         "scheduled_request_count": int(row.get("scheduled_request_count") or 0),
@@ -113,11 +132,52 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "token_ids_retained": False,
         "generated_content_retained": False,
     }
+    if "restore_group_count" in row:
+        value.update(
+            {
+                "restore_group_count": int(
+                    row.get("restore_group_count") or 0
+                ),
+                "restore_groups_captured_exact": row.get(
+                    "restore_groups_captured_exact"
+                ) is True,
+                "restore_groups_cpu_complete_count": int(
+                    row.get("restore_groups_cpu_complete_count") or 0
+                ),
+                "restore_groups_gpu_absent_count": int(
+                    row.get("restore_groups_gpu_absent_count") or 0
+                ),
+                "restore_group_eligibility_complete": row.get(
+                    "restore_group_eligibility_complete"
+                ) is True,
+            }
+        )
+    return value
 
 
 def build_inflight_trigger_state(
-    rows: list[dict[str, Any]], *, pressure_start_timestamp_ns: int
+    rows: list[dict[str, Any]],
+    *,
+    pressure_start_timestamp_ns: int,
+    target_block_count: int | None = None,
+    require_restore_group_eligibility: bool | None = None,
+    stop_on_first_cpu_target_eviction: bool | None = None,
 ) -> dict[str, Any]:
+    required_blocks = (
+        ELIGIBILITY_TARGET_BLOCKS
+        if target_block_count is None
+        else target_block_count
+    )
+    require_groups = (
+        REQUIRE_RESTORE_GROUP_ELIGIBILITY
+        if require_restore_group_eligibility is None
+        else require_restore_group_eligibility
+    )
+    stop_on_eviction = (
+        STOP_ON_FIRST_CPU_TARGET_EVICTION
+        if stop_on_first_cpu_target_eviction is None
+        else stop_on_first_cpu_target_eviction
+    )
     current = [
         row
         for row in rows
@@ -147,14 +207,32 @@ def build_inflight_trigger_state(
         for row in pressure_progress
         if row.get("request_local_progress_exact") is True
         and int(row.get("scheduled_request_count") or 0) == 1
-        and int(row.get("target_block_count") or 0) == TARGET_PREFIX_BLOCKS
-        and int(row.get("cpu_target_block_count") or 0) == TARGET_PREFIX_BLOCKS
+        and int(row.get("target_block_count") or 0) == required_blocks
+        and int(row.get("cpu_target_block_count") or 0)
+        == required_blocks
         and int(row.get("gpu_target_block_count") or 0) == 0
+        and (
+            not require_groups
+            or row.get("restore_group_eligibility_complete") is True
+        )
     ]
+    best_near_miss = (
+        max(
+            pressure_progress,
+            key=lambda row: (
+                int(row.get("restore_groups_cpu_complete_count") or 0),
+                int(row.get("cpu_target_block_count") or 0),
+                -int(row.get("gpu_target_block_count") or 0),
+                int(row.get("timestamp_ns") or 0),
+            ),
+        )
+        if pressure_progress
+        else None
+    )
 
     if ambiguous:
         decision = "request_local_progress_ambiguous"
-    elif cpu_evictions:
+    elif cpu_evictions and stop_on_eviction:
         decision = "cpu_target_lost"
     elif exact_cpu_only:
         decision = "trigger_ready"
@@ -163,7 +241,7 @@ def build_inflight_trigger_state(
 
     trigger = _sanitized_trigger(exact_cpu_only[0]) if exact_cpu_only else None
     return {
-        "schema_version": "p8_2_k1a_r5_f1_r3_inflight_trigger_state_v1",
+        "schema_version": f"{CONTRACT_SCHEMA_TAG}_inflight_trigger_state_v1",
         "decision": decision,
         "abort_allowed": decision == "trigger_ready",
         "pressure_start_timestamp_ns": pressure_start_timestamp_ns,
@@ -172,6 +250,9 @@ def build_inflight_trigger_state(
         "cpu_target_eviction_event_count": len(cpu_evictions),
         "exact_cpu_only_progress_event_count": len(exact_cpu_only),
         "trigger": trigger,
+        "best_restore_eligibility_near_miss": (
+            _sanitized_trigger(best_near_miss) if best_near_miss else None
+        ),
         "raw_hash_values_retained": False,
         "request_ids_retained": False,
         "token_ids_retained": False,
@@ -450,12 +531,12 @@ def prepare_inflight_abort_restore_artifacts(
         lazy_h2d_runner.PRESSURE_CONTEXT_TOKENS = previous_context
         lazy_h2d_runner.PRESSURE_REQUEST_COUNT_MAX = previous_count
     if int(manifest["pressure_request_count_max"]) != 1:
-        raise ValueError("F1-R3 requires exactly one prepared pressure request")
+        raise ValueError(f"{STAGE_LABEL} requires exactly one pressure request")
     if int(manifest["pressure_context_tokens"]) != PRESSURE_CONTEXT_TOKENS:
-        raise ValueError("F1-R3 pressure context must remain fixed at 36800")
+        raise ValueError(f"{STAGE_LABEL} pressure context must remain fixed at 36800")
     manifest.update(
         {
-            "schema_version": "p8_2_k1a_r5_f1_r3_request_body_manifest_v1",
+            "schema_version": f"{CONTRACT_SCHEMA_TAG}_request_body_manifest_v1",
             "task_id": TASK_ID,
             "fixed_request_count": 4,
             "request_count_max": 4,
@@ -469,6 +550,17 @@ def prepare_inflight_abort_restore_artifacts(
             "pressure_request_abort_is_conditional": True,
             "pressure_request_must_not_complete_before_abort": True,
             "restore_requires_abort_confirmed_idle_and_window_still_valid": True,
+            "target_prefix_tokens": (
+                ELIGIBILITY_TARGET_BLOCKS * BLOCK_SIZE_TOKENS
+            ),
+            "target_prefix_blocks": ELIGIBILITY_TARGET_BLOCKS,
+            "restore_group_eligibility_required": (
+                REQUIRE_RESTORE_GROUP_ELIGIBILITY
+            ),
+            "legacy_64_block_subset_authorizes_restore": (
+                ELIGIBILITY_TARGET_BLOCKS == 64
+                and not REQUIRE_RESTORE_GROUP_ELIGIBILITY
+            ),
         }
     )
     (artifact_dir / "request_body_manifest.json").write_text(
@@ -478,13 +570,52 @@ def prepare_inflight_abort_restore_artifacts(
     return manifest
 
 
+def _wait_for_eligibility_target_observable(
+    trace_dir: Path, *, timeout_seconds: float
+) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout_seconds
+    last: dict[str, Any] = {}
+    while time.monotonic() < deadline:
+        trace_rows = _read_trace_rows(trace_dir)
+        last = build_residency_gate(
+            trace_rows, target_block_count=ELIGIBILITY_TARGET_BLOCKS
+        )
+        transfer = summarize_trace_rows(
+            trace_rows,
+            expected_world_size=8,
+            restore_request_suffix="restore_follower",
+        )
+        last = {
+            **last,
+            "d2h_store_complete_before_pressure": transfer[
+                "d2h_store_complete"
+            ],
+        }
+        if last.get("decision") == "cpu_target_lost":
+            return last
+        if (
+            last["d2h_store_complete_before_pressure"] is True
+            and last.get("target_hashes_captured_exact") is True
+            and int(last.get("latest_cpu_target_block_count") or 0)
+            == ELIGIBILITY_TARGET_BLOCKS
+        ):
+            return last
+        time.sleep(1)
+    if (
+        last.get("decision") == "continue_pressure"
+        and last.get("d2h_store_complete_before_pressure") is True
+    ):
+        return last
+    return {**last, "decision": "unobservable", "restore_allowed": False}
+
+
 def execute_inflight_abort_restore(
     artifact_dir: Path, base_url: str, server_pid: int
 ) -> int:
     plan = json.loads((artifact_dir / "run_plan.json").read_text(encoding="utf-8"))
     by_role = {str(row["k1a_role"]): row for row in plan}
     if set(by_role) != {"warmup", "target_prime", PRESSURE_ROLE, "restore_follower"}:
-        raise ValueError("F1-R3 run plan must contain exactly four fixed roles")
+        raise ValueError(f"{STAGE_LABEL} run plan must contain four fixed roles")
     control_dir = artifact_dir / "runtime/request_control"
     trace_dir = artifact_dir / "runtime/offload_trace"
     control_dir.mkdir(parents=True, exist_ok=True)
@@ -497,7 +628,7 @@ def execute_inflight_abort_restore(
     rows: list[dict[str, Any]] = []
     previous_after: dict[str, Any] | None = None
     timeline: dict[str, Any] = {
-        "schema_version": "p8_2_k1a_r5_f1_r3_residency_gate_timeline_v1",
+        "schema_version": f"{CONTRACT_SCHEMA_TAG}_residency_gate_timeline_v1",
         "pressure_request_count_executed": 0,
         "pressure_request_count_max": 1,
         "trigger_poll_seconds": TRIGGER_POLL_SECONDS,
@@ -537,7 +668,7 @@ def execute_inflight_abort_restore(
         if not run_success_role(role):
             return persist_timeline(f"{role}_request_failure")
 
-    initial_gate = _wait_for_target_cpu_presence(
+    initial_gate = _wait_for_eligibility_target_observable(
         trace_dir,
         timeout_seconds=float(
             os.environ.get("P8_2_K1A_H2D_RESIDENCY_TIMEOUT_SECONDS", "180")
@@ -593,7 +724,7 @@ def execute_inflight_abort_restore(
             "batch": batch,
             "request_item": batch["requests"][0],
         },
-        name="p8_2_k1a_f1_r3_pressure_01",
+        name=f"{CONTRACT_SCHEMA_TAG}_pressure_01",
         daemon=True,
     )
     thread.start()
@@ -680,9 +811,16 @@ def execute_inflight_abort_restore(
     if not idle_after:
         return persist_timeline("pressure_not_idle_after_abort")
 
-    post_abort_gate = build_residency_gate(
-        _read_trace_rows(trace_dir), target_block_count=TARGET_PREFIX_BLOCKS
-    )
+    post_abort_rows = _read_trace_rows(trace_dir)
+    if REQUIRE_RESTORE_GROUP_ELIGIBILITY:
+        post_abort_gate = build_restore_eligibility_gate(
+            post_abort_rows,
+            required_restore_block_count=ELIGIBILITY_TARGET_BLOCKS,
+        )
+    else:
+        post_abort_gate = build_residency_gate(
+            post_abort_rows, target_block_count=ELIGIBILITY_TARGET_BLOCKS
+        )
     timeline["post_abort_gate_checked_monotonic_ns"] = time.monotonic_ns()
     timeline["post_abort_gate"] = post_abort_gate
     timeline["window_valid_after_abort"] = (
@@ -807,9 +945,7 @@ def _build_inflight_candidate_manifest(
             ),
         }
     return {
-        "schema_version": (
-            "p8_2_k1a_r5_f1_r3_bounded_candidate_manifest_v1"
-        ),
+        "schema_version": f"{CONTRACT_SCHEMA_TAG}_bounded_candidate_manifest_v1",
         "files": files,
         "payload_file_count": len(files),
         "transfer_file_count_including_manifest": len(files) + 1,
@@ -835,9 +971,10 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
     trace_rows = _read_trace_rows(artifact_dir / "runtime/offload_trace")
     trigger_summary = summarize_h2d_trigger_rows(
         trace_rows,
-        target_block_count=TARGET_PREFIX_BLOCKS,
+        target_block_count=ELIGIBILITY_TARGET_BLOCKS,
         restore_tokens=RESTORE_MATCH_TOKENS,
         expected_world_size=8,
+        require_restore_group_eligibility=REQUIRE_RESTORE_GROUP_ELIGIBILITY,
     )
     transfer_summary = summarize_trace_rows(
         trace_rows,
@@ -911,27 +1048,27 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
     )
     terminal = str(timeline.get("terminal_decision") or "missing")
     if cleanup != "clean" or not recovery_ok:
-        grade = "red_p8_2_k1a_r5_f1_r3_cleanup_or_recovery_incomplete"
+        grade = f"{GRADE_PREFIX}_cleanup_or_recovery_incomplete"
     elif terminal in {
         "request_local_progress_ambiguous",
         "cpu_target_lost",
         "pressure_completed_without_trigger",
         "inflight_trigger_timeout",
     }:
-        grade = f"red_p8_2_k1a_r5_f1_r3_{terminal}"
+        grade = f"{GRADE_PREFIX}_{terminal}"
     elif terminal in {
         "pressure_abort_not_confirmed",
         "pressure_not_idle_after_abort",
         "window_lost_after_abort",
     }:
-        grade = f"red_p8_2_k1a_r5_f1_r3_{terminal}"
+        grade = f"{GRADE_PREFIX}_{terminal}"
     elif not evidence_exact:
-        grade = "red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete"
+        grade = f"{GRADE_PREFIX}_h2d_evidence_incomplete"
     else:
         grade = CANDIDATE_GREEN
 
     grading = {
-        "schema_version": "p8_2_k1a_r5_f1_r3_grading_v1",
+        "schema_version": f"{CONTRACT_SCHEMA_TAG}_grading_v1",
         "server_grade": grade,
         "request_count": len(request_rows),
         "successful_request_count": sum(
@@ -953,6 +1090,10 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         "cleanup": cleanup,
         "context_search_or_sweep_used": False,
         "pressure_context_tokens": PRESSURE_CONTEXT_TOKENS,
+        "required_restore_block_count": ELIGIBILITY_TARGET_BLOCKS,
+        "restore_group_eligibility_required": (
+            REQUIRE_RESTORE_GROUP_ELIGIBILITY
+        ),
         "actual_cpu_eviction_proven": False,
         "cause_proven_as_unique": False,
         "performance_reference_accepted": False,
@@ -966,7 +1107,7 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         ),
     }
     mtp_queue_health = {
-        "schema_version": "p8_2_k1a_r5_f1_r3_mtp_queue_health_v1",
+        "schema_version": f"{CONTRACT_SCHEMA_TAG}_mtp_queue_health_v1",
         "request_count": len(request_rows),
         "completed_request_count": sum(
             _request_evidence_exact(row) for row in request_rows

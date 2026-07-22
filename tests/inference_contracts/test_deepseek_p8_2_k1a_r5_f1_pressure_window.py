@@ -527,7 +527,7 @@ def test_f1_contract_is_offline_first_and_allows_only_one_fixed_lifecycle(
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    current_task_id = "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
+    current_task_id = "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["completed_p8_2_k1a_r5_f1_runner"].endswith(RUNNER.name)
     assert artifacts["completed_p8_2_k1a_r5_l2_runner"].endswith(
@@ -539,13 +539,11 @@ def test_f1_contract_is_offline_first_and_allows_only_one_fixed_lifecycle(
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert f"task_id: {current_task_id}" in handoff
-    assert "parent_f1_pool_delta_gate_fail_closed: true" in handoff
+    assert "parent_grade=red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete" in handoff
     for field in (
-        "offline_first: true",
+        "offline_parent_gate_required: true",
         "npu_execution_authorized: true",
         "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 4",
-        "model_request_count_exact: 4",
         "model_request_count_exact: 4",
         "request_retry_count_exact: 0",
         "result_transfer_authorized: true",

@@ -545,7 +545,7 @@ def test_r4_contract_is_read_only_and_preserved_as_historical_provenance() -> No
         R4_AUDIT.name
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r3_inflight_abort_restore.yaml"
+        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
     )
     assert artifacts["current_server_handoff_task"] != task_id
     assert artifacts["current_p8_2_k1a_r4_runner"].endswith(R4_RUNNER.name)

@@ -1,0 +1,69 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R4
+date: '2026-07-22'
+task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722
+
+accepted_f1_r3_result:
+  server_grade: red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete
+  formal_model_lifecycle_count: 1
+  request_count: 4
+  intentional_pressure_abort_count: 1
+  request_retry_count: 0
+  request_local_trigger_before_abort: true
+  pressure_abort_confirmed: true
+  engine_idle_after_abort: true
+  post_abort_legacy_window_valid: true
+  restore_request_completed: true
+  d2h_store_complete: true
+  d2h_worker_count: 8
+  d2h_bytes_total: 4548257792
+  restore_cpu_hit_exact: false
+  restore_load_scheduled: false
+  h2d_worker_count: 0
+  h2d_bytes_total: 0
+  legacy_observed_target_blocks: 64
+  legacy_target_prefix_tokens: 8192
+  restore_match_tokens_required: 16384
+  prefix_hits_delta: 0.0
+  actual_cpu_eviction_proven: false
+  unique_cause_proven: false
+  manifest_sha256: 4299261a926e342366ce841684c48c083f62259e153ff67038359fe81b438371
+
+developer_decision:
+  required_restore_block_count: 128
+  block_size_tokens: 128
+  restore_match_tokens_required: 16384
+  accepted_cpu_blocks_per_rank: 128
+  accepted_cpu_bytes_per_rank: 430604288
+  accepted_cpu_bytes_total: 3444834304
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  pressure_context_tokens_preserved: 36800
+  formal_model_lifecycle_count_exact: 1
+  model_request_count_exact: 4
+  completed_request_count_exact: 3
+  intentional_pressure_abort_count_exact: 1
+  request_retry_count_exact: 0
+  legacy_64_block_subset_authorizes_restore: false
+  all_kv_groups_required: true
+  full_request_window_watch_required: true
+  first_near_miss_may_terminate_watch: false
+  runtime_or_dependency_mutation_authorized: false
+  performance_reference_authorized: false
+  unique_root_cause_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+failure_classification:
+  - insufficient_restore_coverage
+  - restore_groups_incomplete
+  - full_128_cpu_window_never_observed_over_complete_pressure_lifetime
+  - cpu_target_lost_before_full_restore_eligibility
+  - pressure_abort_not_confirmed
+  - pressure_not_idle_after_abort
+  - full_restore_window_lost_after_abort
+  - restore_cpu_hit_or_h2d_pipeline_incomplete
+  - cleanup_or_keep_alive_recovery_incomplete
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_full_16k_restore_eligibility_alignment_and_conditional_h2d_mechanism_candidate_only

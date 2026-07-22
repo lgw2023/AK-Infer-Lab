@@ -25,7 +25,7 @@ def test_current_handoff_preserves_the_r4_r1_source_and_r5_f0_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
+        "task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
     ) in handoff
     assert "manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b" in handoff
     assert "block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283" in handoff
@@ -147,19 +147,20 @@ def test_r3_r2_r1_audit_preserves_parent_block_and_repair_boundary() -> None:
     assert audit["decision"]["p8_3_i1_authorized"] is False
 
 
-def test_r5_l1_handoff_runs_the_full_bounded_single_lifecycle_chain() -> None:
+def test_f1_r4_handoff_runs_the_full_bounded_single_lifecycle_chain() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_single_lifecycle_inflight_trigger_abort_idle_restore",
+        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment",
         "formal_model_lifecycle_count_exact: 1",
         "model_request_count_exact: 4",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh",
-        "parent_r5_l1_r1_bounded_and_raw_replay_authorized: true",
-        "request_local_progress_analysis_authorized: true",
+        "run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh",
+        "offline_parent_gate_required: true",
+        "full_request_window_watch_required: true",
+        "required_restore_block_count_exact: 128",
         "candidate_manifest.server_local.json",
         "email / upload-api / server-local",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
@@ -168,8 +169,8 @@ def test_r5_l1_handoff_runs_the_full_bounded_single_lifecycle_chain() -> None:
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
-    assert 'test ! -e "${RESULT_ROOT}"' in handoff
-    assert "fixed_l2_cleanup=clean" in handoff
+    assert 'test ! -e "${RESULT_DIR}"' in handoff
+    assert "parent_cleanup=clean" in handoff
     assert "keep_alive_stop_authorized: true" in handoff
 
 

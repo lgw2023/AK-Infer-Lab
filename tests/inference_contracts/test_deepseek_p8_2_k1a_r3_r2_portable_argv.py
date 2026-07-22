@@ -282,23 +282,23 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
+        "task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
     ) in handoff
     for exact in (
-            "execution_mode: authorized_single_lifecycle_inflight_trigger_abort_idle_restore",
-            "npu_execution_authorized: true",
+        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment",
+        "npu_execution_authorized: true",
         "formal_model_lifecycle_count_exact: 1",
         "model_request_count_exact: 4",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "parent_server_grade=red_p8_2_k1a_r5_l1_r1_cpu_target_lost",
+        "parent_grade=red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete",
         "parent_d2h_store_complete=true",
-        "parent_h2d_restore_complete=false",
+        "parent_h2d_worker_count=0",
         "不得进入 K2",
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
-    assert 'test ! -e "${RESULT_ROOT}"' in handoff
+    assert 'test ! -e "${RESULT_DIR}"' in handoff
     assert "candidate_manifest.server_local.json" in handoff
     assert "payload_file_count" in handoff
     assert "email / upload-api / server-local" in handoff

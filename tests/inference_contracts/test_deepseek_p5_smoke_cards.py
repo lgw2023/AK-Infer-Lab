@@ -1959,9 +1959,9 @@ def test_server_handoff_advances_from_r4_r1_closeout_to_r5_f0_feasibility():
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-F1-R3 运行中窗口中止与单次恢复" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722" in handoff
-    assert "execution_mode: authorized_single_lifecycle_inflight_trigger_abort_idle_restore" in handoff
+    assert "P8.2-K1A-R5-F1-R4 完整恢复资格对齐" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722" in handoff
+    assert "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "formal_model_lifecycle_count_exact: 1" in handoff
     assert "model_request_count_exact: 4" in handoff
@@ -2048,7 +2048,7 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r3_inflight_abort_restore.yaml"
+        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
         "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_blocked_k1a_r4_r1_offline_store_only_green_k1a_r5_f0_ready_k1a_r5_l1_d2h_green_controller_red_k1a_r5_l1_r1_target_lost_red_k1a_r5_f1_offline_current_l2_conditional_i0_r1_green"
@@ -2446,19 +2446,22 @@ def test_p6_3b_r1_records_bounded_ready_failure_without_revoking_prior_evidence(
     }
 
 
-def test_server_handoff_executes_only_r5_f0_zero_resource_feasibility():
+def test_server_handoff_executes_only_f1_r4_restore_eligibility_alignment():
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
 
-    assert "P8.2-K1A-R5-F1-R3 运行中窗口中止与单次恢复" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722" in handoff
+    assert "P8.2-K1A-R5-F1-R4 完整恢复资格对齐" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "vllm_server_start_authorized: true" in handoff
-    assert "R5-L1-R1 的有界包" in handoff
-    assert "精确重放 R2 geometry/rendezvous/allocator" in handoff
+    assert "parent_task_id=p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722" in handoff
+    assert "required_restore_block_count_exact: 128" in handoff
+    assert "all_relevant_kv_groups_required: true" in handoff
+    assert "full_request_window_watch_required: true" in handoff
+    assert "stop_on_first_cpu_target_eviction: false" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
     assert "merge --ff-only origin/main" in handoff

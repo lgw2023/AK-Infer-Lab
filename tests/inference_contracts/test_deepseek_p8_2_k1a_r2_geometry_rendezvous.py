@@ -215,7 +215,7 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_after_parent_blocks() -> None
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722"
+        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
@@ -231,7 +231,7 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_after_parent_blocks() -> None
     for marker in (
         "ready_p8_2_k1a_r2_allocator_capacity",
         "green_p8_3_i0_r1_unclassified_taxonomy",
-        "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh",
         "cpu_bytes_to_use_per_rank=430604288",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
         "P8.3-I1",
