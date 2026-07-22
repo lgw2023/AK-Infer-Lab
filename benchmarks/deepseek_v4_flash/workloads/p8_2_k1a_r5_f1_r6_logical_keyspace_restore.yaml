@@ -1,0 +1,120 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_f1_r6_logical_keyspace_restore
+date: '2026-07-23'
+task_id: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723
+purpose: preserve_accepted_capacity_and_align_the_full_16k_logical_restore_window_to_runtime_pool_keys
+
+stage_contract:
+  stage: P8.2-K1A-R5-F1-R6
+  mode: one_fixed_accepted_capacity_runtime_keyspace_watch_abort_idle_restore_lifecycle
+  parent_f1_r5_keyspace_probe_invalid: true
+  parent_f1_r5_is_not_capacity_impossibility_evidence: true
+  full_logical_128_block_cpu_only_window_remains_required: true
+  h2d_restore_mechanism_accepted_before_this_task: false
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  unique_root_cause_claim_authorized: false
+
+runtime_config:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  quantization: ascend
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size_tokens: 128
+  chunked_prefill: true
+  prefix_caching: true
+  kv_connector: SimpleCPUOffloadConnector
+  kv_role: kv_both
+  lazy_offload: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count: 128
+  restore_match_tokens: 16384
+  runtime_overlay: accepted_task_local_observe_only_overlay
+  runtime_or_dependency_mutation_authorized: false
+
+request_plan:
+  order:
+    - warmup
+    - target_prime_with_16k_shared_prefix
+    - pressure_01_watch_full_lifetime_and_abort_only_on_exact_logical_restore_eligibility
+    - restore_follower_after_abort_idle_and_full_window_revalidation
+  request_count_max: 4
+  http_transport_success_count_max: 3
+  contract_completed_role_count_max: 4
+  intentional_pressure_abort_count_max: 1
+  pressure_request_count_exact: 1
+  request_retry_count_exact: 0
+  warmup_context_tokens: 4096
+  target_prime_context_tokens: 32768
+  pressure_context_tokens: 36800
+  restore_follower_context_tokens: 32768
+  output_tokens_each: 64
+  target_prefix_tokens: 16384
+  concurrent_restore_while_pressure_active: false
+
+logical_restore_keyspace_gate:
+  logical_restore_match_tokens_exact: 16384
+  hash_block_size_tokens: 128
+  logical_target_block_count_exact: 128
+  request_hash_candidate_count_exact: 128
+  lookup_source: runtime_cpu_coordinator_find_longest_cache_hit
+  runtime_lookup_is_observe_only: true
+  runtime_pool_key_count_fixed: false
+  runtime_pool_key_count_may_differ_by_kv_group: true
+  logical_hit_tokens_must_equal_restore_match_tokens: true
+  exact_runtime_pool_keys_retained_in_process_only: true
+  all_returned_group_pool_keys_must_be_cpu_resident: true
+  all_returned_group_pool_keys_must_be_gpu_absent: true
+  raw_hash_values_allowed_in_bounded_results: false
+  plain_request_hashes_must_not_be_used_as_pool_keys: true
+  legacy_cardinality_only_capture_authorizes_abort: false
+  post_abort_revalidation_required: true
+
+execution_state:
+  npu_execution_authorized: true
+  keep_alive_card_ids_exact: [0, 1, 2, 3, 4, 5, 6, 7]
+  same_card_set_restore_on_every_exit: true
+  keep_alive_marker_format: '#card_id#'
+  keep_alive_expected_marker_count: 16
+  server_task_driver_required: true
+  structured_resource_recovery_artifact_required: true
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  capacity_search_authorized: false
+  context_change_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+result_contract:
+  max_transfer_total_bytes: 71680
+  payload_file_count_max: 15
+  transfer_file_count_including_manifest_max: 16
+  generated_content_allowed: false
+  token_ids_allowed: false
+  request_ids_allowed: false
+  raw_hash_values_allowed: false
+  raw_logs_metrics_request_bodies_and_trace_remain_server_local: true
+  request_outcome_fields_required:
+    - request_count
+    - http_transport_success_count
+    - contract_completed_role_count
+    - intentional_pressure_abort_count
+    - pressure_full_response_without_trigger_count
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_runtime_logical_keyspace_alignment_and_conditional_h2d_mechanism_candidate_only

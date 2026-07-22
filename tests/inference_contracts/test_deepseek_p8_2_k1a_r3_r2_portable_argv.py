@@ -282,10 +282,10 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
+        "task_id: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723"
     ) in handoff
     for exact in (
-        "execution_mode: authorized_single_lifecycle_effective_restore_contract",
+        "execution_mode: authorized_single_lifecycle_logical_keyspace_restore",
         "npu_execution_authorized: true",
         "formal_model_lifecycle_count_exact: 1",
         "model_request_count_max: 4",

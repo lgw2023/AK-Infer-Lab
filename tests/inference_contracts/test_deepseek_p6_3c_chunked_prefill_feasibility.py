@@ -172,10 +172,10 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
+        "p8_2_k1a_r5_f1_r6_logical_keyspace_restore.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K1A-R5-F1-R5_effective_restore_contract"
+        "P8.2-K1A-R5-F1-R6_logical_keyspace_restore"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
@@ -207,8 +207,8 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722" in handoff
-    assert "execution_mode: authorized_single_lifecycle_effective_restore_contract" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723" in handoff
+    assert "execution_mode: authorized_single_lifecycle_logical_keyspace_restore" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff

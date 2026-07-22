@@ -215,7 +215,7 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_after_parent_blocks() -> None
         encoding="utf-8"
     )
     task_id = (
-        "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
+        "p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723"
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1

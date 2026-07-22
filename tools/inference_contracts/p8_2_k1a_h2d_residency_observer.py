@@ -141,6 +141,218 @@ def select_target_hashes(
     }
 
 
+def probe_logical_restore_window(
+    *,
+    cpu_coordinator: Any,
+    request_hashes: list[Any],
+    restore_match_tokens: int,
+    hash_block_size_tokens: int,
+    cpu_pool: Any,
+    gpu_pool: Any,
+    retained_pool_keys: tuple[Any, ...] = (),
+) -> tuple[dict[str, Any], tuple[Any, ...]]:
+    """Probe restore coverage through the runtime's own cache-key semantics.
+
+    Request hashes are logical hash-granularity values. Pool maps are keyed by
+    the runtime's per-group wrapped hashes, and compressed/sparse KV groups do
+    not have one physical key per logical hash block. Reusing the CPU
+    coordinator avoids reimplementing those mappings in the observer.
+    """
+
+    geometry = derive_restore_eligibility_contract(
+        restore_match_tokens=restore_match_tokens,
+        block_size_tokens=hash_block_size_tokens,
+    )
+    result = cpu_coordinator.find_longest_cache_hit(
+        request_hashes, restore_match_tokens
+    )
+    if not isinstance(result, tuple) or len(result) < 2:
+        raise ValueError("runtime CPU coordinator returned an invalid hit result")
+    groups = tuple(result[0])
+    hit_tokens = max(0, min(int(result[1]), restore_match_tokens))
+    logical_exact = hit_tokens == restore_match_tokens
+
+    group_keys: list[tuple[Any, ...]] = []
+    current_keys: list[Any] = []
+    seen: set[Any] = set()
+    for blocks in groups:
+        keys = []
+        for block in blocks:
+            key = getattr(block, "block_hash", None)
+            if getattr(block, "is_null", False) or key is None:
+                continue
+            keys.append(key)
+            if key not in seen:
+                seen.add(key)
+                current_keys.append(key)
+        group_keys.append(tuple(keys))
+
+    if logical_exact and current_keys:
+        target_pool_keys = tuple(current_keys)
+    else:
+        target_pool_keys = retained_pool_keys
+
+    def count(pool: Any, keys: tuple[Any, ...]) -> int:
+        if pool is None:
+            return 0
+        mapping = pool.cached_block_hash_to_block
+        return sum(mapping.get_one_block(key) is not None for key in keys)
+
+    group_rows = []
+    for group_index, keys in enumerate(group_keys):
+        group_rows.append(
+            {
+                "group_index": group_index,
+                "required_block_count": len(keys),
+                "captured_block_count": len(keys),
+                "cpu_block_count": count(cpu_pool, keys),
+                "gpu_block_count": count(gpu_pool, keys),
+                "capture_basis": "runtime_cpu_coordinator_longest_hit",
+                "raw_block_ids_retained": False,
+                "raw_hash_values_retained": False,
+            }
+        )
+    group_summary = build_restore_group_residency_summary(group_rows)
+    cpu_pool_matches = count(cpu_pool, target_pool_keys)
+    gpu_pool_matches = count(gpu_pool, target_pool_keys)
+    request_candidates = [
+        value
+        for value in request_hashes[
+            : geometry["required_restore_block_count"]
+        ]
+        if value is not None
+    ]
+    cardinality_exact = (
+        len(request_candidates) == geometry["required_restore_block_count"]
+    )
+    keyspace_matchable = all(
+        (
+            logical_exact,
+            bool(target_pool_keys),
+            cpu_pool_matches == len(target_pool_keys),
+        )
+    )
+    capture_exact = all(
+        (
+            cardinality_exact,
+            keyspace_matchable,
+            group_summary["restore_group_eligibility_complete"] is True,
+        )
+    )
+    return (
+        {
+            "configured_target_block_count": geometry[
+                "required_restore_block_count"
+            ],
+            "request_hash_candidate_count": len(request_candidates),
+            "selected_target_hash_count": geometry[
+                "required_restore_block_count"
+            ]
+            if cardinality_exact
+            else 0,
+            "target_capture_source": "runtime_cpu_coordinator_longest_hit",
+            "target_capture_cardinality_exact": cardinality_exact,
+            "target_keyspace_matchable": keyspace_matchable,
+            "target_capture_exact": capture_exact,
+            "logical_restore_match_tokens": hit_tokens,
+            "logical_restore_window_exact": logical_exact,
+            "target_pool_key_count": len(target_pool_keys),
+            "cpu_target_pool_key_match_count": cpu_pool_matches,
+            "gpu_target_pool_key_match_count": gpu_pool_matches,
+            "target_count_unit": "logical_request_hash_blocks",
+            "cpu_target_count_unit": "logical_request_hash_blocks",
+            "gpu_target_count_unit": "runtime_group_pool_keys",
+            "target_pool_key_count_unit": "runtime_group_pool_keys",
+            "cpu_target_block_count": hit_tokens // hash_block_size_tokens,
+            "gpu_target_block_count": gpu_pool_matches,
+            **group_summary,
+            "raw_hash_values_retained": False,
+        },
+        target_pool_keys,
+    )
+
+
+def refresh_logical_restore_window(
+    scheduler: Any,
+    *,
+    restore_match_tokens: int,
+    hash_block_size_tokens: int,
+) -> dict[str, Any]:
+    request_hashes = list(
+        getattr(scheduler, "_p8_2_k1a_target_request_hashes", ()) or ()
+    )
+    required = restore_match_tokens // hash_block_size_tokens
+    if not request_hashes:
+        return {
+            "configured_target_block_count": required,
+            "target_capture_source": "runtime_cpu_coordinator_longest_hit",
+            "target_capture_cardinality_exact": False,
+            "target_keyspace_matchable": False,
+            "target_capture_exact": False,
+            "logical_restore_match_tokens": 0,
+            "logical_restore_window_exact": False,
+            "target_pool_key_count": 0,
+            "cpu_target_pool_key_match_count": 0,
+            "gpu_target_pool_key_match_count": 0,
+            "target_count_unit": "logical_request_hash_blocks",
+            "cpu_target_count_unit": "logical_request_hash_blocks",
+            "gpu_target_count_unit": "runtime_group_pool_keys",
+            "target_pool_key_count_unit": "runtime_group_pool_keys",
+            "cpu_target_block_count": 0,
+            "gpu_target_block_count": 0,
+            "restore_group_eligibility_complete": False,
+            "raw_hash_values_retained": False,
+        }
+    retained = tuple(
+        getattr(scheduler, "_p8_2_k1a_target_pool_keys", ()) or ()
+    )
+    try:
+        summary, target_pool_keys = probe_logical_restore_window(
+            cpu_coordinator=scheduler.cpu_coordinator,
+            request_hashes=request_hashes,
+            restore_match_tokens=restore_match_tokens,
+            hash_block_size_tokens=hash_block_size_tokens,
+            cpu_pool=getattr(scheduler, "cpu_block_pool", None),
+            gpu_pool=getattr(scheduler, "_gpu_block_pool", None),
+            retained_pool_keys=retained,
+        )
+    except Exception as error:  # Observe-only: never alter scheduler behavior.
+        summary = {
+            "configured_target_block_count": required,
+            "request_hash_candidate_count": len(request_hashes[:required]),
+            "target_capture_source": "runtime_cpu_coordinator_longest_hit",
+            "target_capture_cardinality_exact": len(request_hashes[:required])
+            == required,
+            "target_keyspace_matchable": False,
+            "target_capture_exact": False,
+            "logical_restore_match_tokens": 0,
+            "logical_restore_window_exact": False,
+            "target_pool_key_count": len(retained),
+            "cpu_target_pool_key_match_count": 0,
+            "gpu_target_pool_key_match_count": 0,
+            "target_count_unit": "logical_request_hash_blocks",
+            "cpu_target_count_unit": "logical_request_hash_blocks",
+            "gpu_target_count_unit": "runtime_group_pool_keys",
+            "target_pool_key_count_unit": "runtime_group_pool_keys",
+            "cpu_target_block_count": 0,
+            "gpu_target_block_count": 0,
+            "restore_group_eligibility_complete": False,
+            "target_keyspace_probe_error_type": type(error).__name__,
+            "raw_hash_values_retained": False,
+        }
+        target_pool_keys = retained
+    if summary.get("logical_restore_window_exact") is True and target_pool_keys:
+        scheduler._p8_2_k1a_target_pool_keys = target_pool_keys
+    else:
+        scheduler._p8_2_k1a_target_pool_keys = retained
+    scheduler._p8_2_k1a_target_hashes = tuple(
+        scheduler._p8_2_k1a_target_pool_keys
+    )
+    scheduler._p8_2_k1a_target_capture_summary = summary
+    scheduler._p8_2_k1a_logical_restore_summary = summary
+    return summary
+
+
 def build_restore_group_residency_summary(
     group_rows: list[dict[str, Any]],
 ) -> dict[str, Any]:
@@ -224,6 +436,21 @@ def build_restore_eligibility_gate(
     groups_complete = (
         latest.get("restore_group_eligibility_complete") is True
     )
+    capture_exact = (
+        latest.get("target_capture_exact") is True
+        if "target_capture_exact" in latest
+        else groups_captured
+    )
+    cardinality_exact = (
+        latest.get("target_capture_cardinality_exact") is True
+        if "target_capture_cardinality_exact" in latest
+        else capture_exact
+    )
+    keyspace_matchable = (
+        latest.get("target_keyspace_matchable") is True
+        if "target_keyspace_matchable" in latest
+        else capture_exact
+    )
     cpu_evictions = [
         row
         for row in rows
@@ -231,12 +458,21 @@ def build_restore_eligibility_gate(
         and row.get("tier") == "cpu"
         and int(row.get("target_evicted_count") or 0) > 0
     ]
+
+    def row_capture_exact(row: dict[str, Any]) -> bool:
+        return (
+            row.get("target_capture_exact") is True
+            if "target_capture_exact" in row
+            else row.get("restore_groups_captured_exact") is True
+        )
+
     full_was_observed = any(
         int(row.get("target_block_count") or 0)
         == required_restore_block_count
         and int(row.get("cpu_target_block_count") or 0)
         == required_restore_block_count
         and int(row.get("gpu_target_block_count") or 0) == 0
+        and row_capture_exact(row)
         and row.get("restore_group_eligibility_complete") is True
         for row in candidates
     )
@@ -249,6 +485,7 @@ def build_restore_eligibility_gate(
             and int(row.get("cpu_target_block_count") or 0)
             == required_restore_block_count
             and int(row.get("gpu_target_block_count") or 0) == 0
+            and row_capture_exact(row)
             and row.get("restore_group_eligibility_complete") is True
         ),
         default=0,
@@ -263,6 +500,8 @@ def build_restore_eligibility_gate(
         decision = "unobservable"
     elif observed != required_restore_block_count:
         decision = "insufficient_restore_coverage"
+    elif not capture_exact or not keyspace_matchable:
+        decision = "target_keyspace_unaligned"
     elif not groups_captured or group_count <= 0 or not groups_complete:
         decision = "restore_groups_incomplete"
     elif cpu_evictions_after_full or (
@@ -281,6 +520,9 @@ def build_restore_eligibility_gate(
         "observed_target_block_count": observed,
         "latest_cpu_target_block_count": cpu_count,
         "latest_gpu_target_block_count": gpu_count,
+        "target_capture_cardinality_exact": cardinality_exact,
+        "target_keyspace_matchable": keyspace_matchable,
+        "target_capture_exact": capture_exact,
         "restore_group_count": group_count,
         "restore_groups_captured_exact": groups_captured,
         "restore_group_eligibility_complete": groups_complete,
@@ -335,17 +577,13 @@ def _register_pools(scheduler: Any) -> None:
 
 
 def _target_residency_counts(scheduler: Any) -> tuple[int, int]:
-    target_hashes = tuple(getattr(scheduler, "_p8_2_k1a_target_hashes", ()))
-    cpu_pool = getattr(scheduler, "cpu_block_pool", None)
-    gpu_pool = getattr(scheduler, "_gpu_block_pool", None)
-
-    def count(pool: Any) -> int:
-        if pool is None:
-            return 0
-        mapping = pool.cached_block_hash_to_block
-        return sum(mapping.get_one_block(value) is not None for value in target_hashes)
-
-    return count(cpu_pool), count(gpu_pool)
+    summary = dict(
+        getattr(scheduler, "_p8_2_k1a_logical_restore_summary", {})
+    )
+    return (
+        int(summary.get("cpu_target_block_count") or 0),
+        int(summary.get("gpu_target_block_count") or 0),
+    )
 
 
 def _capture_restore_group_hashes(
@@ -405,6 +643,22 @@ def _capture_restore_group_hashes(
 
 
 def _restore_group_residency_summary(scheduler: Any) -> dict[str, Any]:
+    logical = dict(
+        getattr(scheduler, "_p8_2_k1a_logical_restore_summary", {})
+    )
+    if "restore_group_rows" in logical:
+        return {
+            key: logical[key]
+            for key in (
+                "restore_group_count",
+                "restore_groups_captured_exact",
+                "restore_groups_cpu_complete_count",
+                "restore_groups_gpu_absent_count",
+                "restore_group_eligibility_complete",
+                "restore_group_rows",
+            )
+            if key in logical
+        }
     hashes_by_group = tuple(
         getattr(scheduler, "_p8_2_k1a_restore_group_hashes", ())
     )
@@ -502,14 +756,22 @@ def build_request_local_pressure_progress(
     }
 
 
-def _emit_residency_snapshot(scheduler: Any, *, reason: str) -> None:
-    target_hashes = tuple(getattr(scheduler, "_p8_2_k1a_target_hashes", ()))
-    if not target_hashes:
+def _emit_residency_snapshot(
+    scheduler: Any,
+    *,
+    reason: str,
+    restore_match_tokens: int,
+    hash_block_size_tokens: int,
+) -> None:
+    request_hashes = tuple(
+        getattr(scheduler, "_p8_2_k1a_target_request_hashes", ())
+    )
+    if not request_hashes:
         return
-    cpu_count, gpu_count = _target_residency_counts(scheduler)
-    group_summary = _restore_group_residency_summary(scheduler)
-    target_capture_summary = dict(
-        getattr(scheduler, "_p8_2_k1a_target_capture_summary", {})
+    summary = refresh_logical_restore_window(
+        scheduler,
+        restore_match_tokens=restore_match_tokens,
+        hash_block_size_tokens=hash_block_size_tokens,
     )
     cpu_pool = scheduler.cpu_block_pool
     gpu_pool = scheduler._gpu_block_pool
@@ -517,11 +779,8 @@ def _emit_residency_snapshot(scheduler: Any, *, reason: str) -> None:
         "target_residency_snapshot",
         component="scheduler",
         reason=reason,
-        target_block_count=len(target_hashes),
-        cpu_target_block_count=cpu_count,
-        gpu_target_block_count=gpu_count,
-        **target_capture_summary,
-        **group_summary,
+        target_block_count=restore_match_tokens // hash_block_size_tokens,
+        **summary,
         cpu_free_block_count=cpu_pool.get_num_free_blocks(),
         gpu_free_block_count=(
             gpu_pool.get_num_free_blocks() if gpu_pool is not None else None
@@ -558,49 +817,38 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     def observed_finished(self, request, block_ids):
         _register_pools(self)
         contract_role = _active_contract_role()
-        if contract_role == "target_prime" or str(request.request_id).endswith(
-            target_suffix
-        ):
-            gpu_pool = self._gpu_block_pool
-            fa_group = list(
-                block_ids[self.fa_gidx] if block_ids else []
-            )[:target_block_count]
-            fa_group_hashes = [
-                gpu_pool.blocks[block_id].block_hash
-                for block_id in fa_group
-                if not gpu_pool.blocks[block_id].is_null
-                and gpu_pool.blocks[block_id].block_hash is not None
-            ]
-            target_hashes, target_capture_summary = select_target_hashes(
-                request_hashes=list(getattr(request, "block_hashes", ()) or ()),
-                fa_group_hashes=fa_group_hashes,
-                target_block_count=target_block_count,
+        is_target = contract_role == "target_prime" or str(
+            request.request_id
+        ).endswith(target_suffix)
+        request_hashes = tuple(
+            getattr(request, "block_hashes", ()) or ()
+        )
+        result = original_finished(self, request, block_ids)
+        if is_target:
+            self._p8_2_k1a_target_request_hashes = request_hashes
+            self._p8_2_k1a_target_pool_keys = ()
+            self._p8_2_k1a_target_hashes = ()
+            target_capture_summary = refresh_logical_restore_window(
+                self,
+                restore_match_tokens=restore_match_tokens,
+                hash_block_size_tokens=block_size_tokens,
             )
-            self._p8_2_k1a_target_hashes = target_hashes
-            self._p8_2_k1a_target_capture_summary = target_capture_summary
-            group_hashes, group_required, group_geometry = (
-                _capture_restore_group_hashes(
-                    self,
-                    block_ids,
-                    restore_match_tokens=restore_match_tokens,
-                )
-            )
-            self._p8_2_k1a_restore_group_hashes = group_hashes
-            self._p8_2_k1a_restore_group_required_counts = group_required
-            self._p8_2_k1a_restore_group_geometry_rows = group_geometry
-            group_summary = _restore_group_residency_summary(self)
             _emit(
                 "target_hashes_captured",
                 component="scheduler",
                 request_id=request.request_id,
                 contract_role=contract_role,
-                target_block_count=len(target_hashes),
+                target_block_count=target_block_count,
                 **eligibility_contract,
                 **target_capture_summary,
-                **group_summary,
             )
-            _emit_residency_snapshot(self, reason="target_request_finished")
-        return original_finished(self, request, block_ids)
+            _emit_residency_snapshot(
+                self,
+                reason="target_request_finished",
+                restore_match_tokens=restore_match_tokens,
+                hash_block_size_tokens=block_size_tokens,
+            )
+        return result
 
     original_match = SimpleCPUOffloadScheduler.get_num_new_matched_tokens
 
@@ -611,7 +859,12 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
         if contract_role == "restore_follower" or str(request.request_id).endswith(
             restore_suffix
         ):
-            _emit_residency_snapshot(self, reason="before_restore_match")
+            _emit_residency_snapshot(
+                self,
+                reason="before_restore_match",
+                restore_match_tokens=restore_match_tokens,
+                hash_block_size_tokens=block_size_tokens,
+            )
         return original_match(self, request, num_computed_tokens)
 
     original_update = SimpleCPUOffloadScheduler.update_state_after_alloc
@@ -624,7 +877,12 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
         if contract_role == "restore_follower" or str(request.request_id).endswith(
             restore_suffix
         ):
-            _emit_residency_snapshot(self, reason="after_restore_alloc")
+            _emit_residency_snapshot(
+                self,
+                reason="after_restore_alloc",
+                restore_match_tokens=restore_match_tokens,
+                hash_block_size_tokens=block_size_tokens,
+            )
         return result
 
     original_build = SimpleCPUOffloadScheduler.build_connector_meta
@@ -633,7 +891,12 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     def observed_build(self, scheduler_output):
         result = original_build(self, scheduler_output)
         _register_pools(self)
-        _emit_residency_snapshot(self, reason="after_connector_meta")
+        _emit_residency_snapshot(
+            self,
+            reason="after_connector_meta",
+            restore_match_tokens=restore_match_tokens,
+            hash_block_size_tokens=block_size_tokens,
+        )
         if os.environ.get(REQUEST_LOCAL_PRESSURE_OBSERVER_ENV) == "1":
             cpu_count, gpu_count = _target_residency_counts(self)
             progress = build_request_local_pressure_progress(
@@ -663,7 +926,12 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     def observed_output(self, connector_output):
         result = original_output(self, connector_output)
         _register_pools(self)
-        _emit_residency_snapshot(self, reason="after_connector_output")
+        _emit_residency_snapshot(
+            self,
+            reason="after_connector_output",
+            restore_match_tokens=restore_match_tokens,
+            hash_block_size_tokens=block_size_tokens,
+        )
         return result
 
     original_evict = BlockPool._maybe_evict_cached_block
@@ -687,7 +955,12 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
                 target_evicted_count=1,
                 raw_hash_values_retained=False,
             )
-            _emit_residency_snapshot(scheduler, reason="after_target_eviction")
+            _emit_residency_snapshot(
+                scheduler,
+                reason="after_target_eviction",
+                restore_match_tokens=restore_match_tokens,
+                hash_block_size_tokens=block_size_tokens,
+            )
         return result
 
     SimpleCPUOffloadScheduler.request_finished_all_groups = observed_finished
@@ -735,6 +1008,13 @@ def observer_self_test_contract() -> dict[str, Any]:
         "restore_eligibility_geometry_is_explicit": True,
         "restore_eligibility_all_kv_groups_observed": True,
         "restore_group_rows_are_bounded_counts_only": True,
+        "request_hashes_are_not_assumed_to_be_pool_keys": True,
+        "logical_restore_lookup_source": (
+            "runtime_cpu_coordinator_find_longest_cache_hit"
+        ),
+        "logical_restore_lookup_is_read_only": True,
+        "logical_restore_target_count_unit": "logical_request_hash_blocks",
+        "runtime_pool_keys_retained_in_process_only": True,
         "request_identity_source": "controller_role_marker_not_server_request_id",
         "request_local_pressure_progress_capability": True,
         "request_local_progress_source": (
@@ -759,11 +1039,28 @@ def _read_trace_dir(trace_dir: Path) -> list[dict[str, Any]]:
 def build_residency_gate(
     rows: list[dict[str, Any]], *, target_block_count: int
 ) -> dict[str, Any]:
+    def capture_exact(row: dict[str, Any]) -> bool:
+        return (
+            row.get("target_capture_exact") is True
+            if "target_capture_exact" in row
+            else True
+        )
+
+    def keyspace_matchable(row: dict[str, Any]) -> bool:
+        return (
+            row.get("target_keyspace_matchable") is True
+            if "target_keyspace_matchable" in row
+            else capture_exact(row)
+        )
+
     captures = [
         row
         for row in rows
-        if row.get("event") == "target_hashes_captured"
+        if row.get("event")
+        in {"target_hashes_captured", "target_residency_snapshot"}
         and int(row.get("target_block_count") or 0) == target_block_count
+        and capture_exact(row)
+        and keyspace_matchable(row)
     ]
     snapshots = [
         row
@@ -783,6 +1080,8 @@ def build_residency_gate(
     gpu_count = int(latest.get("gpu_target_block_count") or 0)
     cpu_was_complete = any(
         int(row.get("cpu_target_block_count") or 0) == target_block_count
+        and capture_exact(row)
+        and keyspace_matchable(row)
         for row in snapshots
     )
 
@@ -790,7 +1089,12 @@ def build_residency_gate(
         decision = "unobservable"
     elif cpu_evictions or (cpu_was_complete and cpu_count < target_block_count):
         decision = "cpu_target_lost"
-    elif cpu_count == target_block_count and gpu_count == 0:
+    elif (
+        cpu_count == target_block_count
+        and gpu_count == 0
+        and capture_exact(latest)
+        and keyspace_matchable(latest)
+    ):
         decision = "trigger_ready"
     else:
         decision = "continue_pressure"
@@ -799,6 +1103,8 @@ def build_residency_gate(
         "decision": decision,
         "restore_allowed": decision == "trigger_ready",
         "target_hashes_captured_exact": bool(captures),
+        "target_keyspace_matchable": keyspace_matchable(latest),
+        "target_capture_exact": capture_exact(latest),
         "target_block_count": target_block_count,
         "latest_cpu_target_block_count": cpu_count,
         "latest_gpu_target_block_count": gpu_count,
@@ -816,11 +1122,28 @@ def summarize_h2d_trigger_rows(
     expected_world_size: int,
     require_restore_group_eligibility: bool = False,
 ) -> dict[str, Any]:
+    def capture_exact(row: dict[str, Any]) -> bool:
+        return (
+            row.get("target_capture_exact") is True
+            if "target_capture_exact" in row
+            else True
+        )
+
+    def keyspace_matchable(row: dict[str, Any]) -> bool:
+        return (
+            row.get("target_keyspace_matchable") is True
+            if "target_keyspace_matchable" in row
+            else capture_exact(row)
+        )
+
     captures = [
         row
         for row in rows
-        if row.get("event") == "target_hashes_captured"
+        if row.get("event")
+        in {"target_hashes_captured", "target_residency_snapshot"}
         and int(row.get("target_block_count") or 0) == target_block_count
+        and capture_exact(row)
+        and keyspace_matchable(row)
     ]
     gpu_evictions = [
         row
@@ -836,6 +1159,8 @@ def summarize_h2d_trigger_rows(
         and row.get("reason") == "before_restore_match"
         and int(row.get("cpu_target_block_count") or 0) == target_block_count
         and int(row.get("gpu_target_block_count") or 0) == 0
+        and capture_exact(row)
+        and keyspace_matchable(row)
         and (
             not require_restore_group_eligibility
             or row.get("restore_group_eligibility_complete") is True

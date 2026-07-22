@@ -335,12 +335,12 @@ def test_r3_finalizer_requires_exact_capacity_and_closes_store_restore(
 
 
 def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> None:
-    task_id = "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
+    task_id = "p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723"
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "execution_mode: authorized_single_lifecycle_effective_restore_contract",
+        "execution_mode: authorized_single_lifecycle_logical_keyspace_restore",
         "npu_execution_authorized: true",
         "vllm_server_start_authorized: true",
         "model_requests_authorized: true",
@@ -370,7 +370,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
+        "workloads/p8_2_k1a_r5_f1_r6_logical_keyspace_restore.yaml"
     )
     assert acceptance["p8_2_k1a_r2_grade"] == (
         "ready_p8_2_k1a_r2_allocator_capacity"
@@ -409,7 +409,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
         "green_p8_3_i0_r1_unclassified_taxonomy"
     )
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R5_single_lifecycle_effective_restore_contract"
+        "P8.2-K1A-R5-F1-R6_single_lifecycle_logical_keyspace_restore"
     )
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False

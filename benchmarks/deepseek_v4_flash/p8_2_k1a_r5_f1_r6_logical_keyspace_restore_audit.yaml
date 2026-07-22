@@ -1,0 +1,83 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R6
+date: '2026-07-23'
+task_id: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723
+
+accepted_f1_r5_result:
+  server_grade: red_p8_2_k1a_r5_f1_r5_cleanup_or_recovery_incomplete
+  experimental_terminal: pressure_completed_without_trigger
+  request_count: 3
+  http_200_full_response_count: 3
+  legacy_successful_request_count: 2
+  intentional_pressure_abort_count: 0
+  request_retry_count: 0
+  configured_target_blocks: 128
+  plain_request_hash_candidate_count: 128
+  observed_cpu_target_blocks: 0
+  observed_gpu_target_blocks: 0
+  group0_cpu_pool_keys: 64
+  group1_cpu_pool_keys: 2
+  pressure_progress_event_count: 41
+  restore_sent: false
+  h2d_restore_attempted: false
+  cleanup: clean
+  keep_alive_restart_exit_code: 0
+  keep_alive_marker_count_from_invalid_probe: 0
+  all_eight_npu_healthy: true
+  grading_sha256: 62eb1cf78270c163a4bc861b21c20bbd165161f2172118928294403c5e61a806
+  trigger_sha256: 79214a8ee8c226fae23acf36da482636d8976638e5e2dc96c5050cf41c4ac3aa
+  timeline_sha256: 6c44139c0f6500af5e09f7de67efc7a619cb856f52a70ec13755f4363e561dca
+  recovery_sha256: 237bcf8456cc9269bd182efeb34d27e3b71b6c9e07563ba8ad4aa7dcf750a429
+  manifest_sha256: 9d820400ef21df57f67540946b2b17917bae1c3949613c1057c661596f274c4e
+
+developer_diagnosis:
+  request_hashes_are_not_runtime_pool_keys: true
+  compressed_and_sparse_groups_have_non_identity_physical_geometry: true
+  plain_hash_cardinality_does_not_prove_pool_key_matchability: true
+  group_physical_key_counts_do_not_replace_logical_restore_coverage: true
+  accepted_capacity_invalidated: false
+  full_logical_128_block_cpu_only_window_disproven: false
+  keep_alive_process_name_probe_invalid: true
+  keep_alive_real_marker_format: '#card_id#'
+  legacy_request_success_count_coupled_to_experimental_role_completion: true
+
+developer_decision:
+  same_fixed_capacity_and_context_required: true
+  logical_target_block_count_required: 128
+  logical_restore_match_tokens_required: 16384
+  hash_block_size_tokens: 128
+  runtime_cpu_coordinator_lookup_required: true
+  runtime_pool_key_count_may_differ: true
+  runtime_pool_keys_internal_only: true
+  exact_runtime_pool_keys_retained_for_eviction_checks: true
+  gpu_runtime_pool_key_match_count_required: 0
+  observer_remains_read_only: true
+  accepted_capacity_invalidated: false
+  give_up_on_128_block_window_authorized: false
+  cpu_blocks_per_rank: 128
+  cpu_bytes_per_rank: 430604288
+  cpu_bytes_total: 3444834304
+  pressure_context_tokens: 36800
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  same_card_set_recovery_required: true
+  keep_alive_expected_marker_count: 16
+  transport_and_contract_outcome_counts_separated: true
+  runtime_or_dependency_mutation_authorized: false
+  performance_reference_authorized: false
+  unique_root_cause_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+failure_classification:
+  - logical_request_hash_to_runtime_pool_key_alignment_missing
+  - full_logical_128_block_cpu_only_window_not_yet_observed_or_disproven
+  - pressure_abort_not_confirmed
+  - restore_cpu_hit_or_h2d_pipeline_incomplete
+  - keep_alive_recovery_probe_false_negative
+  - request_transport_and_contract_counts_ambiguous
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_runtime_logical_keyspace_alignment_and_conditional_h2d_mechanism_candidate_only

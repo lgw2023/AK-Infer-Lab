@@ -162,8 +162,8 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_r5_f0_task():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-F1-R5 有效 128-block 恢复合同闭合" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722" in handoff
+    assert "P8.2-K1A-R5-F1-R6 逻辑恢复键空间对齐" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
@@ -184,7 +184,7 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_r5_f0_task():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
+        "p8_2_k1a_r5_f1_r6_logical_keyspace_restore.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_grade"] == (
         "blocked_p6_3b_r4_source_or_resource_gate"

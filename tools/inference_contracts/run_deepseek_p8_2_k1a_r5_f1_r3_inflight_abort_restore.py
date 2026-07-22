@@ -138,6 +138,10 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "request_hash_candidate_count",
         "fa_group_hash_candidate_count",
         "selected_target_hash_count",
+        "logical_restore_match_tokens",
+        "target_pool_key_count",
+        "cpu_target_pool_key_match_count",
+        "gpu_target_pool_key_match_count",
     ):
         if field in row:
             value[field] = int(row.get(field) or 0)
@@ -145,6 +149,21 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         value["target_capture_source"] = str(row["target_capture_source"])
     if "target_capture_exact" in row:
         value["target_capture_exact"] = row.get("target_capture_exact") is True
+    for field in (
+        "target_capture_cardinality_exact",
+        "target_keyspace_matchable",
+        "logical_restore_window_exact",
+    ):
+        if field in row:
+            value[field] = row.get(field) is True
+    for field in (
+        "target_count_unit",
+        "cpu_target_count_unit",
+        "gpu_target_count_unit",
+        "target_pool_key_count_unit",
+    ):
+        if field in row:
+            value[field] = str(row[field])
     if "restore_group_count" in row:
         value.update(
             {
@@ -260,6 +279,14 @@ def build_inflight_trigger_state(
         and int(row.get("cpu_target_block_count") or 0)
         == required_blocks
         and int(row.get("gpu_target_block_count") or 0) == 0
+        and (
+            "target_capture_exact" not in row
+            or row.get("target_capture_exact") is True
+        )
+        and (
+            "target_keyspace_matchable" not in row
+            or row.get("target_keyspace_matchable") is True
+        )
         and (
             not require_groups
             or row.get("restore_group_eligibility_complete") is True
@@ -909,6 +936,56 @@ def _pressure_abort_evidence_exact(row: dict[str, Any]) -> bool:
     )
 
 
+def summarize_inflight_request_outcomes(
+    rows: list[dict[str, Any]],
+) -> dict[str, int]:
+    http_success = [
+        row
+        for row in rows
+        if row.get("status") == "success"
+        and row.get("http_status") == 200
+        and row.get("saw_done") is True
+    ]
+    contract_completed = [
+        row
+        for row in rows
+        if (
+            str(row.get("k1a_role") or "")
+            in {"warmup", "target_prime", "restore_follower"}
+            and row.get("status") == "success"
+        )
+        or (
+            str(row.get("k1a_role") or "").startswith("pressure_")
+            and row.get("status") == "aborted_on_trigger"
+        )
+    ]
+    intentional_aborts = [
+        row
+        for row in rows
+        if str(row.get("k1a_role") or "").startswith("pressure_")
+        and row.get("status") == "aborted_on_trigger"
+        and row.get("abort_requested") is True
+    ]
+    pressure_completed = [
+        row
+        for row in rows
+        if str(row.get("k1a_role") or "").startswith("pressure_")
+        and row.get("status") == "success"
+        and row.get("http_status") == 200
+        and row.get("saw_done") is True
+        and row.get("abort_requested") is not True
+    ]
+    return {
+        "request_count": len(rows),
+        "http_transport_success_count": len(http_success),
+        "contract_completed_role_count": len(contract_completed),
+        "intentional_pressure_abort_count": len(intentional_aborts),
+        "pressure_full_response_without_trigger_count": len(
+            pressure_completed
+        ),
+    }
+
+
 def _timeline_order_exact(timeline: dict[str, Any]) -> bool:
     timestamp_fields = (
         "pressure_start_monotonic_ns",
@@ -1007,6 +1084,8 @@ def build_resource_recovery_summary(
     stop_exit_code: int,
     restart_exit_code: int,
     keep_alive_marker_count: int,
+    expected_keep_alive_marker_count: int | None = None,
+    keep_alive_marker_card_ids: list[int] | None = None,
     port_7000_listener_count: int,
     vllm_residual_process_count: int,
     healthy_card_ids: list[int],
@@ -1015,13 +1094,20 @@ def build_resource_recovery_summary(
     stopped = sorted(set(stopped_card_ids))
     restored = sorted(set(restored_card_ids))
     healthy = sorted(set(healthy_card_ids))
+    marker_cards = sorted(set(keep_alive_marker_card_ids or []))
     same_card_set = bool(stopped) and stopped == restored
+    marker_coverage_exact = (
+        keep_alive_marker_count > 0
+        if expected_keep_alive_marker_count is None
+        else keep_alive_marker_count == expected_keep_alive_marker_count
+        and marker_cards == stopped
+    )
     keep_alive_restored = all(
         (
             same_card_set,
             stop_exit_code == 0,
             restart_exit_code == 0,
-            keep_alive_marker_count > 0,
+            marker_coverage_exact,
         )
     )
     port_free = port_7000_listener_count == 0
@@ -1043,6 +1129,9 @@ def build_resource_recovery_summary(
         "stop_exit_code": stop_exit_code,
         "restart_exit_code": restart_exit_code,
         "keep_alive_marker_count": keep_alive_marker_count,
+        "expected_keep_alive_marker_count": expected_keep_alive_marker_count,
+        "keep_alive_marker_card_ids": marker_cards,
+        "keep_alive_marker_coverage_exact": marker_coverage_exact,
         "keep_alive_restored_exact": keep_alive_restored,
         "port_7000_listener_count": port_7000_listener_count,
         "port_7000_free": port_free,
@@ -1218,6 +1307,7 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         )
     )
     terminal = str(timeline.get("terminal_decision") or "missing")
+    request_outcomes = summarize_inflight_request_outcomes(request_rows)
     grades = classify_inflight_grades(
         grade_prefix=GRADE_PREFIX,
         candidate_green=CANDIDATE_GREEN,
@@ -1234,10 +1324,19 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         "experimental_grade": grades["experimental_grade"],
         "operational_grade": grades["operational_grade"],
         "experimental_terminal": terminal,
-        "request_count": len(request_rows),
-        "successful_request_count": sum(
-            _request_evidence_exact(row) for row in request_rows
-        ),
+        "request_count": request_outcomes["request_count"],
+        "successful_request_count": request_outcomes[
+            "http_transport_success_count"
+        ],
+        "http_transport_success_count": request_outcomes[
+            "http_transport_success_count"
+        ],
+        "contract_completed_role_count": request_outcomes[
+            "contract_completed_role_count"
+        ],
+        "pressure_full_response_without_trigger_count": request_outcomes[
+            "pressure_full_response_without_trigger_count"
+        ],
         "pressure_request_count_executed": int(
             timeline.get("pressure_request_count_executed") or 0
         ),
@@ -1272,13 +1371,22 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
     }
     mtp_queue_health = {
         "schema_version": f"{CONTRACT_SCHEMA_TAG}_mtp_queue_health_v1",
-        "request_count": len(request_rows),
-        "completed_request_count": sum(
-            _request_evidence_exact(row) for row in request_rows
-        ),
-        "intentional_pressure_abort_count": sum(
-            _pressure_abort_evidence_exact(row) for row in request_rows
-        ),
+        "request_count": request_outcomes["request_count"],
+        "completed_request_count": request_outcomes[
+            "http_transport_success_count"
+        ],
+        "http_transport_success_count": request_outcomes[
+            "http_transport_success_count"
+        ],
+        "contract_completed_role_count": request_outcomes[
+            "contract_completed_role_count"
+        ],
+        "intentional_pressure_abort_count": request_outcomes[
+            "intentional_pressure_abort_count"
+        ],
+        "pressure_full_response_without_trigger_count": request_outcomes[
+            "pressure_full_response_without_trigger_count"
+        ],
         "queue_idle_after_abort": timeline.get("pressure_idle_after_abort") is True,
         "counter_continuity_ok_all": bool(request_rows)
         and all(row.get("counter_continuity_ok") is True for row in request_rows),
@@ -1339,6 +1447,8 @@ def _parser() -> argparse.ArgumentParser:
     recovery.add_argument("--stop-exit-code", type=int, required=True)
     recovery.add_argument("--restart-exit-code", type=int, required=True)
     recovery.add_argument("--keep-alive-marker-count", type=int, required=True)
+    recovery.add_argument("--expected-keep-alive-marker-count", type=int)
+    recovery.add_argument("--keep-alive-marker-card-ids", default="")
     recovery.add_argument("--port-7000-listener-count", type=int, required=True)
     recovery.add_argument(
         "--vllm-residual-process-count", type=int, required=True
@@ -1374,6 +1484,12 @@ def main() -> int:
             stop_exit_code=args.stop_exit_code,
             restart_exit_code=args.restart_exit_code,
             keep_alive_marker_count=args.keep_alive_marker_count,
+            expected_keep_alive_marker_count=(
+                args.expected_keep_alive_marker_count
+            ),
+            keep_alive_marker_card_ids=_parse_card_ids(
+                args.keep_alive_marker_card_ids
+            ),
             port_7000_listener_count=args.port_7000_listener_count,
             vllm_residual_process_count=args.vllm_residual_process_count,
             healthy_card_ids=_parse_card_ids(args.healthy_card_ids),

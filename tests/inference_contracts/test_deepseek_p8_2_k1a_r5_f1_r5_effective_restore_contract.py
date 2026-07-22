@@ -289,22 +289,24 @@ def test_best_near_miss_keeps_bounded_group_geometry_without_hashes() -> None:
     assert near_miss["raw_hash_values_retained"] is False
 
 
-def test_f1_r5_is_the_only_current_server_handoff_and_uses_one_driver() -> None:
+def test_f1_r5_is_preserved_as_parent_of_the_current_r6_handoff() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
+    current_task = "p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723"
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
-    assert f"task_id: {TASK_ID}" in handoff
+    assert f"task_id: {current_task}" in handoff
+    assert f"parent_f1_r5_task={TASK_ID}" in handoff
     for marker in (
-        "F1-R4 是无效运行合同证据，不是 accepted capacity 失败证据",
+        "F1-R5 不是 accepted capacity 失败证据",
         "不要手工分步重现 runner 内部流程",
-        "run_deepseek_p8_2_k1a_r5_f1_r5_server_task.sh",
-        "P8_2_K1A_F1_R5_SERVER_TASK_AUDIT_ONLY=1",
-        "h2d_target_block_count=128",
-        "restore_target_geometry_exact=true",
+        "run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh",
+        "P8_2_K1A_F1_R6_SERVER_TASK_AUDIT_ONLY=1",
+        "logical_target_block_count=128",
+        "runtime_cpu_coordinator_lookup_required=true",
         "request_hash_candidate_count",
-        "fa_group_hash_candidate_count",
-        "theoretical/selected/non-null/hashable",
+        "logical_restore_match_tokens",
+        "target_pool_key_count",
         "resource_recovery_summary.json",
         "experimental_grade",
         "operational_grade",

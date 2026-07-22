@@ -1,10 +1,10 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K1A-R5-F1-R5 有效 128-block 恢复合同闭合
+## 当前唯一服务器动作：P8.2-K1A-R5-F1-R6 逻辑恢复键空间对齐
 
 ~~~text
-task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722
-execution_mode: authorized_single_lifecycle_effective_restore_contract
+task_id: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723
+execution_mode: authorized_single_lifecycle_logical_keyspace_restore
 server_sync_review_authorized: true
 offline_parent_gate_required: true
 npu_execution_authorized: true
@@ -23,12 +23,15 @@ request_retry_count_exact: 0
 accepted_cpu_blocks_per_rank_exact: 128
 accepted_cpu_bytes_per_rank_exact: 430604288
 accepted_cpu_bytes_total_exact: 3444834304
-effective_target_block_count_exact: 128
+logical_target_block_count_exact: 128
 required_restore_block_count_exact: 128
 block_size_tokens_exact: 128
 restore_match_tokens_exact: 16384
 pressure_context_tokens_exact: 36800
+runtime_pool_key_count_fixed: false
+runtime_cpu_coordinator_lookup_required: true
 all_relevant_kv_groups_required: true
+kv_connector: SimpleCPUOffloadConnector
 full_request_window_watch_required: true
 stop_on_first_near_miss: false
 stop_on_first_cpu_target_eviction: false
@@ -49,88 +52,127 @@ p8_3_i1_authorized: false
 no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true
 ~~~
 
-### 先读结论，不要自行推断
+### 先读结论：服务器助手不需要现场设计或改代码
 
-F1-R4 是无效运行合同证据，不是 accepted capacity 失败证据。外层 F1-R4 明确导出
-`P8_2_K1A_H2D_TARGET_BLOCK_COUNT=128`，但旧的通用 mode 脚本在真正启动 vLLM 前又无条件
-覆盖成 `64`。因此 F1-R4 看到的 `CPU=64/GPU=0`、零 trigger 和 pressure 自然完成都是
-旧合同失真下的结果，不得写成“128-block CPU-only 窗口在 accepted capacity 下不可能”。
+F1-R5 不是 accepted capacity 失败证据；accepted capacity 没有失效，也没有证明完整逻辑
+128-block CPU-only 窗口不可形成。
+它把 128 个 plain request hash 直接拿去查以 `BlockHashWithGroupId` 为键的 runtime pool；这里的
+request hash 不是 runtime pool key，所以 41 个进度点都错误显示 `CPU=0/GPU=0`。同一份原始状态已经证明
+真实 CPU pool 中至少有 group 0 的 64 个 key 和 group 1 的 2 个 key。压缩/稀疏 KV 组的
+physical pool key 数量可以不是 128，不能用某个组的物理 key 数代替 16K 前缀的逻辑 128-block 覆盖。
 
-F1-R4 还暴露了两个报告问题：第 0 组为 `65 non-null / 64 hashable`，旧代码把末尾无 hash
-partial block 错当成 restore lookup 必需块；同时 `resource_recovery_summary.json` 没有生成，导致
-cleanup/recovery grade 覆盖了真正的实验终态。F1-R5 已在代码中修复这些问题，服务器助手
-不需要再现场改代码、拼命令或补文件。
+F1-R6 已把代码写好：观察器以只读方式调用运行时自身的
+`find_longest_cache_hit(request_hashes, 16384)`，以返回的命中 token 数判定逻辑 128-block 窗口，
+同时保留运行时返回的真实 group pool key 做 CPU/GPU 驻留和后续 eviction 检查。只有以下条件同时
+成立才允许中止 pressure 并发送 restore：
 
-本轮的唯一执行入口是：
+1. 128 个逻辑 request hash 候选完整；
+2. `logical_restore_match_tokens=16384`，即逻辑 128-block 完整命中；
+3. 运行时返回的全部非空 group pool key 都在 CPU pool；
+4. 这些真实 pool key 在 GPU pool 的匹配数为 0；
+5. request-local progress 唯一、单请求，且 post-abort idle 后复查仍成立。
+
+这是一条 observe-only 路径：不修改调度、请求顺序、复制参数或依赖。不要退回旧的
+`select_target_hashes` 推断，不要把 physical key count 强行设成 128，不要因为仍未看到窗口就放弃
+accepted capacity。
+
+F1-R5 的 keep-alive 恢复也是假阴性：重启退出码为 0、同卡集合一致且八卡健康，但旧 driver 查找
+不存在的 `npu_keep_alive.py` 进程名。真实 worker 参数以 `#0#` 到 `#7#` 标卡，正常总 marker 数为
+16。F1-R6 driver 已在恢复后最多等待 30 秒，按 `#card_id#` 做总数与八卡覆盖双校验。
+
+本轮唯一入口：
 
 ~~~text
-tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_server_task.sh
+tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh
 ~~~
 
-它自动执行 `parent/effective preflight（keep-alive 运行）-> stop keep-alive -> one lifecycle -> vLLM cleanup -> restore same cards ->
-record resource recovery -> finalize bounded package`。不要手工分步重现 runner 内部流程，不要跳过
-driver 直接运行 mode runner，不要重跑 run02。
+它自动执行 `parent/repo preflight（keep-alive 仍运行） -> stop 0-7 -> one lifecycle -> cleanup ->
+restore 0-7 -> real marker probe -> resource recovery record -> bounded finalize`。
+不要手工分步重现 runner 内部流程，不要直接运行 mode runner，不要修改脚本，不要创建 run02，
+不要 retry 或 sweep。
 
-## 0. F1-R4 parent 证据与本轮边界
+## 0. 必须冻结的 F1-R5 parent
 
-服务器 parent 目录必须原位存在：
+直接 parent 目录必须原位存在：
 
 ~~~text
-/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722_run01
+/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722_run01
 ~~~
 
-四个 parent 文件必须精确匹配：
+以下五个文件必须精确匹配；driver 会在停卡前自动验证：
 
 ~~~text
-b84df30aed30cd50374cd9c8a18ce5ae6bc878643dbf4955f32602ac6d416cba  grading_summary.json
-4b47a03bcda1cdc32beab382a22e03cd1ea3753b5bca21924cdfe64e56f3e47a  h2d_trigger_summary.json
-234b3799f77035902cb0b39bdfd62a3dabc918adf46864ba22aed75cf15d6164  residency_gate_timeline.json
-a69a426b8ae323129ea9ecf20ea5410b24da7b61ff062102ccb44006b4215bba  candidate_manifest.server_local.json
+62eb1cf78270c163a4bc861b21c20bbd165161f2172118928294403c5e61a806  grading_summary.json
+79214a8ee8c226fae23acf36da482636d8976638e5e2dc96c5050cf41c4ac3aa  h2d_trigger_summary.json
+6c44139c0f6500af5e09f7de67efc7a619cb856f52a70ec13755f4363e561dca  residency_gate_timeline.json
+237bcf8456cc9269bd182efeb34d27e3b71b6c9e07563ba8ad4aa7dcf750a429  resource_recovery_summary.json
+9d820400ef21df57f67540946b2b17917bae1c3949613c1057c661596f274c4e  candidate_manifest.server_local.json
 ~~~
 
 已接受 parent 事实：
 
 ~~~text
-parent_server_grade=red_p8_2_k1a_r5_f1_r4_cleanup_or_recovery_incomplete
+parent_server_grade=red_p8_2_k1a_r5_f1_r5_cleanup_or_recovery_incomplete
 parent_experimental_terminal=pressure_completed_without_trigger
-parent_formal_model_lifecycle_count=1
 parent_request_count=3
-parent_successful_request_count=3
-parent_intentional_pressure_abort_count=0
+parent_http_200_full_response_count=3
+parent_legacy_successful_request_count=2
 parent_request_retry_count=0
 parent_configured_target_blocks=128
-parent_effective_runtime_target_blocks=64
-parent_best_cpu_target_blocks=64
-parent_best_gpu_target_blocks=0
+parent_request_hash_candidate_count=128
+parent_observed_cpu_target_blocks=0
+parent_observed_gpu_target_blocks=0
+parent_group0_cpu_pool_keys=64
+parent_group1_cpu_pool_keys=2
 parent_pressure_progress_event_count=41
 parent_restore_sent=false
-parent_d2h_store_complete=true
-parent_h2d_worker_count=0
-parent_h2d_bytes_total=0
 parent_h2d_restore_attempted=false
 parent_cleanup=clean
-parent_resource_recovery_structured_artifact_present=false
-parent_accepted_capacity_invalidated=false
+parent_keep_alive_restart_exit_code=0
+parent_keep_alive_marker_count_from_invalid_probe=0
+parent_same_card_set_restored=true
+parent_all_eight_npu_healthy=true
+accepted_capacity_invalidated=false
+full_logical_128_block_cpu_only_window_disproven=false
 ~~~
 
-F1-R4 所继承的上游 F1-R3 事实也继续冻结，仅用于避免服务器助手丢失完整 lineage；它不是
-F1-R5 的直接 parent，不得重跑或用来替代上面的 F1-R4 gate：
+本轮还修正请求计数语义：`http_transport_success_count` 只统计 HTTP 200 + `[DONE]` 的完整传输，
+`contract_completed_role_count` 统计 warmup/target/restore 成功及 pressure 按 trigger 有意中止的合同完成。
+pressure 完整返回但没有 trigger 时，前者增加、后者不增加，并单列
+`pressure_full_response_without_trigger_count`；不得再把传输成功写成请求失败。
+
+拉取后以下 repo 文件 SHA-256 必须精确匹配。R4/R5 文件只用于冻结 parent 链；唯一可执行入口仍是
+R6 server task：
 
 ~~~text
-parent_task_id=p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722
-parent_grade=red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete
-upstream_f1_r3_request_count=4
-upstream_f1_r3_successful_request_count=3
-upstream_f1_r3_d2h_worker_count=8
-upstream_f1_r3_d2h_bytes_total=4548257792
-upstream_f1_r3_restore_cpu_hit_exact=false
-upstream_f1_r3_restore_load_scheduled=false
-upstream_f1_r3_h2d_worker_count=0
-upstream_f1_r3_h2d_bytes_total=0
-upstream_f1_r3_prefix_hits_delta=0.0
+6679e7abf67d3e4a2852273e54f1071a106933228a07a30e6b3987d7db5d4fc5  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_audit.yaml
+2acc928a5b351cd290e3496caaea5ebece58c1caa731a8a83068f3aa5f8b68c8  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml
+09bd6a02da715416f1af85689045ce91841d8279812cd483ec3be62deb6f0288  tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py
+b63c02e92c7f6d9ff4a161e3a418199eff8938c8ebcc8d9535c10ab38d125ee2  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
+34acb760e6d76eb2f7748b6b45c6240bfc6e1a23c1709b11bf17a5e787913bf0  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py
+2835fffdd7876125d947c50bf6246da9038edac4e417e188ca6fc5cd0716ac85  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.py
+5628a1109164146a33e082c9622c31a88c2fcf209808326219be7fd531c19ee9  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh
+2707099971bf71cbec4add841907d864360e60d3e9eac0586ea3eb0c1c5f5ae7  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py
+0d190d51ad15d321fa25db94b82b0c0c6c5f7bbc271a0b6c739fd2d22d36999d  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh
+bcfb73b1faf64afd89e9231ea383500d2a01d38e673f39c3578425f51bd91a03  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
+61bdd399a4742e3ae4b76614628b939a234bae6bd160ad7d22f8fe67ec54a89b  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.py
+5435592911e388daa047fe6d976cc351ab41b8b34de1bee990cc010f66fa3055  benchmarks/deepseek_v4_flash/patches/p8_2_k1a_r5_f1_r1_shared_diagnostic_mode.patch
+5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6  benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch
+557bec74ec427a2bc37165eea3c38eab6f809ec46ac6cd4f904c1e5386b30240  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r5_effective_restore_contract_audit.yaml
+2ed46e8df421076b00a1d71a6dfb1a30e315c21a2ba5990ae1fce7bcedc4211d  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml
+96cc47e1574e2f56eddef8b5e4886491d00af946dee30a66ea761c68eb03a143  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.py
+41fc23b2d793f62ff7ecd58ac091afd5c6200b2816a7845b5e72c89200405337  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.sh
+c81be3a3cf7da92ce4c9279bb4cc1e1039991b2c7a01c398b87b51ae3655a4f7  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_server_task.sh
+7679c5e30829294015d65aed6416ec8986c557937cc8c8fb850003f7037e8244  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.py
+0b7a1b0e2ed18849570fe4b290bd308fcf53997be51e3aae0283edcdd288d793  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r6_logical_keyspace_restore_audit.yaml
+6e4bcc70c78b77f74b834aa51a0f58d46c438206e248311068cc71dd32a3d4e2  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r6_logical_keyspace_restore.yaml
+cb1fc04245741e110f36f3a5296d39de0dc57651e0523d5f07cb338583db173a  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.py
+2140e68e1e39f6c0d05fb8629ecea39dbefac7aaf422ec4d4866c6ad15ca29cd  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.sh
+bba3061051cd19eaab1c61a214081842a73d9dced23fca2c937308e6e4825fc7  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh
+5b5b051afd774b2ca6f7c97f9ec19932028e7644f09ded07948fbddcbe3969ed  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.py
 ~~~
 
-以下已关闭 lineage 只作前置真值，不授权重跑；当前运行仍只有 F1-R5 server driver：
+以下历史阶段已冻结，不授权重跑；这些精确标签只用于防止 lineage 丢失：
 
 ~~~text
 green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab
@@ -147,49 +189,44 @@ red_p8_2_k1a_r5_l1_r1_cpu_target_lost
 red_p8_2_k1a_r5_f1_r1_fixed_pressure_target_lost
 candidate_p8_2_k1a_r5_f1_r2_mid_request_window_endpoint_mismatch
 red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete
+red_p8_2_k1a_r5_f1_r4_cleanup_or_recovery_incomplete
+red_p8_2_k1a_r5_f1_r5_cleanup_or_recovery_incomplete
+parent_task_id=p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722
+parent_f1_r5_task=p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722
 manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
 block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283
+~~~
+
+F1-R1/R2/R3/R4/R5、K2、P8.3-I1 及其后续阶段都不得重跑。
+
+为兼容完整历史合同，以下参数别名继续冻结；它们不扩大授权：
+
+~~~text
+cpu_bytes_to_use_per_rank=430604288
+cpu_bytes_to_use=3444834304
+logical_restore_gate=CPU=128/GPU=0
+pressure_status_on_trigger=aborted_on_trigger
+parent_grade=red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete
+upstream_f1_r3_request_count=4
+parent_successful_request_count=3
+parent_d2h_store_complete=true
+parent_h2d_worker_count=0
+parent_cleanup=clean
+historical_single_group_window=CPU=64/GPU=0
+current_pressure_role=pressure_01
+conditional_restore_role=restore_follower
 historical_invalid_runner=tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh
 ~~~
 
 不得进入 K2；不得进入 P8.3-I1。
 
-拉取后以下 repo 文件 SHA-256 必须精确匹配。表中同时保留 F1-R4 历史合同与 F1-R5 当前入口，
-目的是让服务器机器校验代码链，而不是授权重跑 F1-R4：
+## 1. 同步 main 与离线合同门（此时不要停 keep-alive）
 
-~~~text
-6679e7abf67d3e4a2852273e54f1071a106933228a07a30e6b3987d7db5d4fc5  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_audit.yaml
-2acc928a5b351cd290e3496caaea5ebece58c1caa731a8a83068f3aa5f8b68c8  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml
-69005a9479eb899ab039f14dd6f810e93cf8464d65899355ee832a5ba6c3334d  tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py
-b63c02e92c7f6d9ff4a161e3a418199eff8938c8ebcc8d9535c10ab38d125ee2  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
-e6346b1ef8f89adb4028da02fb53c6dbfbac7dcccf09931c9434b1995f4ac4c1  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py
-2835fffdd7876125d947c50bf6246da9038edac4e417e188ca6fc5cd0716ac85  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.py
-5628a1109164146a33e082c9622c31a88c2fcf209808326219be7fd531c19ee9  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh
-2707099971bf71cbec4add841907d864360e60d3e9eac0586ea3eb0c1c5f5ae7  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py
-0d190d51ad15d321fa25db94b82b0c0c6c5f7bbc271a0b6c739fd2d22d36999d  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh
-bcfb73b1faf64afd89e9231ea383500d2a01d38e673f39c3578425f51bd91a03  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
-61bdd399a4742e3ae4b76614628b939a234bae6bd160ad7d22f8fe67ec54a89b  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.py
-5435592911e388daa047fe6d976cc351ab41b8b34de1bee990cc010f66fa3055  benchmarks/deepseek_v4_flash/patches/p8_2_k1a_r5_f1_r1_shared_diagnostic_mode.patch
-5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6  benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch
-557bec74ec427a2bc37165eea3c38eab6f809ec46ac6cd4f904c1e5386b30240  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r5_effective_restore_contract_audit.yaml
-2ed46e8df421076b00a1d71a6dfb1a30e315c21a2ba5990ae1fce7bcedc4211d  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml
-96cc47e1574e2f56eddef8b5e4886491d00af946dee30a66ea761c68eb03a143  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.py
-41fc23b2d793f62ff7ecd58ac091afd5c6200b2816a7845b5e72c89200405337  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.sh
-c81be3a3cf7da92ce4c9279bb4cc1e1039991b2c7a01c398b87b51ae3655a4f7  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_server_task.sh
-4588d3cad25206688ea7118016a329beb27d474430246d3880ef75065d11f069  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.py
-~~~
-
-本轮不改 capacity、context、request order、runtime 版本、overlay 或依赖，不做 sweep 和 retry。已关闭
-并保持关闭：performance reference、optimization gain、unique cause、K2、P8.3-I1、P8.4、P8.5、P9。
-
-## 1. 同步与仓库合同（keep-alive 保持运行）
-
-只允许从干净 `main` 普通 fast-forward。禁止 reset、stash、rebase、cherry-pick、server commit 或 push。
-未跟踪服务器产物保留在 `--untracked-files=no` 边界外。
+只允许从 tracked-clean `main` 普通 fast-forward。服务器本地 `server_local/` 未跟踪结果不在
+tracked-clean 判定内。禁止 reset、stash、rebase、cherry-pick、server commit 或 push。
 
 ~~~bash
 set -euo pipefail
-
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 cd "${REPO_ROOT}"
 git fetch origin main
@@ -202,65 +239,67 @@ git rev-list --left-right --count HEAD...origin/main
 git status --short --branch --untracked-files=no
 ~~~
 
-拉取后重新打开本文件，只执行这里的 F1-R5。首先在 keep-alive 运行时做离线合同门：
+拉取后重新打开本文件，并按顺序运行以下离线门：
 
 ~~~bash
 set -euo pipefail
-
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
 cd "${REPO_ROOT}"
 
 python3 -m pytest \
   tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py \
   tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.py -q
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.py \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.py -q
 
 python3 -m py_compile \
   tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py \
   tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.py
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.py
 
 bash -n \
   tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.sh \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_server_task.sh
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.sh \
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh
 
-P8_2_K1A_F1_R5_SERVER_TASK_AUDIT_ONLY=1 \
-  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_server_task.sh \
-  /tmp/opencode/p8_2_k1a_r5_f1_r5_unused
+P8_2_K1A_F1_R6_SERVER_TASK_AUDIT_ONLY=1 \
+  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh \
+  /tmp/opencode/p8_2_k1a_r5_f1_r6_unused
 ~~~
 
-audit-only 必须在同一次输出中同时看到：
+audit-only 必须同时看到：
 
 ~~~text
-task_id=p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722
-server_task_driver=stop_run_cleanup_restore_record_finalize
+task_id=p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723
+server_task_driver=preflight_stop_run_cleanup_restore_probe_record_finalize
 keep_alive_card_ids=0,1,2,3,4,5,6,7
+keep_alive_marker_format=#card_id#
+expected_keep_alive_marker_count=16
 same_card_set_restore_on_every_exit=true
-effective_target_block_count=128
-h2d_target_block_count=128
-restore_match_tokens=16384
-block_size_tokens=128
-restore_target_geometry_exact=true
-target_capture_source_and_count_required=true
-group_capture_geometry_required=true
-resource_recovery_summary_always_recorded=true
-finalize_after_recovery=true
+parent_f1_r5_keyspace_probe_invalid=true
+accepted_capacity_invalidated=false
+logical_target_block_count=128
+logical_restore_match_tokens=16384
+runtime_pool_key_count_fixed=false
+runtime_cpu_coordinator_lookup_required=true
+same_capacity_and_context=true
+pressure_context_tokens=36800
 request_retry_count_exact=0
 capacity_search_authorized=false
+resource_recovery_summary_always_recorded=true
+finalize_after_recovery=true
 result_transfer_authorized=true
 automatic_transfer_allowed=false
 next_task_authorized=false
 ~~~
 
-若 `h2d_target_block_count` 不是 128，或 `restore_target_geometry_exact` 不是 true，立即报
-`blocked_p8_2_k1a_r5_f1_r5_effective_runtime_contract_mismatch` 并停止；不得停卡，不得启动 vLLM，
-不得修改脚本继续。这是 repo 合同问题，不是 capacity 结论。
+任一离线门失败：保持 keep-alive 运行，回报完整命令、退出码和不超过 200 行的首尾错误摘要后停止。
+不得现场修代码继续。
 
-## 2. NPU keep-alive 是常规资源操作
+## 2. keep-alive 是常规资源操作，driver 自动负责
 
-停 keep-alive 不是严重异常。本任务需要 0–7 八张卡，driver 会在模型运行前直接停止这八张卡，
-在成功、失败、中断或提前退出后恢复完全相同的 0–7。driver 内部使用的两条固定命令是：
+本任务需要 0-7 八卡，允许直接停。停卡本身不是事故，也无需单独请示。driver 内部使用：
+下面两条命令的末尾数字是卡号，本轮固定为 0-7；最终回报必须包含实际停卡卡号、实际恢复卡号与恢复状态。
 
 ~~~bash
 # Stop the low-priority keep-alive workload on the selected cards.
@@ -270,167 +309,110 @@ bash /data/node0_disk1/Public/npu_stop.sh 0 1 2 3 4 5 6 7
 bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ~~~
 
-命令末尾数字是卡号；本任务只处理当前机器的 0–7，不扩大到其他节点或其他机器。
-最终回报必须明确写出实际停卡卡号、实际恢复卡号与恢复状态。
+无论成功、失败、中断或提前退出，必须恢复完全相同的 0-7，并以真实 `#0#`...`#7#` worker
+参数验证：`expected_keep_alive_marker_count=16` 且 marker card coverage 恰为 0-7。不要另开终端手工停卡
+或恢复；driver 的 trap 会统一收尾。
 
-正常情况不要在 driver 外重复停卡。如果 shell 被强制杀死、终端断开或 driver 返回后复核发现
-keep-alive 没有恢复，立即手工执行上面的恢复命令，只恢复 0–7，然后更新
-`resource_recovery_summary.json` 并重新 finalize；不得重跑模型 lifecycle。
+## 3. 唯一一次正式执行
 
-## 3. 单次正式 lifecycle（只运行一条命令）
-
-前门全部通过后，只允许一个新目录、一次 driver 调用。不得创建 run02，不得 retry，
-不得修改 context/capacity 重跑。
+确认 `run01` 目录不存在；存在就停止，不覆盖、不删除、不改名、不建 run02。
 
 ~~~bash
 set -euo pipefail
-
 REPO_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_DIR=${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722_run01
+TASK_ID=p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723
+RESULT_DIR="${REPO_ROOT}/server_local/${TASK_ID}_run01"
 cd "${REPO_ROOT}"
 test ! -e "${RESULT_DIR}"
 
 set +e
-bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r5_server_task.sh \
+bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh \
   "${RESULT_DIR}"
 TASK_EXIT=$?
 set -e
 printf 'server_task_exit=%s\n' "${TASK_EXIT}"
+printf 'result_dir=%s\n' "${RESULT_DIR}"
 ~~~
 
-driver 返回非 0 可能只表示实验 red，不代表应该重跑。无论返回值是多少，都先检查原有
-`RESULT_DIR`，检查 keep-alive 和 cleanup，然后按下面的分级回报；不得再次执行 driver。
+非零退出可能是预期 RED 终态；不要据此重跑。driver 已负责 cleanup、恢复、recovery record 和
+finalize。若进程被外部硬杀导致 trap 未运行，才允许只执行 keep-alive 恢复命令和只读健康检查，
+不得补跑实验。
 
-### 3.1 冻结运行值
+## 4. 服务器必须怎样判读，禁止脑补
 
-~~~text
-model_path=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-quantization=ascend
-tensor_parallel_size=8
-expert_parallel=true
-mtp_num_speculative_tokens=1
-graph_mode=FULL_DECODE_ONLY
-max_model_len=135168
-max_num_batched_tokens=4096
-max_num_seqs=1
-block_size_tokens=128
-chunked_prefill=true
-prefix_caching=true
-kv_connector=SimpleCPUOffloadConnector
-kv_role=kv_both
-lazy_offload=true
-cpu_blocks_per_rank=128
-cpu_bytes_to_use_per_rank=430604288
-cpu_bytes_to_use_total=3444834304
-pressure_context_tokens=36800
-restore_match_tokens_required=16384
-effective_target_block_count=128
-request_retry_count=0
-~~~
+按以下优先级读取结果：
 
-observer 只观测，不改 scheduler、copy、LRU、block retention、request order 或 runtime source。它对目标同时记录：
+1. `resource_recovery_summary.json`：操作恢复真值；必须报告 stop/restart exit、stopped/restored IDs、
+   marker count、expected count、marker card IDs、coverage、八卡健康、7000、vLLM residual、tracked-clean。
+2. `residency_gate_timeline.json`：实验时序真值；必须报告 initial/best/trigger/post-abort gate、
+   pressure start/trigger/abort/client exit/idle/restore 的 monotonic ns。
+3. `h2d_trigger_summary.json`：H2D 机制证据；报告 D2H、CPU hit/load、H2D workers/bytes/completion。
+4. `grading_summary.json`：同时报告 `experimental_grade`、`operational_grade`、`server_grade`，不得只报
+   被 cleanup/recovery 覆盖的 server grade。
+
+逻辑键空间最少必须回报：
 
 ~~~text
 configured_target_block_count
 request_hash_candidate_count
-fa_group_hash_candidate_count
-selected_target_hash_count
 target_capture_source
+target_capture_cardinality_exact
+target_keyspace_matchable
 target_capture_exact
+logical_restore_match_tokens
+logical_restore_window_exact
+target_count_unit
+cpu_target_count_unit
+gpu_target_count_unit
+target_pool_key_count_unit
+cpu_target_block_count
+gpu_target_block_count
+target_pool_key_count
+cpu_target_pool_key_match_count
+gpu_target_pool_key_match_count
+restore_group_count
+restore_group_rows（只报每组 bounded count，不报 hash/block/request ID）
 ~~~
 
-若 request block hashes 可完整提供 128 个可匹配键，优先使用它；FA-group 保留为 fallback 和差异诊断。
-raw hash、block ID、request ID、token ID、请求体和生成内容不得进入有界包。
+合法终态：
 
-每个 KV group 必须报告 `theoretical/selected/non-null/hashable` 以及 required/captured/CPU/GPU 计数。
-`unhashable_non_null_block_count` 是 partial-block 诊断字段；因为它没有 cache lookup hash，不得被当作
-restore lookup 必需键。同时必须保留 `theoretical_block_count` 与 `provided_block_id_count`，不得用新
-口径掩盖 hybrid geometry 的差异。
+- 若始终没有 `logical_restore_match_tokens=16384`：记录
+  `pressure_completed_without_trigger`；这只是这一次固定生命周期未观察到，不得宣称 accepted
+  capacity 不可能形成完整窗口。
+- 若完整窗口出现但 abort/client exit/idle/post-abort gate 任一不精确：按对应 RED 终态停止。
+- 只有 post-abort gate 仍为 `trigger_ready` 才可发送唯一 restore follower。
+- 只有 restore CPU hit、load scheduled、8 个 H2D worker 完成和 load request completed 全部成立，才可
+  给出 H2D mechanism candidate；不得给 performance 或唯一根因结论。
 
-### 3.2 控制链与观察要求
+请求计数必须分别报告：`request_count`、`http_transport_success_count`、
+`contract_completed_role_count`、`intentional_pressure_abort_count`、
+`pressure_full_response_without_trigger_count`、`request_retry_count=0`。
 
-~~~text
-warmup success
--> target_prime success + D2H store complete
--> effective target capture exact=128 and all bounded group geometry captured
--> async pressure_01 with fixed context 36800
--> watch every request-local progress event for the complete pressure lifetime
--> only exact single-request CPU=128/GPU=0 + all-group eligibility may latch trigger
--> abort pressure streaming connection and record pressure_01 status=aborted_on_trigger
--> pressure client exits
--> engine queue returns idle
--> post-abort full gate remains trigger_ready
--> exactly one restore_follower
-~~~
+## 5. 完整有界回报和传输门
 
-第一次 CPU 近失、GPU 未归零、group 不完整或 CPU target eviction 都不允许提前放弃。只要 pressure
-还在运行，watcher 就继续；后续 scheduler step 仍可能形成完整 128-block CPU-only 窗口。只有完整
-pressure 生命周期结束仍未命中，才可以结束本次 run。
+最终一次性回报：
 
-## 4. 分级解释：必须同时报实验与运维结论
+1. HEAD、origin/main、ahead/behind、tracked-clean；
+2. 五个 parent SHA-256 与 parent grade；
+3. pytest、py_compile、bash -n、audit-only 的命令/退出码/关键合同字段；
+4. lifecycle/request/transport/contract outcome 全部计数；
+5. 逻辑键空间字段与 best near-miss/trigger 的 bounded group counts；
+6. trigger/abort/idle/post-abort/restore 的精确顺序与延迟；
+7. D2H/H2D worker、bytes、pipeline、completion 与三种 grade；
+8. cleanup、7000、vLLM residual、八卡健康、stopped/restored IDs、真实 marker 验证；
+9. `result_summary.md` 绝对路径；
+10. 完整候选清单：每个文件的 bytes、完整 SHA-256、sensitivity；总文件数与总 bytes 双校验。
 
-`grading_summary.json` 现在同时有：
+bounded package 总计不得超过 71680 bytes。不得放入生成内容、请求体、request ID、token ID、原始
+hash、raw vLLM log/trace；大文件只留服务器，回报绝对路径。若包超限，先原位压缩摘要字段而不是
+遗漏清单。
 
-~~~text
-experimental_terminal
-experimental_grade
-operational_grade
-server_grade
-~~~
+候选 manifest 必须显式报告 `payload_file_count`、`transfer_file_count_including_manifest`、
+`candidate_total_bytes` 与上限校验。
 
-不得只报 `server_grade`。分类规则：
+`result_transfer_authorized: true` 仅表示这个完整 bounded package 有资格传输，不代表已经选定渠道。
+必须先展示完整清单、exact result-summary path、每文件 bytes/SHA-256/sensitivity、可用
+`email / upload-api / server-local` 三种方法及推荐理由，然后暂停等待用户明确选择一种方法。
+不得先发状态邮件，不得自动上传，不得失败后自动换渠道。
 
-1. audit-only 的有效值不是 128/16384/128：报 effective runtime contract blocked，零 NPU，不评价 capacity。
-2. target prime 后无法捕获 128 个可匹配 target hashes：报 target-capture/geometry blocked，不评价 capacity，不手工改代码。
-3. 捕获精确，但完整 fixed pressure 生命周期无完整窗口：只报“本次 fixed lifecycle 未观察到”；不得证明 accepted capacity 永久不可能。
-4. trigger/abort/idle/post-abort 闭合，但 CPU hit/load/H2D 不完整：报 H2D evidence incomplete，不得宣称 mechanism green。
-5. 只有 exact 128 CPU-only、全组可恢复、控制顺序闭合、`cpu_hit_matched=16384`、load scheduled、8-rank H2D submit/enqueue/copy/poll/completion、D2H、connector、repair、queue、cleanup/recovery 全部闭合，才允许 candidate green。
-
-任何 red/blocked 都不授权 run02、capacity/context 改动、sweep、K2 或 P8.3-I1。
-
-## 5. Cleanup、recovery 与完整结果包
-
-driver 必须生成 `resource_recovery_summary.json`，即使 restore 没有发送也不得缺失。它至少必须包含：
-
-~~~text
-stopped_card_ids
-restored_card_ids
-same_card_set_restored
-stop_exit_code
-restart_exit_code
-keep_alive_marker_count
-keep_alive_restored_exact
-port_7000_listener_count
-port_7000_free
-vllm_residual_process_count
-healthy_card_ids
-all_eight_npu_healthy
-tracked_worktree_clean
-resource_recovery_exact
-~~~
-
-最终必须确认端口 7000 空闲、无目标 vLLM 残留、八卡 Health=OK、实际 stopped/restored 卡集完全一致、
-keep-alive 恢复准确、tracked worktree clean。大型 raw vLLM log、metrics、request bodies、token IDs、generated
-content、raw trace、raw hashes 与 recovery 命令输出保留在 `RESULT_DIR/runtime/`，只报路径。
-
-有界包合同为 `payload_file_count <= 15`、`manifest_file_count=1`、
-`transfer_file_count <= 16`，包含 manifest 在内严格不超过 `71680 bytes`。最终一次性回报：
-
-1. `HEAD`、`origin/main`、ahead/behind、tracked-clean；
-2. F1-R4 parent 四个 SHA-256、parent server grade 和 experimental terminal；
-3. 定向 pytest、py_compile、三个 Bash 语法、driver audit-only 的有效 128 合同输出和 repo hashes；
-4. lifecycle/request/complete/intentional abort/retry 精确计数与每个 role 终态；
-5. target capture source，`request_hash_candidate_count`、`fa_group_hash_candidate_count`、selected count 与 exact；
-6. 每个 KV group 的 theoretical/selected/non-null/hashable/unhashable/required/captured/CPU/GPU 最佳与终态计数；
-7. 完整 pressure progress 数、最佳 near miss、target eviction 顺序，以及 trigger/abort/client exit/idle/post-abort/restore 时序；
-8. restore CPU hit/load、D2H/H2D worker/bytes/pipeline/completion；
-9. `experimental_terminal`、`experimental_grade`、`operational_grade`、`server_grade`与 claim boundary；
-10. cleanup、7000、vLLM residual、八卡健康、实际停卡/恢复卡集、recovery exact；
-11. `result_summary.md` 绝对路径和完整候选清单：每文件 bytes、SHA-256、sensitivity，另报 payload bytes、manifest bytes、完整 transfer bytes、payload/manifest/transfer file count 并逐文件双校验。
-
-结果传输规则：`result_transfer_authorized: true` 只表示完整有界包可供选择，不选择渠道、不允许自动发送。
-先在当前任务会话给出完整清单，可用方法原样报告为 `email / upload-api / server-local`，并推荐
-`server-local`（raw trace 大，后续可能需要服务器原位分析）。然后暂停，等待用户对这个完整范围明确选择
-一种方法。不得先发状态邮件，不得自动切换渠道，不得在本任务中写传输命令。
-
-回报完成后暂停；不得自行进入 K2、P8.3-I1 或任何下一任务。
+回报完成后暂停；不得自行进入任何下一任务。
