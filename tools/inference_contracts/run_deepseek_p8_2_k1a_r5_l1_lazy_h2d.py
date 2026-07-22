@@ -70,6 +70,7 @@ PRESSURE_CONTEXT_TOKENS = int(
 PRESSURE_REQUEST_COUNT_MAX = int(
     os.environ.get("P8_2_K1A_PRESSURE_REQUEST_COUNT_MAX", "5")
 )
+CALIBRATION_ONLY = os.environ.get("P8_2_K1A_CALIBRATION_ONLY", "0") == "1"
 
 
 def _plan_row(
@@ -214,11 +215,14 @@ def prepare_lazy_h2d_artifacts(
 
 
 def decide_next_action(
-    gate: dict[str, Any], *, pressure_count: int
+    gate: dict[str, Any], *, pressure_count: int, calibration_only: bool = False
 ) -> tuple[dict[str, Any], int]:
     decision = str(gate.get("decision") or "unobservable")
     restore_allowed = gate.get("restore_allowed") is True
-    if decision == "trigger_ready" and restore_allowed:
+    if decision == "trigger_ready" and restore_allowed and calibration_only:
+        action = "stop_calibration_window_observed"
+        exit_code = 0
+    elif decision == "trigger_ready" and restore_allowed:
         action = "send_restore_follower"
         exit_code = 0
     elif decision == "continue_pressure" and pressure_count < PRESSURE_REQUEST_COUNT_MAX:
@@ -500,7 +504,11 @@ def execute_lazy_h2d_lifecycle(
             break
         gate = _wait_for_target_cpu_presence(trace_dir, timeout_seconds=timeout)
         gate_samples.append({"after_role": role, **gate})
-        decision, _ = decide_next_action(gate, pressure_count=pressure_count)
+        decision, _ = decide_next_action(
+            gate,
+            pressure_count=pressure_count,
+            calibration_only=CALIBRATION_ONLY,
+        )
         action = decision["action"]
         if action == "send_restore_follower":
             terminal = "trigger_ready"
@@ -867,6 +875,7 @@ def _parser() -> argparse.ArgumentParser:
     decide = subparsers.add_parser("decide-next")
     decide.add_argument("--gate", type=Path, required=True)
     decide.add_argument("--pressure-count", type=int, required=True)
+    decide.add_argument("--calibration-only", action="store_true")
     decide.add_argument("--output", type=Path, required=True)
     wait = subparsers.add_parser("wait-for-residency")
     wait.add_argument("--trace-dir", type=Path, required=True)
@@ -894,6 +903,7 @@ def main() -> int:
         value, exit_code = decide_next_action(
             json.loads(args.gate.read_text(encoding="utf-8")),
             pressure_count=args.pressure_count,
+            calibration_only=args.calibration_only,
         )
         _write_json(args.output, value)
         return exit_code

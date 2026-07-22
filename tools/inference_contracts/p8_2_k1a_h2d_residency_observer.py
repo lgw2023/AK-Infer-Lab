@@ -15,6 +15,9 @@ TARGET_SUFFIX_ENV = "P8_2_K1A_H2D_TARGET_REQUEST_SUFFIX"
 RESTORE_SUFFIX_ENV = "P8_2_K1A_H2D_RESTORE_REQUEST_SUFFIX"
 TARGET_BLOCK_COUNT_ENV = "P8_2_K1A_H2D_TARGET_BLOCK_COUNT"
 ACTIVE_ROLE_PATH_ENV = "P8_2_K1A_H2D_ACTIVE_ROLE_PATH"
+REQUEST_LOCAL_PRESSURE_OBSERVER_ENV = (
+    "P8_2_K1A_ENABLE_REQUEST_LOCAL_PRESSURE_OBSERVER"
+)
 _POOL_TIERS: dict[int, str] = {}
 _POOL_SCHEDULERS: dict[int, weakref.ReferenceType[Any]] = {}
 
@@ -73,6 +76,62 @@ def _target_residency_counts(scheduler: Any) -> tuple[int, int]:
         return sum(mapping.get_one_block(value) is not None for value in target_hashes)
 
     return count(cpu_pool), count(gpu_pool)
+
+
+def build_request_local_pressure_progress(
+    scheduler_output: Any,
+    *,
+    contract_role: str | None,
+    target_block_count: int,
+    cpu_target_block_count: int,
+    gpu_target_block_count: int,
+) -> dict[str, Any] | None:
+    if not contract_role or not contract_role.startswith("pressure_"):
+        return None
+
+    scheduled = dict(getattr(scheduler_output, "num_scheduled_tokens", {}))
+    request_ids = [
+        request_id
+        for request_id, count in scheduled.items()
+        if int(count or 0) > 0
+    ]
+    if not request_ids:
+        return None
+    computed_before: dict[str, int] = {}
+    for request in getattr(scheduler_output, "scheduled_new_reqs", ()):
+        computed_before[str(request.req_id)] = int(request.num_computed_tokens)
+    cached = getattr(scheduler_output, "scheduled_cached_reqs", None)
+    if cached is not None:
+        computed_before.update(
+            {
+                str(request_id): int(count)
+                for request_id, count in zip(
+                    getattr(cached, "req_ids", ()),
+                    getattr(cached, "num_computed_tokens", ()),
+                )
+            }
+        )
+
+    exact = len(request_ids) == 1 and request_ids[0] in computed_before
+    before = computed_before[request_ids[0]] if exact else None
+    scheduled_tokens = int(scheduled[request_ids[0]]) if exact else None
+    return {
+        "schema_version": "p8_2_k1a_r5_f1_r1_request_local_progress_v1",
+        "contract_role": contract_role,
+        "scheduled_request_count": len(request_ids),
+        "request_local_progress_exact": exact,
+        "num_computed_tokens_before_schedule": before,
+        "num_scheduled_tokens": scheduled_tokens,
+        "num_computed_tokens_after_schedule": (
+            before + scheduled_tokens if exact else None
+        ),
+        "target_block_count": target_block_count,
+        "cpu_target_block_count": cpu_target_block_count,
+        "gpu_target_block_count": gpu_target_block_count,
+        "request_id_retained": False,
+        "token_ids_retained": False,
+        "generated_content_retained": False,
+    }
 
 
 def _emit_residency_snapshot(scheduler: Any, *, reason: str) -> None:
@@ -172,6 +231,17 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
         result = original_build(self, scheduler_output)
         _register_pools(self)
         _emit_residency_snapshot(self, reason="after_connector_meta")
+        if os.environ.get(REQUEST_LOCAL_PRESSURE_OBSERVER_ENV) == "1":
+            cpu_count, gpu_count = _target_residency_counts(self)
+            progress = build_request_local_pressure_progress(
+                scheduler_output,
+                contract_role=_active_contract_role(),
+                target_block_count=target_block_count,
+                cpu_target_block_count=cpu_count,
+                gpu_target_block_count=gpu_count,
+            )
+            if progress is not None:
+                _emit("request_local_pressure_progress", **progress)
         return result
 
     original_output = SimpleCPUOffloadScheduler.update_connector_output
@@ -220,6 +290,15 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
         observer_mode="observe_only_no_decision_request_order_or_copy_mutation",
         raw_hash_values_emitted=False,
     )
+    if os.environ.get(REQUEST_LOCAL_PRESSURE_OBSERVER_ENV) == "1":
+        _emit(
+            "request_local_pressure_observer_installed",
+            component="runtime_patch",
+            observer_mode="observe_only_no_decision_request_order_or_copy_mutation",
+            request_id_retained=False,
+            token_ids_retained=False,
+            generated_content_retained=False,
+        )
 
 
 def observer_self_test_contract() -> dict[str, Any]:
@@ -241,6 +320,12 @@ def observer_self_test_contract() -> dict[str, Any]:
         "generated_content_or_token_ids_emitted": False,
         "target_block_count_is_explicit_and_bounded": True,
         "request_identity_source": "controller_role_marker_not_server_request_id",
+        "request_local_pressure_progress_capability": True,
+        "request_local_progress_source": (
+            "SchedulerOutput.num_scheduled_tokens_and_request_num_computed_tokens"
+        ),
+        "request_local_progress_requires_single_scheduled_request": True,
+        "request_id_retained": False,
     }
 
 

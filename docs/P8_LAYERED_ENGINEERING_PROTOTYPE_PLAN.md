@@ -109,14 +109,14 @@ hybrid-group 不兼容而 blocked；K1A 只有 source candidate，真实 D2H/H2D
 
 ```text
 P8.1-R1 observe-only green
-├─ KV/Prefix track: K0 green -> legacy K1 blocked -> K1A 32GiB red -> K1A-R1 probe-invalid red -> K1A-R2 capacity ready -> full R3 provenance -> R3-R2-R2-R1-R1-R1 store-only yellow -> K1A-R4 matcher-blocked -> K1A-R4-R1 offline store-only green -> K1A-R5-F0 feasibility ready -> K1A-R5-L1 controller-red -> K1A-R5-L1-R1 target-lost red -> K1A-R5-F1 offline current / L2 conditional
+├─ KV/Prefix track: K0 green -> legacy K1 blocked -> K1A 32GiB red -> K1A-R1 probe-invalid red -> K1A-R2 capacity ready -> full R3 provenance -> R3-R2-R2-R1-R1-R1 store-only yellow -> K1A-R4 matcher-blocked -> K1A-R4-R1 offline store-only green -> K1A-R5-F0 feasibility ready -> K1A-R5-L1 controller-red -> K1A-R5-L1-R1 target-lost red -> K1A-R5-F1 pool-delta fail-closed -> K1A-R5-F1-R1 request-local current / calibration+L2 conditional
 └─ Expert/TP4 track: P8.3-I0 inventory green -> I0-R1 taxonomy green (budget incomplete) -> P8.3-I1 separately authorized -> P8.4 simulation
                                                    -> P8.5A mover -> P8.5B TP4 closure
 ```
 
 K1/K1A 只控制 KV warm-tier 的真实迁移门，不是 P8.3 的技术前置。K1A 若成功，可为后续成本模型提供
 同平台 D2H/H2D 机制证据；若失败，也不阻止 checkpoint-first expert inventory、候选 TP4 owner mapping
-或离线 schema/fixture 开发。执行授权必须单列：当前 handoff 先授权 P8.2-K1A-R5-F1 零资源归因；只有
+或离线 schema/fixture 开发。执行授权必须单列：当前 handoff 先授权 P8.2-K1A-R5-F1-R1 零资源 request-local 归因与条件式 calibration；只有
 exact ready grade 才授权一个 accepted-capacity fixed-pressure lifecycle。L2 只发一个 pressure，3 请求可合规停止，
 只有 target CPU-present/GPU-absent 后才发送第 4 个 restore。
 第二 lifecycle 与 P8.3-I1 hotness/route trace 都必须另建 handoff。P8.3-I0 已在 index/header inventory 边界 green，I0-R1 taxonomy
@@ -645,6 +645,7 @@ benchmarks/deepseek_v4_flash/
   p8_2_k1a_r5_l1_lazy_h2d_lifecycle_audit.yaml
   p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle_audit.yaml
   p8_2_k1a_r5_f1_pressure_window_audit.yaml
+  p8_2_k1a_r5_f1_r1_request_local_pressure_audit.yaml
   p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_inventory_taxonomy_audit.yaml
 
@@ -670,6 +671,10 @@ tools/inference_contracts/
   p8_2_k1a_r5_f1_pressure_window.py
   run_deepseek_p8_2_k1a_r5_f1_pressure_window.sh
   run_deepseek_p8_2_k1a_r5_l2_fixed_pressure.sh
+  p8_2_k1a_r5_f1_r1_request_local_pressure.py
+  run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh
+  run_deepseek_p8_2_k1a_r5_f1_r1_request_local_calibration.sh
+  run_deepseek_p8_2_k1a_r5_f1_r1_fixed_pressure_l2.sh
   inventory_deepseek_p8_3_i0_checkpoint.py
   analyze_deepseek_p8_3_i0_unclassified.py
 ```
@@ -687,7 +692,7 @@ K1A-R2 已接受 128-block capacity ready，P8.3-I0/I0-R1 已在各自窄边界 
 K1A-R3 保留 `blocked_p8_2_k1a_r3_source_or_provenance_gate`（零 lifecycle/零请求）；K1A-R3-R1 保留
 `red_p8_2_k1a_r3_r1_no_success`（一次 lifecycle 尝试、vLLM 未启动、0/6 请求），首错仅为非可移植命令身份。
 R5-F0 已接受为零资源 feasibility，R5-L1 保留 D2H 8/8 与 controller-red，R5-L1-R1 保留 target-lost red。当前仅授权
-`p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721`：先离线归因 R1 raw trace；只有 exact ready grade 才使用
+`p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722`：先离线审计 request-local 进度；只有 F1-R1 ready grade 才使用
 R2 的 128-block accepted capacity、lazy offload 和同一冻结 source/repair，执行一个 fixed-pressure lifecycle。
 L2 只有 observer 证明 64-block target 已 CPU-present/GPU-absent 才发送 restore follower。R4 blocked、R4-R1 offline
 store-only green 和 R5-F0 ready 均保留；只有 8-worker D2H/H2D pipeline、transport/MTP/health/queue、cleanup

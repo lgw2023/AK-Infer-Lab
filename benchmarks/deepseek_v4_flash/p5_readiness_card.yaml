@@ -214,13 +214,14 @@ artifacts:
   p8_2_k1a_r5_l1_lazy_h2d_lifecycle_audit: p8_2_k1a_r5_l1_lazy_h2d_lifecycle_audit.yaml
   p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle_audit: p8_2_k1a_r5_l1_r1_lazy_h2d_lifecycle_audit.yaml
   p8_2_k1a_r5_f1_pressure_window_audit: p8_2_k1a_r5_f1_pressure_window_audit.yaml
+  p8_2_k1a_r5_f1_r1_request_local_pressure_audit: p8_2_k1a_r5_f1_r1_request_local_pressure_audit.yaml
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml
-  next_stage_candidate: P8.2-K1A-R5-F1_offline_pressure_window_then_conditional_fixed_L2
-  current_server_handoff_task: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721
-  current_server_handoff_execution_mode: authorized_offline_raw_pressure_window_then_conditional_one_fixed_lifecycle
+  next_workload: workloads/p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml
+  next_stage_candidate: P8.2-K1A-R5-F1-R1_request_local_progress_then_conditional_fixed_L2
+  current_server_handoff_task: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722
+  current_server_handoff_execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -246,9 +247,13 @@ artifacts:
   current_p8_2_k1a_r5_f0_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh
   current_p8_2_k1a_r5_l1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh
   completed_p8_2_k1a_r5_l1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_r1_lazy_h2d.sh
-  current_p8_2_k1a_r5_f1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_pressure_window.sh
-  current_p8_2_k1a_r5_l2_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l2_fixed_pressure.sh
-  current_p8_2_k1a_r5_f1_analyzer: ../../tools/inference_contracts/p8_2_k1a_r5_f1_pressure_window.py
+  completed_p8_2_k1a_r5_f1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_pressure_window.sh
+  completed_p8_2_k1a_r5_f1_analyzer: ../../tools/inference_contracts/p8_2_k1a_r5_f1_pressure_window.py
+  completed_p8_2_k1a_r5_l2_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l2_fixed_pressure.sh
+  current_p8_2_k1a_r5_f1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh
+  current_p8_2_k1a_r5_f1_r1_analyzer: ../../tools/inference_contracts/p8_2_k1a_r5_f1_r1_request_local_pressure.py
+  current_p8_2_k1a_r5_f1_r1_calibration_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_request_local_calibration.sh
+  current_p8_2_k1a_r5_f1_r1_l2_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r1_fixed_pressure_l2.sh
   current_p8_2_k1a_r5_l1_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
   current_p8_2_k1a_trace_attribution: ../../tools/inference_contracts/p8_2_k1a_trace_attribution.py
   current_p8_2_k1a_failure_forensics: ../../tools/inference_contracts/p8_2_k1a_failure_forensics.py
@@ -315,7 +320,7 @@ boundaries:
   - P8.2-K1A-R5-F0 is developer-accepted as candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility after its 9-file/7122-byte package, R4-R1/R2 replay, frozen source semantics, method resolution, observer self-test and trigger geometry all passed. It is zero-resource feasibility evidence, not runtime H2D evidence.
   - P8.2-K1A-R5-L1 completed one accepted-capacity lazy lifecycle with 2/2 request transport and exact 8-worker D2H store, then stopped before pressure because the controller overwrote a valid CPU=0/GPU=64 continue_pressure snapshot as unobservable at timeout. Its red grade is preserved; this is a controller stop, not a proven H2D runtime failure.
   - P8.2-K1A-R5-L1-R1 completed one corrected accepted-capacity lifecycle with 3/3 request transport and D2H 8/8. The controller correctly advanced CPU=0/GPU=64 to pressure_01, after which the observed target terminal state was CPU=0/GPU=0 and restore was not sent. Its red_p8_2_k1a_r5_l1_r1_cpu_target_lost grade is preserved; this terminal observation does not prove full CPU-tier eviction.
-  - The current P8.2-K1A-R5-F1 handoff first attributes the immutable R1 raw trace and frozen source without NPU use. Only an exact CPU=64/GPU=0 snapshot before the first CPU-target eviction plus one positive unique GPU-free-block delta may derive one fixed non-search pressure context and unlock at most one L2 lifecycle. That lifecycle stops cleanly after three requests if the runtime trigger is absent and sends the fourth restore request only when CPU=64/GPU=0 is observed. Missing or ambiguous evidence is a zero-NPU block. K2, P8.3-I1, capacity search, a second lifecycle and performance claims remain closed.
+  - The current P8.2-K1A-R5-F1-R1 handoff permanently fail-closes the old F1 GPU free-pool delta gate. It first audits the immutable R1 raw/legacy package for request-local SchedulerOutput progress without NPU use. Missing direct progress authorizes at most one observe-only calibration lifecycle at fixed 131072 context with restore forbidden. Only candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure unlocks one signed fixed-pressure L2 that stops cleanly after three requests if the runtime trigger is absent and sends the fourth restore only when CPU=64/GPU=0 is observed. Formal model lifecycles are capped at two. K2, P8.3-I1, capacity search, a second calibration, a third lifecycle and performance claims remain closed.
   - P8.3 is not technically dependent on K1/K1A. P8.3-I0 is accepted as green_p8_3_i0_checkpoint_inventory for index/header inventory only, while 1135 tensors and 12319364956 checkpoint bytes remain unclassified and the TP4 planning budget remains incomplete.
   - P8.3-I0-R1 is developer-accepted as green_p8_3_i0_r1_unclassified_taxonomy after byte-identical offline replay; it cannot reclassify tensors, refinalize the TP4 budget or authorize P8.3-I1.
   - Raw logs and large artifacts remain on the server unless a new transfer scope and method are explicitly approved.
@@ -457,16 +462,27 @@ acceptance:
   p8_2_k1a_r5_l1_r1_d2h_store_complete: true
   p8_2_k1a_r5_l1_r1_h2d_restore_complete: false
   p8_2_k1a_r5_l1_r1_k2_authorized: false
-  p8_2_k1a_r5_f1_grade: pending_offline_pressure_window_attribution
-  p8_2_k1a_r5_f1_offline_analysis_authorized: true
-  p8_2_k1a_r5_f1_conditional_npu_execution_authorized: true
+  p8_2_k1a_r5_f1_grade: blocked_p8_2_k1a_r5_f1_no_exact_pressure_window
+  p8_2_k1a_r5_f1_offline_analysis_authorized: false
+  p8_2_k1a_r5_f1_conditional_npu_execution_authorized: false
   p8_2_k1a_r5_f1_formal_model_lifecycle_count_max: 1
   p8_2_k1a_r5_f1_pressure_request_count_exact_if_run: 1
   p8_2_k1a_r5_f1_model_request_count_min_if_run: 3
   p8_2_k1a_r5_f1_model_request_count_max_if_run: 4
   p8_2_k1a_r5_f1_model_request_count_exact_if_trigger_observed: 4
   p8_2_k1a_r5_f1_k2_authorized: false
-  current_task_scoped_authorization: P8.2-K1A-R5-F1_offline_first_then_at_most_one_fixed_non_search_lifecycle
+  p8_2_k1a_r5_f1_pool_delta_gate_permanent_fail_closed: true
+  p8_2_k1a_r5_f1_r1_grade: pending_request_local_progress_calibration_or_fixed_l2
+  p8_2_k1a_r5_f1_r1_offline_analysis_authorized: true
+  p8_2_k1a_r5_f1_r1_conditional_npu_execution_authorized: true
+  p8_2_k1a_r5_f1_r1_formal_model_lifecycle_count_max: 2
+  p8_2_k1a_r5_f1_r1_calibration_lifecycle_count_max: 1
+  p8_2_k1a_r5_f1_r1_fixed_l2_lifecycle_count_max: 1
+  p8_2_k1a_r5_f1_r1_pressure_request_count_exact_if_run: 1
+  p8_2_k1a_r5_f1_r1_model_request_count_min_if_run: 3
+  p8_2_k1a_r5_f1_r1_model_request_count_max_if_run: 4
+  p8_2_k1a_r5_f1_r1_k2_authorized: false
+  current_task_scoped_authorization: P8.2-K1A-R5-F1-R1_parent_legacy_then_at_most_one_calibration_plus_one_fixed_l2
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory

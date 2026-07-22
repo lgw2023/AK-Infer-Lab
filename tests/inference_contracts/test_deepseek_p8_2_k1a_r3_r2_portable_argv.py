@@ -282,13 +282,12 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
+        "task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
     ) in handoff
     for exact in (
-            "execution_mode: authorized_offline_raw_pressure_window_then_"
-            "conditional_one_fixed_lifecycle",
+            "execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2",
             "npu_execution_authorized: conditional",
-        "formal_model_lifecycle_count_max: 1",
+        "formal_model_lifecycle_count_max: 2",
         "model_request_count_max: 4",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
@@ -299,7 +298,7 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
         "不得进入 P8.3-I1",
     ):
         assert exact in handoff
-    assert 'test ! -e "${ANALYSIS_ROOT}"' in handoff
+    assert 'test ! -e "${LEGACY_ANALYSIS_ROOT}"' in handoff
     assert "candidate_manifest.server_local.json" in handoff
     assert "payload_file_count" in handoff
     assert "email / upload-api / server-local" in handoff

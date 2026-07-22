@@ -511,10 +511,10 @@ def test_r5_f0_is_preserved_in_the_current_r5_l1_r1_lineage() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
+        "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
     )
     assert artifacts["current_p8_2_k1a_r5_f0_runner"].endswith(RUNNER.name)
 
@@ -522,7 +522,7 @@ def test_r5_f0_is_preserved_in_the_current_r5_l1_r1_lineage() -> None:
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert "candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722" in handoff
     assert "npu_execution_authorized: conditional" in handoff
     assert "keep_alive_stop_and_restore_authorized: conditional" in handoff
     assert "vllm_server_start_authorized: conditional" in handoff

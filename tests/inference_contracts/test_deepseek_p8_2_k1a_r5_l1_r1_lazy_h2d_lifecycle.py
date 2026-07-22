@@ -106,10 +106,10 @@ def test_r5_l1_r1_runner_is_preserved_while_f1_is_the_current_task(
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    current_task_id = "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
+    current_task_id = "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
     )
     assert artifacts["completed_p8_2_k1a_r5_l1_r1_runner"].endswith(RUNNER.name)
 
@@ -121,11 +121,10 @@ def test_r5_l1_r1_runner_is_preserved_while_f1_is_the_current_task(
     for field in (
         "offline_first: true",
         "npu_execution_authorized: conditional",
-        "formal_model_lifecycle_count_max: 1",
+        "formal_model_lifecycle_count_max: 2",
         "model_request_count_min: 3",
         "model_request_count_max: 4",
-        "model_request_count_exact_if_trigger_observed: 4",
-        "request_retry_count_exact: 0",
+                "request_retry_count_exact: 0",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "next_task_authorized: false",
@@ -134,8 +133,8 @@ def test_r5_l1_r1_runner_is_preserved_while_f1_is_the_current_task(
     ):
         assert field in handoff
     for marker in (
-        "raw pressure-window",
-        "candidate_ready_p8_2_k1a_r5_f1_exact_pressure_window",
+        "request-local",
+        "candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure",
         "CPU=64/GPU=0",
         "pressure_01",
         "pressure_request_count_exact=1",

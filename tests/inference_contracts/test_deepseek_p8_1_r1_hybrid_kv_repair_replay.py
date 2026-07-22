@@ -330,21 +330,21 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
 
 
 def test_r1_is_closed_and_k1a_r5_f0_is_the_only_authorized_handoff() -> None:
-    task_id = "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
+    task_id = "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_offline_raw_pressure_window_then_conditional_one_fixed_lifecycle"
+        "execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2"
         in handoff
     )
     assert "npu_execution_authorized: conditional" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "model_request_count_max: 4" in handoff
-    assert "formal_model_lifecycle_count_max: 1" in handoff
+    assert "formal_model_lifecycle_count_max: 2" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
     assert "green_p8_3_i0_checkpoint_inventory" in handoff
@@ -366,7 +366,7 @@ def test_r1_is_closed_and_k1a_r5_f0_is_the_only_authorized_handoff() -> None:
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     acceptance = readiness["acceptance"]

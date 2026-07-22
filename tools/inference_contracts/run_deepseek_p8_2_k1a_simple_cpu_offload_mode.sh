@@ -44,6 +44,8 @@ MTP_PATCH=${MTP_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_as
 HYBRID_PATCH=${HYBRID_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch}
 DEFERRED_PATCH=${DEFERRED_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch}
 OBSERVER_PATCH=${OBSERVER_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch}
+DIAGNOSTIC_MODE_PATCH=${P8_2_K1A_DIAGNOSTIC_MODE_PATCH:-}
+DIAGNOSTIC_MODE_PATCH_SHA256=${P8_2_K1A_DIAGNOSTIC_MODE_PATCH_SHA256:-}
 RUNTIME_DIR=${RESULT_DIR}/runtime
 OVERLAY_ROOT=${RUNTIME_DIR}/overlay_root
 DIAGNOSTIC_PATH=${RUNTIME_DIR}/hybrid_kv_runtime_diagnostic.jsonl
@@ -108,6 +110,11 @@ audit_contract() {
     printf 'observer_mode=observe_only_with_controller_role_marker_no_runtime_decision_or_copy_mutation\n'
   else
     printf 'observer_mode=observe_only_no_decision_or_copy_mutation\n'
+  fi
+  if test -n "${DIAGNOSTIC_MODE_PATCH}"; then
+    printf 'shared_diagnostic_mode_patch=task_local_0660_only\n'
+  else
+    printf 'shared_diagnostic_mode_patch=none\n'
   fi
   printf 'server_command_identity_schema=ak_infer_lab_server_argv_v1\n'
   printf 'server_command_sha256=%s\n' "${canonical_sha256}"
@@ -209,9 +216,20 @@ test "$(sha256sum "${MTP_PATCH}" | awk '{print $1}')" = 75156e56ce06554cfca79aef
 test "$(sha256sum "${HYBRID_PATCH}" | awk '{print $1}')" = cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
 test "$(sha256sum "${DEFERRED_PATCH}" | awk '{print $1}')" = ad845854461605ae28ae7000f24ada0cb07c5c17f3b0c23ee1485ec537a7a85b
 test "$(sha256sum "${OBSERVER_PATCH}" | awk '{print $1}')" = 5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6
+if test -n "${DIAGNOSTIC_MODE_PATCH}"; then
+  test -n "${DIAGNOSTIC_MODE_PATCH_SHA256}"
+  test "$(sha256sum "${DIAGNOSTIC_MODE_PATCH}" | awk '{print $1}')" = "${DIAGNOSTIC_MODE_PATCH_SHA256}"
+fi
 
 cp -a --no-preserve=ownership "${BASE_PLUGIN_ROOT}" "${OVERLAY_ROOT}/vllm_ascend"
 cp "${RUNTIME_IMPL}" "${OVERLAY_ROOT}/p6_3b_hybrid_kv_runtime_impl.py"
+if test -n "${DIAGNOSTIC_MODE_PATCH}"; then
+  test -f "${DIAGNOSTIC_MODE_PATCH}"
+  patch -p1 -d "${OVERLAY_ROOT}" --dry-run < "${DIAGNOSTIC_MODE_PATCH}" \
+    > "${RUNTIME_DIR}/diagnostic_mode_patch_dry_run.txt"
+  patch -p1 -d "${OVERLAY_ROOT}" < "${DIAGNOSTIC_MODE_PATCH}" \
+    > "${RUNTIME_DIR}/diagnostic_mode_patch_apply.txt"
+fi
 cp "${RUNTIME_LOADER}" "${OVERLAY_ROOT}/p6_3b_r2_hybrid_kv_runtime_patch.py"
 cp "${OBSERVER}" "${OVERLAY_ROOT}/p8_2_k1a_simple_cpu_offload_observer.py"
 if test "${ENABLE_H2D_RESIDENCY_OBSERVER}" = 1; then

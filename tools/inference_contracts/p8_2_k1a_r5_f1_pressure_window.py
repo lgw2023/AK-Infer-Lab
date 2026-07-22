@@ -233,14 +233,12 @@ def build_pressure_window_attribution(root: Path) -> dict[str, Any]:
         if first_cpu_eviction_ns is None
         or int(row.get("timestamp_ns") or 0) < first_cpu_eviction_ns
     ]
-    candidate_deltas = sorted(
-        {
-            gpu_before - int(row.get("gpu_free_block_count") or 0)
-            for row in exact_before_cpu_eviction
-        }
-    )
-    safe_window = len(candidate_deltas) == 1 and candidate_deltas[0] > 0
     first_exact = exact_before_cpu_eviction[0] if exact_before_cpu_eviction else {}
+    first_exact_net_delta = (
+        gpu_before - int(first_exact.get("gpu_free_block_count") or 0)
+        if first_exact
+        else None
+    )
     return {
         "schema_version": "p8_2_k1a_r5_f1_pressure_window_attribution_v1",
         "request_windows": windows,
@@ -261,14 +259,14 @@ def build_pressure_window_attribution(root: Path) -> dict[str, Any]:
             if first_exact
             else None
         ),
-        "pressure_allocated_blocks_at_first_exact_window": (
-            candidate_deltas[0] if safe_window else None
-        ),
+        "gpu_free_block_net_delta_at_first_exact_window": first_exact_net_delta,
+        "request_local_pressure_progress_present": False,
+        "pressure_allocated_blocks_at_first_exact_window": None,
         "first_cpu_target_eviction_timestamp_ns": first_cpu_eviction_ns,
         "cpu_target_eviction_event_count": sum(
             int(row.get("target_evicted_count") or 0) for row in cpu_evictions
         ),
-        "safe_pressure_window_proven": safe_window,
+        "safe_pressure_window_proven": False,
         "raw_hash_values_retained": False,
         "actual_cpu_eviction_proven": False,
     }
@@ -349,10 +347,8 @@ def analyze(args: argparse.Namespace) -> int:
         "after": after,
         "source_evidence_unchanged": True,
     }
-    safe_window = attribution["safe_pressure_window_proven"] is True
-    candidate_blocks = attribution[
-        "pressure_allocated_blocks_at_first_exact_window"
-    ]
+    safe_window = False
+    candidate_blocks = None
     output_tokens = 64
     candidate_context = (
         int(candidate_blocks) * 128 - output_tokens if safe_window else None
@@ -365,9 +361,9 @@ def analyze(args: argparse.Namespace) -> int:
         "candidate_is_fixed_not_search": safe_window,
         "formal_conditional_lifecycle_allowed": safe_window,
         "reason": (
-            "one exact pre-eviction CPU=64 GPU=0 window and one free-block "
-            "delta determine the fixed candidate"
-            if safe_window
+            "exact CPU=64 GPU=0 window exists, but GPU free-block net delta "
+            "is not request-local allocation or progress evidence"
+            if attribution["pressure_cpu_only_exact_snapshot_count"] > 0
             else "no exact CPU=64 GPU=0 pressure snapshot was proven"
         ),
     }
@@ -416,7 +412,10 @@ def analyze(args: argparse.Namespace) -> int:
                 (
                     "- one fixed pressure candidate was derived without a search."
                     if safe_window
-                    else "- existing raw trace has no exact CPU=64/GPU=0 pressure window."
+                    else (
+                        "- existing raw trace cannot derive a fixed pressure request "
+                        "from request-local progress evidence."
+                    )
                 ),
                 "- no NPU lifecycle, request, H2D acceptance or performance claim.",
                 "",

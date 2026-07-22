@@ -1,0 +1,154 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle
+date: '2026-07-22'
+task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722
+purpose: derive_request_local_progress_or_run_one_calibration_then_conditionally_run_one_fixed_non_search_l2
+
+stage_contract:
+  stage: P8.2-K1A-R5-F1-R1
+  mode: parent_legacy_audit_then_one_calibration_then_conditional_fixed_l2
+  claim_boundary: request_local_progress_provenance_then_at_most_two_formal_model_lifecycles
+  parent_r5_l1_r1_grade_preserved: true
+  parent_f1_pool_delta_gate_fail_closed: true
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  unique_root_cause_claim_authorized: false
+
+offline_first_gate:
+  parent_manifest_sha256: 1209e22dc67aa1c15e80efcd26b453d7303665a5cd1a982ca2c41152334bb022
+  parent_server_grade: red_p8_2_k1a_r5_l1_r1_cpu_target_lost
+  source_tree_before_after_inventory_exact: true
+  h2d_residency_trace_pattern: runtime/offload_trace/h2d-residency.*.jsonl
+  analysis_modes: [parent_legacy, calibration]
+  keep_alive_disrupted: false
+  npu_started: false
+  vllm_started: false
+  model_request_sent: false
+
+request_local_progress_contract:
+  target_block_count: 64
+  exact_trigger_cpu_blocks: 64
+  exact_trigger_gpu_blocks: 0
+  progress_must_start_at_before_zero: true
+  progress_must_be_strictly_contiguous: true
+  required_completion_margin_tokens: 4096
+  candidate_output_tokens: 64
+  candidate_context_formula: first_exact_cpu_only_after_tokens_minus_64
+  net_gpu_free_delta_may_unlock_l2: false
+  missing_progress_requires_one_calibration: true
+  pressure_search_or_sweep_allowed: false
+
+calibration_lifecycle:
+  requires_parent_legacy_calibration_required_grade: true
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  quantization: ascend
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size_tokens: 128
+  chunked_prefill: true
+  prefix_caching: true
+  kv_connector: SimpleCPUOffloadConnector
+  kv_role: kv_both
+  lazy_offload: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  pressure_context_tokens: 131072
+  request_order: [warmup, target_prime, pressure_01]
+  request_count_exact: 3
+  pressure_request_count_exact: 1
+  request_retry_count: 0
+  restore_authorized: false
+  calibration_only: true
+  request_local_pressure_observer: true
+  diagnostic_mode_patch: task_local_0660_overlay
+  second_calibration_allowed: false
+
+conditional_fixed_l2:
+  requires_ready_grade: candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure
+  candidate_is_fixed_not_search: true
+  pressure_context_must_match_signed_candidate: true
+  same_accepted_capacity_and_server_argv: true
+  request_order: [warmup, target_prime, fixed_pressure, restore_follower]
+  request_count_min: 3
+  request_count_max: 4
+  request_count_exact_if_trigger_observed: 4
+  terminal_pre_restore_request_count: 3
+  pressure_request_count_exact: 1
+  request_retry_count: 0
+  output_tokens: 64
+  restore_requires_runtime_cpu_64_gpu_0: true
+  capacity_search_allowed: false
+  second_fixed_l2_allowed: false
+
+grading:
+  repository_contract_blocked: blocked_p8_2_k1a_r5_f1_r1_repository_contract_gate
+  source_or_provenance_blocked: blocked_p8_2_k1a_r5_f1_r1_source_or_provenance_gate
+  calibration_required: candidate_requires_p8_2_k1a_r5_f1_r1_instrumented_calibration
+  request_local_ready: candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure
+  request_local_blocked: blocked_p8_2_k1a_r5_f1_r1_request_local_pressure_gate
+  calibration_capture_green: candidate_green_p8_2_k1a_r5_f1_r1_calibration_capture
+  calibration_no_success: red_p8_2_k1a_r5_f1_r1_calibration_no_success
+  calibration_target_lost_after_capture: yellow_p8_2_k1a_r5_f1_r1_calibration_target_lost_after_capture
+  calibration_window_not_reached: yellow_p8_2_k1a_r5_f1_r1_calibration_window_not_reached
+  calibration_evidence_incomplete: red_p8_2_k1a_r5_f1_r1_calibration_evidence_incomplete
+  lifecycle_no_success: red_p8_2_k1a_r5_f1_r1_fixed_pressure_no_success
+  lifecycle_target_lost: red_p8_2_k1a_r5_f1_r1_fixed_pressure_target_lost
+  lifecycle_evidence_incomplete: red_p8_2_k1a_r5_f1_r1_fixed_pressure_evidence_incomplete
+  lifecycle_candidate_green: candidate_green_p8_2_k1a_r5_f1_r1_fixed_pressure_h2d_trigger
+  developer_review_required: true
+
+result_contract:
+  max_transfer_total_bytes: 71680
+  sensitivity: bounded_operational_metadata_no_content_or_token_ids
+  generated_content_allowed: false
+  token_ids_allowed: false
+  raw_hash_values_allowed: false
+  request_ids_allowed: false
+  raw_logs_metrics_request_bodies_and_trace_remain_server_local: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  transfer_methods: [email, upload-api, server-local]
+
+execution_state:
+  execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2
+  offline_analysis_authorized: true
+  npu_execution_authorized: true
+  conditional_on_calibration_required_or_ready_grade: true
+  keep_alive_stop_and_restore_authorized: true
+  vllm_server_start_authorized: true
+  model_requests_authorized: true
+  formal_model_lifecycle_count_min: 0
+  formal_model_lifecycle_count_max: 2
+  second_calibration_authorized: false
+  third_lifecycle_authorized: false
+  request_retry_count_exact: 0
+  capacity_search_authorized: false
+  profiler_authorized: false
+  hbm_sampler_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+  no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true
+
+stop_policy:
+  no_npu_when_parent_legacy_is_blocked: true
+  no_second_calibration: true
+  no_fixed_l2_without_ready_grade: true
+  no_request_retry: true
+  no_capacity_or_runtime_tuning: true
+  no_pressure_sweep: true
+  no_eager_fallback: true
+  no_third_lifecycle: true
+  no_restore_on_calibration: true
+  no_restore_without_runtime_cpu_only_trigger_on_fixed_l2: true
+  no_automatic_result_transfer: true

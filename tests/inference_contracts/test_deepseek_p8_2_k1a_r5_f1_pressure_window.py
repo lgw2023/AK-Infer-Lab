@@ -306,7 +306,7 @@ def test_f1_blocks_without_an_exact_cpu_only_pressure_window(tmp_path: Path) -> 
     assert grading["model_request_sent"] is False
 
 
-def test_f1_derives_one_fixed_pressure_candidate_from_an_exact_window(
+def test_f1_rejects_a_pool_delta_even_with_one_exact_pressure_window(
     tmp_path: Path,
 ) -> None:
     parent = tmp_path / "parent"
@@ -372,19 +372,25 @@ def test_f1_derives_one_fixed_pressure_candidate_from_an_exact_window(
     candidate = json.loads((output / "pressure_candidate.json").read_text())
     grading = json.loads((output / "grading_summary.json").read_text())
     assert attribution["pressure_cpu_only_exact_snapshot_count"] == 1
-    assert attribution["safe_pressure_window_proven"] is True
+    assert attribution["safe_pressure_window_proven"] is False
     assert attribution["gpu_free_blocks_before_pressure"] == 1000
     assert attribution["gpu_free_blocks_at_first_exact_window"] == 936
-    assert attribution["pressure_allocated_blocks_at_first_exact_window"] == 64
-    assert candidate["candidate_pressure_total_blocks"] == 64
+    assert attribution["gpu_free_block_net_delta_at_first_exact_window"] == 64
+    assert attribution["request_local_pressure_progress_present"] is False
+    assert attribution["pressure_allocated_blocks_at_first_exact_window"] is None
+    assert candidate["candidate_pressure_total_blocks"] is None
     assert candidate["candidate_output_tokens"] == 64
-    assert candidate["candidate_pressure_context_tokens"] == 8128
-    assert candidate["candidate_is_fixed_not_search"] is True
-    assert candidate["formal_conditional_lifecycle_allowed"] is True
-    assert grading["server_grade"] == (
-        "candidate_ready_p8_2_k1a_r5_f1_exact_pressure_window"
+    assert candidate["candidate_pressure_context_tokens"] is None
+    assert candidate["candidate_is_fixed_not_search"] is False
+    assert candidate["formal_conditional_lifecycle_allowed"] is False
+    assert candidate["reason"] == (
+        "exact CPU=64 GPU=0 window exists, but GPU free-block net delta "
+        "is not request-local allocation or progress evidence"
     )
-    assert grading["formal_conditional_lifecycle_allowed"] is True
+    assert grading["server_grade"] == (
+        "blocked_p8_2_k1a_r5_f1_no_exact_pressure_window"
+    )
+    assert grading["formal_conditional_lifecycle_allowed"] is False
     assert grading["npu_started"] is False
     assert grading["model_request_sent"] is False
 
@@ -521,25 +527,26 @@ def test_f1_contract_is_offline_first_and_allows_only_one_fixed_lifecycle(
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    assert artifacts["current_server_handoff_task"] == TASK_ID
-    assert artifacts["next_workload"].endswith(WORKLOAD.name)
-    assert artifacts["current_p8_2_k1a_r5_f1_runner"].endswith(RUNNER.name)
-    assert artifacts["current_p8_2_k1a_r5_l2_runner"].endswith(
+    current_task_id = "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
+    assert artifacts["current_server_handoff_task"] == current_task_id
+    assert artifacts["completed_p8_2_k1a_r5_f1_runner"].endswith(RUNNER.name)
+    assert artifacts["completed_p8_2_k1a_r5_l2_runner"].endswith(
         LIFECYCLE_RUNNER.name
     )
+    assert readiness["acceptance"]["p8_2_k1a_r5_f1_pool_delta_gate_permanent_fail_closed"] is True
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
-    assert f"task_id: {TASK_ID}" in handoff
+    assert f"task_id: {current_task_id}" in handoff
+    assert "parent_f1_pool_delta_gate_fail_closed: true" in handoff
     for field in (
         "offline_first: true",
         "npu_execution_authorized: conditional",
-        "formal_model_lifecycle_count_max: 1",
+        "formal_model_lifecycle_count_max: 2",
         "pressure_request_count_exact: 1",
         "model_request_count_min: 3",
         "model_request_count_max: 4",
-        "model_request_count_exact_if_trigger_observed: 4",
         "request_retry_count_exact: 0",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",

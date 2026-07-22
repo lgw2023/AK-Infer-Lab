@@ -127,7 +127,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     assert handoff.count("\ntask_id: ") == 1
     assert "task_id: p8_2_k1a_r3_r2_r2_deepseek_v4_flash_forensic_replay_2026_0720" not in handoff
     assert "candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility" in handoff
-    assert 'test ! -e "${ANALYSIS_ROOT}"' in handoff
+    assert 'test ! -e "${LEGACY_ANALYSIS_ROOT}"' in handoff
     assert "npu_execution_authorized: conditional" in handoff
     assert "cleanup_status.txt=clean" in handoff
     assert "upload_file.py" not in handoff
@@ -140,7 +140,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] != workload_task_id()
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
+        "workloads/p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
     )
     assert acceptance["p8_2_k1a_r3_r2_r1_grade"] == (
         "yellow_p8_2_k1a_r3_r2_r1_partial"
@@ -150,7 +150,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     assert acceptance["p8_2_k1a_r3_r2_r2_formal_model_lifecycle_count_max"] == 1
     assert acceptance["p8_2_k1a_r3_r2_r2_model_request_count_max"] == 6
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1_offline_first_then_at_most_one_fixed_non_search_lifecycle"
+        "P8.2-K1A-R5-F1-R1_parent_legacy_then_at_most_one_calibration_plus_one_fixed_l2"
     )
     assert acceptance["next_task_authorized"] is False
 

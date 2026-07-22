@@ -1,0 +1,87 @@
+schema_version: 1
+audit_id: p8_2_k1a_r5_f1_r1_request_local_pressure_audit
+date: '2026-07-22'
+stage: P8.2-K1A-R5-F1-R1
+
+received_r5_l1_r1_package:
+  task_id: p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_2026_0721
+  path: /Volumes/SSD1/Inbox/2026-07-21/p8_2_k1a_r5_l1_r1_lazy_h2d_trigger_lifecycle_20260721_run01
+  server_grade: red_p8_2_k1a_r5_l1_r1_cpu_target_lost
+  file_count: 15
+  payload_file_count: 14
+  payload_bytes: 15788
+  manifest_bytes: 3578
+  total_bytes: 19366
+  manifest_sha256: 1209e22dc67aa1c15e80efcd26b453d7303665a5cd1a982ca2c41152334bb022
+  successful_request_count: 3
+  d2h_completed_worker_count: 8
+  pressure_request_count_executed: 1
+  restore_sent: false
+  cleanup: clean
+  actual_cpu_eviction_proven: false
+  generated_content_or_token_ids_retained: false
+
+received_f1_parent_decision:
+  task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721
+  parent_f1_gate_permanent_fail_closed: true
+  exact_cpu_only_window_may_exist: true
+  gpu_free_block_net_delta_is_not_request_local: true
+  formal_conditional_lifecycle_allowed_by_pool_delta: false
+  request_local_pressure_progress_present_in_legacy_trace: false
+  one_instrumented_calibration_lifecycle_required: true
+
+developer_decision:
+  parent_r5_l1_r1_grade_preserved: true
+  parent_f1_pool_delta_gate_preserved_as_fail_closed: true
+  blind_pressure_context_change_allowed: false
+  context_sweep_allowed: false
+  one_observe_only_request_local_progress_calibration_lifecycle_allowed: true
+  one_conditional_fixed_l2_lifecycle_allowed_only_after_calibration_ready: true
+  formal_model_lifecycle_count_max: 2
+  performance_reference_accepted: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+request_local_progress_gate:
+  source_result_tree_must_remain_byte_identical: true
+  progress_source: SchedulerOutput.num_scheduled_tokens_and_request_num_computed_tokens
+  requires_single_scheduled_request: true
+  progress_must_start_at_before_zero: true
+  progress_must_be_strictly_contiguous: true
+  first_exact_cpu_only_window_before_first_cpu_target_eviction: true
+  required_completion_margin_tokens: 4096
+  fixed_context_formula: first_exact_cpu_only_after_tokens_minus_64_output
+  net_gpu_free_delta_may_unlock_l2: false
+  missing_progress_grade: candidate_requires_p8_2_k1a_r5_f1_r1_instrumented_calibration
+  ready_grade: candidate_ready_p8_2_k1a_r5_f1_r1_request_local_pressure
+  blocked_grade: blocked_p8_2_k1a_r5_f1_r1_request_local_pressure_gate
+
+calibration_lifecycle_boundary:
+  requires_missing_or_insufficient_legacy_progress: true
+  pressure_context_tokens_exact: 131072
+  pressure_request_count_exact: 1
+  request_count_exact: 3
+  request_order: [warmup, target_prime, pressure_01]
+  restore_authorized: false
+  request_retry_count: 0
+  observer_mode: observe_only_request_local_progress
+  diagnostic_mode_patch: task_local_0660_overlay
+  second_calibration_allowed: false
+
+conditional_fixed_l2_boundary:
+  requires_ready_grade: true
+  same_accepted_capacity: true
+  same_runtime_server_argv_r2_repair_and_mtp: true
+  pressure_context_must_come_from_signed_candidate: true
+  pressure_request_count_exact: 1
+  request_count_min: 3
+  request_count_max: 4
+  request_count_exact_if_trigger_observed: 4
+  terminal_pre_restore_request_count: 3
+  request_retry_count: 0
+  restore_requires_runtime_cpu_64_gpu_0: true
+  second_fixed_l2_allowed: false
+  capacity_search_allowed: false
+  runtime_behavior_patch_allowed: false
+
+claim_boundary: request_local_pressure_progress_provenance_and_at_most_one_calibration_plus_one_fixed_non_search_l2

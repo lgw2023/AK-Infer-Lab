@@ -595,13 +595,12 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
 def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
+        "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_offline_raw_pressure_window_then_"
-        "conditional_one_fixed_lifecycle"
+        "execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2"
         in handoff
     )
     for field in (
@@ -613,7 +612,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
         "profiler_authorized: false",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
-        "formal_model_lifecycle_count_max: 1",
+        "formal_model_lifecycle_count_max: 2",
         "model_request_count_max: 4",
         "capacity_search_authorized: false",
     ):
@@ -621,7 +620,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     for marker in (
         "parent_server_grade=red_p8_2_k1a_r5_l1_r1_cpu_target_lost",
         "parent_successful_request_count=3",
-        "run_deepseek_p8_2_k1a_r5_f1_pressure_window.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r1_request_local_pressure.sh",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
         "pressure_request_count_exact: 1",
         "K2",
@@ -633,7 +632,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
+        "workloads/p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
@@ -663,7 +662,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1_offline_first_then_at_most_one_fixed_non_search_lifecycle"
+        "P8.2-K1A-R5-F1-R1_parent_legacy_then_at_most_one_calibration_plus_one_fixed_l2"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True

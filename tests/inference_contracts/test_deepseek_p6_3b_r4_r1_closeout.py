@@ -91,9 +91,9 @@ def test_current_handoff_preserves_p6_green_during_r5_f0_feasibility():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-F1 raw pressure-window 归因与条件式 L2" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721" in handoff
-    assert "execution_mode: authorized_offline_raw_pressure_window_then_conditional_one_fixed_lifecycle" in handoff
+    assert "P8.2-K1A-R5-F1-R1 请求级压力进度校准与条件式 L2" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722" in handoff
+    assert "execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2" in handoff
     assert "npu_execution_authorized: conditional" in handoff
     assert "next_task_authorized: false" in handoff
     assert "standing_npu_and_vllm_consumption_authorization: true" in handoff
@@ -114,7 +114,7 @@ def test_current_handoff_preserves_p6_green_during_r5_f0_feasibility():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_r1_grade"] == (
         "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"

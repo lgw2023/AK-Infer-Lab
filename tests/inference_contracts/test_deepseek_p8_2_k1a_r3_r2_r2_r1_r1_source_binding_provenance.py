@@ -107,16 +107,16 @@ def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-            "task_id: p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721",
-            "execution_mode: authorized_offline_raw_pressure_window_then_conditional_one_fixed_lifecycle",
+            "task_id: p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722",
+            "execution_mode: authorized_parent_legacy_then_one_calibration_then_conditional_fixed_l2",
             "npu_execution_authorized: conditional",
-            "formal_model_lifecycle_count_max: 1",
+            "formal_model_lifecycle_count_max: 2",
             "model_request_count_max: 4",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "next_task_authorized: false",
             "parent_r5_l1_r1_bounded_and_raw_replay_authorized: true",
-            "frozen_source_and_installed_runtime_audit_authorized: true",
+            "request_local_progress_analysis_authorized: true",
         "parent_d2h_store_complete=true",
         "parent_h2d_restore_complete=false",
         "candidate_manifest.server_local.json",
@@ -134,10 +134,10 @@ def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_f1_pressure_window_conditional_l2_2026_0721"
+        "p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_pressure_window_conditional_lifecycle.yaml"
+        "p8_2_k1a_r5_f1_r1_request_local_pressure_conditional_lifecycle.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_grade"] == (
@@ -154,6 +154,6 @@ def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
         "p8_2_k1a_r3_r2_r2_r1_r1_formal_model_lifecycle_count_max"
     ] == 1
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1_offline_first_then_at_most_one_fixed_non_search_lifecycle"
+        "P8.2-K1A-R5-F1-R1_parent_legacy_then_at_most_one_calibration_plus_one_fixed_l2"
     )
     assert acceptance["next_task_authorized"] is False
