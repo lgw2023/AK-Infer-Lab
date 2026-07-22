@@ -23,6 +23,7 @@
 - `docs/file-transfer-policy.md`：三种文件传输方式、用户确认模板、上传命令和失败边界。
 - `docs/mail-network-config.md`：最新服务器邮件确认的邮件与网络配置事实，已脱敏。
 - `docs/server-docker-images.md`：服务器侧已加载并冒烟通过的 Docker 镜像登记。
+- `docs/internal-ascend-cluster-inventory.md`：2026-07-22 双逻辑节点、共享存储拓扑、磁盘容量、公共模型目录与节点 0 镜像快照；不含登录口令。
 
 ## 服务器侧配置
 
