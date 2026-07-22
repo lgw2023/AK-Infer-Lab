@@ -128,10 +128,23 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "target_block_count": int(row.get("target_block_count") or 0),
         "cpu_target_block_count": int(row.get("cpu_target_block_count") or 0),
         "gpu_target_block_count": int(row.get("gpu_target_block_count") or 0),
+        "raw_hash_values_retained": False,
         "request_id_retained": False,
         "token_ids_retained": False,
         "generated_content_retained": False,
     }
+    for field in (
+        "configured_target_block_count",
+        "request_hash_candidate_count",
+        "fa_group_hash_candidate_count",
+        "selected_target_hash_count",
+    ):
+        if field in row:
+            value[field] = int(row.get(field) or 0)
+    if "target_capture_source" in row:
+        value["target_capture_source"] = str(row["target_capture_source"])
+    if "target_capture_exact" in row:
+        value["target_capture_exact"] = row.get("target_capture_exact") is True
     if "restore_group_count" in row:
         value.update(
             {
@@ -152,6 +165,42 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
                 ) is True,
             }
         )
+        bounded_group_rows = []
+        integer_fields = (
+            "group_index",
+            "restore_match_tokens_required",
+            "effective_block_size_tokens",
+            "theoretical_block_count",
+            "provided_block_id_count",
+            "selected_block_id_count",
+            "non_null_block_count",
+            "hashable_block_count",
+            "unhashable_non_null_block_count",
+            "required_block_count",
+            "captured_block_count",
+            "cpu_block_count",
+            "gpu_block_count",
+        )
+        for group in row.get("restore_group_rows") or ():
+            bounded = {
+                field: int(group.get(field) or 0)
+                for field in integer_fields
+                if field in group
+            }
+            if "capture_basis" in group:
+                bounded["capture_basis"] = str(group["capture_basis"])
+            for field in ("cpu_complete", "gpu_absent"):
+                if field in group:
+                    bounded[field] = group.get(field) is True
+            bounded.update(
+                {
+                    "raw_block_ids_retained": False,
+                    "raw_hash_values_retained": False,
+                }
+            )
+            bounded_group_rows.append(bounded)
+        if bounded_group_rows:
+            value["restore_group_rows"] = bounded_group_rows
     return value
 
 
@@ -926,6 +975,128 @@ def _write_bounded_request_summary(
         writer.writerows(rows)
 
 
+def build_inflight_result_summary(
+    *,
+    stage_label: str,
+    grade: str,
+    request_count: int,
+    completed_request_count: int,
+    intentional_pressure_abort_count: int,
+    terminal_decision: str,
+    resource_recovery_exact: bool,
+) -> str:
+    return (
+        f"# {stage_label} in-flight abort and restore\n\n"
+        f"- grade: `{grade}`\n"
+        f"- terminal: `{terminal_decision}`\n"
+        f"- requests: `{completed_request_count} completed + "
+        f"{intentional_pressure_abort_count} intentional pressure abort / "
+        f"{request_count}`\n"
+        f"- resource recovery exact: `{str(resource_recovery_exact).lower()}`\n"
+        f"- fixed pressure context: `{PRESSURE_CONTEXT_TOKENS}`\n"
+        "- claim: one accepted-capacity in-flight trigger/abort/idle/restore "
+        "H2D mechanism candidate only.\n"
+        "- no performance, unique-cause, K2, or P8.3-I1 claim.\n"
+    )
+
+
+def build_resource_recovery_summary(
+    *,
+    stopped_card_ids: list[int],
+    restored_card_ids: list[int],
+    stop_exit_code: int,
+    restart_exit_code: int,
+    keep_alive_marker_count: int,
+    port_7000_listener_count: int,
+    vllm_residual_process_count: int,
+    healthy_card_ids: list[int],
+    tracked_worktree_clean: bool,
+) -> dict[str, Any]:
+    stopped = sorted(set(stopped_card_ids))
+    restored = sorted(set(restored_card_ids))
+    healthy = sorted(set(healthy_card_ids))
+    same_card_set = bool(stopped) and stopped == restored
+    keep_alive_restored = all(
+        (
+            same_card_set,
+            stop_exit_code == 0,
+            restart_exit_code == 0,
+            keep_alive_marker_count > 0,
+        )
+    )
+    port_free = port_7000_listener_count == 0
+    all_eight_healthy = healthy == list(range(8))
+    recovery_exact = all(
+        (
+            keep_alive_restored,
+            port_free,
+            vllm_residual_process_count == 0,
+            all_eight_healthy,
+            tracked_worktree_clean,
+        )
+    )
+    return {
+        "schema_version": f"{CONTRACT_SCHEMA_TAG}_resource_recovery_v1",
+        "stopped_card_ids": stopped,
+        "restored_card_ids": restored,
+        "same_card_set_restored": same_card_set,
+        "stop_exit_code": stop_exit_code,
+        "restart_exit_code": restart_exit_code,
+        "keep_alive_marker_count": keep_alive_marker_count,
+        "keep_alive_restored_exact": keep_alive_restored,
+        "port_7000_listener_count": port_7000_listener_count,
+        "port_7000_free": port_free,
+        "vllm_residual_process_count": vllm_residual_process_count,
+        "healthy_card_ids": healthy,
+        "all_eight_npu_healthy": all_eight_healthy,
+        "tracked_worktree_clean": tracked_worktree_clean,
+        "resource_recovery_exact": recovery_exact,
+        "generated_content_retained": False,
+        "request_ids_retained": False,
+        "token_ids_retained": False,
+    }
+
+
+def classify_inflight_grades(
+    *,
+    grade_prefix: str,
+    candidate_green: str,
+    terminal: str,
+    cleanup: str,
+    recovery_ok: bool,
+    evidence_exact: bool,
+) -> dict[str, str]:
+    explicit_terminal_grades = {
+        "request_local_progress_ambiguous",
+        "cpu_target_lost",
+        "pressure_completed_without_trigger",
+        "inflight_trigger_timeout",
+        "pressure_abort_not_confirmed",
+        "pressure_not_idle_after_abort",
+        "window_lost_after_abort",
+    }
+    if terminal in explicit_terminal_grades:
+        experimental_grade = f"{grade_prefix}_{terminal}"
+    elif not evidence_exact:
+        experimental_grade = f"{grade_prefix}_h2d_evidence_incomplete"
+    else:
+        experimental_grade = candidate_green
+    operational_grade = (
+        f"{grade_prefix}_cleanup_or_recovery_incomplete"
+        if cleanup != "clean" or not recovery_ok
+        else "operational_recovery_clean"
+    )
+    return {
+        "experimental_grade": experimental_grade,
+        "operational_grade": operational_grade,
+        "server_grade": (
+            operational_grade
+            if operational_grade != "operational_recovery_clean"
+            else experimental_grade
+        ),
+    }
+
+
 def _build_inflight_candidate_manifest(
     artifact_dir: Path,
 ) -> dict[str, Any]:
@@ -1047,29 +1218,22 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         )
     )
     terminal = str(timeline.get("terminal_decision") or "missing")
-    if cleanup != "clean" or not recovery_ok:
-        grade = f"{GRADE_PREFIX}_cleanup_or_recovery_incomplete"
-    elif terminal in {
-        "request_local_progress_ambiguous",
-        "cpu_target_lost",
-        "pressure_completed_without_trigger",
-        "inflight_trigger_timeout",
-    }:
-        grade = f"{GRADE_PREFIX}_{terminal}"
-    elif terminal in {
-        "pressure_abort_not_confirmed",
-        "pressure_not_idle_after_abort",
-        "window_lost_after_abort",
-    }:
-        grade = f"{GRADE_PREFIX}_{terminal}"
-    elif not evidence_exact:
-        grade = f"{GRADE_PREFIX}_h2d_evidence_incomplete"
-    else:
-        grade = CANDIDATE_GREEN
+    grades = classify_inflight_grades(
+        grade_prefix=GRADE_PREFIX,
+        candidate_green=CANDIDATE_GREEN,
+        terminal=terminal,
+        cleanup=cleanup,
+        recovery_ok=recovery_ok,
+        evidence_exact=evidence_exact,
+    )
+    grade = grades["server_grade"]
 
     grading = {
         "schema_version": f"{CONTRACT_SCHEMA_TAG}_grading_v1",
         "server_grade": grade,
+        "experimental_grade": grades["experimental_grade"],
+        "operational_grade": grades["operational_grade"],
+        "experimental_terminal": terminal,
         "request_count": len(request_rows),
         "successful_request_count": sum(
             _request_evidence_exact(row) for row in request_rows
@@ -1128,13 +1292,17 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
     _write_json(artifact_dir / "mtp_queue_health_summary.json", mtp_queue_health)
     _write_json(artifact_dir / "grading_summary.json", grading)
     (artifact_dir / "result_summary.md").write_text(
-        f"# {STAGE_LABEL} in-flight abort and restore\n\n"
-        f"- grade: `{grade}`\n"
-        f"- requests: `3 completed + 1 intentional pressure abort / {len(request_rows)}`\n"
-        f"- fixed pressure context: `{PRESSURE_CONTEXT_TOKENS}`\n"
-        "- claim: one accepted-capacity in-flight trigger/abort/idle/restore "
-        "H2D mechanism candidate only.\n"
-        "- no performance, unique-cause, K2, or P8.3-I1 claim.\n",
+        build_inflight_result_summary(
+            stage_label=STAGE_LABEL,
+            grade=grade,
+            request_count=len(request_rows),
+            completed_request_count=mtp_queue_health["completed_request_count"],
+            intentional_pressure_abort_count=mtp_queue_health[
+                "intentional_pressure_abort_count"
+            ],
+            terminal_decision=terminal,
+            resource_recovery_exact=recovery_ok,
+        ),
         encoding="utf-8",
     )
     manifest = _build_inflight_candidate_manifest(artifact_dir)
@@ -1164,7 +1332,26 @@ def _parser() -> argparse.ArgumentParser:
     execute.add_argument("--server-pid", type=int, required=True)
     finalize = subparsers.add_parser("finalize")
     finalize.add_argument("--artifact-dir", type=Path, required=True)
+    recovery = subparsers.add_parser("record-recovery")
+    recovery.add_argument("--artifact-dir", type=Path, required=True)
+    recovery.add_argument("--stopped-card-ids", required=True)
+    recovery.add_argument("--restored-card-ids", required=True)
+    recovery.add_argument("--stop-exit-code", type=int, required=True)
+    recovery.add_argument("--restart-exit-code", type=int, required=True)
+    recovery.add_argument("--keep-alive-marker-count", type=int, required=True)
+    recovery.add_argument("--port-7000-listener-count", type=int, required=True)
+    recovery.add_argument(
+        "--vllm-residual-process-count", type=int, required=True
+    )
+    recovery.add_argument("--healthy-card-ids", required=True)
+    recovery.add_argument(
+        "--tracked-worktree-clean", choices=("true", "false"), required=True
+    )
     return parser
+
+
+def _parse_card_ids(raw: str) -> list[int]:
+    return [int(value) for value in raw.split(",") if value != ""]
 
 
 def main() -> int:
@@ -1180,6 +1367,20 @@ def main() -> int:
         )
     if args.command == "finalize":
         return finalize_inflight_abort_restore(args.artifact_dir)
+    if args.command == "record-recovery":
+        value = build_resource_recovery_summary(
+            stopped_card_ids=_parse_card_ids(args.stopped_card_ids),
+            restored_card_ids=_parse_card_ids(args.restored_card_ids),
+            stop_exit_code=args.stop_exit_code,
+            restart_exit_code=args.restart_exit_code,
+            keep_alive_marker_count=args.keep_alive_marker_count,
+            port_7000_listener_count=args.port_7000_listener_count,
+            vllm_residual_process_count=args.vllm_residual_process_count,
+            healthy_card_ids=_parse_card_ids(args.healthy_card_ids),
+            tracked_worktree_clean=args.tracked_worktree_clean == "true",
+        )
+        _write_json(args.artifact_dir / "resource_recovery_summary.json", value)
+        return 0 if value["resource_recovery_exact"] is True else 2
     raise AssertionError(args.command)
 
 

@@ -335,17 +335,17 @@ def test_r3_finalizer_requires_exact_capacity_and_closes_store_restore(
 
 
 def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> None:
-    task_id = "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+    task_id = "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment",
+        "execution_mode: authorized_single_lifecycle_effective_restore_contract",
         "npu_execution_authorized: true",
         "vllm_server_start_authorized: true",
         "model_requests_authorized: true",
         "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 4",
+        "model_request_count_max: 4",
         "capacity_search_authorized: false",
         "profiler_authorized: false",
         "result_transfer_authorized: true",
@@ -354,7 +354,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
         assert field in handoff
     for marker in (
         "parent_grade=red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete",
-        "parent_request_count=4",
+            "upstream_f1_r3_request_count=4",
         "parent_successful_request_count=3",
         "parent_d2h_store_complete=true",
         "parent_h2d_worker_count=0",
@@ -370,7 +370,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
+        "workloads/p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
     )
     assert acceptance["p8_2_k1a_r2_grade"] == (
         "ready_p8_2_k1a_r2_allocator_capacity"
@@ -409,7 +409,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
         "green_p8_3_i0_r1_unclassified_taxonomy"
     )
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R4_single_lifecycle_full_restore_eligibility_alignment"
+        "P8.2-K1A-R5-F1-R5_single_lifecycle_effective_restore_contract"
     )
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False

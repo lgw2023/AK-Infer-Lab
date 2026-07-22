@@ -1,0 +1,81 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R5
+date: '2026-07-22'
+task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722
+
+accepted_f1_r4_result:
+  server_grade: red_p8_2_k1a_r5_f1_r4_cleanup_or_recovery_incomplete
+  experimental_terminal: pressure_completed_without_trigger
+  formal_model_lifecycle_count: 1
+  request_count: 3
+  successful_request_count: 3
+  intentional_pressure_abort_count: 0
+  request_retry_count: 0
+  configured_target_blocks: 128
+  effective_runtime_target_blocks: 64
+  best_cpu_target_blocks: 64
+  best_gpu_target_blocks: 0
+  pressure_progress_event_count: 41
+  full_restore_eligibility_event_count: 0
+  restore_sent: false
+  d2h_store_complete: true
+  h2d_restore_attempted: false
+  cleanup: clean
+  resource_recovery_structured_artifact_present: false
+  manifest_sha256: a69a426b8ae323129ea9ecf20ea5410b24da7b61ff062102ccb44006b4215bba
+  grading_sha256: b84df30aed30cd50374cd9c8a18ce5ae6bc878643dbf4955f32602ac6d416cba
+  trigger_sha256: 4b47a03bcda1cdc32beab382a22e03cd1ea3753b5bca21924cdfe64e56f3e47a
+  timeline_sha256: 234b3799f77035902cb0b39bdfd62a3dabc918adf46864ba22aed75cf15d6164
+
+developer_diagnosis:
+  primary_defect: shared_mode_overwrote_outer_target_block_count
+  outer_requested_target_blocks: 128
+  shared_mode_effective_target_blocks: 64
+  fixed_context_or_capacity_failure_proven: false
+  accepted_capacity_invalidated: false
+  restore_geometry_conclusion_proven: false
+  request_hash_capture_source_unobserved: true
+  group0_non_null_but_unhashable_tail_observed: true
+  missing_resource_recovery_artifact_observed: true
+  static_result_summary_count_bug_observed: true
+
+developer_decision:
+  accepted_capacity_invalidated: false
+  rerun_same_fixed_lifecycle: true
+  effective_target_block_count_required: 128
+  restore_match_tokens_required: 16384
+  block_size_tokens: 128
+  accepted_cpu_blocks_per_rank: 128
+  accepted_cpu_bytes_per_rank: 430604288
+  accepted_cpu_bytes_total: 3444834304
+  pressure_context_tokens_preserved: 36800
+  target_capture_source_and_count_required: true
+  all_group_capture_geometry_required: true
+  unhashable_partial_blocks_are_diagnostic_not_lookup_requirements: true
+  runtime_contract_fail_fast_required: true
+  same_card_set_recovery_driver_required: true
+  structured_resource_recovery_artifact_required: true
+  dynamic_request_summary_required: true
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  request_retry_count_exact: 0
+  formal_model_lifecycle_count_exact: 1
+  runtime_or_dependency_mutation_authorized: false
+  performance_reference_authorized: false
+  unique_root_cause_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+failure_classification:
+  - effective_runtime_contract_mismatch
+  - target_capture_incomplete
+  - restore_groups_incomplete
+  - full_128_cpu_window_not_observed_over_complete_pressure_lifetime
+  - pressure_abort_not_confirmed
+  - pressure_not_idle_after_abort
+  - full_restore_window_lost_after_abort
+  - restore_cpu_hit_or_h2d_pipeline_incomplete
+  - cleanup_or_keep_alive_recovery_incomplete
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_effective_128_block_contract_and_conditional_h2d_mechanism_candidate_only

@@ -13,6 +13,10 @@ CPU_BYTES_TO_USE=${P8_2_K1A_CPU_BYTES_TO_USE:-274877906944}
 CPU_BYTES_TO_USE_PER_RANK=${P8_2_K1A_CPU_BYTES_TO_USE_PER_RANK:-34359738368}
 LAZY_OFFLOAD=${P8_2_K1A_LAZY_OFFLOAD:-false}
 ENABLE_H2D_RESIDENCY_OBSERVER=${P8_2_K1A_ENABLE_H2D_RESIDENCY_OBSERVER:-0}
+H2D_TARGET_BLOCK_COUNT=${P8_2_K1A_H2D_TARGET_BLOCK_COUNT:-64}
+RESTORE_MATCH_TOKENS=${P8_2_K1A_RESTORE_MATCH_TOKENS:-16384}
+BLOCK_SIZE_TOKENS=${P8_2_K1A_BLOCK_SIZE_TOKENS:-128}
+REQUIRE_RESTORE_GROUP_ELIGIBILITY=${P8_2_K1A_REQUIRE_RESTORE_GROUP_ELIGIBILITY:-0}
 REQUEST_COUNT_MIN=${P8_2_K1A_REQUEST_COUNT_MIN:-6}
 REQUEST_COUNT_MAX=${P8_2_K1A_REQUEST_COUNT_MAX:-6}
 PRESSURE_REQUEST_COUNT_MAX=${P8_2_K1A_PRESSURE_REQUEST_COUNT_MAX:-1}
@@ -106,6 +110,14 @@ audit_contract() {
   printf 'cpu_bytes_to_use=%s\n' "${CPU_BYTES_TO_USE}"
   printf 'cpu_bytes_to_use_per_rank=%s\n' "${CPU_BYTES_TO_USE_PER_RANK}"
   printf 'lazy_offload=%s\n' "${LAZY_OFFLOAD}"
+  printf 'h2d_target_block_count=%s\n' "${H2D_TARGET_BLOCK_COUNT}"
+  printf 'restore_match_tokens=%s\n' "${RESTORE_MATCH_TOKENS}"
+  printf 'block_size_tokens=%s\n' "${BLOCK_SIZE_TOKENS}"
+  if test "$((H2D_TARGET_BLOCK_COUNT * BLOCK_SIZE_TOKENS))" = "${RESTORE_MATCH_TOKENS}"; then
+    printf 'restore_target_geometry_exact=true\n'
+  else
+    printf 'restore_target_geometry_exact=false\n'
+  fi
   if test "${ENABLE_H2D_RESIDENCY_OBSERVER}" = 1; then
     printf 'observer_mode=observe_only_with_controller_role_marker_no_runtime_decision_or_copy_mutation\n'
   else
@@ -124,6 +136,13 @@ audit_contract() {
 if test "${P8_2_K1A_MODE_AUDIT_ONLY:-0}" = 1; then
   audit_contract
   exit 0
+fi
+
+for value in "${H2D_TARGET_BLOCK_COUNT}" "${RESTORE_MATCH_TOKENS}" "${BLOCK_SIZE_TOKENS}"; do
+  test "${value}" -gt 0
+done
+if test "${REQUIRE_RESTORE_GROUP_ELIGIBILITY}" = 1; then
+  test "$((H2D_TARGET_BLOCK_COUNT * BLOCK_SIZE_TOKENS))" = "${RESTORE_MATCH_TOKENS}"
 fi
 
 cleanup_mode() {
@@ -280,7 +299,10 @@ printf '%s\n' pass > "${RUNTIME_DIR}/source_gate_status.txt"
 export P8_2_K1A_TRANSFER_TRACE_DIR="${TRACE_DIR}"
 export P8_2_K1A_ENABLE_H2D_RESIDENCY_OBSERVER="${ENABLE_H2D_RESIDENCY_OBSERVER}"
 export P8_2_K1A_H2D_ACTIVE_ROLE_PATH="${ACTIVE_ROLE_PATH}"
-export P8_2_K1A_H2D_TARGET_BLOCK_COUNT=64
+export P8_2_K1A_H2D_TARGET_BLOCK_COUNT="${H2D_TARGET_BLOCK_COUNT}"
+export P8_2_K1A_RESTORE_MATCH_TOKENS="${RESTORE_MATCH_TOKENS}"
+export P8_2_K1A_BLOCK_SIZE_TOKENS="${BLOCK_SIZE_TOKENS}"
+export P8_2_K1A_REQUIRE_RESTORE_GROUP_ELIGIBILITY="${REQUIRE_RESTORE_GROUP_ELIGIBILITY}"
 
 test -f "${ARGV_IDENTITY}"
 printf '%q ' "${cmd[@]}" > "${RUNTIME_DIR}/server_command.txt"

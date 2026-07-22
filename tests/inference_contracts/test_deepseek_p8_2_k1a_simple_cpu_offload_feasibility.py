@@ -595,12 +595,12 @@ def test_k1a_preparer_freezes_six_unique_content_free_request_bodies(tmp_path: P
 def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
     task_id = (
-        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment"
+        "execution_mode: authorized_single_lifecycle_effective_restore_contract"
         in handoff
     )
     for field in (
@@ -613,7 +613,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
         "result_transfer_authorized: true",
         "next_task_authorized: false",
         "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 4",
+        "model_request_count_max: 4",
         "capacity_search_authorized: false",
     ):
         assert field in handoff
@@ -622,7 +622,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
             "parent_successful_request_count=3",
             "run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh",
         "candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout",
-        "model_request_count_exact: 4",
+        "model_request_count_max: 4",
         "K2",
         "P8.3-I1",
     ):
@@ -632,7 +632,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
+        "workloads/p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1_feasibility_grade"] == (
@@ -662,7 +662,7 @@ def test_k1a_r5_f0_feasibility_is_the_only_current_server_handoff():
     assert acceptance["p8_2_execution_authorized"] is False
     assert acceptance["p8_2_parent_auto_advance_authorized"] is False
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R4_single_lifecycle_full_restore_eligibility_alignment"
+        "P8.2-K1A-R5-F1-R5_single_lifecycle_effective_restore_contract"
     )
     assert acceptance["p8_3_technical_dependency_on_k1a"] is False
     assert acceptance["p8_3_i0_local_planning_ready"] is True

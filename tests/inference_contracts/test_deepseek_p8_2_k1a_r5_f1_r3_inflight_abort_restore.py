@@ -98,6 +98,7 @@ def test_inflight_trigger_requires_exact_request_local_cpu_only_state() -> None:
         "target_block_count": 64,
         "cpu_target_block_count": 64,
         "gpu_target_block_count": 0,
+        "raw_hash_values_retained": False,
         "request_id_retained": False,
         "token_ids_retained": False,
         "generated_content_retained": False,
@@ -401,18 +402,18 @@ def test_f1_r3_contract_and_audit_only_are_bounded(tmp_path: Path) -> None:
         assert line in completed.stdout
 
 
-def test_f1_r4_is_the_only_current_server_handoff() -> None:
+def test_f1_r5_is_the_only_current_server_handoff() -> None:
     current_task_id = (
-        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
     )
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
     )
-    assert artifacts["current_p8_2_k1a_r5_f1_r4_runner"].endswith(
-        "run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh"
+    assert artifacts["current_p8_2_k1a_r5_f1_r5_runner"].endswith(
+        "run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.sh"
     )
 
     handoff = HANDOFF.read_text(encoding="utf-8")

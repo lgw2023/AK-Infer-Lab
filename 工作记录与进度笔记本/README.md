@@ -26,9 +26,8 @@ P6.3C 已因 `4096 < 135168` 的 frozen validation 约束收口为
 6/6 transport 成功、D2H store 闭合、CPU hit/load/H2D 为零。原 red 保留，开发机只接受 store-only yellow。
 R4-R1 offline store-only closeout 已 green，R5-F0 ready，R5-L1/R1 red 保留。F1-R1 calibration
 得到 36800 candidate，但 fixed L2 3/3 请求和 D2H 8/8 后 endpoint 为 `CPU=54/GPU=0`，保留
-target-lost red、未发送 restore。当前唯一 handoff 为
-`p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722`，固定 36800 在运行中锁存 CPU-only 窗口，
-中止 pressure、等待 engine idle 并复核窗口后只发送一次 restore follower；
+target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 64，保留为无效运行合同证据，不否定 accepted capacity。当前唯一 handoff 为
+`p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722`：先验证嵌套 shell/observer 最终生效 target=128，记录 request-vs-FA 目标来源和各 KV group 有界几何，再以 fixed 36800 在运行中锁存 CPU-only 窗口。唯一 driver 负责停卡、单 lifecycle、清理、原卡集恢复、recovery 写入和 finalize；
 不调 context、不做 sweep。K1A 双向 green、K2、P8.3-I1 和 P9 不自动进入。
 
 ## 当前范围

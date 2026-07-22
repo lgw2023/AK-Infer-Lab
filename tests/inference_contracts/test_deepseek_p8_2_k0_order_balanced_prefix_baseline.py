@@ -675,18 +675,18 @@ def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
 
 def test_k0_is_green_and_k1a_r5_f0_is_the_only_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+    task_id = "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment"
+        "execution_mode: authorized_single_lifecycle_effective_restore_contract"
     ) in handoff
     assert "server_sync_review_authorized: true" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "formal_model_lifecycle_count_exact: 1" in handoff
-    assert "model_request_count_exact: 4" in handoff
+    assert "model_request_count_max: 4" in handoff
     assert "profiler_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "keep_alive_stop_authorized: true" in handoff
@@ -704,7 +704,7 @@ def test_k0_is_green_and_k1a_r5_f0_is_the_only_handoff():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_p8_2_k0_refinalizer"].endswith(

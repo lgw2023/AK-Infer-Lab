@@ -511,10 +511,10 @@ def test_r5_f0_is_preserved_in_the_current_r5_l1_r1_lineage() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
     )
     assert artifacts["current_p8_2_k1a_r5_f0_runner"].endswith(RUNNER.name)
 
@@ -522,7 +522,7 @@ def test_r5_f0_is_preserved_in_the_current_r5_l1_r1_lineage() -> None:
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert "candidate_ready_p8_2_k1a_r5_f0_h2d_trigger_feasibility" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "keep_alive_stop_authorized: true" in handoff
     assert "vllm_server_start_authorized: true" in handoff
@@ -530,5 +530,5 @@ def test_r5_f0_is_preserved_in_the_current_r5_l1_r1_lineage() -> None:
     assert "result_transfer_authorized: true" in handoff
     assert "transfer_method_selected: false" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "model_request_count_exact: 4" in handoff
+    assert "model_request_count_max: 4" in handoff
     assert "CPU=64/GPU=0" in handoff

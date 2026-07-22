@@ -40,26 +40,147 @@ def derive_restore_eligibility_contract(
     }
 
 
+def validate_effective_restore_contract(
+    *,
+    target_block_count: int,
+    restore_match_tokens: int,
+    block_size_tokens: int,
+    require_restore_group_eligibility: bool,
+) -> dict[str, Any]:
+    geometry = derive_restore_eligibility_contract(
+        restore_match_tokens=restore_match_tokens,
+        block_size_tokens=block_size_tokens,
+    )
+    exact = target_block_count == geometry["required_restore_block_count"]
+    if require_restore_group_eligibility and not exact:
+        raise ValueError(
+            "effective target block count does not match restore geometry: "
+            f"target={target_block_count}, "
+            f"required={geometry['required_restore_block_count']}"
+        )
+    return {
+        **geometry,
+        "effective_target_block_count": target_block_count,
+        "restore_group_eligibility_required": require_restore_group_eligibility,
+        "effective_restore_contract_exact": exact,
+    }
+
+
+def capture_restore_group_hashes(
+    *,
+    group_index: int,
+    group_block_ids: list[int],
+    block_lookup: Any,
+    restore_match_tokens: int,
+    effective_block_size_tokens: int,
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    if restore_match_tokens <= 0 or effective_block_size_tokens <= 0:
+        raise ValueError("restore group capture geometry must be positive")
+    if restore_match_tokens % effective_block_size_tokens != 0:
+        raise ValueError("restore match tokens must align to the group block size")
+    theoretical_count = restore_match_tokens // effective_block_size_tokens
+    selected_ids = group_block_ids[:theoretical_count]
+    selected_blocks = [block_lookup[block_id] for block_id in selected_ids]
+    non_null_blocks = [block for block in selected_blocks if not block.is_null]
+    hashes = tuple(
+        block.block_hash
+        for block in non_null_blocks
+        if block.block_hash is not None
+    )
+    return hashes, {
+        "group_index": group_index,
+        "restore_match_tokens_required": restore_match_tokens,
+        "effective_block_size_tokens": effective_block_size_tokens,
+        "theoretical_block_count": theoretical_count,
+        "provided_block_id_count": len(group_block_ids),
+        "selected_block_id_count": len(selected_ids),
+        "non_null_block_count": len(non_null_blocks),
+        "hashable_block_count": len(hashes),
+        "unhashable_non_null_block_count": len(non_null_blocks) - len(hashes),
+        "required_block_count": len(hashes),
+        "capture_basis": "hashable_blocks_used_by_cache_lookup",
+        "raw_block_ids_retained": False,
+        "raw_hash_values_retained": False,
+    }
+
+
+def select_target_hashes(
+    *,
+    request_hashes: list[Any],
+    fa_group_hashes: list[Any],
+    target_block_count: int,
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    if target_block_count <= 0:
+        raise ValueError("target block count must be positive")
+    request_candidates = tuple(
+        value for value in request_hashes[:target_block_count] if value is not None
+    )
+    fa_candidates = tuple(
+        value for value in fa_group_hashes[:target_block_count] if value is not None
+    )
+    if len(request_candidates) == target_block_count:
+        selected = request_candidates
+        source = "request_block_hashes"
+    elif len(fa_candidates) == target_block_count:
+        selected = fa_candidates
+        source = "fa_group_block_hashes"
+    elif len(request_candidates) >= len(fa_candidates):
+        selected = request_candidates
+        source = "request_block_hashes_near_miss"
+    else:
+        selected = fa_candidates
+        source = "fa_group_block_hashes_near_miss"
+    return selected, {
+        "configured_target_block_count": target_block_count,
+        "request_hash_candidate_count": len(request_candidates),
+        "fa_group_hash_candidate_count": len(fa_candidates),
+        "selected_target_hash_count": len(selected),
+        "target_capture_source": source,
+        "target_capture_exact": len(selected) == target_block_count,
+        "raw_hash_values_retained": False,
+    }
+
+
 def build_restore_group_residency_summary(
     group_rows: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    geometry_fields = (
+        "restore_match_tokens_required",
+        "effective_block_size_tokens",
+        "theoretical_block_count",
+        "provided_block_id_count",
+        "selected_block_id_count",
+        "non_null_block_count",
+        "hashable_block_count",
+        "unhashable_non_null_block_count",
+        "capture_basis",
+    )
     bounded_rows: list[dict[str, Any]] = []
     for row in group_rows:
         required = int(row.get("required_block_count") or 0)
         captured = int(row.get("captured_block_count") or 0)
         cpu_count = int(row.get("cpu_block_count") or 0)
         gpu_count = int(row.get("gpu_block_count") or 0)
-        bounded_rows.append(
-            {
-                "group_index": int(row.get("group_index") or 0),
-                "required_block_count": required,
-                "captured_block_count": captured,
-                "cpu_block_count": cpu_count,
-                "gpu_block_count": gpu_count,
-                "cpu_complete": cpu_count == required,
-                "gpu_absent": gpu_count == 0,
-            }
-        )
+        bounded = {
+            "group_index": int(row.get("group_index") or 0),
+            "required_block_count": required,
+            "captured_block_count": captured,
+            "cpu_block_count": cpu_count,
+            "gpu_block_count": gpu_count,
+            "cpu_complete": cpu_count == required,
+            "gpu_absent": gpu_count == 0,
+        }
+        if any(field in row for field in geometry_fields):
+            bounded.update(
+                {field: row.get(field) for field in geometry_fields}
+            )
+            bounded.update(
+                {
+                    "raw_block_ids_retained": False,
+                    "raw_hash_values_retained": False,
+                }
+            )
+        bounded_rows.append(bounded)
     group_count = len(bounded_rows)
     captured_exact = (
         group_count > 0
@@ -232,31 +353,55 @@ def _capture_restore_group_hashes(
     block_ids: Any,
     *,
     restore_match_tokens: int,
-) -> tuple[tuple[tuple[Any, ...], ...], tuple[int, ...]]:
+) -> tuple[
+    tuple[tuple[Any, ...], ...],
+    tuple[int, ...],
+    tuple[dict[str, Any], ...],
+]:
     gpu_pool = scheduler._gpu_block_pool
     groups = scheduler.cpu_kv_cache_config.kv_cache_groups
     cp_world_size = int(getattr(scheduler, "cp_world_size", 1) or 1)
     hashes_by_group: list[tuple[Any, ...]] = []
     required_by_group: list[int] = []
+    geometry_by_group: list[dict[str, Any]] = []
     for group_index, group in enumerate(groups):
         effective_block_size = int(group.kv_cache_spec.block_size) * cp_world_size
         if restore_match_tokens % effective_block_size != 0:
             hashes_by_group.append(())
             required_by_group.append(-1)
-            continue
-        theoretical_count = restore_match_tokens // effective_block_size
-        group_block_ids = list(block_ids[group_index])[:theoretical_count]
-        selected_blocks = [gpu_pool.blocks[block_id] for block_id in group_block_ids]
-        non_null_blocks = [block for block in selected_blocks if not block.is_null]
-        required_by_group.append(len(non_null_blocks))
-        hashes_by_group.append(
-            tuple(
-                block.block_hash
-                for block in non_null_blocks
-                if block.block_hash is not None
+            geometry_by_group.append(
+                {
+                    "group_index": group_index,
+                    "restore_match_tokens_required": restore_match_tokens,
+                    "effective_block_size_tokens": effective_block_size,
+                    "theoretical_block_count": -1,
+                    "provided_block_id_count": len(block_ids[group_index]),
+                    "selected_block_id_count": 0,
+                    "non_null_block_count": 0,
+                    "hashable_block_count": 0,
+                    "unhashable_non_null_block_count": 0,
+                    "required_block_count": -1,
+                    "capture_basis": "unaligned_group_geometry",
+                    "raw_block_ids_retained": False,
+                    "raw_hash_values_retained": False,
+                }
             )
+            continue
+        hashes, geometry = capture_restore_group_hashes(
+            group_index=group_index,
+            group_block_ids=list(block_ids[group_index]),
+            block_lookup=gpu_pool.blocks,
+            restore_match_tokens=restore_match_tokens,
+            effective_block_size_tokens=effective_block_size,
         )
-    return tuple(hashes_by_group), tuple(required_by_group)
+        hashes_by_group.append(hashes)
+        required_by_group.append(len(hashes))
+        geometry_by_group.append(geometry)
+    return (
+        tuple(hashes_by_group),
+        tuple(required_by_group),
+        tuple(geometry_by_group),
+    )
 
 
 def _restore_group_residency_summary(scheduler: Any) -> dict[str, Any]:
@@ -265,6 +410,9 @@ def _restore_group_residency_summary(scheduler: Any) -> dict[str, Any]:
     )
     required_by_group = tuple(
         getattr(scheduler, "_p8_2_k1a_restore_group_required_counts", ())
+    )
+    geometry_by_group = tuple(
+        getattr(scheduler, "_p8_2_k1a_restore_group_geometry_rows", ())
     )
     cpu_pool = getattr(scheduler, "cpu_block_pool", None)
     gpu_pool = getattr(scheduler, "_gpu_block_pool", None)
@@ -278,8 +426,14 @@ def _restore_group_residency_summary(scheduler: Any) -> dict[str, Any]:
     rows = []
     for group_index, required in enumerate(required_by_group):
         hashes = hashes_by_group[group_index] if group_index < len(hashes_by_group) else ()
+        geometry = (
+            dict(geometry_by_group[group_index])
+            if group_index < len(geometry_by_group)
+            else {}
+        )
         rows.append(
             {
+                **geometry,
                 "group_index": group_index,
                 "required_block_count": required,
                 "captured_block_count": len(hashes),
@@ -354,6 +508,9 @@ def _emit_residency_snapshot(scheduler: Any, *, reason: str) -> None:
         return
     cpu_count, gpu_count = _target_residency_counts(scheduler)
     group_summary = _restore_group_residency_summary(scheduler)
+    target_capture_summary = dict(
+        getattr(scheduler, "_p8_2_k1a_target_capture_summary", {})
+    )
     cpu_pool = scheduler.cpu_block_pool
     gpu_pool = scheduler._gpu_block_pool
     _emit(
@@ -363,12 +520,12 @@ def _emit_residency_snapshot(scheduler: Any, *, reason: str) -> None:
         target_block_count=len(target_hashes),
         cpu_target_block_count=cpu_count,
         gpu_target_block_count=gpu_count,
+        **target_capture_summary,
         **group_summary,
         cpu_free_block_count=cpu_pool.get_num_free_blocks(),
         gpu_free_block_count=(
             gpu_pool.get_num_free_blocks() if gpu_pool is not None else None
         ),
-        raw_hash_values_retained=False,
     )
 
 
@@ -385,9 +542,14 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     target_block_count = int(os.environ.get(TARGET_BLOCK_COUNT_ENV, "64"))
     restore_match_tokens = int(os.environ.get(RESTORE_MATCH_TOKENS_ENV, "16384"))
     block_size_tokens = int(os.environ.get(BLOCK_SIZE_TOKENS_ENV, "128"))
-    eligibility_contract = derive_restore_eligibility_contract(
+    require_restore_group_eligibility = (
+        os.environ.get("P8_2_K1A_REQUIRE_RESTORE_GROUP_ELIGIBILITY", "0") == "1"
+    )
+    eligibility_contract = validate_effective_restore_contract(
+        target_block_count=target_block_count,
         restore_match_tokens=restore_match_tokens,
         block_size_tokens=block_size_tokens,
+        require_restore_group_eligibility=require_restore_group_eligibility,
     )
 
     original_finished = SimpleCPUOffloadScheduler.request_finished_all_groups
@@ -400,23 +562,32 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
             target_suffix
         ):
             gpu_pool = self._gpu_block_pool
-            fa_group = (
+            fa_group = list(
                 block_ids[self.fa_gidx] if block_ids else []
             )[:target_block_count]
-            target_hashes = tuple(
+            fa_group_hashes = [
                 gpu_pool.blocks[block_id].block_hash
                 for block_id in fa_group
                 if not gpu_pool.blocks[block_id].is_null
                 and gpu_pool.blocks[block_id].block_hash is not None
+            ]
+            target_hashes, target_capture_summary = select_target_hashes(
+                request_hashes=list(getattr(request, "block_hashes", ()) or ()),
+                fa_group_hashes=fa_group_hashes,
+                target_block_count=target_block_count,
             )
             self._p8_2_k1a_target_hashes = target_hashes
-            group_hashes, group_required = _capture_restore_group_hashes(
-                self,
-                block_ids,
-                restore_match_tokens=restore_match_tokens,
+            self._p8_2_k1a_target_capture_summary = target_capture_summary
+            group_hashes, group_required, group_geometry = (
+                _capture_restore_group_hashes(
+                    self,
+                    block_ids,
+                    restore_match_tokens=restore_match_tokens,
+                )
             )
             self._p8_2_k1a_restore_group_hashes = group_hashes
             self._p8_2_k1a_restore_group_required_counts = group_required
+            self._p8_2_k1a_restore_group_geometry_rows = group_geometry
             group_summary = _restore_group_residency_summary(self)
             _emit(
                 "target_hashes_captured",
@@ -425,8 +596,8 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
                 contract_role=contract_role,
                 target_block_count=len(target_hashes),
                 **eligibility_contract,
+                **target_capture_summary,
                 **group_summary,
-                raw_hash_values_retained=False,
             )
             _emit_residency_snapshot(self, reason="target_request_finished")
         return original_finished(self, request, block_ids)
@@ -471,7 +642,16 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
                 target_block_count=target_block_count,
                 cpu_target_block_count=cpu_count,
                 gpu_target_block_count=gpu_count,
-                restore_group_summary=_restore_group_residency_summary(self),
+                restore_group_summary={
+                    **dict(
+                        getattr(
+                            self,
+                            "_p8_2_k1a_target_capture_summary",
+                            {},
+                        )
+                    ),
+                    **_restore_group_residency_summary(self),
+                },
             )
             if progress is not None:
                 _emit("request_local_pressure_progress", **progress)

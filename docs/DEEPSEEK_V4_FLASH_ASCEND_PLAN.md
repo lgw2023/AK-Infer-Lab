@@ -44,7 +44,7 @@ new isolated host conda environment built; W8A8-MTP official context ladder gree
 P8.1 parent 继续保留 `yellow_p8_1_matrix_trace_invalid`，P8.1-R1 已接受为
 `green_p8_1_r1_official_mtp_observe_only_matrix`；二者均不被后续 K0 覆盖。
 
-旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 与 P8.2-K0 已接受 green。K1 旧路径与完整 K1A R3 lineage 保留；K1A-R2 8-rank/128-block capacity ready。R4-R1 offline store-only closeout green、R5-F0 candidate ready、R5-L1 controller-red 与 R5-L1-R1 target-lost red 均保留。F1-R3 已完成 fixed 36800 的 in-flight trigger→abort→idle→restore 控制链和 8-worker D2H，但 CPU hit/load/H2D 仍为零；`prefix_hits_delta=0` 不支持“由 Prefix Cache 服务”。当前唯一任务 `p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722` 固定 accepted 128 blocks/rank 和一个 lifecycle，把旧 64-block 单组窗口升级为完整 16384-token/128-block、全部相关 KV group 的 restore eligibility；完整 pressure 生命周期内首次近失不得提前终止，只有全资格窗口才中止并发送唯一 restore。P8.3-I0-R1 taxonomy 已在窄边界 green，但 TP4 budget incomplete。
+旧 `0.20.2/0.20.2rc1` 隔离环境通过 Qwen2.5 smoke，但 mixed checkpoint 在 `ModelConfig` 量化平台门失败。完全独立的 `0.22.1/0.22.1rc1` 环境已建成；W8A8-MTP 已完成 P6 official context/performance/profiled/matched controls，P8.1-R1 与 P8.2-K0 已接受 green。K1 旧路径与完整 K1A R3 lineage 保留；K1A-R2 8-rank/128-block capacity ready。R4-R1 offline store-only closeout green、R5-F0 candidate ready、R5-L1 controller-red 与 R5-L1-R1 target-lost red 均保留。F1-R3 已完成 fixed 36800 的 in-flight trigger→abort→idle→restore 控制链和 8-worker D2H，但 CPU hit/load/H2D 仍为零；`prefix_hits_delta=0` 不支持“由 Prefix Cache 服务”。F1-R4 的外层 128 被通用 mode 覆盖为 64，因此其 `pressure_completed_without_trigger` 不否定 accepted capacity。当前唯一任务 `p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722` 保持同一 accepted 128 blocks/rank、fixed 36800 和一个 lifecycle，但先在模型启动前验证嵌套 shell/observer 最终生效 target=128；同时记录 request-vs-FA 目标来源、各 KV group theoretical/selected/non-null/hashable 几何和无 hash partial tail。完整 pressure 生命周期内首次近失不得提前终止，只有全资格窗口才中止并发送唯一 restore。P8.3-I0-R1 taxonomy 已在窄边界 green，但 TP4 budget incomplete。
 
 ### 3.2 对照路：MindIE
 
@@ -68,7 +68,7 @@ mixed checkpoint 的最终诊断为 `diagnostic_yellow_acl_path_fixed`：ACL 门
 p6_1c_r1_deepseek_v4_flash_w8a8_mtp_official_context_ladder_sampling_repair_2026_0714
 ```
 
-server-local Git 管理最终验收已完成。P6.1C-R1、P6.1、P6.2、P6.3A 与 P6.3B-R4-R1 均 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。K1/K1A 旧 lineage 保留，K1A-R2 capacity ready，P8.3-I0-R1 taxonomy green 但 budget incomplete。R4-R1 offline store-only closeout 已 green；R5-F0 feasibility ready，R5-L1/R1 red 保留；F1-R2 已关闭 fixed-L2 中途窗口与 endpoint 的观测点错位。当前唯一服务器 handoff 是 `p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722`：一个 fixed 36800 lifecycle、运行中中止 pressure、idle 后条件式单次 restore；K2 和 P8.3-I1 均未授权。
+server-local Git 管理最终验收已完成。P6.1C-R1、P6.1、P6.2、P6.3A 与 P6.3B-R4-R1 均 green；P8.1 parent yellow、P8.1-R1 green 与 P8.2-K0 green 均已关闭。K1/K1A 旧 lineage 保留，K1A-R2 capacity ready，P8.3-I0-R1 taxonomy green 但 budget incomplete。R4-R1 offline store-only closeout 已 green；R5-F0 feasibility ready，R5-L1/R1 red 保留；F1-R2 已关闭 fixed-L2 中途窗口与 endpoint 的观测点错位，F1-R4 保留为无效有效值合同证据。当前唯一服务器 handoff 是 `p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722`：唯一 driver 自动停 0–7、运行一个 fixed 36800 lifecycle、清理、恢复原卡集、写 recovery 并 finalize；运行中只在完整 128-block 跨组窗口命中后中止 pressure，idle 后条件式单次 restore。K2 和 P8.3-I1 均未授权。
 
 参考配置：
 

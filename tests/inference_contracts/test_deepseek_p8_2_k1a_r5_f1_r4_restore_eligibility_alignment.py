@@ -11,10 +11,16 @@ import yaml
 from tools.inference_contracts.p8_2_k1a_h2d_residency_observer import (
     build_restore_group_residency_summary,
     build_restore_eligibility_gate,
+    capture_restore_group_hashes,
     derive_restore_eligibility_contract,
+    select_target_hashes,
 )
 from tools.inference_contracts.run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment import (
     build_restore_eligible_inflight_trigger_state,
+)
+from tools.inference_contracts.run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore import (
+    build_inflight_result_summary,
+    build_resource_recovery_summary,
 )
 
 
@@ -29,6 +35,11 @@ LIFECYCLE = (
     / "tools/inference_contracts/"
     "run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh"
 )
+MODE_RUNNER = (
+    ROOT
+    / "tools/inference_contracts/"
+    "run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh"
+)
 AUDIT = (
     ROOT
     / "benchmarks/deepseek_v4_flash/"
@@ -39,7 +50,6 @@ WORKLOAD = (
     / "benchmarks/deepseek_v4_flash/workloads/"
     "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
 )
-HANDOFF = ROOT / "通信模块/docs/developer-to-server.md"
 TASK_ID = "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
 
 
@@ -242,6 +252,189 @@ def test_group_summary_preserves_bounded_near_miss_diagnostics() -> None:
     ]
 
 
+def test_group_capture_excludes_unhashable_tail_from_restore_lookup_requirement() -> None:
+    class Block:
+        def __init__(self, *, is_null: bool, block_hash: str | None) -> None:
+            self.is_null = is_null
+            self.block_hash = block_hash
+
+    blocks = {
+        block_id: Block(is_null=False, block_hash=f"hash-{block_id}")
+        for block_id in range(64)
+    }
+    blocks[64] = Block(is_null=False, block_hash=None)
+
+    hashes, row = capture_restore_group_hashes(
+        group_index=0,
+        group_block_ids=list(range(65)),
+        block_lookup=blocks,
+        restore_match_tokens=16384,
+        effective_block_size_tokens=128,
+    )
+
+    assert len(hashes) == 64
+    assert row == {
+        "group_index": 0,
+        "restore_match_tokens_required": 16384,
+        "effective_block_size_tokens": 128,
+        "theoretical_block_count": 128,
+        "provided_block_id_count": 65,
+        "selected_block_id_count": 65,
+        "non_null_block_count": 65,
+        "hashable_block_count": 64,
+        "unhashable_non_null_block_count": 1,
+        "required_block_count": 64,
+        "capture_basis": "hashable_blocks_used_by_cache_lookup",
+        "raw_block_ids_retained": False,
+        "raw_hash_values_retained": False,
+    }
+
+
+def test_group_residency_summary_keeps_bounded_capture_geometry() -> None:
+    summary = build_restore_group_residency_summary(
+        [
+            {
+                "group_index": 0,
+                "restore_match_tokens_required": 16384,
+                "effective_block_size_tokens": 128,
+                "theoretical_block_count": 128,
+                "provided_block_id_count": 65,
+                "selected_block_id_count": 65,
+                "non_null_block_count": 65,
+                "hashable_block_count": 64,
+                "unhashable_non_null_block_count": 1,
+                "required_block_count": 64,
+                "captured_block_count": 64,
+                "cpu_block_count": 64,
+                "gpu_block_count": 0,
+                "capture_basis": "hashable_blocks_used_by_cache_lookup",
+            }
+        ]
+    )
+
+    assert summary["restore_group_eligibility_complete"] is True
+    assert summary["restore_group_rows"][0] == {
+        "group_index": 0,
+        "restore_match_tokens_required": 16384,
+        "effective_block_size_tokens": 128,
+        "theoretical_block_count": 128,
+        "provided_block_id_count": 65,
+        "selected_block_id_count": 65,
+        "non_null_block_count": 65,
+        "hashable_block_count": 64,
+        "unhashable_non_null_block_count": 1,
+        "required_block_count": 64,
+        "captured_block_count": 64,
+        "cpu_block_count": 64,
+        "gpu_block_count": 0,
+        "capture_basis": "hashable_blocks_used_by_cache_lookup",
+        "cpu_complete": True,
+        "gpu_absent": True,
+        "raw_block_ids_retained": False,
+        "raw_hash_values_retained": False,
+    }
+
+
+def test_target_capture_prefers_complete_request_hash_geometry_over_short_fa_group() -> None:
+    hashes, summary = select_target_hashes(
+        request_hashes=[f"request-{index}" for index in range(128)],
+        fa_group_hashes=[f"fa-{index}" for index in range(64)],
+        target_block_count=128,
+    )
+
+    assert len(hashes) == 128
+    assert summary == {
+        "configured_target_block_count": 128,
+        "request_hash_candidate_count": 128,
+        "fa_group_hash_candidate_count": 64,
+        "selected_target_hash_count": 128,
+        "target_capture_source": "request_block_hashes",
+        "target_capture_exact": True,
+        "raw_hash_values_retained": False,
+    }
+
+
+def test_result_summary_reports_observed_request_and_abort_counts() -> None:
+    summary = build_inflight_result_summary(
+        stage_label="P8.2-K1A-R5-F1-R5",
+        grade="red_pressure_completed_without_trigger",
+        request_count=3,
+        completed_request_count=3,
+        intentional_pressure_abort_count=0,
+        terminal_decision="pressure_completed_without_trigger",
+        resource_recovery_exact=True,
+    )
+
+    assert "requests: `3 completed + 0 intentional pressure abort / 3`" in summary
+    assert "terminal: `pressure_completed_without_trigger`" in summary
+    assert "resource recovery exact: `true`" in summary
+
+
+def test_resource_recovery_summary_requires_exact_same_card_set() -> None:
+    summary = build_resource_recovery_summary(
+        stopped_card_ids=list(range(8)),
+        restored_card_ids=list(range(8)),
+        stop_exit_code=0,
+        restart_exit_code=0,
+        keep_alive_marker_count=17,
+        port_7000_listener_count=0,
+        vllm_residual_process_count=0,
+        healthy_card_ids=list(range(8)),
+        tracked_worktree_clean=True,
+    )
+
+    assert summary["keep_alive_restored_exact"] is True
+    assert summary["same_card_set_restored"] is True
+    assert summary["port_7000_free"] is True
+    assert summary["all_eight_npu_healthy"] is True
+    assert summary["resource_recovery_exact"] is True
+    assert summary["generated_content_retained"] is False
+
+
+def test_record_recovery_cli_always_writes_structured_bounded_artifact(
+    tmp_path: Path,
+) -> None:
+    artifact = tmp_path / "artifact"
+    artifact.mkdir()
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(RUNNER),
+            "record-recovery",
+            "--artifact-dir",
+            str(artifact),
+            "--stopped-card-ids",
+            "0,1,2,3,4,5,6,7",
+            "--restored-card-ids",
+            "0,1,2,3,4,5,6,7",
+            "--stop-exit-code",
+            "0",
+            "--restart-exit-code",
+            "0",
+            "--keep-alive-marker-count",
+            "17",
+            "--port-7000-listener-count",
+            "0",
+            "--vllm-residual-process-count",
+            "0",
+            "--healthy-card-ids",
+            "0,1,2,3,4,5,6,7",
+            "--tracked-worktree-clean",
+            "true",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    value = json.loads(
+        (artifact / "resource_recovery_summary.json").read_text(encoding="utf-8")
+    )
+    assert value["resource_recovery_exact"] is True
+    assert value["schema_version"] == "p8_2_k1a_r5_f1_r4_resource_recovery_v1"
+
+
 def test_f1_r4_prepare_freezes_128_block_restore_eligibility(tmp_path: Path) -> None:
     source = tmp_path / "source_payload.json"
     source.write_text(
@@ -325,25 +518,26 @@ def test_f1_r4_contract_and_audit_only_keep_capacity_fixed(tmp_path: Path) -> No
         assert line in completed.stdout
 
 
-def test_f1_r4_is_the_only_current_server_handoff() -> None:
-    handoff = HANDOFF.read_text(encoding="utf-8")
-    assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert handoff.count("\ntask_id: ") == 1
-    assert f"task_id: {TASK_ID}" in handoff
-    for marker in (
-        "CPU=128/GPU=0",
-        "16384",
-        "全部相关 KV group",
-        "完整 pressure 生命周期窗口",
-        "不得因第一次未形成窗口就提前判定容量不兼容",
-        "npu_stop.sh 0 1 2 3 4 5 6 7",
-        "npu_keep_alive.sh 0 1 2 3 4 5 6 7",
-        "成功、失败、中断或提前退出",
-        "result_transfer_authorized: true",
-        "transfer_method_selected: false",
-        "automatic_transfer_allowed: false",
-        "email",
-        "upload-api",
-        "server-local",
-    ):
-        assert marker in handoff
+def test_f1_r4_effective_mode_contract_preserves_outer_128_block_value(
+    tmp_path: Path,
+) -> None:
+    completed = subprocess.run(
+        ["bash", str(MODE_RUNNER), str(tmp_path / "unused")],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "P8_2_K1A_MODE_AUDIT_ONLY": "1",
+            "P8_2_K1A_H2D_TARGET_BLOCK_COUNT": "128",
+            "P8_2_K1A_RESTORE_MATCH_TOKENS": "16384",
+            "P8_2_K1A_BLOCK_SIZE_TOKENS": "128",
+            "P8_2_K1A_REQUIRE_RESTORE_GROUP_ELIGIBILITY": "1",
+        },
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr or completed.stdout
+    assert "h2d_target_block_count=128" in completed.stdout
+    assert "restore_match_tokens=16384" in completed.stdout
+    assert "block_size_tokens=128" in completed.stdout
+    assert "restore_target_geometry_exact=true" in completed.stdout

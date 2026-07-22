@@ -107,11 +107,11 @@ def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722",
-        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment",
+        "task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722",
+        "execution_mode: authorized_single_lifecycle_effective_restore_contract",
         "npu_execution_authorized: true",
         "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 4",
+        "model_request_count_max: 4",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "next_task_authorized: false",
@@ -134,10 +134,10 @@ def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_grade"] == (
@@ -154,6 +154,6 @@ def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
         "p8_2_k1a_r3_r2_r2_r1_r1_formal_model_lifecycle_count_max"
     ] == 1
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R4_single_lifecycle_full_restore_eligibility_alignment"
+        "P8.2-K1A-R5-F1-R5_single_lifecycle_effective_restore_contract"
     )
     assert acceptance["next_task_authorized"] is False

@@ -472,11 +472,11 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_feasibility() -> None:
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-            "task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+            "task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
         in handoff
     )
     assert (
-        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment"
+        "execution_mode: authorized_single_lifecycle_effective_restore_contract"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
@@ -484,7 +484,7 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_feasibility() -> None:
     assert "result_transfer_authorized: true" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
     assert "16384" in handoff
-    assert "model_request_count_exact: 4" in handoff
+    assert "model_request_count_max: 4" in handoff
     assert "merge --ff-only origin/main" in handoff
     assert "keep_alive_stop_authorized: true" in handoff
     assert "formal_model_lifecycle_count_exact: 1" in handoff

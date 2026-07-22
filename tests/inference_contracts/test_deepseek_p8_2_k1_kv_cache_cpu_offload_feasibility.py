@@ -220,13 +220,13 @@ def test_k1_auditor_accepts_hash_verified_installed_source_trees(tmp_path: Path)
 
 
 def test_k1_block_is_preserved_in_the_k1a_r5_f0_server_handoff():
-    task_id = "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+    task_id = "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment"
+        "execution_mode: authorized_single_lifecycle_effective_restore_contract"
         in handoff
     )
     for field in (
@@ -239,7 +239,7 @@ def test_k1_block_is_preserved_in_the_k1a_r5_f0_server_handoff():
         "result_transfer_authorized: true",
         "next_task_authorized: false",
         "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 4",
+        "model_request_count_max: 4",
     ):
         assert field in handoff
     assert "blocked_p8_2_k1_frozen_stack_import_incompatible" in handoff
@@ -255,11 +255,11 @@ def test_k1_block_is_preserved_in_the_k1a_r5_f0_server_handoff():
         "audit_deepseek_p8_2_k1_kv_cache_cpu_offload.py"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.yaml"
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_server_handoff_execution_mode"] == (
-        "authorized_single_lifecycle_full_restore_eligibility_alignment"
+        "authorized_single_lifecycle_effective_restore_contract"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k0_grade"] == (

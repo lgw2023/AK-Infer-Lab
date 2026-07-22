@@ -6,10 +6,10 @@ P8_PLAN = REPO_ROOT / "docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md"
 P5_P9_PLAN = REPO_ROOT / "工作记录与进度笔记本/12_P5_P9_后续阶段重排计划.md"
 
 
-def test_current_plans_route_only_r5_l1_and_keep_later_stages_closed() -> None:
+def test_current_plans_route_only_f1_r5_and_keep_later_stages_closed() -> None:
     p8_plan = P8_PLAN.read_text(encoding="utf-8")
     p5_p9_plan = P5_P9_PLAN.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+    task_id = "p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
 
     assert task_id in p8_plan
     assert task_id in p5_p9_plan
@@ -23,7 +23,7 @@ def test_current_plans_route_only_r5_l1_and_keep_later_stages_closed() -> None:
     assert "K1A-R4 source-matcher blocked" in p5_p9_plan
     assert "K1A-R4-R1 offline store-only closeout green" in p5_p9_plan
     assert "K1A-R5-F0 feasibility ready" in p5_p9_plan
-    assert "K1A-R5-F1-R3 control-chain complete/H2D red -> K1A-R5-F1-R4 full restore-eligibility alignment current" in p5_p9_plan
+    assert "K1A-R5-F1-R4 effective-target-overridden invalid -> K1A-R5-F1-R5 effective 128-block contract current" in p5_p9_plan
     assert "P8.3-I0/I0-R1 已在窄边界 green且 budget incomplete" in p5_p9_plan
     assert "P8.3-I1 Level-A hotness trace 必须另行授权" in p5_p9_plan
     for artifact in (
@@ -41,6 +41,7 @@ def test_current_plans_route_only_r5_l1_and_keep_later_stages_closed() -> None:
         "p8_2_k1a_r5_f1_pressure_window_audit.yaml",
         "p8_2_k1a_r5_f1_r1_request_local_pressure_audit.yaml",
         "p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_audit.yaml",
+        "p8_2_k1a_r5_f1_r5_effective_restore_contract_audit.yaml",
         "p8_3_i0_r1_inventory_taxonomy_audit.yaml",
         "canonicalize_server_argv.py",
         "p8_2_k1a_trace_attribution.py",
@@ -56,5 +57,7 @@ def test_current_plans_route_only_r5_l1_and_keep_later_stages_closed() -> None:
         "run_deepseek_p8_2_k1a_r5_f0_h2d_trigger_feasibility.sh",
         "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.sh",
         "run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r5_server_task.sh",
     ):
         assert artifact in p8_plan

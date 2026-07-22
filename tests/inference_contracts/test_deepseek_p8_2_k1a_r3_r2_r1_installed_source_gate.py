@@ -25,7 +25,7 @@ def test_current_handoff_preserves_the_r4_r1_source_and_r5_f0_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+        "task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
     ) in handoff
     assert "manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b" in handoff
     assert "block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283" in handoff
@@ -152,9 +152,9 @@ def test_f1_r4_handoff_runs_the_full_bounded_single_lifecycle_chain() -> None:
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment",
+        "execution_mode: authorized_single_lifecycle_effective_restore_contract",
         "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 4",
+        "model_request_count_max: 4",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
         "run_deepseek_p8_2_k1a_r5_f1_r4_restore_eligibility_alignment.sh",

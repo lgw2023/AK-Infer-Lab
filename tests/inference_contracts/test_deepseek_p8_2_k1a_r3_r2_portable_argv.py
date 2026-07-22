@@ -282,13 +282,13 @@ def test_r3_lineage_is_consumed_and_r5_f0_is_the_only_current_read_only_handoff(
 
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_2026_0722"
+        "task_id: p8_2_k1a_r5_f1_r5_effective_restore_contract_2026_0722"
     ) in handoff
     for exact in (
-        "execution_mode: authorized_single_lifecycle_full_restore_eligibility_alignment",
+        "execution_mode: authorized_single_lifecycle_effective_restore_contract",
         "npu_execution_authorized: true",
         "formal_model_lifecycle_count_exact: 1",
-        "model_request_count_exact: 4",
+        "model_request_count_max: 4",
         "result_transfer_authorized: true",
         "next_task_authorized: false",
         "parent_grade=red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete",
