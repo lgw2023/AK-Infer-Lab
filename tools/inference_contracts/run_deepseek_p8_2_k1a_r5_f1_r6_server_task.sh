@@ -9,10 +9,10 @@ fi
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=${REPO_ROOT:-$(cd -- "${SCRIPT_DIR}/../.." && pwd)}
 RESULT_DIR=$1
-TASK_ID=p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723
-LIFECYCLE=${SCRIPT_DIR}/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.sh
+TASK_ID=${P8_2_K1A_TASK_ID:-p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723}
+LIFECYCLE=${P8_2_K1A_LIFECYCLE_RUNNER:-${SCRIPT_DIR}/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.sh}
 MODE_RUNNER=${SCRIPT_DIR}/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
-REQUEST_RUNNER=${SCRIPT_DIR}/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.py
+REQUEST_RUNNER=${P8_2_K1A_REQUEST_RUNNER:-${SCRIPT_DIR}/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.py}
 ENV_PREFIX=${ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1}
 PYTHON_BIN=${PYTHON_BIN:-${ENV_PREFIX}/bin/python}
 CARD_IDS=(0 1 2 3 4 5 6 7)
@@ -29,7 +29,7 @@ audit_contract() {
   printf 'same_card_set_restore_on_every_exit=true\n'
   printf 'resource_recovery_summary_always_recorded=true\n'
   printf 'finalize_after_recovery=true\n'
-  P8_2_K1A_F1_R6_AUDIT_ONLY=1 bash "${LIFECYCLE}" "${RESULT_DIR}"
+  P8_2_K1A_LIFECYCLE_AUDIT_ONLY=1 bash "${LIFECYCLE}" "${RESULT_DIR}"
   P8_2_K1A_MODE_AUDIT_ONLY=1 \
   P8_2_K1A_TASK_ID="${TASK_ID}" \
   P8_2_K1A_CPU_BYTES_TO_USE=3444834304 \
@@ -49,7 +49,7 @@ run_parent_and_contract_preflight() {
   P8_2_K1A_MODE_AUDIT_ONLY=1 bash "${LIFECYCLE}" "${RESULT_DIR}"
 }
 
-if test "${P8_2_K1A_F1_R6_SERVER_TASK_AUDIT_ONLY:-0}" = 1; then
+if test "${P8_2_K1A_SERVER_TASK_AUDIT_ONLY:-${P8_2_K1A_F1_R6_SERVER_TASK_AUDIT_ONLY:-0}}" = 1; then
   audit_contract
   exit 0
 fi

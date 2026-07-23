@@ -1,0 +1,143 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh
+date: '2026-07-23'
+task_id: p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723
+purpose: break_the_pre_pressure_circular_wait_and_refresh_the_full_16k_logical_keyspace_during_the_one_fixed_pressure_request
+
+stage_contract:
+  stage: P8.2-K1A-R5-F1-R7
+  mode: one_fixed_accepted_capacity_pressure_inflight_keyspace_refresh_abort_idle_restore_lifecycle
+  parent_f1_r6_prepressure_circular_wait: true
+  parent_f1_r6_is_not_capacity_impossibility_evidence: true
+  full_logical_128_block_cpu_only_window_remains_required: true
+  h2d_restore_mechanism_accepted_before_this_task: false
+  performance_reference_authorized: false
+  optimization_claim_authorized: false
+  unique_root_cause_claim_authorized: false
+
+runtime_config:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  quantization: ascend
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size_tokens: 128
+  chunked_prefill: true
+  prefix_caching: true
+  kv_connector: SimpleCPUOffloadConnector
+  kv_role: kv_both
+  lazy_offload: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count: 128
+  restore_match_tokens: 16384
+  runtime_overlay: accepted_task_local_observe_only_overlay
+  runtime_or_dependency_mutation_authorized: false
+
+request_plan:
+  order:
+    - warmup
+    - target_prime_with_16k_shared_prefix
+    - pressure_01_refresh_runtime_keyspace_on_every_request_local_progress_and_abort_only_on_exact_trigger
+    - restore_follower_after_abort_idle_and_retained_pool_key_revalidation
+  request_count_min: 3
+  request_count_max: 4
+  pressure_request_count_exact: 1
+  request_retry_count_exact: 0
+  warmup_context_tokens: 4096
+  target_prime_context_tokens: 32768
+  pressure_context_tokens: 36800
+  restore_follower_context_tokens: 32768
+  output_tokens_each: 64
+  target_prefix_tokens: 16384
+  concurrent_restore_while_pressure_active: false
+
+pre_pressure_admission:
+  d2h_store_complete_required: true
+  request_hash_candidate_count_exact: 128
+  target_capture_cardinality_exact_required: true
+  runtime_keyspace_exact_required: false
+  runtime_pool_key_count_required_before_pressure: false
+  admitted_decision: pressure_admitted_for_inflight_refresh
+  target_capture_unobservable_before_pressure_terminal_forbidden_after_admission: true
+  fixed_pressure_must_start_after_admission: true
+
+inflight_logical_restore_keyspace_gate:
+  refresh_hook: every_request_local_pressure_progress
+  lookup_source: runtime_cpu_coordinator_find_longest_cache_hit
+  runtime_lookup_is_observe_only: true
+  runtime_lookup_num_uncached_common_prefix_tokens_restored: true
+  logical_restore_match_tokens_exact: 16384
+  hash_block_size_tokens: 128
+  logical_target_block_count_exact: 128
+  request_hash_candidate_count_exact: 128
+  runtime_pool_key_count_fixed: false
+  runtime_pool_key_count_may_differ_by_kv_group: true
+  exact_runtime_pool_keys_retained_in_process_only: true
+  all_returned_group_pool_keys_must_be_cpu_resident: true
+  all_returned_group_pool_keys_must_be_gpu_absent: true
+  all_restore_groups_eligible_required: true
+  scheduled_request_count_exact: 1
+  request_local_progress_exact_required: true
+  unobservable_probe_stops_pressure: false
+  keyspace_near_miss_stops_pressure: false
+  temporary_cpu_target_loss_stops_pressure: false
+  pressure_end_without_trigger_terminal: pressure_completed_without_trigger
+  raw_hash_values_allowed_in_bounded_results: false
+
+trigger_abort_restore_gate:
+  trigger_requires_exact_logical_hit_and_cpu_only_runtime_pool_keys: true
+  abort_only_while_pressure_client_is_alive: true
+  client_exit_confirmation_required: true
+  engine_idle_confirmation_required: true
+  post_abort_retained_pool_key_revalidation_required: true
+  restore_allowed_only_if_post_abort_gate_trigger_ready: true
+  restore_request_count_max: 1
+
+execution_state:
+  npu_execution_authorized: true
+  keep_alive_card_ids_exact: [0, 1, 2, 3, 4, 5, 6, 7]
+  keep_alive_stop_is_routine_resource_operation: true
+  same_card_set_restore_on_every_exit: true
+  keep_alive_marker_format: '#card_id#'
+  keep_alive_expected_marker_count: 16
+  server_task_driver_required: true
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  capacity_search_authorized: false
+  context_change_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+result_contract:
+  max_transfer_total_bytes: 71680
+  payload_file_count_max: 15
+  transfer_file_count_including_manifest_max: 16
+  logical_keyspace_probe_diagnostic_summary_required: true
+  probe_diagnostic_allowed_fields:
+    - counts
+    - reasons
+    - error_types
+    - timestamps
+    - bounded_group_counts
+  generated_content_allowed: false
+  token_ids_allowed: false
+  request_ids_allowed: false
+  raw_hash_values_allowed: false
+  raw_logs_metrics_request_bodies_and_trace_remain_server_local: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_inflight_keyspace_refresh_and_conditional_h2d_mechanism_candidate_only

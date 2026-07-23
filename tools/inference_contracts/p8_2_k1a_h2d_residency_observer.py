@@ -163,9 +163,24 @@ def probe_logical_restore_window(
         restore_match_tokens=restore_match_tokens,
         block_size_tokens=hash_block_size_tokens,
     )
-    result = cpu_coordinator.find_longest_cache_hit(
-        request_hashes, restore_match_tokens
+    side_effect_field = "num_uncached_common_prefix_tokens"
+    had_side_effect_field = hasattr(cpu_coordinator, side_effect_field)
+    previous_side_effect_value = getattr(
+        cpu_coordinator, side_effect_field, None
     )
+    try:
+        result = cpu_coordinator.find_longest_cache_hit(
+            request_hashes, restore_match_tokens
+        )
+    finally:
+        if had_side_effect_field:
+            setattr(
+                cpu_coordinator,
+                side_effect_field,
+                previous_side_effect_value,
+            )
+        elif hasattr(cpu_coordinator, side_effect_field):
+            delattr(cpu_coordinator, side_effect_field)
     if not isinstance(result, tuple) or len(result) < 2:
         raise ValueError("runtime CPU coordinator returned an invalid hit result")
     groups = tuple(result[0])
@@ -756,18 +771,61 @@ def build_request_local_pressure_progress(
     }
 
 
+def build_refreshed_request_local_pressure_progress(
+    scheduler: Any,
+    scheduler_output: Any,
+    *,
+    contract_role: str | None,
+    target_block_count: int,
+    restore_match_tokens: int,
+    hash_block_size_tokens: int,
+    logical_summary: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Refresh the runtime keyspace before evaluating one pressure step."""
+
+    if not contract_role or not contract_role.startswith("pressure_"):
+        return None
+    summary = (
+        refresh_logical_restore_window(
+            scheduler,
+            restore_match_tokens=restore_match_tokens,
+            hash_block_size_tokens=hash_block_size_tokens,
+        )
+        if logical_summary is None
+        else dict(logical_summary)
+    )
+    summary["logical_keyspace_probe_reason"] = (
+        "pressure_request_local_progress"
+    )
+    return build_request_local_pressure_progress(
+        scheduler_output,
+        contract_role=contract_role,
+        target_block_count=target_block_count,
+        cpu_target_block_count=int(
+            summary.get("cpu_target_block_count") or 0
+        ),
+        gpu_target_block_count=int(
+            summary.get("gpu_target_block_count") or 0
+        ),
+        restore_group_summary={
+            **summary,
+            **_restore_group_residency_summary(scheduler),
+        },
+    )
+
+
 def _emit_residency_snapshot(
     scheduler: Any,
     *,
     reason: str,
     restore_match_tokens: int,
     hash_block_size_tokens: int,
-) -> None:
+) -> dict[str, Any] | None:
     request_hashes = tuple(
         getattr(scheduler, "_p8_2_k1a_target_request_hashes", ())
     )
     if not request_hashes:
-        return
+        return None
     summary = refresh_logical_restore_window(
         scheduler,
         restore_match_tokens=restore_match_tokens,
@@ -786,6 +844,7 @@ def _emit_residency_snapshot(
             gpu_pool.get_num_free_blocks() if gpu_pool is not None else None
         ),
     )
+    return summary
 
 
 def install_p8_2_k1a_h2d_residency_observer() -> None:
@@ -820,6 +879,9 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
         is_target = contract_role == "target_prime" or str(
             request.request_id
         ).endswith(target_suffix)
+        is_pressure = bool(
+            contract_role and contract_role.startswith("pressure_")
+        )
         request_hashes = tuple(
             getattr(request, "block_hashes", ()) or ()
         )
@@ -845,6 +907,13 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
             _emit_residency_snapshot(
                 self,
                 reason="target_request_finished",
+                restore_match_tokens=restore_match_tokens,
+                hash_block_size_tokens=block_size_tokens,
+            )
+        elif is_pressure:
+            _emit_residency_snapshot(
+                self,
+                reason="pressure_request_finished",
                 restore_match_tokens=restore_match_tokens,
                 hash_block_size_tokens=block_size_tokens,
             )
@@ -891,30 +960,21 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     def observed_build(self, scheduler_output):
         result = original_build(self, scheduler_output)
         _register_pools(self)
-        _emit_residency_snapshot(
+        logical_summary = _emit_residency_snapshot(
             self,
             reason="after_connector_meta",
             restore_match_tokens=restore_match_tokens,
             hash_block_size_tokens=block_size_tokens,
         )
         if os.environ.get(REQUEST_LOCAL_PRESSURE_OBSERVER_ENV) == "1":
-            cpu_count, gpu_count = _target_residency_counts(self)
-            progress = build_request_local_pressure_progress(
+            progress = build_refreshed_request_local_pressure_progress(
+                self,
                 scheduler_output,
                 contract_role=_active_contract_role(),
                 target_block_count=target_block_count,
-                cpu_target_block_count=cpu_count,
-                gpu_target_block_count=gpu_count,
-                restore_group_summary={
-                    **dict(
-                        getattr(
-                            self,
-                            "_p8_2_k1a_target_capture_summary",
-                            {},
-                        )
-                    ),
-                    **_restore_group_residency_summary(self),
-                },
+                restore_match_tokens=restore_match_tokens,
+                hash_block_size_tokens=block_size_tokens,
+                logical_summary=logical_summary,
             )
             if progress is not None:
                 _emit("request_local_pressure_progress", **progress)
@@ -1013,6 +1073,7 @@ def observer_self_test_contract() -> dict[str, Any]:
             "runtime_cpu_coordinator_find_longest_cache_hit"
         ),
         "logical_restore_lookup_is_read_only": True,
+        "runtime_lookup_side_effect_field_restored": True,
         "logical_restore_target_count_unit": "logical_request_hash_blocks",
         "runtime_pool_keys_retained_in_process_only": True,
         "request_identity_source": "controller_role_marker_not_server_request_id",

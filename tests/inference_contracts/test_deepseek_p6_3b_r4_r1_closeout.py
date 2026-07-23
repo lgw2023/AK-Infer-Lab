@@ -91,9 +91,9 @@ def test_current_handoff_preserves_p6_green_during_r5_f0_feasibility():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-F1-R6 逻辑恢复键空间对齐" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723" in handoff
-    assert "execution_mode: authorized_single_lifecycle_logical_keyspace_restore" in handoff
+    assert "P8.2-K1A-R5-F1-R7 压力内逻辑键空间刷新" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723" in handoff
+    assert "execution_mode: authorized_single_lifecycle_inflight_keyspace_refresh" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "vllm_server_start_authorized: true" in handoff
@@ -114,7 +114,7 @@ def test_current_handoff_preserves_p6_green_during_r5_f0_feasibility():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r6_logical_keyspace_restore.yaml"
+        "p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_r1_grade"] == (
         "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab"

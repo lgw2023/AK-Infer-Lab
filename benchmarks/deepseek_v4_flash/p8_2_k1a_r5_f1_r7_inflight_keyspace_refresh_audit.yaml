@@ -1,0 +1,82 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R7
+date: '2026-07-23'
+task_id: p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723
+
+accepted_f1_r6_result:
+  server_grade: red_p8_2_k1a_r5_f1_r6_h2d_evidence_incomplete
+  operational_grade: operational_recovery_clean
+  experimental_terminal: target_capture_unobservable_before_pressure
+  request_count: 2
+  http_transport_success_count: 2
+  pressure_request_count_executed: 0
+  restore_sent: false
+  d2h_store_complete: true
+  d2h_worker_count: 8
+  d2h_bytes_total: 2206846976
+  h2d_worker_count: 0
+  cleanup: clean
+  resource_recovery_exact: true
+  stopped_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  restored_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  grading_sha256: 6c25e21e022de71319eab54d954fa803eb8d725e197e30e517bf11c1a92091f5
+  timeline_sha256: 982bdc2d191929e1b369d872262db4fe8be58af0fa6eb5fe1c42cef2b5ebc7d9
+  transfer_sha256: 602bd438fdb2300032912b991c4b12d11e2222a9a9bf9b7fe49ec0e0172c8971
+  recovery_sha256: c0c64cbc9c81080e1e5604277e3b2f7843f9272958f48c7ddea237d04734abd3
+  manifest_sha256: 103557a871bf863d8eb2ed221a85fe650fa9444aa86263702318cb591a01829f
+
+developer_diagnosis:
+  asynchronous_d2h_completes_after_target_finish_callback: true
+  target_finish_callback_performed_only_initial_runtime_lookup: true
+  controller_wait_re_read_static_trace_only: true
+  runtime_keyspace_refresh_requires_scheduler_activity: true
+  pressure_was_next_scheduler_activity: true
+  pre_pressure_gate_required_keyspace_exact_before_pressure: true
+  circular_wait_proven_from_repo_control_flow: true
+  target_keyspace_probe_result_shape_or_exception_still_possible: true
+  bounded_parent_omits_probe_error_type: true
+  accepted_capacity_invalidated: false
+  full_logical_128_block_cpu_only_window_disproven: false
+  server_execution_or_cleanup_failure: false
+
+developer_decision:
+  same_fixed_capacity_and_context_required: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_per_rank: 430604288
+  cpu_bytes_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count_required: 128
+  logical_restore_match_tokens_required: 16384
+  hash_block_size_tokens: 128
+  pre_pressure_requires_d2h_complete: true
+  pre_pressure_requires_logical_candidate_cardinality_exact: true
+  pre_pressure_requires_runtime_keyspace_exact: false
+  fixed_pressure_must_execute_after_pre_pressure_gate: true
+  refresh_runtime_keyspace_on_every_pressure_progress: true
+  continue_after_unobservable_or_near_miss: true
+  continue_after_temporary_cpu_target_loss: true
+  stop_only_on_exact_trigger_or_pressure_end: true
+  post_abort_retained_pool_key_revalidation_required: true
+  logical_keyspace_probe_diagnostic_summary_required: true
+  diagnostic_counts_reasons_error_types_and_timestamps_only: true
+  observer_remains_read_only: true
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  pressure_request_count_exact: 1
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  performance_reference_authorized: false
+  unique_root_cause_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+failure_classification:
+  - pre_pressure_runtime_keyspace_circular_wait
+  - pressure_not_executed
+  - logical_keyspace_probe_error_not_bounded
+  - trigger_abort_idle_restore_chain_not_entered
+  - restore_cpu_hit_or_h2d_pipeline_incomplete
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_inflight_keyspace_refresh_and_conditional_h2d_mechanism_candidate_only

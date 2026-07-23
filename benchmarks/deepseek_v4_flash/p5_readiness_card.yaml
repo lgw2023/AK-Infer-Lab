@@ -220,13 +220,14 @@ artifacts:
   p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_audit: p8_2_k1a_r5_f1_r4_restore_eligibility_alignment_audit.yaml
   p8_2_k1a_r5_f1_r5_effective_restore_contract_audit: p8_2_k1a_r5_f1_r5_effective_restore_contract_audit.yaml
   p8_2_k1a_r5_f1_r6_logical_keyspace_restore_audit: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_audit.yaml
+  p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_audit: p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_audit.yaml
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p8_2_k1a_r5_f1_r6_logical_keyspace_restore.yaml
-  next_stage_candidate: P8.2-K1A-R5-F1-R6_logical_keyspace_restore
-  current_server_handoff_task: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723
-  current_server_handoff_execution_mode: authorized_single_lifecycle_logical_keyspace_restore
+  next_workload: workloads/p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.yaml
+  next_stage_candidate: P8.2-K1A-R5-F1-R7_inflight_keyspace_refresh
+  current_server_handoff_task: p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723
+  current_server_handoff_execution_mode: authorized_single_lifecycle_inflight_keyspace_refresh
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -271,6 +272,9 @@ artifacts:
   current_p8_2_k1a_r5_f1_r6_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.sh
   current_p8_2_k1a_r5_f1_r6_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.py
   current_p8_2_k1a_r5_f1_r6_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh
+  current_p8_2_k1a_r5_f1_r7_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.sh
+  current_p8_2_k1a_r5_f1_r7_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.py
+  current_p8_2_k1a_r5_f1_r7_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r7_server_task.sh
   current_p8_2_k1a_r5_l1_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
   current_p8_2_k1a_trace_attribution: ../../tools/inference_contracts/p8_2_k1a_trace_attribution.py
   current_p8_2_k1a_failure_forensics: ../../tools/inference_contracts/p8_2_k1a_failure_forensics.py
@@ -561,8 +565,10 @@ acceptance:
   p8_2_k1a_r5_f1_r5_group1_cpu_pool_keys: 2
   p8_2_k1a_r5_f1_r5_accepted_capacity_invalidated: false
   p8_2_k1a_r5_f1_r5_keep_alive_recovery_probe_false_negative: true
-  p8_2_k1a_r5_f1_r6_grade: pending_single_lifecycle_logical_keyspace_restore
-  p8_2_k1a_r5_f1_r6_npu_execution_authorized: true
+  p8_2_k1a_r5_f1_r6_grade: red_p8_2_k1a_r5_f1_r6_h2d_evidence_incomplete
+  p8_2_k1a_r5_f1_r6_operational_grade: operational_recovery_clean
+  p8_2_k1a_r5_f1_r6_terminal: target_capture_unobservable_before_pressure
+  p8_2_k1a_r5_f1_r6_npu_execution_authorized: false
   p8_2_k1a_r5_f1_r6_formal_model_lifecycle_count_exact: 1
   p8_2_k1a_r5_f1_r6_model_request_count_max: 4
   p8_2_k1a_r5_f1_r6_pressure_context_tokens: 36800
@@ -572,7 +578,23 @@ acceptance:
   p8_2_k1a_r5_f1_r6_request_retry_count_exact: 0
   p8_2_k1a_r5_f1_r6_server_task_driver_required: true
   p8_2_k1a_r5_f1_r6_next_task_authorized: false
-  current_task_scoped_authorization: P8.2-K1A-R5-F1-R6_single_lifecycle_logical_keyspace_restore
+  p8_2_k1a_r5_f1_r6_pressure_request_count_executed: 0
+  p8_2_k1a_r5_f1_r6_accepted_capacity_invalidated: false
+  p8_2_k1a_r5_f1_r7_grade: pending_single_lifecycle_inflight_keyspace_refresh
+  p8_2_k1a_r5_f1_r7_npu_execution_authorized: true
+  p8_2_k1a_r5_f1_r7_formal_model_lifecycle_count_exact: 1
+  p8_2_k1a_r5_f1_r7_model_request_count_max: 4
+  p8_2_k1a_r5_f1_r7_pressure_request_count_exact: 1
+  p8_2_k1a_r5_f1_r7_pressure_context_tokens: 36800
+  p8_2_k1a_r5_f1_r7_logical_target_block_count: 128
+  p8_2_k1a_r5_f1_r7_restore_match_tokens: 16384
+  p8_2_k1a_r5_f1_r7_prepressure_runtime_keyspace_exact_required: false
+  p8_2_k1a_r5_f1_r7_pressure_progress_runtime_keyspace_refresh_required: true
+  p8_2_k1a_r5_f1_r7_post_abort_fresh_revalidation_required: true
+  p8_2_k1a_r5_f1_r7_request_retry_count_exact: 0
+  p8_2_k1a_r5_f1_r7_server_task_driver_required: true
+  p8_2_k1a_r5_f1_r7_next_task_authorized: false
+  current_task_scoped_authorization: P8.2-K1A-R5-F1-R7_single_lifecycle_inflight_keyspace_refresh
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory

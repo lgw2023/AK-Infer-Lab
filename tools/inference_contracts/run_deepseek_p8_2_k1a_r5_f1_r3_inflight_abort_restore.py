@@ -76,6 +76,16 @@ REQUIRE_RESTORE_GROUP_ELIGIBILITY = (
 STOP_ON_FIRST_CPU_TARGET_EVICTION = (
     os.environ.get("P8_2_K1A_STOP_ON_FIRST_CPU_TARGET_EVICTION", "1") == "1"
 )
+ALLOW_INFLIGHT_KEYSPACE_REFRESH = (
+    os.environ.get(
+        "P8_2_K1A_ALLOW_PRESSURE_BEFORE_KEYSPACE_EXACT", "0"
+    )
+    == "1"
+)
+REQUIRE_POST_ABORT_FRESH_REVALIDATION = (
+    os.environ.get("P8_2_K1A_REQUIRE_POST_ABORT_FRESH_REVALIDATION", "0")
+    == "1"
+)
 PRESSURE_CONTEXT_TOKENS = 36800
 PRESSURE_ROLE = "pressure_01"
 TRIGGER_POLL_SECONDS = float(
@@ -94,6 +104,13 @@ CANDIDATE_GREEN = os.environ.get(
     "P8_2_K1A_CANDIDATE_GREEN",
     "candidate_green_p8_2_k1a_r5_f1_r3_inflight_abort_restore",
 )
+LOGICAL_KEYSPACE_DIAGNOSTICS = (
+    os.environ.get("P8_2_K1A_LOGICAL_KEYSPACE_DIAGNOSTICS", "0") == "1"
+)
+RESULT_SUMMARY_TITLE = os.environ.get(
+    "P8_2_K1A_RESULT_SUMMARY_TITLE",
+    "request-local pressure and conditional restore",
+)
 
 BOUNDED_CANDIDATE_FILES = (
     "result_summary.md",
@@ -108,6 +125,10 @@ BOUNDED_CANDIDATE_FILES = (
     "grading_summary.json",
     "cleanup_status.txt",
     "resource_recovery_summary.json",
+) + (
+    ("logical_keyspace_probe_diagnostic_summary.json",)
+    if LOGICAL_KEYSPACE_DIAGNOSTICS
+    else ()
 )
 
 
@@ -646,6 +667,249 @@ def prepare_inflight_abort_restore_artifacts(
     return manifest
 
 
+def build_pre_pressure_admission(
+    rows: list[dict[str, Any]],
+    *,
+    d2h_store_complete: bool,
+    target_block_count: int,
+    allow_inflight_keyspace_refresh: bool,
+) -> dict[str, Any]:
+    candidates = [
+        row
+        for row in rows
+        if row.get("event")
+        in {"target_hashes_captured", "target_residency_snapshot"}
+        and int(row.get("target_block_count") or 0) == target_block_count
+    ]
+    latest = candidates[-1] if candidates else {}
+    request_hash_candidate_count = int(
+        latest.get("request_hash_candidate_count") or 0
+    )
+    cardinality_exact = (
+        latest.get("target_capture_cardinality_exact") is True
+        and request_hash_candidate_count == target_block_count
+    )
+    keyspace_matchable = latest.get("target_keyspace_matchable") is True
+    capture_exact = latest.get("target_capture_exact") is True
+    if not d2h_store_complete:
+        decision = "d2h_store_incomplete_before_pressure"
+    elif not cardinality_exact:
+        decision = "target_candidates_unobservable_before_pressure"
+    elif capture_exact and keyspace_matchable:
+        decision = "target_keyspace_exact_before_pressure"
+    elif allow_inflight_keyspace_refresh:
+        decision = "pressure_admitted_for_inflight_refresh"
+    else:
+        decision = "target_keyspace_unobservable_before_pressure"
+    return {
+        "decision": decision,
+        "pressure_allowed": decision
+        in {
+            "target_keyspace_exact_before_pressure",
+            "pressure_admitted_for_inflight_refresh",
+        },
+        "d2h_store_complete_before_pressure": d2h_store_complete,
+        "request_hash_candidate_count": request_hash_candidate_count,
+        "target_capture_cardinality_exact": cardinality_exact,
+        "target_keyspace_matchable": keyspace_matchable,
+        "target_capture_exact": capture_exact,
+        "target_pool_key_count": int(latest.get("target_pool_key_count") or 0),
+        "cpu_target_pool_key_match_count": int(
+            latest.get("cpu_target_pool_key_match_count") or 0
+        ),
+        "gpu_target_pool_key_match_count": int(
+            latest.get("gpu_target_pool_key_match_count") or 0
+        ),
+        "allow_inflight_keyspace_refresh": allow_inflight_keyspace_refresh,
+        "raw_hash_values_retained": False,
+        "request_ids_retained": False,
+        "token_ids_retained": False,
+        "generated_content_retained": False,
+    }
+
+
+def summarize_logical_keyspace_probe_diagnostics(
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    probes = [
+        row
+        for row in rows
+        if row.get("target_capture_source")
+        == "runtime_cpu_coordinator_longest_hit"
+        and row.get("event")
+        in {
+            "target_hashes_captured",
+            "target_residency_snapshot",
+            "request_local_pressure_progress",
+        }
+    ]
+
+    def histogram(values: list[str]) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for value in values:
+            if value:
+                counts[value] = counts.get(value, 0) + 1
+        return dict(sorted(counts.items()))
+
+    def maximum(field: str, selected: list[dict[str, Any]] = probes) -> int:
+        return max((int(row.get(field) or 0) for row in selected), default=0)
+
+    def stage_name(row: dict[str, Any]) -> str:
+        return str(
+            row.get("contract_role")
+            or row.get("logical_keyspace_probe_reason")
+            or row.get("reason")
+            or row.get("event")
+            or "unknown"
+        )
+
+    stage_names: list[str] = []
+    for row in probes:
+        name = stage_name(row)
+        if name not in stage_names:
+            stage_names.append(name)
+    stage_rows = []
+    for name in stage_names:
+        selected = [row for row in probes if stage_name(row) == name]
+        timestamps = [int(row.get("timestamp_ns") or 0) for row in selected]
+        exact_count = sum(row.get("target_capture_exact") is True for row in selected)
+        stage_rows.append(
+            {
+                "stage": name,
+                "probe_event_count": len(selected),
+                "exact_probe_event_count": exact_count,
+                "near_miss_probe_event_count": len(selected) - exact_count,
+                "logical_restore_match_tokens_max": maximum(
+                    "logical_restore_match_tokens", selected
+                ),
+                "target_pool_key_count_max": maximum(
+                    "target_pool_key_count", selected
+                ),
+                "cpu_target_pool_key_match_count_max": maximum(
+                    "cpu_target_pool_key_match_count", selected
+                ),
+                "gpu_target_pool_key_match_count_max": maximum(
+                    "gpu_target_pool_key_match_count", selected
+                ),
+                "restore_group_count_max": maximum(
+                    "restore_group_count", selected
+                ),
+                "first_probe_timestamp_ns": min(timestamps, default=0),
+                "latest_probe_timestamp_ns": max(timestamps, default=0),
+                "probe_error_type_histogram": histogram(
+                    [
+                        str(row.get("target_keyspace_probe_error_type") or "")
+                        for row in selected
+                    ]
+                ),
+                "raw_hash_values_retained": False,
+            }
+        )
+
+    timestamps = [int(row.get("timestamp_ns") or 0) for row in probes]
+    exact_timestamps = [
+        int(row.get("timestamp_ns") or 0)
+        for row in probes
+        if row.get("target_capture_exact") is True
+    ]
+    error_types = [
+        str(row.get("target_keyspace_probe_error_type") or "")
+        for row in probes
+        if row.get("target_keyspace_probe_error_type")
+    ]
+    reasons = [
+        str(
+            row.get("logical_keyspace_probe_reason")
+            or row.get("reason")
+            or row.get("event")
+            or "unknown"
+        )
+        for row in probes
+    ]
+    exact_count = sum(row.get("target_capture_exact") is True for row in probes)
+    gpu_counts = [
+        int(row.get("gpu_target_pool_key_match_count") or 0) for row in probes
+    ]
+    return {
+        "schema_version": (
+            f"{CONTRACT_SCHEMA_TAG}_logical_keyspace_probe_diagnostic_v1"
+        ),
+        "probe_event_count": len(probes),
+        "pressure_probe_event_count": sum(
+            row.get("event") == "request_local_pressure_progress"
+            for row in probes
+        ),
+        "exact_probe_event_count": exact_count,
+        "near_miss_probe_event_count": len(probes) - exact_count,
+        "probe_error_event_count": len(error_types),
+        "probe_error_type_histogram": histogram(error_types),
+        "probe_reason_histogram": histogram(reasons),
+        "request_hash_candidate_count_max": maximum(
+            "request_hash_candidate_count"
+        ),
+        "logical_restore_match_tokens_max": maximum(
+            "logical_restore_match_tokens"
+        ),
+        "target_pool_key_count_max": maximum("target_pool_key_count"),
+        "cpu_target_pool_key_match_count_max": maximum(
+            "cpu_target_pool_key_match_count"
+        ),
+        "gpu_target_pool_key_match_count_min": min(gpu_counts, default=0),
+        "gpu_target_pool_key_match_count_max": max(gpu_counts, default=0),
+        "restore_group_count_max": maximum("restore_group_count"),
+        "first_probe_timestamp_ns": min(timestamps, default=0),
+        "first_exact_probe_timestamp_ns": min(exact_timestamps, default=0),
+        "latest_probe_timestamp_ns": max(timestamps, default=0),
+        "stage_rows": stage_rows,
+        "raw_hash_values_retained": False,
+        "request_ids_retained": False,
+        "token_ids_retained": False,
+        "generated_content_retained": False,
+    }
+
+
+def build_post_abort_revalidation_gate(
+    rows: list[dict[str, Any]],
+    *,
+    abort_requested_timestamp_ns: int,
+    required_restore_block_count: int,
+    require_restore_group_eligibility: bool,
+) -> dict[str, Any]:
+    fresh = [
+        row
+        for row in rows
+        if int(row.get("timestamp_ns") or 0) >= abort_requested_timestamp_ns
+        and row.get("event")
+        in {"target_residency_snapshot", "request_local_pressure_progress"}
+    ]
+    if not fresh:
+        return {
+            "decision": "post_abort_revalidation_unobservable",
+            "restore_allowed": False,
+            "post_abort_candidate_event_count": 0,
+            "post_abort_revalidation_fresh": False,
+            "abort_requested_timestamp_ns": abort_requested_timestamp_ns,
+            "raw_hash_values_retained": False,
+        }
+    gate = (
+        build_restore_eligibility_gate(
+            fresh,
+            required_restore_block_count=required_restore_block_count,
+        )
+        if require_restore_group_eligibility
+        else build_residency_gate(
+            fresh, target_block_count=required_restore_block_count
+        )
+    )
+    return {
+        **gate,
+        "post_abort_candidate_event_count": len(fresh),
+        "post_abort_revalidation_fresh": True,
+        "abort_requested_timestamp_ns": abort_requested_timestamp_ns,
+        "raw_hash_values_retained": False,
+    }
+
+
 def _wait_for_eligibility_target_observable(
     trace_dir: Path, *, timeout_seconds: float
 ) -> dict[str, Any]:
@@ -653,36 +917,21 @@ def _wait_for_eligibility_target_observable(
     last: dict[str, Any] = {}
     while time.monotonic() < deadline:
         trace_rows = _read_trace_rows(trace_dir)
-        last = build_residency_gate(
-            trace_rows, target_block_count=ELIGIBILITY_TARGET_BLOCKS
-        )
         transfer = summarize_trace_rows(
             trace_rows,
             expected_world_size=8,
             restore_request_suffix="restore_follower",
         )
-        last = {
-            **last,
-            "d2h_store_complete_before_pressure": transfer[
-                "d2h_store_complete"
-            ],
-        }
-        if last.get("decision") == "cpu_target_lost":
-            return last
-        if (
-            last["d2h_store_complete_before_pressure"] is True
-            and last.get("target_hashes_captured_exact") is True
-            and int(last.get("latest_cpu_target_block_count") or 0)
-            == ELIGIBILITY_TARGET_BLOCKS
-        ):
+        last = build_pre_pressure_admission(
+            trace_rows,
+            d2h_store_complete=transfer["d2h_store_complete"] is True,
+            target_block_count=ELIGIBILITY_TARGET_BLOCKS,
+            allow_inflight_keyspace_refresh=ALLOW_INFLIGHT_KEYSPACE_REFRESH,
+        )
+        if last["pressure_allowed"] is True:
             return last
         time.sleep(1)
-    if (
-        last.get("decision") == "continue_pressure"
-        and last.get("d2h_store_complete_before_pressure") is True
-    ):
-        return last
-    return {**last, "decision": "unobservable", "restore_allowed": False}
+    return last
 
 
 def execute_inflight_abort_restore(
@@ -753,8 +1002,8 @@ def execute_inflight_abort_restore(
     timeline["initial_gate"] = initial_gate
     if initial_gate.get("d2h_store_complete_before_pressure") is not True:
         return persist_timeline("d2h_store_incomplete_before_pressure")
-    if initial_gate.get("target_hashes_captured_exact") is not True:
-        return persist_timeline("target_capture_unobservable_before_pressure")
+    if initial_gate.get("pressure_allowed") is not True:
+        return persist_timeline(str(initial_gate.get("decision") or "unobservable"))
 
     pressure = by_role[PRESSURE_ROLE]
     request_id = str(pressure["request_id"])
@@ -858,6 +1107,7 @@ def execute_inflight_abort_restore(
     timeline["trigger_observed_before_abort"] = True
     timeline["trigger"] = state.get("trigger")
     timeline["trigger_latched_monotonic_ns"] = time.monotonic_ns()
+    timeline["pressure_abort_requested_timestamp_ns"] = time.time_ns()
     handle.abort()
     timeline["pressure_abort_requested"] = True
     timeline["pressure_abort_requested_monotonic_ns"] = (
@@ -888,7 +1138,18 @@ def execute_inflight_abort_restore(
         return persist_timeline("pressure_not_idle_after_abort")
 
     post_abort_rows = _read_trace_rows(trace_dir)
-    if REQUIRE_RESTORE_GROUP_ELIGIBILITY:
+    if REQUIRE_POST_ABORT_FRESH_REVALIDATION:
+        post_abort_gate = build_post_abort_revalidation_gate(
+            post_abort_rows,
+            abort_requested_timestamp_ns=int(
+                timeline["pressure_abort_requested_timestamp_ns"]
+            ),
+            required_restore_block_count=ELIGIBILITY_TARGET_BLOCKS,
+            require_restore_group_eligibility=(
+                REQUIRE_RESTORE_GROUP_ELIGIBILITY
+            ),
+        )
+    elif REQUIRE_RESTORE_GROUP_ELIGIBILITY:
         post_abort_gate = build_restore_eligibility_gate(
             post_abort_rows,
             required_restore_block_count=ELIGIBILITY_TARGET_BLOCKS,
@@ -1063,7 +1324,7 @@ def build_inflight_result_summary(
     resource_recovery_exact: bool,
 ) -> str:
     return (
-        f"# {stage_label} in-flight abort and restore\n\n"
+        f"# {stage_label} {RESULT_SUMMARY_TITLE}\n\n"
         f"- grade: `{grade}`\n"
         f"- terminal: `{terminal_decision}`\n"
         f"- requests: `{completed_request_count} completed + "
@@ -1308,6 +1569,11 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
     )
     terminal = str(timeline.get("terminal_decision") or "missing")
     request_outcomes = summarize_inflight_request_outcomes(request_rows)
+    logical_keyspace_diagnostics = (
+        summarize_logical_keyspace_probe_diagnostics(trace_rows)
+        if LOGICAL_KEYSPACE_DIAGNOSTICS
+        else None
+    )
     grades = classify_inflight_grades(
         grade_prefix=GRADE_PREFIX,
         candidate_green=CANDIDATE_GREEN,
@@ -1339,6 +1605,16 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         ],
         "pressure_request_count_executed": int(
             timeline.get("pressure_request_count_executed") or 0
+        ),
+        "inflight_keyspace_refresh_required": (
+            ALLOW_INFLIGHT_KEYSPACE_REFRESH
+        ),
+        "logical_keyspace_probe_event_count": int(
+            (logical_keyspace_diagnostics or {}).get("probe_event_count") or 0
+        ),
+        "logical_keyspace_exact_probe_event_count": int(
+            (logical_keyspace_diagnostics or {}).get("exact_probe_event_count")
+            or 0
         ),
         "roles_exact": roles_exact,
         "completed_roles_exact": completed_roles_exact,
@@ -1399,6 +1675,11 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
     _write_json(artifact_dir / "transfer_trace_summary.json", transfer_summary)
     _write_json(artifact_dir / "mtp_queue_health_summary.json", mtp_queue_health)
     _write_json(artifact_dir / "grading_summary.json", grading)
+    if logical_keyspace_diagnostics is not None:
+        _write_json(
+            artifact_dir / "logical_keyspace_probe_diagnostic_summary.json",
+            logical_keyspace_diagnostics,
+        )
     (artifact_dir / "result_summary.md").write_text(
         build_inflight_result_summary(
             stage_label=STAGE_LABEL,

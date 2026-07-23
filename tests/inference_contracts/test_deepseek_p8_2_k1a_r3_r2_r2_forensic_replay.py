@@ -140,7 +140,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] != workload_task_id()
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_r6_logical_keyspace_restore.yaml"
+        "workloads/p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.yaml"
     )
     assert acceptance["p8_2_k1a_r3_r2_r1_grade"] == (
         "yellow_p8_2_k1a_r3_r2_r1_partial"
@@ -150,7 +150,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     assert acceptance["p8_2_k1a_r3_r2_r2_formal_model_lifecycle_count_max"] == 1
     assert acceptance["p8_2_k1a_r3_r2_r2_model_request_count_max"] == 6
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R6_single_lifecycle_logical_keyspace_restore"
+        "P8.2-K1A-R5-F1-R7_single_lifecycle_inflight_keyspace_refresh"
     )
     assert acceptance["next_task_authorized"] is False
 

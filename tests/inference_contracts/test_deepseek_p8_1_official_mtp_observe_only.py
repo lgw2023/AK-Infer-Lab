@@ -261,6 +261,6 @@ def test_single_request_tracer_is_preserved_but_superseded_before_execution() ->
         not in handoff
     )
     assert (
-            "task_id: p8_2_k1a_r5_f1_r6_logical_keyspace_restore_2026_0723"
+            "task_id: p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723"
         in handoff
     )
