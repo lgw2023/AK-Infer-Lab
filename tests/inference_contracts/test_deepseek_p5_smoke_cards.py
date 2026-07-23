@@ -1959,9 +1959,9 @@ def test_server_handoff_advances_from_r4_r1_closeout_to_r5_f0_feasibility():
     )
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-F1-R8 target-store lineage" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723" in handoff
-    assert "execution_mode: authorized_single_lifecycle_target_store_lineage" in handoff
+    assert "P8.2-K1A-R5-F1-R9 runtime effective-group geometry" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723" in handoff
+    assert "execution_mode: authorized_single_lifecycle_effective_group_geometry" in handoff
     assert "capacity_search_authorized: false" in handoff
     assert "formal_model_lifecycle_count_exact: 1" in handoff
     assert "model_request_count_max: 4" in handoff
@@ -2048,7 +2048,7 @@ def test_p6_3b_lineage_is_preserved_after_r4_r1_green_closeout():
         "workloads/p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r8_target_store_lineage.yaml"
+        "p8_2_k1a_r5_f1_r9_effective_group_geometry.yaml"
     )
     assert readiness["target_runtime"]["runtime_status"] == (
         "p8_2_k0_green_k1_blocked_k1a_red_k1a_r2_ready_full_r3_lineage_preserved_k1a_r3_r2_r2_r1_r1_r1_store_only_yellow_h2d_absent_k1a_r4_blocked_k1a_r4_r1_offline_store_only_green_k1a_r5_f0_ready_k1a_r5_l1_d2h_green_controller_red_k1a_r5_l1_r1_target_lost_red_k1a_r5_f1_offline_current_l2_conditional_i0_r1_green"
@@ -2451,8 +2451,8 @@ def test_server_handoff_executes_only_f1_r4_restore_eligibility_alignment():
         encoding="utf-8"
     )
 
-    assert "P8.2-K1A-R5-F1-R8 target-store lineage" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723" in handoff
+    assert "P8.2-K1A-R5-F1-R9 runtime effective-group geometry" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "result_transfer_authorized: true" in handoff

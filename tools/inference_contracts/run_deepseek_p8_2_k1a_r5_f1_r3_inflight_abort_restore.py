@@ -87,6 +87,9 @@ REQUIRE_POST_ABORT_FRESH_REVALIDATION = (
     os.environ.get("P8_2_K1A_REQUIRE_POST_ABORT_FRESH_REVALIDATION", "0")
     == "1"
 )
+REQUIRE_EFFECTIVE_GROUP_GEOMETRY = (
+    os.environ.get("P8_2_K1A_REQUIRE_EFFECTIVE_GROUP_GEOMETRY", "0") == "1"
+)
 PRESSURE_CONTEXT_TOKENS = 36800
 PRESSURE_ROLE = "pressure_01"
 TRIGGER_POLL_SECONDS = float(
@@ -198,6 +201,9 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "target_gpu_evicted_key_count",
         "target_fa_group_index",
         "target_fa_key_count",
+        "target_fa_required_physical_key_count",
+        "target_logical_block_count",
+        "target_logical_coverage_tokens",
         "target_fa_store_scheduled_key_count",
         "target_fa_store_completed_key_count",
         "target_fa_cpu_evicted_key_count",
@@ -215,6 +221,8 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "logical_restore_window_exact",
         "target_store_lineage_capture_exact",
         "target_fa_capture_exact",
+        "target_logical_coverage_exact",
+        "physical_target_window_exact",
     ):
         if field in row:
             value[field] = row.get(field) is True
@@ -257,6 +265,10 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
             "group_index",
             "restore_match_tokens_required",
             "effective_block_size_tokens",
+            "base_block_size_tokens",
+            "cp_world_size",
+            "compress_ratio",
+            "physical_key_count_required",
             "theoretical_block_count",
             "provided_block_id_count",
             "selected_block_id_count",
@@ -305,6 +317,7 @@ def build_inflight_trigger_state(
     target_block_count: int | None = None,
     require_restore_group_eligibility: bool | None = None,
     stop_on_first_cpu_target_eviction: bool | None = None,
+    require_effective_group_geometry: bool | None = None,
 ) -> dict[str, Any]:
     required_blocks = (
         ELIGIBILITY_TARGET_BLOCKS
@@ -320,6 +333,11 @@ def build_inflight_trigger_state(
         STOP_ON_FIRST_CPU_TARGET_EVICTION
         if stop_on_first_cpu_target_eviction is None
         else stop_on_first_cpu_target_eviction
+    )
+    require_runtime_geometry = (
+        REQUIRE_EFFECTIVE_GROUP_GEOMETRY
+        if require_effective_group_geometry is None
+        else require_effective_group_geometry
     )
     current = [
         row
@@ -351,9 +369,19 @@ def build_inflight_trigger_state(
         if row.get("request_local_progress_exact") is True
         and int(row.get("scheduled_request_count") or 0) == 1
         and int(row.get("target_block_count") or 0) == required_blocks
-        and int(row.get("cpu_target_block_count") or 0)
-        == required_blocks
-        and int(row.get("gpu_target_block_count") or 0) == 0
+        and (
+            (
+                require_runtime_geometry
+                and row.get("target_logical_coverage_exact") is True
+                and row.get("physical_target_window_exact") is True
+            )
+            or (
+                not require_runtime_geometry
+                and int(row.get("cpu_target_block_count") or 0)
+                == required_blocks
+                and int(row.get("gpu_target_block_count") or 0) == 0
+            )
+        )
         and (
             "target_capture_exact" not in row
             or row.get("target_capture_exact") is True
@@ -400,6 +428,7 @@ def build_inflight_trigger_state(
         "ambiguous_progress_event_count": len(ambiguous),
         "cpu_target_eviction_event_count": len(cpu_evictions),
         "exact_cpu_only_progress_event_count": len(exact_cpu_only),
+        "effective_group_geometry_required": require_runtime_geometry,
         "trigger": trigger,
         "best_restore_eligibility_near_miss": (
             _sanitized_trigger(best_near_miss) if best_near_miss else None
@@ -728,6 +757,7 @@ def build_pre_pressure_admission(
     target_block_count: int,
     allow_inflight_keyspace_refresh: bool,
     require_target_store_lineage: bool = False,
+    require_effective_group_geometry: bool = False,
 ) -> dict[str, Any]:
     candidates = [
         row
@@ -753,6 +783,12 @@ def build_pre_pressure_admission(
     target_store_key_count = int(
         latest.get("target_store_key_count") or 0
     )
+    target_fa_required_physical_key_count = int(
+        latest.get("target_fa_required_physical_key_count") or 0
+    )
+    target_logical_coverage_exact = (
+        latest.get("target_logical_coverage_exact") is True
+    )
     if not d2h_store_complete:
         decision = "d2h_store_incomplete_before_pressure"
     elif not cardinality_exact:
@@ -760,7 +796,14 @@ def build_pre_pressure_admission(
     elif require_target_store_lineage and not all(
         (
             target_store_lineage_capture_exact,
-            target_fa_key_count == target_block_count,
+            (
+                target_logical_coverage_exact
+                and target_fa_required_physical_key_count > 0
+                and target_fa_key_count
+                == target_fa_required_physical_key_count
+                if require_effective_group_geometry
+                else target_fa_key_count == target_block_count
+            ),
             target_store_key_count > 0,
         )
     ):
@@ -788,6 +831,13 @@ def build_pre_pressure_admission(
             target_store_lineage_capture_exact
         ),
         "target_fa_key_count": target_fa_key_count,
+        "target_fa_required_physical_key_count": (
+            target_fa_required_physical_key_count
+        ),
+        "target_logical_coverage_exact": target_logical_coverage_exact,
+        "effective_group_geometry_required": (
+            require_effective_group_geometry
+        ),
         "target_store_key_count": target_store_key_count,
         "target_pool_key_count": int(latest.get("target_pool_key_count") or 0),
         "cpu_target_pool_key_match_count": int(
@@ -951,6 +1001,7 @@ def build_post_abort_revalidation_gate(
     required_restore_block_count: int,
     require_restore_group_eligibility: bool,
     require_logical_restore_window: bool = False,
+    require_effective_group_geometry: bool = False,
 ) -> dict[str, Any]:
     fresh = [
         row
@@ -972,6 +1023,9 @@ def build_post_abort_revalidation_gate(
         build_restore_eligibility_gate(
             fresh,
             required_restore_block_count=required_restore_block_count,
+            require_effective_group_geometry=(
+                require_effective_group_geometry
+            ),
         )
         if require_restore_group_eligibility
         else build_residency_gate(
@@ -1030,6 +1084,9 @@ def _wait_for_eligibility_target_observable(
             target_block_count=ELIGIBILITY_TARGET_BLOCKS,
             allow_inflight_keyspace_refresh=ALLOW_INFLIGHT_KEYSPACE_REFRESH,
             require_target_store_lineage=REQUIRE_TARGET_STORE_LINEAGE,
+            require_effective_group_geometry=(
+                REQUIRE_EFFECTIVE_GROUP_GEOMETRY
+            ),
         )
         if last["pressure_allowed"] is True:
             return last
@@ -1254,11 +1311,17 @@ def execute_inflight_abort_restore(
             require_logical_restore_window=(
                 REQUIRE_LOGICAL_RESTORE_WINDOW
             ),
+            require_effective_group_geometry=(
+                REQUIRE_EFFECTIVE_GROUP_GEOMETRY
+            ),
         )
     elif REQUIRE_RESTORE_GROUP_ELIGIBILITY:
         post_abort_gate = build_restore_eligibility_gate(
             post_abort_rows,
             required_restore_block_count=ELIGIBILITY_TARGET_BLOCKS,
+            require_effective_group_geometry=(
+                REQUIRE_EFFECTIVE_GROUP_GEOMETRY
+            ),
         )
     else:
         post_abort_gate = build_residency_gate(
@@ -1710,7 +1773,16 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
                     )
                     or 0
                 )
-                == ELIGIBILITY_TARGET_BLOCKS,
+                == (
+                    int(
+                        (target_store_lineage or {}).get(
+                            "target_fa_required_physical_key_count"
+                        )
+                        or 0
+                    )
+                    if REQUIRE_EFFECTIVE_GROUP_GEOMETRY
+                    else ELIGIBILITY_TARGET_BLOCKS
+                ),
                 int(
                     (target_store_lineage or {}).get(
                         "logical_and_physical_window_event_count"

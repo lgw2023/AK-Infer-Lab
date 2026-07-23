@@ -25,7 +25,7 @@ def test_current_handoff_preserves_the_r4_r1_source_and_r5_f0_gate() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
 
     assert (
-        "task_id: p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
+        "task_id: p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723"
     ) in handoff
     assert "manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b" in handoff
     assert "block_pool.py=36a1683a7341a27862b0301e991e76734d968701632775932fbeb0420e894283" in handoff
@@ -152,7 +152,7 @@ def test_f1_r4_handoff_runs_the_full_bounded_single_lifecycle_chain() -> None:
 
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "execution_mode: authorized_single_lifecycle_target_store_lineage",
+        "execution_mode: authorized_single_lifecycle_effective_group_geometry",
         "formal_model_lifecycle_count_exact: 1",
         "model_request_count_max: 4",
         "result_transfer_authorized: true",

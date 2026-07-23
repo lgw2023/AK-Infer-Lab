@@ -1,0 +1,79 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R9
+date: '2026-07-23'
+task_id: p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723
+
+accepted_f1_r8_result:
+  server_grade: red_p8_2_k1a_r5_f1_r8_target_store_lineage_unobservable_before_pressure
+  operational_grade: operational_recovery_clean
+  experimental_terminal: target_store_lineage_unobservable_before_pressure
+  request_count: 2
+  pressure_request_count_executed: 0
+  logical_target_block_count: 128
+  observed_target_fa_key_count: 64
+  observed_target_store_key_count: 66
+  observer_reported_fa_effective_block_size_tokens: 128
+  d2h_store_complete: true
+  d2h_worker_count: 8
+  d2h_bytes_total: 2206846976
+  h2d_worker_count: 0
+  restore_sent: false
+  cleanup: clean
+  resource_recovery_exact: true
+  stopped_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  restored_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  grading_sha256: 896bfcd9d8722d398b5ee34a5730839b5c6028fd9f23d176d8cb3fb8dcb1f8a7
+  timeline_sha256: 7e2752bf178d7fa37ea5de29c4fa65f5ac7495f4dcd93a4ad0fc18c337080884
+  target_lineage_sha256: 0c38987f4c9469989d64fb9713fb6d3558df56105e179efc0068466f199d155b
+  transfer_sha256: 2898cf42a8f44462220466a10192edfbf45775282e9060aa6829228dfe5f1876
+  recovery_sha256: e0ebfe458b8d9129465d872c0bb213e7d034bcacd3d5d468bfb4048040c27f4c
+  manifest_sha256: a8b1154213cbac77d1cd5892dedcb726f881168d31e7cb43edf4a7df962e393c
+
+developer_diagnosis:
+  pressure_was_blocked_by_observer_geometry_contract: true
+  observer_omitted_runtime_compress_ratio: true
+  logical_hash_block_count_was_compared_to_physical_group_key_count: true
+  r8_is_not_accepted_capacity_impossibility_evidence: true
+  full_logical_128_block_cpu_only_window_disproven: false
+  server_execution_or_cleanup_failure: false
+
+source_alignment:
+  coordinator_source: vllm_ascend/patch/platform/patch_kv_cache_coordinator.py
+  effective_block_size_method: KVCacheCoordinator._get_effective_block_size
+  effective_block_size_factors:
+    - kv_cache_spec.block_size
+    - dcp_world_size_times_pcp_world_size
+    - kv_cache_spec.compress_ratio
+  physical_key_count_formula: restore_match_tokens_divided_by_runtime_effective_block_size
+  coordinator_runtime_method_is_primary_observer_source: true
+  source_aligned_fallback_is_diagnostic_only: true
+
+developer_decision:
+  same_fixed_capacity_and_context_required: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_per_rank: 430604288
+  cpu_bytes_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count_required: 128
+  logical_restore_match_tokens_required: 16384
+  hash_block_size_tokens: 128
+  physical_fa_key_count_fixed: false
+  derive_each_group_geometry_from_runtime_coordinator: true
+  require_logical_coverage_exact_before_pressure: true
+  require_all_applicable_group_capture_exact_before_pressure: true
+  fixed_pressure_must_execute_after_geometry_capture: true
+  physical_group_cpu_only_window_triggers_abort: true
+  logical_restore_window_exact_required_before_restore_dispatch: true
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  pressure_request_count_exact: 1
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  performance_reference_authorized: false
+  unique_root_cause_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_runtime_effective_group_geometry_logical_128_block_window_and_conditional_h2d_candidate_only

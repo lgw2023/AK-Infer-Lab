@@ -527,7 +527,7 @@ def test_f1_contract_is_offline_first_and_allows_only_one_fixed_lifecycle(
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
-    current_task_id = "p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
+    current_task_id = "p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723"
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["completed_p8_2_k1a_r5_f1_runner"].endswith(RUNNER.name)
     assert artifacts["completed_p8_2_k1a_r5_l2_runner"].endswith(

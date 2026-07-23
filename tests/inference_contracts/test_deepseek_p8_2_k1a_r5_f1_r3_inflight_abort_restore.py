@@ -404,13 +404,13 @@ def test_f1_r3_contract_and_audit_only_are_bounded(tmp_path: Path) -> None:
 
 def test_f1_r5_is_the_only_current_server_handoff() -> None:
     current_task_id = (
-        "p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
+        "p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723"
     )
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r8_target_store_lineage.yaml"
+        "p8_2_k1a_r5_f1_r9_effective_group_geometry.yaml"
     )
     assert artifacts["current_p8_2_k1a_r5_f1_r5_runner"].endswith(
         "run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.sh"
@@ -421,14 +421,15 @@ def test_f1_r5_is_the_only_current_server_handoff() -> None:
     assert handoff.count("\ntask_id: ") == 1
     assert f"task_id: {current_task_id}" in handoff
     for marker in (
-        "CPU=128/GPU=0",
+        "logical_target_block_count_exact: 128",
+        "physical_fa_key_count_fixed: false",
         "36800",
         "pressure_01",
-        "aborted_on_trigger",
+        "physical_group_cpu_only_window_required_to_abort: true",
         "restore_follower",
         "npu_stop.sh 0 1 2 3 4 5 6 7",
         "npu_keep_alive.sh 0 1 2 3 4 5 6 7",
-        "成功、失败、中断或提前退出",
+        "成功、实验 RED、失败、中断或提前退出",
         "result_transfer_authorized: true",
         "transfer_method_selected: false",
         "automatic_transfer_allowed: false",

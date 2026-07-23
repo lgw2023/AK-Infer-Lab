@@ -754,17 +754,17 @@ def test_r5_l1_contract_is_preserved_as_parent_of_current_r1() -> None:
 
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     assert readiness["artifacts"]["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
+        "p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r8_target_store_lineage.yaml"
+        "p8_2_k1a_r5_f1_r9_effective_group_geometry.yaml"
     )
 
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
+        "task_id: p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723"
         in handoff
     )
     for field in (
@@ -779,7 +779,8 @@ def test_r5_l1_contract_is_preserved_as_parent_of_current_r1() -> None:
     ):
         assert field in handoff
     for marker in (
-            "CPU=128/GPU=0",
+            "logical_target_block_count_exact: 128",
+            "physical_fa_key_count_fixed: false",
             "pressure_01",
             "pressure_request_count_exact: 1",
         "request-local",

@@ -88,22 +88,100 @@ def capture_restore_group_hashes(
         if block.block_hash is not None
     )
     selected_geometry_exact = len(selected_ids) == theoretical_count
-    hash_capture_exact = len(non_null_blocks) == len(hashes)
+    # A runtime group with supplied block IDs remains applicable even when its
+    # selected blocks are null or unhashable.  Treating applicability as
+    # ``bool(hashes)`` would silently drop precisely the incomplete capture
+    # that must fail the pre-pressure gate.
+    group_applicable = bool(group_block_ids)
+    hash_capture_exact = (
+        len(non_null_blocks) == len(hashes)
+        and (not group_applicable or len(hashes) == theoretical_count)
+    )
     return hashes, {
         "group_index": group_index,
         "restore_match_tokens_required": restore_match_tokens,
         "effective_block_size_tokens": effective_block_size_tokens,
         "theoretical_block_count": theoretical_count,
+        "physical_key_count_required": theoretical_count,
         "provided_block_id_count": len(group_block_ids),
         "selected_block_id_count": len(selected_ids),
         "non_null_block_count": len(non_null_blocks),
         "hashable_block_count": len(hashes),
         "unhashable_non_null_block_count": len(non_null_blocks) - len(hashes),
-        "required_block_count": len(hashes),
-        "group_applicable": bool(hashes),
+        "required_block_count": theoretical_count if group_applicable else 0,
+        "group_applicable": group_applicable,
         "selected_geometry_exact": selected_geometry_exact,
         "hash_capture_exact": hash_capture_exact,
+        "logical_coverage_exact": (
+            group_applicable
+            and selected_geometry_exact
+            and hash_capture_exact
+        ),
         "capture_basis": "hashable_blocks_used_by_cache_lookup",
+        "raw_block_ids_retained": False,
+        "raw_hash_values_retained": False,
+    }
+
+
+def derive_runtime_group_geometry(
+    scheduler: Any,
+    *,
+    group_index: int,
+    group: Any,
+    restore_match_tokens: int,
+) -> dict[str, Any]:
+    """Mirror the live coordinator's per-group cache-key geometry.
+
+    The vLLM-Ascend coordinator may multiply a group's declared block size by
+    context-parallel width and ``compress_ratio``.  The scheduler's retained
+    group block IDs already use that coordinator geometry, so observer-side
+    slicing must use the same unit instead of treating every physical key as
+    one logical hash block.
+    """
+
+    spec = group.kv_cache_spec
+    base_block_size = int(spec.block_size)
+    cp_world_size = int(getattr(scheduler, "cp_world_size", 1) or 1)
+    raw_compress_ratio = getattr(spec, "compress_ratio", 1)
+    try:
+        compress_ratio = max(1, int(raw_compress_ratio or 1))
+    except (TypeError, ValueError):
+        compress_ratio = 1
+
+    coordinator = getattr(scheduler, "cpu_coordinator", None)
+    coordinator_method = getattr(
+        coordinator, "_get_effective_block_size", None
+    )
+    if callable(coordinator_method):
+        effective_block_size = int(coordinator_method(spec))
+        geometry_source = "runtime_cpu_coordinator"
+    else:
+        is_mamba = type(spec).__name__ == "MambaSpec"
+        effective_block_size = base_block_size
+        if not is_mamba:
+            effective_block_size *= cp_world_size
+            effective_block_size *= compress_ratio
+        geometry_source = "observer_source_aligned_fallback"
+
+    aligned = (
+        effective_block_size > 0
+        and restore_match_tokens % effective_block_size == 0
+    )
+    return {
+        "group_index": group_index,
+        "kv_cache_spec_type": type(spec).__name__,
+        "base_block_size_tokens": base_block_size,
+        "cp_world_size": cp_world_size,
+        "compress_ratio": compress_ratio,
+        "effective_block_size_tokens": effective_block_size,
+        "restore_match_tokens_required": restore_match_tokens,
+        "physical_key_count_required": (
+            restore_match_tokens // effective_block_size
+            if aligned
+            else -1
+        ),
+        "effective_geometry_aligned": aligned,
+        "effective_geometry_source": geometry_source,
         "raw_block_ids_retained": False,
         "raw_hash_values_retained": False,
     }
@@ -429,7 +507,11 @@ def build_restore_group_residency_summary(
 ) -> dict[str, Any]:
     geometry_fields = (
         "restore_match_tokens_required",
+        "base_block_size_tokens",
+        "cp_world_size",
+        "compress_ratio",
         "effective_block_size_tokens",
+        "physical_key_count_required",
         "theoretical_block_count",
         "provided_block_id_count",
         "selected_block_id_count",
@@ -439,6 +521,10 @@ def build_restore_group_residency_summary(
         "group_applicable",
         "selected_geometry_exact",
         "hash_capture_exact",
+        "logical_coverage_exact",
+        "effective_geometry_aligned",
+        "effective_geometry_source",
+        "kv_cache_spec_type",
         "capture_basis",
     )
     bounded_rows: list[dict[str, Any]] = []
@@ -517,7 +603,10 @@ def build_restore_group_residency_summary(
 
 
 def build_restore_eligibility_gate(
-    rows: list[dict[str, Any]], *, required_restore_block_count: int
+    rows: list[dict[str, Any]],
+    *,
+    required_restore_block_count: int,
+    require_effective_group_geometry: bool = False,
 ) -> dict[str, Any]:
     candidates = [
         row
@@ -564,27 +653,38 @@ def build_restore_eligibility_gate(
             else row.get("restore_groups_captured_exact") is True
         )
 
+    def physical_window_exact(row: dict[str, Any]) -> bool:
+        if require_effective_group_geometry:
+            return all(
+                (
+                    int(row.get("target_block_count") or 0)
+                    == required_restore_block_count,
+                    row.get("target_logical_coverage_exact") is True,
+                    row.get("physical_target_window_exact") is True,
+                    row_capture_exact(row),
+                    row.get("restore_group_eligibility_complete") is True,
+                )
+            )
+        return all(
+            (
+                int(row.get("target_block_count") or 0)
+                == required_restore_block_count,
+                int(row.get("cpu_target_block_count") or 0)
+                == required_restore_block_count,
+                int(row.get("gpu_target_block_count") or 0) == 0,
+                row_capture_exact(row),
+                row.get("restore_group_eligibility_complete") is True,
+            )
+        )
+
     full_was_observed = any(
-        int(row.get("target_block_count") or 0)
-        == required_restore_block_count
-        and int(row.get("cpu_target_block_count") or 0)
-        == required_restore_block_count
-        and int(row.get("gpu_target_block_count") or 0) == 0
-        and row_capture_exact(row)
-        and row.get("restore_group_eligibility_complete") is True
-        for row in candidates
+        physical_window_exact(row) for row in candidates
     )
     last_full_timestamp_ns = max(
         (
             int(row.get("timestamp_ns") or 0)
             for row in candidates
-            if int(row.get("target_block_count") or 0)
-            == required_restore_block_count
-            and int(row.get("cpu_target_block_count") or 0)
-            == required_restore_block_count
-            and int(row.get("gpu_target_block_count") or 0) == 0
-            and row_capture_exact(row)
-            and row.get("restore_group_eligibility_complete") is True
+            if physical_window_exact(row)
         ),
         default=0,
     )
@@ -598,15 +698,29 @@ def build_restore_eligibility_gate(
         decision = "unobservable"
     elif observed != required_restore_block_count:
         decision = "insufficient_restore_coverage"
+    elif (
+        require_effective_group_geometry
+        and latest.get("target_logical_coverage_exact") is not True
+    ):
+        decision = "effective_group_geometry_incomplete"
     elif not capture_exact or not keyspace_matchable:
         decision = "target_keyspace_unaligned"
     elif not groups_captured or group_count <= 0 or not groups_complete:
         decision = "restore_groups_incomplete"
     elif cpu_evictions_after_full or (
-        full_was_observed and cpu_count < required_restore_block_count
+        full_was_observed
+        and cpu_count
+        < (
+            int(
+                latest.get("target_fa_required_physical_key_count")
+                or 0
+            )
+            if require_effective_group_geometry
+            else required_restore_block_count
+        )
     ):
         decision = "cpu_target_lost"
-    elif cpu_count == required_restore_block_count and gpu_count == 0:
+    elif physical_window_exact(latest):
         decision = "trigger_ready"
     else:
         decision = "continue_pressure"
@@ -629,6 +743,18 @@ def build_restore_eligibility_gate(
             cpu_evictions_after_full
         ),
         "raw_hash_values_retained": False,
+        "effective_group_geometry_required": (
+            require_effective_group_geometry
+        ),
+        "target_fa_required_physical_key_count": int(
+            latest.get("target_fa_required_physical_key_count") or 0
+        ),
+        "target_logical_coverage_exact": (
+            latest.get("target_logical_coverage_exact") is True
+        ),
+        "physical_target_window_exact": (
+            latest.get("physical_target_window_exact") is True
+        ),
     }
 
 
@@ -696,17 +822,25 @@ def _capture_restore_group_hashes(
 ]:
     gpu_pool = scheduler._gpu_block_pool
     groups = scheduler.cpu_kv_cache_config.kv_cache_groups
-    cp_world_size = int(getattr(scheduler, "cp_world_size", 1) or 1)
     hashes_by_group: list[tuple[Any, ...]] = []
     required_by_group: list[int] = []
     geometry_by_group: list[dict[str, Any]] = []
     for group_index, group in enumerate(groups):
-        effective_block_size = int(group.kv_cache_spec.block_size) * cp_world_size
+        runtime_geometry = derive_runtime_group_geometry(
+            scheduler,
+            group_index=group_index,
+            group=group,
+            restore_match_tokens=restore_match_tokens,
+        )
+        effective_block_size = int(
+            runtime_geometry["effective_block_size_tokens"]
+        )
         if restore_match_tokens % effective_block_size != 0:
             hashes_by_group.append(())
             required_by_group.append(-1)
             geometry_by_group.append(
                 {
+                    **runtime_geometry,
                     "group_index": group_index,
                     "restore_match_tokens_required": restore_match_tokens,
                     "effective_block_size_tokens": effective_block_size,
@@ -717,6 +851,10 @@ def _capture_restore_group_hashes(
                     "hashable_block_count": 0,
                     "unhashable_non_null_block_count": 0,
                     "required_block_count": -1,
+                    "group_applicable": False,
+                    "selected_geometry_exact": False,
+                    "hash_capture_exact": False,
+                    "logical_coverage_exact": False,
                     "capture_basis": "unaligned_group_geometry",
                     "raw_block_ids_retained": False,
                     "raw_hash_values_retained": False,
@@ -730,8 +868,11 @@ def _capture_restore_group_hashes(
             restore_match_tokens=restore_match_tokens,
             effective_block_size_tokens=effective_block_size,
         )
+        geometry = {**geometry, **runtime_geometry}
         hashes_by_group.append(hashes)
-        required_by_group.append(len(hashes))
+        required_by_group.append(
+            int(geometry.get("required_block_count") or 0)
+        )
         geometry_by_group.append(geometry)
     return (
         tuple(hashes_by_group),
@@ -806,6 +947,7 @@ def _capture_target_store_lineage(
     scheduler._p8_2_k1a_target_logical_block_count = (
         restore_match_tokens // hash_block_size_tokens
     )
+    scheduler._p8_2_k1a_target_restore_match_tokens = restore_match_tokens
     return _target_store_lineage_residency_summary(scheduler)
 
 
@@ -885,12 +1027,32 @@ def _target_store_lineage_residency_summary(
         int(row.get("group_index") or 0): row for row in geometry_by_group
     }
     fa_geometry = geometry_by_index.get(fa_group_index, {})
-    fa_capture_exact = all(
+    fa_required_physical_key_count = int(
+        fa_geometry.get("physical_key_count_required") or 0
+    )
+    restore_match_tokens = int(
+        getattr(scheduler, "_p8_2_k1a_target_restore_match_tokens", 0)
+        or 0
+    )
+    fa_effective_block_size = int(
+        fa_geometry.get("effective_block_size_tokens") or 0
+    )
+    target_logical_coverage_exact = all(
         (
             logical_block_count > 0,
-            len(fa_keys) == logical_block_count,
+            fa_required_physical_key_count > 0,
+            len(fa_keys) == fa_required_physical_key_count,
+            fa_required_physical_key_count * fa_effective_block_size
+            == restore_match_tokens,
+            fa_geometry.get("effective_geometry_aligned") is True,
             fa_geometry.get("selected_geometry_exact") is True,
             fa_geometry.get("hash_capture_exact") is True,
+        )
+    )
+    fa_capture_exact = all(
+        (
+            target_logical_coverage_exact,
+            fa_geometry.get("logical_coverage_exact") is True,
         )
     )
     scheduled = set(
@@ -916,6 +1078,17 @@ def _target_store_lineage_residency_summary(
     fa_set = set(fa_keys)
     cpu_matches = count(cpu_pool, target_keys)
     gpu_matches = count(gpu_pool, target_keys)
+    cpu_fa_matches = count(cpu_pool, fa_keys)
+    gpu_fa_matches = count(gpu_pool, fa_keys)
+    physical_target_window_exact = all(
+        (
+            target_logical_coverage_exact,
+            fa_capture_exact,
+            cpu_fa_matches == fa_required_physical_key_count,
+            gpu_fa_matches == 0,
+            group_summary["restore_group_eligibility_complete"] is True,
+        )
+    )
     return {
         "target_store_lineage_capture_exact": all(
             (
@@ -931,7 +1104,14 @@ def _target_store_lineage_residency_summary(
         "target_gpu_evicted_key_count": len(gpu_evicted),
         "target_fa_group_index": fa_group_index,
         "target_fa_key_count": len(fa_keys),
+        "target_fa_required_physical_key_count": (
+            fa_required_physical_key_count
+        ),
         "target_fa_capture_exact": fa_capture_exact,
+        "target_logical_block_count": logical_block_count,
+        "target_logical_coverage_tokens": restore_match_tokens,
+        "target_logical_coverage_exact": target_logical_coverage_exact,
+        "physical_target_window_exact": physical_target_window_exact,
         "target_fa_store_scheduled_key_count": len(scheduled & fa_set),
         "target_fa_store_completed_key_count": len(completed & fa_set),
         "target_fa_cpu_evicted_key_count": len(cpu_evicted & fa_set),
@@ -939,12 +1119,12 @@ def _target_store_lineage_residency_summary(
         "target_pool_key_count": len(target_keys),
         "cpu_target_pool_key_match_count": cpu_matches,
         "gpu_target_pool_key_match_count": gpu_matches,
-        "target_count_unit": "logical_full_attention_hash_blocks",
-        "cpu_target_count_unit": "logical_full_attention_hash_blocks",
-        "gpu_target_count_unit": "logical_full_attention_hash_blocks",
+        "target_count_unit": "logical_request_hash_blocks",
+        "cpu_target_count_unit": "physical_full_attention_group_keys",
+        "gpu_target_count_unit": "physical_full_attention_group_keys",
         "target_pool_key_count_unit": "runtime_group_wrapped_pool_keys",
-        "cpu_target_block_count": count(cpu_pool, fa_keys),
-        "gpu_target_block_count": count(gpu_pool, fa_keys),
+        "cpu_target_block_count": cpu_fa_matches,
+        "gpu_target_block_count": gpu_fa_matches,
         **group_summary,
         "raw_block_ids_retained": False,
         "raw_hash_values_retained": False,
@@ -1612,10 +1792,16 @@ def summarize_target_store_lineage_rows(
         row
         for row in observed
         if row.get("target_store_lineage_capture_exact") is True
-        and int(row.get("cpu_target_block_count") or 0)
-        == target_block_count
-        and int(row.get("gpu_target_block_count") or 0) == 0
-        and row.get("restore_group_eligibility_complete") is True
+        and (
+            row.get("physical_target_window_exact") is True
+            or (
+                "physical_target_window_exact" not in row
+                and int(row.get("cpu_target_block_count") or 0)
+                == target_block_count
+                and int(row.get("gpu_target_block_count") or 0) == 0
+                and row.get("restore_group_eligibility_complete") is True
+            )
+        )
     ]
     logical_and_physical = [
         row
@@ -1631,6 +1817,11 @@ def summarize_target_store_lineage_rows(
     fa_key_count = int(
         captured.get("target_fa_key_count")
         or maximum("target_fa_key_count", observed)
+    )
+    fa_required_physical_key_count = int(
+        captured.get("target_fa_required_physical_key_count")
+        or maximum("target_fa_required_physical_key_count", observed)
+        or target_block_count
     )
     scheduled_max = max(
         maximum("target_store_scheduled_key_count", scheduled),
@@ -1664,7 +1855,7 @@ def summarize_target_store_lineage_rows(
         attribution = "target_keys_never_scheduled_for_d2h"
     elif completed_max < scheduled_max:
         attribution = "target_d2h_store_completion_incomplete"
-    elif fa_completed_max < target_block_count:
+    elif fa_completed_max < fa_required_physical_key_count:
         attribution = "full_attention_target_d2h_incomplete"
     elif not physical_cpu_only and cpu_evicted_count > 0:
         attribution = "target_cpu_evicted_before_complete_cpu_only_window"
@@ -1685,7 +1876,11 @@ def summarize_target_store_lineage_rows(
                 for key in (
                     "group_index",
                     "restore_match_tokens_required",
+                    "base_block_size_tokens",
+                    "cp_world_size",
+                    "compress_ratio",
                     "effective_block_size_tokens",
+                    "physical_key_count_required",
                     "theoretical_block_count",
                     "provided_block_id_count",
                     "selected_block_id_count",
@@ -1696,6 +1891,10 @@ def summarize_target_store_lineage_rows(
                     "captured_block_count",
                     "group_applicable",
                     "capture_exact",
+                    "logical_coverage_exact",
+                    "effective_geometry_aligned",
+                    "effective_geometry_source",
+                    "kv_cache_spec_type",
                 )
                 if key in row
             }
@@ -1711,8 +1910,23 @@ def summarize_target_store_lineage_rows(
         ),
         "target_store_key_count": target_store_key_count,
         "target_fa_key_count": fa_key_count,
+        "target_fa_required_physical_key_count": (
+            fa_required_physical_key_count
+        ),
         "target_fa_capture_exact": (
             captured.get("target_fa_capture_exact") is True
+        ),
+        "target_logical_block_count": int(
+            captured.get("target_logical_block_count")
+            or maximum("target_logical_block_count", observed)
+            or target_block_count
+        ),
+        "target_logical_coverage_tokens": int(
+            captured.get("target_logical_coverage_tokens")
+            or maximum("target_logical_coverage_tokens", observed)
+        ),
+        "target_logical_coverage_exact": (
+            captured.get("target_logical_coverage_exact") is True
         ),
         "target_store_schedule_event_count": len(scheduled),
         "target_store_completion_event_count": len(completed),

@@ -293,9 +293,9 @@ def test_handoff_preserves_closed_lineage_during_f1_r4_alignment():
     ).read_text(encoding="utf-8")
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "P8.2-K1A-R5-F1-R8 target-store lineage" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723" in handoff
-    assert "execution_mode: authorized_single_lifecycle_target_store_lineage" in handoff
+    assert "P8.2-K1A-R5-F1-R9 runtime effective-group geometry" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723" in handoff
+    assert "execution_mode: authorized_single_lifecycle_effective_group_geometry" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "parent_task_id=p8_2_k1a_r5_f1_r3_inflight_abort_restore_2026_0722" in handoff
@@ -327,7 +327,7 @@ def test_current_truth_surfaces_preserve_r3_and_blocked_r4_then_close_r4_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r8_target_store_lineage.yaml"
+        "p8_2_k1a_r5_f1_r9_effective_group_geometry.yaml"
     )
     assert acceptance["p6_3b_r2_grade"] == (
         "green_p6_3b_r2_hybrid_kv_repair"
