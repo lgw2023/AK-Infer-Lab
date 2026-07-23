@@ -1,0 +1,86 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R10
+date: '2026-07-23'
+task_id: p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723
+
+accepted_f1_r9_result:
+  server_grade: red_p8_2_k1a_r5_f1_r9_target_store_lineage_unobservable_before_pressure
+  operational_grade: operational_recovery_clean
+  experimental_terminal: target_store_lineage_unobservable_before_pressure
+  request_count: 2
+  pressure_request_count_executed: 0
+  logical_target_block_count: 128
+  target_fa_key_count: 32
+  target_store_key_count: 33
+  full_attention_geometry_exact: true
+  sliding_window_groups_reported_applicable: 4
+  sliding_window_captured_key_count: 0
+  d2h_store_complete: true
+  d2h_worker_count: 8
+  d2h_bytes_total: 2206846976
+  h2d_worker_count: 0
+  restore_sent: false
+  cleanup: clean
+  resource_recovery_exact: true
+  stopped_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  restored_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  grading_sha256: 04e87d5a5d3a1ada5dccf2925a5860cca4a6f83cbd7f5e0f925444eb4cba4f82
+  timeline_sha256: b918ec163720ce73e679db0be48cb48d87530200c199e93f1e0a9dedb79d8b4f
+  target_lineage_sha256: 14e1a18b24947bd8b02c849b3eefa42fa1597f740bf54153d74b1c42cc6c087c
+  transfer_sha256: aa94e2a9019749ec1fad01fc17fb210811c2af1c8d9f563c2e2d9295716ff8bb
+  recovery_sha256: 65eb3136c608ef59c9def9a20a214e6cd6e835c565ab2fa1c1488b22b0a79ac1
+  manifest_sha256: 8e08ee3d52ee2770f2795fe9588d420dedd5f9659663e1f5e8d22ec75ac2f2af
+
+developer_diagnosis:
+  full_attention_effective_geometry_is_fixed: true
+  request_finish_block_table_is_invalid_for_sliding_window_lineage: true
+  sliding_window_manager_replaces_skipped_request_blocks_with_null: true
+  sliding_window_cache_mask_stamps_only_lookup_reachable_positions: true
+  runtime_group_wrapped_keys_exist_at_cache_stamp_boundary: true
+  r9_zero_sliding_window_capture_is_not_capacity_impossibility_evidence: true
+  full_logical_128_block_cpu_only_window_disproven: false
+  server_execution_or_cleanup_failure: false
+
+source_alignment:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  cache_stamp_source: vllm/v1/core/block_pool.py
+  cache_stamp_method: BlockPool.cache_full_blocks
+  sparse_mask_source: vllm/v1/core/single_type_kv_cache_manager.py
+  sparse_mask_method: SlidingWindowManager._cache_block_mask
+  pool_key_contract: request_block_hash_wrapped_with_kv_cache_group_id
+  target_capture_point: after_runtime_cache_full_blocks_returns
+  actual_mask_and_null_semantics_are_authoritative: true
+  request_finish_group_block_ids_are_not_used_for_r10_lineage: true
+
+developer_decision:
+  same_fixed_capacity_and_context_required: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_per_rank: 430604288
+  cpu_bytes_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count_required: 128
+  logical_restore_match_tokens_required: 16384
+  hash_block_size_tokens: 128
+  capture_target_keys_at_each_runtime_gpu_cache_stamp: true
+  aggregate_only_positions_inside_first_16384_tokens: true
+  reuse_runtime_sparse_block_mask: true
+  zero_cacheable_position_group_is_not_applicable_only_after_full_scan: true
+  partially_scanned_or_unobserved_group_fails_closed: true
+  progressive_target_keys_feed_lazy_store_attribution: true
+  fixed_pressure_must_execute_after_exact_stamp_lineage: true
+  physical_group_cpu_only_window_triggers_abort: true
+  logical_restore_window_exact_required_before_restore_dispatch: true
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  pressure_request_count_exact: 1
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  server_side_code_edit_authorized: false
+  performance_reference_authorized: false
+  unique_root_cause_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_runtime_cache_stamp_lineage_logical_128_block_window_and_conditional_h2d_candidate_only

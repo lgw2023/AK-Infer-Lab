@@ -675,11 +675,11 @@ def test_k0_runners_freeze_editable_source_root_and_audit_four_lifecycles(
 
 def test_k0_is_green_and_k1a_r5_f0_is_the_only_handoff():
     handoff = HANDOFF.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723"
+    task_id = "p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723"
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_single_lifecycle_effective_group_geometry"
+        "execution_mode: authorized_single_lifecycle_cache_stamp_lineage"
     ) in handoff
     assert "server_sync_review_authorized: true" in handoff
     assert "npu_execution_authorized: true" in handoff
@@ -704,7 +704,7 @@ def test_k0_is_green_and_k1a_r5_f0_is_the_only_handoff():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r9_effective_group_geometry.yaml"
+        "p8_2_k1a_r5_f1_r10_cache_stamp_lineage.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["current_p8_2_k0_refinalizer"].endswith(

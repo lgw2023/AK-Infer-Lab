@@ -1,10 +1,10 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K1A-R5-F1-R9 runtime effective-group geometry
+## 当前唯一服务器动作：P8.2-K1A-R5-F1-R10 runtime cache-stamp lineage
 
 ~~~text
-task_id: p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723
-execution_mode: authorized_single_lifecycle_effective_group_geometry
+task_id: p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723
+execution_mode: authorized_single_lifecycle_cache_stamp_lineage
 server_sync_review_authorized: true
 offline_parent_gate_required: true
 npu_execution_authorized: true
@@ -15,6 +15,7 @@ result_directory_creation_authorized: true
 keep_alive_card_ids_exact: 0,1,2,3,4,5,6,7
 server_task_driver_required: true
 manual_internal_step_reconstruction_authorized: false
+server_side_code_edit_authorized: false
 formal_model_lifecycle_count_exact: 1
 model_request_count_min: 3
 model_request_count_max: 4
@@ -26,21 +27,22 @@ accepted_cpu_bytes_total_exact: 3444834304
 logical_target_block_count_exact: 128
 logical_restore_match_tokens_exact: 16384
 hash_block_size_tokens_exact: 128
-physical_fa_key_count_fixed: false
-runtime_effective_group_geometry_required: true
 pressure_context_tokens_exact: 36800
 pressure_role_exact: pressure_01
-target_store_lineage_capture_required: true
+target_cache_stamp_lineage_required: true
+target_finish_block_table_used_for_lineage: false
+runtime_sparse_block_mask_authoritative: true
 target_lazy_store_schedule_attribution_required: true
 target_store_all_worker_completion_attribution_required: true
 physical_group_cpu_only_window_required_to_abort: true
 logical_restore_window_required_before_restore: true
 post_abort_fresh_revalidation_required: true
 runtime_pool_key_count_fixed: false
+physical_fa_key_count_fixed: false
 kv_connector: SimpleCPUOffloadConnector
 all_applicable_kv_groups_required: true
 all_relevant_kv_groups_required: true
-zero_key_groups_count_as_complete: false
+zero_cacheable_groups_count_as_complete: false
 full_request_window_watch_required: true
 stop_on_first_near_miss: false
 stop_on_first_unobservable_probe: false
@@ -62,100 +64,117 @@ p8_3_i1_authorized: false
 no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true
 ~~~
 
-### 先读结论：R9 已把 R8 的实际代码问题修完，服务器只执行
+### 先读结论：R10 代码已经写完，服务器只需同步并执行
 
-R8 的 RED 不是 accepted capacity 失败，也不是“完整 logical 128-block CPU-only 窗口无法形成”：
+R9 的有效结果与限制：
 
-- R8 只完成 warmup 与 target prime，pressure count=`0`；
-- target finish 捕获 group0 `65 provided / 64 hashable`、group1 `2 hashable`，并归因 66 个
-  target group-wrapped keys；
-- R8 observer 把 `16384 / 128 = 128 logical hash blocks` 错当成 FA physical key count；
-- 它只计算 `spec.block_size * cp_world_size`，漏掉 runtime Ascend coordinator 的
-  `compress_ratio`，所以在 pressure 前以 `64/128` fail closed；
-- target completion=`0` 发生在 pressure 未进入、后续 scheduler activity 被截断的 lifecycle，
-  不能证明 mover 永远不会完成；
-- R8 cleanup、八卡健康与 0–7 keep-alive 同卡恢复均 clean。
+- compressed full-attention group0 已正确得到 `effective=512 tokens`、
+  `required=32`、`captured=32`；
+- state group1 已正确得到 `effective=16384`、`required=1`、`captured=1`；
+- groups2–5 是 `AscendSlidingWindowMLASpec`，R9 在 request finish 从 block table
+  选取 dense 前缀时得到全 null，却仍按 `128/128/2048/512` dense positions
+  要求 key capture；
+- 所以 R9 在 pressure 前终止，`pressure_request_count_executed=0`；
+- 该结果证明 R9 effective geometry 修复有效，但 finish-time sliding-window block
+  table 不是恢复 lineage 的权威来源；
+- 它没有执行 fixed pressure，不能否定 accepted 128 blocks/rank，也不能证明完整
+  logical 128-block CPU-only 窗口无法形成。
 
-R9 已在代码里完成以下实质修复，服务器助手不要再设计或补实现：
+冻结 vLLM `0decac0d96c42b49572498019f0a0e3600f50398` 的实际语义：
 
-1. target finish 时优先调用 runtime CPU coordinator
-   `_get_effective_block_size(kv_cache_spec)`。
-2. 每组 effective size 采用 runtime 真实语义：base block size、DCP×PCP、`compress_ratio`；
-   只有 runtime method 不可见时才用同源码语义的 observe-only fallback。
-3. logical 16K/128 hash-block 目标按
-   `physical_required = 16384 / runtime_effective_block_size` 映射到每组。
-4. capture exact 表示 logical 16K 在全部 applicable group 的真实 physical keys 上覆盖精确；
-   不再要求 FA physical count 必须等于 128。
-5. pre-pressure gate 要求 128 个逻辑候选、runtime geometry/capture exact、target lineage 可追踪和
-   D2H ready。满足后唯一 fixed 36800 pressure 必须执行。
-6. pressure 中逐 scheduler progress 读取 target-specific CPU/GPU residency。只有
-   logical coverage exact、全部 applicable group CPU complete/GPU absent、单请求 progress exact
-   才触发 abort。
-7. abort 后等待 client exit 与 engine idle，再以 abort 之后的新鲜 snapshot 重验物理窗口；
-   还必须获得 coordinator logical 16384-token hit，才发送唯一 restore follower。
-8. target D2H completion 的期望值使用 runtime FA physical-required count，不再与 logical 128
-   作错误比较。
+1. `SlidingWindowManager` 会移除窗口外的 request blocks 并用 null 补位；
+2. `_cache_block_mask` 只允许未来 prefix lookup 能访问的 sparse positions 进入 cache；
+3. `BlockPool.cache_full_blocks` 才会把 request block hash 加上 KV group ID，并写入
+   GPU prefix-cache map；
+4. lazy offload 只扫描 non-null、hashable GPU blocks。
 
-本轮没有降低目标：仍是 accepted `128 CPU blocks/rank / 430604288 bytes/rank`、logical
-`16384 tokens = 128 hash blocks`、fixed pressure `36800`。physical FA key 数只是同一逻辑覆盖
-在压缩 group 上的真实表示，不是把目标从 128 降到 32/64。
+R10 已在开发机把实质修复写入公共 observer：
+
+1. 包装 GPU `BlockPool.cache_full_blocks`，先调用原方法；只有原方法成功返回后观察，
+   不改变参数、返回值、异常、调度或 copy。
+2. target prime 每次真实 cache stamp 后，按原 runtime `block_mask`、null 语义和
+   实际 `block_size` 累计前 16384 tokens 的 group-wrapped keys。
+3. 新 key 在 target 仍运行时立即进入 target lazy-store schedule/completion 与
+   CPU/GPU eviction 归因，避免 finish 后才知道 key 而漏掉早期 D2H。
+4. 每组记录 dense/scanned/cacheable/masked/null/captured counts 与 stamp call count。
+5. 未观察或只扫描一部分的组保持 fail closed；完整扫描后 cacheable positions 确为
+   0 的组才是 N/A，不能把 `0==0` 写成 CPU complete。
+6. target finish 只 finalize 已累计的 stamp lineage，不再用 finish-time block IDs
+   覆盖它。
+7. logical 128 hash blocks 与 physical group keys 继续分单位；不要求 FA physical
+   count 等于 128。
+8. capture exact 后唯一 fixed 36800 pressure 必须执行。若真实 applicable keyspace
+   大于 accepted 128-block capacity，也要通过 pressure 中逐组 residency/eviction 事实返回，
+   不得在 capture 阶段提前放弃。
+
+本轮没有降低或搜索目标：
+
+~~~text
+accepted CPU capacity = 128 blocks/rank = 430604288 bytes/rank
+logical restore prefix = 16384 tokens = 128 hash blocks
+fixed pressure context = 36800
+formal lifecycle count = 1
+pressure request count = 1
+retry/sweep = 0
+~~~
 
 ### 唯一正式入口
 
 ~~~text
-tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh
+tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh
 ~~~
 
-它自动执行：
+driver 自动执行：
 
 ~~~text
-parent/repo/runtime preflight（keep-alive 仍运行）
+R9 parent/repo/runtime preflight（keep-alive 仍运行）
 -> routine stop 0-7
 -> one accepted-capacity TP8 lifecycle
 -> cleanup vLLM
 -> restore exactly 0-7
--> real keep-alive marker/NPU/port/process probe
+-> keep-alive marker/NPU/port/process probe
 -> resource recovery record
 -> bounded finalize
 ~~~
 
-不要手工拆内部步骤，不要直接运行 common lifecycle/mode，不要修改代码、dependency、capacity、
-context 或 request，不要 retry，不要创建 run02。
+不要手工拆内部步骤，不要直接运行 common lifecycle/mode，不要修改代码、dependency、
+capacity、context 或 request，不要 retry，不要创建 run02。
 
-## 0. 冻结 F1-R8 direct parent（停卡前自动验证）
+## 0. 冻结 F1-R9 direct parent（停卡前自动验证）
 
 parent 目录必须原位存在：
 
 ~~~text
-/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723_run01
+/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723_run01
 ~~~
 
 以下 SHA-256 必须精确匹配：
 
 ~~~text
-896bfcd9d8722d398b5ee34a5730839b5c6028fd9f23d176d8cb3fb8dcb1f8a7  grading_summary.json
-7e2752bf178d7fa37ea5de29c4fa65f5ac7495f4dcd93a4ad0fc18c337080884  residency_gate_timeline.json
-0c38987f4c9469989d64fb9713fb6d3558df56105e179efc0068466f199d155b  target_store_lineage_summary.json
-2898cf42a8f44462220466a10192edfbf45775282e9060aa6829228dfe5f1876  transfer_trace_summary.json
-e0ebfe458b8d9129465d872c0bb213e7d034bcacd3d5d468bfb4048040c27f4c  resource_recovery_summary.json
-a8b1154213cbac77d1cd5892dedcb726f881168d31e7cb43edf4a7df962e393c  candidate_manifest.server_local.json
+04e87d5a5d3a1ada5dccf2925a5860cca4a6f83cbd7f5e0f925444eb4cba4f82  grading_summary.json
+b918ec163720ce73e679db0be48cb48d87530200c199e93f1e0a9dedb79d8b4f  residency_gate_timeline.json
+14e1a18b24947bd8b02c849b3eefa42fa1597f740bf54153d74b1c42cc6c087c  target_store_lineage_summary.json
+aa94e2a9019749ec1fad01fc17fb210811c2af1c8d9f563c2e2d9295716ff8bb  transfer_trace_summary.json
+65eb3136c608ef59c9def9a20a214e6cd6e835c565ab2fa1c1488b22b0a79ac1  resource_recovery_summary.json
+8e08ee3d52ee2770f2795fe9588d420dedd5f9659663e1f5e8d22ec75ac2f2af  candidate_manifest.server_local.json
 ~~~
 
 必须接受并保持这些 parent 事实：
 
 ~~~text
-server_grade=red_p8_2_k1a_r5_f1_r8_target_store_lineage_unobservable_before_pressure
+server_grade=red_p8_2_k1a_r5_f1_r9_target_store_lineage_unobservable_before_pressure
 operational_grade=operational_recovery_clean
 experimental_terminal=target_store_lineage_unobservable_before_pressure
 request_count=2
 successful_request_count=2
 pressure_request_count_executed=0
 required_restore_block_count=128
-target_fa_key_count=64
-target_store_key_count=66
-target_store_scheduled_key_count_max=66
+target_fa_key_count=32
+target_store_key_count=33
+target_store_scheduled_key_count_max=33
 target_store_completed_key_count_max=0
-observer_reported_fa_effective_block_size_tokens=128
+restore_group_applicable_count=6
+groups_2_to_5_captured_block_count=0
 restore_sent=false
 d2h_store_complete=true
 d2h_worker_count=8
@@ -169,9 +188,12 @@ accepted_capacity_invalidated=false
 full_logical_128_block_cpu_only_window_disproven=false
 ~~~
 
-R8 不得重跑。R7/R6/R5 等历史 parent 只保留 lineage，不是本轮入口。
+R9 不得重跑。历史 R8/R7/R6/R5 只保留 lineage，不是本轮入口。不得进入 K2 或
+P8.3-I1，也不得把历史 `CPU=64/GPU=0` 当作 R10 固定门槛。
 
-以下已关闭 lineage 必须保留，列出它们只是防止服务器助手误改路线，不授权重跑：
+以下是服务器助手必须保留的已关闭 lineage。它们只用于防止误改路线，不授权重跑；
+其中 `restore_follower`、`request-local`、`CPU=64/GPU=0`、`#0#` 都是历史证据词，
+不是 R10 的固定门槛或额外请求：
 
 ~~~text
 不得进入 K2
@@ -224,19 +246,19 @@ red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete
 red_p8_2_k1a_r5_f1_r6_h2d_evidence_incomplete
 red_p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger
 red_p8_2_k1a_r5_f1_r8_target_store_lineage_unobservable_before_pressure
+red_p8_2_k1a_r5_f1_r9_target_store_lineage_unobservable_before_pressure
 cpu_bytes_to_use_per_rank=430604288
 cpu_bytes_to_use=3444834304
 ~~~
 
-这些是只读 lineage 字段；其中历史 `required_restore_block_count_exact: 128` 指 logical hash
-blocks，不是 R9 的 physical FA key count。`CPU=64/GPU=0` 是旧轮次已观察到的 physical
-snapshot，`#0#` 是历史 keep-alive marker 示例；二者都不是 R9 固定门槛。R9 仍须在 accepted
-capacity 下用 runtime effective geometry 证明完整逻辑 128-block CPU-only 窗口。
+R10 仍须在 accepted capacity 下用 runtime cache-stamp lineage 争取形成完整逻辑
+128-block CPU-only 窗口；不得因为 SWA 的 finish-time null block table 再次在 pressure
+之前提前放弃。
 
 ## 1. 同步 main 与离线门（此时不要停 keep-alive）
 
-只允许 tracked-clean `main` 普通 fast-forward。`server_local/` 未跟踪结果不计入 tracked-clean。
-禁止 reset、stash、rebase、cherry-pick、服务器 commit 或 push。
+只允许 tracked-clean `main` 普通 fast-forward。`server_local/` 未跟踪结果不计入
+tracked-clean。禁止 reset、stash、rebase、cherry-pick、服务器 commit 或 push。
 
 ~~~bash
 set -euo pipefail
@@ -253,44 +275,44 @@ git status --short --branch --untracked-files=no
 
 python3 -m pytest \
   tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py \
-  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r8_target_store_lineage.py \
   tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.py \
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.py \
   tests/inference_contracts/test_p8_current_plan_truth.py -q
 
 python3 -m py_compile \
   tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py \
   tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.py
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.py
 
 bash -n \
   tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh \
   tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.sh \
   tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.sh \
-  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.sh \
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh
 
-P8_2_K1A_F1_R9_SERVER_TASK_AUDIT_ONLY=1 \
-  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh \
-  /tmp/opencode/p8_2_k1a_r5_f1_r9_unused
+P8_2_K1A_F1_R10_SERVER_TASK_AUDIT_ONLY=1 \
+  bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh \
+  /tmp/opencode/p8_2_k1a_r5_f1_r10_unused
 ~~~
 
 以下 16 个 direct contract input 的 SHA-256 必须在停卡前现场精确匹配：
 
 ~~~text
-dbddb4abd40d2ab965257ebcb81a69008d0e17694c29533469b813fa26ee91a4  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r9_effective_group_geometry_audit.yaml
-c1fff191dd1bf23b9fed64e36423c3cf522a1652d57e6c0cd4e16f8690eeeaa5  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r9_effective_group_geometry.yaml
-7093324b30135cb598c05f6f782fa5467abf160f47323527daafedaeb0f61de9  tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py
+c1e79148b2afc32c90a76ef9a322125a2e56533202f03e9150d4b52363814b03  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r10_cache_stamp_lineage_audit.yaml
+9173040ce2445dc43ab914b4fe7954a7503b80f198df5e6555faf539adea68fc  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r10_cache_stamp_lineage.yaml
+0db27347d8fec7d7e190389147ffacecfd44b14b9d472d3565227e3c11ab1b2a  tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py
 b63c02e92c7f6d9ff4a161e3a418199eff8938c8ebcc8d9535c10ab38d125ee2  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
 0a2cba3cd38f2c0d3841f2ecb0c6a1742646623b4fcc9bf0cfb58100d16290a3  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py
 3488140e597852c2de38a69942f87263ff92ecc8dafc530fc479faca9ebebecb  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.sh
 9b193867f0ecdd4098985eb041937f9e73c4e421b8afce1f5253a5b51f036e23  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh
-45fee1b8bd841dcaaca7e3ccd66f2618c7b183a533f97d6a8f0e82dcaf77bbd9  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.py
-6273bae6748a120f8c3b192250555e98591eb2d78bcf96204280369026c74ee6  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.sh
-845ae76093a2544faf38c21a39268d6b88dc0187da0a421f77276be1140f56c1  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh
+de635c2d880a546a1addf538f19f5f47af52fa35f3586a51a6c9bf3ba84e89ba  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.py
+8da9a6a8d7bcdfef0e194875948f51f4c2d22374b8ffb75fe524b8c401e6851e  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.sh
+108a1ae10b8fdbc524a71e7dd0a5e2a037ddc7d95630424fba72332acc2468b8  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh
 2707099971bf71cbec4add841907d864360e60d3e9eac0586ea3eb0c1c5f5ae7  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py
 0d190d51ad15d321fa25db94b82b0c0c6c5f7bbc271a0b6c739fd2d22d36999d  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh
 bcfb73b1faf64afd89e9231ea383500d2a01d38e673f39c3578425f51bd91a03  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
-b3ef8726db9ca29c36bd810ce872175a2719a5077ece4918685093bef4e9dcb1  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.py
+f51bc92a0abe4c6e5e2f0a0193dd96358a54d7c8399ac8e4bcd654ffa727f4fe  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.py
 5435592911e388daa047fe6d976cc351ab41b8b34de1bee990cc010f66fa3055  benchmarks/deepseek_v4_flash/patches/p8_2_k1a_r5_f1_r1_shared_diagnostic_mode.patch
 5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6  benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch
 ~~~
@@ -298,26 +320,28 @@ b3ef8726db9ca29c36bd810ce872175a2719a5077ece4918685093bef4e9dcb1  tests/inferenc
 audit-only 必须包含：
 
 ~~~text
-task_id=p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723
-execution_mode=authorized_single_lifecycle_effective_group_geometry
+task_id=p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723
+execution_mode=authorized_single_lifecycle_cache_stamp_lineage
 server_task_driver=preflight_stop_run_cleanup_restore_probe_record_finalize
 keep_alive_card_ids=0,1,2,3,4,5,6,7
 keep_alive_marker_format=#card_id#
 expected_keep_alive_marker_count=16
 same_card_set_restore_on_every_exit=true
-parent_f1_r8_geometry_contract_red_accepted=true
+parent_f1_r9_runtime_geometry_red_accepted=true
 accepted_capacity_invalidated=false
 logical_target_block_count=128
-runtime_effective_group_geometry_required=true
-physical_fa_key_count_fixed=false
-target_group_wrapped_keys_captured_before_finish=true
-target_lazy_store_schedule_completion_attributed=true
-zero_key_groups_counted_complete=false
-fixed_pressure_must_execute_after_geometry_capture=true
+target_lineage_capture_boundary=runtime_gpu_block_pool_cache_full_blocks
+runtime_sparse_block_mask_is_authoritative=true
+request_finish_null_block_table_used_for_lineage=false
+unobserved_or_partial_group_fails_closed=true
+fully_scanned_zero_cacheable_group_not_applicable=true
+progressive_target_keys_feed_lazy_store_attribution=true
+fixed_pressure_must_execute_after_cache_stamp_lineage=true
 logical_restore_window_required_before_restore=true
 pressure_context_tokens=36800
 request_retry_count_exact=0
 capacity_or_context_change_authorized=false
+server_side_code_edit_authorized=false
 resource_recovery_summary_always_recorded=true
 finalize_after_recovery=true
 result_transfer_authorized=true
@@ -325,13 +349,12 @@ automatic_transfer_allowed=false
 next_task_authorized=false
 ~~~
 
-任一离线门失败：keep-alive 保持运行，回报失败命令、退出码和不超过 200 行的首尾摘要后停止；
-不得现场修代码继续。
+任一离线门失败：keep-alive 保持运行，回报失败命令、退出码和不超过 200 行的
+首尾摘要后停止；不得现场修代码继续。
 
 ## 2. keep-alive 是常规资源操作，由 driver 自动处理
 
 本任务需要 0–7 八卡，可以直接停；停 keep-alive 本身不是事故。driver 使用：
-两条命令的末尾数字是卡号，本轮必须保持同一个精确集合 `0 1 2 3 4 5 6 7`。
 
 ~~~bash
 # Stop the low-priority keep-alive workload on the selected cards.
@@ -341,10 +364,21 @@ bash /data/node0_disk1/Public/npu_stop.sh 0 1 2 3 4 5 6 7
 bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ~~~
 
-无论成功、失败、中断或提前退出（包括实验 RED），都必须恢复 exactly 0–7，并报告 stopped/restored card IDs、
-16 个真实 `#card_id#` markers、八卡健康、7000 端口与 vLLM residual。
-等价地说：成功、实验 RED、失败、中断或提前退出，均不得跳过同卡恢复。
-最终回报必须明确列出实际停卡卡号、实际恢复卡号与恢复状态。
+两条命令的末尾数字是卡号，本轮必须保持同一个精确集合 `0 1 2 3 4 5 6 7`。
+无论成功、实验 RED、失败、中断或提前退出，都必须恢复 exactly 0–7；也就是成功、失败、中断或提前退出
+均不得遗漏恢复。最终报告：
+
+~~~text
+实际 stopped card IDs
+实际 restored card IDs
+restart exit code
+16 个真实 #card_id# markers
+marker card coverage
+八卡健康
+7000 端口
+vLLM residual
+keep_alive_restored_exact
+~~~
 
 ## 3. 只执行一次正式 driver
 
@@ -353,58 +387,75 @@ bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ~~~bash
 set -euo pipefail
 cd /data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723_run01
+RESULT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723_run01
 test ! -e "${RESULT_DIR}"
 
-bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh \
+bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh \
   "${RESULT_DIR}"
 ~~~
 
-不要因为正式命令退出码非零而绕过 driver 的 cleanup/recovery/finalize。driver 已负责把实验 RED 与运维恢复
-分开；命令返回后直接进入结果核验，不得 retry。
+不要因为正式命令退出码非零而绕过 driver 的 cleanup/recovery/finalize。命令返回后直接
+进入结果核验，不得 retry，不得创建 run02。
 
-## 4. 本轮必须观察和判读的主线
+## 4. 本轮主线与精确判读
 
-### 4.1 geometry capture
+### 4.1 target cache-stamp lineage
 
-必须报告每个 KV group 的：
+必须报告：
+
+~~~text
+target_lineage_capture_basis=runtime_gpu_cache_stamp_sparse_mask_keys
+target_cache_stamp_event_count
+target_cache_stamp_observer_error_count
+target_cache_stamp_observer_error_type_histogram
+target_store_lineage_capture_exact
+target_store_key_count
+target_fa_key_count
+target_fa_required_physical_key_count
+target_logical_block_count=128
+target_logical_coverage_tokens=16384
+target_logical_coverage_exact
+~~~
+
+每个 KV group 必须报告完整有界行：
 
 ~~~text
 group_index
 kv_cache_spec_type
 base_block_size_tokens
-cp_world_size
 compress_ratio
-effective_block_size_tokens
-effective_geometry_source
-restore_match_tokens_required
-physical_key_count_required
-provided_block_id_count
-selected_block_id_count
-hashable_block_count
+coordinator_effective_block_size_tokens
+coordinator_effective_geometry_source
+cache_stamp_block_size_tokens
+cache_block_size_matches_effective_geometry
+dense_physical_position_count
+scanned_position_count
+cacheable_position_count
+masked_position_count
+null_position_count
+cache_stamp_call_count
+required_block_count
+captured_block_count
 group_applicable
 capture_exact
 logical_coverage_exact
+effective_geometry_source
+capture_basis
 ~~~
 
-核心不变量：
+核心判定：
 
-~~~text
-target_logical_block_count=128
-target_logical_coverage_tokens=16384
-target_logical_coverage_exact=true
-target_fa_key_count=target_fa_required_physical_key_count
-target_fa_required_physical_key_count 不要求等于 128
-all applicable groups capture_exact=true
-zero-key groups are N/A, not vacuous complete
-~~~
+1. `scanned_position_count < dense_physical_position_count` 时不能把组标 N/A。
+2. 完整扫描且 `cacheable_position_count=0` 才允许 `group_applicable=false`。
+3. applicable group 必须 `captured=required` 才是 capture exact。
+4. raw block IDs/hash values 不得进入有界包。
+5. 如果 observer error count > 0 或 lineage incomplete，准确报告 group/error；不得改代码
+   后重跑。
+6. R10 不再要求 sliding-window dense positions 全部有 key。
 
-如果 geometry/capture exact 后仍未执行 pressure，终态必须明确指出新的代码/运行门，不能再次用
-`FA physical != 128` 阻断，也不能擅自修复后重跑。
+### 4.2 pre-pressure 与唯一 fixed pressure
 
-### 4.2 fixed pressure 与 target lineage
-
-必须实际出现：
+capture exact、128 logical candidates 与 D2H ready 后必须出现：
 
 ~~~text
 pressure_request_count_executed=1
@@ -412,7 +463,10 @@ pressure_context_tokens=36800
 request_retry_count=0
 ~~~
 
-持续报告 target-specific：
+如果仍没有执行 pressure，必须返回阻断它的准确代码门、latest event 和逐组 stamp counts；
+不能再写笼统的 “lineage unobservable”，不能现场修复，不得重跑。
+
+pressure 中持续报告 target-specific：
 
 ~~~text
 target_store_key_count
@@ -427,21 +481,60 @@ cpu_target_block_count_max
 gpu_target_block_count_min
 physical_cpu_only_window_event_count
 logical_and_physical_window_event_count
+restore_group_applicable_count
+restore_groups_cpu_complete_count
+restore_groups_gpu_absent_count
 ~~~
 
 全局 D2H bytes 不能替代 target-specific completion/residency。
 
-### 4.3 abort / restore
+若真实 applicable target key count 大于 CPU pool 128：
 
-- pressure 未形成完整物理窗口：允许自然完成，grade 为
-  `red_p8_2_k1a_r5_f1_r9_pressure_completed_without_trigger` 或更精确 terminal；不发 restore。
-- physical window 出现：必须在 pressure 仍 active 时 abort，并确认 client exit、engine idle。
-- abort 后物理窗口丢失：不发 restore。
-- abort 后物理窗口仍在但 logical 16K miss：终态
-  `logical_restore_hit_incomplete_after_physical_window`，不发 restore。
-- 只有新鲜物理窗口与 logical 16K hit 同时成立才发一次 restore。
-- HTTP 200、Prefix Cache counter、accepted token、全局 D2H 中任何一个都不能单独证明 H2D。
-- candidate green 还必须有 8-worker H2D schedule/copy/poll/completion 与 target CPU hit/load 的完整证据。
+- 仍执行完整唯一 pressure；
+- 报每组 required/captured/CPU/GPU 与最接近窗口；
+- 报 CPU/GPU eviction 顺序和 first/last best window；
+- 只可说本 fixed lifecycle 未形成完整窗口；
+- 未授权直接宣称唯一根因、永久不可能或擅自调容量。
+
+### 4.3 trigger、abort、idle、restore
+
+只在同一 `pressure_01` 仍 active 且以下全部成立时 trigger：
+
+~~~text
+request_local_progress_exact=true
+scheduled_request_count=1
+target_logical_coverage_exact=true
+target_fa CPU complete
+target_fa GPU absent
+all applicable restore groups CPU complete
+all applicable restore groups GPU absent
+physical_target_window_exact=true
+~~~
+
+之后必须保持精确顺序：
+
+~~~text
+pressure start
+-> trigger latched
+-> abort requested
+-> client exit observed
+-> engine idle confirmed
+-> post-abort fresh physical revalidation
+-> logical 16384-token coordinator hit
+-> one restore dispatched
+-> restore completed
+~~~
+
+分支：
+
+- pressure 自然结束且无窗口：不发 restore，保留
+  `red_p8_2_k1a_r5_f1_r10_pressure_completed_without_trigger` 或更精确 terminal。
+- 物理窗口后 abort，但窗口在 post-abort 消失：不发 restore。
+- 物理窗口仍在但 logical 16K miss：不发 restore，明确
+  `logical_restore_hit_incomplete_after_physical_window`。
+- 只有 abort/exit/idle、新鲜物理窗口和 logical 16K hit 全部成立才发一次 restore。
+- HTTP 200、Prefix Cache counter、accepted-token delta 或全局 D2H 不能单独证明 H2D。
+- candidate green 必须还有 restore CPU hit/load、8-worker H2D schedule/copy/poll/completion。
 
 ## 5. cleanup 与有界结果包
 
@@ -480,15 +573,16 @@ transfer_trace_summary.json
 candidate_manifest.server_local.json
 ~~~
 
-raw vLLM log、raw metrics、request body、raw trace、request IDs、token IDs、generated content、raw hash/block IDs
-留服务器本地，只报告绝对路径，不进入有界包。
+raw vLLM log、raw metrics、request body、raw trace、request IDs、token IDs、generated
+content、raw hash/block IDs 留服务器本地，只报告绝对路径，不进入有界包。
 
-`payload_file_count`、`transfer_file_count` 和 `transfer_total_bytes` 必须从最终白名单 manifest
-实算并回报；不要预填一个与真实终态不一致的固定文件数。
+`payload_file_count`、`transfer_file_count` 和 `transfer_total_bytes` 必须从最终 manifest
+实算，不要预填固定值。
 
-`result_transfer_authorized:true` 只表示完整有界包具备候选资格。本任务没有选择 `email`、`upload-api`
-或 `server-local`，不得自动发送或上传。先一次性报告完整 manifest（每文件 bytes/SHA-256/sensitivity）、
-result summary 绝对路径、可用三种方法和推荐方法，等待用户为完整范围选择一个渠道。
+`result_transfer_authorized:true` 只表示完整有界包具备候选资格。本任务没有选择
+`email`、`upload-api` 或 `server-local`，不得自动发送或上传。先一次性报告完整
+manifest（每文件 bytes/SHA-256/sensitivity）、result summary 绝对路径、三种可用方法
+和一个推荐方法及理由，等待用户为完整范围选择单一渠道。
 
 available result methods: `email / upload-api / server-local`
 
@@ -497,17 +591,22 @@ available result methods: `email / upload-api / server-local`
 完成后一次性回报以下 12 项，然后暂停：
 
 1. `HEAD`、`origin/main`、ahead/behind、tracked-clean。
-2. R8 parent 六个现场 SHA 与 parent grade/terminal。
-3. 聚焦 pytest、py_compile、Bash syntax、audit-only 与 repo input hash 结果。
-4. lifecycle/request 总数，warmup/target/pressure/restore 各自 outcome，retry count。
-5. 每组 runtime effective geometry 完整有界表；明确 logical 128 与 physical counts 的关系。
-6. pressure 是否实际执行；若未执行，准确给出 gate 和代码/运行证据。
-7. target store schedule/completion、CPU/GPU residency/eviction、首个物理窗口和 logical window。
-8. pressure start→trigger→abort→client exit→idle→post-abort gate→restore 的精确顺序与时间戳。
-9. D2H/H2D worker、bytes、copy/poll/completion，restore CPU hit/load 与最终 experimental/server grade。
-10. cleanup、7000、vLLM residual、八卡健康、停卡集合、恢复集合与 16-marker 恢复状态。
+2. R9 parent 六个现场 SHA、parent grade/terminal 和 package integrity。
+3. 聚焦 pytest、py_compile、Bash syntax、audit-only 与 16 个 repo input hash 结果。
+4. lifecycle/request 总数，warmup/target/pressure/restore outcome，retry count。
+5. cache-stamp 总事件/error 计数，逐组 dense/scanned/cacheable/masked/null/captured
+   完整表，lineage capture basis/exact。
+6. pressure 是否实际执行；若未执行，准确给出 gate、latest event 与逐组原因。
+7. target store schedule/completion、CPU/GPU residency/eviction、最佳物理窗口与 logical
+   window；全局 D2H 单列。
+8. pressure start→trigger→abort→client exit→idle→post-abort gate→restore 的精确顺序
+   和 monotonic 时间戳。
+9. D2H/H2D worker、bytes、copy/poll/completion，restore CPU hit/load 与最终
+   experimental/operational/server grade。
+10. cleanup、7000、vLLM residual、八卡健康、实际停卡卡号、实际恢复卡号与恢复状态，
+    并给出 16-marker 恢复状态。
 11. `result_summary.md` 绝对路径、raw evidence 服务器路径。
-12. 完整有界候选清单：逐文件 bytes、SHA-256、sensitivity、总文件数/bytes、全部校验结果、可用
-    `email/upload-api/server-local`、推荐方法及理由；不要执行传输。
+12. 完整有界候选清单：逐文件 bytes、SHA-256、sensitivity、总文件数/bytes、全部
+    校验结果、可用 `email/upload-api/server-local`、推荐方法及理由；不要执行传输。
 
-报告后 `next_task_authorized=false`：不得继续 R9 run02、K2、P8.3-I1 或任何新任务。
+报告后 `next_task_authorized=false`：不得继续 R10 run02、K2、P8.3-I1 或任何新任务。

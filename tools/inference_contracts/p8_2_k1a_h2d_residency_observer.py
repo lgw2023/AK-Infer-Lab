@@ -123,6 +123,95 @@ def capture_restore_group_hashes(
     }
 
 
+def accumulate_target_cache_stamp_lineage(
+    state: dict[str, Any],
+    *,
+    blocks: list[Any],
+    num_cached_blocks: int,
+    num_full_blocks: int,
+    block_size_tokens: int,
+    block_mask: list[bool] | None,
+    restore_match_tokens: int,
+) -> dict[str, Any]:
+    """Accumulate the exact keys stamped for one target cache group.
+
+    Sliding-window managers may replace old request blocks with null blocks
+    before request finish.  The only reliable time to recover their prefix
+    cache lineage is the GPU ``BlockPool.cache_full_blocks`` call where the
+    runtime's own sparse mask is applied and group-wrapped hashes are stamped.
+    This helper retains those keys in process while exposing bounded counts
+    only.
+    """
+
+    if block_size_tokens <= 0 or restore_match_tokens <= 0:
+        raise ValueError("cache-stamp lineage geometry must be positive")
+    if restore_match_tokens % block_size_tokens != 0:
+        raise ValueError("restore prefix must align to cache-stamp block size")
+    if num_cached_blocks < 0 or num_full_blocks < num_cached_blocks:
+        raise ValueError("invalid cache-stamp block range")
+    observed_count = num_full_blocks - num_cached_blocks
+    if block_mask is not None and len(block_mask) != observed_count:
+        raise ValueError("cache-stamp mask must align to the observed range")
+
+    prefix_position_count = restore_match_tokens // block_size_tokens
+    scanned_positions = state.setdefault("scanned_positions", set())
+    cacheable_positions = state.setdefault("cacheable_positions", set())
+    masked_positions = state.setdefault("masked_positions", set())
+    null_positions = state.setdefault("null_positions", set())
+    hashes_by_position = state.setdefault("hashes_by_position", {})
+    state["block_size_tokens"] = block_size_tokens
+    state["prefix_position_count"] = prefix_position_count
+    state["stamp_call_count"] = int(state.get("stamp_call_count") or 0) + 1
+
+    upper = min(num_full_blocks, prefix_position_count)
+    for position in range(num_cached_blocks, upper):
+        scanned_positions.add(position)
+        block = blocks[position]
+        if getattr(block, "is_null", False):
+            null_positions.add(position)
+            continue
+        mask_index = position - num_cached_blocks
+        if block_mask is not None and not block_mask[mask_index]:
+            masked_positions.add(position)
+            continue
+        cacheable_positions.add(position)
+        block_hash = getattr(block, "block_hash", None)
+        if block_hash is not None:
+            hashes_by_position[position] = block_hash
+
+    scanned_exact = len(scanned_positions) == prefix_position_count
+    cacheable_count = len(cacheable_positions)
+    captured_count = len(hashes_by_position)
+    # An unobserved or partially observed group must remain fail-closed.
+    # Once the complete prefix range has been scanned, a zero-key sparse group
+    # is genuinely not applicable to this restore prefix.
+    group_applicable = cacheable_count > 0 if scanned_exact else True
+    required_count = (
+        cacheable_count if scanned_exact else prefix_position_count
+    )
+    hash_capture_exact = scanned_exact and captured_count == cacheable_count
+    return {
+        "cache_stamp_block_size_tokens": block_size_tokens,
+        "dense_physical_position_count": prefix_position_count,
+        "scanned_position_count": len(scanned_positions),
+        "cacheable_position_count": cacheable_count,
+        "masked_position_count": len(masked_positions),
+        "null_position_count": len(null_positions),
+        "cache_stamp_call_count": int(state["stamp_call_count"]),
+        "required_block_count": required_count,
+        "captured_block_count": captured_count,
+        "group_applicable": group_applicable,
+        "selected_geometry_exact": scanned_exact,
+        "hash_capture_exact": hash_capture_exact,
+        "logical_coverage_exact": scanned_exact and hash_capture_exact,
+        "capture_basis": (
+            "runtime_gpu_block_pool_cache_full_blocks_sparse_mask"
+        ),
+        "raw_block_ids_retained": False,
+        "raw_hash_values_retained": False,
+    }
+
+
 def derive_runtime_group_geometry(
     scheduler: Any,
     *,
@@ -475,7 +564,11 @@ def refresh_logical_restore_window(
                 required if request_hash_candidate_count == required else 0
             ),
             "target_capture_source": (
-                "target_finish_gpu_group_wrapped_keys"
+                getattr(
+                    scheduler,
+                    "_p8_2_k1a_target_lineage_capture_basis",
+                    "target_finish_gpu_group_wrapped_keys",
+                )
             ),
             "target_keyspace_matchable": (
                 lineage.get("target_store_lineage_capture_exact") is True
@@ -526,6 +619,16 @@ def build_restore_group_residency_summary(
         "effective_geometry_source",
         "kv_cache_spec_type",
         "capture_basis",
+        "cache_stamp_block_size_tokens",
+        "dense_physical_position_count",
+        "scanned_position_count",
+        "cacheable_position_count",
+        "masked_position_count",
+        "null_position_count",
+        "cache_stamp_call_count",
+        "cache_block_size_matches_effective_geometry",
+        "coordinator_effective_block_size_tokens",
+        "coordinator_effective_geometry_source",
     )
     bounded_rows: list[dict[str, Any]] = []
     for row in group_rows:
@@ -892,6 +995,287 @@ def _unique_keys(groups: tuple[tuple[Any, ...], ...]) -> tuple[Any, ...]:
     return tuple(values)
 
 
+def _ensure_target_cache_stamp_lineage(
+    scheduler: Any,
+    request: Any,
+) -> dict[int, dict[str, Any]]:
+    identity = id(request)
+    if (
+        getattr(scheduler, "_p8_2_k1a_target_cache_stamp_identity", None)
+        != identity
+    ):
+        scheduler._p8_2_k1a_target_cache_stamp_identity = identity
+        scheduler._p8_2_k1a_target_cache_stamp_state = {}
+        scheduler._p8_2_k1a_target_store_scheduled_keys = set()
+        scheduler._p8_2_k1a_target_store_completed_keys = set()
+        scheduler._p8_2_k1a_target_cpu_evicted_keys = set()
+        scheduler._p8_2_k1a_target_gpu_evicted_keys = set()
+    return scheduler._p8_2_k1a_target_cache_stamp_state
+
+
+def _refresh_target_cache_stamp_lineage(
+    scheduler: Any,
+    *,
+    restore_match_tokens: int,
+    hash_block_size_tokens: int,
+) -> dict[str, Any]:
+    groups = scheduler.cpu_kv_cache_config.kv_cache_groups
+    state_by_group = dict(
+        getattr(scheduler, "_p8_2_k1a_target_cache_stamp_state", {})
+        or {}
+    )
+    hashes_by_group: list[tuple[Any, ...]] = []
+    required_by_group: list[int] = []
+    geometry_by_group: list[dict[str, Any]] = []
+    for group_index, group in enumerate(groups):
+        runtime_geometry = derive_runtime_group_geometry(
+            scheduler,
+            group_index=group_index,
+            group=group,
+            restore_match_tokens=restore_match_tokens,
+        )
+        state = state_by_group.get(group_index)
+        if state is None:
+            dense_count = int(
+                runtime_geometry.get("physical_key_count_required") or 0
+            )
+            stamp_row = {
+                "cache_stamp_block_size_tokens": int(
+                    runtime_geometry["effective_block_size_tokens"]
+                ),
+                "dense_physical_position_count": dense_count,
+                "scanned_position_count": 0,
+                "cacheable_position_count": 0,
+                "masked_position_count": 0,
+                "null_position_count": 0,
+                "cache_stamp_call_count": 0,
+                "required_block_count": dense_count,
+                "captured_block_count": 0,
+                "group_applicable": True,
+                "selected_geometry_exact": False,
+                "hash_capture_exact": False,
+                "logical_coverage_exact": False,
+                "capture_basis": (
+                    "runtime_gpu_block_pool_cache_full_blocks_unobserved"
+                ),
+                "raw_block_ids_retained": False,
+                "raw_hash_values_retained": False,
+            }
+            hashes: tuple[Any, ...] = ()
+        else:
+            hashes_by_position = dict(
+                state.get("hashes_by_position", {}) or {}
+            )
+            hashes = tuple(
+                hashes_by_position[position]
+                for position in sorted(hashes_by_position)
+            )
+            scanned_exact = len(
+                state.get("scanned_positions", set()) or set()
+            ) == int(state.get("prefix_position_count") or 0)
+            cacheable_count = len(
+                state.get("cacheable_positions", set()) or set()
+            )
+            stamp_row = {
+                "cache_stamp_block_size_tokens": int(
+                    state.get("block_size_tokens") or 0
+                ),
+                "dense_physical_position_count": int(
+                    state.get("prefix_position_count") or 0
+                ),
+                "scanned_position_count": len(
+                    state.get("scanned_positions", set()) or set()
+                ),
+                "cacheable_position_count": cacheable_count,
+                "masked_position_count": len(
+                    state.get("masked_positions", set()) or set()
+                ),
+                "null_position_count": len(
+                    state.get("null_positions", set()) or set()
+                ),
+                "cache_stamp_call_count": int(
+                    state.get("stamp_call_count") or 0
+                ),
+                "required_block_count": (
+                    cacheable_count
+                    if scanned_exact
+                    else int(state.get("prefix_position_count") or 0)
+                ),
+                "captured_block_count": len(hashes),
+                "group_applicable": (
+                    cacheable_count > 0 if scanned_exact else True
+                ),
+                "selected_geometry_exact": scanned_exact,
+                "hash_capture_exact": (
+                    scanned_exact and len(hashes) == cacheable_count
+                ),
+                "logical_coverage_exact": (
+                    scanned_exact and len(hashes) == cacheable_count
+                ),
+                "capture_basis": (
+                    "runtime_gpu_block_pool_cache_full_blocks_sparse_mask"
+                ),
+                "raw_block_ids_retained": False,
+                "raw_hash_values_retained": False,
+            }
+        coordinator_effective_size = int(
+            runtime_geometry["effective_block_size_tokens"]
+        )
+        cache_stamp_size = int(
+            stamp_row["cache_stamp_block_size_tokens"]
+        )
+        observed_cache_stamp_size = (
+            cache_stamp_size
+            if int(stamp_row["cache_stamp_call_count"]) > 0
+            else coordinator_effective_size
+        )
+        geometry = {
+            **runtime_geometry,
+            **stamp_row,
+            "coordinator_effective_block_size_tokens": (
+                coordinator_effective_size
+            ),
+            "coordinator_effective_geometry_source": (
+                runtime_geometry["effective_geometry_source"]
+            ),
+            "effective_block_size_tokens": observed_cache_stamp_size,
+            "effective_geometry_source": (
+                "runtime_gpu_cache_stamp_block_size"
+                if int(stamp_row["cache_stamp_call_count"]) > 0
+                else "runtime_cpu_coordinator_unobserved_group"
+            ),
+            "physical_key_count_required": int(
+                stamp_row["required_block_count"]
+            ),
+            "theoretical_block_count": int(
+                stamp_row["dense_physical_position_count"]
+            ),
+            "provided_block_id_count": int(
+                stamp_row["scanned_position_count"]
+            ),
+            "selected_block_id_count": int(
+                stamp_row["cacheable_position_count"]
+            ),
+            "non_null_block_count": int(
+                stamp_row["cacheable_position_count"]
+            ),
+            "hashable_block_count": len(hashes),
+            "unhashable_non_null_block_count": (
+                int(stamp_row["cacheable_position_count"]) - len(hashes)
+            ),
+            "cache_block_size_matches_effective_geometry": (
+                cache_stamp_size == coordinator_effective_size
+            ),
+            "effective_geometry_aligned": (
+                observed_cache_stamp_size > 0
+                and restore_match_tokens % observed_cache_stamp_size == 0
+            ),
+        }
+        hashes_by_group.append(hashes)
+        required_by_group.append(int(geometry["required_block_count"]))
+        geometry_by_group.append(geometry)
+
+    target_keys = _unique_keys(tuple(hashes_by_group))
+    scheduler._p8_2_k1a_restore_group_hashes = tuple(hashes_by_group)
+    scheduler._p8_2_k1a_restore_group_required_counts = tuple(
+        required_by_group
+    )
+    scheduler._p8_2_k1a_restore_group_geometry_rows = tuple(
+        geometry_by_group
+    )
+    scheduler._p8_2_k1a_target_store_keys = target_keys
+    scheduler._p8_2_k1a_target_pool_keys = target_keys
+    scheduler._p8_2_k1a_target_hashes = target_keys
+    scheduler._p8_2_k1a_target_fa_group_index = int(
+        getattr(scheduler, "fa_gidx", -1)
+    )
+    scheduler._p8_2_k1a_target_logical_block_count = (
+        restore_match_tokens // hash_block_size_tokens
+    )
+    scheduler._p8_2_k1a_target_restore_match_tokens = restore_match_tokens
+    scheduler._p8_2_k1a_target_lineage_capture_basis = (
+        "runtime_gpu_cache_stamp_sparse_mask_keys"
+    )
+
+    target_set = set(target_keys)
+    cpu_pool = getattr(scheduler, "cpu_block_pool", None)
+    completed = set(
+        getattr(
+            scheduler, "_p8_2_k1a_target_store_completed_keys", set()
+        )
+        or set()
+    )
+    if cpu_pool is not None:
+        completed.update(
+            value
+            for value in target_keys
+            if cpu_pool.cached_block_hash_to_block.get_one_block(value)
+            is not None
+        )
+    pending: set[Any] = set()
+    for transfer in (
+        getattr(scheduler, "_store_event_to_blocks", {}) or {}
+    ).values():
+        for block_id in getattr(transfer, "cpu_block_ids", ()) or ():
+            block_hash = scheduler.cpu_block_pool.blocks[
+                block_id
+            ].block_hash
+            if block_hash in target_set:
+                pending.add(block_hash)
+    scheduled = set(
+        getattr(
+            scheduler, "_p8_2_k1a_target_store_scheduled_keys", set()
+        )
+        or set()
+    )
+    scheduler._p8_2_k1a_target_store_scheduled_keys = (
+        scheduled | completed | pending
+    )
+    scheduler._p8_2_k1a_target_store_completed_keys = completed
+    return _target_store_lineage_residency_summary(scheduler)
+
+
+def _observe_target_cache_stamp(
+    scheduler: Any,
+    request: Any,
+    *,
+    group_index: int,
+    blocks: list[Any],
+    num_cached_blocks: int,
+    num_full_blocks: int,
+    block_size_tokens: int,
+    block_mask: list[bool] | None,
+    restore_match_tokens: int,
+    hash_block_size_tokens: int,
+) -> dict[str, Any]:
+    state_by_group = _ensure_target_cache_stamp_lineage(
+        scheduler, request
+    )
+    state = state_by_group.setdefault(group_index, {})
+    stamp_row = accumulate_target_cache_stamp_lineage(
+        state,
+        blocks=blocks,
+        num_cached_blocks=num_cached_blocks,
+        num_full_blocks=num_full_blocks,
+        block_size_tokens=block_size_tokens,
+        block_mask=block_mask,
+        restore_match_tokens=restore_match_tokens,
+    )
+    scheduler._p8_2_k1a_target_request_hashes = tuple(
+        getattr(request, "block_hashes", ()) or ()
+    )
+    summary = _refresh_target_cache_stamp_lineage(
+        scheduler,
+        restore_match_tokens=restore_match_tokens,
+        hash_block_size_tokens=hash_block_size_tokens,
+    )
+    return {
+        "group_index": group_index,
+        **stamp_row,
+        **summary,
+    }
+
+
 def _capture_target_store_lineage(
     scheduler: Any,
     block_ids: Any,
@@ -1003,7 +1387,11 @@ def _target_store_lineage_residency_summary(
                 "cpu_block_count": count(cpu_pool, hashes),
                 "gpu_block_count": count(gpu_pool, hashes),
                 "capture_basis": (
-                    "target_finish_gpu_group_wrapped_keys"
+                    getattr(
+                        scheduler,
+                        "_p8_2_k1a_target_lineage_capture_basis",
+                        "target_finish_gpu_group_wrapped_keys",
+                    )
                 ),
             }
         )
@@ -1096,6 +1484,11 @@ def _target_store_lineage_residency_summary(
                 group_summary["restore_groups_captured_exact"] is True,
                 bool(target_keys),
             )
+        ),
+        "target_lineage_capture_basis": getattr(
+            scheduler,
+            "_p8_2_k1a_target_lineage_capture_basis",
+            "target_finish_gpu_group_wrapped_keys",
         ),
         "target_store_key_count": len(target_keys),
         "target_store_scheduled_key_count": len(scheduled),
@@ -1382,6 +1775,9 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     require_restore_group_eligibility = (
         os.environ.get("P8_2_K1A_REQUIRE_RESTORE_GROUP_ELIGIBILITY", "0") == "1"
     )
+    cache_stamp_lineage = (
+        os.environ.get("P8_2_K1A_TARGET_CACHE_STAMP_LINEAGE", "0") == "1"
+    )
     eligibility_contract = validate_effective_restore_contract(
         target_block_count=target_block_count,
         restore_match_tokens=restore_match_tokens,
@@ -1406,12 +1802,23 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
         )
         if is_target:
             self._p8_2_k1a_target_request_hashes = request_hashes
-            lineage_capture = _capture_target_store_lineage(
-                self,
-                block_ids,
-                restore_match_tokens=restore_match_tokens,
-                hash_block_size_tokens=block_size_tokens,
-            )
+            if cache_stamp_lineage:
+                if not hasattr(
+                    self, "_p8_2_k1a_target_cache_stamp_state"
+                ):
+                    _ensure_target_cache_stamp_lineage(self, request)
+                lineage_capture = _refresh_target_cache_stamp_lineage(
+                    self,
+                    restore_match_tokens=restore_match_tokens,
+                    hash_block_size_tokens=block_size_tokens,
+                )
+            else:
+                lineage_capture = _capture_target_store_lineage(
+                    self,
+                    block_ids,
+                    restore_match_tokens=restore_match_tokens,
+                    hash_block_size_tokens=block_size_tokens,
+                )
             _emit(
                 "target_store_lineage_captured",
                 component="scheduler",
@@ -1449,6 +1856,71 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
                 restore_match_tokens=restore_match_tokens,
                 hash_block_size_tokens=block_size_tokens,
             )
+        return result
+
+    original_cache_full_blocks = BlockPool.cache_full_blocks
+
+    @wraps(original_cache_full_blocks)
+    def observed_cache_full_blocks(
+        self,
+        request,
+        blocks,
+        num_cached_blocks,
+        num_full_blocks,
+        block_size,
+        kv_cache_group_id,
+        block_mask=None,
+    ):
+        result = original_cache_full_blocks(
+            self,
+            request,
+            blocks,
+            num_cached_blocks,
+            num_full_blocks,
+            block_size,
+            kv_cache_group_id,
+            block_mask,
+        )
+        if (
+            cache_stamp_lineage
+            and _POOL_TIERS.get(id(self)) == "gpu"
+            and (
+                _active_contract_role() == "target_prime"
+                or str(request.request_id).endswith(target_suffix)
+            )
+        ):
+            owner_ref = _POOL_SCHEDULERS.get(id(self))
+            scheduler = owner_ref() if owner_ref is not None else None
+            if scheduler is not None:
+                try:
+                    stamp = _observe_target_cache_stamp(
+                        scheduler,
+                        request,
+                        group_index=int(kv_cache_group_id),
+                        blocks=blocks,
+                        num_cached_blocks=int(num_cached_blocks),
+                        num_full_blocks=int(num_full_blocks),
+                        block_size_tokens=int(block_size),
+                        block_mask=block_mask,
+                        restore_match_tokens=restore_match_tokens,
+                        hash_block_size_tokens=block_size_tokens,
+                    )
+                    _emit(
+                        "target_cache_stamp_observed",
+                        component="gpu_block_pool",
+                        contract_role=_active_contract_role(),
+                        **stamp,
+                    )
+                except Exception as error:
+                    _emit(
+                        "target_cache_stamp_observer_error",
+                        component="gpu_block_pool",
+                        contract_role=_active_contract_role(),
+                        group_index=int(kv_cache_group_id),
+                        observer_error_type=type(error).__name__,
+                        raw_hash_values_retained=False,
+                        raw_block_ids_retained=False,
+                    )
         return result
 
     original_prepare_lazy = (
@@ -1684,6 +2156,7 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
     SimpleCPUOffloadScheduler.update_state_after_alloc = observed_update
     SimpleCPUOffloadScheduler.build_connector_meta = observed_build
     SimpleCPUOffloadScheduler.update_connector_output = observed_output
+    BlockPool.cache_full_blocks = observed_cache_full_blocks
     BlockPool._maybe_evict_cached_block = observed_evict
     setattr(SimpleCPUOffloadScheduler, marker, True)
     _emit(
@@ -1716,7 +2189,10 @@ def observer_self_test_contract() -> dict[str, Any]:
             "build_connector_meta",
             "update_connector_output",
         ],
-        "wrapped_block_pool_methods": ["_maybe_evict_cached_block"],
+        "wrapped_block_pool_methods": [
+            "cache_full_blocks",
+            "_maybe_evict_cached_block",
+        ],
         "original_return_values_preserved": True,
         "original_exceptions_preserved": True,
         "scheduling_or_copy_arguments_mutated": False,
@@ -1735,6 +2211,9 @@ def observer_self_test_contract() -> dict[str, Any]:
         "logical_restore_target_count_unit": "logical_request_hash_blocks",
         "runtime_pool_keys_retained_in_process_only": True,
         "target_group_wrapped_keys_captured_before_request_finish": True,
+        "target_group_wrapped_keys_captured_at_runtime_cache_stamp": True,
+        "runtime_sparse_cache_mask_is_lineage_source": True,
+        "request_finish_null_block_table_is_not_lineage_source": True,
         "target_lazy_store_schedule_and_completion_attribution": True,
         "zero_key_restore_groups_are_not_counted_complete": True,
         "request_identity_source": "controller_role_marker_not_server_request_id",
@@ -1762,6 +2241,16 @@ def summarize_target_store_lineage_rows(
     ]
     completed = [
         row for row in rows if row.get("event") == "target_store_completed"
+    ]
+    cache_stamps = [
+        row
+        for row in rows
+        if row.get("event") == "target_cache_stamp_observed"
+    ]
+    cache_stamp_errors = [
+        row
+        for row in rows
+        if row.get("event") == "target_cache_stamp_observer_error"
     ]
     observed = [
         row
@@ -1847,10 +2336,25 @@ def summarize_target_store_lineage_rows(
         maximum("target_gpu_evicted_key_count", evictions),
         maximum("target_gpu_evicted_key_count", observed),
     )
+    capture_basis = str(
+        captured.get("target_lineage_capture_basis")
+        or "target_finish_gpu_group_wrapped_keys"
+    )
+    cache_stamp_capture = capture_basis == (
+        "runtime_gpu_cache_stamp_sparse_mask_keys"
+    )
     if not captures:
-        attribution = "target_finish_key_capture_missing"
+        attribution = (
+            "target_cache_stamp_lineage_missing"
+            if cache_stamp_capture
+            else "target_finish_key_capture_missing"
+        )
     elif captured.get("target_store_lineage_capture_exact") is not True:
-        attribution = "target_finish_key_capture_incomplete"
+        attribution = (
+            "target_cache_stamp_lineage_incomplete"
+            if cache_stamp_capture
+            else "target_finish_key_capture_incomplete"
+        )
     elif scheduled_max == 0:
         attribution = "target_keys_never_scheduled_for_d2h"
     elif completed_max < scheduled_max:
@@ -1895,9 +2399,26 @@ def summarize_target_store_lineage_rows(
                     "effective_geometry_aligned",
                     "effective_geometry_source",
                     "kv_cache_spec_type",
+                    "capture_basis",
+                    "cache_stamp_block_size_tokens",
+                    "dense_physical_position_count",
+                    "scanned_position_count",
+                    "cacheable_position_count",
+                    "masked_position_count",
+                    "null_position_count",
+                    "cache_stamp_call_count",
+                    "cache_block_size_matches_effective_geometry",
+                    "coordinator_effective_block_size_tokens",
+                    "coordinator_effective_geometry_source",
                 )
                 if key in row
             }
+        )
+    cache_stamp_error_type_histogram: dict[str, int] = {}
+    for row in cache_stamp_errors:
+        error_type = str(row.get("observer_error_type") or "unknown")
+        cache_stamp_error_type_histogram[error_type] = (
+            cache_stamp_error_type_histogram.get(error_type, 0) + 1
         )
     return {
         "schema_version": (
@@ -1907,6 +2428,9 @@ def summarize_target_store_lineage_rows(
         "target_store_lineage_capture_event_count": len(captures),
         "target_store_lineage_capture_exact": (
             captured.get("target_store_lineage_capture_exact") is True
+        ),
+        "target_lineage_capture_basis": str(
+            capture_basis
         ),
         "target_store_key_count": target_store_key_count,
         "target_fa_key_count": fa_key_count,
@@ -1930,6 +2454,13 @@ def summarize_target_store_lineage_rows(
         ),
         "target_store_schedule_event_count": len(scheduled),
         "target_store_completion_event_count": len(completed),
+        "target_cache_stamp_event_count": len(cache_stamps),
+        "target_cache_stamp_observer_error_count": len(
+            cache_stamp_errors
+        ),
+        "target_cache_stamp_observer_error_type_histogram": (
+            cache_stamp_error_type_histogram
+        ),
         "target_store_scheduled_key_count_max": scheduled_max,
         "target_store_completed_key_count_max": completed_max,
         "target_fa_store_scheduled_key_count_max": fa_scheduled_max,

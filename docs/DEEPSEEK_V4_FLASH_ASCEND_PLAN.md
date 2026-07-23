@@ -62,11 +62,13 @@ red 仍不能否定 accepted 128 blocks/rank capacity。
 
 F1-R8 已在 target finish 捕获 66 个 group-wrapped key，但 observer 漏算 runtime
 `compress_ratio`，把 logical `16384/128=128` 错当成 FA physical key count，因而在 pressure
-前错误阻断；R8 不是 accepted-capacity impossibility evidence。当前唯一任务
-`p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723` 已按 runtime coordinator 的
-effective block geometry 修正 capture、pressure 和 restore gate，仍固定 accepted capacity、
-36800 context、一个 lifecycle 和零 retry。P8.3-I0-R1 taxonomy 已在窄边界 green，但 TP4
-budget incomplete。
+前错误阻断；R8 不是 accepted-capacity impossibility evidence。F1-R9 修正 effective geometry
+后确认 compressed FA 与 state group 已完整，却又受 finish-time sliding-window null block table
+误导，仍在 pressure 前退出。当前唯一任务
+`p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723` 已把 lineage 捕获移到 runtime
+`BlockPool.cache_full_blocks` 的真实 cache-stamp 时刻，仍固定 accepted capacity、36800
+context、一个 lifecycle 和零 retry。P8.3-I0-R1 taxonomy 已在窄边界 green，但 TP4 budget
+incomplete。
 
 ### 3.2 对照路：MindIE
 
@@ -100,10 +102,10 @@ pressure-complete-without-trigger red，F1-R8 保留为 effective-geometry obser
 contract red；各轮 recovery 均 green。
 
 当前唯一服务器 handoff 是
-`p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723`：唯一 driver 自动停 0–7、运行
+`p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723`：唯一 driver 自动停 0–7、运行
 一个 fixed 36800 lifecycle、清理、恢复原卡集、按真实 marker 写 recovery 并 finalize；
-observer 以 runtime effective block size 把 logical 128 hash blocks 映射为各 KV group 的
-真实 physical key 数，只有逻辑覆盖与全部 applicable group 的物理 CPU-only 窗口都成立才
+observer 在真实 cache stamp 时按 runtime sparse mask、null 语义和 block size 捕获各 KV group
+的 physical keys，只有逻辑覆盖与全部 applicable group 的物理 CPU-only 窗口都成立才
 中止，idle 后还必须通过新鲜物理+logical 16K 双重复核才条件式发送单次 restore。K2 和
 P8.3-I1 均未授权。
 
@@ -316,15 +318,15 @@ boundaries:
 ## 10. 当前下一步
 
 截至 2026-07-23，当前唯一服务器任务已经推进到
-`p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723`。R8 已证明旧 observer 把 logical
-128 hash blocks 错当成 FA physical key 数；R9 已按 runtime coordinator effective block
-geometry 修正 target capture、pressure gate 与 restore gate，并只授权 accepted-capacity、
-fixed-context、单 lifecycle 的实机验证。以下较早描述仅保留阶段 lineage，若与本段冲突以本段和
+`p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723`。R9 已证明 finish-time
+sliding-window block table 不是 target lineage 的权威来源；R10 在真实 cache stamp 时按 runtime
+sparse mask 捕获并即时归因 target keys，只授权 accepted-capacity、fixed-context、单 lifecycle
+的实机验证。以下较早描述仅保留阶段 lineage，若与本段冲突以本段和
 `通信模块/docs/developer-to-server.md` 为准。
 
 完整 K1A-R3 lineage 作为 provenance 保留，不因 R4 离线收口改写。
 
 1. P6.1C-R1 official、P6.1 unprofiled performance、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache control 已完成并验收。
-2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A-R2 capacity 与 P8.3-I0-R1 taxonomy 已在各自边界闭合。K1A 完整 lineage 保留，R3-R2-R2-R1-R1-R1 为 store-only yellow，R4 为 source-matcher blocked，R4-R1 为 offline store-only closeout green，R5-F0 为 candidate-ready feasibility，R5-L1/R1 red 保留。当前 handoff 只授权 R9 的 runtime effective-group geometry 实机闭环：`formal_model_lifecycle_count_exact:1`、`model_request_count_min:3`、`model_request_count_max:4`、`pressure_request_count_exact:1`、`request_retry_count_exact:0`、`next_task_authorized:false`、`result_transfer_authorized:true`；外发前仍须报告完整清单并由用户选择单一渠道。
+2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A-R2 capacity 与 P8.3-I0-R1 taxonomy 已在各自边界闭合。K1A 完整 lineage 保留，R3-R2-R2-R1-R1-R1 为 store-only yellow，R4 为 source-matcher blocked，R4-R1 为 offline store-only closeout green，R5-F0 为 candidate-ready feasibility，R5-L1/R1 red 保留。当前 handoff 只授权 R10 的 runtime cache-stamp lineage 实机闭环：`formal_model_lifecycle_count_exact:1`、`model_request_count_min:3`、`model_request_count_max:4`、`pressure_request_count_exact:1`、`request_retry_count_exact:0`、`next_task_authorized:false`、`result_transfer_authorized:true`；外发前仍须报告完整清单并由用户选择单一渠道。
 3. P6.3C Chunked Prefill on/off 已完成冻结源码审计：显式双布尔 CLI 存在，但 `4096 < 135168` 使 off 侧在 resolved config 前失败，结论为 `blocked_p6_3c_not_strict_single_variable`。
 4. P8.3-I0/I0-R1 已完成 inventory/taxonomy 窄边界；P8.3-I1 hotness/runtime trace、P7 与 P9 均需新授权。

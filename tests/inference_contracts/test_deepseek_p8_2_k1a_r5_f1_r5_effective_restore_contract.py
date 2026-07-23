@@ -291,7 +291,7 @@ def test_best_near_miss_keeps_bounded_group_geometry_without_hashes() -> None:
 
 def test_f1_r5_is_preserved_in_the_current_r7_handoff_lineage() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
-    current_task = "p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723"
+    current_task = "p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723"
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1

@@ -2,24 +2,45 @@
 
 日期：2026-07-10；最后更新：2026-07-23
 
-当前执行覆盖：`local_artifact_state=k1a_r5_f1_r9_runtime_effective_group_geometry_prepared`；
+当前执行覆盖：`local_artifact_state=k1a_r5_f1_r10_runtime_cache_stamp_lineage_prepared`；
 `server_execution_state=authorized_one_fixed_lifecycle`；
-`current_task_id=p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723`。R9 保持
+`current_task_id=p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723`。R10 保持
 accepted 128 CPU blocks/rank、logical 16384 tokens/128 hash blocks 与 fixed 36800，
-但由 runtime coordinator 推导各组 physical key 数；不得再把 FA physical key count 固定为 128。
+在 GPU `BlockPool.cache_full_blocks` 真正写入 group-wrapped key 时按 runtime sparse mask 捕获
+各组恢复 lineage；不得再从请求结束后的 sliding-window null block table 推断 keyspace。
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_full_lineage_preserved / p8_2_k1a_r4_r1_offline_store_only_closeout_green / p8_2_k1a_r5_f0_h2d_trigger_feasibility_ready / p8_2_k1a_r5_l1_d2h_green_controller_red / p8_2_k1a_r5_l1_r1_target_lost_red / p8_2_k1a_r5_f1_r1_fixed_l2_target_lost_red / p8_2_k1a_r5_f1_r2_mid_request_endpoint_mismatch / p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete_red / p8_2_k1a_r5_f1_r4_invalid_effective_64_block_contract / p8_2_k1a_r5_f1_r5_runtime_keyspace_probe_invalid / p8_2_k1a_r5_f1_r6_prepressure_circular_wait_red / p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger_red / p8_2_k1a_r5_f1_r8_effective_geometry_contract_red / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_full_lineage_preserved / p8_2_k1a_r4_r1_offline_store_only_closeout_green / p8_2_k1a_r5_f0_h2d_trigger_feasibility_ready / p8_2_k1a_r5_l1_d2h_green_controller_red / p8_2_k1a_r5_l1_r1_target_lost_red / p8_2_k1a_r5_f1_r1_fixed_l2_target_lost_red / p8_2_k1a_r5_f1_r2_mid_request_endpoint_mismatch / p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete_red / p8_2_k1a_r5_f1_r4_invalid_effective_64_block_contract / p8_2_k1a_r5_f1_r5_runtime_keyspace_probe_invalid / p8_2_k1a_r5_f1_r6_prepressure_circular_wait_red / p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger_red / p8_2_k1a_r5_f1_r8_effective_geometry_contract_red / p8_2_k1a_r5_f1_r9_finish_time_swa_lineage_red / p8_2_k1a_r5_f1_r10_cache_stamp_lineage_prepared / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 
 P8.1 parent grade 保留为 `yellow_p8_1_matrix_trace_invalid`。
 
 以下长段“状态拆分”冻结的是 R8 验收时点，仅作 parent lineage；其中
-`no_current_task_authorized` 已由本文顶部 R9 执行覆盖取代，不是当前授权。
+`no_current_task_authorized` 已由本文顶部 R10 执行覆盖取代，不是当前授权。
 
 状态拆分：`local_artifact_state=k1a_r5_f1_r8_result_accepted_geometry_fix_pending`；`server_execution_state=no_current_task_authorized`；`blocked_legacy_path=OffloadingConnector_NPUOffloadingSpec`；`k1a_r2_state=developer_ready_128_block_capacity`；`k1a_r3_full_lineage=preserved`；`k1a_r4_r1_state=developer_green_offline_store_only_closeout_no_restore`；`k1a_r5_f0_state=candidate_ready_zero_resource_feasibility`；`k1a_r5_l1_r1_state=red_target_lost_three_requests_d2h_complete`；`k1a_r5_f1_r1_state=red_fixed_pressure_target_lost_two_lifecycles_consumed`；`k1a_r5_f1_r2_state=developer_accepted_mid_request_window_endpoint_mismatch`；`k1a_r5_f1_r3_state=red_h2d_evidence_incomplete_after_control_chain_success`；`k1a_r5_f1_r4_state=invalid_effective_64_block_contract_not_capacity_evidence`；`k1a_r5_f1_r5_state=runtime_keyspace_probe_invalid_not_capacity_evidence`；`k1a_r5_f1_r6_state=red_prepressure_circular_wait_no_pressure_executed`；`k1a_r5_f1_r7_state=red_pressure_completed_without_trigger_recovery_clean`；`k1a_r5_f1_r8_state=red_target_store_lineage_unobservable_before_pressure_due_geometry_contract`；`candidate_real_move_path=SimpleCPUOffloadConnector`；`expert_track_state=p8_3_i0_inventory_green_budget_incomplete_i0_r1_taxonomy_green`；`p8_3_technical_dependency_on_k1a=false`；`p8_3_i1_server_execution_authorized=false`；`tp4_state=checkpoint_budget_incomplete_1135_unclassified`。P8.1 parent 保留 yellow，P8.1-R1 和 P8.2-K0 已 green，K1 保留 blocked，K1A-R2 accepted capacity ready，完整 R3 lineage 不改写。R4-R1 offline store-only closeout green、R5-F0 feasibility ready、R5-L1/R1 red 均保留。F1-R3 已闭合 trigger→abort→idle→restore 控制链并完成 8-worker D2H，但 `prefix_hits_delta=0`、CPU hit/load/H2D 均为零；不能写成“由 Prefix Cache 服务”。F1-R4/R5 是观测合同失真，F1-R6 在 pressure 前循环阻塞。F1-R7 已执行一个 fixed pressure，却因 observer 只有 coordinator 命中后才知道目标 pool key，134 次 probe 全为 near-miss；全局 D2H 与零 eviction 计数都不能证明 target 的真实迁移/驻留。F1-R8 首次把 66 个 group-wrapped key 归因 target schedule，但 pre-pressure gate 把 logical `16384/128=128` 错作 compressed FA physical-key 数，漏掉 runtime coordinator 的 effective geometry，因而没有执行 pressure。R8 不否定 accepted capacity；下一开发轮先修正 per-group geometry，仍不授权服务器重跑、context/capacity 调整、sweep、性能、K2 或 P8.3-I1。P8.3-I0-R1 taxonomy 已 green但不自动补 TP4 budget。
 
-当前唯一服务器任务是 `p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723`。`p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723` 已消费且不得重跑；R9 固定一个 lifecycle、一个 pressure、零 retry，服务器不得补代码或调整 capacity/context。
+R9 已消费且不得重跑：它修正 compressed FA geometry 后确认 group0=`32/32`、group1=`1/1`，
+但在 target finish 从 sliding-window groups 2–5 的 block table 读取到全 null，因而把这些组错误标为
+applicable 且 capture incomplete；pressure count 仍为 0。该 RED 是 capture timing/key-set 合同问题，
+不是 accepted capacity 的失败证据。
+R9 的历史合同与入口仍由
+`p8_2_k1a_r5_f1_r9_effective_group_geometry_audit.yaml`、
+`p8_2_k1a_r5_f1_r9_effective_group_geometry.yaml`、
+`run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.sh` 和
+`run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh` 冻结保留；它们不是当前执行入口。
 
-当前执行合同由 `p8_2_k1a_r5_f1_r9_effective_group_geometry_audit.yaml`、`p8_2_k1a_r5_f1_r9_effective_group_geometry.yaml`、`run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.sh` 与唯一 `run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh` 固定；公共 observer 在 target finish 原始调用前读取 runtime coordinator 的 effective geometry，按 logical 16K 覆盖截取各 applicable group 的 group-wrapped key，在 `_prepare_lazy_store_specs` 与 `_process_store_event` 两侧归因 target schedule/completion，并由 BlockPool eviction 与每个 pressure progress 给出物理 residency。raw hash 与 block ID 仅驻留进程内，不写入有界包；logical coordinator lookup 仍只读并恢复 side-effect field。
+当前唯一服务器任务是 `p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723`。R10 固定一个
+lifecycle、一个 pressure、零 retry，服务器不得补代码或调整 capacity/context。
+
+当前执行合同由 `p8_2_k1a_r5_f1_r10_cache_stamp_lineage_audit.yaml`、
+`p8_2_k1a_r5_f1_r10_cache_stamp_lineage.yaml`、
+`run_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.sh` 与唯一
+`run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh` 固定。公共 observer 包装 GPU
+`BlockPool.cache_full_blocks`，在原调用成功返回后按 runtime `block_mask`、null 语义和真实
+cache-stamp block size 累计 16K 前缀内的 group-wrapped keys；这些 keys 立即进入 lazy-store
+schedule/completion 与 eviction 归因。未扫描完的组 fail closed；完整扫描后确实没有 cacheable
+position 的组才是 N/A。target finish 只 finalize 已累计的 stamp lineage，不再重读已被 sliding-window
+manager 置 null 的 request block table。raw hash 与 block ID 仅驻留进程内，不写入有界包；logical
+coordinator lookup 仍只读并恢复 side-effect field。
 F1-R8 parent 资产 `p8_2_k1a_r5_f1_r8_target_store_lineage_audit.yaml`、`p8_2_k1a_r5_f1_r8_target_store_lineage.yaml`、`run_deepseek_p8_2_k1a_r5_f1_r8_target_store_lineage.sh` 与 `run_deepseek_p8_2_k1a_r5_f1_r8_server_task.sh` 仅用于冻结 R8 result lineage，不是当前入口。
 F1-R7 parent 合同继续由 `p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_audit.yaml`、`p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.yaml`、`run_deepseek_p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.sh` 与 `run_deepseek_p8_2_k1a_r5_f1_r7_server_task.sh` 冻结，只用于 parent provenance，不是当前执行入口。
 F1-R6 parent 合同继续由 `p8_2_k1a_r5_f1_r6_logical_keyspace_restore_audit.yaml` 冻结，只用于 parent provenance，不是当前执行入口。
@@ -129,7 +150,7 @@ hybrid-group 不兼容而 blocked；K1A 已取得 D2H store 证据，但 F1-R1 f
 
 ```text
 P8.1-R1 observe-only green
-├─ KV/Prefix track: K0 green -> legacy K1 blocked -> K1A 32GiB red -> K1A-R1 probe-invalid red -> K1A-R2 capacity ready -> full R3 provenance -> R3-R2-R2-R1-R1-R1 store-only yellow -> K1A-R4 matcher-blocked -> K1A-R4-R1 offline store-only green -> K1A-R5-F0 feasibility ready -> K1A-R5-L1 controller-red -> K1A-R5-L1-R1 target-lost red -> K1A-R5-F1 pool-delta fail-closed -> K1A-R5-F1-R1 fixed-L2 target-lost red -> K1A-R5-F1-R2 mid-request/endpoint mismatch -> K1A-R5-F1-R3 control-chain complete but H2D red -> K1A-R5-F1-R4 invalid effective 64-block contract -> K1A-R5-F1-R5 runtime keyspace probe invalid -> K1A-R5-F1-R6 pre-pressure circular-wait red -> K1A-R5-F1-R7 pressure-completed-without-trigger red -> K1A-R5-F1-R8 effective-geometry contract red
+├─ KV/Prefix track: K0 green -> legacy K1 blocked -> K1A 32GiB red -> K1A-R1 probe-invalid red -> K1A-R2 capacity ready -> full R3 provenance -> R3-R2-R2-R1-R1-R1 store-only yellow -> K1A-R4 matcher-blocked -> K1A-R4-R1 offline store-only green -> K1A-R5-F0 feasibility ready -> K1A-R5-L1 controller-red -> K1A-R5-L1-R1 target-lost red -> K1A-R5-F1 pool-delta fail-closed -> K1A-R5-F1-R1 fixed-L2 target-lost red -> K1A-R5-F1-R2 mid-request/endpoint mismatch -> K1A-R5-F1-R3 control-chain complete but H2D red -> K1A-R5-F1-R4 invalid effective 64-block contract -> K1A-R5-F1-R5 runtime keyspace probe invalid -> K1A-R5-F1-R6 pre-pressure circular-wait red -> K1A-R5-F1-R7 pressure-completed-without-trigger red -> K1A-R5-F1-R8 effective-geometry contract red -> K1A-R5-F1-R9 finish-time SWA lineage red -> K1A-R5-F1-R10 cache-stamp lineage prepared
 └─ Expert/TP4 track: P8.3-I0 inventory green -> I0-R1 taxonomy green (budget incomplete) -> P8.3-I1 separately authorized -> P8.4 simulation
                                                    -> P8.5A mover -> P8.5B TP4 closure
 ```
