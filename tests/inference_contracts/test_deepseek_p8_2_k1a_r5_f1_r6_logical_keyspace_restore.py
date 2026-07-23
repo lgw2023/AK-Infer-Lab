@@ -475,7 +475,7 @@ def test_r6_is_frozen_as_parent_of_the_only_current_r7_entrypoint() -> None:
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723"
+        "task_id: p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
         in handoff
     )
     assert TASK_ID in handoff
@@ -484,7 +484,7 @@ def test_r6_is_frozen_as_parent_of_the_only_current_r7_entrypoint() -> None:
         "完整逻辑 128-block CPU-only 窗口",
         "accepted capacity",
         "不要手工拆内部步骤",
-        "run_deepseek_p8_2_k1a_r5_f1_r7_server_task.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r8_server_task.sh",
         "P8_2_K1A_F1_R7_SERVER_TASK_AUDIT_ONLY=1",
         "#0#",
         "expected_keep_alive_marker_count=16",

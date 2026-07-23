@@ -107,8 +107,8 @@ def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     for exact in (
-        "task_id: p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723",
-        "execution_mode: authorized_single_lifecycle_inflight_keyspace_refresh",
+        "task_id: p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723",
+        "execution_mode: authorized_single_lifecycle_target_store_lineage",
         "npu_execution_authorized: true",
         "formal_model_lifecycle_count_exact: 1",
         "model_request_count_max: 4",
@@ -134,10 +134,10 @@ def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == (
-        "p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723"
+        "p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.yaml"
+        "p8_2_k1a_r5_f1_r8_target_store_lineage.yaml"
     )
     acceptance = readiness["acceptance"]
     assert acceptance["p8_2_k1a_r3_r2_r2_r1_grade"] == (
@@ -154,6 +154,6 @@ def test_source_binding_task_is_consumed_and_r5_f0_is_current() -> None:
         "p8_2_k1a_r3_r2_r2_r1_r1_formal_model_lifecycle_count_max"
     ] == 1
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R7_single_lifecycle_inflight_keyspace_refresh"
+        "P8.2-K1A-R5-F1-R8_single_lifecycle_target_store_lineage"
     )
     assert acceptance["next_task_authorized"] is False

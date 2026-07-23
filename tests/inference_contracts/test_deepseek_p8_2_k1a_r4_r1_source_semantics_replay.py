@@ -60,7 +60,7 @@ def test_r4_r1_contract_is_preserved_while_r5_f0_is_current() -> None:
     historical_task_id = (
         "p8_2_k1a_r4_r1_store_only_source_semantics_replay_2026_0721"
     )
-    current_task_id = "p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723"
+    current_task_id = "p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
 
     assert workload["task_id"] == historical_task_id
     assert workload["source_gate"]["parent_r4_grade"] == (
@@ -85,7 +85,7 @@ def test_r4_r1_contract_is_preserved_while_r5_f0_is_current() -> None:
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.yaml"
+        "p8_2_k1a_r5_f1_r8_target_store_lineage.yaml"
     )
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["current_p8_2_k1a_r4_r1_runner"].endswith(RUNNER.name)

@@ -291,7 +291,7 @@ def test_best_near_miss_keeps_bounded_group_geometry_without_hashes() -> None:
 
 def test_f1_r5_is_preserved_in_the_current_r7_handoff_lineage() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
-    current_task = "p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723"
+    current_task = "p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
@@ -300,7 +300,7 @@ def test_f1_r5_is_preserved_in_the_current_r7_handoff_lineage() -> None:
     for marker in (
         "F1-R6 的实验 RED、运维 GREEN",
         "不要手工拆内部步骤",
-        "run_deepseek_p8_2_k1a_r5_f1_r7_server_task.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r8_server_task.sh",
         "P8_2_K1A_F1_R7_SERVER_TASK_AUDIT_ONLY=1",
         "logical_target_block_count=128",
         "pressure_progress_runtime_keyspace_refresh_required=true",

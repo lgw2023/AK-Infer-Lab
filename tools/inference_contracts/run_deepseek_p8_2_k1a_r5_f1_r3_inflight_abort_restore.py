@@ -24,6 +24,7 @@ from tools.inference_contracts.p8_2_k1a_h2d_residency_observer import (
     build_restore_eligibility_gate,
     build_residency_gate,
     summarize_h2d_trigger_rows,
+    summarize_target_store_lineage_rows,
 )
 from tools.inference_contracts.p8_2_k1a_simple_cpu_offload_observer import (
     summarize_trace_rows,
@@ -107,9 +108,29 @@ CANDIDATE_GREEN = os.environ.get(
 LOGICAL_KEYSPACE_DIAGNOSTICS = (
     os.environ.get("P8_2_K1A_LOGICAL_KEYSPACE_DIAGNOSTICS", "0") == "1"
 )
+TARGET_STORE_LINEAGE_DIAGNOSTICS = (
+    os.environ.get("P8_2_K1A_TARGET_STORE_LINEAGE_DIAGNOSTICS", "0")
+    == "1"
+)
+REQUIRE_TARGET_STORE_LINEAGE = (
+    os.environ.get("P8_2_K1A_REQUIRE_TARGET_STORE_LINEAGE", "0") == "1"
+)
+REQUIRE_LOGICAL_RESTORE_WINDOW = (
+    os.environ.get(
+        "P8_2_K1A_REQUIRE_LOGICAL_RESTORE_WINDOW_FOR_RESTORE", "0"
+    )
+    == "1"
+)
 RESULT_SUMMARY_TITLE = os.environ.get(
     "P8_2_K1A_RESULT_SUMMARY_TITLE",
     "request-local pressure and conditional restore",
+)
+CLAIM_BOUNDARY = os.environ.get(
+    "P8_2_K1A_CLAIM_BOUNDARY",
+    (
+        "accepted_capacity_single_lifecycle_inflight_trigger_abort_idle_and_"
+        "conditional_restore_h2d_mechanism_candidate_only"
+    ),
 )
 
 BOUNDED_CANDIDATE_FILES = (
@@ -128,6 +149,10 @@ BOUNDED_CANDIDATE_FILES = (
 ) + (
     ("logical_keyspace_probe_diagnostic_summary.json",)
     if LOGICAL_KEYSPACE_DIAGNOSTICS
+    else ()
+) + (
+    ("target_store_lineage_summary.json",)
+    if TARGET_STORE_LINEAGE_DIAGNOSTICS
     else ()
 )
 
@@ -163,6 +188,20 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "target_pool_key_count",
         "cpu_target_pool_key_match_count",
         "gpu_target_pool_key_match_count",
+        "coordinator_returned_pool_key_count",
+        "coordinator_cpu_pool_key_match_count",
+        "coordinator_gpu_pool_key_match_count",
+        "target_store_key_count",
+        "target_store_scheduled_key_count",
+        "target_store_completed_key_count",
+        "target_cpu_evicted_key_count",
+        "target_gpu_evicted_key_count",
+        "target_fa_group_index",
+        "target_fa_key_count",
+        "target_fa_store_scheduled_key_count",
+        "target_fa_store_completed_key_count",
+        "target_fa_cpu_evicted_key_count",
+        "target_fa_gpu_evicted_key_count",
     ):
         if field in row:
             value[field] = int(row.get(field) or 0)
@@ -174,6 +213,8 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "target_capture_cardinality_exact",
         "target_keyspace_matchable",
         "logical_restore_window_exact",
+        "target_store_lineage_capture_exact",
+        "target_fa_capture_exact",
     ):
         if field in row:
             value[field] = row.get(field) is True
@@ -190,6 +231,12 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
             {
                 "restore_group_count": int(
                     row.get("restore_group_count") or 0
+                ),
+                "restore_group_applicable_count": int(
+                    row.get("restore_group_applicable_count") or 0
+                ),
+                "restore_groups_captured_exact_count": int(
+                    row.get("restore_groups_captured_exact_count") or 0
                 ),
                 "restore_groups_captured_exact": row.get(
                     "restore_groups_captured_exact"
@@ -229,7 +276,14 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
             }
             if "capture_basis" in group:
                 bounded["capture_basis"] = str(group["capture_basis"])
-            for field in ("cpu_complete", "gpu_absent"):
+            for field in (
+                "group_applicable",
+                "capture_exact",
+                "selected_geometry_exact",
+                "hash_capture_exact",
+                "cpu_complete",
+                "gpu_absent",
+            ):
                 if field in group:
                     bounded[field] = group.get(field) is True
             bounded.update(
@@ -673,6 +727,7 @@ def build_pre_pressure_admission(
     d2h_store_complete: bool,
     target_block_count: int,
     allow_inflight_keyspace_refresh: bool,
+    require_target_store_lineage: bool = False,
 ) -> dict[str, Any]:
     candidates = [
         row
@@ -691,10 +746,25 @@ def build_pre_pressure_admission(
     )
     keyspace_matchable = latest.get("target_keyspace_matchable") is True
     capture_exact = latest.get("target_capture_exact") is True
+    target_store_lineage_capture_exact = (
+        latest.get("target_store_lineage_capture_exact") is True
+    )
+    target_fa_key_count = int(latest.get("target_fa_key_count") or 0)
+    target_store_key_count = int(
+        latest.get("target_store_key_count") or 0
+    )
     if not d2h_store_complete:
         decision = "d2h_store_incomplete_before_pressure"
     elif not cardinality_exact:
         decision = "target_candidates_unobservable_before_pressure"
+    elif require_target_store_lineage and not all(
+        (
+            target_store_lineage_capture_exact,
+            target_fa_key_count == target_block_count,
+            target_store_key_count > 0,
+        )
+    ):
+        decision = "target_store_lineage_unobservable_before_pressure"
     elif capture_exact and keyspace_matchable:
         decision = "target_keyspace_exact_before_pressure"
     elif allow_inflight_keyspace_refresh:
@@ -713,6 +783,12 @@ def build_pre_pressure_admission(
         "target_capture_cardinality_exact": cardinality_exact,
         "target_keyspace_matchable": keyspace_matchable,
         "target_capture_exact": capture_exact,
+        "target_store_lineage_required": require_target_store_lineage,
+        "target_store_lineage_capture_exact": (
+            target_store_lineage_capture_exact
+        ),
+        "target_fa_key_count": target_fa_key_count,
+        "target_store_key_count": target_store_key_count,
         "target_pool_key_count": int(latest.get("target_pool_key_count") or 0),
         "cpu_target_pool_key_match_count": int(
             latest.get("cpu_target_pool_key_match_count") or 0
@@ -874,6 +950,7 @@ def build_post_abort_revalidation_gate(
     abort_requested_timestamp_ns: int,
     required_restore_block_count: int,
     require_restore_group_eligibility: bool,
+    require_logical_restore_window: bool = False,
 ) -> dict[str, Any]:
     fresh = [
         row
@@ -901,11 +978,36 @@ def build_post_abort_revalidation_gate(
             fresh, target_block_count=required_restore_block_count
         )
     )
+    latest = fresh[-1]
+    logical_exact = latest.get("logical_restore_window_exact") is True
+    physical_ready = (
+        gate.get("decision") == "trigger_ready"
+        and gate.get("restore_allowed") is True
+    )
+    if (
+        physical_ready
+        and require_logical_restore_window
+        and not logical_exact
+    ):
+        gate = {
+            **gate,
+            "decision": (
+                "logical_restore_hit_incomplete_after_physical_window"
+            ),
+            "restore_allowed": False,
+        }
     return {
         **gate,
         "post_abort_candidate_event_count": len(fresh),
         "post_abort_revalidation_fresh": True,
         "abort_requested_timestamp_ns": abort_requested_timestamp_ns,
+        "logical_restore_window_required": (
+            require_logical_restore_window
+        ),
+        "logical_restore_window_exact": logical_exact,
+        "logical_restore_match_tokens": int(
+            latest.get("logical_restore_match_tokens") or 0
+        ),
         "raw_hash_values_retained": False,
     }
 
@@ -927,6 +1029,7 @@ def _wait_for_eligibility_target_observable(
             d2h_store_complete=transfer["d2h_store_complete"] is True,
             target_block_count=ELIGIBILITY_TARGET_BLOCKS,
             allow_inflight_keyspace_refresh=ALLOW_INFLIGHT_KEYSPACE_REFRESH,
+            require_target_store_lineage=REQUIRE_TARGET_STORE_LINEAGE,
         )
         if last["pressure_allowed"] is True:
             return last
@@ -1148,6 +1251,9 @@ def execute_inflight_abort_restore(
             require_restore_group_eligibility=(
                 REQUIRE_RESTORE_GROUP_ELIGIBILITY
             ),
+            require_logical_restore_window=(
+                REQUIRE_LOGICAL_RESTORE_WINDOW
+            ),
         )
     elif REQUIRE_RESTORE_GROUP_ELIGIBILITY:
         post_abort_gate = build_restore_eligibility_gate(
@@ -1165,7 +1271,13 @@ def execute_inflight_abort_restore(
         and post_abort_gate.get("restore_allowed") is True
     )
     if timeline["window_valid_after_abort"] is not True:
-        return persist_timeline("window_lost_after_abort")
+        decision = str(post_abort_gate.get("decision") or "")
+        return persist_timeline(
+            decision
+            if decision
+            == "logical_restore_hit_incomplete_after_physical_window"
+            else "window_lost_after_abort"
+        )
 
     timeline["restore_sent"] = True
     timeline["restore_dispatched_monotonic_ns"] = time.monotonic_ns()
@@ -1419,11 +1531,13 @@ def classify_inflight_grades(
     explicit_terminal_grades = {
         "request_local_progress_ambiguous",
         "cpu_target_lost",
+        "target_store_lineage_unobservable_before_pressure",
         "pressure_completed_without_trigger",
         "inflight_trigger_timeout",
         "pressure_abort_not_confirmed",
         "pressure_not_idle_after_abort",
         "window_lost_after_abort",
+        "logical_restore_hit_incomplete_after_physical_window",
     }
     if terminal in explicit_terminal_grades:
         experimental_grade = f"{grade_prefix}_{terminal}"
@@ -1574,6 +1688,40 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         if LOGICAL_KEYSPACE_DIAGNOSTICS
         else None
     )
+    target_store_lineage = (
+        summarize_target_store_lineage_rows(
+            trace_rows,
+            target_block_count=ELIGIBILITY_TARGET_BLOCKS,
+        )
+        if TARGET_STORE_LINEAGE_DIAGNOSTICS
+        else None
+    )
+    target_store_lineage_ok = (
+        not REQUIRE_TARGET_STORE_LINEAGE
+        or all(
+            (
+                (target_store_lineage or {}).get(
+                    "target_store_lineage_capture_exact"
+                )
+                is True,
+                int(
+                    (target_store_lineage or {}).get(
+                        "target_fa_store_completed_key_count_max"
+                    )
+                    or 0
+                )
+                == ELIGIBILITY_TARGET_BLOCKS,
+                int(
+                    (target_store_lineage or {}).get(
+                        "logical_and_physical_window_event_count"
+                    )
+                    or 0
+                )
+                > 0,
+            )
+        )
+    )
+    evidence_exact = evidence_exact and target_store_lineage_ok
     grades = classify_inflight_grades(
         grade_prefix=GRADE_PREFIX,
         candidate_green=CANDIDATE_GREEN,
@@ -1616,6 +1764,53 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
             (logical_keyspace_diagnostics or {}).get("exact_probe_event_count")
             or 0
         ),
+        "target_store_lineage_required": REQUIRE_TARGET_STORE_LINEAGE,
+        "target_store_lineage_capture_exact": (
+            (target_store_lineage or {}).get(
+                "target_store_lineage_capture_exact"
+            )
+            is True
+        ),
+        "target_store_lineage_attribution": str(
+            (target_store_lineage or {}).get(
+                "target_lineage_attribution"
+            )
+            or "not_enabled"
+        ),
+        "target_store_key_count": int(
+            (target_store_lineage or {}).get("target_store_key_count")
+            or 0
+        ),
+        "target_store_scheduled_key_count": int(
+            (target_store_lineage or {}).get(
+                "target_store_scheduled_key_count_max"
+            )
+            or 0
+        ),
+        "target_store_completed_key_count": int(
+            (target_store_lineage or {}).get(
+                "target_store_completed_key_count_max"
+            )
+            or 0
+        ),
+        "target_fa_store_completed_key_count": int(
+            (target_store_lineage or {}).get(
+                "target_fa_store_completed_key_count_max"
+            )
+            or 0
+        ),
+        "physical_cpu_only_window_event_count": int(
+            (target_store_lineage or {}).get(
+                "physical_cpu_only_window_event_count"
+            )
+            or 0
+        ),
+        "logical_and_physical_window_event_count": int(
+            (target_store_lineage or {}).get(
+                "logical_and_physical_window_event_count"
+            )
+            or 0
+        ),
         "roles_exact": roles_exact,
         "completed_roles_exact": completed_roles_exact,
         "pressure_abort_evidence_exact": pressure_abort_exact,
@@ -1633,17 +1828,23 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         "restore_group_eligibility_required": (
             REQUIRE_RESTORE_GROUP_ELIGIBILITY
         ),
-        "actual_cpu_eviction_proven": False,
+        "logical_restore_window_required_for_restore": (
+            REQUIRE_LOGICAL_RESTORE_WINDOW
+        ),
+        "actual_cpu_eviction_proven": int(
+            (target_store_lineage or {}).get(
+                "target_cpu_evicted_key_count"
+            )
+            or 0
+        )
+        > 0,
         "cause_proven_as_unique": False,
         "performance_reference_accepted": False,
         "k2_authorized": False,
         "p8_3_i1_authorized": False,
         "next_task_authorized": False,
         "developer_review_required": True,
-        "claim_boundary": (
-            "accepted_capacity_single_lifecycle_inflight_trigger_abort_idle_and_"
-            "conditional_restore_h2d_mechanism_candidate_only"
-        ),
+        "claim_boundary": CLAIM_BOUNDARY,
     }
     mtp_queue_health = {
         "schema_version": f"{CONTRACT_SCHEMA_TAG}_mtp_queue_health_v1",
@@ -1679,6 +1880,11 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         _write_json(
             artifact_dir / "logical_keyspace_probe_diagnostic_summary.json",
             logical_keyspace_diagnostics,
+        )
+    if target_store_lineage is not None:
+        _write_json(
+            artifact_dir / "target_store_lineage_summary.json",
+            target_store_lineage,
         )
     (artifact_dir / "result_summary.md").write_text(
         build_inflight_result_summary(

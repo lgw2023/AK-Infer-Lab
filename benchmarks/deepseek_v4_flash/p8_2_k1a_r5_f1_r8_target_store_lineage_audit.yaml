@@ -1,0 +1,87 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R8
+date: '2026-07-23'
+task_id: p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723
+
+accepted_f1_r7_result:
+  server_grade: red_p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger
+  operational_grade: operational_recovery_clean
+  experimental_terminal: pressure_completed_without_trigger
+  request_count: 3
+  pressure_request_count_executed: 1
+  pressure_progress_event_count: 41
+  logical_probe_event_count: 134
+  logical_exact_probe_event_count: 0
+  logical_restore_match_tokens_max: 0
+  target_pool_key_count_max: 0
+  d2h_store_complete: true
+  d2h_worker_count: 8
+  d2h_bytes_total: 4467519488
+  h2d_worker_count: 0
+  restore_sent: false
+  cleanup: clean
+  resource_recovery_exact: true
+  stopped_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  restored_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  grading_sha256: fbe61292041d7902f7177cd9c71712a6aafa9b6bd5fe675dac803e89cdf9e023
+  timeline_sha256: e8e1f3b50e68a98cbd2a6673ee7cb15051b3659f6e757d9e2ef1c85d4fb16fe7
+  transfer_sha256: d06592e9609f29bf445de78f44de3a7ae2c45b4616ee9e7f8d010baadf93f560
+  logical_probe_sha256: c97a190c840e1b175ccd7ae66500c8f964ed27a1dd773390a5904745189efb2a
+  recovery_sha256: 7999be2de5f4a90f99ecd7ab518ee92a297512e48e3f1f043ed503bd9de4f00c
+  manifest_sha256: ab04a826c07eb5ccaeed54048b3a74c086cc2c7b277fd6ac16d92e20a87528b7
+
+developer_diagnosis:
+  fixed_pressure_executed_successfully: true
+  pressure_control_chain_no_longer_circular: true
+  current_observer_learns_pool_keys_only_after_coordinator_hit: true
+  current_observer_cannot_attribute_lazy_store_to_target: true
+  current_cpu_eviction_count_zero_is_not_target_eviction_absence_evidence: true
+  current_restore_group_complete_count_is_vacuous_for_zero_key_groups: true
+  global_d2h_bytes_are_not_target_request_residency_evidence: true
+  accepted_capacity_invalidated: false
+  full_logical_128_block_cpu_only_window_disproven: false
+  server_execution_or_cleanup_failure: false
+
+upstream_vllm_0221_source_alignment:
+  manager_source: vllm/v1/simple_kv_offload/manager.py
+  target_finish_hook_receives_all_group_block_ids: request_finished_all_groups
+  lazy_store_source: _prepare_lazy_store_specs
+  lazy_store_walks_global_gpu_free_queue: true
+  store_event_completion_source: _process_store_event
+  cpu_cache_insert_source: _process_store_completion
+  block_hash_is_stamped_before_async_copy: true
+  cpu_cache_insert_occurs_after_all_worker_completion: true
+  raw_source_url: https://raw.githubusercontent.com/vllm-project/vllm/v0.22.1/vllm/v1/simple_kv_offload/manager.py
+
+developer_decision:
+  same_fixed_capacity_and_context_required: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_per_rank: 430604288
+  cpu_bytes_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count_required: 128
+  logical_restore_match_tokens_required: 16384
+  hash_block_size_tokens: 128
+  capture_group_wrapped_target_keys_before_request_finish: true
+  retain_target_keys_in_process_only: true
+  attribute_lazy_store_schedule_to_target_keys: true
+  attribute_store_completion_after_all_workers_to_target_keys: true
+  attribute_cpu_and_gpu_evictions_to_target_keys: true
+  fa_group_exact_128_keys_required: true
+  zero_key_groups_are_not_complete: true
+  physical_cpu_only_window_triggers_abort: true
+  logical_restore_window_exact_required_before_restore_dispatch: true
+  continue_after_target_store_near_miss_or_cpu_eviction: true
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  pressure_request_count_exact: 1
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  runtime_or_dependency_mutation_authorized: false
+  performance_reference_authorized: false
+  unique_root_cause_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_target_store_lineage_physical_cpu_only_window_and_conditional_h2d_candidate_only

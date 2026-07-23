@@ -237,6 +237,8 @@ def test_group_summary_preserves_bounded_near_miss_diagnostics() -> None:
             "captured_block_count": 128,
             "cpu_block_count": 128,
             "gpu_block_count": 0,
+            "group_applicable": True,
+            "capture_exact": True,
             "cpu_complete": True,
             "gpu_absent": True,
         },
@@ -246,6 +248,8 @@ def test_group_summary_preserves_bounded_near_miss_diagnostics() -> None:
             "captured_block_count": 1,
             "cpu_block_count": 0,
             "gpu_block_count": 0,
+            "group_applicable": True,
+            "capture_exact": True,
             "cpu_complete": False,
             "gpu_absent": True,
         },
@@ -284,6 +288,9 @@ def test_group_capture_excludes_unhashable_tail_from_restore_lookup_requirement(
         "hashable_block_count": 64,
         "unhashable_non_null_block_count": 1,
         "required_block_count": 64,
+        "group_applicable": True,
+        "selected_geometry_exact": False,
+        "hash_capture_exact": False,
         "capture_basis": "hashable_blocks_used_by_cache_lookup",
         "raw_block_ids_retained": False,
         "raw_hash_values_retained": False,
@@ -303,6 +310,9 @@ def test_group_residency_summary_keeps_bounded_capture_geometry() -> None:
                 "non_null_block_count": 65,
                 "hashable_block_count": 64,
                 "unhashable_non_null_block_count": 1,
+                "group_applicable": True,
+                "selected_geometry_exact": False,
+                "hash_capture_exact": False,
                 "required_block_count": 64,
                 "captured_block_count": 64,
                 "cpu_block_count": 64,
@@ -312,7 +322,7 @@ def test_group_residency_summary_keeps_bounded_capture_geometry() -> None:
         ]
     )
 
-    assert summary["restore_group_eligibility_complete"] is True
+    assert summary["restore_group_eligibility_complete"] is False
     assert summary["restore_group_rows"][0] == {
         "group_index": 0,
         "restore_match_tokens_required": 16384,
@@ -323,11 +333,15 @@ def test_group_residency_summary_keeps_bounded_capture_geometry() -> None:
         "non_null_block_count": 65,
         "hashable_block_count": 64,
         "unhashable_non_null_block_count": 1,
+        "group_applicable": True,
+        "selected_geometry_exact": False,
+        "hash_capture_exact": False,
         "required_block_count": 64,
         "captured_block_count": 64,
         "cpu_block_count": 64,
         "gpu_block_count": 0,
         "capture_basis": "hashable_blocks_used_by_cache_lookup",
+        "capture_exact": False,
         "cpu_complete": True,
         "gpu_absent": True,
         "raw_block_ids_retained": False,

@@ -330,14 +330,14 @@ def test_r1_runner_preserves_argv_and_closes_repair_protocol_gates() -> None:
 
 
 def test_r1_is_closed_and_k1a_r5_f0_is_the_only_authorized_handoff() -> None:
-    task_id = "p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_2026_0723"
+    task_id = "p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723"
     handoff = (REPO_ROOT / "通信模块/docs/developer-to-server.md").read_text(
         encoding="utf-8"
     )
     assert handoff.count("当前唯一服务器动作") == 1
     assert f"task_id: {task_id}" in handoff
     assert (
-        "execution_mode: authorized_single_lifecycle_inflight_keyspace_refresh"
+        "execution_mode: authorized_single_lifecycle_target_store_lineage"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
@@ -366,7 +366,7 @@ def test_r1_is_closed_and_k1a_r5_f0_is_the_only_authorized_handoff() -> None:
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.yaml"
+        "p8_2_k1a_r5_f1_r8_target_store_lineage.yaml"
     )
     assert artifacts["current_server_handoff_task"] == task_id
     acceptance = readiness["acceptance"]

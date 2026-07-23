@@ -87,6 +87,8 @@ def capture_restore_group_hashes(
         for block in non_null_blocks
         if block.block_hash is not None
     )
+    selected_geometry_exact = len(selected_ids) == theoretical_count
+    hash_capture_exact = len(non_null_blocks) == len(hashes)
     return hashes, {
         "group_index": group_index,
         "restore_match_tokens_required": restore_match_tokens,
@@ -98,6 +100,9 @@ def capture_restore_group_hashes(
         "hashable_block_count": len(hashes),
         "unhashable_non_null_block_count": len(non_null_blocks) - len(hashes),
         "required_block_count": len(hashes),
+        "group_applicable": bool(hashes),
+        "selected_geometry_exact": selected_geometry_exact,
+        "hash_capture_exact": hash_capture_exact,
         "capture_basis": "hashable_blocks_used_by_cache_lookup",
         "raw_block_ids_retained": False,
         "raw_hash_values_retained": False,
@@ -271,6 +276,13 @@ def probe_logical_restore_window(
             "target_capture_exact": capture_exact,
             "logical_restore_match_tokens": hit_tokens,
             "logical_restore_window_exact": logical_exact,
+            "coordinator_returned_pool_key_count": len(current_keys),
+            "coordinator_cpu_pool_key_match_count": count(
+                cpu_pool, tuple(current_keys)
+            ),
+            "coordinator_gpu_pool_key_match_count": count(
+                gpu_pool, tuple(current_keys)
+            ),
             "target_pool_key_count": len(target_pool_keys),
             "cpu_target_pool_key_match_count": cpu_pool_matches,
             "gpu_target_pool_key_match_count": gpu_pool_matches,
@@ -356,7 +368,51 @@ def refresh_logical_restore_window(
             "raw_hash_values_retained": False,
         }
         target_pool_keys = retained
-    if summary.get("logical_restore_window_exact") is True and target_pool_keys:
+    lineage = _target_store_lineage_residency_summary(scheduler)
+    if lineage:
+        logical_fields = {
+            key: summary.get(key)
+            for key in (
+                "logical_restore_match_tokens",
+                "logical_restore_window_exact",
+                "coordinator_returned_pool_key_count",
+                "coordinator_cpu_pool_key_match_count",
+                "coordinator_gpu_pool_key_match_count",
+                "target_keyspace_probe_error_type",
+            )
+            if key in summary
+        }
+        request_hash_candidate_count = int(
+            summary.get("request_hash_candidate_count") or 0
+        )
+        summary = {
+            **summary,
+            **lineage,
+            **logical_fields,
+            "request_hash_candidate_count": request_hash_candidate_count,
+            "target_capture_cardinality_exact": (
+                request_hash_candidate_count == required
+            ),
+            "selected_target_hash_count": (
+                required if request_hash_candidate_count == required else 0
+            ),
+            "target_capture_source": (
+                "target_finish_gpu_group_wrapped_keys"
+            ),
+            "target_keyspace_matchable": (
+                lineage.get("target_store_lineage_capture_exact") is True
+            ),
+            "target_capture_exact": all(
+                (
+                    request_hash_candidate_count == required,
+                    lineage.get("target_store_lineage_capture_exact") is True,
+                )
+            ),
+        }
+        target_pool_keys = tuple(
+            getattr(scheduler, "_p8_2_k1a_target_store_keys", ()) or ()
+        )
+    if target_pool_keys:
         scheduler._p8_2_k1a_target_pool_keys = target_pool_keys
     else:
         scheduler._p8_2_k1a_target_pool_keys = retained
@@ -380,6 +436,9 @@ def build_restore_group_residency_summary(
         "non_null_block_count",
         "hashable_block_count",
         "unhashable_non_null_block_count",
+        "group_applicable",
+        "selected_geometry_exact",
+        "hash_capture_exact",
         "capture_basis",
     )
     bounded_rows: list[dict[str, Any]] = []
@@ -388,18 +447,37 @@ def build_restore_group_residency_summary(
         captured = int(row.get("captured_block_count") or 0)
         cpu_count = int(row.get("cpu_block_count") or 0)
         gpu_count = int(row.get("gpu_block_count") or 0)
+        applicable = (
+            row.get("group_applicable") is True
+            if "group_applicable" in row
+            else required > 0
+        )
+        capture_exact = all(
+            (
+                applicable,
+                captured == required,
+                row.get("selected_geometry_exact", True) is True,
+                row.get("hash_capture_exact", True) is True,
+            )
+        )
         bounded = {
             "group_index": int(row.get("group_index") or 0),
             "required_block_count": required,
             "captured_block_count": captured,
             "cpu_block_count": cpu_count,
             "gpu_block_count": gpu_count,
-            "cpu_complete": cpu_count == required,
-            "gpu_absent": gpu_count == 0,
+            "group_applicable": applicable,
+            "capture_exact": capture_exact,
+            "cpu_complete": applicable and cpu_count == required,
+            "gpu_absent": applicable and gpu_count == 0,
         }
         if any(field in row for field in geometry_fields):
             bounded.update(
-                {field: row.get(field) for field in geometry_fields}
+                {
+                    field: row[field]
+                    for field in geometry_fields
+                    if field in row
+                }
             )
             bounded.update(
                 {
@@ -409,25 +487,30 @@ def build_restore_group_residency_summary(
             )
         bounded_rows.append(bounded)
     group_count = len(bounded_rows)
+    applicable_rows = [
+        row for row in bounded_rows if row["group_applicable"] is True
+    ]
+    applicable_count = len(applicable_rows)
     captured_exact = (
-        group_count > 0
-        and any(row["required_block_count"] > 0 for row in bounded_rows)
-        and all(
-            row["captured_block_count"] == row["required_block_count"]
-            for row in bounded_rows
-        )
+        applicable_count > 0
+        and all(row["capture_exact"] is True for row in applicable_rows)
     )
-    cpu_complete_count = sum(row["cpu_complete"] for row in bounded_rows)
-    gpu_absent_count = sum(row["gpu_absent"] for row in bounded_rows)
+    captured_exact_count = sum(
+        row["capture_exact"] for row in applicable_rows
+    )
+    cpu_complete_count = sum(row["cpu_complete"] for row in applicable_rows)
+    gpu_absent_count = sum(row["gpu_absent"] for row in applicable_rows)
     return {
         "restore_group_count": group_count,
+        "restore_group_applicable_count": applicable_count,
+        "restore_groups_captured_exact_count": captured_exact_count,
         "restore_groups_captured_exact": captured_exact,
         "restore_groups_cpu_complete_count": cpu_complete_count,
         "restore_groups_gpu_absent_count": gpu_absent_count,
         "restore_group_eligibility_complete": (
             captured_exact
-            and cpu_complete_count == group_count
-            and gpu_absent_count == group_count
+            and cpu_complete_count == applicable_count
+            and gpu_absent_count == applicable_count
         ),
         "restore_group_rows": bounded_rows,
     }
@@ -657,7 +740,261 @@ def _capture_restore_group_hashes(
     )
 
 
+def _unique_keys(groups: tuple[tuple[Any, ...], ...]) -> tuple[Any, ...]:
+    values: list[Any] = []
+    seen: set[Any] = set()
+    for group in groups:
+        for value in group:
+            if value not in seen:
+                seen.add(value)
+                values.append(value)
+    return tuple(values)
+
+
+def _capture_target_store_lineage(
+    scheduler: Any,
+    block_ids: Any,
+    *,
+    restore_match_tokens: int,
+    hash_block_size_tokens: int,
+) -> dict[str, Any]:
+    hashes_by_group, required_by_group, geometry_by_group = (
+        _capture_restore_group_hashes(
+            scheduler,
+            block_ids,
+            restore_match_tokens=restore_match_tokens,
+        )
+    )
+    target_keys = _unique_keys(hashes_by_group)
+    scheduler._p8_2_k1a_restore_group_hashes = hashes_by_group
+    scheduler._p8_2_k1a_restore_group_required_counts = required_by_group
+    scheduler._p8_2_k1a_restore_group_geometry_rows = geometry_by_group
+    scheduler._p8_2_k1a_target_store_keys = target_keys
+    scheduler._p8_2_k1a_target_pool_keys = target_keys
+    scheduler._p8_2_k1a_target_hashes = target_keys
+    target_set = set(target_keys)
+    cpu_pool = getattr(scheduler, "cpu_block_pool", None)
+    completed = (
+        {
+            value
+            for value in target_keys
+            if cpu_pool.cached_block_hash_to_block.get_one_block(value)
+            is not None
+        }
+        if cpu_pool is not None
+        else set()
+    )
+    pending: set[Any] = set()
+    for transfer in (
+        getattr(scheduler, "_store_event_to_blocks", {}) or {}
+    ).values():
+        for block_id in getattr(transfer, "cpu_block_ids", ()) or ():
+            block_hash = scheduler.cpu_block_pool.blocks[
+                block_id
+            ].block_hash
+            if block_hash in target_set:
+                pending.add(block_hash)
+    scheduler._p8_2_k1a_target_store_scheduled_keys = (
+        completed | pending
+    )
+    scheduler._p8_2_k1a_target_store_completed_keys = completed
+    scheduler._p8_2_k1a_target_cpu_evicted_keys = set()
+    scheduler._p8_2_k1a_target_gpu_evicted_keys = set()
+    scheduler._p8_2_k1a_target_fa_group_index = int(
+        getattr(scheduler, "fa_gidx", -1)
+    )
+    scheduler._p8_2_k1a_target_logical_block_count = (
+        restore_match_tokens // hash_block_size_tokens
+    )
+    return _target_store_lineage_residency_summary(scheduler)
+
+
+def _target_store_lineage_residency_summary(
+    scheduler: Any,
+) -> dict[str, Any]:
+    hashes_by_group = tuple(
+        getattr(scheduler, "_p8_2_k1a_restore_group_hashes", ()) or ()
+    )
+    if not hashes_by_group:
+        return {}
+    required_by_group = tuple(
+        getattr(
+            scheduler, "_p8_2_k1a_restore_group_required_counts", ()
+        )
+        or ()
+    )
+    geometry_by_group = tuple(
+        getattr(
+            scheduler, "_p8_2_k1a_restore_group_geometry_rows", ()
+        )
+        or ()
+    )
+    cpu_pool = getattr(scheduler, "cpu_block_pool", None)
+    gpu_pool = getattr(scheduler, "_gpu_block_pool", None)
+
+    def count(pool: Any, hashes: tuple[Any, ...]) -> int:
+        if pool is None:
+            return 0
+        mapping = pool.cached_block_hash_to_block
+        return sum(
+            mapping.get_one_block(value) is not None for value in hashes
+        )
+
+    rows = []
+    for group_index, hashes in enumerate(hashes_by_group):
+        required = (
+            required_by_group[group_index]
+            if group_index < len(required_by_group)
+            else len(hashes)
+        )
+        geometry = (
+            dict(geometry_by_group[group_index])
+            if group_index < len(geometry_by_group)
+            else {}
+        )
+        rows.append(
+            {
+                **geometry,
+                "group_index": group_index,
+                "required_block_count": required,
+                "captured_block_count": len(hashes),
+                "cpu_block_count": count(cpu_pool, hashes),
+                "gpu_block_count": count(gpu_pool, hashes),
+                "capture_basis": (
+                    "target_finish_gpu_group_wrapped_keys"
+                ),
+            }
+        )
+    group_summary = build_restore_group_residency_summary(rows)
+    target_keys = tuple(
+        getattr(scheduler, "_p8_2_k1a_target_store_keys", ()) or ()
+    )
+    fa_group_index = int(
+        getattr(scheduler, "_p8_2_k1a_target_fa_group_index", -1)
+    )
+    fa_keys = (
+        hashes_by_group[fa_group_index]
+        if 0 <= fa_group_index < len(hashes_by_group)
+        else ()
+    )
+    logical_block_count = int(
+        getattr(scheduler, "_p8_2_k1a_target_logical_block_count", 0)
+        or 0
+    )
+    geometry_by_index = {
+        int(row.get("group_index") or 0): row for row in geometry_by_group
+    }
+    fa_geometry = geometry_by_index.get(fa_group_index, {})
+    fa_capture_exact = all(
+        (
+            logical_block_count > 0,
+            len(fa_keys) == logical_block_count,
+            fa_geometry.get("selected_geometry_exact") is True,
+            fa_geometry.get("hash_capture_exact") is True,
+        )
+    )
+    scheduled = set(
+        getattr(
+            scheduler, "_p8_2_k1a_target_store_scheduled_keys", set()
+        )
+        or set()
+    )
+    completed = set(
+        getattr(
+            scheduler, "_p8_2_k1a_target_store_completed_keys", set()
+        )
+        or set()
+    )
+    cpu_evicted = set(
+        getattr(scheduler, "_p8_2_k1a_target_cpu_evicted_keys", set())
+        or set()
+    )
+    gpu_evicted = set(
+        getattr(scheduler, "_p8_2_k1a_target_gpu_evicted_keys", set())
+        or set()
+    )
+    fa_set = set(fa_keys)
+    cpu_matches = count(cpu_pool, target_keys)
+    gpu_matches = count(gpu_pool, target_keys)
+    return {
+        "target_store_lineage_capture_exact": all(
+            (
+                fa_capture_exact,
+                group_summary["restore_groups_captured_exact"] is True,
+                bool(target_keys),
+            )
+        ),
+        "target_store_key_count": len(target_keys),
+        "target_store_scheduled_key_count": len(scheduled),
+        "target_store_completed_key_count": len(completed),
+        "target_cpu_evicted_key_count": len(cpu_evicted),
+        "target_gpu_evicted_key_count": len(gpu_evicted),
+        "target_fa_group_index": fa_group_index,
+        "target_fa_key_count": len(fa_keys),
+        "target_fa_capture_exact": fa_capture_exact,
+        "target_fa_store_scheduled_key_count": len(scheduled & fa_set),
+        "target_fa_store_completed_key_count": len(completed & fa_set),
+        "target_fa_cpu_evicted_key_count": len(cpu_evicted & fa_set),
+        "target_fa_gpu_evicted_key_count": len(gpu_evicted & fa_set),
+        "target_pool_key_count": len(target_keys),
+        "cpu_target_pool_key_match_count": cpu_matches,
+        "gpu_target_pool_key_match_count": gpu_matches,
+        "target_count_unit": "logical_full_attention_hash_blocks",
+        "cpu_target_count_unit": "logical_full_attention_hash_blocks",
+        "gpu_target_count_unit": "logical_full_attention_hash_blocks",
+        "target_pool_key_count_unit": "runtime_group_wrapped_pool_keys",
+        "cpu_target_block_count": count(cpu_pool, fa_keys),
+        "gpu_target_block_count": count(gpu_pool, fa_keys),
+        **group_summary,
+        "raw_block_ids_retained": False,
+        "raw_hash_values_retained": False,
+    }
+
+
+def _target_store_event_overlap(
+    scheduler: Any,
+    keys: tuple[Any, ...],
+) -> dict[str, Any]:
+    target_groups = tuple(
+        getattr(scheduler, "_p8_2_k1a_restore_group_hashes", ()) or ()
+    )
+    selected = set(keys)
+    group_counts = [
+        len(selected & set(group))
+        for group in target_groups
+    ]
+    fa_group_index = int(
+        getattr(scheduler, "_p8_2_k1a_target_fa_group_index", -1)
+    )
+    return {
+        "target_store_event_key_count": sum(group_counts),
+        "target_store_event_fa_key_count": (
+            group_counts[fa_group_index]
+            if 0 <= fa_group_index < len(group_counts)
+            else 0
+        ),
+        "target_store_event_group_key_counts": group_counts,
+        "raw_hash_values_retained": False,
+    }
+
+
 def _restore_group_residency_summary(scheduler: Any) -> dict[str, Any]:
+    lineage = _target_store_lineage_residency_summary(scheduler)
+    if lineage:
+        return {
+            key: lineage[key]
+            for key in (
+                "restore_group_count",
+                "restore_group_applicable_count",
+                "restore_groups_captured_exact_count",
+                "restore_groups_captured_exact",
+                "restore_groups_cpu_complete_count",
+                "restore_groups_gpu_absent_count",
+                "restore_group_eligibility_complete",
+                "restore_group_rows",
+            )
+            if key in lineage
+        }
     logical = dict(
         getattr(scheduler, "_p8_2_k1a_logical_restore_summary", {})
     )
@@ -666,6 +1003,8 @@ def _restore_group_residency_summary(scheduler: Any) -> dict[str, Any]:
             key: logical[key]
             for key in (
                 "restore_group_count",
+                "restore_group_applicable_count",
+                "restore_groups_captured_exact_count",
                 "restore_groups_captured_exact",
                 "restore_groups_cpu_complete_count",
                 "restore_groups_gpu_absent_count",
@@ -885,11 +1224,24 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
         request_hashes = tuple(
             getattr(request, "block_hashes", ()) or ()
         )
-        result = original_finished(self, request, block_ids)
         if is_target:
             self._p8_2_k1a_target_request_hashes = request_hashes
-            self._p8_2_k1a_target_pool_keys = ()
-            self._p8_2_k1a_target_hashes = ()
+            lineage_capture = _capture_target_store_lineage(
+                self,
+                block_ids,
+                restore_match_tokens=restore_match_tokens,
+                hash_block_size_tokens=block_size_tokens,
+            )
+            _emit(
+                "target_store_lineage_captured",
+                component="scheduler",
+                contract_role=contract_role,
+                target_block_count=target_block_count,
+                **eligibility_contract,
+                **lineage_capture,
+            )
+        result = original_finished(self, request, block_ids)
+        if is_target:
             target_capture_summary = refresh_logical_restore_window(
                 self,
                 restore_match_tokens=restore_match_tokens,
@@ -916,6 +1268,94 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
                 reason="pressure_request_finished",
                 restore_match_tokens=restore_match_tokens,
                 hash_block_size_tokens=block_size_tokens,
+            )
+        return result
+
+    original_prepare_lazy = (
+        SimpleCPUOffloadScheduler._prepare_lazy_store_specs
+    )
+
+    @wraps(original_prepare_lazy)
+    def observed_prepare_lazy(self):
+        result = original_prepare_lazy(self)
+        gpu_ids, cpu_ids, request_ids = result
+        target_keys = set(
+            getattr(self, "_p8_2_k1a_target_store_keys", ()) or ()
+        )
+        if target_keys and cpu_ids:
+            scheduled_keys = {
+                self.cpu_block_pool.blocks[block_id].block_hash
+                for block_id in cpu_ids
+            } & target_keys
+            if scheduled_keys:
+                cumulative = set(
+                    getattr(
+                        self,
+                        "_p8_2_k1a_target_store_scheduled_keys",
+                        set(),
+                    )
+                    or set()
+                )
+                cumulative.update(scheduled_keys)
+                self._p8_2_k1a_target_store_scheduled_keys = cumulative
+                event_summary = {
+                    **_target_store_event_overlap(
+                        self, tuple(scheduled_keys)
+                    ),
+                    **_target_store_lineage_residency_summary(self),
+                }
+                _emit(
+                    "target_store_scheduled",
+                    component="scheduler",
+                    contract_role=_active_contract_role(),
+                    store_event_candidate_index=int(
+                        getattr(self, "_store_event_counter", 0) or 0
+                    ),
+                    store_total_block_count=len(cpu_ids),
+                    **event_summary,
+                )
+        return gpu_ids, cpu_ids, request_ids
+
+    original_process_store_event = (
+        SimpleCPUOffloadScheduler._process_store_event
+    )
+
+    @wraps(original_process_store_event)
+    def observed_process_store_event(self, event_idx):
+        transfer = self._store_event_to_blocks.get(event_idx)
+        target_keys = set(
+            getattr(self, "_p8_2_k1a_target_store_keys", ()) or ()
+        )
+        completed_keys: set[Any] = set()
+        if transfer is not None and target_keys:
+            completed_keys = {
+                self.cpu_block_pool.blocks[block_id].block_hash
+                for block_id in transfer.cpu_block_ids
+            } & target_keys
+        result = original_process_store_event(self, event_idx)
+        if completed_keys:
+            cumulative = set(
+                getattr(
+                    self,
+                    "_p8_2_k1a_target_store_completed_keys",
+                    set(),
+                )
+                or set()
+            )
+            cumulative.update(completed_keys)
+            self._p8_2_k1a_target_store_completed_keys = cumulative
+            event_summary = {
+                **_target_store_event_overlap(
+                    self, tuple(completed_keys)
+                ),
+                **_target_store_lineage_residency_summary(self),
+            }
+            _emit(
+                "target_store_completed",
+                component="scheduler",
+                contract_role=_active_contract_role(),
+                store_event_index=int(event_idx),
+                **event_summary,
             )
         return result
 
@@ -1008,11 +1448,41 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
             else ()
         )
         if result and old_hash is not None and old_hash in target_hashes:
+            tier = _POOL_TIERS.get(id(self), "unknown")
+            if scheduler is not None:
+                field = (
+                    "_p8_2_k1a_target_cpu_evicted_keys"
+                    if tier == "cpu"
+                    else "_p8_2_k1a_target_gpu_evicted_keys"
+                )
+                evicted = set(getattr(scheduler, field, set()) or set())
+                evicted.add(old_hash)
+                setattr(scheduler, field, evicted)
             _emit(
                 "target_cache_evicted",
                 component="block_pool",
-                tier=_POOL_TIERS.get(id(self), "unknown"),
+                tier=tier,
                 target_evicted_count=1,
+                target_cpu_evicted_key_count=len(
+                    getattr(
+                        scheduler,
+                        "_p8_2_k1a_target_cpu_evicted_keys",
+                        set(),
+                    )
+                    or set()
+                )
+                if scheduler is not None
+                else 0,
+                target_gpu_evicted_key_count=len(
+                    getattr(
+                        scheduler,
+                        "_p8_2_k1a_target_gpu_evicted_keys",
+                        set(),
+                    )
+                    or set()
+                )
+                if scheduler is not None
+                else 0,
                 raw_hash_values_retained=False,
             )
             _emit_residency_snapshot(
@@ -1024,6 +1494,12 @@ def install_p8_2_k1a_h2d_residency_observer() -> None:
         return result
 
     SimpleCPUOffloadScheduler.request_finished_all_groups = observed_finished
+    SimpleCPUOffloadScheduler._prepare_lazy_store_specs = (
+        observed_prepare_lazy
+    )
+    SimpleCPUOffloadScheduler._process_store_event = (
+        observed_process_store_event
+    )
     SimpleCPUOffloadScheduler.get_num_new_matched_tokens = observed_match
     SimpleCPUOffloadScheduler.update_state_after_alloc = observed_update
     SimpleCPUOffloadScheduler.build_connector_meta = observed_build
@@ -1053,6 +1529,8 @@ def observer_self_test_contract() -> dict[str, Any]:
         "observer_mode": "observe_only_no_decision_request_order_or_copy_mutation",
         "wrapped_scheduler_methods": [
             "request_finished_all_groups",
+            "_prepare_lazy_store_specs",
+            "_process_store_event",
             "get_num_new_matched_tokens",
             "update_state_after_alloc",
             "build_connector_meta",
@@ -1076,6 +1554,9 @@ def observer_self_test_contract() -> dict[str, Any]:
         "runtime_lookup_side_effect_field_restored": True,
         "logical_restore_target_count_unit": "logical_request_hash_blocks",
         "runtime_pool_keys_retained_in_process_only": True,
+        "target_group_wrapped_keys_captured_before_request_finish": True,
+        "target_lazy_store_schedule_and_completion_attribution": True,
+        "zero_key_restore_groups_are_not_counted_complete": True,
         "request_identity_source": "controller_role_marker_not_server_request_id",
         "request_local_pressure_progress_capability": True,
         "request_local_progress_source": (
@@ -1083,6 +1564,210 @@ def observer_self_test_contract() -> dict[str, Any]:
         ),
         "request_local_progress_requires_single_scheduled_request": True,
         "request_id_retained": False,
+    }
+
+
+def summarize_target_store_lineage_rows(
+    rows: list[dict[str, Any]],
+    *,
+    target_block_count: int,
+) -> dict[str, Any]:
+    captures = [
+        row
+        for row in rows
+        if row.get("event") == "target_store_lineage_captured"
+    ]
+    scheduled = [
+        row for row in rows if row.get("event") == "target_store_scheduled"
+    ]
+    completed = [
+        row for row in rows if row.get("event") == "target_store_completed"
+    ]
+    observed = [
+        row
+        for row in rows
+        if row.get("event")
+        in {
+            "target_store_lineage_captured",
+            "target_hashes_captured",
+            "target_store_completed",
+            "target_residency_snapshot",
+            "request_local_pressure_progress",
+        }
+        and "target_store_lineage_capture_exact" in row
+    ]
+    evictions = [
+        row
+        for row in rows
+        if row.get("event") == "target_cache_evicted"
+    ]
+
+    def maximum(field: str, selected: list[dict[str, Any]]) -> int:
+        return max(
+            (int(row.get(field) or 0) for row in selected),
+            default=0,
+        )
+
+    physical_cpu_only = [
+        row
+        for row in observed
+        if row.get("target_store_lineage_capture_exact") is True
+        and int(row.get("cpu_target_block_count") or 0)
+        == target_block_count
+        and int(row.get("gpu_target_block_count") or 0) == 0
+        and row.get("restore_group_eligibility_complete") is True
+    ]
+    logical_and_physical = [
+        row
+        for row in physical_cpu_only
+        if row.get("logical_restore_window_exact") is True
+    ]
+    latest = observed[-1] if observed else {}
+    captured = captures[-1] if captures else {}
+    target_store_key_count = int(
+        captured.get("target_store_key_count")
+        or maximum("target_store_key_count", observed)
+    )
+    fa_key_count = int(
+        captured.get("target_fa_key_count")
+        or maximum("target_fa_key_count", observed)
+    )
+    scheduled_max = max(
+        maximum("target_store_scheduled_key_count", scheduled),
+        maximum("target_store_scheduled_key_count", observed),
+    )
+    completed_max = max(
+        maximum("target_store_completed_key_count", completed),
+        maximum("target_store_completed_key_count", observed),
+    )
+    fa_scheduled_max = max(
+        maximum("target_fa_store_scheduled_key_count", scheduled),
+        maximum("target_fa_store_scheduled_key_count", observed),
+    )
+    fa_completed_max = max(
+        maximum("target_fa_store_completed_key_count", completed),
+        maximum("target_fa_store_completed_key_count", observed),
+    )
+    cpu_evicted_count = max(
+        maximum("target_cpu_evicted_key_count", evictions),
+        maximum("target_cpu_evicted_key_count", observed),
+    )
+    gpu_evicted_count = max(
+        maximum("target_gpu_evicted_key_count", evictions),
+        maximum("target_gpu_evicted_key_count", observed),
+    )
+    if not captures:
+        attribution = "target_finish_key_capture_missing"
+    elif captured.get("target_store_lineage_capture_exact") is not True:
+        attribution = "target_finish_key_capture_incomplete"
+    elif scheduled_max == 0:
+        attribution = "target_keys_never_scheduled_for_d2h"
+    elif completed_max < scheduled_max:
+        attribution = "target_d2h_store_completion_incomplete"
+    elif fa_completed_max < target_block_count:
+        attribution = "full_attention_target_d2h_incomplete"
+    elif not physical_cpu_only and cpu_evicted_count > 0:
+        attribution = "target_cpu_evicted_before_complete_cpu_only_window"
+    elif physical_cpu_only and not logical_and_physical:
+        attribution = (
+            "physical_cpu_only_window_not_accepted_by_logical_coordinator"
+        )
+    elif logical_and_physical:
+        attribution = "physical_and_logical_restore_window_observed"
+    else:
+        attribution = "target_d2h_complete_without_cpu_only_window"
+
+    bounded_group_rows = []
+    for row in captured.get("restore_group_rows") or ():
+        bounded_group_rows.append(
+            {
+                key: row[key]
+                for key in (
+                    "group_index",
+                    "restore_match_tokens_required",
+                    "effective_block_size_tokens",
+                    "theoretical_block_count",
+                    "provided_block_id_count",
+                    "selected_block_id_count",
+                    "non_null_block_count",
+                    "hashable_block_count",
+                    "unhashable_non_null_block_count",
+                    "required_block_count",
+                    "captured_block_count",
+                    "group_applicable",
+                    "capture_exact",
+                )
+                if key in row
+            }
+        )
+    return {
+        "schema_version": (
+            "p8_2_k1a_target_store_lineage_summary_v1"
+        ),
+        "target_lineage_attribution": attribution,
+        "target_store_lineage_capture_event_count": len(captures),
+        "target_store_lineage_capture_exact": (
+            captured.get("target_store_lineage_capture_exact") is True
+        ),
+        "target_store_key_count": target_store_key_count,
+        "target_fa_key_count": fa_key_count,
+        "target_fa_capture_exact": (
+            captured.get("target_fa_capture_exact") is True
+        ),
+        "target_store_schedule_event_count": len(scheduled),
+        "target_store_completion_event_count": len(completed),
+        "target_store_scheduled_key_count_max": scheduled_max,
+        "target_store_completed_key_count_max": completed_max,
+        "target_fa_store_scheduled_key_count_max": fa_scheduled_max,
+        "target_fa_store_completed_key_count_max": fa_completed_max,
+        "target_cpu_evicted_key_count": cpu_evicted_count,
+        "target_gpu_evicted_key_count": gpu_evicted_count,
+        "cpu_target_block_count_max": maximum(
+            "cpu_target_block_count", observed
+        ),
+        "gpu_target_block_count_min": min(
+            (
+                int(row.get("gpu_target_block_count") or 0)
+                for row in observed
+            ),
+            default=0,
+        ),
+        "physical_cpu_only_window_event_count": len(physical_cpu_only),
+        "logical_and_physical_window_event_count": len(
+            logical_and_physical
+        ),
+        "first_physical_cpu_only_window_timestamp_ns": min(
+            (
+                int(row.get("timestamp_ns") or 0)
+                for row in physical_cpu_only
+            ),
+            default=0,
+        ),
+        "first_logical_and_physical_window_timestamp_ns": min(
+            (
+                int(row.get("timestamp_ns") or 0)
+                for row in logical_and_physical
+            ),
+            default=0,
+        ),
+        "latest_cpu_target_block_count": int(
+            latest.get("cpu_target_block_count") or 0
+        ),
+        "latest_gpu_target_block_count": int(
+            latest.get("gpu_target_block_count") or 0
+        ),
+        "restore_group_count": int(
+            captured.get("restore_group_count") or 0
+        ),
+        "restore_group_applicable_count": int(
+            captured.get("restore_group_applicable_count") or 0
+        ),
+        "restore_group_capture_rows": bounded_group_rows,
+        "raw_hash_values_retained": False,
+        "raw_block_ids_retained": False,
+        "request_ids_retained": False,
+        "token_ids_retained": False,
+        "generated_content_retained": False,
     }
 
 
