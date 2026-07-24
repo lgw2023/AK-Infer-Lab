@@ -404,13 +404,13 @@ def test_f1_r3_contract_and_audit_only_are_bounded(tmp_path: Path) -> None:
 
 def test_f1_r5_is_the_only_current_server_handoff() -> None:
     current_task_id = (
-        "p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724"
+        "p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724"
     )
     readiness = yaml.safe_load(READINESS.read_text(encoding="utf-8"))
     artifacts = readiness["artifacts"]
     assert artifacts["current_server_handoff_task"] == current_task_id
     assert artifacts["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml"
+        "p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml"
     )
     assert artifacts["current_p8_2_k1a_r5_f1_r5_runner"].endswith(
         "run_deepseek_p8_2_k1a_r5_f1_r5_effective_restore_contract.sh"

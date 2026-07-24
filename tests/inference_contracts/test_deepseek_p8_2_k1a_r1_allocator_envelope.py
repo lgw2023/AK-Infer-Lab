@@ -147,7 +147,7 @@ def test_k1a_r1_contract_stays_red_while_r3_has_new_formal_authorization() -> No
     assert audit["allocator_envelope"]["wave_cpu_blocks"] == [32, 64, 96, 128]
     assert audit["decision"]["formal_lifecycle_authorized"] is False
     assert audit["decision"]["k2_authorized"] is False
-    assert "p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724" in handoff
+    assert "p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724" in handoff
     assert "ready_p8_2_k1a_r2_allocator_capacity" in handoff
     assert "formal_model_lifecycle_count_exact: 1" in handoff
     assert "model_request_count_max: 4" in handoff

@@ -381,7 +381,7 @@ def test_r4_r1_closeout_is_preserved_during_r5_f0_feasibility():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-            "p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml"
+            "p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r3_grade"].startswith("yellow_")
     assert readiness["acceptance"]["p6_3b_r4_execution_authorized"] is False

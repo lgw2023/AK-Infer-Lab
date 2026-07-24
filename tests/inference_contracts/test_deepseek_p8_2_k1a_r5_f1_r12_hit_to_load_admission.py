@@ -202,8 +202,9 @@ def test_summarize_trace_includes_hit_to_load_gap() -> None:
 def test_handoff_and_runners_point_at_r12() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
     workload = yaml.safe_load(WORKLOAD.read_text(encoding="utf-8"))
-    assert TASK_ID in handoff
+    assert "p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724" in handoff
     assert "authorized_single_lifecycle_hit_to_load_admission" in handoff
+    assert "parent_f1_r12_task_id: p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724" in handoff
     assert "restore_hit_to_load_gap_class" in handoff
     assert "allocate_slots_observed" in handoff
     assert workload["task_id"] == TASK_ID

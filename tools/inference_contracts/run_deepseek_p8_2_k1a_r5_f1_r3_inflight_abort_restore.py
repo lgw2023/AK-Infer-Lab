@@ -2098,6 +2098,24 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
             hit_to_load.get("restore_update_early_return_reason")
             or "not_called"
         ),
+        "restore_update_error_type": str(
+            hit_to_load.get("restore_update_error_type") or ""
+        ),
+        "restore_update_raise_subclass": str(
+            hit_to_load.get("restore_update_raise_subclass") or "none"
+        ),
+        "restore_geometry_preflight_failure_class": str(
+            hit_to_load.get("restore_geometry_preflight_failure_class")
+            or "none"
+        ),
+        "restore_first_pairing_overflow_group_index": int(
+            hit_to_load.get("restore_first_pairing_overflow_group_index")
+            if hit_to_load.get("restore_first_pairing_overflow_group_index") is not None
+            else -1
+        ),
+        "restore_num_cached_fa_blocks": int(
+            hit_to_load.get("restore_num_cached_fa_blocks") or 0
+        ),
         "resolved_connector_and_lazy_mode_exact": connector_ok,
         "repair_diagnostic_ok": repair_ok,
         "host_memory_gate_ok": host.get("preflight_gate_ok") is True,

@@ -2,15 +2,15 @@
 
 日期：2026-07-10；最后更新：2026-07-24
 
-当前执行覆盖：`local_artifact_state=k1a_r5_f1_r12_hit_to_load_admission_prepared`；
+当前执行覆盖：`local_artifact_state=k1a_r5_f1_r13_update_raise_geometry_prepared`；
 `server_execution_state=authorized_one_fixed_lifecycle`；
-`current_task_id=p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724`。R12 保持
+`current_task_id=p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724`。R13 保持
 accepted 128 CPU blocks/rank、logical 16384 tokens/128 hash blocks 与 fixed 36800，
-在 R11 已证明的 CPU hit=16384 窗口上诊断 hit→load admission：observe-only 记录
-`allocate_slots` / `update_state_after_alloc` / connector load-meta 分支，分类
-`restore_hit_to_load_gap_class`；不改 capacity/context，不预先宣称唯一根因。
+在 R12 已证明的 `update_raised` 窗口上诊断异常类型与 GPU/CPU pairing 几何：
+observe-only 提升 `error_type`/`error_message`，并预检
+`group_gpu_ids[gpu_ext_start+i]`；不改 capacity/context，不预先宣称唯一根因。
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_full_lineage_preserved / p8_2_k1a_r4_r1_offline_store_only_closeout_green / p8_2_k1a_r5_f0_h2d_trigger_feasibility_ready / p8_2_k1a_r5_l1_d2h_green_controller_red / p8_2_k1a_r5_l1_r1_target_lost_red / p8_2_k1a_r5_f1_r1_fixed_l2_target_lost_red / p8_2_k1a_r5_f1_r2_mid_request_endpoint_mismatch / p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete_red / p8_2_k1a_r5_f1_r4_invalid_effective_64_block_contract / p8_2_k1a_r5_f1_r5_runtime_keyspace_probe_invalid / p8_2_k1a_r5_f1_r6_prepressure_circular_wait_red / p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger_red / p8_2_k1a_r5_f1_r8_effective_geometry_contract_red / p8_2_k1a_r5_f1_r9_finish_time_swa_lineage_red / p8_2_k1a_r5_f1_r10_logical_restore_hit_incomplete_after_physical_window / p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete / p8_2_k1a_r5_f1_r12_hit_to_load_admission_prepared / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_full_lineage_preserved / p8_2_k1a_r4_r1_offline_store_only_closeout_green / p8_2_k1a_r5_f0_h2d_trigger_feasibility_ready / p8_2_k1a_r5_l1_d2h_green_controller_red / p8_2_k1a_r5_l1_r1_target_lost_red / p8_2_k1a_r5_f1_r1_fixed_l2_target_lost_red / p8_2_k1a_r5_f1_r2_mid_request_endpoint_mismatch / p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete_red / p8_2_k1a_r5_f1_r4_invalid_effective_64_block_contract / p8_2_k1a_r5_f1_r5_runtime_keyspace_probe_invalid / p8_2_k1a_r5_f1_r6_prepressure_circular_wait_red / p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger_red / p8_2_k1a_r5_f1_r8_effective_geometry_contract_red / p8_2_k1a_r5_f1_r9_finish_time_swa_lineage_red / p8_2_k1a_r5_f1_r10_logical_restore_hit_incomplete_after_physical_window / p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete / p8_2_k1a_r5_f1_r13_update_raise_geometry_prepared / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 
 P8.1 parent grade 保留为 `yellow_p8_1_matrix_trace_invalid`。
 
@@ -29,23 +29,27 @@ R9 的历史合同与入口仍由
 `run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.sh` 和
 `run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh` 冻结保留；它们不是当前执行入口。
 
-当前唯一服务器任务是 `p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724`。R12 固定一个
+当前唯一服务器任务是 `p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724`。R13 固定一个
 lifecycle、一个 pressure、零 retry，服务器不得补代码或调整 capacity/context。
 
-当前执行合同由 `p8_2_k1a_r5_f1_r12_hit_to_load_admission_audit.yaml`、
+当前执行合同由 `p8_2_k1a_r5_f1_r13_update_raise_geometry_audit.yaml`、
+`p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml`、
+`run_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.sh` 与唯一
+`run_deepseek_p8_2_k1a_r5_f1_r13_server_task.sh` 固定。R12 parent
+`p8_2_k1a_r5_f1_r12_hit_to_load_admission_audit.yaml`、
 `p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml`、
-`run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.sh` 与唯一
-`run_deepseek_p8_2_k1a_r5_f1_r12_server_task.sh` 固定。R11 parent
+`run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.sh` 与
+`run_deepseek_p8_2_k1a_r5_f1_r12_server_task.sh` 仅作 parent provenance，不得重跑。
+R11 parent
 `p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_audit.yaml`、
 `p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.yaml`、
 `run_deepseek_p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.sh` 与
-`run_deepseek_p8_2_k1a_r5_f1_r11_server_task.sh` 仅作 parent provenance，不得重跑。
+`run_deepseek_p8_2_k1a_r5_f1_r11_server_task.sh` 也只作更早 parent provenance，不得重跑。
 R10 parent 资产 `p8_2_k1a_r5_f1_r10_cache_stamp_lineage_audit.yaml`、
 `run_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.sh` 与
 `run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh` 也只作更早 parent provenance，不得重跑。
-公共 observer 保留 R11 EAGLE-aware logical gate，并新增 allocate_slots /
-update_state_after_alloc / connector load-meta 的 hit→load admission 分类；accepted
-restore target 仍为 16384。raw hash 与 block ID 仅驻留进程内，不写入有界包。
+公共 observer 保留 R11/R12 hit→load admission，并新增 update raise exception /
+pairing geometry 字段；accepted restore target 仍为 16384。raw hash 与 block ID 仅驻留进程内，不写入有界包。
 F1-R8 parent 资产 `p8_2_k1a_r5_f1_r8_target_store_lineage_audit.yaml`、`p8_2_k1a_r5_f1_r8_target_store_lineage.yaml`、`run_deepseek_p8_2_k1a_r5_f1_r8_target_store_lineage.sh` 与 `run_deepseek_p8_2_k1a_r5_f1_r8_server_task.sh` 仅用于冻结 R8 result lineage，不是当前入口。
 F1-R7 parent 合同继续由 `p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_audit.yaml`、`p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.yaml`、`run_deepseek_p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.sh` 与 `run_deepseek_p8_2_k1a_r5_f1_r7_server_task.sh` 冻结，只用于 parent provenance，不是当前执行入口。
 F1-R6 parent 合同继续由 `p8_2_k1a_r5_f1_r6_logical_keyspace_restore_audit.yaml` 冻结，只用于 parent provenance，不是当前执行入口。

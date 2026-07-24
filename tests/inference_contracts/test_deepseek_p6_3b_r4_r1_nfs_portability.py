@@ -163,7 +163,7 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_r5_f0_task():
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert "P8.2-K1A-R5-F1-R11 EAGLE-aware logical lookup lineage" in handoff
-    assert "task_id: p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab" in handoff
@@ -184,7 +184,7 @@ def test_r4_r1_closeout_is_preserved_in_the_unique_r5_f0_task():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml"
+        "p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml"
     )
     assert readiness["acceptance"]["p6_3b_r4_grade"] == (
         "blocked_p6_3b_r4_source_or_resource_gate"

@@ -1,0 +1,141 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R13
+date: '2026-07-24'
+task_id: p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724
+
+accepted_f1_r12_result:
+  server_grade: red_p8_2_k1a_r5_f1_r12_h2d_evidence_incomplete
+  operational_grade: operational_recovery_clean
+  experimental_terminal: restore_request_failure
+  request_count: 4
+  successful_request_count: 2
+  pressure_request_count_executed: 1
+  logical_target_block_count: 128
+  accepted_restore_match_tokens: 16384
+  restore_shared_prefix_tokens: 32768
+  restore_cpu_hit_exact: true
+  restore_cpu_hit_tokens_max: 16384
+  restore_allocate_slots_observed: true
+  restore_allocate_slots_ok: true
+  restore_num_external_tokens_at_alloc: 16384
+  restore_num_new_tokens_at_alloc: 0
+  restore_delay_cache_blocks_at_alloc: true
+  restore_update_after_alloc_called: true
+  restore_pending_present_at_update: true
+  restore_pending_non_null_block_count: 40
+  restore_hit_to_load_gap_class: update_raised
+  restore_update_early_return_reason: update_raised
+  restore_entered_reqs_to_load: false
+  restore_load_scheduled: false
+  restore_connector_load_meta_observed: false
+  h2d_worker_count: 0
+  h2d_bytes_total: 0
+  target_store_key_count: 40
+  target_store_completed_key_count: 40
+  target_gpu_evicted_key_count: 40
+  target_cpu_evicted_key_count: 0
+  d2h_store_complete: true
+  d2h_worker_count: 8
+  d2h_bytes_total: 2206846976
+  physical_cpu_only_window_event_count: 9
+  logical_and_physical_window_event_count: 9
+  logical_keyspace_probe_event_count: 152
+  cleanup: clean
+  resource_recovery_exact: true
+  stopped_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  restored_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  grading_sha256: b644f197ace6d9d4829831e1303fe4582a7eaf7f5d13be8c0d5ea60462b5ea8c
+  timeline_sha256: c1ff9de2492908418dd3468d42e79519226ceab87c1cb350158eaed57c65c62b
+  h2d_trigger_sha256: f44aff05aefee6191ac7e8b644b639172a3dab48db2a18408646f7aa26fa7c0e
+  transfer_sha256: 88fa66f31989bb5a0b958904b7599f2e9af5d8626600408af49ccb1c47f2da5c
+  logical_diagnostic_sha256: 0fa734a9fb284d9ebf344843565ca8b7591cac4248f008f8e2c224b3b2a97a45
+  target_lineage_sha256: ee7fed15ef78ed503a50453cf93eddffbe57ba167075549db684a4f55eaf5ab0
+  repair_sha256: 459d0f9aa71587d5359a23aabdb44741d4b41195c6cd56a8e8775fc7d1ae1862
+  recovery_sha256: 1af761a643b8ea42ea74f9a6b5f4a9baa7bed5a4aa895c421f090cd43da1df61
+  manifest_sha256: da2f19ee6a0e3d3b459110d5d7fefc77746fbde451989e2e467102e3f6528d3e
+
+developer_diagnosis:
+  r12_closed_hit_to_load_as_update_raised: true
+  r12_allocate_slots_ok_with_num_new_tokens_zero: true
+  r12_pending_non_null_block_count: 40
+  r12_bounded_package_missing_error_type_and_message: true
+  current_gap_is_inside_update_state_after_alloc: true
+  frozen_pairing_index_site: group_gpu_ids[gpu_ext_start + i]
+  unique_root_cause_claim_authorized: false
+  accepted_capacity_invalidated: false
+  repeating_r12_gap_class_only_is_not_the_next_action: true
+
+source_alignment:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  simple_cpu_offload_scheduler_path: vllm/v1/simple_kv_offload/manager.py
+  source_blob_sha256_manager_py: fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
+  frozen_raise_sites:
+    - IndexError_at_group_gpu_ids_gpu_ext_start_plus_i
+    - AssertionError_num_external_tokens_not_aligned_to_group_block_size
+    - AssertionError_num_blocks_to_load_gt_zero
+    - AssertionError_gpu_block_pool_is_not_none
+  observe_only_must_surface_error_type_and_pairing_geometry: true
+
+developer_decision:
+  same_fixed_capacity_and_context_required: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_per_rank: 430604288
+  cpu_bytes_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count_required: 128
+  accepted_restore_match_tokens: 16384
+  hash_block_size_tokens: 128
+  target_restore_shared_prefix_tokens: 32768
+  target_restore_prompt_identity_required: true
+  eagle_aware_logical_lookup_retained: true
+  legacy_capped_probe_retained: true
+  hit_to_load_admission_lineage_retained: true
+  update_raise_geometry_lineage_required: true
+  required_observe_events:
+    - cpu_hit_matched
+    - allocate_slots_observed
+    - update_state_after_alloc_observed
+    - load_scheduled
+    - connector_load_meta_observed
+  required_bounded_fields:
+    - restore_hit_to_load_gap_class
+    - restore_update_error_type
+    - restore_update_error_message
+    - restore_update_raise_subclass
+    - restore_geometry_preflight_status
+    - restore_geometry_preflight_failure_class
+    - restore_num_cached_fa_blocks
+    - restore_gpu_block_table_lens
+    - restore_pending_block_counts
+    - restore_pending_non_null_counts
+    - restore_n_take_by_group
+    - restore_gpu_ext_start_by_group
+    - restore_first_pairing_overflow_group_index
+    - restore_first_overflow_needed_index
+    - restore_first_overflow_gpu_len
+    - restore_predicted_transfer_pair_count
+  required_raise_subclasses:
+    - none
+    - index_error_gpu_cpu_pairing
+    - alignment_assert
+    - blocks_to_load_assert
+    - gpu_pool_assert
+    - assertion_other
+    - update_raised_without_error_fields
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  pressure_request_count_exact: 1
+  restore_request_count_max: 1
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  runtime_dependency_mutation_authorized: false
+  server_side_code_edit_authorized: false
+  unique_root_cause_claim_authorized: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+claim_boundary: >
+  accepted_capacity_single_lifecycle_update_raise_exception_and_pairing_geometry
+  discrimination_and_conditional_h2d_candidate_only

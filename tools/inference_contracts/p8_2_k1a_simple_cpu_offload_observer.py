@@ -66,6 +66,191 @@ def _pending_non_null_block_count(pending: object | None) -> int:
         return 0
 
 
+def _as_int(value: object, default: int = 0) -> int:
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _cdiv(a: int, b: int) -> int:
+    if b <= 0:
+        return 0
+    return -(-int(a) // int(b))
+
+
+def _effective_group_block_size(scheduler: Any, group_index: int) -> int | None:
+    try:
+        groups = scheduler.cpu_kv_cache_config.kv_cache_groups
+        base = int(groups[group_index].kv_cache_spec.block_size)
+        cp = int(getattr(scheduler, "cp_world_size", 1) or 1)
+        return base * cp
+    except Exception:
+        return None
+
+
+def observe_update_pairing_geometry(
+    scheduler: Any,
+    blocks: Any,
+    num_external_tokens: int,
+    pending: object | None,
+) -> dict[str, Any]:
+    """Observe-only replica of frozen update pairing math; never mutates state."""
+
+    out: dict[str, Any] = {
+        "geometry_preflight_status": "skipped",
+        "geometry_preflight_failure_class": "none",
+        "fa_gidx": int(getattr(scheduler, "fa_gidx", -1) or -1),
+        "fa_block_size": int(getattr(scheduler, "fa_block_size", 0) or 0),
+        "num_cached_fa_blocks": 0,
+        "num_computed_tokens_from_fa": 0,
+        "total_computed_tokens_expected": 0,
+        "gpu_group_count": 0,
+        "pending_group_count": 0,
+        "gpu_block_table_lens": [],
+        "pending_block_counts": [],
+        "pending_non_null_counts": [],
+        "n_take_by_group": [],
+        "gpu_ext_start_by_group": [],
+        "first_alignment_failure_group_index": -1,
+        "first_pairing_overflow_group_index": -1,
+        "first_overflow_needed_index": -1,
+        "first_overflow_gpu_len": -1,
+        "predicted_transfer_pair_count": 0,
+    }
+    if pending is None or int(num_external_tokens) <= 0:
+        out["geometry_preflight_status"] = "not_applicable"
+        return out
+    try:
+        block_ids_by_group = blocks.get_block_ids()
+        cpu_hit_blocks_full = pending[0] if isinstance(pending, tuple) else pending
+        gpu_group_count = len(block_ids_by_group)
+        pending_group_count = len(cpu_hit_blocks_full)
+        out["gpu_group_count"] = gpu_group_count
+        out["pending_group_count"] = pending_group_count
+        out["gpu_block_table_lens"] = [len(ids) for ids in block_ids_by_group]
+        out["pending_block_counts"] = [len(group) for group in cpu_hit_blocks_full]
+        out["pending_non_null_counts"] = [
+            sum(1 for block in group if not getattr(block, "is_null", False))
+            for group in cpu_hit_blocks_full
+        ]
+
+        fa_gidx = int(getattr(scheduler, "fa_gidx", -1))
+        fa_block_size = int(getattr(scheduler, "fa_block_size", 0) or 0)
+        out["fa_gidx"] = fa_gidx
+        out["fa_block_size"] = fa_block_size
+        if 0 <= fa_gidx < len(getattr(blocks, "blocks", ()) or ()):
+            fa_blocks = blocks.blocks[fa_gidx]
+            num_cached_fa_blocks = sum(
+                1 for blk in fa_blocks if getattr(blk, "block_hash", None) is not None
+            )
+        else:
+            num_cached_fa_blocks = 0
+        num_computed_tokens = num_cached_fa_blocks * fa_block_size
+        total_computed_tokens = num_computed_tokens + int(num_external_tokens)
+        out["num_cached_fa_blocks"] = num_cached_fa_blocks
+        out["num_computed_tokens_from_fa"] = num_computed_tokens
+        out["total_computed_tokens_expected"] = total_computed_tokens
+
+        scheduler_block_size = int(getattr(scheduler, "block_size", 0) or 0)
+        if scheduler_block_size <= 0 or int(num_external_tokens) // scheduler_block_size <= 0:
+            out["geometry_preflight_status"] = "would_fail"
+            out["geometry_preflight_failure_class"] = "blocks_to_load_assert"
+            return out
+
+        num_groups = min(gpu_group_count, pending_group_count)
+        n_take_by_group: list[int] = []
+        gpu_ext_start_by_group: list[int] = []
+        predicted_pairs = 0
+        for g in range(num_groups):
+            g_block_size = _effective_group_block_size(scheduler, g)
+            if g_block_size is None or g_block_size <= 0:
+                out["geometry_preflight_status"] = "would_fail"
+                out["geometry_preflight_failure_class"] = "group_block_size_unreadable"
+                out["first_alignment_failure_group_index"] = g
+                return out
+            if int(num_external_tokens) % g_block_size != 0:
+                out["geometry_preflight_status"] = "would_fail"
+                out["geometry_preflight_failure_class"] = "alignment_assert"
+                out["first_alignment_failure_group_index"] = g
+                out["n_take_by_group"] = n_take_by_group
+                out["gpu_ext_start_by_group"] = gpu_ext_start_by_group
+                return out
+            n_take_g = int(num_external_tokens) // g_block_size
+            cpu_blocks_g = list(cpu_hit_blocks_full[g][:n_take_g])
+            n_ext_g = len(cpu_blocks_g)
+            n_take_by_group.append(n_take_g)
+            if n_ext_g == 0:
+                gpu_ext_start_by_group.append(0)
+                continue
+            n_computed_g = _cdiv(total_computed_tokens, g_block_size)
+            gpu_ext_start = n_computed_g - n_ext_g
+            gpu_ext_start_by_group.append(gpu_ext_start)
+            group_gpu_ids = block_ids_by_group[g]
+            gpu_len = len(group_gpu_ids)
+            for i, cpu_blk in enumerate(cpu_blocks_g):
+                if getattr(cpu_blk, "is_null", False):
+                    continue
+                needed = gpu_ext_start + i
+                if needed < 0 or needed >= gpu_len:
+                    out["geometry_preflight_status"] = "would_fail"
+                    out["geometry_preflight_failure_class"] = (
+                        "index_error_gpu_cpu_pairing"
+                    )
+                    out["first_pairing_overflow_group_index"] = g
+                    out["first_overflow_needed_index"] = needed
+                    out["first_overflow_gpu_len"] = gpu_len
+                    out["n_take_by_group"] = n_take_by_group
+                    out["gpu_ext_start_by_group"] = gpu_ext_start_by_group
+                    out["predicted_transfer_pair_count"] = predicted_pairs
+                    return out
+                predicted_pairs += 1
+
+        out["n_take_by_group"] = n_take_by_group
+        out["gpu_ext_start_by_group"] = gpu_ext_start_by_group
+        out["predicted_transfer_pair_count"] = predicted_pairs
+        out["geometry_preflight_status"] = "ok"
+        out["geometry_preflight_failure_class"] = "none"
+        return out
+    except Exception as error:  # pragma: no cover - defensive observer path
+        out["geometry_preflight_status"] = "observer_geometry_failed"
+        out["geometry_preflight_failure_class"] = type(error).__name__
+        return out
+
+
+def classify_update_raise_subclass(update: dict[str, Any] | None) -> str:
+    if update is None:
+        return "none"
+    if str(update.get("early_return_reason") or "") != "update_raised":
+        return "none"
+    error_type = str(update.get("error_type") or "")
+    error_message = str(update.get("error_message") or "")
+    preflight = str(update.get("geometry_preflight_failure_class") or "none")
+    if (
+        error_type == "IndexError"
+        or preflight == "index_error_gpu_cpu_pairing"
+        or _as_int(update.get("first_pairing_overflow_group_index"), -1) >= 0
+    ):
+        return "index_error_gpu_cpu_pairing"
+    if error_type == "AssertionError" and (
+        "not aligned" in error_message or preflight == "alignment_assert"
+    ):
+        return "alignment_assert"
+    if error_type == "AssertionError" and preflight == "blocks_to_load_assert":
+        return "blocks_to_load_assert"
+    if error_type == "AssertionError" and (
+        "gpu_block_pool" in error_message or "_gpu_block_pool" in error_message
+    ):
+        return "gpu_pool_assert"
+    if error_type == "AssertionError":
+        return "assertion_other"
+    if error_type:
+        return f"other_{error_type}"
+    return "update_raised_without_error_fields"
+
+
 def classify_restore_hit_to_load_gap(
     rows: list[dict[str, Any]],
     *,
@@ -137,11 +322,20 @@ def classify_restore_hit_to_load_gap(
     elif hit is not None:
         gap_class = "hit_without_alloc_or_update_evidence"
 
+    raise_subclass = classify_update_raise_subclass(update)
+    gpu_table_lens = list((update or {}).get("gpu_block_table_lens") or [])
+    fa_gidx = _as_int((update or {}).get("fa_gidx"), -1)
+    fa_table_len = (
+        _as_int(gpu_table_lens[fa_gidx], 0)
+        if 0 <= fa_gidx < len(gpu_table_lens)
+        else 0
+    )
+
     return {
-        "schema_version": "p8_2_k1a_hit_to_load_gap_v1",
+        "schema_version": "p8_2_k1a_hit_to_load_gap_v2",
         "restore_cpu_hit_observed": hit is not None,
         "restore_cpu_hit_tokens_max": max(
-            (int(row.get("num_new_tokens") or 0) for row in hits),
+            (_as_int(row.get("num_new_tokens"), 0) for row in hits),
             default=0,
         ),
         "restore_cpu_hit_is_async": (
@@ -154,49 +348,103 @@ def classify_restore_hit_to_load_gap(
         "restore_allocate_slots_none": (
             alloc.get("allocate_slots_ok") is False if alloc is not None else False
         ),
-        "restore_num_external_tokens_at_alloc": int(
-            (alloc or {}).get("num_external_computed_tokens") or 0
+        "restore_num_external_tokens_at_alloc": _as_int(
+            (alloc or {}).get("num_external_computed_tokens"), 0
         ),
-        "restore_num_new_tokens_at_alloc": int(
-            (alloc or {}).get("num_new_tokens") or 0
+        "restore_num_new_tokens_at_alloc": _as_int(
+            (alloc or {}).get("num_new_tokens"), 0
         ),
         "restore_delay_cache_blocks_at_alloc": (
             (alloc or {}).get("delay_cache_blocks") is True
         ),
         "restore_update_after_alloc_called": update is not None,
-        "restore_num_external_tokens_at_update": int(
-            (update or {}).get("num_external_tokens") or 0
+        "restore_num_external_tokens_at_update": _as_int(
+            (update or {}).get("num_external_tokens"), 0
         ),
         "restore_pending_present_at_update": (
             (update or {}).get("pending_present") is True
         ),
-        "restore_pending_non_null_block_count": int(
-            (update or hit or {}).get("pending_non_null_block_count") or 0
+        "restore_pending_non_null_block_count": _as_int(
+            (update or hit or {}).get("pending_non_null_block_count"), 0
         ),
         "restore_update_early_return_reason": str(
             (update or {}).get("early_return_reason") or "not_called"
         ),
+        "restore_update_error_type": str((update or {}).get("error_type") or ""),
+        "restore_update_error_message": str(
+            (update or {}).get("error_message") or ""
+        )[:512],
+        "restore_update_raise_subclass": raise_subclass,
+        "restore_geometry_preflight_status": str(
+            (update or {}).get("geometry_preflight_status") or "missing"
+        ),
+        "restore_geometry_preflight_failure_class": str(
+            (update or {}).get("geometry_preflight_failure_class") or "none"
+        ),
+        "restore_fa_gidx": fa_gidx,
+        "restore_fa_block_size": _as_int((update or {}).get("fa_block_size"), 0),
+        "restore_num_cached_fa_blocks": _as_int(
+            (update or {}).get("num_cached_fa_blocks"), 0
+        ),
+        "restore_num_computed_tokens_from_fa": _as_int(
+            (update or {}).get("num_computed_tokens_from_fa"), 0
+        ),
+        "restore_total_computed_tokens_expected": _as_int(
+            (update or {}).get("total_computed_tokens_expected"), 0
+        ),
+        "restore_gpu_group_count": _as_int((update or {}).get("gpu_group_count"), 0),
+        "restore_pending_group_count": _as_int(
+            (update or {}).get("pending_group_count"), 0
+        ),
+        "restore_gpu_block_table_lens": gpu_table_lens,
+        "restore_pending_block_counts": list(
+            (update or {}).get("pending_block_counts") or []
+        ),
+        "restore_pending_non_null_counts": list(
+            (update or {}).get("pending_non_null_counts") or []
+        ),
+        "restore_n_take_by_group": list((update or {}).get("n_take_by_group") or []),
+        "restore_gpu_ext_start_by_group": list(
+            (update or {}).get("gpu_ext_start_by_group") or []
+        ),
+        "restore_gpu_block_table_len_fa": fa_table_len,
+        "restore_first_alignment_failure_group_index": _as_int(
+            (update or {}).get("first_alignment_failure_group_index"), -1
+        ),
+        "restore_first_pairing_overflow_group_index": _as_int(
+            (update or {}).get("first_pairing_overflow_group_index"), -1
+        ),
+        "restore_first_overflow_needed_index": _as_int(
+            (update or {}).get("first_overflow_needed_index"), -1
+        ),
+        "restore_first_overflow_gpu_len": _as_int(
+            (update or {}).get("first_overflow_gpu_len"), -1
+        ),
+        "restore_predicted_transfer_pair_count": _as_int(
+            (update or {}).get("predicted_transfer_pair_count"), 0
+        ),
         "restore_entered_reqs_to_load": (
             (update or {}).get("entered_reqs_to_load") is True
         ),
-        "restore_transfer_gpu_block_count": int(
+        "restore_transfer_gpu_block_count": _as_int(
             (update or load or {}).get("gpu_block_ids_count")
-            or (load or {}).get("block_count")
-            or 0
+            if (update or load or {}).get("gpu_block_ids_count") is not None
+            else (load or {}).get("block_count"),
+            0,
         ),
-        "restore_transfer_cpu_block_count": int(
-            (update or {}).get("cpu_block_ids_count") or 0
+        "restore_transfer_cpu_block_count": _as_int(
+            (update or {}).get("cpu_block_ids_count"), 0
         ),
-        "restore_null_cpu_blocks_skipped": int(
-            (update or {}).get("null_cpu_blocks_skipped") or 0
+        "restore_null_cpu_blocks_skipped": _as_int(
+            (update or {}).get("null_cpu_blocks_skipped"), 0
         ),
         "restore_load_scheduled": load is not None,
         "restore_connector_load_meta_observed": load_meta is not None,
         "restore_connector_load_event_ready": (
             (load_meta or {}).get("load_event_ready") is True
         ),
-        "restore_connector_load_gpu_block_count": int(
-            (load_meta or {}).get("load_gpu_block_count") or 0
+        "restore_connector_load_gpu_block_count": _as_int(
+            (load_meta or {}).get("load_gpu_block_count"), 0
         ),
         "restore_hit_to_load_gap_class": gap_class,
         "raw_hash_values_retained": False,
@@ -306,6 +554,12 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
         pending_before = self._pending_cpu_hits.get(req_id)
         pending_present = pending_before is not None
         pending_non_null = _pending_non_null_block_count(pending_before)
+        geometry = observe_update_pairing_geometry(
+            self,
+            blocks,
+            int(num_external_tokens),
+            pending_before,
+        )
         early_return_reason = "success"
         entered_reqs_to_load = False
         gpu_block_ids_count = 0
@@ -328,6 +582,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 gpu_block_ids_count=0,
                 cpu_block_ids_count=0,
                 null_cpu_blocks_skipped=0,
+                **geometry,
                 **_bounded_error_fields(error),
             )
             raise
@@ -375,6 +630,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
             gpu_block_ids_count=gpu_block_ids_count,
             cpu_block_ids_count=cpu_block_ids_count,
             null_cpu_blocks_skipped=null_cpu_blocks_skipped,
+            **geometry,
         )
         return result
 

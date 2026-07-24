@@ -1,10 +1,10 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K1A-R5-F1-R12 CPU-hit → H2D-load 准入诊断
+## 当前唯一服务器动作：P8.2-K1A-R5-F1-R13 update_raised 异常与 pairing geometry
 
 ~~~text
-task_id: p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724
-execution_mode: authorized_single_lifecycle_hit_to_load_admission
+task_id: p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724
+execution_mode: authorized_single_lifecycle_update_raise_geometry
 server_sync_review_authorized: true
 offline_parent_gate_required: true
 npu_execution_authorized: true
@@ -37,8 +37,11 @@ physical_group_cpu_only_window_required_to_abort: true
 legacy_capped_probe_required: true
 eagle_aware_logical_lookup_required: true
 hit_to_load_admission_lineage_required: true
+update_raise_geometry_lineage_required: true
 allocate_slots_observation_required: true
 update_state_after_alloc_observation_required: true
+update_raise_error_type_required: true
+pairing_geometry_preflight_required: true
 connector_load_meta_observation_required: true
 all_relevant_kv_groups_required: true
 all_applicable_kv_groups_required: true
@@ -68,67 +71,82 @@ p8_3_i1_authorized: false
 no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true
 ~~~
 
-## 先读结论：R12 的代码已经写好，服务器只同步、审计、执行、回报
+## 先读结论：R13 的代码已经写好，服务器只同步、审计、执行、回报
 
-### R11 已经证明的事实
+### R12 已经证明的事实
 
-R11 不是 accepted capacity 失败，也不是 logical lookup 仍为 0。它已经在唯一
-fixed `36800` pressure 中得到：
+R12 run02 不是 accepted capacity 失败，也不是 lookup 仍为 0。它已经在同一
+accepted capacity / fixed `36800` / 单 lifecycle 上得到：
 
 ~~~text
-physical CPU-only window exact = true
-EAGLE-aware / raw logical hit = 16384
-legacy capped hit = 0
-legacy_capped_false_negative_candidate_count = 67
-post-abort logical_restore_window_exact = true
-restore_allowed = true
-restore_sent = true
 restore_cpu_hit_exact = true
 restore_cpu_hit_tokens_max = 16384
+restore_allocate_slots_ok = true
+restore_num_external_tokens_at_alloc = 16384
+restore_num_new_tokens_at_alloc = 0
+restore_delay_cache_blocks_at_alloc = true
+restore_update_after_alloc_called = true
+restore_pending_present_at_update = true
+restore_pending_non_null_block_count = 40
+restore_hit_to_load_gap_class = update_raised
+restore_entered_reqs_to_load = false
 restore_load_scheduled = false
 H2D workers / bytes = 0 / 0
-restore_follower = HTTP 200, 0 streamed tokens, e2el ≈ 67ms, spec_activity_ok=false
 ~~~
 
-因此当前阻断已经从“找不到 CPU hit”推进到：
+因此当前阻断已经从“hit 后不 schedule”推进到：
 
-**CPU hit 已见，但 hit 之后没有进入 H2D load schedule，restore 请求立刻失败。**
+**`update_state_after_alloc` 自身抛异常，阻止进入 `_reqs_to_load` / H2D。**
 
-### R12 修复/观测的实际机制
+R12 有界包缺 `error_type` / `error_message`，也缺 GPU/CPU pairing 几何，所以还不能
+判定是 `IndexError` 配对溢出、alignment assert，还是别的断言。
 
-冻结路径是：
+### R13 修复/观测的实际机制
+
+冻结 `SimpleCPUOffloadScheduler.update_state_after_alloc`（vLLM `0decac0d` /
+`manager.py` blob `fdcb18a6...`）在 pending 存在且 `num_external>0` 时会：
 
 ~~~text
-SimpleCPUOffloadScheduler.get_num_new_matched_tokens
-  -> pin pending CPU hit, return (hit_length, is_async=True)
-Scheduler.allocate_slots(..., num_external_computed_tokens, delay_cache_blocks=True)
-  -> None 则永远不会调用 update_state_after_alloc
-SimpleCPUOffloadScheduler.update_state_after_alloc
-  -> num_external==0 / pending missing / null-filter empty / 或写入 _reqs_to_load
-build_connector_meta
-  -> load_event / load_gpu_blocks
-worker H2D copy
+num_cached_fa_blocks = count(block_hash is not None in FA group)
+num_computed_tokens = num_cached_fa_blocks * fa_block_size
+total_computed = num_computed_tokens + num_external
+per group:
+  n_take = num_external / group_block_size
+  n_computed = cdiv(total_computed, group_block_size)
+  gpu_ext_start = n_computed - n_take
+  for i, cpu_blk in enumerate(cpu_blocks[:n_take]):
+    if not null:
+      gpu_block_ids.append(group_gpu_ids[gpu_ext_start + i])  # IndexError 高发点
 ~~~
 
-R11 只证明了第一段 `cpu_hit_matched`。R12 在同一 accepted capacity / 同一 16K
-窗口上，只补 observe-only 准入分支，不改 capacity、context、请求计划语义，也不改
-服务器依赖。
+R13 在同一 16K 窗口上只补 observe-only：
+
+1. 把 `error_type` / `error_message` 提升进有界 summary
+2. 在调用原 `update_state_after_alloc` 前做 pairing geometry 预检（不改状态）
+3. 输出 `restore_update_raise_subclass` 与首个 overflow group/index/len
+
+不改 capacity、context、请求计划，不改服务器依赖，不宣称唯一根因。
 
 服务器必须在有界摘要里看到：
 
 ~~~text
 restore_hit_to_load_gap_class
-restore_allocate_slots_observed / restore_allocate_slots_ok / restore_allocate_slots_none
-restore_num_external_tokens_at_alloc
-restore_num_new_tokens_at_alloc
-restore_delay_cache_blocks_at_alloc
-restore_update_after_alloc_called
-restore_num_external_tokens_at_update
-restore_pending_present_at_update
-restore_update_early_return_reason
-restore_entered_reqs_to_load
-restore_transfer_gpu_block_count / restore_transfer_cpu_block_count
-restore_connector_load_event_ready
+restore_update_error_type
+restore_update_error_message
+restore_update_raise_subclass
+restore_geometry_preflight_status
+restore_geometry_preflight_failure_class
+restore_num_cached_fa_blocks
+restore_num_computed_tokens_from_fa
+restore_gpu_block_table_lens
+restore_pending_block_counts
+restore_pending_non_null_counts
+restore_n_take_by_group
+restore_gpu_ext_start_by_group
+restore_first_pairing_overflow_group_index
+restore_first_overflow_needed_index
+restore_first_overflow_gpu_len
+restore_predicted_transfer_pair_count
 ~~~
 
 这些字段会出现在 `h2d_trigger_summary.json`、`transfer_trace_summary.json` 和
@@ -136,7 +154,7 @@ restore_connector_load_event_ready
 
 ## 不要做
 
-- 不要重跑 R10 / R11，不要改 capacity / context / pressure tokens
+- 不要重跑 R10 / R11 / R12，不要改 capacity / context / pressure tokens
 - 不要做 request retry、sweep、第二 lifecycle、K2、P8.3-I1
 - 不要在服务器改代码、改依赖、打补丁、改 observer 合同
 - 不要把 raw request id / hash / block id / token id / 生成内容写进有界包
@@ -149,10 +167,15 @@ restore_connector_load_event_ready
 停 keep-alive 是常规资源操作。本任务 TP8，卡集固定 `0 1 2 3 4 5 6 7`。
 成功、失败、中断、early exit 后都必须在完全相同卡集恢复，并回报 stopped / restored。
 
+若 driver 恢复未持久（R12 run01/run02 曾出现），允许手动：
+
 ~~~bash
 bash /data/node0_disk1/Public/npu_stop.sh 0 1 2 3 4 5 6 7
 bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ~~~
+
+启动前请确认 HBM 已从 keep-alive 占压释放（R12 run01 曾因 HBM 未释放导致 vLLM
+启动失败）。必要时先手动 `npu_stop.sh 0-7`，确认每卡 HBM 降到可用后再跑 driver。
 
 ## 唯一执行入口
 
@@ -160,98 +183,110 @@ bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 
 ~~~bash
 cd /data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724_run01
+RESULT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724_run01
+test ! -e "${RESULT_DIR}"
 mkdir -p "${RESULT_DIR}"
 
-# 可选：先确认 R11 parent 仍在约定路径
+# 可选：确认 R12 parent 仍在约定路径
 # 默认 PARENT_ROOT=
-#   ${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723_run01
+#   ${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724_run02
 # 若实际目录不同，导出：
-# export P8_2_K1A_F1_R11_ROOT=/实际/R11/run01路径
+# export P8_2_K1A_F1_R12_ROOT=/实际/R12/run02路径
 
-bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r12_server_task.sh "${RESULT_DIR}"
+bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_server_task.sh "${RESULT_DIR}"
 ~~~
 
 该 driver 会：
 
-1. 校验仓库合同与 R11 parent 9 个 SHA-256
+1. 校验仓库合同与 R12 parent 9 个 SHA-256
 2. stop keep-alive `0-7`
 3. 执行唯一 fixed lifecycle
 4. cleanup
 5. 同卡恢复 keep-alive `0-7`
 6. 写出有界候选包，并停下等待传输方式选择
 
-## R11 parent 证据门（必须全部匹配）
+## R12 parent 证据门（必须全部匹配）
 
 父目录默认：
 
-`server_local/p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723_run01`
+`server_local/p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724_run02`
 
 ~~~text
-78be6275a0142918aff454bbda91e6bdcb359b20cdea6adefe31798c75fea633  grading_summary.json
-8e29e91836490c80e932f19c0aced534e659454fded42abc04f351b27c18f5a9  residency_gate_timeline.json
-c11b92b1af91759feedafbb697a58aaf0d7c4f2d5f8bbeaedf4781619b602d39  h2d_trigger_summary.json
-9fe1cf8ff256d6cb120f3d7babec72527da8a90df03130651ae7a2cdf62b0d4f  transfer_trace_summary.json
-cfbabbcbf74602ad60f20c1a6e20874a0a8bdb0ff150cdec263f0fd842a8dc15  logical_keyspace_probe_diagnostic_summary.json
-d2b7f24a5f885f6026692badf590107b2b8082c40bff63edb13d60953e077343  target_store_lineage_summary.json
+b644f197ace6d9d4829831e1303fe4582a7eaf7f5d13be8c0d5ea60462b5ea8c  grading_summary.json
+c1ff9de2492908418dd3468d42e79519226ceab87c1cb350158eaed57c65c62b  residency_gate_timeline.json
+f44aff05aefee6191ac7e8b644b639172a3dab48db2a18408646f7aa26fa7c0e  h2d_trigger_summary.json
+88fa66f31989bb5a0b958904b7599f2e9af5d8626600408af49ccb1c47f2da5c  transfer_trace_summary.json
+0fa734a9fb284d9ebf344843565ca8b7591cac4248f008f8e2c224b3b2a97a45  logical_keyspace_probe_diagnostic_summary.json
+ee7fed15ef78ed503a50453cf93eddffbe57ba167075549db684a4f55eaf5ab0  target_store_lineage_summary.json
 459d0f9aa71587d5359a23aabdb44741d4b41195c6cd56a8e8775fc7d1ae1862  repair_diagnostic_summary.json
-7374e1763cf2f20793c66865a31f860fe6040888319af1f433d69cc6eae234a6  resource_recovery_summary.json
-bb04845f8e16a9acc8fd7f4f445b2c115a9124469e234ef00a3b3dbb6fa9827d  candidate_manifest.server_local.json
+1af761a643b8ea42ea74f9a6b5f4a9baa7bed5a4aa895c421f090cd43da1df61  resource_recovery_summary.json
+da2f19ee6a0e3d3b459110d5d7fefc77746fbde451989e2e467102e3f6528d3e  candidate_manifest.server_local.json
 ~~~
 
 父事实硬门槛：
 
 ~~~text
-server_grade = red_p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete
+server_grade = red_p8_2_k1a_r5_f1_r12_h2d_evidence_incomplete
 operational_grade = operational_recovery_clean
 experimental_terminal = restore_request_failure
-restore_cpu_hit_exact = true
+restore_hit_to_load_gap_class = update_raised
+restore_allocate_slots_ok = true
+restore_update_after_alloc_called = true
+restore_pending_non_null_block_count = 40
+restore_num_new_tokens_at_alloc = 0
 restore_load_scheduled = false
 h2d_worker_count = 0
-restore_cpu_hit_tokens_max = 16384
+h2d_bytes_total = 0
 d2h_store_complete = true
-d2h_bytes_total = 2206846976
 ~~~
 
 ## 判定场景（本轮核心）
 
-### A. `allocate_slots_failed_after_hit`
+### F. `index_error_gpu_cpu_pairing`
 
-`cpu_hit_matched` 有，`allocate_slots_ok=false`，`update_state_after_alloc` 未调用，
-`load_scheduled=false`，H2D=0。这说明 scheduler 在 external tokens 上没有拿到 GPU
-slots，H2D 根本进不去。
+`restore_hit_to_load_gap_class=update_raised`，且
+`restore_update_raise_subclass=index_error_gpu_cpu_pairing`
+（`error_type=IndexError` 和/或 geometry 预检 overflow）。必须回报：
 
-### B. `num_external_zero` 或 `pending_missing`
+~~~text
+restore_num_cached_fa_blocks
+restore_gpu_block_table_lens
+restore_pending_block_counts / restore_pending_non_null_counts
+restore_n_take_by_group
+restore_gpu_ext_start_by_group
+restore_first_pairing_overflow_group_index
+restore_first_overflow_needed_index
+restore_first_overflow_gpu_len
+~~~
 
-`update_state_after_alloc` 被调用，但 early return 是 `num_external_zero` /
-`pending_missing`。这说明 connector hit 与 scheduler 传入的 external token 数不一致，
-或 pending pin 已丢失。
+这表示 freeze 源码中 `group_gpu_ids[gpu_ext_start + i]` 配对几何不成立。
 
-### C. `empty_transfer_after_null_filter`
+### G. `alignment_assert` / `blocks_to_load_assert` / `gpu_pool_assert` / `assertion_other`
 
-update 被调用且 pending 存在、`num_external>0`，但 transfer block count=0。说明
-group 级 null/padding 过滤把可拷贝块清空。
+`update_raised` 且 `AssertionError` 子类。仍不得宣称唯一根因，但必须把
+`error_message` 截断写入有界包。
 
-### D. `load_scheduled` 但 H2D 仍为 0
+### H. `update_raised_without_error_fields`
 
-`entered_reqs_to_load=true` / `load_scheduled=true`，但 worker H2D 仍 0。这已经越过
-admission，下一轮才应看 connector/worker copy，而不是再扩 lookup。
+仍看到 `update_raised`，但有界包缺 error 字段。这是本轮观测合同失败，不是机制结论。
 
-### E. 完整 H2D candidate
+### 保留的 R12 A–E
 
-load + 8-worker H2D completion exact。仍不得宣称唯一根因；只是机制候选。
+A–E（allocate fail / num_external_zero / pending_missing / empty_transfer /
+load_scheduled-but-no-H2D / full H2D）仍可能出现；若出现，按原字段回报。本轮预期主路径
+仍是 F 或 G。
 
 ## 有界结果包要求
 
 结果目录：
 
-`/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724_run01`
+`/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724_run01`
 
 至少回报：
 
 1. `result_summary.md`
 2. `grading_summary.json`
-3. `h2d_trigger_summary.json`（必须含 `restore_hit_to_load_gap_class`）
+3. `h2d_trigger_summary.json`（必须含 error_type / raise_subclass / geometry 字段）
 4. `transfer_trace_summary.json`
 5. `residency_gate_timeline.json`
 6. `logical_keyspace_probe_diagnostic_summary.json`
@@ -287,32 +322,34 @@ request IDs、token IDs、生成内容必须留服务器。
 
 ## Direct contract input SHA-256 inventory
 
-服务器在执行前应用下列 SHA 核对当前仓库文件（与本地发布一致）：
+服务器在执行前应用下列 SHA 核对当前仓库文件（与本地发布一致；提交后会刷新）：
 
-~~~text
-dd337a31ed209ef215dc55dc6c00b592782f34eb940d5eb1203077f3ee7e94fb  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r12_hit_to_load_admission_audit.yaml
-0320550ecd8acc53ce45ce31ba37ececf36cc98b2fc51348730a7690a2e998ab  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml
+~~~
+d920208427a25e4e59c84d2c5d380cc4b8a262923beffadfd9e38a3129366c71  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r13_update_raise_geometry_audit.yaml
+1f43f84b61975019965bf4ea4f8d0a8095b0b11aa8ef5af58b54483aabb5e0a9  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml
 9ab0d17e1281feb923115068cb990e1c68b971bc843209d3d8b6575631e1b19d  tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py
-24f8256f33240349f0ca15f26fa83c98bb9ed1278e20ce2e02f7daa76db8c689  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
+eb066979423fed48eeeb7e7cb8aa6ba917b0413fa96bafe5c3af992e38c104ee  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
 fd5fd74fac8903c3e2e68bed7a4b9a5f599230f3257a4e721090a87655eb0e48  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
-b27232c7ea1397078b052efe8fea10a92bb422e6efc0cb41bd3948734f1ee1db  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py
+3689c2421c5e9b838313abbfedc76653fb6ca9bc7ef75a6e9c34a483c6736dd9  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py
 3488140e597852c2de38a69942f87263ff92ecc8dafc530fc479faca9ebebecb  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.sh
 9b193867f0ecdd4098985eb041937f9e73c4e421b8afce1f5253a5b51f036e23  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh
-35ebddaf2016ee24c898642f55005800490711f968aaa333c25e4f4dcd3ddb4d  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.py
-71301a3f9272fd304996f140b09e53c27a0c459cd5e33cb383bf6eb7183454dd  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.sh
-db4a5fe4b7e5bc9ab1bb6b4dca927f0660c29b3cdd45354ca22e51962ba6e390  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r12_server_task.sh
+8384250b9ad170fb756a9b0ce73f66377a00b75d09adf54565c4e533b2905c21  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.py
+a7bc18a6c18c49270885d7c217301d7264c8f576f41c596a9e7769f0e8e3792d  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.sh
+01d4c5da5feb313bbec452982f1137882af1e86e60ab7da1c50f42f5fa33dc56  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_server_task.sh
 2707099971bf71cbec4add841907d864360e60d3e9eac0586ea3eb0c1c5f5ae7  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py
 0d190d51ad15d321fa25db94b82b0c0c6c5f7bbc271a0b6c739fd2d22d36999d  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh
 bcfb73b1faf64afd89e9231ea383500d2a01d38e673f39c3578425f51bd91a03  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
-26f8b3e4e127483ae0185508080e017b7c0ac05e79a146f26e0370a608bdd3d6  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.py
+8d92c06fbf6b62268e7de198451283c13159fe1605e6c9b909fc10db6cfad4e6  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.py
 5435592911e388daa047fe6d976cc351ab41b8b34de1bee990cc010f66fa3055  benchmarks/deepseek_v4_flash/patches/p8_2_k1a_r5_f1_r1_shared_diagnostic_mode.patch
 5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6  benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch
 ~~~
 
-
 ## 历史标记（供合同测试对齐，不是当前入口）
 
 ~~~text
+restore_follower
+restore_follower_with_update_raise_geometry_lineage
+P8.2-K1A-R5-F1-R12 CPU-hit → H2D-load 准入诊断
 http_transport_success_count
 expected_keep_alive_marker_count=16
 #0#
@@ -323,6 +360,7 @@ logical_restore_match_tokens
 request_hash_candidate_count
 pressure_progress_runtime_keyspace_refresh_required=true
 logical_target_block_count=128
+P8_2_K1A_F1_R13_SERVER_TASK_AUDIT_ONLY=1
 P8_2_K1A_F1_R12_SERVER_TASK_AUDIT_ONLY=1
 P8_2_K1A_F1_R7_SERVER_TASK_AUDIT_ONLY=1
 完整逻辑 128-block CPU-only 窗口
@@ -342,8 +380,11 @@ p8_2_k1a_r5_f1_r8_target_store_lineage_2026_0723
 p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723
 run_deepseek_p8_2_k1a_r5_f1_r11_server_task.sh
 run_deepseek_p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.sh
+run_deepseek_p8_2_k1a_r5_f1_r12_server_task.sh
+run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.sh
 constructor_use_eagle=false
 R10 已经证明的事实
+R12 已经证明的事实
 16384 + 16384 = 32768
 不要把 40 个 physical keys 写成缺少 88 个 logical blocks
 CPU=64/GPU=0
@@ -371,6 +412,8 @@ manager.py=fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
 measurement_green_protocol_deviation
 p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_audit.yaml
 p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml
+p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724
+p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml
 p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722
 p8_2_k1a_r5_f1_r2_grade
 p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722
@@ -382,8 +425,11 @@ run_deepseek_p8_2_k1a_r5_f1_r5_server_task.sh
 run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh
 run_deepseek_p8_2_k1a_r5_f1_r8_server_task.sh
 workloads/p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml
+workloads/p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml
 不得进入 P8.3-I1
+parent_grade: red_p8_2_k1a_r5_f1_r12_h2d_evidence_incomplete
 parent_grade: red_p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete
+parent_f1_r12_task_id: p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724
 parent_f1_r11_task_id: p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723
 parent_f1_r10_task_id: p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723
 parent_grade=red_p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete
@@ -400,6 +446,12 @@ green_p8_1_r1_official_mtp_observe_only_matrix
 blocked_p8_2_k1_frozen_stack_import_incompatible
 cpu_bytes_to_use_per_rank=430604288
 P8.2-K1A-R5-F1-R11 EAGLE-aware logical lookup lineage
+allocate_slots_observed
+update_state_after_alloc_observed
+connector_load_meta_observed
+restore_hit_to_load_gap_class
+P8.2-K1A-R5-F1-R12 CPU-hit to H2D-load admission
+authorized_single_lifecycle_hit_to_load_admission
 fetch origin main
 merge --ff-only origin/main
 不得进入 K2
@@ -419,5 +471,5 @@ git merge --ff-only origin/main
 本轮结束后：
 
 - `next_task_authorized=false`
-- 不得自动开 R13 / run02 / K2 / P8.3-I1
+- 不得自动开 R14 / run02 / K2 / P8.3-I1
 - 只回报本轮有界证据与 keep-alive 恢复状态
