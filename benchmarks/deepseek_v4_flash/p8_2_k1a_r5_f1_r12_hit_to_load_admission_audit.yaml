@@ -1,0 +1,128 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R12
+date: '2026-07-24'
+task_id: p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724
+
+accepted_f1_r11_result:
+  server_grade: red_p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete
+  operational_grade: operational_recovery_clean
+  experimental_terminal: restore_request_failure
+  request_count: 4
+  successful_request_count: 2
+  pressure_request_count_executed: 1
+  logical_target_block_count: 128
+  accepted_restore_match_tokens: 16384
+  restore_shared_prefix_tokens: 32768
+  logical_restore_window_exact: true
+  restore_allowed: true
+  restore_sent: true
+  restore_cpu_hit_exact: true
+  restore_cpu_hit_tokens_max: 16384
+  restore_load_scheduled: false
+  h2d_worker_count: 0
+  h2d_bytes_total: 0
+  physical_cpu_only_window_event_count: 9
+  logical_and_physical_window_event_count: 9
+  logical_keyspace_probe_event_count: 152
+  legacy_capped_false_negative_candidate_count: 67
+  best_probe_first_reduction_attention_group_index: 2
+  target_store_key_count: 40
+  target_store_completed_key_count: 40
+  target_gpu_evicted_key_count: 40
+  target_cpu_evicted_key_count: 0
+  d2h_store_complete: true
+  d2h_worker_count: 8
+  d2h_bytes_total: 2206846976
+  cleanup: clean
+  resource_recovery_exact: true
+  stopped_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  restored_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  grading_sha256: 78be6275a0142918aff454bbda91e6bdcb359b20cdea6adefe31798c75fea633
+  timeline_sha256: 8e29e91836490c80e932f19c0aced534e659454fded42abc04f351b27c18f5a9
+  h2d_trigger_sha256: c11b92b1af91759feedafbb697a58aaf0d7c4f2d5f8bbeaedf4781619b602d39
+  transfer_sha256: 9fe1cf8ff256d6cb120f3d7babec72527da8a90df03130651ae7a2cdf62b0d4f
+  logical_diagnostic_sha256: cfbabbcbf74602ad60f20c1a6e20874a0a8bdb0ff150cdec263f0fd842a8dc15
+  target_lineage_sha256: d2b7f24a5f885f6026692badf590107b2b8082c40bff63edb13d60953e077343
+  repair_sha256: 459d0f9aa71587d5359a23aabdb44741d4b41195c6cd56a8e8775fc7d1ae1862
+  recovery_sha256: 7374e1763cf2f20793c66865a31f860fe6040888319af1f433d69cc6eae234a6
+  manifest_sha256: bb04845f8e16a9acc8fd7f4f445b2c115a9124469e234ef00a3b3dbb6fa9827d
+
+developer_diagnosis:
+  r11_closed_logical_gate_false_negative: true
+  r11_eagle_aware_raw_hit_tokens: 16384
+  r11_legacy_capped_hit_tokens: 0
+  r11_restore_was_dispatched: true
+  r11_restore_cpu_hit_exact: true
+  r11_restore_load_scheduled: false
+  r11_h2d_workers_and_bytes_zero: true
+  r11_restore_follower_http_200_with_zero_streamed_tokens: true
+  current_gap_is_between_cpu_hit_and_load_schedule: true
+  uninstrumented_admission_path: get_num_new_matched_tokens_to_allocate_slots_to_update_state_after_alloc
+  unique_root_cause_claim_authorized: false
+  accepted_capacity_invalidated: false
+  repeating_eagle_lookup_lineage_is_not_the_next_action: true
+  repeating_r10_physical_window_is_not_the_next_action: true
+
+source_alignment:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  simple_cpu_offload_scheduler_path: vllm/v1/simple_kv_offload/manager.py
+  source_blob_sha256_manager_py: fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
+  scheduler_path: vllm/v1/core/sched/scheduler.py
+  source_blob_sha256_scheduler_py: 41ff2e524c90d9aa72b72cd77492eb62ee2a729a773bd8233e970f39abbb5983
+  ascend_patch_scheduler_path: vllm_ascend/patch/platform/patch_scheduler.py
+  source_blob_sha256_ascend_patch_scheduler_py: 3c7a4cae783f6a083fd0a3715c3c70ba9243ae2f3ae8668962378edee6d6ed3e
+  kv_cache_manager_allocate_slots: vllm/v1/core/kv_cache_manager.py
+  frozen_load_path: >
+    connector.get_num_new_matched_tokens -> pending pin ->
+    allocate_slots(num_external, delay_cache_blocks=load_kv_async) ->
+    connector.update_state_after_alloc -> _reqs_to_load ->
+    build_connector_meta load_event -> worker H2D
+  stock_mamba_assert_external_tokens_zero: true
+  ascend_patch_removes_external_token_assert: true
+  observe_only_must_classify_allocate_and_update_branches: true
+
+developer_decision:
+  same_fixed_capacity_and_context_required: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_per_rank: 430604288
+  cpu_bytes_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count_required: 128
+  accepted_restore_match_tokens: 16384
+  hash_block_size_tokens: 128
+  target_restore_shared_prefix_tokens: 32768
+  target_restore_prompt_identity_required: true
+  eagle_aware_logical_lookup_retained: true
+  legacy_capped_probe_retained: true
+  hit_to_load_admission_lineage_required: true
+  required_observe_events:
+    - cpu_hit_matched
+    - allocate_slots_observed
+    - update_state_after_alloc_observed
+    - load_scheduled
+    - connector_load_meta_observed
+  required_gap_classes:
+    - no_restore_cpu_hit
+    - allocate_slots_failed_after_hit
+    - update_state_after_alloc_not_called_after_hit
+    - num_external_zero
+    - pending_missing
+    - empty_transfer_after_null_filter
+    - load_scheduled
+    - hit_without_alloc_or_update_evidence
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  pressure_request_count_exact: 1
+  restore_request_count_max: 1
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  runtime_dependency_mutation_authorized: false
+  server_side_code_edit_authorized: false
+  performance_reference_authorized: false
+  unique_root_cause_claim_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_cpu_hit_to_load_admission_discrimination_and_conditional_h2d_candidate_only

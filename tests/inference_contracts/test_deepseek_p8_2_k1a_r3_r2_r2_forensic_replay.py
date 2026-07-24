@@ -140,7 +140,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] != workload_task_id()
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.yaml"
+        "workloads/p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml"
     )
     assert acceptance["p8_2_k1a_r3_r2_r1_grade"] == (
         "yellow_p8_2_k1a_r3_r2_r1_partial"
@@ -150,7 +150,7 @@ def test_consumed_r3_r2_r2_contract_remains_preserved_but_is_not_current() -> No
     assert acceptance["p8_2_k1a_r3_r2_r2_formal_model_lifecycle_count_max"] == 1
     assert acceptance["p8_2_k1a_r3_r2_r2_model_request_count_max"] == 6
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R11_single_lifecycle_eagle_lookup_lineage"
+        "P8.2-K1A-R5-F1-R12_single_lifecycle_hit_to_load_admission"
     )
     assert acceptance["next_task_authorized"] is False
 

@@ -1,0 +1,126 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_f1_r12_hit_to_load_admission
+date: '2026-07-24'
+task_id: p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724
+purpose: classify_the_admission_gap_between_restore_cpu_hit_and_h2d_load_schedule_on_the_same_accepted_16k_window
+
+runtime_config:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  quantization: ascend
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size_tokens: 128
+  chunked_prefill: true
+  prefix_caching: true
+  kv_connector: SimpleCPUOffloadConnector
+  kv_role: kv_both
+  lazy_offload: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count: 128
+  restore_match_tokens: 16384
+  runtime_or_dependency_mutation_authorized: false
+
+request_plan:
+  order:
+    - warmup
+    - target_prime_capture_cache_stamp_lineage
+    - pressure_01_abort_on_exact_physical_cpu_only_window
+    - post_abort_eagle_aware_logical_acceptance
+    - restore_follower_with_hit_to_load_admission_lineage
+  request_count_min: 3
+  request_count_max: 4
+  pressure_request_count_exact: 1
+  request_retry_count_exact: 0
+  warmup_context_tokens: 4096
+  target_prime_context_tokens: 32768
+  pressure_context_tokens: 36800
+  restore_follower_context_tokens: 32768
+  output_tokens_each: 64
+  target_prefix_tokens: 16384
+  target_restore_shared_prefix_tokens: 32768
+  target_restore_prompts_identical_for_eagle_lookahead: true
+  concurrent_restore_while_pressure_active: false
+
+accepted_physical_and_logical_parent:
+  source: r11_eagle_aware_lookup_lineage
+  logical_target_tokens: 16384
+  logical_target_hash_blocks: 128
+  runtime_physical_group_wrapped_key_count_observed: 40
+  eagle_aware_logical_hit_tokens_observed: 16384
+  restore_cpu_hit_exact_observed: true
+  restore_load_scheduled_observed: false
+  h2d_worker_count_observed: 0
+
+hit_to_load_admission:
+  retained_from_r11:
+    eagle_aware_logical_lookup: true
+    legacy_capped_probe: true
+    accepted_restore_match_tokens: 16384
+    restore_shared_prefix_tokens: 32768
+  new_observe_only_events:
+    - allocate_slots_observed
+    - update_state_after_alloc_observed
+    - connector_load_meta_observed
+  enriched_events:
+    - cpu_hit_matched
+    - load_scheduled
+  gap_class_field: restore_hit_to_load_gap_class
+  bounded_summary_fields:
+    - restore_hit_to_load_gap_class
+    - restore_allocate_slots_observed
+    - restore_allocate_slots_ok
+    - restore_allocate_slots_none
+    - restore_num_external_tokens_at_alloc
+    - restore_num_new_tokens_at_alloc
+    - restore_delay_cache_blocks_at_alloc
+    - restore_update_after_alloc_called
+    - restore_num_external_tokens_at_update
+    - restore_pending_present_at_update
+    - restore_pending_non_null_block_count
+    - restore_update_early_return_reason
+    - restore_entered_reqs_to_load
+    - restore_transfer_gpu_block_count
+    - restore_transfer_cpu_block_count
+    - restore_null_cpu_blocks_skipped
+    - restore_connector_load_event_ready
+    - restore_connector_load_gpu_block_count
+  raw_block_ids_forbidden_in_bounded_output: true
+  raw_request_ids_forbidden_in_bounded_output: true
+  raw_hash_values_forbidden_in_bounded_output: true
+
+discrimination:
+  scenario_a_allocate_slots_failed_after_hit: >
+    cpu_hit_matched true, allocate_slots_ok false, update not called,
+    load_scheduled false, H2D 0
+  scenario_b_num_external_zero_or_pending_missing: >
+    update_state_after_alloc called with num_external_zero or pending_missing,
+    load_scheduled false
+  scenario_c_empty_transfer_after_null_filter: >
+    update called with pending present and num_external>0 but transfer block
+    counts are 0 after null-block filter
+  scenario_d_load_scheduled_but_no_h2d_copy: >
+    load_scheduled true / entered_reqs_to_load true but worker H2D still 0;
+    then next round focuses on connector/worker copy path
+  scenario_e_full_h2d_candidate: >
+    load_scheduled and H2D worker completion exact; still not unique root cause
+
+constraints:
+  formal_model_lifecycle_count_exact: 1
+  pressure_request_count_exact: 1
+  request_retry_count_exact: 0
+  restore_request_count_max: 1
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  runtime_dependency_mutation_authorized: false
+  server_side_code_edit_authorized: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false

@@ -27,6 +27,7 @@ from tools.inference_contracts.p8_2_k1a_h2d_residency_observer import (
     summarize_target_store_lineage_rows,
 )
 from tools.inference_contracts.p8_2_k1a_simple_cpu_offload_observer import (
+    classify_restore_hit_to_load_gap,
     summarize_trace_rows,
 )
 from tools.inference_contracts.run_deepseek_p6_1_unprofiled_baseline import (
@@ -1863,6 +1864,15 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         expected_world_size=8,
         restore_request_suffix="restore_follower",
     )
+    hit_to_load = classify_restore_hit_to_load_gap(
+        trace_rows,
+        restore_request_suffix="restore_follower",
+    )
+    for key, value in hit_to_load.items():
+        if key == "schema_version":
+            continue
+        trigger_summary[key] = value
+        transfer_summary.setdefault(key, value)
     connector = _read_json(artifact_dir / "connector_resolution_summary.json")
     repair = _read_json(artifact_dir / "repair_diagnostic_summary.json")
     host = _read_json(artifact_dir / "host_memory_summary.json")
@@ -2073,6 +2083,21 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         "trigger_abort_idle_restore_order_exact": timeline_exact,
         "window_valid_after_abort": timeline.get("window_valid_after_abort") is True,
         "h2d_restore_mechanism_candidate": mechanism_ok,
+        "restore_hit_to_load_gap_class": str(
+            hit_to_load.get("restore_hit_to_load_gap_class") or "missing"
+        ),
+        "restore_allocate_slots_ok": hit_to_load.get(
+            "restore_allocate_slots_ok"
+        )
+        is True,
+        "restore_update_after_alloc_called": hit_to_load.get(
+            "restore_update_after_alloc_called"
+        )
+        is True,
+        "restore_update_early_return_reason": str(
+            hit_to_load.get("restore_update_early_return_reason")
+            or "not_called"
+        ),
         "resolved_connector_and_lazy_mode_exact": connector_ok,
         "repair_diagnostic_ok": repair_ok,
         "host_memory_gate_ok": host.get("preflight_gate_ok") is True,

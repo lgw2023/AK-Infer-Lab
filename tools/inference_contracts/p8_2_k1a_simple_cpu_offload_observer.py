@@ -51,7 +51,162 @@ def _bounded_error_fields(error: BaseException) -> dict[str, str]:
     }
 
 
+def _pending_non_null_block_count(pending: object | None) -> int:
+    if pending is None:
+        return 0
+    cpu_hit_blocks = pending[0] if isinstance(pending, tuple) else pending
+    try:
+        return sum(
+            1
+            for group in cpu_hit_blocks
+            for block in group
+            if not getattr(block, "is_null", False)
+        )
+    except TypeError:
+        return 0
+
+
+def classify_restore_hit_to_load_gap(
+    rows: list[dict[str, Any]],
+    *,
+    restore_request_suffix: str = "restore_follower",
+) -> dict[str, Any]:
+    """Classify the observe-only gap between CPU hit and H2D load schedule."""
+
+    def _is_restore(row: dict[str, Any]) -> bool:
+        return row.get("contract_role") == "restore_follower" or str(
+            row.get("request_id", "")
+        ).endswith(restore_request_suffix)
+
+    hits = [
+        row
+        for row in rows
+        if row.get("event") == "cpu_hit_matched"
+        and _is_restore(row)
+        and int(row.get("num_new_tokens") or 0) > 0
+    ]
+    allocs = [
+        row
+        for row in rows
+        if row.get("event") == "allocate_slots_observed" and _is_restore(row)
+    ]
+    updates = [
+        row
+        for row in rows
+        if row.get("event") == "update_state_after_alloc_observed"
+        and _is_restore(row)
+    ]
+    loads = [
+        row
+        for row in rows
+        if row.get("event") == "load_scheduled"
+        and _is_restore(row)
+        and int(row.get("block_count") or 0) > 0
+    ]
+    load_metas = [
+        row
+        for row in rows
+        if row.get("event") == "connector_load_meta_observed"
+        and _is_restore(row)
+    ]
+    hit = hits[-1] if hits else None
+    alloc = allocs[-1] if allocs else None
+    update = updates[-1] if updates else None
+    load = loads[-1] if loads else None
+    load_meta = load_metas[-1] if load_metas else None
+
+    gap_class = "no_restore_cpu_hit"
+    if hit is not None and load is not None:
+        gap_class = "load_scheduled"
+    elif hit is not None and alloc is not None and alloc.get("allocate_slots_ok") is False:
+        gap_class = "allocate_slots_failed_after_hit"
+    elif hit is not None and not updates:
+        gap_class = "update_state_after_alloc_not_called_after_hit"
+    elif hit is not None and update is not None:
+        reason = str(update.get("early_return_reason") or "")
+        if reason in {
+            "num_external_zero",
+            "pending_missing",
+            "empty_transfer_after_null_filter",
+            "update_raised",
+            "success",
+        }:
+            gap_class = reason if reason != "success" else "load_registered_without_positive_blocks"
+        else:
+            gap_class = "update_observed_without_load"
+    elif hit is not None:
+        gap_class = "hit_without_alloc_or_update_evidence"
+
+    return {
+        "schema_version": "p8_2_k1a_hit_to_load_gap_v1",
+        "restore_cpu_hit_observed": hit is not None,
+        "restore_cpu_hit_tokens_max": max(
+            (int(row.get("num_new_tokens") or 0) for row in hits),
+            default=0,
+        ),
+        "restore_cpu_hit_is_async": (
+            bool(hit.get("is_async")) if hit is not None else False
+        ),
+        "restore_allocate_slots_observed": alloc is not None,
+        "restore_allocate_slots_ok": (
+            alloc.get("allocate_slots_ok") is True if alloc is not None else False
+        ),
+        "restore_allocate_slots_none": (
+            alloc.get("allocate_slots_ok") is False if alloc is not None else False
+        ),
+        "restore_num_external_tokens_at_alloc": int(
+            (alloc or {}).get("num_external_computed_tokens") or 0
+        ),
+        "restore_num_new_tokens_at_alloc": int(
+            (alloc or {}).get("num_new_tokens") or 0
+        ),
+        "restore_delay_cache_blocks_at_alloc": (
+            (alloc or {}).get("delay_cache_blocks") is True
+        ),
+        "restore_update_after_alloc_called": update is not None,
+        "restore_num_external_tokens_at_update": int(
+            (update or {}).get("num_external_tokens") or 0
+        ),
+        "restore_pending_present_at_update": (
+            (update or {}).get("pending_present") is True
+        ),
+        "restore_pending_non_null_block_count": int(
+            (update or hit or {}).get("pending_non_null_block_count") or 0
+        ),
+        "restore_update_early_return_reason": str(
+            (update or {}).get("early_return_reason") or "not_called"
+        ),
+        "restore_entered_reqs_to_load": (
+            (update or {}).get("entered_reqs_to_load") is True
+        ),
+        "restore_transfer_gpu_block_count": int(
+            (update or load or {}).get("gpu_block_ids_count")
+            or (load or {}).get("block_count")
+            or 0
+        ),
+        "restore_transfer_cpu_block_count": int(
+            (update or {}).get("cpu_block_ids_count") or 0
+        ),
+        "restore_null_cpu_blocks_skipped": int(
+            (update or {}).get("null_cpu_blocks_skipped") or 0
+        ),
+        "restore_load_scheduled": load is not None,
+        "restore_connector_load_meta_observed": load_meta is not None,
+        "restore_connector_load_event_ready": (
+            (load_meta or {}).get("load_event_ready") is True
+        ),
+        "restore_connector_load_gpu_block_count": int(
+            (load_meta or {}).get("load_gpu_block_count") or 0
+        ),
+        "restore_hit_to_load_gap_class": gap_class,
+        "raw_hash_values_retained": False,
+        "request_ids_retained": False,
+        "block_ids_retained": False,
+    }
+
+
 def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
+    from vllm.v1.core.kv_cache_manager import KVCacheManager
     from vllm.v1.simple_kv_offload.manager import SimpleCPUOffloadScheduler
     from vllm_ascend.simple_kv_offload import copy_backend as copy_backend_module
     from vllm_ascend.simple_kv_offload.copy_backend import NPUDmaCopyBackend
@@ -67,6 +222,8 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
         result = original_match(self, request, num_computed_tokens)
         num_new_tokens, is_async = result
         if num_new_tokens and num_new_tokens > 0:
+            pending = self._pending_cpu_hits.get(request.request_id)
+            max_hit_len = int(request.num_tokens) - 1 - int(num_computed_tokens)
             _emit(
                 "cpu_hit_matched",
                 component="scheduler",
@@ -75,6 +232,69 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 contract_role=_active_contract_role(),
                 num_new_tokens=num_new_tokens,
                 is_async=bool(is_async),
+                num_computed_tokens_arg=int(num_computed_tokens),
+                max_hit_len=max_hit_len,
+                pending_stored=pending is not None,
+                pending_non_null_block_count=_pending_non_null_block_count(
+                    pending
+                ),
+            )
+        return result
+
+    original_allocate = KVCacheManager.allocate_slots
+
+    @wraps(original_allocate)
+    def observed_allocate(
+        self,
+        request,
+        num_new_tokens,
+        num_new_computed_tokens=0,
+        new_computed_blocks=None,
+        num_lookahead_tokens=0,
+        num_external_computed_tokens=0,
+        delay_cache_blocks=False,
+        num_encoder_tokens=0,
+        full_sequence_must_fit=False,
+    ):
+        contract_role = _active_contract_role()
+        observe_restore = contract_role == "restore_follower" or str(
+            request.request_id
+        ).endswith("restore_follower")
+        free_blocks = None
+        if observe_restore:
+            coordinator = getattr(self, "coordinator", None)
+            block_pool = getattr(coordinator, "block_pool", None)
+            if block_pool is not None and hasattr(block_pool, "get_num_free_blocks"):
+                try:
+                    free_blocks = int(block_pool.get_num_free_blocks())
+                except Exception:
+                    free_blocks = None
+        result = original_allocate(
+            self,
+            request,
+            num_new_tokens,
+            num_new_computed_tokens=num_new_computed_tokens,
+            new_computed_blocks=new_computed_blocks,
+            num_lookahead_tokens=num_lookahead_tokens,
+            num_external_computed_tokens=num_external_computed_tokens,
+            delay_cache_blocks=delay_cache_blocks,
+            num_encoder_tokens=num_encoder_tokens,
+            full_sequence_must_fit=full_sequence_must_fit,
+        )
+        if observe_restore:
+            _emit(
+                "allocate_slots_observed",
+                component="kv_cache_manager",
+                direction="h2d",
+                request_id=request.request_id,
+                contract_role=contract_role,
+                num_new_tokens=int(num_new_tokens),
+                num_new_computed_tokens=int(num_new_computed_tokens),
+                num_external_computed_tokens=int(num_external_computed_tokens),
+                num_lookahead_tokens=int(num_lookahead_tokens),
+                delay_cache_blocks=bool(delay_cache_blocks),
+                allocate_slots_ok=result is not None,
+                gpu_free_block_count_before=free_blocks,
             )
         return result
 
@@ -82,19 +302,80 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
 
     @wraps(original_update)
     def observed_update(self, request, blocks, num_external_tokens):
-        result = original_update(self, request, blocks, num_external_tokens)
-        state = self._reqs_to_load.get(request.request_id)
+        req_id = request.request_id
+        pending_before = self._pending_cpu_hits.get(req_id)
+        pending_present = pending_before is not None
+        pending_non_null = _pending_non_null_block_count(pending_before)
+        early_return_reason = "success"
+        entered_reqs_to_load = False
+        gpu_block_ids_count = 0
+        cpu_block_ids_count = 0
+        null_cpu_blocks_skipped = 0
+        try:
+            result = original_update(self, request, blocks, num_external_tokens)
+        except BaseException as error:
+            _emit(
+                "update_state_after_alloc_observed",
+                component="scheduler",
+                direction="h2d",
+                request_id=req_id,
+                contract_role=_active_contract_role(),
+                num_external_tokens=int(num_external_tokens),
+                pending_present=pending_present,
+                pending_non_null_block_count=pending_non_null,
+                early_return_reason="update_raised",
+                entered_reqs_to_load=False,
+                gpu_block_ids_count=0,
+                cpu_block_ids_count=0,
+                null_cpu_blocks_skipped=0,
+                **_bounded_error_fields(error),
+            )
+            raise
+        state = self._reqs_to_load.get(req_id)
         transfer = state.transfer_meta if state is not None else None
         if transfer is not None:
+            gpu_block_ids_count = len(transfer.gpu_block_ids)
+            cpu_block_ids_count = len(transfer.cpu_block_ids)
+            entered_reqs_to_load = True
+            if gpu_block_ids_count <= 0:
+                early_return_reason = "empty_transfer_after_null_filter"
             _emit(
                 "load_scheduled",
                 component="scheduler",
                 direction="h2d",
-                request_id=request.request_id,
+                request_id=req_id,
                 contract_role=_active_contract_role(),
-                block_count=len(transfer.gpu_block_ids),
-                num_external_tokens=num_external_tokens,
+                block_count=gpu_block_ids_count,
+                num_external_tokens=int(num_external_tokens),
+                gpu_block_ids_count=gpu_block_ids_count,
+                cpu_block_ids_count=cpu_block_ids_count,
             )
+        elif int(num_external_tokens) == 0:
+            early_return_reason = "num_external_zero"
+        elif not pending_present:
+            early_return_reason = "pending_missing"
+        else:
+            early_return_reason = "empty_transfer_after_null_filter"
+            if pending_before is not None:
+                null_cpu_blocks_skipped = max(
+                    pending_non_null - cpu_block_ids_count,
+                    0,
+                )
+        _emit(
+            "update_state_after_alloc_observed",
+            component="scheduler",
+            direction="h2d",
+            request_id=req_id,
+            contract_role=_active_contract_role(),
+            num_external_tokens=int(num_external_tokens),
+            pending_present=pending_present,
+            pending_non_null_block_count=pending_non_null,
+            early_return_reason=early_return_reason,
+            entered_reqs_to_load=entered_reqs_to_load,
+            gpu_block_ids_count=gpu_block_ids_count,
+            cpu_block_ids_count=cpu_block_ids_count,
+            null_cpu_blocks_skipped=null_cpu_blocks_skipped,
+        )
         return result
 
     original_build = SimpleCPUOffloadScheduler.build_connector_meta
@@ -110,13 +391,36 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 event_idx=metadata.store_event,
                 block_count=len(metadata.store_gpu_blocks),
             )
-        if metadata.load_event >= 0 and metadata.load_gpu_blocks:
+        load_gpu_count = len(metadata.load_gpu_blocks or [])
+        load_event_ready = int(metadata.load_event) >= 0 and load_gpu_count > 0
+        pending_load_req_count = sum(
+            1
+            for state in self._reqs_to_load.values()
+            if getattr(state, "load_event", None) is None
+        )
+        if (
+            _active_contract_role() == "restore_follower"
+            or pending_load_req_count
+            or load_gpu_count
+            or int(metadata.load_event) >= 0
+        ):
+            _emit(
+                "connector_load_meta_observed",
+                component="scheduler",
+                direction="h2d",
+                contract_role=_active_contract_role(),
+                load_event=int(metadata.load_event),
+                load_event_ready=load_event_ready,
+                load_gpu_block_count=load_gpu_count,
+                pending_load_request_count=pending_load_req_count,
+            )
+        if load_event_ready:
             _emit(
                 "transfer_scheduled",
                 component="scheduler",
                 direction="h2d",
                 event_idx=metadata.load_event,
-                block_count=len(metadata.load_gpu_blocks),
+                block_count=load_gpu_count,
             )
         return metadata
 
@@ -296,6 +600,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
         return hwm
 
     SimpleCPUOffloadScheduler.get_num_new_matched_tokens = observed_match
+    KVCacheManager.allocate_slots = observed_allocate
     SimpleCPUOffloadScheduler.update_state_after_alloc = observed_update
     SimpleCPUOffloadScheduler.build_connector_meta = observed_build
     SimpleCPUOffloadScheduler.update_connector_output = observed_output
@@ -304,6 +609,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
     NPUDmaCopyBackend.launch_copy = observed_launch
     SimpleCPUOffloadNPUWorker._poll_stream_events = observed_poll
     SimpleCPUOffloadScheduler._p8_2_k1a_observer_installed = True
+    KVCacheManager._p8_2_k1a_allocate_observer_installed = True
     _emit("observer_installed", component="runtime_patch", mutation="observe_only")
     if os.environ.get("P8_2_K1A_ENABLE_H2D_RESIDENCY_OBSERVER") == "1":
         from p8_2_k1a_h2d_residency_observer import (
@@ -486,6 +792,10 @@ def summarize_trace_rows(
             bool(load_completed),
         )
     )
+    hit_to_load = classify_restore_hit_to_load_gap(
+        rows,
+        restore_request_suffix=restore_request_suffix,
+    )
     return {
         "trace_event_count": len(rows),
         "expected_world_size": expected_world_size,
@@ -531,4 +841,9 @@ def summarize_trace_rows(
             and async_pipeline_exact["d2h"]
             and async_pipeline_exact["h2d"]
         ),
+        **{
+            key: value
+            for key, value in hit_to_load.items()
+            if key != "schema_version"
+        },
     }

@@ -335,12 +335,12 @@ def test_r3_finalizer_requires_exact_capacity_and_closes_store_restore(
 
 
 def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> None:
-    task_id = "p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723"
+    task_id = "p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724"
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert f"task_id: {task_id}" in handoff
     for field in (
-        "execution_mode: authorized_single_lifecycle_eagle_lookup_lineage",
+        "execution_mode: authorized_single_lifecycle_hit_to_load_admission",
         "npu_execution_authorized: true",
         "vllm_server_start_authorized: true",
         "model_requests_authorized: true",
@@ -370,7 +370,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
     acceptance = readiness["acceptance"]
     assert artifacts["current_server_handoff_task"] == task_id
     assert artifacts["next_workload"] == (
-        "workloads/p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.yaml"
+        "workloads/p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml"
     )
     assert acceptance["p8_2_k1a_r2_grade"] == (
         "ready_p8_2_k1a_r2_allocator_capacity"
@@ -409,7 +409,7 @@ def test_causal_replay_is_consumed_and_r5_f0_is_the_current_server_handoff() -> 
         "green_p8_3_i0_r1_unclassified_taxonomy"
     )
     assert acceptance["current_task_scoped_authorization"] == (
-        "P8.2-K1A-R5-F1-R11_single_lifecycle_eagle_lookup_lineage"
+        "P8.2-K1A-R5-F1-R12_single_lifecycle_hit_to_load_admission"
     )
     assert acceptance["p8_3_i1_server_execution_authorized"] is False
     assert acceptance["next_task_authorized"] is False
@@ -425,11 +425,13 @@ def test_r7_handoff_freezes_all_direct_contract_inputs_without_placeholders() ->
 
     frozen_paths = (
         "benchmarks/deepseek_v4_flash/"
-        "p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_audit.yaml",
+        "p8_2_k1a_r5_f1_r12_hit_to_load_admission_audit.yaml",
         "benchmarks/deepseek_v4_flash/workloads/"
-        "p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.yaml",
+        "p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml",
         "tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py",
         "tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py",
+        "tools/inference_contracts/"
+        "run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py",
         "tools/inference_contracts/"
         "run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py",
         "tools/inference_contracts/"
@@ -437,16 +439,16 @@ def test_r7_handoff_freezes_all_direct_contract_inputs_without_placeholders() ->
         "tools/inference_contracts/"
         "run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh",
         "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.py",
+        "run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.py",
         "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.sh",
         "tools/inference_contracts/"
-        "run_deepseek_p8_2_k1a_r5_f1_r11_server_task.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r12_server_task.sh",
         "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py",
         "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh",
         "tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh",
         "tests/inference_contracts/"
-        "test_deepseek_p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.py",
+        "test_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.py",
         "benchmarks/deepseek_v4_flash/patches/"
         "p8_2_k1a_r5_f1_r1_shared_diagnostic_mode.patch",
         "benchmarks/deepseek_v4_flash/patches/"

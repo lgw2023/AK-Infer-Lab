@@ -172,10 +172,10 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.yaml"
+        "p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K1A-R5-F1-R11_eagle_lookup_lineage"
+        "P8.2-K1A-R5-F1-R12_hit_to_load_admission"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
@@ -207,8 +207,8 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723" in handoff
-    assert "execution_mode: authorized_single_lifecycle_eagle_lookup_lineage" in handoff
+    assert "task_id: p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724" in handoff
+    assert "execution_mode: authorized_single_lifecycle_hit_to_load_admission" in handoff
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff

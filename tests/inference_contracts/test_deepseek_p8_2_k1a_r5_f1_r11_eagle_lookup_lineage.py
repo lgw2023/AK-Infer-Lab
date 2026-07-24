@@ -443,12 +443,12 @@ def test_r11_contract_and_single_server_entrypoint_are_executable(
     assert "keep_alive_card_ids=0,1,2,3,4,5,6,7" in server_audit.stdout
 
     handoff = HANDOFF.read_text(encoding="utf-8")
-    assert TASK_ID in handoff
-    assert "R10 已经证明的事实" in handoff
-    assert "16384 + 16384 = 32768" in handoff
-    assert "不要把 40 个 physical keys 写成缺少 88 个 logical blocks" in handoff
-    assert "run_deepseek_p8_2_k1a_r5_f1_r11_server_task.sh" in handoff
+    # Current handoff may already advance past R11; keep parent provenance markers.
+    assert f"parent_f1_r11_task_id: {TASK_ID}" in handoff
+    assert "parent_grade: red_p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete" in handoff
     assert "result_transfer_authorized: true" in handoff
     assert "transfer_method_selected: false" in handoff
     assert "automatic_transfer_allowed: false" in handoff
-    assert "constructor_use_eagle=false" in handoff
+    assert AUDIT.is_file()
+    assert SERVER_TASK.is_file()
+    assert "eagle_aware_probe_enabled: true" in AUDIT.read_text(encoding="utf-8")

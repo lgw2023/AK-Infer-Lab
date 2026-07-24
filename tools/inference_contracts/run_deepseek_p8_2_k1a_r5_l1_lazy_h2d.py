@@ -30,6 +30,7 @@ from tools.inference_contracts.p8_2_k1a_h2d_residency_observer import (
     summarize_h2d_trigger_rows,
 )
 from tools.inference_contracts.p8_2_k1a_simple_cpu_offload_observer import (
+    classify_restore_hit_to_load_gap,
     summarize_trace_rows,
 )
 
@@ -759,6 +760,15 @@ def finalize_lazy_h2d_artifacts(artifact_dir: Path) -> int:
         expected_world_size=8,
         restore_request_suffix="restore_follower",
     )
+    hit_to_load = classify_restore_hit_to_load_gap(
+        trace_rows,
+        restore_request_suffix="restore_follower",
+    )
+    for key, value in hit_to_load.items():
+        if key == "schema_version":
+            continue
+        trigger_summary[key] = value
+        transfer_summary.setdefault(key, value)
     connector = _read_json(artifact_dir / "connector_resolution_summary.json")
     repair = _read_json(artifact_dir / "repair_diagnostic_summary.json")
     host = _read_json(artifact_dir / "host_memory_summary.json")
