@@ -1,0 +1,160 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_f1_r11_eagle_lookup_lineage
+date: '2026-07-23'
+task_id: p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723
+purpose: compare_the_legacy_16k_capped_probe_with_runtime_derived_eagle_lookahead_and_dispatch_one_restore_only_after_exact_physical_and_logical_acceptance
+
+runtime_config:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  quantization: ascend
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size_tokens: 128
+  chunked_prefill: true
+  prefix_caching: true
+  kv_connector: SimpleCPUOffloadConnector
+  kv_role: kv_both
+  lazy_offload: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count: 128
+  restore_match_tokens: 16384
+  runtime_or_dependency_mutation_authorized: false
+
+request_plan:
+  order:
+    - warmup
+    - target_prime_capture_cache_stamp_lineage
+    - pressure_01_abort_on_exact_physical_cpu_only_window
+    - post_abort_compare_legacy_capped_and_eagle_aware_logical_lookup
+    - restore_follower_only_after_physical_and_eagle_aware_logical_acceptance
+  request_count_min: 3
+  request_count_max: 4
+  pressure_request_count_exact: 1
+  request_retry_count_exact: 0
+  warmup_context_tokens: 4096
+  target_prime_context_tokens: 32768
+  pressure_context_tokens: 36800
+  restore_follower_context_tokens: 32768
+  output_tokens_each: 64
+  target_prefix_tokens: 16384
+  target_restore_shared_prefix_tokens: 32768
+  target_restore_prompts_identical_for_eagle_lookahead: true
+  concurrent_restore_while_pressure_active: false
+
+accepted_physical_window:
+  source: r10_runtime_cache_stamp_lineage
+  logical_target_tokens: 16384
+  logical_target_hash_blocks: 128
+  runtime_physical_group_wrapped_key_count_observed: 40
+  all_target_physical_keys_cpu_required: true
+  all_target_physical_keys_gpu_absent_required: true
+  target_cpu_eviction_count_required: 0
+  physical_key_count_is_not_compared_to_logical_hash_block_count: true
+
+eagle_aware_logical_lookup:
+  accepted_restore_match_tokens: 16384
+  legacy_capped_probe_horizon_tokens: 16384
+  probe_horizon_source: conservative_two_effective_block_ceiling
+  eagle_inner_delta_source: spec_block_size
+  probe_horizon_is_not_exact_eagle_delta: true
+  runtime_attention_groups_authoritative: true
+  runtime_eagle_attention_group_indices_authoritative: true
+  runtime_cpu_coordinator_use_eagle_authoritative: true
+  runtime_effective_group_geometry_authoritative: true
+  expected_r10_geometry_lookahead_tokens: 16384
+  expected_r10_geometry_probe_horizon_tokens: 32768
+  restore_request_shared_prefix_tokens: 32768
+  restore_request_covers_accepted_target_plus_lookahead: true
+  identical_target_restore_prompt_authorized: true
+  hardcode_expected_horizon_in_observer: false
+  accepted_target_changed_by_probe_horizon: false
+  legacy_capped_probe_retained_for_same_window_comparison: true
+  raw_coordinator_hit_tokens_required: true
+  accepted_hit_tokens_are_min_raw_and_16384: true
+  logical_window_exact_when_raw_hit_at_least_16384: true
+  per_attention_group_lookup_lineage_required: true
+  per_group_fields:
+    - attention_group_index
+    - kv_cache_group_ids
+    - kv_cache_spec_type
+    - manager_type
+    - candidate_in_tokens
+    - manager_max_length_tokens
+    - base_block_size_tokens
+    - effective_block_size_tokens
+    - alignment_tokens
+    - use_eagle
+    - eagle_lookahead_delta_tokens
+    - eagle_lookahead_required_tokens
+    - eagle_lookahead_sufficient
+    - eagle_lookahead_requested
+    - eagle_lookahead_suppressed_by_horizon
+    - eagle_inner_readable_blocks
+    - returned_block_count
+    - returned_hit_tokens
+    - candidate_reduced
+  raw_hash_values_retained: false
+  raw_block_ids_retained: false
+  request_ids_retained: false
+  token_ids_retained: false
+
+pressure_and_restore:
+  pre_pressure_requires_cache_stamp_lineage_exact: true
+  pre_pressure_requires_logical_128_block_coverage_exact: true
+  fixed_pressure_must_execute_after_pre_pressure_gate: true
+  abort_requires_all_applicable_groups_cpu_complete_and_gpu_absent: true
+  logical_coordinator_hit_required_to_abort_pressure: false
+  continue_after_near_miss_or_cpu_eviction: true
+  pressure_end_without_trigger_terminal: pressure_completed_without_trigger
+  client_exit_confirmation_required: true
+  engine_idle_confirmation_required: true
+  post_abort_fresh_physical_revalidation_required: true
+  post_abort_eagle_aware_logical_match_tokens_min: 16384
+  restore_allowed_only_if_physical_and_eagle_aware_logical_gates_exact: true
+  restore_request_count_max: 1
+  real_h2d_copy_evidence_required_for_candidate_green: true
+
+execution_state:
+  npu_execution_authorized: true
+  keep_alive_card_ids_exact: [0, 1, 2, 3, 4, 5, 6, 7]
+  keep_alive_stop_is_routine_resource_operation: true
+  same_card_set_restore_on_every_exit: true
+  server_task_driver_required: true
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  capacity_search_authorized: false
+  context_change_authorized: false
+  server_side_code_edit_authorized: false
+  runtime_dependency_mutation_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+result_contract:
+  max_transfer_total_bytes: 71680
+  payload_file_count_max: 15
+  transfer_file_count_including_manifest_max: 16
+  target_store_lineage_summary_required: true
+  logical_keyspace_probe_diagnostic_summary_required: true
+  legacy_vs_eagle_aware_comparison_required: true
+  per_attention_group_lookup_lineage_required: true
+  generated_content_allowed: false
+  token_ids_allowed: false
+  request_ids_allowed: false
+  raw_hash_values_allowed: false
+  raw_block_ids_allowed: false
+  raw_logs_metrics_request_bodies_and_trace_remain_server_local: true
+
+claim_boundary:
+  accepted_capacity_single_lifecycle_eagle_aware_lookup_lineage_legacy_boundary_comparison_and_conditional_h2d_candidate_only

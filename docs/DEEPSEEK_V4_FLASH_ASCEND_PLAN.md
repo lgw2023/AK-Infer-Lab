@@ -65,7 +65,7 @@ F1-R8 已在 target finish 捕获 66 个 group-wrapped key，但 observer 漏算
 前错误阻断；R8 不是 accepted-capacity impossibility evidence。F1-R9 修正 effective geometry
 后确认 compressed FA 与 state group 已完整，却又受 finish-time sliding-window null block table
 误导，仍在 pressure 前退出。当前唯一任务
-`p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723` 已把 lineage 捕获移到 runtime
+`p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723` 已把 lineage 捕获移到 runtime
 `BlockPool.cache_full_blocks` 的真实 cache-stamp 时刻，仍固定 accepted capacity、36800
 context、一个 lifecycle 和零 retry。P8.3-I0-R1 taxonomy 已在窄边界 green，但 TP4 budget
 incomplete。
@@ -102,7 +102,7 @@ pressure-complete-without-trigger red，F1-R8 保留为 effective-geometry obser
 contract red；各轮 recovery 均 green。
 
 当前唯一服务器 handoff 是
-`p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723`：唯一 driver 自动停 0–7、运行
+`p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723`：唯一 driver 自动停 0–7、运行
 一个 fixed 36800 lifecycle、清理、恢复原卡集、按真实 marker 写 recovery 并 finalize；
 observer 在真实 cache stamp 时按 runtime sparse mask、null 语义和 block size 捕获各 KV group
 的 physical keys，只有逻辑覆盖与全部 applicable group 的物理 CPU-only 窗口都成立才
@@ -318,7 +318,7 @@ boundaries:
 ## 10. 当前下一步
 
 截至 2026-07-23，当前唯一服务器任务已经推进到
-`p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723`。R9 已证明 finish-time
+`p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723`。R9 已证明 finish-time
 sliding-window block table 不是 target lineage 的权威来源；R10 在真实 cache stamp 时按 runtime
 sparse mask 捕获并即时归因 target keys，只授权 accepted-capacity、fixed-context、单 lifecycle
 的实机验证。以下较早描述仅保留阶段 lineage，若与本段冲突以本段和

@@ -64,6 +64,16 @@ BLOCK_SIZE_TOKENS = 128
 TARGET_PREFIX_TOKENS = 8192
 TARGET_PREFIX_BLOCKS = TARGET_PREFIX_TOKENS // BLOCK_SIZE_TOKENS
 RESTORE_MATCH_TOKENS = 16384
+RESTORE_SHARED_PREFIX_TOKENS = int(
+    os.environ.get(
+        "P8_2_K1A_RESTORE_SHARED_PREFIX_TOKENS",
+        str(RESTORE_MATCH_TOKENS),
+    )
+)
+ALLOW_IDENTICAL_TARGET_RESTORE_BODIES = (
+    os.environ.get("P8_2_K1A_ALLOW_IDENTICAL_TARGET_RESTORE_BODIES", "0")
+    == "1"
+)
 PRESSURE_CONTEXT_TOKENS = int(
     os.environ.get("P8_2_K1A_PRESSURE_CONTEXT_TOKENS", "131072")
 )
@@ -96,6 +106,17 @@ def _plan_row(
 
 
 def build_run_plan() -> list[dict[str, Any]]:
+    if not (
+        RESTORE_MATCH_TOKENS
+        <= RESTORE_SHARED_PREFIX_TOKENS
+        <= 32768
+    ):
+        raise ValueError(
+            "restore shared prefix must cover the accepted target "
+            "without exceeding the target context"
+        )
+    if RESTORE_SHARED_PREFIX_TOKENS % BLOCK_SIZE_TOKENS != 0:
+        raise ValueError("restore shared prefix must align to hash blocks")
     plan = [
         _plan_row("lifecycle_01_warmup", "r5_l1_warmup", "warmup", 4096),
         _plan_row(
@@ -103,7 +124,7 @@ def build_run_plan() -> list[dict[str, Any]]:
             "r5_l1_target",
             "target_prime",
             32768,
-            RESTORE_MATCH_TOKENS,
+            RESTORE_SHARED_PREFIX_TOKENS,
         ),
     ]
     plan.extend(
@@ -121,7 +142,7 @@ def build_run_plan() -> list[dict[str, Any]]:
             "r5_l1_target",
             "restore_follower",
             32768,
-            RESTORE_MATCH_TOKENS,
+            RESTORE_SHARED_PREFIX_TOKENS,
         )
     )
     return plan
@@ -133,11 +154,24 @@ def prepare_lazy_h2d_artifacts(
     model_name: str,
 ) -> dict[str, Any]:
     plan = build_run_plan()
+    authorized_identical_body_request_ids = (
+        frozenset(
+            {
+                "lifecycle_01_target_prime",
+                "lifecycle_01_restore_follower",
+            }
+        )
+        if ALLOW_IDENTICAL_TARGET_RESTORE_BODIES
+        else None
+    )
     prepared = prepare_artifacts(
         source_payload,
         artifact_dir,
         model_name,
         plan=plan,
+        authorized_identical_body_request_ids=(
+            authorized_identical_body_request_ids
+        ),
     )
     prepared_by_id = {
         str(row["request_id"]): row for row in prepared["records"]
@@ -156,8 +190,15 @@ def prepare_lazy_h2d_artifacts(
     prime = prompts["lifecycle_01_target_prime"]
     restore = prompts["lifecycle_01_restore_follower"]
     restore_lcp = _common_prefix_length(prime, restore)
-    if restore_lcp // RESTORE_MATCH_TOKENS * RESTORE_MATCH_TOKENS != RESTORE_MATCH_TOKENS:
+    aligned_hybrid_match = (
+        restore_lcp // RESTORE_MATCH_TOKENS * RESTORE_MATCH_TOKENS
+    )
+    if aligned_hybrid_match < RESTORE_MATCH_TOKENS:
         raise ValueError("restore follower does not preserve the 16K hybrid match")
+    if restore_lcp < RESTORE_SHARED_PREFIX_TOKENS:
+        raise ValueError(
+            "restore follower does not preserve the configured lookup horizon"
+        )
     isolated_ids = [
         row["request_id"]
         for row in plan
@@ -170,7 +211,22 @@ def prepare_lazy_h2d_artifacts(
     if cross_group_lcp_max >= BLOCK_SIZE_TOKENS:
         raise ValueError("isolated body shares a cacheable target block")
     body_hashes = {str(row["request_body_sha256"]) for row in records}
-    if len(body_hashes) != len(records):
+    target_restore_identical = prime == restore
+    if (
+        ALLOW_IDENTICAL_TARGET_RESTORE_BODIES
+        and RESTORE_SHARED_PREFIX_TOKENS == 32768
+        and not target_restore_identical
+    ):
+        raise ValueError(
+            "full-context EAGLE lookahead requires identical target/restore prompts"
+        )
+    duplicate_allowance = (
+        1
+        if ALLOW_IDENTICAL_TARGET_RESTORE_BODIES
+        and target_restore_identical
+        else 0
+    )
+    if len(body_hashes) != len(records) - duplicate_allowance:
         raise ValueError("request bodies are not unique")
 
     (artifact_dir / "run_plan.json").write_text(
@@ -196,13 +252,21 @@ def prepare_lazy_h2d_artifacts(
         "target_prefix_tokens": TARGET_PREFIX_TOKENS,
         "target_prefix_blocks": TARGET_PREFIX_BLOCKS,
         "restore_match_tokens_required": RESTORE_MATCH_TOKENS,
+        "restore_shared_prefix_tokens": RESTORE_SHARED_PREFIX_TOKENS,
         "restore_token_lcp": restore_lcp,
+        "target_restore_prompts_identical": target_restore_identical,
+        "identical_target_restore_bodies_authorized": (
+            ALLOW_IDENTICAL_TARGET_RESTORE_BODIES
+        ),
         "pressure_context_tokens": PRESSURE_CONTEXT_TOKENS,
         "pressure_request_count_is_runtime_fact": False,
         "restore_body_prepared_but_conditionally_sent": True,
         "cross_group_lcp_max": cross_group_lcp_max,
         "cross_group_lcp_less_than_block_size": True,
-        "body_hashes_unique": True,
+        "body_hashes_unique": duplicate_allowance == 0,
+        "body_hashes_unique_except_authorized_target_restore_repeat": (
+            len(body_hashes) == len(records) - duplicate_allowance
+        ),
         "records": records,
         "generated_text_retained": False,
         "token_ids_retained": False,

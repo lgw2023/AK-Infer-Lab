@@ -313,6 +313,319 @@ def select_target_hashes(
     }
 
 
+def derive_eagle_aware_lookup_contract(
+    *,
+    cpu_coordinator: Any,
+    request_hashes: list[Any],
+    restore_match_tokens: int,
+    hash_block_size_tokens: int,
+) -> dict[str, Any]:
+    """Derive the read-only lookup horizon from the live hybrid coordinator.
+
+    Frozen Ascend EAGLE lookup adds ``spec.block_size`` (not the effective
+    block) before dropping the last matched block.  That delta alone is often
+    insufficient for a compressed manager whose effective block is much larger.
+
+    Separately, the observe-only probe may use a conservative horizon large
+    enough to read two effective blocks of the largest attention group.  That
+    ceiling is not claimed to be the runtime's exact EAGLE increment.
+    The accepted restore target remains unchanged.
+    """
+
+    if restore_match_tokens <= 0 or hash_block_size_tokens <= 0:
+        raise ValueError("logical lookup geometry must be positive")
+    available_tokens = len(request_hashes) * hash_block_size_tokens
+    attention_groups = tuple(
+        getattr(cpu_coordinator, "attention_groups", ()) or ()
+    )
+    eagle_indices = {
+        int(value)
+        for value in (
+            getattr(cpu_coordinator, "eagle_attn_group_indices", set()) or set()
+        )
+    }
+    managers = tuple(
+        getattr(cpu_coordinator, "single_type_managers", ()) or ()
+    )
+    coordinator_use_eagle = bool(
+        getattr(cpu_coordinator, "use_eagle", False)
+    ) or bool(eagle_indices)
+    effective_method = getattr(
+        cpu_coordinator, "_get_effective_block_size", None
+    )
+    group_rows: list[dict[str, Any]] = []
+    eagle_lookahead_delta_tokens = 0
+    max_effective_block_size = 0
+    for attention_group_index, item in enumerate(attention_groups):
+        if not isinstance(item, tuple) or len(item) < 2:
+            continue
+        spec = item[0]
+        group_ids = tuple(int(value) for value in item[1])
+        base_block_size = int(getattr(spec, "block_size", 0) or 0)
+        if callable(effective_method):
+            effective_block_size = int(effective_method(spec))
+            effective_source = "runtime_cpu_coordinator"
+        else:
+            compress_ratio = max(
+                1, int(getattr(spec, "compress_ratio", 1) or 1)
+            )
+            effective_block_size = base_block_size * compress_ratio
+            effective_source = "observer_source_aligned_fallback"
+        max_effective_block_size = max(
+            max_effective_block_size, effective_block_size
+        )
+        uses_eagle = attention_group_index in eagle_indices
+        if uses_eagle:
+            # Frozen Ascend: curr_hit_length + spec.block_size.
+            eagle_lookahead_delta_tokens = max(
+                eagle_lookahead_delta_tokens,
+                base_block_size,
+            )
+        group_rows.append(
+            {
+                "attention_group_index": attention_group_index,
+                "kv_cache_group_ids": list(group_ids),
+                "kv_cache_spec_type": type(spec).__name__,
+                "base_block_size_tokens": base_block_size,
+                "effective_block_size_tokens": effective_block_size,
+                "effective_geometry_source": effective_source,
+                "coordinator_use_eagle": uses_eagle,
+                "manager_use_eagle_flags": [
+                    bool(getattr(managers[group_id], "use_eagle", False))
+                    if 0 <= group_id < len(managers)
+                    else None
+                    for group_id in group_ids
+                ],
+                "raw_hash_values_retained": False,
+            }
+        )
+
+    # Conservative observe-only ceiling: enough hashes to inspect two
+    # effective blocks of the largest live group.  Not an EAGLE delta claim.
+    conservative_extra_tokens = max_effective_block_size
+    eagle_lookahead_required_tokens = max(
+        (
+            int(row["effective_block_size_tokens"])
+            for row in group_rows
+            if row.get("coordinator_use_eagle") is True
+        ),
+        default=0,
+    )
+    eagle_lookahead_sufficient = bool(
+        eagle_lookahead_delta_tokens > 0
+        and eagle_lookahead_delta_tokens >= eagle_lookahead_required_tokens
+    )
+    desired_horizon = restore_match_tokens + conservative_extra_tokens
+    probe_horizon = min(desired_horizon, available_tokens)
+    return {
+        "accepted_restore_match_tokens": restore_match_tokens,
+        "logical_lookup_available_tokens": available_tokens,
+        "logical_lookup_lookahead_tokens": conservative_extra_tokens,
+        "logical_lookup_horizon_basis": (
+            "conservative_two_effective_block_ceiling"
+        ),
+        "logical_lookup_desired_horizon_tokens": desired_horizon,
+        "logical_lookup_probe_horizon_tokens": probe_horizon,
+        "logical_lookup_horizon_exact": probe_horizon >= desired_horizon,
+        "cpu_coordinator_use_eagle": coordinator_use_eagle,
+        "eagle_lookahead_delta_tokens": eagle_lookahead_delta_tokens,
+        "eagle_lookahead_required_tokens": eagle_lookahead_required_tokens,
+        "eagle_lookahead_sufficient": eagle_lookahead_sufficient,
+        "logical_lookup_eagle_attention_group_count": len(eagle_indices),
+        "logical_lookup_attention_group_count": len(group_rows),
+        "logical_lookup_group_contract_rows": group_rows,
+        "raw_hash_values_retained": False,
+    }
+
+
+def _find_classmethod_descriptor(
+    manager_class: type[Any],
+    method_name: str,
+) -> tuple[type[Any], classmethod[Any]] | None:
+    for owner in manager_class.__mro__:
+        descriptor = owner.__dict__.get(method_name)
+        if isinstance(descriptor, classmethod):
+            return owner, descriptor
+    return None
+
+
+def _read_only_coordinator_lookup(
+    *,
+    cpu_coordinator: Any,
+    request_hashes: list[Any],
+    probe_horizon_tokens: int,
+    capture_group_lineage: bool,
+) -> tuple[Any, list[dict[str, Any]], str | None]:
+    """Call the runtime lookup while restoring its observer-visible side effect.
+
+    When possible, classmethod wrappers capture bounded per-attention-group
+    inputs and results. They are installed only for this synchronous probe and
+    restored in ``finally``; lookup arguments, results, exceptions, pool keys,
+    and runtime decisions are not changed.
+    """
+
+    side_effect_field = "num_uncached_common_prefix_tokens"
+    had_side_effect_field = hasattr(cpu_coordinator, side_effect_field)
+    previous_side_effect_value = getattr(
+        cpu_coordinator, side_effect_field, None
+    )
+    originals: list[tuple[type[Any], classmethod[Any]]] = []
+    rows: list[dict[str, Any]] = []
+    lineage_error_type: str | None = None
+    state = {
+        "candidate_tokens": probe_horizon_tokens,
+        "lookup_iteration_index": 0,
+    }
+    attention_groups = tuple(
+        getattr(cpu_coordinator, "attention_groups", ()) or ()
+    )
+    attention_index_by_group_ids = {
+        tuple(int(value) for value in item[1]): index
+        for index, item in enumerate(attention_groups)
+        if isinstance(item, tuple) and len(item) >= 2
+    }
+    effective_method = getattr(
+        cpu_coordinator, "_get_effective_block_size", None
+    )
+
+    try:
+        if capture_group_lineage:
+            patched_owners: set[type[Any]] = set()
+            manager_classes = [
+                item[2]
+                for item in attention_groups
+                if isinstance(item, tuple)
+                and len(item) >= 3
+                and isinstance(item[2], type)
+            ]
+            for manager_class in manager_classes:
+                resolved = _find_classmethod_descriptor(
+                    manager_class, "find_longest_cache_hit"
+                )
+                if resolved is None:
+                    continue
+                owner, descriptor = resolved
+                if owner in patched_owners:
+                    continue
+                patched_owners.add(owner)
+                originals.append((owner, descriptor))
+                original_function = descriptor.__func__
+
+                def observed_find_longest_cache_hit(
+                    cls: type[Any],
+                    *args: Any,
+                    __original: Any = original_function,
+                    **kwargs: Any,
+                ) -> Any:
+                    group_ids = tuple(
+                        int(value)
+                        for value in kwargs.get("kv_cache_group_ids", ())
+                    )
+                    spec = kwargs.get("kv_cache_spec")
+                    base_block_size = int(
+                        getattr(spec, "block_size", 0) or 0
+                    )
+                    if callable(effective_method):
+                        effective_block_size = int(effective_method(spec))
+                    else:
+                        effective_block_size = base_block_size * max(
+                            1,
+                            int(getattr(spec, "compress_ratio", 1) or 1),
+                        )
+                    candidate_in = int(state["candidate_tokens"])
+                    max_length = int(kwargs.get("max_length") or 0)
+                    use_eagle = bool(kwargs.get("use_eagle", False))
+                    # Frozen Ascend adds spec.block_size, not effective size.
+                    eagle_delta = (
+                        max(0, max_length - candidate_in) if use_eagle else 0
+                    )
+                    eagle_required = effective_block_size
+                    eagle_inner_readable_blocks = (
+                        max_length // effective_block_size
+                        if effective_block_size > 0
+                        else 0
+                    )
+                    result = __original(cls, *args, **kwargs)
+                    returned_block_count = (
+                        len(result[0])
+                        if isinstance(result, tuple) and result
+                        else 0
+                    )
+                    returned_hit_tokens = (
+                        returned_block_count * effective_block_size
+                    )
+                    row = {
+                        "lookup_iteration_index": int(
+                            state["lookup_iteration_index"]
+                        ),
+                        "attention_group_index": (
+                            attention_index_by_group_ids.get(group_ids, -1)
+                        ),
+                        "kv_cache_group_ids": list(group_ids),
+                        "manager_type": cls.__name__,
+                        "kv_cache_spec_type": type(spec).__name__,
+                        "candidate_in_tokens": candidate_in,
+                        "manager_max_length_tokens": max_length,
+                        "base_block_size_tokens": base_block_size,
+                        "effective_block_size_tokens": effective_block_size,
+                        "alignment_tokens": int(
+                            kwargs.get("alignment_tokens") or 0
+                        ),
+                        "use_eagle": use_eagle,
+                        "eagle_lookahead_delta_tokens": eagle_delta,
+                        "eagle_lookahead_required_tokens": eagle_required,
+                        "eagle_lookahead_sufficient": (
+                            use_eagle and eagle_inner_readable_blocks >= 2
+                        ),
+                        "eagle_lookahead_requested": (
+                            use_eagle and eagle_delta > 0
+                        ),
+                        "eagle_lookahead_suppressed_by_horizon": (
+                            use_eagle and max_length <= candidate_in
+                        ),
+                        "eagle_inner_readable_blocks": (
+                            eagle_inner_readable_blocks
+                        ),
+                        "returned_block_count": returned_block_count,
+                        "returned_hit_tokens": returned_hit_tokens,
+                        "candidate_reduced": (
+                            returned_hit_tokens < candidate_in
+                        ),
+                        "raw_hash_values_retained": False,
+                    }
+                    rows.append(row)
+                    state["candidate_tokens"] = returned_hit_tokens
+                    state["lookup_iteration_index"] = (
+                        int(state["lookup_iteration_index"]) + 1
+                    )
+                    return result
+
+                setattr(
+                    owner,
+                    "find_longest_cache_hit",
+                    classmethod(observed_find_longest_cache_hit),
+                )
+        result = cpu_coordinator.find_longest_cache_hit(
+            request_hashes, probe_horizon_tokens
+        )
+    except Exception:
+        raise
+    finally:
+        for owner, descriptor in reversed(originals):
+            setattr(owner, "find_longest_cache_hit", descriptor)
+        if capture_group_lineage and attention_groups and not originals:
+            lineage_error_type = "ManagerClassmethodLineageUnavailable"
+        if had_side_effect_field:
+            setattr(
+                cpu_coordinator,
+                side_effect_field,
+                previous_side_effect_value,
+            )
+        elif hasattr(cpu_coordinator, side_effect_field):
+            delattr(cpu_coordinator, side_effect_field)
+    return result, rows, lineage_error_type
+
+
 def probe_logical_restore_window(
     *,
     cpu_coordinator: Any,
@@ -322,6 +635,7 @@ def probe_logical_restore_window(
     cpu_pool: Any,
     gpu_pool: Any,
     retained_pool_keys: tuple[Any, ...] = (),
+    eagle_aware: bool = False,
 ) -> tuple[dict[str, Any], tuple[Any, ...]]:
     """Probe restore coverage through the runtime's own cache-key semantics.
 
@@ -335,29 +649,62 @@ def probe_logical_restore_window(
         restore_match_tokens=restore_match_tokens,
         block_size_tokens=hash_block_size_tokens,
     )
-    side_effect_field = "num_uncached_common_prefix_tokens"
-    had_side_effect_field = hasattr(cpu_coordinator, side_effect_field)
-    previous_side_effect_value = getattr(
-        cpu_coordinator, side_effect_field, None
+    lookup_contract = derive_eagle_aware_lookup_contract(
+        cpu_coordinator=cpu_coordinator,
+        request_hashes=request_hashes,
+        restore_match_tokens=restore_match_tokens,
+        hash_block_size_tokens=hash_block_size_tokens,
     )
-    try:
-        result = cpu_coordinator.find_longest_cache_hit(
-            request_hashes, restore_match_tokens
-        )
-    finally:
-        if had_side_effect_field:
-            setattr(
-                cpu_coordinator,
-                side_effect_field,
-                previous_side_effect_value,
+    legacy_result, _, _ = _read_only_coordinator_lookup(
+        cpu_coordinator=cpu_coordinator,
+        request_hashes=request_hashes,
+        probe_horizon_tokens=restore_match_tokens,
+        capture_group_lineage=False,
+    )
+    probe_horizon = (
+        int(lookup_contract["logical_lookup_probe_horizon_tokens"])
+        if eagle_aware
+        else restore_match_tokens
+    )
+    if probe_horizon == restore_match_tokens:
+        result = legacy_result
+        group_lookup_rows: list[dict[str, Any]] = []
+        lineage_error_type: str | None = None
+    else:
+        result, group_lookup_rows, lineage_error_type = (
+            _read_only_coordinator_lookup(
+                cpu_coordinator=cpu_coordinator,
+                request_hashes=request_hashes,
+                probe_horizon_tokens=probe_horizon,
+                capture_group_lineage=True,
             )
-        elif hasattr(cpu_coordinator, side_effect_field):
-            delattr(cpu_coordinator, side_effect_field)
+        )
     if not isinstance(result, tuple) or len(result) < 2:
         raise ValueError("runtime CPU coordinator returned an invalid hit result")
+    if not isinstance(legacy_result, tuple) or len(legacy_result) < 2:
+        raise ValueError("runtime CPU coordinator returned an invalid legacy result")
     groups = tuple(result[0])
-    hit_tokens = max(0, min(int(result[1]), restore_match_tokens))
-    logical_exact = hit_tokens == restore_match_tokens
+    raw_hit_tokens = max(0, int(result[1]))
+    hit_tokens = min(raw_hit_tokens, restore_match_tokens)
+    legacy_raw_hit_tokens = max(0, int(legacy_result[1]))
+    legacy_hit_tokens = min(legacy_raw_hit_tokens, restore_match_tokens)
+    logical_exact = raw_hit_tokens >= restore_match_tokens
+    first_reduction = next(
+        (
+            row
+            for row in group_lookup_rows
+            if row.get("candidate_reduced") is True
+        ),
+        {},
+    )
+    first_zero = next(
+        (
+            row
+            for row in group_lookup_rows
+            if int(row.get("returned_hit_tokens") or 0) == 0
+        ),
+        {},
+    )
 
     group_keys: list[tuple[Any, ...]] = []
     current_keys: list[Any] = []
@@ -438,11 +785,45 @@ def probe_logical_restore_window(
             if cardinality_exact
             else 0,
             "target_capture_source": "runtime_cpu_coordinator_longest_hit",
+            "logical_probe_source": "runtime_cpu_coordinator_longest_hit",
             "target_capture_cardinality_exact": cardinality_exact,
             "target_keyspace_matchable": keyspace_matchable,
             "target_capture_exact": capture_exact,
             "logical_restore_match_tokens": hit_tokens,
+            "raw_logical_restore_match_tokens": raw_hit_tokens,
+            "legacy_capped_logical_restore_match_tokens": legacy_hit_tokens,
+            "legacy_capped_raw_logical_restore_match_tokens": (
+                legacy_raw_hit_tokens
+            ),
             "logical_restore_window_exact": logical_exact,
+            "legacy_capped_logical_restore_window_exact": (
+                legacy_raw_hit_tokens >= restore_match_tokens
+            ),
+            "legacy_capped_false_negative_candidate": all(
+                (
+                    legacy_raw_hit_tokens < restore_match_tokens,
+                    raw_hit_tokens >= restore_match_tokens,
+                    probe_horizon > restore_match_tokens,
+                )
+            ),
+            "eagle_aware_logical_lookup_enabled": eagle_aware,
+            "logical_lookup_group_lineage_observable": (
+                bool(group_lookup_rows) if eagle_aware else False
+            ),
+            "logical_lookup_group_lineage_error_type": lineage_error_type,
+            "logical_lookup_iteration_rows": group_lookup_rows,
+            "logical_lookup_first_reduction_attention_group_index": int(
+                first_reduction.get("attention_group_index", -1)
+            ),
+            "logical_lookup_first_reduction_spec_type": first_reduction.get(
+                "kv_cache_spec_type"
+            ),
+            "logical_lookup_first_zero_attention_group_index": int(
+                first_zero.get("attention_group_index", -1)
+            ),
+            "logical_lookup_first_zero_spec_type": first_zero.get(
+                "kv_cache_spec_type"
+            ),
             "coordinator_returned_pool_key_count": len(current_keys),
             "coordinator_cpu_pool_key_match_count": count(
                 cpu_pool, tuple(current_keys)
@@ -459,6 +840,7 @@ def probe_logical_restore_window(
             "target_pool_key_count_unit": "runtime_group_pool_keys",
             "cpu_target_block_count": hit_tokens // hash_block_size_tokens,
             "gpu_target_block_count": gpu_pool_matches,
+            **lookup_contract,
             **group_summary,
             "raw_hash_values_retained": False,
         },
@@ -500,6 +882,9 @@ def refresh_logical_restore_window(
     retained = tuple(
         getattr(scheduler, "_p8_2_k1a_target_pool_keys", ()) or ()
     )
+    eagle_aware = (
+        os.environ.get("P8_2_K1A_EAGLE_AWARE_LOGICAL_LOOKUP", "0") == "1"
+    )
     try:
         summary, target_pool_keys = probe_logical_restore_window(
             cpu_coordinator=scheduler.cpu_coordinator,
@@ -509,6 +894,7 @@ def refresh_logical_restore_window(
             cpu_pool=getattr(scheduler, "cpu_block_pool", None),
             gpu_pool=getattr(scheduler, "_gpu_block_pool", None),
             retained_pool_keys=retained,
+            eagle_aware=eagle_aware,
         )
     except Exception as error:  # Observe-only: never alter scheduler behavior.
         summary = {
@@ -546,6 +932,28 @@ def refresh_logical_restore_window(
                 "coordinator_cpu_pool_key_match_count",
                 "coordinator_gpu_pool_key_match_count",
                 "target_keyspace_probe_error_type",
+                "logical_probe_source",
+                "raw_logical_restore_match_tokens",
+                "legacy_capped_logical_restore_match_tokens",
+                "legacy_capped_raw_logical_restore_match_tokens",
+                "legacy_capped_logical_restore_window_exact",
+                "legacy_capped_false_negative_candidate",
+                "eagle_aware_logical_lookup_enabled",
+                "logical_lookup_available_tokens",
+                "logical_lookup_lookahead_tokens",
+                "logical_lookup_desired_horizon_tokens",
+                "logical_lookup_probe_horizon_tokens",
+                "logical_lookup_horizon_exact",
+                "logical_lookup_eagle_attention_group_count",
+                "logical_lookup_attention_group_count",
+                "logical_lookup_group_contract_rows",
+                "logical_lookup_group_lineage_observable",
+                "logical_lookup_group_lineage_error_type",
+                "logical_lookup_iteration_rows",
+                "logical_lookup_first_reduction_attention_group_index",
+                "logical_lookup_first_reduction_spec_type",
+                "logical_lookup_first_zero_attention_group_index",
+                "logical_lookup_first_zero_spec_type",
             )
             if key in summary
         }
@@ -2208,6 +2616,14 @@ def observer_self_test_contract() -> dict[str, Any]:
         ),
         "logical_restore_lookup_is_read_only": True,
         "runtime_lookup_side_effect_field_restored": True,
+        "eagle_aware_lookup_horizon_derived_from_runtime_groups": True,
+        "lookup_horizon_basis_is_conservative_two_effective_block_ceiling": True,
+        "eagle_inner_delta_is_spec_block_size_not_effective": True,
+        "cpu_coordinator_use_eagle_is_runtime_observed": True,
+        "accepted_restore_target_unchanged_by_lookup_horizon": True,
+        "legacy_capped_and_eagle_aware_probe_comparison": True,
+        "per_attention_group_lookup_lineage_bounded": True,
+        "logical_probe_source_is_independent_from_target_lineage_source": True,
         "logical_restore_target_count_unit": "logical_request_hash_blocks",
         "runtime_pool_keys_retained_in_process_only": True,
         "target_group_wrapped_keys_captured_before_request_finish": True,

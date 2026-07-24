@@ -1,15 +1,17 @@
 # P8 分层工程原型实施计划
 
-日期：2026-07-10；最后更新：2026-07-23
+日期：2026-07-10；最后更新：2026-07-24
 
-当前执行覆盖：`local_artifact_state=k1a_r5_f1_r10_runtime_cache_stamp_lineage_prepared`；
+当前执行覆盖：`local_artifact_state=k1a_r5_f1_r11_cpu_coordinator_lookup_lineage_prepared`；
 `server_execution_state=authorized_one_fixed_lifecycle`；
-`current_task_id=p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723`。R10 保持
+`current_task_id=p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723`。R11 保持
 accepted 128 CPU blocks/rank、logical 16384 tokens/128 hash blocks 与 fixed 36800，
-在 GPU `BlockPool.cache_full_blocks` 真正写入 group-wrapped key 时按 runtime sparse mask 捕获
-各组恢复 lineage；不得再从请求结束后的 sliding-window null block table 推断 keyspace。
+在同一 R10 已证明的 physical CPU-only window 上对比 legacy 16K capped lookup 与
+conservative two-effective-block horizon，并记录 per-attention-group lineage；不预先宣称
+唯一根因，也不假设 CPU coordinator 已启用 EAGLE（冻结 `SimpleCPUOffloadScheduler`
+构造参数 `constructor_use_eagle=false`）。
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_full_lineage_preserved / p8_2_k1a_r4_r1_offline_store_only_closeout_green / p8_2_k1a_r5_f0_h2d_trigger_feasibility_ready / p8_2_k1a_r5_l1_d2h_green_controller_red / p8_2_k1a_r5_l1_r1_target_lost_red / p8_2_k1a_r5_f1_r1_fixed_l2_target_lost_red / p8_2_k1a_r5_f1_r2_mid_request_endpoint_mismatch / p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete_red / p8_2_k1a_r5_f1_r4_invalid_effective_64_block_contract / p8_2_k1a_r5_f1_r5_runtime_keyspace_probe_invalid / p8_2_k1a_r5_f1_r6_prepressure_circular_wait_red / p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger_red / p8_2_k1a_r5_f1_r8_effective_geometry_contract_red / p8_2_k1a_r5_f1_r9_finish_time_swa_lineage_red / p8_2_k1a_r5_f1_r10_cache_stamp_lineage_prepared / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_full_lineage_preserved / p8_2_k1a_r4_r1_offline_store_only_closeout_green / p8_2_k1a_r5_f0_h2d_trigger_feasibility_ready / p8_2_k1a_r5_l1_d2h_green_controller_red / p8_2_k1a_r5_l1_r1_target_lost_red / p8_2_k1a_r5_f1_r1_fixed_l2_target_lost_red / p8_2_k1a_r5_f1_r2_mid_request_endpoint_mismatch / p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete_red / p8_2_k1a_r5_f1_r4_invalid_effective_64_block_contract / p8_2_k1a_r5_f1_r5_runtime_keyspace_probe_invalid / p8_2_k1a_r5_f1_r6_prepressure_circular_wait_red / p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger_red / p8_2_k1a_r5_f1_r8_effective_geometry_contract_red / p8_2_k1a_r5_f1_r9_finish_time_swa_lineage_red / p8_2_k1a_r5_f1_r10_logical_restore_hit_incomplete_after_physical_window / p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_prepared / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 
 P8.1 parent grade 保留为 `yellow_p8_1_matrix_trace_invalid`。
 
@@ -28,19 +30,20 @@ R9 的历史合同与入口仍由
 `run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.sh` 和
 `run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh` 冻结保留；它们不是当前执行入口。
 
-当前唯一服务器任务是 `p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723`。R10 固定一个
+当前唯一服务器任务是 `p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723`。R11 固定一个
 lifecycle、一个 pressure、零 retry，服务器不得补代码或调整 capacity/context。
 
-当前执行合同由 `p8_2_k1a_r5_f1_r10_cache_stamp_lineage_audit.yaml`、
+当前执行合同由 `p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_audit.yaml`、
+`p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.yaml`、
+`run_deepseek_p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.sh` 与唯一
+`run_deepseek_p8_2_k1a_r5_f1_r11_server_task.sh` 固定。R10 parent
+`p8_2_k1a_r5_f1_r10_cache_stamp_lineage_audit.yaml`、
 `p8_2_k1a_r5_f1_r10_cache_stamp_lineage.yaml`、
-`run_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.sh` 与唯一
-`run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh` 固定。公共 observer 包装 GPU
-`BlockPool.cache_full_blocks`，在原调用成功返回后按 runtime `block_mask`、null 语义和真实
-cache-stamp block size 累计 16K 前缀内的 group-wrapped keys；这些 keys 立即进入 lazy-store
-schedule/completion 与 eviction 归因。未扫描完的组 fail closed；完整扫描后确实没有 cacheable
-position 的组才是 N/A。target finish 只 finalize 已累计的 stamp lineage，不再重读已被 sliding-window
-manager 置 null 的 request block table。raw hash 与 block ID 仅驻留进程内，不写入有界包；logical
-coordinator lookup 仍只读并恢复 side-effect field。
+`run_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.sh` 与
+`run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh` 仅作 parent provenance，不得重跑。
+公共 observer 在同一 physical CPU-only window 上保留 legacy 16K capped probe，并增加
+conservative two-effective-block horizon 对照与 per-group lookup lineage；accepted
+restore target 仍为 16384。raw hash 与 block ID 仅驻留进程内，不写入有界包。
 F1-R8 parent 资产 `p8_2_k1a_r5_f1_r8_target_store_lineage_audit.yaml`、`p8_2_k1a_r5_f1_r8_target_store_lineage.yaml`、`run_deepseek_p8_2_k1a_r5_f1_r8_target_store_lineage.sh` 与 `run_deepseek_p8_2_k1a_r5_f1_r8_server_task.sh` 仅用于冻结 R8 result lineage，不是当前入口。
 F1-R7 parent 合同继续由 `p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh_audit.yaml`、`p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.yaml`、`run_deepseek_p8_2_k1a_r5_f1_r7_inflight_keyspace_refresh.sh` 与 `run_deepseek_p8_2_k1a_r5_f1_r7_server_task.sh` 冻结，只用于 parent provenance，不是当前执行入口。
 F1-R6 parent 合同继续由 `p8_2_k1a_r5_f1_r6_logical_keyspace_restore_audit.yaml` 冻结，只用于 parent provenance，不是当前执行入口。

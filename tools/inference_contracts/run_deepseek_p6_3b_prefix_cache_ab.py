@@ -80,6 +80,7 @@ def prepare_artifacts(
     model_name: str,
     *,
     plan: list[dict[str, Any]] | None = None,
+    authorized_identical_body_request_ids: frozenset[str] | None = None,
 ) -> dict[str, Any]:
     source = json.loads(source_payload.read_text(encoding="utf-8"))
     source_tokens = source.get("prompt")
@@ -176,7 +177,37 @@ def prepare_artifacts(
                 | {"actual_shared_prefix_tokens": actual_shared}
             )
 
-    if len({row["request_body_sha256"] for row in records}) != len(records):
+    body_hashes = [str(row["request_body_sha256"]) for row in records]
+    if authorized_identical_body_request_ids:
+        authorized_ids = set(authorized_identical_body_request_ids)
+        by_id = {str(row["request_id"]): row for row in records}
+        missing = sorted(authorized_ids - by_id.keys())
+        if missing:
+            raise ValueError(
+                "authorized identical body request ids are missing: "
+                + ", ".join(missing)
+            )
+        authorized_hashes = {
+            str(by_id[request_id]["request_body_sha256"])
+            for request_id in authorized_ids
+        }
+        if len(authorized_hashes) != 1:
+            raise ValueError(
+                "authorized identical body request ids must share one hash"
+            )
+        shared_hash = next(iter(authorized_hashes))
+        other_hashes = [
+            str(row["request_body_sha256"])
+            for row in records
+            if str(row["request_id"]) not in authorized_ids
+        ]
+        if shared_hash in other_hashes:
+            raise ValueError(
+                "authorized identical body hash leaked outside the pair"
+            )
+        if len(set(other_hashes)) != len(other_hashes):
+            raise ValueError("request body hashes are not unique")
+    elif len(set(body_hashes)) != len(body_hashes):
         raise ValueError("request body hashes are not unique")
     manifest = {
         "source_prompt_tokens": len(source_tokens),
@@ -186,6 +217,9 @@ def prepare_artifacts(
         "modes_reuse_identical_body_bytes": True,
         "cross_group_common_prefix_tokens_less_than": BLOCK_SIZE,
         "shared_prefix_block_aligned": True,
+        "authorized_identical_body_request_ids": sorted(
+            authorized_identical_body_request_ids or ()
+        ),
         "generated_text_retained": False,
         "token_ids_retained": False,
         "records": records,

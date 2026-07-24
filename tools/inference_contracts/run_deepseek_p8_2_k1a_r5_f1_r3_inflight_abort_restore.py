@@ -188,6 +188,12 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "fa_group_hash_candidate_count",
         "selected_target_hash_count",
         "logical_restore_match_tokens",
+        "raw_logical_restore_match_tokens",
+        "legacy_capped_logical_restore_match_tokens",
+        "logical_lookup_probe_horizon_tokens",
+        "logical_lookup_lookahead_tokens",
+        "eagle_lookahead_delta_tokens",
+        "eagle_lookahead_required_tokens",
         "target_pool_key_count",
         "cpu_target_pool_key_match_count",
         "gpu_target_pool_key_match_count",
@@ -208,17 +214,31 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "target_fa_store_completed_key_count",
         "target_fa_cpu_evicted_key_count",
         "target_fa_gpu_evicted_key_count",
+        "logical_lookup_first_reduction_attention_group_index",
+        "logical_lookup_first_zero_attention_group_index",
     ):
         if field in row:
             value[field] = int(row.get(field) or 0)
     if "target_capture_source" in row:
         value["target_capture_source"] = str(row["target_capture_source"])
+    if "logical_probe_source" in row:
+        value["logical_probe_source"] = str(row["logical_probe_source"])
+    if "logical_lookup_horizon_basis" in row:
+        value["logical_lookup_horizon_basis"] = str(
+            row["logical_lookup_horizon_basis"]
+        )
     if "target_capture_exact" in row:
         value["target_capture_exact"] = row.get("target_capture_exact") is True
     for field in (
         "target_capture_cardinality_exact",
         "target_keyspace_matchable",
         "logical_restore_window_exact",
+        "legacy_capped_logical_restore_window_exact",
+        "legacy_capped_false_negative_candidate",
+        "eagle_aware_logical_lookup_enabled",
+        "logical_lookup_group_lineage_observable",
+        "cpu_coordinator_use_eagle",
+        "eagle_lookahead_sufficient",
         "target_store_lineage_capture_exact",
         "target_fa_capture_exact",
         "target_logical_coverage_exact",
@@ -231,9 +251,69 @@ def _sanitized_trigger(row: dict[str, Any]) -> dict[str, Any]:
         "cpu_target_count_unit",
         "gpu_target_count_unit",
         "target_pool_key_count_unit",
+        "logical_lookup_first_reduction_spec_type",
+        "logical_lookup_first_zero_spec_type",
     ):
         if field in row:
             value[field] = str(row[field])
+    if "logical_lookup_iteration_rows" in row:
+        bounded_lookup_rows = []
+        for lookup in row.get("logical_lookup_iteration_rows") or ():
+            bounded = {
+                field: int(lookup.get(field) or 0)
+                for field in (
+                    "lookup_iteration_index",
+                    "attention_group_index",
+                    "candidate_in_tokens",
+                    "manager_max_length_tokens",
+                    "base_block_size_tokens",
+                    "effective_block_size_tokens",
+                    "alignment_tokens",
+                    "eagle_lookahead_delta_tokens",
+                    "eagle_lookahead_required_tokens",
+                    "eagle_inner_readable_blocks",
+                    "returned_block_count",
+                    "returned_hit_tokens",
+                )
+                if field in lookup
+            }
+            for field in (
+                "use_eagle",
+                "eagle_lookahead_requested",
+                "eagle_lookahead_suppressed_by_horizon",
+                "eagle_lookahead_sufficient",
+                "candidate_reduced",
+            ):
+                if field in lookup:
+                    bounded[field] = lookup.get(field) is True
+            if "kv_cache_spec_type" in lookup:
+                bounded["kv_cache_spec_type"] = str(lookup["kv_cache_spec_type"])
+            if "manager_type" in lookup:
+                bounded["manager_type"] = str(lookup["manager_type"])
+            bounded["raw_hash_values_retained"] = False
+            bounded_lookup_rows.append(bounded)
+        value["logical_lookup_iteration_rows"] = bounded_lookup_rows
+    if "logical_lookup_group_contract_rows" in row:
+        bounded_contract_rows = []
+        for group in row.get("logical_lookup_group_contract_rows") or ():
+            bounded = {
+                field: int(group.get(field) or 0)
+                for field in (
+                    "attention_group_index",
+                    "base_block_size_tokens",
+                    "effective_block_size_tokens",
+                )
+                if field in group
+            }
+            if "kv_cache_spec_type" in group:
+                bounded["kv_cache_spec_type"] = str(group["kv_cache_spec_type"])
+            if "coordinator_use_eagle" in group:
+                bounded["coordinator_use_eagle"] = (
+                    group.get("coordinator_use_eagle") is True
+                )
+            bounded["raw_hash_values_retained"] = False
+            bounded_contract_rows.append(bounded)
+        value["logical_lookup_group_contract_rows"] = bounded_contract_rows
     if "restore_group_count" in row:
         value.update(
             {
@@ -860,8 +940,15 @@ def summarize_logical_keyspace_probe_diagnostics(
     probes = [
         row
         for row in rows
-        if row.get("target_capture_source")
-        == "runtime_cpu_coordinator_longest_hit"
+        if (
+            row.get("logical_probe_source")
+            == "runtime_cpu_coordinator_longest_hit"
+            or (
+                "logical_probe_source" not in row
+                and row.get("target_capture_source")
+                == "runtime_cpu_coordinator_longest_hit"
+            )
+        )
         and row.get("event")
         in {
             "target_hashes_captured",
@@ -907,6 +994,19 @@ def summarize_logical_keyspace_probe_diagnostics(
                 "near_miss_probe_event_count": len(selected) - exact_count,
                 "logical_restore_match_tokens_max": maximum(
                     "logical_restore_match_tokens", selected
+                ),
+                "raw_logical_restore_match_tokens_max": maximum(
+                    "raw_logical_restore_match_tokens", selected
+                ),
+                "legacy_capped_logical_restore_match_tokens_max": maximum(
+                    "legacy_capped_logical_restore_match_tokens", selected
+                ),
+                "logical_lookup_probe_horizon_tokens_max": maximum(
+                    "logical_lookup_probe_horizon_tokens", selected
+                ),
+                "legacy_capped_false_negative_candidate_count": sum(
+                    row.get("legacy_capped_false_negative_candidate") is True
+                    for row in selected
                 ),
                 "target_pool_key_count_max": maximum(
                     "target_pool_key_count", selected
@@ -956,6 +1056,14 @@ def summarize_logical_keyspace_probe_diagnostics(
     gpu_counts = [
         int(row.get("gpu_target_pool_key_match_count") or 0) for row in probes
     ]
+    best_probe = max(
+        probes,
+        key=lambda row: (
+            int(row.get("logical_restore_match_tokens") or 0),
+            int(row.get("timestamp_ns") or 0),
+        ),
+        default={},
+    )
     return {
         "schema_version": (
             f"{CONTRACT_SCHEMA_TAG}_logical_keyspace_probe_diagnostic_v1"
@@ -975,6 +1083,48 @@ def summarize_logical_keyspace_probe_diagnostics(
         ),
         "logical_restore_match_tokens_max": maximum(
             "logical_restore_match_tokens"
+        ),
+        "raw_logical_restore_match_tokens_max": maximum(
+            "raw_logical_restore_match_tokens"
+        ),
+        "legacy_capped_logical_restore_match_tokens_max": maximum(
+            "legacy_capped_logical_restore_match_tokens"
+        ),
+        "logical_lookup_probe_horizon_tokens_max": maximum(
+            "logical_lookup_probe_horizon_tokens"
+        ),
+        "logical_lookup_lookahead_tokens_max": maximum(
+            "logical_lookup_lookahead_tokens"
+        ),
+        "legacy_capped_false_negative_candidate_count": sum(
+            row.get("legacy_capped_false_negative_candidate") is True
+            for row in probes
+        ),
+        "group_lineage_observable_event_count": sum(
+            row.get("logical_lookup_group_lineage_observable") is True
+            for row in probes
+        ),
+        "best_probe_first_reduction_attention_group_index": int(
+            best_probe.get(
+                "logical_lookup_first_reduction_attention_group_index", -1
+            )
+        ),
+        "best_probe_first_reduction_spec_type": best_probe.get(
+            "logical_lookup_first_reduction_spec_type"
+        ),
+        "best_probe_first_zero_attention_group_index": int(
+            best_probe.get(
+                "logical_lookup_first_zero_attention_group_index", -1
+            )
+        ),
+        "best_probe_first_zero_spec_type": best_probe.get(
+            "logical_lookup_first_zero_spec_type"
+        ),
+        "best_probe_group_contract_rows": list(
+            best_probe.get("logical_lookup_group_contract_rows", ()) or ()
+        ),
+        "best_probe_lookup_iteration_rows": list(
+            best_probe.get("logical_lookup_iteration_rows", ()) or ()
         ),
         "target_pool_key_count_max": maximum("target_pool_key_count"),
         "cpu_target_pool_key_match_count_max": maximum(
@@ -1062,6 +1212,40 @@ def build_post_abort_revalidation_gate(
         "logical_restore_match_tokens": int(
             latest.get("logical_restore_match_tokens") or 0
         ),
+        "raw_logical_restore_match_tokens": int(
+            latest.get("raw_logical_restore_match_tokens") or 0
+        ),
+        "legacy_capped_logical_restore_match_tokens": int(
+            latest.get("legacy_capped_logical_restore_match_tokens") or 0
+        ),
+        "logical_lookup_probe_horizon_tokens": int(
+            latest.get("logical_lookup_probe_horizon_tokens") or 0
+        ),
+        "logical_lookup_lookahead_tokens": int(
+            latest.get("logical_lookup_lookahead_tokens") or 0
+        ),
+        "legacy_capped_false_negative_candidate": latest.get(
+            "legacy_capped_false_negative_candidate"
+        )
+        is True,
+        "cpu_coordinator_use_eagle": latest.get("cpu_coordinator_use_eagle")
+        is True,
+        "eagle_lookahead_delta_tokens": int(
+            latest.get("eagle_lookahead_delta_tokens") or 0
+        ),
+        "eagle_lookahead_required_tokens": int(
+            latest.get("eagle_lookahead_required_tokens") or 0
+        ),
+        "eagle_lookahead_sufficient": latest.get("eagle_lookahead_sufficient")
+        is True,
+        "logical_lookup_first_reduction_attention_group_index": int(
+            latest.get("logical_lookup_first_reduction_attention_group_index")
+            or -1
+        ),
+        "logical_lookup_first_zero_attention_group_index": int(
+            latest.get("logical_lookup_first_zero_attention_group_index") or -1
+        ),
+        "logical_probe_source": str(latest.get("logical_probe_source") or ""),
         "raw_hash_values_retained": False,
     }
 
