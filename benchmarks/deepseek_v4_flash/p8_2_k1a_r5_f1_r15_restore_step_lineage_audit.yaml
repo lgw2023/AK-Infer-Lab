@@ -1,0 +1,149 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R15
+date: '2026-07-25'
+task_id: p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725
+
+accepted_f1_r14_result:
+  server_grade: red_p8_2_k1a_r5_f1_r14_h2d_evidence_incomplete
+  operational_grade: operational_recovery_clean
+  experimental_terminal: restore_request_completed
+  request_count: 4
+  successful_request_count: 3
+  pressure_request_count_executed: 1
+  logical_target_block_count: 128
+  accepted_restore_match_tokens: 16384
+  restore_shared_prefix_tokens: 32768
+  restore_cpu_hit_exact: true
+  restore_cpu_hit_tokens_max: 16384
+  restore_allocate_slots_observed: true
+  restore_allocate_slots_ok: true
+  restore_num_external_tokens_at_alloc: 0
+  restore_num_new_tokens_at_alloc: 2
+  restore_delay_cache_blocks_at_alloc: false
+  restore_update_after_alloc_called: true
+  restore_pending_present_at_update: false
+  restore_pending_non_null_block_count: 0
+  restore_hit_to_load_gap_class: load_scheduled
+  restore_update_early_return_reason: num_external_zero
+  restore_update_raise_subclass: none
+  restore_pairing_repair_enabled: true
+  restore_pairing_repair_applied: false
+  restore_pairing_repair_eligible: false
+  restore_pairing_repair_skip_reason: frozen_geometry_not_index_overflow
+  restore_manager_source_sha_matched: true
+  restore_compress_aware_geometry_status: not_applicable
+  restore_entered_reqs_to_load: false
+  restore_load_scheduled: true
+  restore_load_request_completed: true
+  restore_connector_load_meta_observed: true
+  restore_connector_load_gpu_block_count: 0
+  restore_transfer_gpu_block_count: 0
+  restore_transfer_cpu_block_count: 0
+  h2d_worker_count: 8
+  h2d_bytes_total: 1076510720
+  h2d_restore_complete: true
+  h2d_async_copy_pipeline_exact: false
+  h2d_poll_event_visible_worker_count: 6
+  h2d_restore_mechanism_candidate: false
+  target_cpu_only_residency_observed: false
+  target_store_key_count: 40
+  target_store_completed_key_count: 40
+  d2h_store_complete: true
+  d2h_worker_count: 8
+  d2h_bytes_total: 4386781184
+  physical_cpu_only_window_event_count: 14
+  logical_and_physical_window_event_count: 14
+  cleanup: clean
+  resource_recovery_exact: true
+  stopped_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  restored_card_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+  grading_sha256: 403b5fc007fbec07628319d46af50c4ecd6314eec39fda8f2fad39ed9189526b
+  timeline_sha256: 78ba2fa1c27bdbb4a6512b852e1029d4acd9cf4fc2cdb127297f103bb26e7370
+  h2d_trigger_sha256: eab6d7161dfda5373bc5c20cfcb0efb38adbc6a10b7be29e7723fc2b944b15cd
+  transfer_sha256: 1266033f325bb8a1571dd46c563fd28feeb0753fb2b01439dc0830808f93c983
+  logical_diagnostic_sha256: 8b997ae5e0b8ddc1c9f13791888c27eebd4a6ae1b10a7f21de155908ae8dc8bf
+  target_lineage_sha256: 5f0dcd40353412ea2d232332ba0aa9e3103c1a0bb35e6dbd4b01e2c4267b3d93
+  repair_sha256: 459d0f9aa71587d5359a23aabdb44741d4b41195c6cd56a8e8775fc7d1ae1862
+  recovery_sha256: aaf96cd771158866c72d4a2a6e3fa3f3242838c2cef0fe14dd42e043292f17ba
+  manifest_sha256: c739ce99cf7038f80cf0867787a2f850f7909e9306476a61956764abc926208a
+
+developer_diagnosis:
+  r14_repair_skipped_on_last_update: true
+  r14_last_alloc_looks_like_decode_step: true
+  r14_last_update_num_external_zero: true
+  r14_load_scheduled_and_h2d_bytes_observed: true
+  r14_entered_reqs_to_load_false_on_summarized_last_update: true
+  r14_mechanism_candidate_false_due_to_logical_vs_physical_cpu_only_gate: true
+  last_event_summarizer_can_mask_earlier_delayed_external_prefill: true
+  unique_root_cause_claim_authorized: false
+  accepted_capacity_invalidated: false
+  repeating_r14_repair_skip_only_is_not_the_next_action: true
+
+source_alignment:
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  simple_cpu_offload_scheduler_path: vllm/v1/simple_kv_offload/manager.py
+  source_blob_sha256_manager_py: fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
+  task_local_repair_retained: true
+  site_packages_edit_authorized: false
+
+developer_decision:
+  same_fixed_capacity_and_context_required: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_per_rank: 430604288
+  cpu_bytes_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count_required: 128
+  accepted_restore_match_tokens: 16384
+  hash_block_size_tokens: 128
+  target_restore_shared_prefix_tokens: 32768
+  target_restore_prompt_identity_required: true
+  eagle_aware_logical_lookup_retained: true
+  legacy_capped_probe_retained: true
+  hit_to_load_admission_lineage_retained: true
+  update_raise_geometry_lineage_retained: true
+  compress_aware_pairing_repair_retained: true
+  restore_step_lineage_required: true
+  physical_fa_cpu_only_gate_required: true
+  required_observe_events:
+    - cpu_hit_matched
+    - allocate_slots_observed
+    - update_state_after_alloc_observed
+    - load_scheduled
+    - connector_load_meta_observed
+  required_bounded_fields:
+    - restore_hit_to_load_gap_class
+    - restore_allocate_slots_observed_count
+    - restore_update_observed_count
+    - restore_load_scheduled_event_count
+    - restore_alloc_step_classes
+    - restore_last_alloc_step_class
+    - restore_first_delayed_external_alloc_index
+    - restore_first_delayed_external_num_external
+    - restore_first_entered_reqs_to_load_update_index
+    - restore_any_entered_reqs_to_load
+    - restore_any_pairing_repair_applied
+    - restore_any_update_raise_subclass
+    - restore_last_step_masks_earlier_delayed_external
+    - restore_step_lineage_primary_class
+    - restore_h2d_path_class
+    - restore_load_scheduled
+    - h2d_restore_mechanism_candidate
+  formal_model_lifecycle_count_exact: 1
+  request_retry_count_exact: 0
+  pressure_request_count_exact: 1
+  restore_request_count_max: 1
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  runtime_dependency_mutation_authorized: false
+  task_local_observer_behavioral_repair_authorized: true
+  server_side_code_edit_authorized: false
+  site_packages_edit_authorized: false
+  unique_root_cause_claim_authorized: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+claim_boundary: >
+  accepted_capacity_single_lifecycle_restore_allocate_update_load_step_lineage
+  and_h2d_path_attribution_and_conditional_h2d_candidate_only

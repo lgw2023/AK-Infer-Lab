@@ -4,7 +4,7 @@
 
 当前执行覆盖：`local_artifact_state=k1a_r5_f1_r14_compress_aware_pairing_repair_prepared`；
 `server_execution_state=authorized_one_fixed_lifecycle`；
-`current_task_id=p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725`。R13 保持
+`current_task_id=p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725`。R13 保持
 accepted 128 CPU blocks/rank、logical 16384 tokens/128 hash blocks 与 fixed 36800，
 在 R12 已证明的 `update_raised` 窗口上诊断异常类型与 GPU/CPU pairing 几何：
 observe-only 提升 `error_type`/`error_message`，并预检
@@ -29,13 +29,13 @@ R9 的历史合同与入口仍由
 `run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.sh` 和
 `run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh` 冻结保留；它们不是当前执行入口。
 
-当前唯一服务器任务是 `p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725`。R13 固定一个
+当前唯一服务器任务是 `p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725`。R13 固定一个
 lifecycle、一个 pressure、零 retry，服务器不得补代码或调整 capacity/context。
 
-当前执行合同由 `p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_audit.yaml`、
+当前执行合同由 `p8_2_k1a_r5_f1_r15_restore_step_lineage_audit.yaml`、
 `p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair.yaml`、
-`run_deepseek_p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair.sh` 与唯一
-`run_deepseek_p8_2_k1a_r5_f1_r14_server_task.sh` 固定。R12 parent
+`run_deepseek_p8_2_k1a_r5_f1_r15_restore_step_lineage.sh` 与唯一
+`run_deepseek_p8_2_k1a_r5_f1_r15_server_task.sh` 固定。R12 parent
 `p8_2_k1a_r5_f1_r12_hit_to_load_admission_audit.yaml`、
 `p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml`、
 `run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.sh` 与

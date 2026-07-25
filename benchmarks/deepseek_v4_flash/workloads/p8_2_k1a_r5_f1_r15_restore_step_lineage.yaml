@@ -1,0 +1,132 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_f1_r15_restore_step_lineage
+date: '2026-07-25'
+task_id: p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725
+purpose: attribute_restore_allocate_update_load_steps_and_h2d_path_on_the_same_accepted_16k_window
+
+runtime_config:
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  quantization: ascend
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  max_model_len: 135168
+  max_num_batched_tokens: 4096
+  max_num_seqs: 1
+  block_size_tokens: 128
+  chunked_prefill: true
+  prefix_caching: true
+  kv_connector: SimpleCPUOffloadConnector
+  kv_role: kv_both
+  lazy_offload: true
+  cpu_blocks_per_rank: 128
+  cpu_bytes_to_use_per_rank: 430604288
+  cpu_bytes_to_use_total: 3444834304
+  pressure_context_tokens: 36800
+  logical_target_block_count: 128
+  restore_match_tokens: 16384
+  runtime_or_dependency_mutation_authorized: false
+  task_local_observer_behavioral_repair_authorized: true
+  compress_aware_pairing_repair_enabled: true
+  restore_step_lineage_enabled: true
+  physical_fa_cpu_only_gate_enabled: true
+
+request_plan:
+  order:
+    - warmup
+    - target_prime_capture_cache_stamp_lineage
+    - pressure_01_abort_on_exact_physical_cpu_only_window
+    - post_abort_eagle_aware_logical_acceptance
+    - restore_follower_with_step_lineage_attribution
+  request_count_min: 3
+  request_count_max: 4
+  pressure_request_count_exact: 1
+  request_retry_count_exact: 0
+  warmup_context_tokens: 4096
+  target_prime_context_tokens: 32768
+  pressure_context_tokens: 36800
+  restore_follower_context_tokens: 32768
+  output_tokens_each: 64
+  target_prefix_tokens: 16384
+  target_restore_shared_prefix_tokens: 32768
+  target_restore_prompts_identical_for_eagle_lookahead: true
+  concurrent_restore_while_pressure_active: false
+
+accepted_physical_and_logical_parent:
+  source: r14_compress_aware_pairing_repair_skipped_last_decode_step
+  logical_target_tokens: 16384
+  logical_target_hash_blocks: 128
+  runtime_physical_group_wrapped_key_count_observed: 40
+  eagle_aware_logical_hit_tokens_observed: 16384
+  restore_cpu_hit_exact_observed: true
+  restore_load_scheduled_observed: true
+  h2d_worker_count_observed: 8
+  h2d_bytes_total_observed: 1076510720
+  entered_reqs_to_load_on_last_update_observed: false
+
+restore_step_lineage:
+  retained_from_r14:
+    eagle_aware_logical_lookup: true
+    compress_aware_pairing_repair: true
+    accepted_restore_match_tokens: 16384
+    restore_shared_prefix_tokens: 32768
+  new_observe_only_fields:
+    - restore_allocate_slots_observed_count
+    - restore_update_observed_count
+    - restore_load_scheduled_event_count
+    - restore_alloc_step_classes
+    - restore_last_alloc_step_class
+    - restore_first_delayed_external_alloc_index
+    - restore_first_delayed_external_num_external
+    - restore_first_entered_reqs_to_load_update_index
+    - restore_any_entered_reqs_to_load
+    - restore_any_pairing_repair_applied
+    - restore_any_update_raise_subclass
+    - restore_last_step_masks_earlier_delayed_external
+    - restore_step_lineage_primary_class
+    - restore_h2d_path_class
+  gap_class_field: restore_hit_to_load_gap_class
+  h2d_path_class_field: restore_h2d_path_class
+  raw_block_ids_forbidden_in_bounded_output: true
+  raw_request_ids_forbidden_in_bounded_output: true
+  raw_hash_values_forbidden_in_bounded_output: true
+
+discrimination:
+  scenario_a_delayed_external_then_reqs_to_load: >
+    at least one delayed_external_prefill alloc, first entered_reqs_to_load
+    update index >= 0, load_scheduled true, h2d_path_class=via_reqs_to_load
+  scenario_b_delayed_external_then_update_raise: >
+    delayed_external_prefill present, any update_raised subclass reported,
+    load absent or incomplete; repair may apply on that step
+  scenario_c_load_without_reqs_to_load_lineage: >
+    load_scheduled true / H2D bytes > 0 but any_entered_reqs_to_load false;
+    h2d_path_class=load_event_without_reqs_to_load
+  scenario_d_last_decode_masks_earlier_prefill: >
+    last alloc decode_like / last update num_external_zero, but
+    last_step_masks_earlier_delayed_external true
+  scenario_e_decode_only_no_delayed_external: >
+    all restore allocs decode_like/other, no delayed_external_prefill;
+    explains R14-like last-event surface without pairing IndexError
+  scenario_f_full_h2d_candidate_with_physical_fa_gate: >
+    physical FA cpu-only gate true, load + H2D worker completion exact;
+    still not unique root cause
+
+constraints:
+  formal_model_lifecycle_count_exact: 1
+  pressure_request_count_exact: 1
+  request_retry_count_exact: 0
+  restore_request_count_max: 1
+  capacity_change_authorized: false
+  context_change_or_sweep_authorized: false
+  runtime_dependency_mutation_authorized: false
+  server_side_code_edit_authorized: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+compress_aware_pairing_repair:
+  enable_env: P8_2_K1A_ENABLE_COMPRESS_AWARE_PAIRING_REPAIR
+  expected_manager_sha256: fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b
+  retained_from_r14: true
+  site_packages_edit_authorized: false

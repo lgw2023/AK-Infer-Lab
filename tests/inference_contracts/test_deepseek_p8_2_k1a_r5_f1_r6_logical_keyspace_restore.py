@@ -475,7 +475,7 @@ def test_r6_is_frozen_as_parent_of_the_only_current_r7_entrypoint() -> None:
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert handoff.count("\ntask_id: ") == 1
     assert (
-        "task_id: p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725"
+        "task_id: p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725"
         in handoff
     )
     assert TASK_ID in handoff

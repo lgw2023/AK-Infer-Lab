@@ -543,78 +543,20 @@ def classify_update_raise_subclass(update: dict[str, Any] | None) -> str:
     return "update_raised_without_error_fields"
 
 
-def classify_restore_hit_to_load_gap(
-    rows: list[dict[str, Any]],
-    *,
-    restore_request_suffix: str = "restore_follower",
-) -> dict[str, Any]:
-    """Classify the observe-only gap between CPU hit and H2D load schedule."""
+def _restore_alloc_step_class(row: dict[str, Any]) -> str:
+    num_ext = _as_int(row.get("num_external_computed_tokens"), 0)
+    num_new = _as_int(row.get("num_new_tokens"), 0)
+    delay = row.get("delay_cache_blocks") is True
+    if num_ext > 0 and delay:
+        return "delayed_external_prefill"
+    if num_ext > 0:
+        return "external_without_delay"
+    if num_ext == 0 and num_new > 0:
+        return "decode_like"
+    return "other"
 
-    def _is_restore(row: dict[str, Any]) -> bool:
-        return row.get("contract_role") == "restore_follower" or str(
-            row.get("request_id", "")
-        ).endswith(restore_request_suffix)
 
-    hits = [
-        row
-        for row in rows
-        if row.get("event") == "cpu_hit_matched"
-        and _is_restore(row)
-        and int(row.get("num_new_tokens") or 0) > 0
-    ]
-    allocs = [
-        row
-        for row in rows
-        if row.get("event") == "allocate_slots_observed" and _is_restore(row)
-    ]
-    updates = [
-        row
-        for row in rows
-        if row.get("event") == "update_state_after_alloc_observed"
-        and _is_restore(row)
-    ]
-    loads = [
-        row
-        for row in rows
-        if row.get("event") == "load_scheduled"
-        and _is_restore(row)
-        and int(row.get("block_count") or 0) > 0
-    ]
-    load_metas = [
-        row
-        for row in rows
-        if row.get("event") == "connector_load_meta_observed"
-        and _is_restore(row)
-    ]
-    hit = hits[-1] if hits else None
-    alloc = allocs[-1] if allocs else None
-    update = updates[-1] if updates else None
-    load = loads[-1] if loads else None
-    load_meta = load_metas[-1] if load_metas else None
-
-    gap_class = "no_restore_cpu_hit"
-    if hit is not None and load is not None:
-        gap_class = "load_scheduled"
-    elif hit is not None and alloc is not None and alloc.get("allocate_slots_ok") is False:
-        gap_class = "allocate_slots_failed_after_hit"
-    elif hit is not None and not updates:
-        gap_class = "update_state_after_alloc_not_called_after_hit"
-    elif hit is not None and update is not None:
-        reason = str(update.get("early_return_reason") or "")
-        if reason in {
-            "num_external_zero",
-            "pending_missing",
-            "empty_transfer_after_null_filter",
-            "update_raised",
-            "success",
-        }:
-            gap_class = reason if reason != "success" else "load_registered_without_positive_blocks"
-        else:
-            gap_class = "update_observed_without_load"
-    elif hit is not None:
-        gap_class = "hit_without_alloc_or_update_evidence"
-
-    raise_subclass = classify_update_raise_subclass(update)
+def _bounded_update_geometry_fields(update: dict[str, Any] | None) -> dict[str, Any]:
     gpu_table_lens = list((update or {}).get("gpu_block_table_lens") or [])
     fa_gidx = _as_int((update or {}).get("fa_gidx"), -1)
     fa_table_len = (
@@ -622,51 +564,12 @@ def classify_restore_hit_to_load_gap(
         if 0 <= fa_gidx < len(gpu_table_lens)
         else 0
     )
-
     return {
-        "schema_version": "p8_2_k1a_hit_to_load_gap_v3",
-        "restore_cpu_hit_observed": hit is not None,
-        "restore_cpu_hit_tokens_max": max(
-            (_as_int(row.get("num_new_tokens"), 0) for row in hits),
-            default=0,
-        ),
-        "restore_cpu_hit_is_async": (
-            bool(hit.get("is_async")) if hit is not None else False
-        ),
-        "restore_allocate_slots_observed": alloc is not None,
-        "restore_allocate_slots_ok": (
-            alloc.get("allocate_slots_ok") is True if alloc is not None else False
-        ),
-        "restore_allocate_slots_none": (
-            alloc.get("allocate_slots_ok") is False if alloc is not None else False
-        ),
-        "restore_num_external_tokens_at_alloc": _as_int(
-            (alloc or {}).get("num_external_computed_tokens"), 0
-        ),
-        "restore_num_new_tokens_at_alloc": _as_int(
-            (alloc or {}).get("num_new_tokens"), 0
-        ),
-        "restore_delay_cache_blocks_at_alloc": (
-            (alloc or {}).get("delay_cache_blocks") is True
-        ),
-        "restore_update_after_alloc_called": update is not None,
-        "restore_num_external_tokens_at_update": _as_int(
-            (update or {}).get("num_external_tokens"), 0
-        ),
-        "restore_pending_present_at_update": (
-            (update or {}).get("pending_present") is True
-        ),
-        "restore_pending_non_null_block_count": _as_int(
-            (update or hit or {}).get("pending_non_null_block_count"), 0
-        ),
-        "restore_update_early_return_reason": str(
-            (update or {}).get("early_return_reason") or "not_called"
-        ),
         "restore_update_error_type": str((update or {}).get("error_type") or ""),
         "restore_update_error_message": str(
             (update or {}).get("error_message") or ""
         )[:512],
-        "restore_update_raise_subclass": raise_subclass,
+        "restore_update_raise_subclass": classify_update_raise_subclass(update),
         "restore_geometry_preflight_status": str(
             (update or {}).get("geometry_preflight_status") or "missing"
         ),
@@ -748,22 +651,290 @@ def classify_restore_hit_to_load_gap(
         "restore_compress_aware_predicted_transfer_pair_count": _as_int(
             (update or {}).get("compress_aware_predicted_transfer_pair_count"), 0
         ),
+    }
+
+
+def classify_restore_hit_to_load_gap(
+    rows: list[dict[str, Any]],
+    *,
+    restore_request_suffix: str = "restore_follower",
+) -> dict[str, Any]:
+    """Classify the observe-only gap between CPU hit and H2D load schedule."""
+
+    def _is_restore(row: dict[str, Any]) -> bool:
+        return row.get("contract_role") == "restore_follower" or str(
+            row.get("request_id", "")
+        ).endswith(restore_request_suffix)
+
+    hits = [
+        row
+        for row in rows
+        if row.get("event") == "cpu_hit_matched"
+        and _is_restore(row)
+        and int(row.get("num_new_tokens") or 0) > 0
+    ]
+    allocs = [
+        row
+        for row in rows
+        if row.get("event") == "allocate_slots_observed" and _is_restore(row)
+    ]
+    updates = [
+        row
+        for row in rows
+        if row.get("event") == "update_state_after_alloc_observed"
+        and _is_restore(row)
+    ]
+    loads = [
+        row
+        for row in rows
+        if row.get("event") == "load_scheduled"
+        and _is_restore(row)
+        and int(row.get("block_count") or 0) > 0
+    ]
+    load_metas = [
+        row
+        for row in rows
+        if row.get("event") == "connector_load_meta_observed"
+        and _is_restore(row)
+    ]
+    hit = hits[-1] if hits else None
+    alloc = allocs[-1] if allocs else None
+    update = updates[-1] if updates else None
+    load = loads[-1] if loads else None
+    load_meta = load_metas[-1] if load_metas else None
+
+    alloc_step_classes = [_restore_alloc_step_class(row) for row in allocs]
+    first_delayed_idx = next(
+        (
+            index
+            for index, step_class in enumerate(alloc_step_classes)
+            if step_class == "delayed_external_prefill"
+        ),
+        -1,
+    )
+    first_external_update = next(
+        (
+            row
+            for row in updates
+            if _as_int(row.get("num_external_tokens"), 0) > 0
+        ),
+        None,
+    )
+    first_entered_idx = next(
+        (
+            index
+            for index, row in enumerate(updates)
+            if row.get("entered_reqs_to_load") is True
+        ),
+        -1,
+    )
+    any_raise_update = next(
+        (
+            row
+            for row in updates
+            if str(row.get("early_return_reason") or "") == "update_raised"
+        ),
+        None,
+    )
+    primary_update = (
+        updates[first_entered_idx]
+        if first_entered_idx >= 0
+        else any_raise_update
+        if any_raise_update is not None
+        else first_external_update
+        if first_external_update is not None
+        else update
+    )
+    geometry_update = primary_update if primary_update is not None else update
+    last_masks_earlier = bool(
+        update is not None
+        and str(update.get("early_return_reason") or "") == "num_external_zero"
+        and (
+            first_delayed_idx >= 0
+            or first_entered_idx >= 0
+            or any_raise_update is not None
+            or first_external_update is not None
+        )
+    )
+
+    if first_entered_idx >= 0 and load is not None:
+        h2d_path_class = "via_reqs_to_load"
+    elif load is not None and first_entered_idx < 0:
+        h2d_path_class = "load_event_without_reqs_to_load"
+    elif any_raise_update is not None and load is None:
+        h2d_path_class = "no_load_after_update_raise"
+    elif load is None:
+        h2d_path_class = "no_load"
+    else:
+        h2d_path_class = "ambiguous"
+
+    if first_delayed_idx >= 0 and first_entered_idx >= 0:
+        step_lineage_primary_class = "delayed_external_then_reqs_to_load"
+    elif first_delayed_idx >= 0 and any_raise_update is not None:
+        step_lineage_primary_class = "delayed_external_then_update_raise"
+    elif first_delayed_idx >= 0:
+        step_lineage_primary_class = "delayed_external_without_reqs_to_load"
+    elif any(step == "decode_like" for step in alloc_step_classes) and (
+        first_delayed_idx < 0
+    ):
+        step_lineage_primary_class = "decode_only_no_delayed_external"
+    elif allocs:
+        step_lineage_primary_class = "alloc_without_delayed_external"
+    else:
+        step_lineage_primary_class = "no_alloc"
+
+    gap_class = "no_restore_cpu_hit"
+    if hit is not None and any_raise_update is not None and load is None:
+        gap_class = "update_raised"
+    elif hit is not None and first_entered_idx >= 0 and load is not None:
+        gap_class = "load_scheduled"
+    elif (
+        hit is not None
+        and load is not None
+        and first_entered_idx < 0
+    ):
+        gap_class = "load_scheduled_without_reqs_to_load_lineage"
+    elif (
+        hit is not None
+        and first_delayed_idx < 0
+        and alloc is not None
+        and _restore_alloc_step_class(alloc) == "decode_like"
+        and load is None
+    ):
+        gap_class = "decode_only_after_hit_no_delayed_external"
+    elif hit is not None and load is not None:
+        gap_class = "load_scheduled"
+    elif hit is not None and alloc is not None and alloc.get("allocate_slots_ok") is False:
+        gap_class = "allocate_slots_failed_after_hit"
+    elif hit is not None and not updates:
+        gap_class = "update_state_after_alloc_not_called_after_hit"
+    elif hit is not None and update is not None:
+        reason = str(update.get("early_return_reason") or "")
+        if reason in {
+            "num_external_zero",
+            "pending_missing",
+            "empty_transfer_after_null_filter",
+            "update_raised",
+            "success",
+        }:
+            gap_class = reason if reason != "success" else "load_registered_without_positive_blocks"
+        else:
+            gap_class = "update_observed_without_load"
+    elif hit is not None:
+        gap_class = "hit_without_alloc_or_update_evidence"
+
+    first_delayed = (
+        allocs[first_delayed_idx] if first_delayed_idx >= 0 else None
+    )
+    first_entered = (
+        updates[first_entered_idx] if first_entered_idx >= 0 else None
+    )
+    geometry_fields = _bounded_update_geometry_fields(geometry_update)
+
+    return {
+        "schema_version": "p8_2_k1a_hit_to_load_gap_v4",
+        "restore_cpu_hit_observed": hit is not None,
+        "restore_cpu_hit_tokens_max": max(
+            (_as_int(row.get("num_new_tokens"), 0) for row in hits),
+            default=0,
+        ),
+        "restore_cpu_hit_is_async": (
+            bool(hit.get("is_async")) if hit is not None else False
+        ),
+        "restore_cpu_hit_event_count": len(hits),
+        "restore_allocate_slots_observed": alloc is not None,
+        "restore_allocate_slots_observed_count": len(allocs),
+        "restore_allocate_slots_ok": (
+            alloc.get("allocate_slots_ok") is True if alloc is not None else False
+        ),
+        "restore_allocate_slots_none": (
+            alloc.get("allocate_slots_ok") is False if alloc is not None else False
+        ),
+        "restore_num_external_tokens_at_alloc": _as_int(
+            (alloc or {}).get("num_external_computed_tokens"), 0
+        ),
+        "restore_num_new_tokens_at_alloc": _as_int(
+            (alloc or {}).get("num_new_tokens"), 0
+        ),
+        "restore_delay_cache_blocks_at_alloc": (
+            (alloc or {}).get("delay_cache_blocks") is True
+        ),
+        "restore_last_alloc_step_class": (
+            _restore_alloc_step_class(alloc) if alloc is not None else "none"
+        ),
+        "restore_alloc_step_classes": alloc_step_classes[:16],
+        "restore_update_after_alloc_called": update is not None,
+        "restore_update_observed_count": len(updates),
+        "restore_num_external_tokens_at_update": _as_int(
+            (update or {}).get("num_external_tokens"), 0
+        ),
+        "restore_pending_present_at_update": (
+            (update or {}).get("pending_present") is True
+        ),
+        "restore_pending_non_null_block_count": _as_int(
+            (update or hit or {}).get("pending_non_null_block_count"), 0
+        ),
+        "restore_update_early_return_reason": str(
+            (update or {}).get("early_return_reason") or "not_called"
+        ),
+        **geometry_fields,
         "restore_entered_reqs_to_load": (
             (update or {}).get("entered_reqs_to_load") is True
         ),
+        "restore_any_entered_reqs_to_load": first_entered_idx >= 0,
+        "restore_any_update_raise_subclass": classify_update_raise_subclass(
+            any_raise_update
+        ),
+        "restore_any_pairing_repair_eligible": any(
+            row.get("pairing_repair_eligible") is True for row in updates
+        ),
+        "restore_any_pairing_repair_applied": any(
+            row.get("pairing_repair_applied") is True for row in updates
+        ),
+        "restore_first_delayed_external_alloc_index": first_delayed_idx,
+        "restore_first_delayed_external_num_external": _as_int(
+            (first_delayed or {}).get("num_external_computed_tokens"), 0
+        ),
+        "restore_first_delayed_external_num_new": _as_int(
+            (first_delayed or {}).get("num_new_tokens"), 0
+        ),
+        "restore_first_delayed_external_delay_cache_blocks": (
+            (first_delayed or {}).get("delay_cache_blocks") is True
+        ),
+        "restore_first_entered_reqs_to_load_update_index": first_entered_idx,
+        "restore_first_entered_reqs_to_load_num_external": _as_int(
+            (first_entered or {}).get("num_external_tokens"), 0
+        ),
+        "restore_first_entered_reqs_to_load_gpu_block_count": _as_int(
+            (first_entered or {}).get("gpu_block_ids_count"), 0
+        ),
+        "restore_first_entered_reqs_to_load_cpu_block_count": _as_int(
+            (first_entered or {}).get("cpu_block_ids_count"), 0
+        ),
+        "restore_primary_update_num_external": _as_int(
+            (primary_update or {}).get("num_external_tokens"), 0
+        ),
+        "restore_primary_update_early_return_reason": str(
+            (primary_update or {}).get("early_return_reason") or "not_called"
+        ),
+        "restore_last_step_masks_earlier_delayed_external": last_masks_earlier,
+        "restore_step_lineage_primary_class": step_lineage_primary_class,
+        "restore_h2d_path_class": h2d_path_class,
         "restore_transfer_gpu_block_count": _as_int(
-            (update or load or {}).get("gpu_block_ids_count")
-            if (update or load or {}).get("gpu_block_ids_count") is not None
+            (first_entered or update or load or {}).get("gpu_block_ids_count")
+            if (first_entered or update or load or {}).get("gpu_block_ids_count")
+            is not None
             else (load or {}).get("block_count"),
             0,
         ),
         "restore_transfer_cpu_block_count": _as_int(
-            (update or {}).get("cpu_block_ids_count"), 0
+            (first_entered or update or {}).get("cpu_block_ids_count"), 0
         ),
         "restore_null_cpu_blocks_skipped": _as_int(
             (update or {}).get("null_cpu_blocks_skipped"), 0
         ),
         "restore_load_scheduled": load is not None,
+        "restore_load_scheduled_event_count": len(loads),
         "restore_connector_load_meta_observed": load_meta is not None,
         "restore_connector_load_event_ready": (
             (load_meta or {}).get("load_event_ready") is True
@@ -855,19 +1026,32 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
             full_sequence_must_fit=full_sequence_must_fit,
         )
         if observe_restore:
+            alloc_step_index = int(
+                getattr(self, "_p8_2_k1a_restore_alloc_step_index", 0) or 0
+            )
+            setattr(
+                self,
+                "_p8_2_k1a_restore_alloc_step_index",
+                alloc_step_index + 1,
+            )
+            alloc_fields = {
+                "num_new_tokens": int(num_new_tokens),
+                "num_new_computed_tokens": int(num_new_computed_tokens),
+                "num_external_computed_tokens": int(num_external_computed_tokens),
+                "num_lookahead_tokens": int(num_lookahead_tokens),
+                "delay_cache_blocks": bool(delay_cache_blocks),
+            }
             _emit(
                 "allocate_slots_observed",
                 component="kv_cache_manager",
                 direction="h2d",
                 request_id=request.request_id,
                 contract_role=contract_role,
-                num_new_tokens=int(num_new_tokens),
-                num_new_computed_tokens=int(num_new_computed_tokens),
-                num_external_computed_tokens=int(num_external_computed_tokens),
-                num_lookahead_tokens=int(num_lookahead_tokens),
-                delay_cache_blocks=bool(delay_cache_blocks),
+                restore_alloc_step_index=alloc_step_index,
+                restore_alloc_step_class=_restore_alloc_step_class(alloc_fields),
                 allocate_slots_ok=result is not None,
                 gpu_free_block_count_before=free_blocks,
+                **alloc_fields,
             )
         return result
 
@@ -876,6 +1060,14 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
     @wraps(original_update)
     def observed_update(self, request, blocks, num_external_tokens):
         req_id = request.request_id
+        update_step_index = int(
+            getattr(self, "_p8_2_k1a_restore_update_step_index", 0) or 0
+        )
+        setattr(
+            self,
+            "_p8_2_k1a_restore_update_step_index",
+            update_step_index + 1,
+        )
         pending_before = self._pending_cpu_hits.get(req_id)
         pending_present = pending_before is not None
         pending_non_null = _pending_non_null_block_count(pending_before)
@@ -963,6 +1155,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 direction="h2d",
                 request_id=req_id,
                 contract_role=_active_contract_role(),
+                restore_update_step_index=update_step_index,
                 num_external_tokens=int(num_external_tokens),
                 pending_present=pending_present,
                 pending_non_null_block_count=pending_non_null,
@@ -990,6 +1183,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 direction="h2d",
                 request_id=req_id,
                 contract_role=_active_contract_role(),
+                restore_update_step_index=update_step_index,
                 block_count=gpu_block_ids_count,
                 num_external_tokens=int(num_external_tokens),
                 gpu_block_ids_count=gpu_block_ids_count,
@@ -1013,6 +1207,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
             direction="h2d",
             request_id=req_id,
             contract_role=_active_contract_role(),
+            restore_update_step_index=update_step_index,
             num_external_tokens=int(num_external_tokens),
             pending_present=pending_present,
             pending_non_null_block_count=pending_non_null,

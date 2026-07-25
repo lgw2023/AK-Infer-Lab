@@ -35,7 +35,7 @@ Prefix Cache off hit=`0`，on 侧三个 primary group 9/9 正命中且逐请求�
 
 ```text
 last_task_id:p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723
-current_task_id:p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725
+current_task_id:p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725
 server_execution_authorized:true / next_task_authorized:false
 formal_model_lifecycle_count_exact:1 / pressure_request_count_exact:1 / request_retry_count_exact:0
 pressure_context_tokens_frozen:36800 / context_change_or_sweep_authorized:false
@@ -440,4 +440,4 @@ simulator_validation_report.md
 8. P7 工具链预研可继续，但不得外推 full-model runtime。
 9. P9 最后消费统一 trace、inventory、simulation 与 TP4 closure 证据，输出硬件优先级。
 
-当前唯一服务器任务是 `p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725`；R10/R11 不得重跑。R12 不构成 P8.2 通配授权，也不授权 retry、context 调整、sweep、第二 lifecycle、K2、P8.3-I1 或 P9。P6.3C 保持 blocked，不得通过第二变量重开。
+当前唯一服务器任务是 `p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725`；R10/R11 不得重跑。R12 不构成 P8.2 通配授权，也不授权 retry、context 调整、sweep、第二 lifecycle、K2、P8.3-I1 或 P9。P6.3C 保持 blocked，不得通过第二变量重开。

@@ -212,17 +212,16 @@ def test_classify_surfaces_repair_fields() -> None:
     assert gap["restore_compress_aware_predicted_transfer_pair_count"] == 40
 
 
-def test_handoff_and_runners_point_at_r14() -> None:
+def test_handoff_retains_r14_as_parent_marker() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
-    workload = yaml.safe_load(WORKLOAD.read_text(encoding="utf-8"))
-    assert TASK_ID in handoff
+    assert "p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725" in handoff
     assert "authorized_single_lifecycle_compress_aware_pairing_repair" in handoff
-    assert "P8_2_K1A_ENABLE_COMPRESS_AWARE_PAIRING_REPAIR" in handoff
-    assert "restore_pairing_repair_applied" in handoff
-    assert workload["task_id"] == TASK_ID
-    assert RUNNER.is_file()
-    assert LIFECYCLE.is_file()
-    assert SERVER_TASK.is_file()
+    assert TASK_ID in LIFECYCLE.read_text(encoding="utf-8")
+    assert TASK_ID in SERVER_TASK.read_text(encoding="utf-8")
+    assert "P8_2_K1A_ENABLE_COMPRESS_AWARE_PAIRING_REPAIR" in RUNNER.read_text(
+        encoding="utf-8"
+    )
+
 
 
 def test_lifecycle_audit_only_emits_r14_contract() -> None:

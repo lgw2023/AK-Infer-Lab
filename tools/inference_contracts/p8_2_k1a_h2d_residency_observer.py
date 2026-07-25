@@ -3059,13 +3059,30 @@ def summarize_h2d_trigger_rows(
         and row.get("tier") == "gpu"
         and int(row.get("target_evicted_count") or 0) > 0
     ]
+    def _cpu_only_window_exact(row: dict[str, Any]) -> bool:
+        cpu_count = int(row.get("cpu_target_block_count") or 0)
+        gpu_count = int(row.get("gpu_target_block_count") or 0)
+        if gpu_count != 0 or cpu_count <= 0:
+            return False
+        # Legacy logical hash-block unit (128) retained for older rows.
+        if cpu_count == target_block_count:
+            return True
+        # Runtime physical FA key unit used by cache-stamp lineage snapshots.
+        return (
+            row.get("cpu_target_count_unit")
+            == "physical_full_attention_group_keys"
+            and (
+                row.get("physical_target_window_exact") is True
+                or row.get("restore_group_eligibility_complete") is True
+            )
+        )
+
     cpu_only = [
         row
         for row in rows
         if row.get("event") == "target_residency_snapshot"
         and row.get("reason") == "before_restore_match"
-        and int(row.get("cpu_target_block_count") or 0) == target_block_count
-        and int(row.get("gpu_target_block_count") or 0) == 0
+        and _cpu_only_window_exact(row)
         and capture_exact(row)
         and keyspace_matchable(row)
         and (

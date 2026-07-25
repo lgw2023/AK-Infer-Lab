@@ -9,7 +9,7 @@ P5_P9_PLAN = REPO_ROOT / "工作记录与进度笔记本/12_P5_P9_后续阶段�
 def test_current_plans_route_only_f1_r5_and_keep_later_stages_closed() -> None:
     p8_plan = P8_PLAN.read_text(encoding="utf-8")
     p5_p9_plan = P5_P9_PLAN.read_text(encoding="utf-8")
-    task_id = "p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725"
+    task_id = "p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725"
 
     assert task_id in p8_plan
     assert task_id in p5_p9_plan
@@ -51,8 +51,8 @@ def test_current_plans_route_only_f1_r5_and_keep_later_stages_closed() -> None:
         "p8_2_k1a_r5_f1_r9_effective_group_geometry_audit.yaml",
         "p8_2_k1a_r5_f1_r10_cache_stamp_lineage_audit.yaml",
         "p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_audit.yaml",
-        "p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_audit.yaml",
-        "p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_audit.yaml",
+        "p8_2_k1a_r5_f1_r15_restore_step_lineage_audit.yaml",
+        "p8_2_k1a_r5_f1_r15_restore_step_lineage_audit.yaml",
         "p8_3_i0_r1_inventory_taxonomy_audit.yaml",
         "canonicalize_server_argv.py",
         "p8_2_k1a_trace_attribution.py",
@@ -79,8 +79,8 @@ def test_current_plans_route_only_f1_r5_and_keep_later_stages_closed() -> None:
         "run_deepseek_p8_2_k1a_r5_f1_r10_cache_stamp_lineage.sh",
         "run_deepseek_p8_2_k1a_r5_f1_r10_server_task.sh",
         "run_deepseek_p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.sh",
-        "run_deepseek_p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r15_restore_step_lineage.sh",
         "run_deepseek_p8_2_k1a_r5_f1_r11_server_task.sh",
-        "run_deepseek_p8_2_k1a_r5_f1_r14_server_task.sh",
+        "run_deepseek_p8_2_k1a_r5_f1_r15_server_task.sh",
     ):
         assert artifact in p8_plan

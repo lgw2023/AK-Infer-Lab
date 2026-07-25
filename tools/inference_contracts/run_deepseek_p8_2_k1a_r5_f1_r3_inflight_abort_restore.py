@@ -2138,6 +2138,48 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
             hit_to_load.get("restore_compress_aware_predicted_transfer_pair_count")
             or 0
         ),
+        "restore_allocate_slots_observed_count": int(
+            hit_to_load.get("restore_allocate_slots_observed_count") or 0
+        ),
+        "restore_update_observed_count": int(
+            hit_to_load.get("restore_update_observed_count") or 0
+        ),
+        "restore_load_scheduled_event_count": int(
+            hit_to_load.get("restore_load_scheduled_event_count") or 0
+        ),
+        "restore_last_alloc_step_class": str(
+            hit_to_load.get("restore_last_alloc_step_class") or "none"
+        ),
+        "restore_step_lineage_primary_class": str(
+            hit_to_load.get("restore_step_lineage_primary_class") or "missing"
+        ),
+        "restore_h2d_path_class": str(
+            hit_to_load.get("restore_h2d_path_class") or "missing"
+        ),
+        "restore_last_step_masks_earlier_delayed_external": hit_to_load.get(
+            "restore_last_step_masks_earlier_delayed_external"
+        )
+        is True,
+        "restore_any_entered_reqs_to_load": hit_to_load.get(
+            "restore_any_entered_reqs_to_load"
+        )
+        is True,
+        "restore_any_pairing_repair_applied": hit_to_load.get(
+            "restore_any_pairing_repair_applied"
+        )
+        is True,
+        "restore_first_delayed_external_alloc_index": int(
+            hit_to_load.get("restore_first_delayed_external_alloc_index")
+            if hit_to_load.get("restore_first_delayed_external_alloc_index")
+            is not None
+            else -1
+        ),
+        "restore_first_entered_reqs_to_load_update_index": int(
+            hit_to_load.get("restore_first_entered_reqs_to_load_update_index")
+            if hit_to_load.get("restore_first_entered_reqs_to_load_update_index")
+            is not None
+            else -1
+        ),
         "resolved_connector_and_lazy_mode_exact": connector_ok,
         "repair_diagnostic_ok": repair_ok,
         "host_memory_gate_ok": host.get("preflight_gate_ok") is True,
