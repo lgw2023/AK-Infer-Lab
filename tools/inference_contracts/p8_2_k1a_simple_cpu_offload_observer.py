@@ -10,6 +10,10 @@ from typing import Any
 
 TRACE_ENV = "P8_2_K1A_TRANSFER_TRACE_DIR"
 ACTIVE_ROLE_PATH_ENV = "P8_2_K1A_H2D_ACTIVE_ROLE_PATH"
+REPAIR_ENABLE_ENV = "P8_2_K1A_ENABLE_COMPRESS_AWARE_PAIRING_REPAIR"
+EXPECTED_MANAGER_SHA256 = (
+    "fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b"
+)
 
 
 def _active_contract_role() -> str | None:
@@ -81,14 +85,66 @@ def _cdiv(a: int, b: int) -> int:
     return -(-int(a) // int(b))
 
 
-def _effective_group_block_size(scheduler: Any, group_index: int) -> int | None:
+def _frozen_group_block_size(scheduler: Any, group_index: int) -> int | None:
+    """Exact frozen update_state_after_alloc group block size (spec.block_size)."""
+
     try:
         groups = scheduler.cpu_kv_cache_config.kv_cache_groups
-        base = int(groups[group_index].kv_cache_spec.block_size)
-        cp = int(getattr(scheduler, "cp_world_size", 1) or 1)
-        return base * cp
+        return int(groups[group_index].kv_cache_spec.block_size)
     except Exception:
         return None
+
+
+def _effective_group_block_size(scheduler: Any, group_index: int) -> int | None:
+    """Frozen-aligned size used by R13 preflight (spec.block_size * cp)."""
+
+    try:
+        base = _frozen_group_block_size(scheduler, group_index)
+        if base is None:
+            return None
+        cp = int(getattr(scheduler, "cp_world_size", 1) or 1)
+        return int(base) * cp
+    except Exception:
+        return None
+
+
+def _compress_aware_group_block_size(
+    scheduler: Any, group_index: int
+) -> tuple[int | None, str]:
+    """Runtime physical tokens/block, including Ascend compress_ratio."""
+
+    try:
+        groups = scheduler.cpu_kv_cache_config.kv_cache_groups
+        spec = groups[group_index].kv_cache_spec
+        base = int(spec.block_size)
+        cp = int(getattr(scheduler, "cp_world_size", 1) or 1)
+        try:
+            compress = max(1, int(getattr(spec, "compress_ratio", 1) or 1))
+        except (TypeError, ValueError):
+            compress = 1
+        coordinator = getattr(scheduler, "cpu_coordinator", None)
+        method = getattr(coordinator, "_get_effective_block_size", None)
+        if callable(method):
+            return int(method(spec)), "runtime_cpu_coordinator"
+        if type(spec).__name__ == "MambaSpec":
+            return base, "mamba_spec_block_size"
+        return base * cp * compress, "observer_compress_aware_fallback"
+    except Exception:
+        return None, "unreadable"
+
+
+def _manager_source_sha256() -> str:
+    try:
+        import vllm.v1.simple_kv_offload.manager as manager_module
+
+        path = Path(manager_module.__file__).resolve()
+        digest = __import__("hashlib").sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+    except Exception:
+        return ""
 
 
 def observe_update_pairing_geometry(
@@ -220,6 +276,242 @@ def observe_update_pairing_geometry(
         return out
 
 
+def observe_compress_aware_pairing_geometry(
+    scheduler: Any,
+    blocks: Any,
+    num_external_tokens: int,
+    pending: object | None,
+) -> dict[str, Any]:
+    """Observe-only pairing math using compress-aware effective block sizes."""
+
+    out: dict[str, Any] = {
+        "compress_aware_geometry_status": "skipped",
+        "compress_aware_geometry_failure_class": "none",
+        "compress_aware_block_sizes": [],
+        "compress_aware_block_size_sources": [],
+        "compress_aware_fa_block_size": 0,
+        "compress_aware_num_computed_tokens_from_fa": 0,
+        "compress_aware_total_computed_tokens": 0,
+        "compress_aware_n_take_by_group": [],
+        "compress_aware_gpu_ext_start_by_group": [],
+        "compress_aware_first_overflow_group_index": -1,
+        "compress_aware_first_overflow_needed_index": -1,
+        "compress_aware_first_overflow_gpu_len": -1,
+        "compress_aware_predicted_transfer_pair_count": 0,
+    }
+    if pending is None or int(num_external_tokens) <= 0:
+        out["compress_aware_geometry_status"] = "not_applicable"
+        return out
+    try:
+        block_ids_by_group = blocks.get_block_ids()
+        cpu_hit_blocks_full = pending[0] if isinstance(pending, tuple) else pending
+        fa_gidx = int(getattr(scheduler, "fa_gidx", -1))
+        fa_eff, fa_source = _compress_aware_group_block_size(scheduler, fa_gidx)
+        if fa_eff is None or fa_eff <= 0:
+            out["compress_aware_geometry_status"] = "would_fail"
+            out["compress_aware_geometry_failure_class"] = "fa_block_size_unreadable"
+            return out
+        if 0 <= fa_gidx < len(getattr(blocks, "blocks", ()) or ()):
+            fa_blocks = blocks.blocks[fa_gidx]
+            num_cached_fa_blocks = sum(
+                1 for blk in fa_blocks if getattr(blk, "block_hash", None) is not None
+            )
+        else:
+            num_cached_fa_blocks = 0
+        num_computed_tokens = num_cached_fa_blocks * int(fa_eff)
+        total_computed_tokens = num_computed_tokens + int(num_external_tokens)
+        out["compress_aware_fa_block_size"] = int(fa_eff)
+        out["compress_aware_num_computed_tokens_from_fa"] = num_computed_tokens
+        out["compress_aware_total_computed_tokens"] = total_computed_tokens
+
+        scheduler_block_size = int(getattr(scheduler, "block_size", 0) or 0)
+        if scheduler_block_size <= 0 or int(num_external_tokens) // scheduler_block_size <= 0:
+            out["compress_aware_geometry_status"] = "would_fail"
+            out["compress_aware_geometry_failure_class"] = "blocks_to_load_assert"
+            return out
+
+        num_groups = min(len(block_ids_by_group), len(cpu_hit_blocks_full))
+        n_take_by_group: list[int] = []
+        gpu_ext_start_by_group: list[int] = []
+        block_sizes: list[int] = []
+        sources: list[str] = [fa_source]
+        predicted_pairs = 0
+        for g in range(num_groups):
+            g_block_size, source = _compress_aware_group_block_size(scheduler, g)
+            sources.append(source)
+            if g_block_size is None or g_block_size <= 0:
+                out["compress_aware_geometry_status"] = "would_fail"
+                out["compress_aware_geometry_failure_class"] = (
+                    "group_block_size_unreadable"
+                )
+                out["compress_aware_block_sizes"] = block_sizes
+                out["compress_aware_block_size_sources"] = sources
+                return out
+            block_sizes.append(int(g_block_size))
+            if int(num_external_tokens) % int(g_block_size) != 0:
+                out["compress_aware_geometry_status"] = "would_fail"
+                out["compress_aware_geometry_failure_class"] = "alignment_assert"
+                out["compress_aware_block_sizes"] = block_sizes
+                out["compress_aware_block_size_sources"] = sources
+                out["compress_aware_n_take_by_group"] = n_take_by_group
+                out["compress_aware_gpu_ext_start_by_group"] = gpu_ext_start_by_group
+                return out
+            n_take_g = int(num_external_tokens) // int(g_block_size)
+            cpu_blocks_g = list(cpu_hit_blocks_full[g][:n_take_g])
+            n_ext_g = len(cpu_blocks_g)
+            n_take_by_group.append(n_take_g)
+            if n_ext_g == 0:
+                gpu_ext_start_by_group.append(0)
+                continue
+            n_computed_g = _cdiv(total_computed_tokens, int(g_block_size))
+            gpu_ext_start = n_computed_g - n_ext_g
+            gpu_ext_start_by_group.append(gpu_ext_start)
+            group_gpu_ids = block_ids_by_group[g]
+            gpu_len = len(group_gpu_ids)
+            for i, cpu_blk in enumerate(cpu_blocks_g):
+                if getattr(cpu_blk, "is_null", False):
+                    continue
+                needed = gpu_ext_start + i
+                if needed < 0 or needed >= gpu_len:
+                    out["compress_aware_geometry_status"] = "would_fail"
+                    out["compress_aware_geometry_failure_class"] = (
+                        "index_error_gpu_cpu_pairing"
+                    )
+                    out["compress_aware_first_overflow_group_index"] = g
+                    out["compress_aware_first_overflow_needed_index"] = needed
+                    out["compress_aware_first_overflow_gpu_len"] = gpu_len
+                    out["compress_aware_block_sizes"] = block_sizes
+                    out["compress_aware_block_size_sources"] = sources
+                    out["compress_aware_n_take_by_group"] = n_take_by_group
+                    out["compress_aware_gpu_ext_start_by_group"] = (
+                        gpu_ext_start_by_group
+                    )
+                    out["compress_aware_predicted_transfer_pair_count"] = (
+                        predicted_pairs
+                    )
+                    return out
+                predicted_pairs += 1
+
+        out["compress_aware_block_sizes"] = block_sizes
+        out["compress_aware_block_size_sources"] = sources
+        out["compress_aware_n_take_by_group"] = n_take_by_group
+        out["compress_aware_gpu_ext_start_by_group"] = gpu_ext_start_by_group
+        out["compress_aware_predicted_transfer_pair_count"] = predicted_pairs
+        out["compress_aware_geometry_status"] = "ok"
+        out["compress_aware_geometry_failure_class"] = "none"
+        return out
+    except Exception as error:  # pragma: no cover - defensive observer path
+        out["compress_aware_geometry_status"] = "observer_geometry_failed"
+        out["compress_aware_geometry_failure_class"] = type(error).__name__
+        return out
+
+
+def repaired_update_state_after_alloc(
+    scheduler: Any,
+    request: Any,
+    blocks: Any,
+    num_external_tokens: int,
+) -> None:
+    """Task-local compress-aware clone of frozen update_state_after_alloc.
+
+    Uses the same control flow and side effects as the frozen method, but
+    substitutes compress-aware effective block sizes for per-group pairing.
+    Does not edit installed site-packages.
+    """
+
+    from vllm.v1.simple_kv_offload.manager import (
+        LoadRequestState,
+        StoreRequestState,
+        TransferMeta,
+    )
+
+    req_id = request.request_id
+    block_ids_by_group = blocks.get_block_ids()
+    num_groups = len(block_ids_by_group)
+
+    if not scheduler._lazy_mode and req_id not in scheduler._reqs_to_store:
+        scheduler._reqs_to_store[req_id] = StoreRequestState(
+            request=request,
+            block_ids=tuple([] for _ in range(num_groups)),
+            num_stored_blocks=[0] * num_groups,
+        )
+
+    pending = scheduler._pending_cpu_hits.pop(req_id, None)
+    if num_external_tokens == 0:
+        if pending is not None:
+            scheduler._free_pending_cpu_hit(pending)
+        return
+    if pending is None:
+        return
+
+    cpu_hit_blocks_full, _ = pending
+    num_blocks_to_load = int(num_external_tokens) // int(scheduler.block_size)
+    assert num_blocks_to_load > 0
+
+    fa_gidx = int(scheduler.fa_gidx)
+    fa_eff, _ = _compress_aware_group_block_size(scheduler, fa_gidx)
+    if fa_eff is None or fa_eff <= 0:
+        scheduler._free_pending_cpu_hit(pending)
+        raise RuntimeError("compress-aware FA block size unreadable")
+    num_cached_fa_blocks = sum(
+        blk.block_hash is not None for blk in blocks.blocks[fa_gidx]
+    )
+    num_computed_tokens = num_cached_fa_blocks * int(fa_eff)
+    total_computed_tokens = num_computed_tokens + int(num_external_tokens)
+
+    cpu_hit_blocks: list[list[Any]] = []
+    for g in range(num_groups):
+        g_block_size, _ = _compress_aware_group_block_size(scheduler, g)
+        if g_block_size is None or g_block_size <= 0:
+            scheduler._free_pending_cpu_hit(pending)
+            raise RuntimeError(f"compress-aware group {g} block size unreadable")
+        assert int(num_external_tokens) % int(g_block_size) == 0, (
+            f"num_external_tokens={num_external_tokens} not aligned to "
+            f"group {g} compress-aware block_size={g_block_size}"
+        )
+        n_take_g = int(num_external_tokens) // int(g_block_size)
+        cpu_hit_blocks.append(list(cpu_hit_blocks_full[g][:n_take_g]))
+
+    gpu_block_ids: list[int] = []
+    cpu_block_ids: list[int] = []
+    cpu_blocks_to_touch: list[Any] = []
+    for g in range(num_groups):
+        cpu_blocks_g = cpu_hit_blocks[g]
+        n_ext_g = len(cpu_blocks_g)
+        if n_ext_g == 0:
+            continue
+        g_block_size, _ = _compress_aware_group_block_size(scheduler, g)
+        assert g_block_size is not None and g_block_size > 0
+        n_computed_g = _cdiv(total_computed_tokens, int(g_block_size))
+        gpu_ext_start = n_computed_g - n_ext_g
+        group_gpu_ids = block_ids_by_group[g]
+        for i, cpu_blk in enumerate(cpu_blocks_g):
+            if getattr(cpu_blk, "is_null", False):
+                continue
+            needed = gpu_ext_start + i
+            if needed < 0 or needed >= len(group_gpu_ids):
+                scheduler._free_pending_cpu_hit(pending)
+                raise IndexError(
+                    "compress-aware pairing overflow at "
+                    f"group={g} needed={needed} gpu_len={len(group_gpu_ids)}"
+                )
+            gpu_block_ids.append(group_gpu_ids[needed])
+            cpu_block_ids.append(cpu_blk.block_id)
+            cpu_blocks_to_touch.append(cpu_blk)
+
+    scheduler.cpu_block_pool.touch(cpu_blocks_to_touch)
+    scheduler._free_pending_cpu_hit(pending)
+    assert scheduler._gpu_block_pool is not None
+    scheduler._gpu_block_pool.touch(
+        [scheduler._gpu_block_pool.blocks[bid] for bid in gpu_block_ids]
+    )
+    assert scheduler._reqs_to_load.get(req_id) is None
+    scheduler._reqs_to_load[req_id] = LoadRequestState(
+        request=request,
+        transfer_meta=TransferMeta(gpu_block_ids, cpu_block_ids),
+    )
+
+
 def classify_update_raise_subclass(update: dict[str, Any] | None) -> str:
     if update is None:
         return "none"
@@ -332,7 +624,7 @@ def classify_restore_hit_to_load_gap(
     )
 
     return {
-        "schema_version": "p8_2_k1a_hit_to_load_gap_v2",
+        "schema_version": "p8_2_k1a_hit_to_load_gap_v3",
         "restore_cpu_hit_observed": hit is not None,
         "restore_cpu_hit_tokens_max": max(
             (_as_int(row.get("num_new_tokens"), 0) for row in hits),
@@ -422,6 +714,39 @@ def classify_restore_hit_to_load_gap(
         ),
         "restore_predicted_transfer_pair_count": _as_int(
             (update or {}).get("predicted_transfer_pair_count"), 0
+        ),
+        "restore_pairing_repair_enabled": (
+            (update or {}).get("pairing_repair_enabled") is True
+        ),
+        "restore_pairing_repair_eligible": (
+            (update or {}).get("pairing_repair_eligible") is True
+        ),
+        "restore_pairing_repair_applied": (
+            (update or {}).get("pairing_repair_applied") is True
+        ),
+        "restore_pairing_repair_skip_reason": str(
+            (update or {}).get("pairing_repair_skip_reason") or "none"
+        ),
+        "restore_manager_source_sha_matched": (
+            (update or {}).get("manager_source_sha_matched") is True
+        ),
+        "restore_compress_aware_geometry_status": str(
+            (update or {}).get("compress_aware_geometry_status") or "missing"
+        ),
+        "restore_compress_aware_geometry_failure_class": str(
+            (update or {}).get("compress_aware_geometry_failure_class") or "none"
+        ),
+        "restore_compress_aware_block_sizes": list(
+            (update or {}).get("compress_aware_block_sizes") or []
+        ),
+        "restore_compress_aware_n_take_by_group": list(
+            (update or {}).get("compress_aware_n_take_by_group") or []
+        ),
+        "restore_compress_aware_gpu_ext_start_by_group": list(
+            (update or {}).get("compress_aware_gpu_ext_start_by_group") or []
+        ),
+        "restore_compress_aware_predicted_transfer_pair_count": _as_int(
+            (update or {}).get("compress_aware_predicted_transfer_pair_count"), 0
         ),
         "restore_entered_reqs_to_load": (
             (update or {}).get("entered_reqs_to_load") is True
@@ -560,13 +885,77 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
             int(num_external_tokens),
             pending_before,
         )
+        compress_geometry = observe_compress_aware_pairing_geometry(
+            self,
+            blocks,
+            int(num_external_tokens),
+            pending_before,
+        )
+        repair_enabled = os.environ.get(REPAIR_ENABLE_ENV) == "1"
+        manager_sha = _manager_source_sha256() if repair_enabled else ""
+        manager_sha_matched = bool(
+            manager_sha and manager_sha == EXPECTED_MANAGER_SHA256
+        )
+        repair_eligible = (
+            repair_enabled
+            and manager_sha_matched
+            and geometry.get("geometry_preflight_failure_class")
+            == "index_error_gpu_cpu_pairing"
+            and compress_geometry.get("compress_aware_geometry_status") == "ok"
+        )
+        if not repair_enabled:
+            repair_skip_reason = "repair_disabled"
+        elif not manager_sha_matched:
+            repair_skip_reason = "manager_sha_mismatch_or_unreadable"
+        elif geometry.get("geometry_preflight_failure_class") != (
+            "index_error_gpu_cpu_pairing"
+        ):
+            repair_skip_reason = "frozen_geometry_not_index_overflow"
+        elif compress_geometry.get("compress_aware_geometry_status") != "ok":
+            repair_skip_reason = "compress_aware_geometry_not_ok"
+        else:
+            repair_skip_reason = "none"
+        repair_fields = {
+            "pairing_repair_enabled": repair_enabled,
+            "pairing_repair_eligible": repair_eligible,
+            "pairing_repair_applied": False,
+            "pairing_repair_skip_reason": repair_skip_reason,
+            "manager_source_sha_matched": manager_sha_matched,
+            **compress_geometry,
+        }
         early_return_reason = "success"
         entered_reqs_to_load = False
         gpu_block_ids_count = 0
         cpu_block_ids_count = 0
         null_cpu_blocks_skipped = 0
         try:
-            result = original_update(self, request, blocks, num_external_tokens)
+            if repair_eligible:
+                repaired_update_state_after_alloc(
+                    self, request, blocks, int(num_external_tokens)
+                )
+                result = None
+                repair_fields["pairing_repair_applied"] = True
+                _emit(
+                    "compress_aware_pairing_repair_applied",
+                    component="scheduler",
+                    direction="h2d",
+                    request_id=req_id,
+                    contract_role=_active_contract_role(),
+                    num_external_tokens=int(num_external_tokens),
+                    predicted_transfer_pair_count=_as_int(
+                        compress_geometry.get(
+                            "compress_aware_predicted_transfer_pair_count"
+                        ),
+                        0,
+                    ),
+                    compress_aware_block_sizes=list(
+                        compress_geometry.get("compress_aware_block_sizes") or []
+                    ),
+                )
+            else:
+                result = original_update(
+                    self, request, blocks, num_external_tokens
+                )
         except BaseException as error:
             _emit(
                 "update_state_after_alloc_observed",
@@ -583,6 +972,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 cpu_block_ids_count=0,
                 null_cpu_blocks_skipped=0,
                 **geometry,
+                **repair_fields,
                 **_bounded_error_fields(error),
             )
             raise
@@ -604,6 +994,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
                 num_external_tokens=int(num_external_tokens),
                 gpu_block_ids_count=gpu_block_ids_count,
                 cpu_block_ids_count=cpu_block_ids_count,
+                pairing_repair_applied=repair_fields["pairing_repair_applied"],
             )
         elif int(num_external_tokens) == 0:
             early_return_reason = "num_external_zero"
@@ -631,6 +1022,7 @@ def install_p8_2_k1a_simple_cpu_offload_observer() -> None:
             cpu_block_ids_count=cpu_block_ids_count,
             null_cpu_blocks_skipped=null_cpu_blocks_skipped,
             **geometry,
+            **repair_fields,
         )
         return result
 

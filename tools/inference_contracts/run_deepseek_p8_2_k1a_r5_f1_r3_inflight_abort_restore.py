@@ -2116,6 +2116,28 @@ def finalize_inflight_abort_restore(artifact_dir: Path) -> int:
         "restore_num_cached_fa_blocks": int(
             hit_to_load.get("restore_num_cached_fa_blocks") or 0
         ),
+        "restore_pairing_repair_enabled": hit_to_load.get(
+            "restore_pairing_repair_enabled"
+        )
+        is True,
+        "restore_pairing_repair_eligible": hit_to_load.get(
+            "restore_pairing_repair_eligible"
+        )
+        is True,
+        "restore_pairing_repair_applied": hit_to_load.get(
+            "restore_pairing_repair_applied"
+        )
+        is True,
+        "restore_pairing_repair_skip_reason": str(
+            hit_to_load.get("restore_pairing_repair_skip_reason") or "none"
+        ),
+        "restore_compress_aware_geometry_status": str(
+            hit_to_load.get("restore_compress_aware_geometry_status") or "missing"
+        ),
+        "restore_compress_aware_predicted_transfer_pair_count": int(
+            hit_to_load.get("restore_compress_aware_predicted_transfer_pair_count")
+            or 0
+        ),
         "resolved_connector_and_lazy_mode_exact": connector_ok,
         "repair_diagnostic_ok": repair_ok,
         "host_memory_gate_ok": host.get("preflight_gate_ok") is True,

@@ -472,11 +472,11 @@ def test_current_handoff_authorizes_only_k1a_r5_f0_feasibility() -> None:
 
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-            "task_id: p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724"
+            "task_id: p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725"
         in handoff
     )
     assert (
-        "execution_mode: authorized_single_lifecycle_update_raise_geometry"
+        "execution_mode: authorized_single_lifecycle_compress_aware_pairing_repair"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff

@@ -1,10 +1,10 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K1A-R5-F1-R13 update_raised 异常与 pairing geometry
+## 当前唯一服务器动作：P8.2-K1A-R5-F1-R14 compress-aware pairing repair
 
 ~~~text
-task_id: p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724
-execution_mode: authorized_single_lifecycle_update_raise_geometry
+task_id: p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725
+execution_mode: authorized_single_lifecycle_compress_aware_pairing_repair
 server_sync_review_authorized: true
 offline_parent_gate_required: true
 npu_execution_authorized: true
@@ -16,6 +16,9 @@ keep_alive_card_ids_exact: 0,1,2,3,4,5,6,7
 server_task_driver_required: true
 manual_internal_step_reconstruction_authorized: false
 server_side_code_edit_authorized: false
+site_packages_edit_authorized: false
+task_local_observer_behavioral_repair_authorized: true
+compress_aware_pairing_repair_required: true
 formal_model_lifecycle_count_exact: 1
 model_request_count_min: 3
 model_request_count_max: 4
@@ -40,8 +43,6 @@ hit_to_load_admission_lineage_required: true
 update_raise_geometry_lineage_required: true
 allocate_slots_observation_required: true
 update_state_after_alloc_observation_required: true
-update_raise_error_type_required: true
-pairing_geometry_preflight_required: true
 connector_load_meta_observation_required: true
 all_relevant_kv_groups_required: true
 all_applicable_kv_groups_required: true
@@ -71,92 +72,102 @@ p8_3_i1_authorized: false
 no_k2_k3_k4_p8_3_i1_p8_4_p8_5_or_p9: true
 ~~~
 
-## 先读结论：R13 的代码已经写好，服务器只同步、审计、执行、回报
+## 先读结论：R14 的代码已经写好，服务器只同步、审计、执行、回报
 
-### R12 已经证明的事实
+### R13 已经证明的事实
 
-R12 run02 不是 accepted capacity 失败，也不是 lookup 仍为 0。它已经在同一
-accepted capacity / fixed `36800` / 单 lifecycle 上得到：
+R13 run01 在同一 accepted capacity / fixed `36800` / 单 lifecycle 上得到：
 
 ~~~text
-restore_cpu_hit_exact = true
-restore_cpu_hit_tokens_max = 16384
-restore_allocate_slots_ok = true
-restore_num_external_tokens_at_alloc = 16384
-restore_num_new_tokens_at_alloc = 0
-restore_delay_cache_blocks_at_alloc = true
-restore_update_after_alloc_called = true
-restore_pending_present_at_update = true
-restore_pending_non_null_block_count = 40
 restore_hit_to_load_gap_class = update_raised
+restore_update_error_type = IndexError
+restore_update_error_message = list index out of range
+restore_update_raise_subclass = index_error_gpu_cpu_pairing
+restore_num_cached_fa_blocks = 0
+restore_fa_block_size = 128
+restore_gpu_block_table_lens = [32, 1, 128, 128, 2048, 512]
+restore_n_take_by_group = [128]
+restore_gpu_ext_start_by_group = [96]
+restore_first_pairing_overflow_group_index = 0
+restore_first_overflow_needed_index = 96
+restore_first_overflow_gpu_len = 32
 restore_entered_reqs_to_load = false
 restore_load_scheduled = false
 H2D workers / bytes = 0 / 0
 ~~~
 
-因此当前阻断已经从“hit 后不 schedule”推进到：
-
-**`update_state_after_alloc` 自身抛异常，阻止进入 `_reqs_to_load` / H2D。**
-
-R12 有界包缺 `error_type` / `error_message`，也缺 GPU/CPU pairing 几何，所以还不能
-判定是 `IndexError` 配对溢出、alignment assert，还是别的断言。
-
-### R13 修复/观测的实际机制
-
-冻结 `SimpleCPUOffloadScheduler.update_state_after_alloc`（vLLM `0decac0d` /
-`manager.py` blob `fdcb18a6...`）在 pending 存在且 `num_external>0` 时会：
+机制算术：
 
 ~~~text
-num_cached_fa_blocks = count(block_hash is not None in FA group)
-num_computed_tokens = num_cached_fa_blocks * fa_block_size
-total_computed = num_computed_tokens + num_external
-per group:
-  n_take = num_external / group_block_size
-  n_computed = cdiv(total_computed, group_block_size)
-  gpu_ext_start = n_computed - n_take
-  for i, cpu_blk in enumerate(cpu_blocks[:n_take]):
-    if not null:
-      gpu_block_ids.append(group_gpu_ids[gpu_ext_start + i])  # IndexError 高发点
+frozen g_block_size = spec.block_size = 128   # 不含 compress_ratio
+n_take = 16384 / 128 = 128
+n_ext  = min(128, pending0) = 32
+n_computed = cdiv(16384, 128) = 128
+gpu_ext_start = 128 - 32 = 96
+group_gpu_ids[96] → IndexError   # 表长仅 32
 ~~~
 
-R13 在同一 16K 窗口上只补 observe-only：
+若按 Ascend compress-aware 物理几何（FA `effective=512`）：
 
-1. 把 `error_type` / `error_message` 提升进有界 summary
-2. 在调用原 `update_state_after_alloc` 前做 pairing geometry 预检（不改状态）
-3. 输出 `restore_update_raise_subclass` 与首个 overflow group/index/len
+~~~text
+n_take = 16384 / 512 = 32
+gpu_ext_start = 0
+gpu_len = 32 → 配对成立
+~~~
 
-不改 capacity、context、请求计划，不改服务器依赖，不宣称唯一根因。
+因此当前阻断不是 lookup / allocate，而是 **冻结 `update_state_after_alloc` 用 raw `spec.block_size` 做 pairing，忽略了 compress_ratio 物理量纲**。
+
+### R14 实际机制（task-local repair，不是改依赖）
+
+本轮在仓库已交付的 observer overlay 内启用受控修复：
+
+1. 环境变量 `P8_2_K1A_ENABLE_COMPRESS_AWARE_PAIRING_REPAIR=1`（runner 已设）
+2. 运行时核对 `vllm/v1/simple_kv_offload/manager.py` SHA-256 必须等于
+   `fdcb18a63db0131a0f59dabbb73de915773dcdf67f713e479f5ef301d4a9911b`
+3. 仅当冻结几何预检为 `index_error_gpu_cpu_pairing`，且 compress-aware 几何预检为 `ok` 时，
+   才走 task-local `repaired_update_state_after_alloc`
+4. 修复路径用 `base * cp * compress_ratio`（或 runtime coordinator `_get_effective_block_size`）
+   替代冻结 `spec.block_size`，然后照常写入 `_reqs_to_load`
+5. 不改 site-packages、不改服务器依赖、不改 capacity/context
 
 服务器必须在有界摘要里看到：
 
 ~~~text
+restore_pairing_repair_enabled
+restore_pairing_repair_eligible
+restore_pairing_repair_applied
+restore_pairing_repair_skip_reason
+restore_manager_source_sha_matched
+restore_compress_aware_geometry_status
+restore_compress_aware_block_sizes
+restore_compress_aware_n_take_by_group
+restore_compress_aware_gpu_ext_start_by_group
+restore_compress_aware_predicted_transfer_pair_count
+restore_entered_reqs_to_load
+restore_load_scheduled
 restore_hit_to_load_gap_class
-restore_update_error_type
-restore_update_error_message
-restore_update_raise_subclass
-restore_geometry_preflight_status
-restore_geometry_preflight_failure_class
-restore_num_cached_fa_blocks
-restore_num_computed_tokens_from_fa
-restore_gpu_block_table_lens
-restore_pending_block_counts
-restore_pending_non_null_counts
-restore_n_take_by_group
-restore_gpu_ext_start_by_group
-restore_first_pairing_overflow_group_index
-restore_first_overflow_needed_index
-restore_first_overflow_gpu_len
-restore_predicted_transfer_pair_count
 ~~~
 
-这些字段会出现在 `h2d_trigger_summary.json`、`transfer_trace_summary.json` 和
-`grading_summary.json`。
+成功主路径期望：
+
+~~~text
+restore_pairing_repair_applied = true
+restore_compress_aware_geometry_status = ok
+restore_compress_aware_n_take_by_group[0] = 32
+restore_compress_aware_gpu_ext_start_by_group[0] = 0
+restore_entered_reqs_to_load = true
+restore_load_scheduled = true
+restore_hit_to_load_gap_class = load_scheduled
+~~~
+
+然后继续观察 connector load meta / H2D workers / bytes / restore 请求是否完成。
+仍不得宣称唯一根因或性能结论。
 
 ## 不要做
 
-- 不要重跑 R10 / R11 / R12，不要改 capacity / context / pressure tokens
+- 不要重跑 R10 / R11 / R12 / R13，不要改 capacity / context / pressure tokens
 - 不要做 request retry、sweep、第二 lifecycle、K2、P8.3-I1
-- 不要在服务器改代码、改依赖、打补丁、改 observer 合同
+- 不要在服务器改代码、改依赖、改 site-packages；本轮 repair 已在仓库 observer 内
 - 不要把 raw request id / hash / block id / token id / 生成内容写进有界包
 - 不要把 `result_transfer_authorized: true` 理解成已选择传输方式
 - 不要自动 email / upload；先完整清单，再等用户明确选择
@@ -167,15 +178,15 @@ restore_predicted_transfer_pair_count
 停 keep-alive 是常规资源操作。本任务 TP8，卡集固定 `0 1 2 3 4 5 6 7`。
 成功、失败、中断、early exit 后都必须在完全相同卡集恢复，并回报 stopped / restored。
 
-若 driver 恢复未持久（R12 run01/run02 曾出现），允许手动：
+若 driver 恢复未持久（R12/R13 曾出现），允许手动：
 
 ~~~bash
 bash /data/node0_disk1/Public/npu_stop.sh 0 1 2 3 4 5 6 7
 bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ~~~
 
-启动前请确认 HBM 已从 keep-alive 占压释放（R12 run01 曾因 HBM 未释放导致 vLLM
-启动失败）。必要时先手动 `npu_stop.sh 0-7`，确认每卡 HBM 降到可用后再跑 driver。
+启动前请确认 HBM 已从 keep-alive 占压释放。必要时先手动 `npu_stop.sh 0-7`，
+确认每卡 HBM 降到可用后再跑 driver。
 
 ## 唯一执行入口
 
@@ -183,57 +194,58 @@ bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 
 ~~~bash
 cd /data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724_run01
+RESULT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725_run01
 test ! -e "${RESULT_DIR}"
 mkdir -p "${RESULT_DIR}"
 
-# 可选：确认 R12 parent 仍在约定路径
+# 可选：确认 R13 parent 仍在约定路径
 # 默认 PARENT_ROOT=
-#   ${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724_run02
+#   ${REPO_ROOT}/server_local/p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724_run01
 # 若实际目录不同，导出：
-# export P8_2_K1A_F1_R12_ROOT=/实际/R12/run02路径
+# export P8_2_K1A_F1_R13_ROOT=/实际/R13/run01路径
 
-bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_server_task.sh "${RESULT_DIR}"
+bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r14_server_task.sh "${RESULT_DIR}"
 ~~~
 
 该 driver 会：
 
-1. 校验仓库合同与 R12 parent 9 个 SHA-256
+1. 校验仓库合同与 R13 parent 9 个 SHA-256
 2. stop keep-alive `0-7`
-3. 执行唯一 fixed lifecycle
+3. 执行唯一 fixed lifecycle（repair env 已开）
 4. cleanup
 5. 同卡恢复 keep-alive `0-7`
 6. 写出有界候选包，并停下等待传输方式选择
 
-## R12 parent 证据门（必须全部匹配）
+## R13 parent 证据门（必须全部匹配）
 
 父目录默认：
 
-`server_local/p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724_run02`
+`server_local/p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724_run01`
 
 ~~~text
-b644f197ace6d9d4829831e1303fe4582a7eaf7f5d13be8c0d5ea60462b5ea8c  grading_summary.json
-c1ff9de2492908418dd3468d42e79519226ceab87c1cb350158eaed57c65c62b  residency_gate_timeline.json
-f44aff05aefee6191ac7e8b644b639172a3dab48db2a18408646f7aa26fa7c0e  h2d_trigger_summary.json
-88fa66f31989bb5a0b958904b7599f2e9af5d8626600408af49ccb1c47f2da5c  transfer_trace_summary.json
-0fa734a9fb284d9ebf344843565ca8b7591cac4248f008f8e2c224b3b2a97a45  logical_keyspace_probe_diagnostic_summary.json
-ee7fed15ef78ed503a50453cf93eddffbe57ba167075549db684a4f55eaf5ab0  target_store_lineage_summary.json
+ae89aa2e9c0373aa74a528ec732d8d12ebcc9e03d55e06d418aeb3e122b0a9a9  grading_summary.json
+09904e8e605fd9112a9e55c9c6bdf53c79ce2e1c7d98ae2230f42f80271dbfa9  residency_gate_timeline.json
+98e0cbca45929b8e67cfc5655c0a1afe7623c50316937479d5413d667023ba4d  h2d_trigger_summary.json
+0463048453bec7813268e8f2891a001621c079cddbe93d6b9e7956861451fff1  transfer_trace_summary.json
+77fbcf4290fe9a8bd76b227cc373d60687e229f3118b3a1635573e10ca0e31c1  logical_keyspace_probe_diagnostic_summary.json
+61530a2c3fc20a57fd94922f1629b73e26b562085cea83371a4755b8a0b75515  target_store_lineage_summary.json
 459d0f9aa71587d5359a23aabdb44741d4b41195c6cd56a8e8775fc7d1ae1862  repair_diagnostic_summary.json
-1af761a643b8ea42ea74f9a6b5f4a9baa7bed5a4aa895c421f090cd43da1df61  resource_recovery_summary.json
-da2f19ee6a0e3d3b459110d5d7fefc77746fbde451989e2e467102e3f6528d3e  candidate_manifest.server_local.json
+f64373b464356cdaae72dac2e645971c48c5df986b9eb4046195af031f0218ad  resource_recovery_summary.json
+248655f8bfce690f0d2c19a01a1fb8b2a0be699377541f7d55542dd0098bdf4b  candidate_manifest.server_local.json
 ~~~
 
 父事实硬门槛：
 
 ~~~text
-server_grade = red_p8_2_k1a_r5_f1_r12_h2d_evidence_incomplete
+server_grade = red_p8_2_k1a_r5_f1_r13_h2d_evidence_incomplete
 operational_grade = operational_recovery_clean
 experimental_terminal = restore_request_failure
 restore_hit_to_load_gap_class = update_raised
-restore_allocate_slots_ok = true
-restore_update_after_alloc_called = true
-restore_pending_non_null_block_count = 40
-restore_num_new_tokens_at_alloc = 0
+restore_update_raise_subclass = index_error_gpu_cpu_pairing
+restore_first_pairing_overflow_group_index = 0
+restore_first_overflow_needed_index = 96
+restore_first_overflow_gpu_len = 32
+restore_num_cached_fa_blocks = 0
 restore_load_scheduled = false
 h2d_worker_count = 0
 h2d_bytes_total = 0
@@ -242,51 +254,45 @@ d2h_store_complete = true
 
 ## 判定场景（本轮核心）
 
-### F. `index_error_gpu_cpu_pairing`
-
-`restore_hit_to_load_gap_class=update_raised`，且
-`restore_update_raise_subclass=index_error_gpu_cpu_pairing`
-（`error_type=IndexError` 和/或 geometry 预检 overflow）。必须回报：
+### A. repair applied → load scheduled（期望主路径）
 
 ~~~text
-restore_num_cached_fa_blocks
-restore_gpu_block_table_lens
-restore_pending_block_counts / restore_pending_non_null_counts
-restore_n_take_by_group
-restore_gpu_ext_start_by_group
-restore_first_pairing_overflow_group_index
-restore_first_overflow_needed_index
-restore_first_overflow_gpu_len
+restore_pairing_repair_applied = true
+restore_compress_aware_geometry_status = ok
+restore_entered_reqs_to_load = true
+restore_load_scheduled = true
+restore_hit_to_load_gap_class = load_scheduled
 ~~~
 
-这表示 freeze 源码中 `group_gpu_ids[gpu_ext_start + i]` 配对几何不成立。
+继续回报 H2D workers/bytes、connector load meta、restore 请求终态。
 
-### G. `alignment_assert` / `blocks_to_load_assert` / `gpu_pool_assert` / `assertion_other`
+### B. repair skipped（manager SHA / geometry 门失败）
 
-`update_raised` 且 `AssertionError` 子类。仍不得宣称唯一根因，但必须把
-`error_message` 截断写入有界包。
+回报 `restore_pairing_repair_skip_reason`：
+`manager_sha_mismatch_or_unreadable` /
+`frozen_geometry_not_index_overflow` /
+`compress_aware_geometry_not_ok` /
+`repair_disabled`
 
-### H. `update_raised_without_error_fields`
+### C. repair applied but load/H2D still incomplete
 
-仍看到 `update_raised`，但有界包缺 error 字段。这是本轮观测合同失败，不是机制结论。
+`repair_applied=true` 但 `load_scheduled=false` 或 H2D=0。这是下一轮问题，不是 R13 重复分类。
 
-### 保留的 R12 A–E
+### D. 仍 `update_raised`
 
-A–E（allocate fail / num_external_zero / pending_missing / empty_transfer /
-load_scheduled-but-no-H2D / full H2D）仍可能出现；若出现，按原字段回报。本轮预期主路径
-仍是 F 或 G。
+repair 未生效或 repair 自身失败。必须带 error_type/message 与两边几何字段。
 
 ## 有界结果包要求
 
 结果目录：
 
-`/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724_run01`
+`/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_2026_0725_run01`
 
 至少回报：
 
 1. `result_summary.md`
 2. `grading_summary.json`
-3. `h2d_trigger_summary.json`（必须含 error_type / raise_subclass / geometry 字段）
+3. `h2d_trigger_summary.json`（必须含 repair / compress-aware 字段）
 4. `transfer_trace_summary.json`
 5. `residency_gate_timeline.json`
 6. `logical_keyspace_probe_diagnostic_summary.json`
@@ -325,21 +331,21 @@ request IDs、token IDs、生成内容必须留服务器。
 服务器在执行前应用下列 SHA 核对当前仓库文件（与本地发布一致；提交后会刷新）：
 
 ~~~
-d920208427a25e4e59c84d2c5d380cc4b8a262923beffadfd9e38a3129366c71  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r13_update_raise_geometry_audit.yaml
-1f43f84b61975019965bf4ea4f8d0a8095b0b11aa8ef5af58b54483aabb5e0a9  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml
+f4e917864fccc640be4c11c8196e8a8206e45cf2967cfe7add7c8643479a9ca9  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair_audit.yaml
+f45fa16069ea7f7dee3f72a492165909b793b48bcf91e12c47f6d383d0f9b9b5  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair.yaml
 9ab0d17e1281feb923115068cb990e1c68b971bc843209d3d8b6575631e1b19d  tools/inference_contracts/p8_2_k1a_h2d_residency_observer.py
-eb066979423fed48eeeb7e7cb8aa6ba917b0413fa96bafe5c3af992e38c104ee  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
+697b9f34a966decef947b367ffc7c660751f2113d158e14a0dde7bef5dae8ae0  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
 fd5fd74fac8903c3e2e68bed7a4b9a5f599230f3257a4e721090a87655eb0e48  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
-3689c2421c5e9b838313abbfedc76653fb6ca9bc7ef75a6e9c34a483c6736dd9  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py
+835c5434805747d9c094770e67b82f1f7e89d906ce6f8fdcbcc18016af929338  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r3_inflight_abort_restore.py
 3488140e597852c2de38a69942f87263ff92ecc8dafc530fc479faca9ebebecb  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_logical_keyspace_restore.sh
 9b193867f0ecdd4098985eb041937f9e73c4e421b8afce1f5253a5b51f036e23  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh
-8384250b9ad170fb756a9b0ce73f66377a00b75d09adf54565c4e533b2905c21  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.py
-a7bc18a6c18c49270885d7c217301d7264c8f576f41c596a9e7769f0e8e3792d  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.sh
-01d4c5da5feb313bbec452982f1137882af1e86e60ab7da1c50f42f5fa33dc56  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_server_task.sh
+934c241d34e10bd84bb7df677db70a0511fc2bec345de7921cba60622a8e5eef  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair.py
+fd6c08e1e46547bb356c83cf573b8cbc20eea230f63eeba2cb18c2ea9f99e839  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair.sh
+6c8302bd411b951493d2a4718afe38219220e133c2ab487f615db19f0d74c43c  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r14_server_task.sh
 2707099971bf71cbec4add841907d864360e60d3e9eac0586ea3eb0c1c5f5ae7  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.py
 0d190d51ad15d321fa25db94b82b0c0c6c5f7bbc271a0b6c739fd2d22d36999d  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload.sh
 bcfb73b1faf64afd89e9231ea383500d2a01d38e673f39c3578425f51bd91a03  tools/inference_contracts/run_deepseek_p8_2_k1a_simple_cpu_offload_mode.sh
-8d92c06fbf6b62268e7de198451283c13159fe1605e6c9b909fc10db6cfad4e6  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.py
+3c418d8f6df194d5863e29207185bc96846f3d8779d20e589f8165e8541df644  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair.py
 5435592911e388daa047fe6d976cc351ab41b8b34de1bee990cc010f66fa3055  benchmarks/deepseek_v4_flash/patches/p8_2_k1a_r5_f1_r1_shared_diagnostic_mode.patch
 5db6a0c78d36eb9821474cfef21245b45bd858d07361b7f9afd36ef49e76c2b6  benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_simple_cpu_offload_observer_overlay.patch
 ~~~
@@ -349,7 +355,9 @@ bcfb73b1faf64afd89e9231ea383500d2a01d38e673f39c3578425f51bd91a03  tools/inferenc
 ~~~text
 restore_follower
 restore_follower_with_update_raise_geometry_lineage
+restore_follower_with_compress_aware_pairing_repair
 P8.2-K1A-R5-F1-R12 CPU-hit → H2D-load 准入诊断
+P8.2-K1A-R5-F1-R13 update_raised 异常与 pairing geometry
 http_transport_success_count
 expected_keep_alive_marker_count=16
 #0#
@@ -360,6 +368,7 @@ logical_restore_match_tokens
 request_hash_candidate_count
 pressure_progress_runtime_keyspace_refresh_required=true
 logical_target_block_count=128
+P8_2_K1A_F1_R14_SERVER_TASK_AUDIT_ONLY=1
 P8_2_K1A_F1_R13_SERVER_TASK_AUDIT_ONLY=1
 P8_2_K1A_F1_R12_SERVER_TASK_AUDIT_ONLY=1
 P8_2_K1A_F1_R7_SERVER_TASK_AUDIT_ONLY=1
@@ -382,9 +391,12 @@ run_deepseek_p8_2_k1a_r5_f1_r11_server_task.sh
 run_deepseek_p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.sh
 run_deepseek_p8_2_k1a_r5_f1_r12_server_task.sh
 run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.sh
+run_deepseek_p8_2_k1a_r5_f1_r13_server_task.sh
+run_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.sh
 constructor_use_eagle=false
 R10 已经证明的事实
 R12 已经证明的事实
+R13 已经证明的事实
 16384 + 16384 = 32768
 不要把 40 个 physical keys 写成缺少 88 个 logical blocks
 CPU=64/GPU=0
@@ -414,6 +426,8 @@ p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_audit.yaml
 p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml
 p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724
 p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml
+p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724
+p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair.yaml
 p8_2_k1a_r5_f1_r1_request_local_pressure_2026_0722
 p8_2_k1a_r5_f1_r2_grade
 p8_2_k1a_r5_f1_r2_trace_alignment_2026_0722
@@ -426,9 +440,12 @@ run_deepseek_p8_2_k1a_r5_f1_r6_server_task.sh
 run_deepseek_p8_2_k1a_r5_f1_r8_server_task.sh
 workloads/p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml
 workloads/p8_2_k1a_r5_f1_r13_update_raise_geometry.yaml
+workloads/p8_2_k1a_r5_f1_r14_compress_aware_pairing_repair.yaml
 不得进入 P8.3-I1
+parent_grade: red_p8_2_k1a_r5_f1_r13_h2d_evidence_incomplete
 parent_grade: red_p8_2_k1a_r5_f1_r12_h2d_evidence_incomplete
 parent_grade: red_p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete
+parent_f1_r13_task_id: p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724
 parent_f1_r12_task_id: p8_2_k1a_r5_f1_r12_hit_to_load_admission_2026_0724
 parent_f1_r11_task_id: p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_2026_0723
 parent_f1_r10_task_id: p8_2_k1a_r5_f1_r10_cache_stamp_lineage_2026_0723
@@ -450,8 +467,11 @@ allocate_slots_observed
 update_state_after_alloc_observed
 connector_load_meta_observed
 restore_hit_to_load_gap_class
+restore_pairing_repair_applied
 P8.2-K1A-R5-F1-R12 CPU-hit to H2D-load admission
 authorized_single_lifecycle_hit_to_load_admission
+authorized_single_lifecycle_update_raise_geometry
+authorized_single_lifecycle_compress_aware_pairing_repair
 fetch origin main
 merge --ff-only origin/main
 不得进入 K2
@@ -471,5 +491,5 @@ git merge --ff-only origin/main
 本轮结束后：
 
 - `next_task_authorized=false`
-- 不得自动开 R14 / run02 / K2 / P8.3-I1
+- 不得自动开 R15 / run02 / K2 / P8.3-I1
 - 只回报本轮有界证据与 keep-alive 恢复状态

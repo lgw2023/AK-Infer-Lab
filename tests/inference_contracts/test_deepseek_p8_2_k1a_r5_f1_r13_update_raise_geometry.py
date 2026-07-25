@@ -196,10 +196,10 @@ def test_observe_pairing_geometry_detects_empty_gpu_tables() -> None:
 def test_handoff_and_runners_point_at_r13() -> None:
     handoff = HANDOFF.read_text(encoding="utf-8")
     workload = yaml.safe_load(WORKLOAD.read_text(encoding="utf-8"))
-    assert TASK_ID in handoff
-    assert "authorized_single_lifecycle_update_raise_geometry" in handoff
-    assert "restore_update_error_type" in handoff
-    assert "restore_first_pairing_overflow_group_index" in handoff
+    assert TASK_ID in handoff  # parent provenance marker
+    assert "parent_f1_r13_task_id: p8_2_k1a_r5_f1_r13_update_raise_geometry_2026_0724" in handoff
+    assert "restore_update_error_type" in handoff or "index_error_gpu_cpu_pairing" in handoff
+    assert "restore_first_pairing_overflow_group_index" in handoff or "first_overflow" in handoff
     assert workload["task_id"] == TASK_ID
     assert RUNNER.is_file()
     assert LIFECYCLE.is_file()
