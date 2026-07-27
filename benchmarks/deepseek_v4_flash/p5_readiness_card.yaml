@@ -228,13 +228,14 @@ artifacts:
   p8_2_k1a_r5_f1_r13_update_raise_geometry_audit: p8_2_k1a_r5_f1_r13_update_raise_geometry_audit.yaml
   p8_2_k1a_r5_f1_r15_restore_step_lineage_audit: p8_2_k1a_r5_f1_r15_restore_step_lineage_audit.yaml
   p8_2_k1a_r5_f1_r16_async_completion_semantics_audit: p8_2_k1a_r5_f1_r16_async_completion_semantics_audit.yaml
+  p8_2_k1a_r5_f1_r17_full_trace_source_replay_audit: p8_2_k1a_r5_f1_r17_full_trace_source_replay_audit.yaml
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p8_2_k1a_r5_f1_r16_async_completion_semantics.yaml
-  next_stage_candidate: P8.2-K1A-R5-F1-R16_async_completion_semantics
-  current_server_handoff_task: p8_2_k1a_r5_f1_r16_async_completion_semantics_2026_0727
-  current_server_handoff_execution_mode: authorized_offline_r15_raw_trace_completion_adjudication
+  next_workload: workloads/p8_2_k1a_r5_f1_r17_full_trace_source_replay.yaml
+  next_stage_candidate: P8.2-K1A-R5-F1-R17_full_trace_source_replay
+  current_server_handoff_task: p8_2_k1a_r5_f1_r17_full_trace_source_replay_2026_0727
+  current_server_handoff_execution_mode: authorized_offline_r15_complete_trace_source_replay
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -677,7 +678,11 @@ acceptance:
   p8_2_k1a_r5_f1_r15_h2d_bytes_total: 1076510720
   p8_2_k1a_r5_f1_r15_h2d_restore_complete: true
   p8_2_k1a_r5_f1_r15_h2d_async_copy_pipeline_exact: false
-  p8_2_k1a_r5_f1_r16_grade: pending_offline_r15_raw_trace_completion_adjudication
+  p8_2_k1a_r5_f1_r16_grade: invalid_inconclusive_source_selection_formal_red_retained
+  p8_2_k1a_r5_f1_r16_formal_server_grade: red_p8_2_k1a_r5_f1_r16_async_completion_trace_incomplete
+  p8_2_k1a_r5_f1_r16_selected_trace_event_count: 319
+  p8_2_k1a_r5_f1_r15_canonical_trace_event_count: 1369
+  p8_2_k1a_r5_f1_r17_grade: pending_complete_trace_source_replay
   p8_2_k1a_r5_f1_r11_npu_execution_authorized: false
   p8_2_k1a_r5_f1_r12_npu_execution_authorized: false
   p8_2_k1a_r5_f1_r13_npu_execution_authorized: false
@@ -687,6 +692,12 @@ acceptance:
   p8_2_k1a_r5_f1_r16_model_request_count_exact: 0
   p8_2_k1a_r5_f1_r16_keep_alive_action: leave_running
   p8_2_k1a_r5_f1_r16_poll_live_pending_required_for_completion: false
+  p8_2_k1a_r5_f1_r17_npu_execution_authorized: false
+  p8_2_k1a_r5_f1_r17_formal_model_lifecycle_count_exact: 0
+  p8_2_k1a_r5_f1_r17_model_request_count_exact: 0
+  p8_2_k1a_r5_f1_r17_keep_alive_action: leave_running
+  p8_2_k1a_r5_f1_r17_canonical_trace_reader: combined_json_else_all_jsonl
+  p8_2_k1a_r5_f1_r17_coverage_mismatch_is_mechanism_red: false
   p8_2_k1a_r5_f1_r11_formal_model_lifecycle_count_exact: 1
   p8_2_k1a_r5_f1_r11_pressure_request_count_exact: 1
   p8_2_k1a_r5_f1_r11_pressure_context_tokens: 36800
@@ -711,7 +722,8 @@ acceptance:
   p8_2_k1a_r5_f1_r13_next_task_authorized: false
   p8_2_k1a_r5_f1_r15_next_task_authorized: false
   p8_2_k1a_r5_f1_r16_next_task_authorized: false
-  current_task_scoped_authorization: P8.2-K1A-R5-F1-R16_offline_r15_raw_trace_completion_adjudication
+  p8_2_k1a_r5_f1_r17_next_task_authorized: false
+  current_task_scoped_authorization: P8.2-K1A-R5-F1-R17_offline_r15_complete_trace_source_replay
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory

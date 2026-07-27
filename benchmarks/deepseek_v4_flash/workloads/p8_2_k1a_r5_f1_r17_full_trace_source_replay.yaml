@@ -1,0 +1,79 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_f1_r17_full_trace_source_replay
+date: '2026-07-27'
+task_id: p8_2_k1a_r5_f1_r17_full_trace_source_replay_2026_0727
+purpose: correct_r16_trace_source_selection_and_replay_complete_r15_evidence
+
+sources:
+  r15:
+    parent_task_id: p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725
+    parent_default_root: server_local/p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725_run01
+    raw_trace_relative_root: runtime/offload_trace
+    immutable: true
+  r16:
+    parent_task_id: p8_2_k1a_r5_f1_r16_async_completion_semantics_2026_0727
+    parent_default_root: server_local/p8_2_k1a_r5_f1_r16_async_completion_semantics_2026_0727_run01
+    purpose: freeze_the_incomplete_319_event_selection_for_comparison
+    immutable: true
+
+analysis:
+  expected_world_size: 8
+  canonical_trace_reader:
+    if_combined_json_exists: read_combined_json_only
+    otherwise: read_all_jsonl_in_lexical_order
+    never_read_combined_and_jsonl_together: true
+  all_jsonl_required_file_families:
+    - async_transfer_trace
+    - residency_trace
+  frozen_r15_trace_event_count: 1369
+  frozen_r16_selected_trace_event_count: 319
+  frozen_recovered_event_count_candidate: 1050
+  r15_replay_field_parity_required: true
+  required_key_events_nonzero: true
+  coverage_mismatch_is_mechanism_red: false
+  directions: [d2h, h2d]
+  completion_events:
+    - device_copy_submitted
+    - device_copy_enqueued
+    - copy_blocks_entered
+    - copy_blocks_returned
+    - transfer_poll_returned
+    - transfer_completed
+  point_in_time_diagnostic:
+    event: transfer_poll_entered
+    predicate: pending_event_count_positive_and_copy_thread_alive
+    required_for_completion: false
+  worker_output_identity: direction_local_ordinal_without_raw_pid
+  repository_input_sha_gate_required: true
+  parent_source_sha_gate_required: true
+  raw_trace_digest_before_read_required: true
+  raw_trace_digest_after_read_required: true
+  compact_outputs_only: true
+  result_package_self_verification_required: true
+  copy_ready_server_report_emitted: true
+
+authorization:
+  npu_execution_authorized: false
+  vllm_server_start_authorized: false
+  model_requests_authorized: false
+  keep_alive_action: leave_running
+  profiler_authorized: false
+  context_change_authorized: false
+  capacity_change_authorized: false
+  runtime_dependency_mutation_authorized: false
+  parent_source_mutation_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+result_contract:
+  max_transfer_bytes: 71680
+  raw_trace_content_retained: false
+  raw_process_ids_retained: false
+  request_ids_retained: false
+  token_ids_retained: false
+  raw_hash_values_retained: false
+  generated_content_retained: false

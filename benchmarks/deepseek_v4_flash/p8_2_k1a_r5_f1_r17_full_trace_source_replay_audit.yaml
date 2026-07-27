@@ -1,0 +1,152 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R17
+date: '2026-07-27'
+task_id: p8_2_k1a_r5_f1_r17_full_trace_source_replay_2026_0727
+
+accepted_f1_r15_result:
+  grading_fields:
+    server_grade: red_p8_2_k1a_r5_f1_r15_h2d_evidence_incomplete
+    experimental_terminal: restore_request_completed
+    operational_grade: operational_recovery_clean
+    restore_step_lineage_primary_class: delayed_external_then_reqs_to_load
+    restore_h2d_path_class: via_reqs_to_load
+    restore_pairing_repair_applied: true
+    restore_any_entered_reqs_to_load: true
+    cleanup: clean
+    resource_recovery_exact: true
+  trigger_fields:
+    h2d_restore_mechanism_candidate: true
+    target_cpu_only_residency_observed: true
+    h2d_worker_completion_count: 8
+    h2d_worker_completion_exact: true
+    restore_cpu_hit_exact: true
+    restore_cpu_hit_tokens_max: 16384
+  transfer_fields:
+    trace_event_count: 1369
+    expected_world_size: 8
+    d2h_worker_count: 8
+    h2d_worker_count: 8
+    d2h_completed_worker_count: 8
+    h2d_completed_worker_count: 8
+    d2h_enqueued_worker_count: 8
+    h2d_enqueued_worker_count: 8
+    d2h_copy_blocks_entered_worker_count: 8
+    h2d_copy_blocks_entered_worker_count: 8
+    d2h_copy_blocks_returned_worker_count: 8
+    h2d_copy_blocks_returned_worker_count: 8
+    d2h_poll_event_visible_worker_count: 8
+    h2d_poll_event_visible_worker_count: 7
+    copy_thread_started_worker_count: 8
+    d2h_bytes_total: 4386781184
+    h2d_bytes_total: 1076510720
+    async_copy_failure_event_count: 0
+    d2h_store_complete: true
+    h2d_restore_complete: true
+    h2d_async_copy_pipeline_exact: false
+    restore_step_lineage_primary_class: delayed_external_then_reqs_to_load
+    restore_h2d_path_class: via_reqs_to_load
+    restore_any_pairing_repair_applied: true
+    restore_any_entered_reqs_to_load: true
+  source_file_sha256:
+    grading_summary.json: 29a240d1eb5cce44eb63e94c297cbf4051123e40046e999259fb4343ac14e7c5
+    h2d_trigger_summary.json: 1107daccdaad77863d655dc2ae6c07b359328275151e498e36cc35ca2e4b709a
+    transfer_trace_summary.json: d8bc7fe07e24e0878714969364c530201a2ac4370d33ff85c3dd70e7966a37a2
+    resource_recovery_summary.json: 5e4795b6ddbebee7b8fb213ae9a2702c937333bf4ee0809c30a69e9cb141b4fe
+    cleanup_status.txt: 2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d
+    candidate_manifest.server_local.json: a9defd7d0167e1048a652dee68b788ffbce6cc201f082b89872f6279e4f9b40c
+
+accepted_f1_r16_result:
+  grading_fields:
+    server_grade: red_p8_2_k1a_r5_f1_r16_async_completion_trace_incomplete
+    parent_source_hashes_exact: true
+    source_evidence_unchanged: true
+    async_completion_evidence_exact: false
+    h2d_restore_mechanism_accepted: false
+    new_npu_lifecycle_executed: false
+  adjudication_fields:
+    server_grade: red_p8_2_k1a_r5_f1_r16_async_completion_trace_incomplete
+    parent_contract_exact: true
+    async_completion_evidence_exact: false
+    h2d_poll_live_pending_coverage_exact: false
+  recomputed_transfer_fields:
+    trace_event_count: 319
+    d2h_worker_count: 0
+    h2d_worker_count: 0
+    d2h_bytes_total: 0
+    h2d_bytes_total: 0
+    async_copy_failure_event_count: 0
+  provenance_fields:
+    task_id: p8_2_k1a_r5_f1_r16_async_completion_semantics_2026_0727
+    all_source_files_unchanged: true
+    raw_trace_content_retained: false
+  raw_trace_fields:
+    file_count: 10
+    total_bytes: 4450889
+    tree_sha256: e7629a9740ef6a66911c359d7f5944a496ffcd8cf3630e5faca8b91379f9c750
+  source_file_sha256:
+    grading_summary.json: a7f6eddecad3659dd32b9ac0d2f9b79d84030c509aa07556540be074ca1da60c
+    async_completion_adjudication_summary.json: a722f8577685fdccbecba0a83a94c40a0d1f3967862451cdd6ad19fcb4cc2825
+    source_evidence_provenance.json: ca4055681dd5a2130bcea3702b9e362cb65af2dd29b034b16975f9955374b8db
+    task_grade.txt: 50226a367352a3be929abd860f922ae25faf265f4b96dba01e1c6efdfd6bc4d2
+    candidate_manifest.server_local.json: 44714051a99ab05939485489ac8ae6c0e44563556f9b13b4ddbd3e82eca687ff
+
+repository_input_sha256:
+  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r17_full_trace_source_replay.yaml: d7fac55bd00de647d7657cedbd85617b848790d06725c8520534bad532abd525
+  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py: 43801af40010490ae51a7545dcff762dee831f3af937b23192514a95523add85
+  tools/inference_contracts/p8_2_k1a_r5_f1_r16_async_completion_adjudication.py: 7a2bd0789d932249b77520d6f4927463c83481b937e226d73bc7a793bb4e323b
+  tools/inference_contracts/p8_2_k1a_r5_f1_r17_full_trace_source_replay.py: 201b81d4b2545b8813f256ebe840864842c9e2eef2b6eb5cc706575166e8eee9
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r17_full_trace_source_replay.sh: e958a0ddaf3960a8d55a7bac2930a8aae6255e590727add1dda2103259cd2b31
+  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r17_server_task.sh: 000a3bd53c881b3ea3b2a0f18f34604f36dd5da250236add4316b4df39ff7f31
+  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r17_full_trace_source_replay.py: 06c3aef4781b3893a64e9e733c6d2c08125bf4f702939ab896c3809349e61e2c
+
+developer_diagnosis:
+  server_r16_execution_was_contract_correct: true
+  r16_selector_only_read_h2d_residency_family: true
+  r16_selected_trace_event_count: 319
+  r15_canonical_trace_event_count: 1369
+  omitted_trace_event_count_candidate: 1050
+  r15_reader_semantics: combined_json_else_all_jsonl
+  new_npu_lifecycle_required: false
+
+coverage_contract:
+  canonical_reader_semantics: combined_json_else_all_jsonl
+  all_jsonl_mode_required_families:
+    - trace.*
+    - h2d-residency.*
+  r15_replay_field_parity_required: true
+  required_key_events_nonzero: true
+  coverage_mismatch_grade: blocked_source_trace_coverage_mismatch
+  coverage_mismatch_is_mechanism_red: false
+
+completion_contract:
+  expected_world_size: 8
+  same_worker_set_required:
+    - device_copy_submitted
+    - device_copy_enqueued
+    - copy_blocks_entered
+    - copy_blocks_returned
+    - transfer_completed
+  all_copy_threads_started_required: true
+  transfer_poll_returned_for_completed_workers_required: true
+  async_failure_event_count_exact: 0
+  poll_live_pending_coverage_required_for_completion: false
+
+authorization:
+  execution_mode: authorized_offline_r15_complete_trace_source_replay
+  npu_execution_authorized: false
+  vllm_server_start_authorized: false
+  model_requests_authorized: false
+  keep_alive_action: leave_running
+  server_side_code_edit_authorized: false
+  parent_source_mutation_authorized: false
+  result_directory_creation_authorized: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+claim_boundary: >
+  r15_existing_accepted_capacity_single_lifecycle_complete_raw_trace_source
+  replay_and_restore_h2d_mechanism_only

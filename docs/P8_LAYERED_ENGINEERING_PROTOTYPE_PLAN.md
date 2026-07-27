@@ -2,17 +2,20 @@
 
 日期：2026-07-10；最后更新：2026-07-27
 
-当前执行覆盖：`local_artifact_state=k1a_r5_f1_r16_async_completion_semantics_prepared`；
-`server_execution_state=authorized_zero_npu_r15_raw_trace_adjudication`；
-`current_task_id=p8_2_k1a_r5_f1_r16_async_completion_semantics_2026_0727`。R15 已在
+当前执行覆盖：`local_artifact_state=k1a_r5_f1_r17_full_trace_source_replay_prepared`；
+`server_execution_state=authorized_zero_npu_r15_complete_trace_source_replay`；
+`current_task_id=p8_2_k1a_r5_f1_r17_full_trace_source_replay_2026_0727`。R15 已在
 accepted 128 CPU blocks/rank、logical 16384 tokens/128 hash blocks 与 fixed 36800
-上闭合 `delayed_external_prefill → _reqs_to_load → H2D 8-worker completion`。当前唯一
-缺口是旧 grader 把 `transfer_poll_entered` 时的 live/pending 瞬时覆盖当作完成硬门：
-R15 为 H2D completed 8/8、failure 0，但 live-pending 仅 7/8。R16 只读同一 raw trace，
-按 submitted/enqueued/copy-entered/copy-returned/poll-returned/completed 同 worker 集合
-裁定；不启动 NPU/vLLM，不改 capacity/context，不做性能或唯一根因外推。
+上闭合 `delayed_external_prefill → _reqs_to_load → H2D 8-worker completion`。R16
+服务器按合同正确执行，但本地发布的 selector 只读取 `h2d-residency.*.jsonl`：仅重放
+319 个事件，漏掉 `trace.*.jsonl` 中的 async copy 边，而 R15 canonical reader 实际读到
+1369 个事件。因此 R16 formal RED 只作为历史结果保留，机制结论标为
+`invalid/inconclusive_source_selection`，不否定 R15 accepted capacity 或 H2D 8/8。
+R17 复用 R15 的 `combined.json` 优先、否则全部 `*.jsonl` 规则，先对 1369 个事件和
+父 transfer summary 做覆盖奇偶校验，再按 completed same-worker completion 裁定；
+不启动 NPU/vLLM，不改 capacity/context，不做性能或唯一根因外推。
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_full_lineage_preserved / p8_2_k1a_r4_r1_offline_store_only_closeout_green / p8_2_k1a_r5_f0_h2d_trigger_feasibility_ready / p8_2_k1a_r5_l1_d2h_green_controller_red / p8_2_k1a_r5_l1_r1_target_lost_red / p8_2_k1a_r5_f1_r1_fixed_l2_target_lost_red / p8_2_k1a_r5_f1_r2_mid_request_endpoint_mismatch / p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete_red / p8_2_k1a_r5_f1_r4_invalid_effective_64_block_contract / p8_2_k1a_r5_f1_r5_runtime_keyspace_probe_invalid / p8_2_k1a_r5_f1_r6_prepressure_circular_wait_red / p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger_red / p8_2_k1a_r5_f1_r8_effective_geometry_contract_red / p8_2_k1a_r5_f1_r9_finish_time_swa_lineage_red / p8_2_k1a_r5_f1_r10_logical_restore_hit_incomplete_after_physical_window / p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete / p8_2_k1a_r5_f1_r15_restore_path_and_h2d_completion_observed_poll_gate_red / p8_2_k1a_r5_f1_r16_offline_completion_adjudication_ready / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_32gib_per_rank_red / p8_2_k1a_r1_probe_invalid / p8_2_k1a_r2_capacity_ready / p8_2_k1a_r3_full_lineage_preserved / p8_2_k1a_r4_r1_offline_store_only_closeout_green / p8_2_k1a_r5_f0_h2d_trigger_feasibility_ready / p8_2_k1a_r5_l1_d2h_green_controller_red / p8_2_k1a_r5_l1_r1_target_lost_red / p8_2_k1a_r5_f1_r1_fixed_l2_target_lost_red / p8_2_k1a_r5_f1_r2_mid_request_endpoint_mismatch / p8_2_k1a_r5_f1_r3_h2d_evidence_incomplete_red / p8_2_k1a_r5_f1_r4_invalid_effective_64_block_contract / p8_2_k1a_r5_f1_r5_runtime_keyspace_probe_invalid / p8_2_k1a_r5_f1_r6_prepressure_circular_wait_red / p8_2_k1a_r5_f1_r7_pressure_completed_without_trigger_red / p8_2_k1a_r5_f1_r8_effective_geometry_contract_red / p8_2_k1a_r5_f1_r9_finish_time_swa_lineage_red / p8_2_k1a_r5_f1_r10_logical_restore_hit_incomplete_after_physical_window / p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete / p8_2_k1a_r5_f1_r15_restore_path_and_h2d_completion_observed_poll_gate_red / p8_2_k1a_r5_f1_r16_invalid_inconclusive_source_selection / p8_2_k1a_r5_f1_r17_full_trace_source_replay_ready / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 
 P8.1 parent grade 保留为 `yellow_p8_1_matrix_trace_invalid`。
 
@@ -32,14 +35,15 @@ R9 的历史合同与入口仍由
 `run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh` 冻结保留；它们不是当前执行入口。
 
 当前唯一服务器任务是
-`p8_2_k1a_r5_f1_r16_async_completion_semantics_2026_0727`。它固定零 lifecycle、
-零请求、keep-alive 留运行，只读 R15 raw trace；服务器不得补代码或启动 NPU。
+`p8_2_k1a_r5_f1_r17_full_trace_source_replay_2026_0727`。它固定零 lifecycle、
+零请求、keep-alive 留运行，只读 R15 raw trace 与 R16 bounded parent；服务器不得
+补代码或启动 NPU。R16 的任务和正式 RED 已消费，不得重跑。
 
-当前执行合同由 `p8_2_k1a_r5_f1_r16_async_completion_semantics_audit.yaml`、
-`p8_2_k1a_r5_f1_r16_async_completion_semantics.yaml`、
-`p8_2_k1a_r5_f1_r16_async_completion_adjudication.py` 与唯一
-`run_deepseek_p8_2_k1a_r5_f1_r16_server_task.sh` 固定。R15 的 audit/workload/runner
-仅作直接 parent provenance，不得重跑。R12 parent
+当前执行合同由 `p8_2_k1a_r5_f1_r17_full_trace_source_replay_audit.yaml`、
+`p8_2_k1a_r5_f1_r17_full_trace_source_replay.yaml`、
+`p8_2_k1a_r5_f1_r17_full_trace_source_replay.py` 与唯一
+`run_deepseek_p8_2_k1a_r5_f1_r17_server_task.sh` 固定。R15/R16 的
+audit/workload/runner 仅作直接 parent provenance，不得重跑。R12 parent
 `p8_2_k1a_r5_f1_r12_hit_to_load_admission_audit.yaml`、
 `p8_2_k1a_r5_f1_r12_hit_to_load_admission.yaml`、
 `run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.sh` 与
