@@ -1,0 +1,54 @@
+schema_version: 1
+workload_id: p8_2_k1a_r5_f1_r16_async_completion_semantics
+date: '2026-07-27'
+task_id: p8_2_k1a_r5_f1_r16_async_completion_semantics_2026_0727
+purpose: adjudicate_r15_h2d_async_completion_from_retained_raw_trace_without_npu
+
+source:
+  parent_task_id: p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725
+  parent_default_root: server_local/p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725_run01
+  raw_trace_relative_root: runtime/offload_trace
+  immutable: true
+
+analysis:
+  expected_world_size: 8
+  directions: [d2h, h2d]
+  completion_events:
+    - device_copy_submitted
+    - device_copy_enqueued
+    - copy_blocks_entered
+    - copy_blocks_returned
+    - transfer_poll_returned
+    - transfer_completed
+  point_in_time_diagnostic:
+    event: transfer_poll_entered
+    predicate: pending_event_count_positive_and_copy_thread_alive
+    required_for_completion: false
+  worker_output_identity: direction_local_ordinal_without_raw_pid
+  compact_outputs_only: true
+
+authorization:
+  npu_execution_authorized: false
+  vllm_server_start_authorized: false
+  model_requests_authorized: false
+  keep_alive_action: leave_running
+  profiler_authorized: false
+  context_change_authorized: false
+  capacity_change_authorized: false
+  runtime_dependency_mutation_authorized: false
+  parent_source_mutation_authorized: false
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+result_contract:
+  max_transfer_bytes: 71680
+  raw_trace_content_retained: false
+  raw_process_ids_retained: false
+  request_ids_retained: false
+  token_ids_retained: false
+  raw_hash_values_retained: false
+  generated_content_retained: false

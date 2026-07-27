@@ -227,13 +227,14 @@ artifacts:
   p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_audit: p8_2_k1a_r5_f1_r11_eagle_lookup_lineage_audit.yaml
   p8_2_k1a_r5_f1_r13_update_raise_geometry_audit: p8_2_k1a_r5_f1_r13_update_raise_geometry_audit.yaml
   p8_2_k1a_r5_f1_r15_restore_step_lineage_audit: p8_2_k1a_r5_f1_r15_restore_step_lineage_audit.yaml
+  p8_2_k1a_r5_f1_r16_async_completion_semantics_audit: p8_2_k1a_r5_f1_r16_async_completion_semantics_audit.yaml
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p8_2_k1a_r5_f1_r15_restore_step_lineage.yaml
-  next_stage_candidate: P8.2-K1A-R5-F1-R15_restore_step_lineage
-  current_server_handoff_task: p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725
-  current_server_handoff_execution_mode: authorized_single_lifecycle_restore_step_lineage
+  next_workload: workloads/p8_2_k1a_r5_f1_r16_async_completion_semantics.yaml
+  next_stage_candidate: P8.2-K1A-R5-F1-R16_async_completion_semantics
+  current_server_handoff_task: p8_2_k1a_r5_f1_r16_async_completion_semantics_2026_0727
+  current_server_handoff_execution_mode: authorized_offline_r15_raw_trace_completion_adjudication
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -294,6 +295,8 @@ artifacts:
   current_p8_2_k1a_r5_f1_r12_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.sh
   current_p8_2_k1a_r5_f1_r13_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.sh
   current_p8_2_k1a_r5_f1_r15_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r15_restore_step_lineage.sh
+  current_p8_2_k1a_r5_f1_r16_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r16_async_completion_semantics.sh
+  current_p8_2_k1a_r5_f1_r16_analyzer: ../../tools/inference_contracts/p8_2_k1a_r5_f1_r16_async_completion_adjudication.py
   current_p8_2_k1a_r5_f1_r11_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r11_eagle_lookup_lineage.py
   current_p8_2_k1a_r5_f1_r12_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r12_hit_to_load_admission.py
   current_p8_2_k1a_r5_f1_r13_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_update_raise_geometry.py
@@ -302,6 +305,7 @@ artifacts:
   current_p8_2_k1a_r5_f1_r12_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r12_server_task.sh
   current_p8_2_k1a_r5_f1_r13_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_server_task.sh
   current_p8_2_k1a_r5_f1_r15_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r15_server_task.sh
+  current_p8_2_k1a_r5_f1_r16_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r16_server_task.sh
   current_p8_2_k1a_r5_l1_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
   current_p8_2_k1a_trace_attribution: ../../tools/inference_contracts/p8_2_k1a_trace_attribution.py
   current_p8_2_k1a_failure_forensics: ../../tools/inference_contracts/p8_2_k1a_failure_forensics.py
@@ -662,11 +666,27 @@ acceptance:
   p8_2_k1a_r5_f1_r11_grade: red_p8_2_k1a_r5_f1_r11_h2d_evidence_incomplete
   p8_2_k1a_r5_f1_r12_grade: red_p8_2_k1a_r5_f1_r12_h2d_evidence_incomplete
   p8_2_k1a_r5_f1_r13_grade: red_p8_2_k1a_r5_f1_r13_h2d_evidence_incomplete
-  p8_2_k1a_r5_f1_r15_grade: pending_single_lifecycle_restore_step_lineage
+  p8_2_k1a_r5_f1_r15_grade: red_p8_2_k1a_r5_f1_r15_h2d_evidence_incomplete
+  p8_2_k1a_r5_f1_r15_operational_grade: operational_recovery_clean
+  p8_2_k1a_r5_f1_r15_experimental_terminal: restore_request_completed
+  p8_2_k1a_r5_f1_r15_restore_step_lineage_primary_class: delayed_external_then_reqs_to_load
+  p8_2_k1a_r5_f1_r15_restore_h2d_path_class: via_reqs_to_load
+  p8_2_k1a_r5_f1_r15_h2d_worker_count: 8
+  p8_2_k1a_r5_f1_r15_h2d_completed_worker_count: 8
+  p8_2_k1a_r5_f1_r15_h2d_poll_event_visible_worker_count: 7
+  p8_2_k1a_r5_f1_r15_h2d_bytes_total: 1076510720
+  p8_2_k1a_r5_f1_r15_h2d_restore_complete: true
+  p8_2_k1a_r5_f1_r15_h2d_async_copy_pipeline_exact: false
+  p8_2_k1a_r5_f1_r16_grade: pending_offline_r15_raw_trace_completion_adjudication
   p8_2_k1a_r5_f1_r11_npu_execution_authorized: false
   p8_2_k1a_r5_f1_r12_npu_execution_authorized: false
   p8_2_k1a_r5_f1_r13_npu_execution_authorized: false
   p8_2_k1a_r5_f1_r15_npu_execution_authorized: true
+  p8_2_k1a_r5_f1_r16_npu_execution_authorized: false
+  p8_2_k1a_r5_f1_r16_formal_model_lifecycle_count_exact: 0
+  p8_2_k1a_r5_f1_r16_model_request_count_exact: 0
+  p8_2_k1a_r5_f1_r16_keep_alive_action: leave_running
+  p8_2_k1a_r5_f1_r16_poll_live_pending_required_for_completion: false
   p8_2_k1a_r5_f1_r11_formal_model_lifecycle_count_exact: 1
   p8_2_k1a_r5_f1_r11_pressure_request_count_exact: 1
   p8_2_k1a_r5_f1_r11_pressure_context_tokens: 36800
@@ -690,7 +710,8 @@ acceptance:
   p8_2_k1a_r5_f1_r12_next_task_authorized: false
   p8_2_k1a_r5_f1_r13_next_task_authorized: false
   p8_2_k1a_r5_f1_r15_next_task_authorized: false
-  current_task_scoped_authorization: P8.2-K1A-R5-F1-R15_single_lifecycle_restore_step_lineage
+  p8_2_k1a_r5_f1_r16_next_task_authorized: false
+  current_task_scoped_authorization: P8.2-K1A-R5-F1-R16_offline_r15_raw_trace_completion_adjudication
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory

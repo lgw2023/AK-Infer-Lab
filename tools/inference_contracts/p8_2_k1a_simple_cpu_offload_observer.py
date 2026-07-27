@@ -1514,7 +1514,25 @@ def summarize_trace_rows(
         ]
         for direction in ("d2h", "h2d")
     }
-    poll_event_visible = {
+    poll_entered = {
+        direction: [
+            row
+            for row in rows
+            if row.get("event") == "transfer_poll_entered"
+            and row.get("direction") == direction
+        ]
+        for direction in ("d2h", "h2d")
+    }
+    poll_returned = {
+        direction: [
+            row
+            for row in rows
+            if row.get("event") == "transfer_poll_returned"
+            and row.get("direction") == direction
+        ]
+        for direction in ("d2h", "h2d")
+    }
+    poll_live_pending = {
         direction: [
             row
             for row in rows
@@ -1545,9 +1563,17 @@ def summarize_trace_rows(
         direction: {int(row["pid"]) for row in values}
         for direction, values in copy_returned.items()
     }
-    poll_event_visible_pids = {
+    poll_entered_pids = {
         direction: {int(row["pid"]) for row in values}
-        for direction, values in poll_event_visible.items()
+        for direction, values in poll_entered.items()
+    }
+    poll_returned_pids = {
+        direction: {int(row["pid"]) for row in values}
+        for direction, values in poll_returned.items()
+    }
+    poll_live_pending_pids = {
+        direction: {int(row["pid"]) for row in values}
+        for direction, values in poll_live_pending.items()
     }
     copy_thread_started_pids = {
         int(row["pid"])
@@ -1612,11 +1638,21 @@ def summarize_trace_rows(
                 enqueued_pids[direction],
                 copy_entered_pids[direction],
                 copy_returned_pids[direction],
-                poll_event_visible_pids[direction],
+                completed_pids[direction],
             )
         )
         and submitted_pids[direction].issubset(copy_thread_started_pids)
         and not async_failure_events
+        for direction in ("d2h", "h2d")
+    }
+    poll_live_pending_coverage_exact = {
+        direction: bool(submitted_pids[direction])
+        and poll_live_pending_pids[direction] == submitted_pids[direction]
+        for direction in ("d2h", "h2d")
+    }
+    poll_returned_completion_exact = {
+        direction: bool(completed_pids[direction])
+        and completed_pids[direction].issubset(poll_returned_pids[direction])
         for direction in ("d2h", "h2d")
     }
     d2h_store_complete = all(
@@ -1652,8 +1688,38 @@ def summarize_trace_rows(
         "h2d_copy_blocks_entered_worker_count": len(copy_entered_pids["h2d"]),
         "d2h_copy_blocks_returned_worker_count": len(copy_returned_pids["d2h"]),
         "h2d_copy_blocks_returned_worker_count": len(copy_returned_pids["h2d"]),
-        "d2h_poll_event_visible_worker_count": len(poll_event_visible_pids["d2h"]),
-        "h2d_poll_event_visible_worker_count": len(poll_event_visible_pids["h2d"]),
+        "d2h_poll_entered_worker_count": len(poll_entered_pids["d2h"]),
+        "h2d_poll_entered_worker_count": len(poll_entered_pids["h2d"]),
+        "d2h_poll_returned_worker_count": len(poll_returned_pids["d2h"]),
+        "h2d_poll_returned_worker_count": len(poll_returned_pids["h2d"]),
+        "d2h_poll_completed_worker_count": len(completed_pids["d2h"]),
+        "h2d_poll_completed_worker_count": len(completed_pids["h2d"]),
+        "d2h_poll_live_pending_worker_count": len(
+            poll_live_pending_pids["d2h"]
+        ),
+        "h2d_poll_live_pending_worker_count": len(
+            poll_live_pending_pids["h2d"]
+        ),
+        # Compatibility field. This is a point-in-time poll observation, not a
+        # transfer-completion requirement.
+        "d2h_poll_event_visible_worker_count": len(
+            poll_live_pending_pids["d2h"]
+        ),
+        "h2d_poll_event_visible_worker_count": len(
+            poll_live_pending_pids["h2d"]
+        ),
+        "d2h_poll_live_pending_coverage_exact": (
+            poll_live_pending_coverage_exact["d2h"]
+        ),
+        "h2d_poll_live_pending_coverage_exact": (
+            poll_live_pending_coverage_exact["h2d"]
+        ),
+        "d2h_poll_returned_completion_exact": (
+            poll_returned_completion_exact["d2h"]
+        ),
+        "h2d_poll_returned_completion_exact": (
+            poll_returned_completion_exact["h2d"]
+        ),
         "copy_thread_started_worker_count": len(copy_thread_started_pids),
         "d2h_bytes_total": sum(
             int(row.get("byte_count") or 0) for row in submitted["d2h"]

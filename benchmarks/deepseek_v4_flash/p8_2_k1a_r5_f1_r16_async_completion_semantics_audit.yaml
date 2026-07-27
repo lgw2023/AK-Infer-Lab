@@ -1,0 +1,75 @@
+schema_version: 1
+stage: P8.2-K1A-R5-F1-R16
+date: '2026-07-27'
+task_id: p8_2_k1a_r5_f1_r16_async_completion_semantics_2026_0727
+
+accepted_f1_r15_result:
+  server_grade: red_p8_2_k1a_r5_f1_r15_h2d_evidence_incomplete
+  experimental_terminal: restore_request_completed
+  operational_grade: operational_recovery_clean
+  restore_step_lineage_primary_class: delayed_external_then_reqs_to_load
+  restore_h2d_path_class: via_reqs_to_load
+  restore_pairing_repair_applied: true
+  restore_any_entered_reqs_to_load: true
+  target_cpu_only_residency_observed: true
+  h2d_trigger_mechanism_candidate: true
+  h2d_worker_count: 8
+  h2d_completed_worker_count: 8
+  h2d_poll_event_visible_worker_count: 7
+  h2d_bytes_total: 1076510720
+  h2d_restore_complete: true
+  h2d_async_copy_pipeline_exact: false
+  d2h_worker_count: 8
+  d2h_store_complete: true
+  async_copy_failure_event_count: 0
+  cleanup: clean
+  resource_recovery_exact: true
+  source_file_sha256:
+    grading_summary.json: 29a240d1eb5cce44eb63e94c297cbf4051123e40046e999259fb4343ac14e7c5
+    h2d_trigger_summary.json: 1107daccdaad77863d655dc2ae6c07b359328275151e498e36cc35ca2e4b709a
+    transfer_trace_summary.json: d8bc7fe07e24e0878714969364c530201a2ac4370d33ff85c3dd70e7966a37a2
+    resource_recovery_summary.json: 5e4795b6ddbebee7b8fb213ae9a2702c937333bf4ee0809c30a69e9cb141b4fe
+    cleanup_status.txt: 2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d
+    candidate_manifest.server_local.json: a9defd7d0167e1048a652dee68b788ffbce6cc201f082b89872f6279e4f9b40c
+
+developer_diagnosis:
+  h2d_completion_already_observed_on_all_workers: true
+  poll_live_pending_is_point_in_time_coverage: true
+  poll_live_pending_can_be_false_after_copy_thread_exit: true
+  poll_live_pending_must_not_replace_completion_evidence: true
+  raw_trace_adjudication_required_before_regrading: true
+  repeat_npu_lifecycle_required: false
+
+completion_contract:
+  expected_world_size: 8
+  same_worker_set_required:
+    - device_copy_submitted
+    - device_copy_enqueued
+    - copy_blocks_entered
+    - copy_blocks_returned
+    - transfer_completed
+  all_copy_threads_started_required: true
+  transfer_poll_returned_for_completed_workers_required: true
+  async_failure_event_count_exact: 0
+  poll_live_pending_coverage_required_for_completion: false
+  legacy_poll_event_visible_field_retained_as_diagnostic: true
+
+authorization:
+  execution_mode: authorized_offline_r15_raw_trace_completion_adjudication
+  npu_execution_authorized: false
+  vllm_server_start_authorized: false
+  model_requests_authorized: false
+  keep_alive_action: leave_running
+  server_side_code_edit_authorized: false
+  parent_source_mutation_authorized: false
+  result_directory_creation_authorized: true
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  next_task_authorized: false
+  k2_authorized: false
+  p8_3_i1_authorized: false
+
+claim_boundary: >
+  r15_existing_single_lifecycle_raw_trace_offline_async_completion_semantics
+  and_restore_h2d_mechanism_only
