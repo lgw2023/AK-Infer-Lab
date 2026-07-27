@@ -39,6 +39,38 @@ p8_3_i1_authorized: false
 本文件已清空上一轮内容，只描述当前 R16。服务器助手不要设计实验、不要补代码、
 不要启动 NPU/vLLM、不要发送请求，也不要创建 run02。
 
+## 零、给服务器助手的“照做即可”执行摘要
+
+服务器端不需要查外部资料，也不需要理解或改写 observer。开发机已经把 R16 所需
+判断写进唯一入口；服务器助手只负责：
+
+1. fast-forward 同步远程 `main`，确认 HEAD=origin/main 且 tracked-clean；
+2. 运行本文件第四节的开发检查和自动 preflight；
+3. preflight 通过后，只运行第五节唯一正式命令一次；
+4. 从终端 `R16_SERVER_REPORT_BEGIN` 到 `R16_SERVER_REPORT_END` 收集回报，并补上
+   focused test/compile/Bash/audit-only 的 exit code；
+5. 报完整 7-file 清单后暂停，等待用户选择传输方式。
+
+禁止服务器助手自行：
+
+- 写 Python/Bash/YAML 修补结果；
+- 人工修改 grade、manifest、worker count 或 SHA；
+- 因为看到 R15 是 RED 就启动 NPU 补跑；
+- 因为看到 R16 是 GREEN 就进入 R17/K2/P8.3-I1；
+- 删除已存在的 R16 目录后重跑，或创建 run02；
+- 停止 keep-alive。本轮不占卡。
+
+入口会自动执行四层硬门：
+
+```text
+repository input SHA gate
+→ R15 six-file SHA + fact gate
+→ raw trace digest-before-read / digest-after-read immutability gate
+→ complete 7-file result-package bytes/SHA/sensitivity/control self-verification
+```
+
+任何一层失败都应原样回报错误并停止，不由服务器助手临场“修到通过”。
+
 ## 一、为什么本轮是实质推进，而不是再做一次形式评分
 
 R15 已经把 accepted-capacity 主链闭合到：
@@ -111,14 +143,19 @@ tools/inference_contracts/p8_2_k1a_r5_f1_r16_async_completion_adjudication.py
 
 分析器会：
 
-1. 精确校验 R15 六个父文件 SHA-256。
-2. 只读 `R15_ROOT/runtime/offload_trace/h2d-residency.*.jsonl`。
-3. 读取前后各计算一次 raw trace tree digest，证明父证据未变。
-4. 重算 D2H/H2D submitted、enqueued、copy entered、copy returned、poll entered、
+1. 从 audit 合同精确校验 6 个仓库执行输入 SHA-256，防止服务器代码漂移。
+2. 精确校验 R15 六个父文件 SHA-256 与父事实。
+3. 在读取前先计算
+   `R15_ROOT/runtime/offload_trace/h2d-residency.*.jsonl` tree digest。
+4. 只读 raw trace，再次计算 tree digest，证明分析期间父证据未变。
+5. 重算 D2H/H2D submitted、enqueued、copy entered、copy returned、poll entered、
    poll returned、live-pending 与 completed worker 集合。
-5. 用不带 raw PID 的 direction-local worker ordinal 产出紧凑 rollup。
-6. 将 live-pending 保留为诊断覆盖，不再替代完成证据。
-7. 生成严格不超过 `71680 bytes` 的 6 payload + 1 manifest；超限会直接失败。
+6. 用不带 raw PID 的 direction-local worker ordinal 产出紧凑 rollup。
+7. 将 live-pending 保留为诊断覆盖，不再替代完成证据。
+8. 生成严格不超过 `71680 bytes` 的 6 payload + 1 manifest。
+9. 逐文件复核结果 bytes、SHA-256、sensitivity、完整文件集合与全部 manifest
+   control；任何不一致或超限都会直接失败。
+10. 在终端输出带 begin/end 标记的回报素材，服务器助手不必手工拼字段。
 
 ## 三、R15 父证据与精确 SHA 门
 
@@ -192,6 +229,10 @@ bash -n \
 P8_2_K1A_F1_R16_AUDIT_ONLY=1 \
 bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r16_server_task.sh \
   /tmp/p8_2_k1a_r5_f1_r16_audit_unused
+
+P8_2_K1A_F1_R16_PREFLIGHT_ONLY=1 \
+bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r16_server_task.sh \
+  "/tmp/p8_2_k1a_r5_f1_r16_preflight_unused_$$"
 ```
 
 audit-only 必须明确输出：
@@ -203,12 +244,29 @@ model_requests_authorized=false
 keep_alive_action=leave_running
 h2d_poll_live_pending_is_diagnostic_only=true
 async_completion_same_worker_sets_required=true
+repository_input_sha_gate_required=true
+result_package_self_verification_required=true
+copy_ready_server_report_emitted=true
 result_transfer_authorized=true
 transfer_method_selected=false
 next_task_authorized=false
 ```
 
-任一预检失败就停止；不要临时改服务器代码。
+自动 preflight 还必须输出：
+
+```text
+preflight_status=pass
+repository_input_hashes_exact=true
+parent_source_hashes_exact=true
+parent_contract_exact=true
+raw_trace_unchanged_during_preflight=true
+npu_started=false
+vllm_started=false
+model_requests_sent=0
+keep_alive_action=leave_running
+```
+
+任一开发检查或自动 preflight 失败就停止；不要临时改服务器代码。
 
 ## 五、唯一正式命令
 
@@ -223,6 +281,19 @@ bash tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r16_server_task.sh \
 ```
 
 不要预先 `mkdir "${RESULT_DIR}"`；分析器会创建。不要手工拆内部步骤，不要运行第二次。
+
+这条命令内部已经固定顺序：
+
+```text
+确认 HEAD=origin/main 与 tracked-clean
+→ 自动 preflight
+→ 只读分析
+→ 结果包逐文件自校验
+→ 输出 R16_SERVER_REPORT_BEGIN ... R16_SERVER_REPORT_END
+```
+
+正式命令退出码为 0 表示“离线裁定流程和结果包完成”，不等于 grade 必然 GREEN。
+若 grade 是 RED 但包自校验通过，任务同样已经完成，应回报 RED 后暂停，不能补跑。
 
 ## 六、精确判定逻辑
 
@@ -342,6 +413,16 @@ transfer_method_selected = false
 automatic_transfer_allowed = false
 ```
 
+入口在生成后会再次执行 `verify-output`；终端必须看到：
+
+```text
+package_verification_status=pass
+payload_file_count=6
+manifest_file_count=1
+transfer_file_count=7
+bounded_transfer_package_exact=true
+```
+
 ## 九、完成后一次性回报
 
 请一次性回报：
@@ -365,21 +446,45 @@ automatic_transfer_allowed = false
 11. 可用方式 `email / upload-api / server-local`，推荐一种并说明原因；然后暂停等待
     用户明确选择，不能自动传输。
 
+优先使用正式命令打印的 `R16_SERVER_REPORT_BEGIN ... R16_SERVER_REPORT_END` 作为
+回报依据。它已经包含 Git 状态、零 NPU/零请求/keep-alive 空集、详细结果摘要、
+grading、adjudication、16-worker rollup、source provenance 与完整 manifest。
+不要省略其中不符合预期的字段，也不要只回一句 grade。
+
 `result_transfer_authorized: true` 只表示完整有界包具备候选资格，不选择渠道、不扩大
 范围。不要先发 status-only 邮件，不要在失败后自动切换渠道。
 
-## 十、当前仓库合同输入 SHA-256
+## 十、失败分支对照表
+
+| 看到的失败 | 含义 | 唯一允许动作 |
+|---|---|---|
+| HEAD != origin/main | 未同步到发布版本 | 停止；只允许重新 fetch + ff-only，再核对 |
+| tracked worktree 非 clean | 服务器有 tracked 修改 | 原样列出；不得 reset/restore/stash/覆盖 |
+| `repository SHA mismatch` | 执行输入不是开发机发布版本 | 停止；不得编辑文件凑 SHA |
+| R15 默认目录不存在 | parent 路径不同或证据缺失 | 只可用实际 run01 根设置 `P8_2_K1A_F1_R15_ROOT` |
+| `R15 parent SHA mismatch` | 父有界证据不是冻结 run01 | 停止并回报 expected/actual；不得复制改名凑门 |
+| `no retained R15 trace files` | 服务器原始轨迹缺失 | 停止；不得启动 NPU 补跑 |
+| raw trace before/after digest 不同 | 分析期间父证据被改动 | 停止，保留现场，不重跑 |
+| RESULT_DIR 已存在 | run01 已执行或目录冲突 | 不删除、不覆盖、不建 run02；检查并回报现有目录 |
+| `package ... mismatch/exceeds` | 候选包不完整或超限 | 不传输，回报错误与服务器本地路径 |
+| formal grade RED | 真实 completion 边仍不闭合 | 回报缺失 worker/count 后完成任务并暂停 |
+| formal grade GREEN | R15 同 lifecycle 机制证据闭合 | 只回报本轮边界；不得扩展到性能/唯一根因/下一任务 |
+
+如进程因 SSH/终端中断但 `RESULT_DIR` 已出现，也视为“可能已经执行”，不要重发正式
+命令。先只读检查目录和 manifest，再把现场回报给开发机。
+
+## 十一、当前仓库合同输入 SHA-256
 
 服务器预检要逐项匹配下列文件；该清单由开发机在最终修改后生成：
 
 ```text
-5de8065a7b3d7ac3f3dd58c55a4eab419f060a0804c3b24447b57b6d078d0b79  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r16_async_completion_semantics_audit.yaml
-82ec9c1ce163aae10a3315e6e05cfdc9fc50d00f73915e4e1d13c7732af56867  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r16_async_completion_semantics.yaml
+0c44e312fc386d172adef92d40256630b211db59b97908fcae958bb47d461cee  benchmarks/deepseek_v4_flash/p8_2_k1a_r5_f1_r16_async_completion_semantics_audit.yaml
+6c81398e9adeeb05efaf6397a588115e55463942c2f424e436890250b2b5fcd9  benchmarks/deepseek_v4_flash/workloads/p8_2_k1a_r5_f1_r16_async_completion_semantics.yaml
 43801af40010490ae51a7545dcff762dee831f3af937b23192514a95523add85  tools/inference_contracts/p8_2_k1a_simple_cpu_offload_observer.py
-21583c44ce912f61586812b1bf502a059a08379d698283ad67d9ea5adc565e71  tools/inference_contracts/p8_2_k1a_r5_f1_r16_async_completion_adjudication.py
-4477149b648294aa48e9170f000af5d554341e4f38d3ad9942b4f6abf35ffc3c  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r16_async_completion_semantics.sh
+7a2bd0789d932249b77520d6f4927463c83481b937e226d73bc7a793bb4e323b  tools/inference_contracts/p8_2_k1a_r5_f1_r16_async_completion_adjudication.py
+5432a21bd055c1c22f077da5fe1137393e17bc58181f807dae8581028b8d13dc  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r16_async_completion_semantics.sh
 7af6136f38aad8f24cd864a7aeba652ed893f49bcc56fe78b28bbd96921bc4ba  tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r16_server_task.sh
-6035974a80e60dc20ef4f04ffbe888a60baadf8e13218bdca088bdb7c3adc881  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r16_async_completion_semantics.py
+df09b22723ea08a70dcfa7dc7c70bf9855597279ef94901d450914a9931bf4ef  tests/inference_contracts/test_deepseek_p8_2_k1a_r5_f1_r16_async_completion_semantics.py
 ```
 
 ## 完成后停止

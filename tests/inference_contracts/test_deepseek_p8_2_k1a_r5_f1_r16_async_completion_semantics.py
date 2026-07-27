@@ -232,6 +232,9 @@ def test_offline_analyzer_regrades_the_exact_r15_shape_without_npu(
         yaml.safe_dump(
             {
                 "task_id": TASK_ID,
+                "repository_input_sha256": {
+                    ANALYZER.relative_to(ROOT).as_posix(): _sha256(ANALYZER)
+                },
                 "accepted_f1_r15_result": {
                     "source_file_sha256": source_files
                 },
@@ -240,6 +243,24 @@ def test_offline_analyzer_regrades_the_exact_r15_shape_without_npu(
         ),
         encoding="utf-8",
     )
+    preflight = subprocess.run(
+        [
+            sys.executable,
+            str(ANALYZER),
+            "preflight",
+            "--parent-root",
+            str(parent),
+            "--audit",
+            str(audit_path),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    assert preflight.returncode == 0, preflight.stderr or preflight.stdout
+    assert "preflight_status=pass" in preflight.stdout
+    assert "raw_trace_unchanged_during_preflight=true" in preflight.stdout
+
     output = tmp_path / "r16"
     completed = subprocess.run(
         [
@@ -260,6 +281,20 @@ def test_offline_analyzer_regrades_the_exact_r15_shape_without_npu(
 
     assert completed.returncode == 0, completed.stderr or completed.stdout
     assert (output / "task_grade.txt").read_text().strip() == GREEN_GRADE
+    verified = subprocess.run(
+        [
+            sys.executable,
+            str(ANALYZER),
+            "verify-output",
+            "--output-dir",
+            str(output),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    assert verified.returncode == 0, verified.stderr or verified.stdout
+    assert "package_verification_status=pass" in verified.stdout
     grading = json.loads((output / "grading_summary.json").read_text())
     assert grading["h2d_restore_mechanism_accepted"] is True
     assert grading["r15_false_negative_gate_observed"] is True
@@ -273,6 +308,9 @@ def test_offline_analyzer_regrades_the_exact_r15_shape_without_npu(
     assert manifest["transfer_file_count"] == 7
     assert manifest["transfer_total_bytes"] <= 71680
     assert manifest["bounded_transfer_package_exact"] is True
+    result_summary = (output / "result_summary.md").read_text()
+    assert "Recomputed completion evidence" in result_summary
+    assert "raw trace unchanged before/after read: `true`" in result_summary
 
 
 def test_r16_contract_is_zero_npu_and_current_handoff_only() -> None:
@@ -289,11 +327,15 @@ def test_r16_contract_is_zero_npu_and_current_handoff_only() -> None:
     assert "model_requests_authorized=false" in completed.stdout
     assert "keep_alive_action=leave_running" in completed.stdout
     assert "h2d_poll_live_pending_is_diagnostic_only=true" in completed.stdout
+    assert "repository_input_sha_gate_required=true" in completed.stdout
+    assert "result_package_self_verification_required=true" in completed.stdout
+    assert "copy_ready_server_report_emitted=true" in completed.stdout
 
     audit = yaml.safe_load(AUDIT.read_text(encoding="utf-8"))
     workload = yaml.safe_load(WORKLOAD.read_text(encoding="utf-8"))
     handoff = HANDOFF.read_text(encoding="utf-8")
     assert audit["task_id"] == TASK_ID
+    assert audit["repository_input_sha256"]
     assert workload["task_id"] == TASK_ID
     assert workload["authorization"]["npu_execution_authorized"] is False
     assert TASK_ID in SERVER_TASK.read_text(encoding="utf-8") or (

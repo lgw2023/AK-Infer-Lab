@@ -12,6 +12,10 @@ source:
 
 analysis:
   expected_world_size: 8
+  repository_input_sha_gate_required: true
+  parent_source_sha_gate_required: true
+  raw_trace_digest_before_read_required: true
+  raw_trace_digest_after_read_required: true
   directions: [d2h, h2d]
   completion_events:
     - device_copy_submitted
@@ -26,6 +30,8 @@ analysis:
     required_for_completion: false
   worker_output_identity: direction_local_ordinal_without_raw_pid
   compact_outputs_only: true
+  result_package_self_verification_required: true
+  copy_ready_server_report_emitted: true
 
 authorization:
   npu_execution_authorized: false
