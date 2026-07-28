@@ -4,7 +4,7 @@
 interface comparison, trace-schema study, and simulator calibration. It is not
 the implementation directory of AK-Infer-Lab.
 
-Inventory verified through: **2026-07-20 (Asia/Shanghai)**.
+Inventory verified through: **2026-07-28 (Asia/Shanghai)**.
 
 ## Refresh result
 
@@ -32,7 +32,7 @@ Inventory verified through: **2026-07-20 (Asia/Shanghai)**.
 | `vllm-ascend/` | [vllm-project/vllm-ascend](https://github.com/vllm-project/vllm-ascend), `main`; fetched tags through `v0.22.1rc1` | local `main@73998d1`; target tag `5f6faa0` | Rolling discovery plus the exact current P5 source object; `origin/main@dbcbf02` was observed without changing the working tree. |
 | `vllm/` | [vllm-project/vllm](https://github.com/vllm-project/vllm), `main`; fetched tags through `v0.22.1` | local `main@e5588e4`; target tag `0decac0` | Rolling scheduler/KV/serving reference plus the exact current P5 vLLM source object; `origin/main@c227aaa` was observed without changing the working tree. |
 | `lmcache-ascend/` | [LMCache/LMCache-Ascend](https://github.com/LMCache/LMCache-Ascend), `main` | `79fc599` | Ascend KV connector, NPU transfer, HCCL/HIXL, and adapter patterns. |
-| `unified-cache-management/` | [ModelEngine-Group/unified-cache-management](https://github.com/ModelEngine-Group/unified-cache-management), `develop` | `22f0145` | UCM implementation reference for external KV/prefix object management and DRAM-first tiering. |
+| `unified-cache-management/` | [ModelEngine-Group/unified-cache-management](https://github.com/ModelEngine-Group/unified-cache-management), `develop` | `01cbf9b` | P8.2-K2-R0 pinned implementation source for DeepSeek V4 Flash external Prefix Cache on vLLM-Ascend: v0.22.1 hybrid recovery, MTP/multigroup load recovery, variable block size and multi-rank load-failure propagation; real 910B validation remains the current server task. |
 | `mindie-llm/` | [Ascend/MindIE-LLM](https://github.com/Ascend/MindIE-LLM), `master` | `238c543` | MindIE LLM source reference for prefix/KV, expert-parallel, and Ascend runtime comparison. Source presence does not prove the server runtime is installed. |
 | `mindie-motor/` | [Ascend/MindIE-Motor](https://github.com/Ascend/MindIE-Motor), `master` | `a7de90c` | Ascend serving/orchestration comparison path. |
 | `mindie-turbo/` | [Ascend/MindIE-Turbo](https://github.com/Ascend/MindIE-Turbo), `master` | `fba896e` | Ascend inference acceleration plugin reference. |

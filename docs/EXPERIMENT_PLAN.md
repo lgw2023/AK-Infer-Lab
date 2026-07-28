@@ -1,8 +1,27 @@
 # P5-P9 实验计划
 
-日期：2026-07-17
+日期：2026-07-17；当前执行状态更新：2026-07-28
 
 本文档是 P5-P9 的稳定阶段契约。P8 的工程细节见 `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`；每轮实时状态、服务器回传和下一动作写入 `工作记录与进度笔记本/`。
+
+## 0. 2026-07-28 当前执行真值
+
+R17 已正式接受
+`green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed`：完整 1369-event
+重放证明 accepted-capacity K1A-F1 的 D2H/H2D 8-worker completion，K1A-F1 到此
+关闭。R16 formal RED 保留为历史包，其不完整 selector 结论已被 R17 supersede。
+
+当前唯一任务为
+`p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728`。开发机已实现 pinned UCM
+依赖安装、`Cache|Posix` DRAM-first 外部前缀对象、禁用内部 Prefix Cache 的 exact
+32K prime/follower、UCM metrics 路径归因、cleanup 和有界打包。服务器只运行
+`tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh`。
+
+本轮目标是忠实跑通
+`save → external DRAM hit → load/H2D → inference completion`。当前服务器的延迟
+收益正负只做实测描述，不是方法实现前置门；也不要求 pairing repair 是唯一或普遍
+根因。K3、P8.3-I1、额外 lifecycle、retry 和 sweep 均未授权。下文更早的“当前”
+字样是各历史轮次冻结记录，若与本节冲突，以本节和当前 handoff 为准。
 
 ## 1. 当前起点
 
@@ -34,11 +53,14 @@ Prefix Cache off hit=`0`，on 侧三个 primary group 9/9 正命中且逐请求�
 当前合同状态为：
 
 ```text
-last_task_id:p8_2_k1a_r5_f1_r9_effective_group_geometry_2026_0723
-current_task_id:p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725
+last_task_id:p8_2_k1a_r5_f1_r17_full_trace_source_replay_2026_0727
+last_task_grade:green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed
+current_task_id:p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
 server_execution_authorized:true / next_task_authorized:false
-formal_model_lifecycle_count_exact:1 / pressure_request_count_exact:1 / request_retry_count_exact:0
-pressure_context_tokens_frozen:36800 / context_change_or_sweep_authorized:false
+formal_model_lifecycle_count_exact:1 / model_request_count_exact:3 / request_retry_count_exact:0
+ucm_source_commit:01cbf9b71892c88319862fa57f195b0bef93fa6f
+internal_prefix_cache:false / ucm_pipeline:Cache|Posix / parameter_sweep_authorized:false
+performance_benefit_required_for_path_acceptance:false
 result_transfer_authorized:true
 standing_npu_and_vllm_consumption_authorization:true
 P8.2-K1: blocked_p8_2_k1_frozen_stack_import_incompatible
@@ -64,7 +86,8 @@ P8.2-K1A-R5-F1-R6: red_h2d_evidence_incomplete / prepressure_circular_wait / ope
 P8.2-K1A-R5-F1-R7: red_pressure_completed_without_trigger / operational_recovery_clean / accepted_capacity_not_invalidated
 P8.2-K1A-R5-F1-R8: red_target_store_lineage_unobservable_before_pressure / physical_geometry_contract_invalid / accepted_capacity_not_invalidated
 P8.2-K1A-R5-F1-R9: red_finish_time_swa_lineage_unobservable / accepted_capacity_not_invalidated
-P8.2-K1A-R5-F1-R10: developer_ready_runtime_cache_stamp_lineage / one_fixed_lifecycle_authorized
+P8.2-K1A-R5-F1-R17: green_restore_h2d_mechanism_closed / k1a_f1_closed
+P8.2-K2-R0: developer_ready_ucm_dram_external_prefix_path / one_lifecycle_authorized
 P8.3-I0: green_p8_3_i0_checkpoint_inventory_budget_incomplete
 P8.3-I0-R1: green_p8_3_i0_r1_unclassified_taxonomy
 P6.3C: blocked_p6_3c_not_strict_single_variable, no executable workload

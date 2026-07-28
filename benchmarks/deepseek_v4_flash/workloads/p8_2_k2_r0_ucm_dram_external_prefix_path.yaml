@@ -1,0 +1,122 @@
+schema_version: 1
+workload_id: p8_2_k2_r0_ucm_dram_external_prefix_path
+date: "2026-07-28"
+task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
+
+stage_contract:
+  stage: P8.2-K2-R0
+  mode: pinned_ucm_dependency_plus_single_lifecycle_dram_external_prefix_path
+  purpose: implement_and_run_external_prefix_store_lookup_hit_and_h2d_load_with_dram_cache_first
+  claim_boundary: single_lifecycle_ucm_external_prefix_store_lookup_load_and_dram_first_path_observation
+  performance_benefit_required: false
+  unique_root_cause_required: false
+
+parents:
+  p8_2_k0: green_p8_2_k0_order_balanced_prefix_cache_baseline
+  p8_2_k1a_f1_r17: green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed
+  k1a_closed_mechanism: physical_cpu_only_to_logical_hit_to_h2d_restore
+  r17_reused_as_performance_claim: false
+
+runtime:
+  base_environment: /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
+  vllm: 0.22.1
+  vllm_ascend: 0.22.1rc1
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  tensor_parallel_size: 8
+  enable_expert_parallel: true
+  speculative_method: mtp
+  num_speculative_tokens: 1
+  internal_prefix_cache: false
+  connector: UCMConnector
+  connector_role: kv_both
+
+ucm_dependency:
+  source_url: https://github.com/ModelEngine-Group/unified-cache-management.git
+  source_commit: 01cbf9b71892c88319862fa57f195b0bef93fa6f
+  source_branch_provenance: develop
+  install_scope: isolated_server_local_venv
+  base_environment_mutation: false
+  enable_ucm_patch: true
+  engine_type: vllm-ascend.a2
+  selected_support: DeepSeek_V4_Flash_prefix_cache_on_vllm_ascend_and_910B
+  relevant_fixes:
+    - v0_22_1_ascend_hybrid_cache_recovery
+    - mtp_speculative_decoding_and_multigroup_load_failure_recovery
+    - variable_block_size_for_ascend
+    - shared_cache_load_failure_propagation_across_ranks
+
+ucm_store:
+  pipeline: Cache|Posix
+  dram_cache_buffer_capacity_gb: 8
+  local_posix_capacity_gb: 32
+  use_layerwise: true
+  event_sync: true
+  metrics: true
+  record_raw_hash_traces: false
+  use_lite: false
+  use_gdr: false
+  persist_token_threshold: 0
+  load_tokens_threshold: 2048
+  storage_scope: task_local_server_local
+  dram_first_proof:
+    - follower_ucm_hit_tokens_delta_positive
+    - follower_cache_lookup_hit_blocks_delta_positive
+    - follower_cache_load_bytes_delta_positive
+    - follower_load_bytes_delta_positive
+    - follower_posix_s2h_bytes_delta_zero
+    - follower_gpu_hbm_hit_tokens_delta_zero
+
+request_plan:
+  formal_model_lifecycle_count: 1
+  model_request_count: 3
+  request_retry_count: 0
+  concurrency: 1
+  output_tokens: 64
+  order:
+    - warmup_unrelated_4096
+    - prime_exact_32768
+    - follower_byte_identical_32768
+  follower_body_byte_identical_to_prime: true
+  generated_text_retained: false
+  request_ids_retained_in_bounded_package: false
+  token_ids_retained_in_bounded_package: false
+
+implementation_acceptance:
+  latency_sign_is_not_a_path_gate: true
+  required:
+    - three_requests_http_token_sse_exact
+    - prime_ucm_save_and_cache_dump_bytes_positive
+    - follower_external_hit_tokens_positive
+    - follower_hbm_hit_tokens_zero
+    - follower_cache_stage_hit_positive
+    - follower_h2d_load_bytes_positive
+    - follower_posix_s2h_bytes_zero
+    - ucm_error_counter_delta_zero
+    - ucm_log_external_hit_corroborated
+    - clean_vllm_cleanup
+    - keep_alive_same_card_set_restored
+  implemented_grade: implemented_p8_2_k2_r0_ucm_dram_external_prefix_path
+
+authorization:
+  server_execution_authorized: true
+  npu_cards: [0, 1, 2, 3, 4, 5, 6, 7]
+  isolated_dependency_install_authorized: true
+  base_conda_mutation_authorized: false
+  server_side_code_edit_authorized: false
+  formal_model_lifecycle_count_exact: 1
+  model_request_count_exact: 3
+  request_retry_count_exact: 0
+  profiler_authorized: false
+  parameter_sweep_authorized: false
+  k3_authorized: false
+  p8_3_i1_authorized: false
+  next_task_authorized: false
+  result_transfer_authorized: true
+  automatic_transfer_allowed: false
+
+result_package:
+  max_total_bytes: 71680
+  sensitivity: bounded_operational_metadata_no_content_or_token_ids
+  raw_logs_metrics_request_bodies_generated_output_and_raw_hashes_remain_server_local: true
+  available_methods: [email, upload-api, server-local]
+  selection_required_before_transfer: true

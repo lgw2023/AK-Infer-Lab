@@ -229,13 +229,14 @@ artifacts:
   p8_2_k1a_r5_f1_r15_restore_step_lineage_audit: p8_2_k1a_r5_f1_r15_restore_step_lineage_audit.yaml
   p8_2_k1a_r5_f1_r16_async_completion_semantics_audit: p8_2_k1a_r5_f1_r16_async_completion_semantics_audit.yaml
   p8_2_k1a_r5_f1_r17_full_trace_source_replay_audit: p8_2_k1a_r5_f1_r17_full_trace_source_replay_audit.yaml
+  p8_2_k2_r0_ucm_dram_external_prefix_path_audit: p8_2_k2_r0_ucm_dram_external_prefix_path_audit.yaml
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p8_2_k1a_r5_f1_r17_full_trace_source_replay.yaml
-  next_stage_candidate: P8.2-K1A-R5-F1-R17_full_trace_source_replay
-  current_server_handoff_task: p8_2_k1a_r5_f1_r17_full_trace_source_replay_2026_0727
-  current_server_handoff_execution_mode: authorized_offline_r15_complete_trace_source_replay
+  next_workload: workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
+  next_stage_candidate: P8.2-K2-R0_ucm_dram_external_prefix_path
+  current_server_handoff_task: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
+  current_server_handoff_execution_mode: authorized_pinned_ucm_dependency_and_single_lifecycle_dram_external_prefix_path
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -307,6 +308,9 @@ artifacts:
   current_p8_2_k1a_r5_f1_r13_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r13_server_task.sh
   current_p8_2_k1a_r5_f1_r15_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r15_server_task.sh
   current_p8_2_k1a_r5_f1_r16_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_f1_r16_server_task.sh
+  current_p8_2_k2_r0_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh
+  current_p8_2_k2_r0_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
+  current_p8_2_k2_r0_server_task_driver: ../../tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh
   current_p8_2_k1a_r5_l1_request_runner: ../../tools/inference_contracts/run_deepseek_p8_2_k1a_r5_l1_lazy_h2d.py
   current_p8_2_k1a_trace_attribution: ../../tools/inference_contracts/p8_2_k1a_trace_attribution.py
   current_p8_2_k1a_failure_forensics: ../../tools/inference_contracts/p8_2_k1a_failure_forensics.py
@@ -682,7 +686,15 @@ acceptance:
   p8_2_k1a_r5_f1_r16_formal_server_grade: red_p8_2_k1a_r5_f1_r16_async_completion_trace_incomplete
   p8_2_k1a_r5_f1_r16_selected_trace_event_count: 319
   p8_2_k1a_r5_f1_r15_canonical_trace_event_count: 1369
-  p8_2_k1a_r5_f1_r17_grade: pending_complete_trace_source_replay
+  p8_2_k1a_r5_f1_r17_grade: green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed
+  p8_2_k1a_r5_f1_r17_trace_source_coverage_exact: true
+  p8_2_k1a_r5_f1_r17_async_completion_evidence_exact: true
+  p8_2_k1a_r5_f1_r17_h2d_restore_mechanism_accepted: true
+  p8_2_k1a_r5_f1_r17_full_trace_event_count: 1369
+  p8_2_k1a_r5_f1_r17_d2h_completed_worker_count: 8
+  p8_2_k1a_r5_f1_r17_h2d_completed_worker_count: 8
+  p8_2_k1a_r5_f1_r17_h2d_bytes_total: 1076510720
+  p8_2_k1a_r5_f1_r17_async_copy_failure_event_count: 0
   p8_2_k1a_r5_f1_r11_npu_execution_authorized: false
   p8_2_k1a_r5_f1_r12_npu_execution_authorized: false
   p8_2_k1a_r5_f1_r13_npu_execution_authorized: false
@@ -723,7 +735,18 @@ acceptance:
   p8_2_k1a_r5_f1_r15_next_task_authorized: false
   p8_2_k1a_r5_f1_r16_next_task_authorized: false
   p8_2_k1a_r5_f1_r17_next_task_authorized: false
-  current_task_scoped_authorization: P8.2-K1A-R5-F1-R17_offline_r15_complete_trace_source_replay
+  p8_2_k2_r0_grade: pending_server_execution
+  p8_2_k2_r0_execution_authorized: true
+  p8_2_k2_r0_npu_execution_authorized: true
+  p8_2_k2_r0_formal_model_lifecycle_count_exact: 1
+  p8_2_k2_r0_model_request_count_exact: 3
+  p8_2_k2_r0_request_retry_count_exact: 0
+  p8_2_k2_r0_internal_prefix_cache_enabled: false
+  p8_2_k2_r0_ucm_source_commit: 01cbf9b71892c88319862fa57f195b0bef93fa6f
+  p8_2_k2_r0_ucm_store_pipeline: Cache|Posix
+  p8_2_k2_r0_performance_benefit_required: false
+  p8_2_k2_r0_next_task_authorized: false
+  current_task_scoped_authorization: P8.2-K2-R0_pinned_ucm_dram_external_prefix_path
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory

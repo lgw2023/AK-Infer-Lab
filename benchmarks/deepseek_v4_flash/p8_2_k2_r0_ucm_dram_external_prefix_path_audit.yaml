@@ -1,0 +1,66 @@
+schema_version: 1
+task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
+stage: P8.2-K2-R0
+
+developer_decision:
+  k1a_f1_closed_by_r17: true
+  k1a_f1_grade: green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed
+  next_substantive_path: UCM_External_KV_Cache_DRAM_first
+  performance_benefit_is_not_an_implementation_prerequisite: true
+  unique_root_cause_is_not_an_implementation_prerequisite: true
+  objective: implement_and_exercise_the_real_external_prefix_object_path
+
+pinned_ucm_source:
+  url: https://github.com/ModelEngine-Group/unified-cache-management.git
+  commit: 01cbf9b71892c88319862fa57f195b0bef93fa6f
+  commit_date: "2026-07-28"
+  source_license: MIT
+  integration_symbols:
+    - ucm.integration.vllm.ucm_connector.UCMConnector
+    - vllm_ascend.distributed.kv_transfer.kv_pool.ucm_connector.UCMConnectorV1
+    - ucm.integration.vllm.patch.v0221.vllm_ascend.ascend_hybrid_cache_patch
+    - ucm.integration.vllm.rank_consistency
+  source_support_claim:
+    model: DeepSeek V4 Flash
+    runtime: vLLM-Ascend
+    platform: 910B
+    feature: Prefix Cache
+  runtime_verification_still_required: true
+
+implementation:
+  workload: benchmarks/deepseek_v4_flash/workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
+  request_runner: tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
+  lifecycle_runner: tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh
+  server_task_driver: tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh
+  server_ai_code_changes_required: false
+  dependency_provisioning_automated: true
+  lifecycle_and_cleanup_automated: true
+  result_finalization_and_manifest_automated: true
+
+evidence:
+  path_events:
+    - prime_save_bytes
+    - cache_dump_bytes
+    - follower_ucm_hit_tokens
+    - cache_lookup_hit_blocks
+    - cache_load_bytes
+    - connector_load_bytes
+    - posix_s2h_bytes
+    - gpu_hbm_hit_tokens
+  latency_fields_descriptive:
+    - ttft_ms
+    - tpot_ms
+    - itl_p95_ms
+    - e2el_ms
+  result_interpretation: path_acceptance_does_not_depend_on_latency_delta_sign
+
+operational_contract:
+  keep_alive_stop_cards: [0, 1, 2, 3, 4, 5, 6, 7]
+  keep_alive_restore_same_cards_on_every_exit: true
+  port: 7000
+  one_lifecycle: true
+  no_retry: true
+  no_sweep: true
+  raw_artifacts_server_local: true
+  result_transfer_authorized: true
+  automatic_transfer_allowed: false
