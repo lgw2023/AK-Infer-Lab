@@ -1,0 +1,2962 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>P8 分层工程原型｜主要结果与证据链仪表盘</title>
+  <style>
+    :root {
+      --paper: #f2efe6;
+      --paper-2: #fbfaf5;
+      --paper-3: #e9e3d4;
+      --ink: #192027;
+      --muted: #626970;
+      --navy: #123b5d;
+      --navy-2: #082a45;
+      --navy-soft: #e2ebf1;
+      --red: #ae3027;
+      --red-dark: #822119;
+      --red-soft: #f7e5df;
+      --amber: #c47a16;
+      --amber-soft: #fff0c9;
+      --green: #286a4a;
+      --green-soft: #e1efe5;
+      --gray-soft: #e7e8e5;
+      --line: #74746e;
+      --line-soft: #c7c3b8;
+      --shadow: 0 18px 40px rgba(19, 31, 40, .12);
+      --rail-width: 258px;
+      --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Menlo, monospace;
+      --sans: "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --serif: "Source Han Serif SC", "Songti SC", STSong, serif;
+      --condensed: "Avenir Next Condensed", "Arial Narrow", var(--sans);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 24px;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(18, 59, 93, .035) 1px, transparent 1px),
+        linear-gradient(rgba(174, 48, 39, .025) 1px, transparent 1px),
+        var(--paper);
+      background-size: 44px 44px;
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .scroll-progress {
+      position: fixed;
+      inset: 0 auto auto 0;
+      z-index: 100;
+      width: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--red), var(--amber));
+      box-shadow: 0 0 14px rgba(174, 48, 39, .55);
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: var(--rail-width) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .side-rail {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      height: 100vh;
+      overflow: auto;
+      border-right: 1px solid rgba(255, 255, 255, .12);
+      background:
+        radial-gradient(circle at 15% 5%, rgba(255, 255, 255, .12), transparent 26%),
+        linear-gradient(155deg, #143f62 0%, #0a2f4b 58%, #07243a 100%);
+      color: #f8f5ed;
+      padding: 28px 22px 22px;
+    }
+
+    .rail-brand {
+      padding-bottom: 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, .2);
+    }
+
+    .rail-kicker {
+      margin: 0 0 8px;
+      color: #e2bb73;
+      font-family: var(--condensed);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .rail-brand strong {
+      display: block;
+      font-family: var(--serif);
+      font-size: 29px;
+      line-height: 1.08;
+      letter-spacing: -.04em;
+    }
+
+    .rail-brand span {
+      display: block;
+      margin-top: 8px;
+      color: #bdcbd5;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .rail-nav {
+      display: grid;
+      gap: 3px;
+      margin: 22px 0;
+    }
+
+    .rail-nav a {
+      position: relative;
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      align-items: center;
+      min-height: 34px;
+      padding: 5px 8px;
+      border: 1px solid transparent;
+      color: #cfdae2;
+      font-size: 12px;
+      text-decoration: none;
+      transition: .2s ease;
+    }
+
+    .rail-nav a::before {
+      content: attr(data-index);
+      color: #e2bb73;
+      font-family: var(--condensed);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .rail-nav a:hover,
+    .rail-nav a.active {
+      border-color: rgba(255, 255, 255, .24);
+      background: rgba(255, 255, 255, .09);
+      color: #fff;
+      transform: translateX(3px);
+    }
+
+    .rail-legend {
+      display: grid;
+      gap: 8px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255, 255, 255, .2);
+      font-size: 10px;
+    }
+
+    .legend-item {
+      display: grid;
+      grid-template-columns: 8px 1fr;
+      gap: 8px;
+      align-items: center;
+      color: #c5d1d9;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, .08);
+    }
+
+    .legend-dot.negative {
+      background: #d8833f;
+    }
+
+    .legend-dot.open {
+      background: #9aa2a7;
+    }
+
+    .rail-foot {
+      margin-top: 18px;
+      color: #91a6b5;
+      font-family: var(--mono);
+      font-size: 9px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .page {
+      min-width: 0;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 50px;
+      padding: 8px clamp(18px, 3vw, 48px);
+      border-bottom: 1px solid var(--line);
+      background: rgba(242, 239, 230, .94);
+      backdrop-filter: blur(14px);
+    }
+
+    .data-stamp {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .data-stamp strong {
+      color: var(--navy);
+    }
+
+    .toolbar-actions,
+    .filter-group {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tool-button {
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 800;
+      transition: .18s ease;
+    }
+
+    .tool-button:hover,
+    .tool-button.active {
+      border-color: var(--red);
+      color: var(--red);
+      box-shadow: inset 0 -2px 0 var(--red);
+    }
+
+    .content-wrap {
+      width: min(100%, 1540px);
+      margin: 0 auto;
+      padding: 0 clamp(18px, 3vw, 48px) 80px;
+    }
+
+    .hero {
+      position: relative;
+      min-height: 540px;
+      margin: 0 calc(clamp(18px, 3vw, 48px) * -1);
+      padding: 68px clamp(26px, 5vw, 78px) 48px;
+      overflow: hidden;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 87% 15%, rgba(196, 122, 22, .2), transparent 22%),
+        linear-gradient(125deg, rgba(255, 255, 255, .94), rgba(248, 246, 238, .9)),
+        var(--paper-2);
+    }
+
+    .hero::before {
+      content: "P8";
+      position: absolute;
+      right: -10px;
+      top: -68px;
+      color: rgba(18, 59, 93, .055);
+      font-family: var(--condensed);
+      font-size: clamp(230px, 27vw, 430px);
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -.08em;
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 12px;
+      height: 100%;
+      background: linear-gradient(var(--red) 0 44%, var(--amber) 44% 63%, var(--navy) 63%);
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(360px, .8fr);
+      gap: 44px;
+      align-items: end;
+    }
+
+    .hero-grid > * {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 13px;
+      color: var(--navy);
+      font-family: var(--condensed);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
+
+    .hero h1 {
+      max-width: 910px;
+      margin: 0;
+      color: var(--red-dark);
+      font-family: var(--serif);
+      font-size: clamp(48px, 6.6vw, 100px);
+      line-height: .95;
+      letter-spacing: -.065em;
+    }
+
+    .hero h1 small {
+      display: block;
+      margin-top: 18px;
+      color: var(--navy-2);
+      font-family: var(--sans);
+      font-size: clamp(17px, 1.8vw, 28px);
+      line-height: 1.25;
+      letter-spacing: -.02em;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .hero-lead {
+      max-width: 810px;
+      margin: 24px 0 0;
+      color: #3e454a;
+      font-size: 15px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .hero-lead strong {
+      color: var(--red-dark);
+    }
+
+    .hero-status {
+      align-self: stretch;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .76);
+      box-shadow: var(--shadow);
+    }
+
+    .status-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 15px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .status-banner span {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .status-banner b {
+      color: #f5c36a;
+      font-size: 12px;
+    }
+
+    .status-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .status-cell {
+      min-height: 112px;
+      padding: 18px;
+      border-right: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .status-cell:nth-child(2n) {
+      border-right: 0;
+    }
+
+    .status-cell:nth-last-child(-n + 2) {
+      border-bottom: 0;
+    }
+
+    .status-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .06em;
+    }
+
+    .status-cell strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--navy-2);
+      font-family: var(--condensed);
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status-cell em {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.4;
+      font-style: normal;
+    }
+
+    .hero-note {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      margin-top: 34px;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+    }
+
+    .hero-note > div {
+      min-height: 88px;
+      padding: 15px 17px;
+      border-right: 1px solid var(--line-soft);
+    }
+
+    .hero-note > div:last-child {
+      border-right: 0;
+    }
+
+    .hero-note b {
+      display: block;
+      color: var(--red-dark);
+      font-family: var(--serif);
+      font-size: 16px;
+    }
+
+    .hero-note span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .section {
+      padding-top: 82px;
+      scroll-margin-top: 20px;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 22px;
+      padding-bottom: 13px;
+      border-bottom: 2px solid var(--navy);
+    }
+
+    .section-index {
+      color: var(--red);
+      font-family: var(--condensed);
+      font-size: 38px;
+      line-height: .8;
+      font-weight: 950;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      color: var(--navy-2);
+      font-family: var(--serif);
+      font-size: clamp(28px, 3vw, 45px);
+      line-height: 1;
+      letter-spacing: -.035em;
+    }
+
+    .section-title p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .section-tag {
+      color: var(--muted);
+      font-family: var(--condensed);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: rgba(251, 250, 245, .94);
+      box-shadow: 0 9px 24px rgba(19, 31, 40, .07);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 42px;
+      padding: 8px 13px;
+      border-bottom: 1px solid var(--line);
+      background: var(--amber-soft);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .panel-head.blue {
+      background: var(--navy-soft);
+      color: var(--navy-2);
+    }
+
+    .panel-head.green {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .panel-head.red {
+      background: var(--red-soft);
+      color: var(--red-dark);
+    }
+
+    .panel-head small {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .panel-body {
+      padding: 17px;
+    }
+
+    .executive-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .result-card {
+      position: relative;
+      min-width: 0;
+      min-height: 188px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+      padding: 21px 21px 18px 25px;
+      transition: .22s ease;
+    }
+
+    .result-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow);
+    }
+
+    .result-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 7px;
+      background: var(--green);
+    }
+
+    .result-card[data-state="negative"]::before {
+      background: var(--amber);
+    }
+
+    .result-card[data-state="open"]::before {
+      background: #90989e;
+    }
+
+    .result-card.hidden {
+      display: none;
+    }
+
+    .result-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-family: var(--condensed);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .state-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 3px 7px;
+      border: 1px solid var(--green);
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .05em;
+    }
+
+    .state-pill.negative {
+      border-color: var(--amber);
+      background: var(--amber-soft);
+      color: #854c05;
+    }
+
+    .state-pill.open {
+      border-color: #888f94;
+      background: var(--gray-soft);
+      color: #5d6469;
+    }
+
+    .result-card h3 {
+      margin: 16px 0 9px;
+      color: var(--navy-2);
+      font-family: var(--serif);
+      font-size: 23px;
+      line-height: 1.12;
+    }
+
+    .result-card p {
+      margin: 0;
+      color: #51585d;
+      font-size: 12px;
+      line-height: 1.68;
+    }
+
+    .result-card strong {
+      color: var(--red-dark);
+    }
+
+    .stage-map {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(160px, 1fr));
+      margin-top: 18px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+    }
+
+    .stage-node {
+      position: relative;
+      min-height: 156px;
+      padding: 17px 15px;
+      border-right: 1px solid var(--line-soft);
+    }
+
+    .stage-node:last-child {
+      border-right: 0;
+    }
+
+    .stage-node::after {
+      content: "";
+      position: absolute;
+      left: 15px;
+      right: 15px;
+      bottom: 14px;
+      height: 5px;
+      background: var(--green);
+    }
+
+    .stage-node.negative::after {
+      background: linear-gradient(90deg, var(--amber) 0 42%, var(--green) 42%);
+    }
+
+    .stage-node.open::after {
+      background: #c7c9c8;
+    }
+
+    .stage-node small {
+      color: var(--red);
+      font-family: var(--condensed);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .12em;
+    }
+
+    .stage-node strong {
+      display: block;
+      margin: 8px 0 6px;
+      color: var(--navy-2);
+      font-size: 17px;
+      line-height: 1.15;
+    }
+
+    .stage-node span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.5;
+    }
+
+    .contract-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+      gap: 14px;
+    }
+
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--line-soft);
+      border-right: 0;
+      border-bottom: 0;
+    }
+
+    .spec {
+      min-height: 98px;
+      padding: 13px;
+      border-right: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+      background: #fff;
+    }
+
+    .spec span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .spec strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--navy-2);
+      font-family: var(--condensed);
+      font-size: 20px;
+      line-height: 1.05;
+      font-weight: 950;
+    }
+
+    .spec em {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.35;
+      font-style: normal;
+    }
+
+    .guard-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .guard-list li {
+      position: relative;
+      padding: 10px 11px 10px 34px;
+      border: 1px solid var(--line-soft);
+      background: #fff;
+      color: #4e555a;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .guard-list li::before {
+      content: "×";
+      position: absolute;
+      left: 11px;
+      top: 8px;
+      color: var(--red);
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      position: relative;
+      min-width: 0;
+      min-height: 128px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+      padding: 15px 16px;
+    }
+
+    .metric::after {
+      content: "";
+      position: absolute;
+      right: -18px;
+      bottom: -31px;
+      width: 88px;
+      height: 88px;
+      border: 12px solid rgba(18, 59, 93, .055);
+      border-radius: 50%;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 10px;
+      color: var(--navy-2);
+      font-family: var(--condensed);
+      font-size: clamp(28px, 3vw, 43px);
+      line-height: .92;
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.04em;
+    }
+
+    .metric em {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.35;
+      font-style: normal;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      line-height: 1.35;
+      font-variant-numeric: tabular-nums;
+    }
+
+    th,
+    td {
+      padding: 8px 9px;
+      border-right: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th:last-child,
+    td:last-child {
+      border-right: 0;
+    }
+
+    thead th {
+      background: var(--navy);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .04em;
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(231, 232, 229, .42);
+    }
+
+    td.num {
+      font-family: var(--condensed);
+      font-weight: 900;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    td.good {
+      color: var(--green);
+      font-weight: 900;
+    }
+
+    td.warn {
+      color: #9a5700;
+      font-weight: 900;
+    }
+
+    .boundary-note {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-left: 6px solid var(--amber);
+      background: var(--amber-soft);
+      color: #60491f;
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .boundary-note strong {
+      color: #7a4500;
+    }
+
+    .k1a-story {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .capacity-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .capacity-wave {
+      position: relative;
+      min-height: 74px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 12px 13px;
+    }
+
+    .capacity-wave::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: var(--fill);
+      height: 7px;
+      background: var(--green);
+    }
+
+    .capacity-wave span {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .capacity-wave strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--navy-2);
+      font-family: var(--condensed);
+      font-size: 19px;
+    }
+
+    .capacity-wave em {
+      display: block;
+      margin-top: 3px;
+      color: var(--green);
+      font-size: 9px;
+      font-style: normal;
+      font-weight: 900;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      gap: 0;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 94px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--line-soft);
+    }
+
+    .timeline-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: 78px 1fr auto;
+      gap: 20px;
+      min-height: 92px;
+      padding: 15px 15px 15px 12px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .timeline-row:last-child {
+      border-bottom: 0;
+    }
+
+    .timeline-row::before {
+      content: "";
+      position: absolute;
+      left: 87px;
+      top: 27px;
+      width: 14px;
+      height: 14px;
+      border: 3px solid var(--paper-2);
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 1px var(--green);
+    }
+
+    .timeline-row.negative::before {
+      background: var(--amber);
+      box-shadow: 0 0 0 1px var(--amber);
+    }
+
+    .round {
+      color: var(--red);
+      font-family: var(--condensed);
+      font-size: 20px;
+      font-weight: 950;
+    }
+
+    .timeline-copy strong {
+      display: block;
+      color: var(--navy-2);
+      font-size: 13px;
+    }
+
+    .timeline-copy span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .timeline-value {
+      align-self: center;
+      min-width: 106px;
+      padding: 7px 9px;
+      border: 1px solid var(--line-soft);
+      background: #fff;
+      color: var(--navy-2);
+      font-family: var(--condensed);
+      font-size: 12px;
+      font-weight: 950;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .mechanism {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(130px, 1fr));
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      background: var(--navy-2);
+      color: #fff;
+    }
+
+    .mechanism-step {
+      position: relative;
+      min-height: 185px;
+      padding: 20px 16px 18px;
+      border-right: 1px solid rgba(255, 255, 255, .18);
+    }
+
+    .mechanism-step:last-child {
+      border-right: 0;
+    }
+
+    .mechanism-step::after {
+      content: "→";
+      position: absolute;
+      right: -12px;
+      top: 65px;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(255, 255, 255, .3);
+      border-radius: 50%;
+      background: var(--navy-2);
+      color: #f0c66c;
+      font-weight: 900;
+    }
+
+    .mechanism-step:last-child::after {
+      display: none;
+    }
+
+    .mechanism-step small {
+      color: #efc66d;
+      font-family: var(--condensed);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .1em;
+    }
+
+    .mechanism-step strong {
+      display: block;
+      margin-top: 17px;
+      font-family: var(--serif);
+      font-size: 17px;
+      line-height: 1.18;
+    }
+
+    .mechanism-step span {
+      display: block;
+      margin-top: 10px;
+      color: #b9c9d4;
+      font-size: 9px;
+      line-height: 1.5;
+    }
+
+    .mechanism-step b {
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .worker-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 5px;
+      margin-top: 12px;
+    }
+
+    .worker {
+      display: grid;
+      place-items: center;
+      min-height: 54px;
+      border: 1px solid #78a08b;
+      background: var(--green-soft);
+      color: var(--green);
+      font-family: var(--condensed);
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .worker.diagnostic {
+      border-style: dashed;
+      border-color: var(--amber);
+      background: var(--amber-soft);
+      color: #8b5209;
+    }
+
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .inventory-metric {
+      min-height: 145px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 17px;
+    }
+
+    .inventory-metric span {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .inventory-metric strong {
+      display: block;
+      margin-top: 14px;
+      color: var(--navy-2);
+      font-family: var(--condensed);
+      font-size: 34px;
+      line-height: .95;
+      font-weight: 950;
+      letter-spacing: -.03em;
+    }
+
+    .inventory-metric em {
+      display: block;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.4;
+      font-style: normal;
+    }
+
+    .claims-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .claim-list {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .claim-list li {
+      position: relative;
+      padding: 10px 12px 10px 37px;
+      border: 1px solid var(--line-soft);
+      background: #fff;
+      color: #4d555a;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .claim-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 12px;
+      top: 9px;
+      color: var(--green);
+      font-weight: 950;
+    }
+
+    .claim-list.no li::before {
+      content: "—";
+      color: var(--red);
+    }
+
+    .next-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .next-card {
+      position: relative;
+      min-height: 215px;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+      padding: 21px;
+    }
+
+    .next-card::before {
+      content: attr(data-order);
+      position: absolute;
+      right: 12px;
+      top: 6px;
+      color: rgba(18, 59, 93, .09);
+      font-family: var(--condensed);
+      font-size: 76px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .next-card small {
+      position: relative;
+      color: var(--red);
+      font-family: var(--condensed);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .1em;
+    }
+
+    .next-card strong {
+      position: relative;
+      display: block;
+      max-width: 80%;
+      margin: 13px 0 10px;
+      color: var(--navy-2);
+      font-family: var(--serif);
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    .next-card p {
+      position: relative;
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.62;
+    }
+
+    .evidence-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .evidence-item {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr) auto;
+      gap: 13px;
+      align-items: center;
+      min-height: 58px;
+      padding: 9px 12px;
+      border: 1px solid var(--line-soft);
+      background: #fff;
+    }
+
+    .evidence-item b {
+      color: var(--navy);
+      font-family: var(--condensed);
+      font-size: 12px;
+    }
+
+    .evidence-item a,
+    .evidence-item code {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      color: #4a5156;
+      font-family: var(--mono);
+      font-size: 9px;
+      line-height: 1.45;
+      text-decoration: none;
+    }
+
+    .evidence-item a:hover {
+      color: var(--red);
+      text-decoration: underline;
+    }
+
+    .evidence-item span {
+      color: var(--muted);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 12px 14px;
+      background: var(--navy-soft);
+      color: var(--navy-2);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    details .details-body {
+      padding: 15px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.65;
+    }
+
+    .update-protocol {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+    }
+
+    .protocol-step {
+      min-height: 126px;
+      padding: 16px;
+      border-right: 1px solid var(--line-soft);
+    }
+
+    .protocol-step:last-child {
+      border-right: 0;
+    }
+
+    .protocol-step b {
+      color: var(--red);
+      font-family: var(--condensed);
+      font-size: 12px;
+    }
+
+    .protocol-step strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--navy-2);
+      font-size: 13px;
+    }
+
+    .protocol-step span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.45;
+    }
+
+    .page-footer {
+      margin-top: 82px;
+      padding: 23px 0;
+      border-top: 3px solid var(--red);
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.6;
+    }
+
+    .page-footer strong {
+      color: var(--navy);
+    }
+
+    .to-top {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 25;
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--line);
+      background: var(--navy);
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: .2s ease;
+    }
+
+    .to-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1180px) {
+      :root {
+        --rail-width: 220px;
+      }
+
+      .hero-grid,
+      .contract-grid,
+      .evidence-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-status {
+        min-height: 290px;
+      }
+
+      .metric-strip,
+      .inventory-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .k1a-story {
+        grid-template-columns: 1fr;
+      }
+
+      .capacity-stack {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .capacity-wave {
+        min-height: 100px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .shell {
+        display: block;
+      }
+
+      .side-rail {
+        position: relative;
+        width: 100%;
+        height: auto;
+        padding: 20px;
+      }
+
+      .rail-brand {
+        padding-bottom: 12px;
+      }
+
+      .rail-brand strong {
+        font-size: 24px;
+      }
+
+      .rail-nav {
+        grid-template-columns: repeat(3, 1fr);
+        margin: 14px 0;
+      }
+
+      .rail-legend,
+      .rail-foot {
+        display: none;
+      }
+
+      .topbar {
+        position: relative;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 45px;
+      }
+
+      .hero-grid {
+        gap: 28px;
+      }
+
+      .hero-note,
+      .executive-grid,
+      .two-col,
+      .claims-grid,
+      .next-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-note > div {
+        border-right: 0;
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .hero-note > div:last-child {
+        border-bottom: 0;
+      }
+
+      .section-head {
+        grid-template-columns: 48px 1fr;
+      }
+
+      .section-tag {
+        display: none;
+      }
+
+      .spec-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .metric-strip,
+      .inventory-grid,
+      .capacity-stack {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .update-protocol {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .protocol-step:nth-child(2) {
+        border-right: 0;
+      }
+
+      .protocol-step:nth-child(-n + 2) {
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .evidence-item {
+        grid-template-columns: 90px 1fr;
+      }
+
+      .evidence-item span {
+        grid-column: 2;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .rail-nav {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .content-wrap {
+        padding-left: 13px;
+        padding-right: 13px;
+      }
+
+      .hero {
+        margin: 0 -13px;
+        padding-left: 25px;
+        padding-right: 18px;
+      }
+
+      .hero h1 {
+        font-size: 46px;
+      }
+
+      .hero h1 small {
+        max-width: 100%;
+        font-size: 19px;
+        word-break: break-all;
+      }
+
+      .hero-grid,
+      .hero-grid > *,
+      .hero-status,
+      .status-body {
+        width: calc(100vw - 43px);
+        max-width: calc(100vw - 43px);
+        min-width: 0;
+      }
+
+      .eyebrow,
+      .hero-lead,
+      .hero h1 small {
+        width: calc(100vw - 43px);
+        max-width: calc(100vw - 43px);
+        white-space: normal;
+        word-break: break-all;
+      }
+
+      .status-banner {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-content: center;
+      }
+
+      .status-banner span,
+      .status-banner b {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .hero-status .status-body,
+      .metric-strip,
+      .inventory-grid,
+      .capacity-stack,
+      .spec-grid,
+      .update-protocol {
+        grid-template-columns: 1fr;
+      }
+
+      .status-cell {
+        border-right: 0;
+      }
+
+      .status-cell:nth-last-child(-n + 2) {
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .status-cell:last-child {
+        border-bottom: 0;
+      }
+
+      .section {
+        padding-top: 58px;
+      }
+
+      .timeline::before,
+      .timeline-row::before {
+        display: none;
+      }
+
+      .timeline-row {
+        grid-template-columns: 60px 1fr;
+      }
+
+      .timeline-value {
+        grid-column: 2;
+        justify-self: start;
+      }
+
+      .worker-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .protocol-step {
+        border-right: 0;
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .protocol-step:last-child {
+        border-bottom: 0;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .side-rail,
+      .topbar,
+      .to-top,
+      .scroll-progress {
+        display: none !important;
+      }
+
+      .shell {
+        display: block;
+      }
+
+      .content-wrap {
+        width: 100%;
+        padding: 0 18px;
+      }
+
+      .hero {
+        min-height: auto;
+        margin: 0 -18px;
+        padding: 35px 35px 25px;
+        break-after: page;
+      }
+
+      .section {
+        padding-top: 28px;
+        break-before: page;
+      }
+
+      .panel,
+      .result-card,
+      .metric,
+      .inventory-metric,
+      .next-card {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      .result-card:hover {
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+  <div class="shell">
+    <aside class="side-rail" aria-label="页面导航">
+      <div class="rail-brand">
+        <p class="rail-kicker">AK-Infer-Lab / Evidence Ledger</p>
+        <strong>P8 分层工程原型</strong>
+        <span>主要结果、实验合同、机制证据与开放门的持续记录页</span>
+      </div>
+      <nav class="rail-nav">
+        <a href="#overview" data-index="01">阶段判断</a>
+        <a href="#contract" data-index="02">实验合同</a>
+        <a href="#observe" data-index="03">P8.0 / P8.1</a>
+        <a href="#prefix" data-index="04">P8.2-K0 / K1</a>
+        <a href="#k1a" data-index="05">K1A 容量与演进</a>
+        <a href="#mechanism" data-index="06">R17 机制闭环</a>
+        <a href="#expert" data-index="07">P8.3 专家资产</a>
+        <a href="#boundary" data-index="08">结论边界</a>
+        <a href="#next" data-index="09">开放门与下一步</a>
+        <a href="#evidence" data-index="10">证据索引</a>
+      </nav>
+      <div class="rail-legend">
+        <div class="legend-item"><span class="legend-dot"></span><span>已验证：当前边界内可接受</span></div>
+        <div class="legend-item"><span class="legend-dot negative"></span><span>有效负结论：阻断或修正了错误路线</span></div>
+        <div class="legend-item"><span class="legend-dot open"></span><span>开放门：尚未授权或证据不足</span></div>
+      </div>
+      <div class="rail-foot">
+        DATA CUT · 2026-07-28<br>
+        CURRENT MECHANISM TERMINAL · R17<br>
+        CLAIM CEILING · INSTRUMENTED PATH
+      </div>
+    </aside>
+
+    <div class="page">
+      <header class="topbar">
+        <div class="data-stamp">
+          数据截点：<strong>2026-07-28 / R17 已验收，K2-R0 已开发待实机</strong> · 页面不读取网络资源
+        </div>
+        <div class="toolbar-actions">
+          <div class="filter-group" aria-label="结果筛选">
+            <button class="tool-button active" type="button" data-filter="all">全部</button>
+            <button class="tool-button" type="button" data-filter="validated">已验证</button>
+            <button class="tool-button" type="button" data-filter="negative">有效负结论</button>
+            <button class="tool-button" type="button" data-filter="open">开放门</button>
+          </div>
+          <button class="tool-button" type="button" id="printButton">打印 / PDF</button>
+        </div>
+      </header>
+
+      <main class="content-wrap">
+        <section class="hero" id="top">
+          <div class="hero-grid">
+            <div>
+              <p class="eyebrow">DeepSeek-V4-Flash W8A8-MTP · Ascend 910B1 · TP8</p>
+              <h1>
+                P8
+                <small>从“能力存在”推进到“KV DRAM warm tier 真实迁移闭环”</small>
+              </h1>
+              <p class="hero-lead">
+                P8 的主要有效进展不是若干轮 grade 颜色变化，而是把
+                <strong>source capability → observe-only trace → Prefix Cache 对照 →
+                精确 CPU capacity → D2H store → logical CPU hit → H2D restore</strong>
+                连成了同一条可追溯证据链。R17 已在既有 accepted-capacity 单 lifecycle
+                上关闭 KV warm-tier 机制问题；专家分层路线已完成 checkpoint inventory，
+                但 TP4 materialized budget 与 runtime hotness 仍是开放门。
+              </p>
+            </div>
+            <div class="hero-status" aria-label="阶段关键数字">
+              <div class="status-banner">
+                <span>Current stage verdict</span>
+                <b>MECHANISM CLOSED</b>
+              </div>
+              <div class="status-body">
+                <div class="status-cell">
+                  <span>R17 完整轨迹事件</span>
+                  <strong>1,369</strong>
+                  <em>20 files；比 R16 恢复 1,050 events</em>
+                </div>
+                <div class="status-cell">
+                  <span>H2D 完成 worker</span>
+                  <strong>8 / 8</strong>
+                  <em>submitted → poll-returned → completed</em>
+                </div>
+                <div class="status-cell">
+                  <span>H2D 实际传输</span>
+                  <strong>1.003 GiB</strong>
+                  <em>1,076,510,720 bytes；0 async failure</em>
+                </div>
+                <div class="status-cell">
+                  <span>accepted CPU capacity</span>
+                  <strong>128 blocks</strong>
+                  <em>每 rank 430,604,288 bytes</em>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-note">
+            <div>
+              <b>已关闭</b>
+              <span>SimpleCPUOffload 的 8-rank D2H store 与 DRAM→HBM restore 机制。</span>
+            </div>
+            <div>
+              <b>已保留</b>
+              <span>K1 frozen-stack import blocked、R16 selector fault 等有效负结论及 provenance。</span>
+            </div>
+            <div>
+              <b>未外推</b>
+              <span>不宣称性能收益、唯一根因、生产可用性，也不把 1.08GB copy 当成收益。</span>
+            </div>
+            <div>
+              <b>仍开放</b>
+              <span>K2-R0 external KV 已单独授权并待实机；P8.3-I1、P8.4、P8.5 / TP4 仍未授权。</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="overview" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">01</div>
+            <div class="section-title">
+              <h2>阶段判断：主线已形成，终局尚未到达</h2>
+              <p>把“已验证”“有效负结论”“开放门”分开，避免用单一完成率掩盖证据边界。</p>
+            </div>
+            <div class="section-tag">Executive readout</div>
+          </div>
+
+          <div class="executive-grid">
+            <article class="result-card filterable" data-state="validated">
+              <div class="result-meta">
+                <span>KV warm tier / K1A</span>
+                <span class="state-pill">已验证</span>
+              </div>
+              <h3>DRAM warm-tier 真实 store / restore 机制闭合</h3>
+              <p>在 accepted <strong>128 CPU blocks/rank</strong>、fixed pressure
+                <strong>36,800 tokens</strong>、restore match <strong>16,384 tokens</strong>
+                的单 lifecycle 内，D2H 与 H2D 均为 8/8 worker 完成。</p>
+            </article>
+
+            <article class="result-card filterable" data-state="validated">
+              <div class="result-meta">
+                <span>Instrumentation / P8.1</span>
+                <span class="state-pill">已验证</span>
+              </div>
+              <h3>请求、MTP、Prefix proxy 可在同一 session 中对齐</h3>
+              <p>P8.1-R1 六条请求覆盖 4K / 64K / 131K，<strong>6/6 HTTP 200</strong>，
+                每请求 MTP accepted/draft delta 均为 32；64K follower 精确命中 49,152 tokens。</p>
+            </article>
+
+            <article class="result-card filterable" data-state="negative">
+              <div class="result-meta">
+                <span>Frozen path / K1</span>
+                <span class="state-pill negative">有效负结论</span>
+              </div>
+              <h3>旧 OffloadingConnector 路径被 import 合同阻断</h3>
+              <p>固定 vLLM/vLLM-Ascend 栈缺少 <strong>vllm.v1.kv_offload.abstract</strong>，
+                NPUOffloadingSpec 导入失败；零 NPU、零请求停止，未把不兼容路线伪装成 runtime RED。</p>
+            </article>
+
+            <article class="result-card filterable" data-state="open">
+              <div class="result-meta">
+                <span>Expert / TP4 track</span>
+                <span class="state-pill open">开放门</span>
+              </div>
+              <h3>Checkpoint inventory 已绿，TP4 runtime budget 仍不完整</h3>
+              <p><strong>103,176 tensors / 70 shards / 300,002,377,534 bytes</strong>
+                已全量核对；仍有 1,135 tensors / 12,319,364,956 bytes 仅完成 taxonomy，
+                materialized bytes 未实测。</p>
+            </article>
+          </div>
+
+          <div class="stage-map" aria-label="P8 阶段地图">
+            <div class="stage-node">
+              <small>P8.0</small>
+              <strong>能力与底座</strong>
+              <span>13 项 fixed-tag capability；离线 State Runtime 垂直切片。</span>
+            </div>
+            <div class="stage-node">
+              <small>P8.1</small>
+              <strong>Observe-only</strong>
+              <span>R1 6/6 请求、trace validation=0、shared-prefix exact。</span>
+            </div>
+            <div class="stage-node negative">
+              <small>P8.2</small>
+              <strong>K0 / K1 / K1A</strong>
+              <span>K0 green；K1 valid blocked；K1A R17 mechanism closed。</span>
+            </div>
+            <div class="stage-node open">
+              <small>P8.2</small>
+              <strong>K2 / K3 / K4</strong>
+              <span>External KV、cold persistence、MindIE 对照尚未授权。</span>
+            </div>
+            <div class="stage-node open">
+              <small>P8.3</small>
+              <strong>I0 green / I1 open</strong>
+              <span>Inventory/taxonomy 完成；hotness、placement A/B 未开始。</span>
+            </div>
+            <div class="stage-node open">
+              <small>P8.4–P8.6</small>
+              <strong>Simulation → mover</strong>
+              <span>需真实 expert bytes、hotness、latency 与 TP4 ownership 输入。</span>
+            </div>
+          </div>
+
+          <details style="margin-top:14px">
+            <summary>主要任务与 formal grade 台账（保留历史 provenance）</summary>
+            <div class="details-body">
+              <table>
+                <thead>
+                  <tr>
+                    <th>阶段 / 任务</th>
+                    <th>Formal grade / 状态</th>
+                    <th>保留解释</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>P8.0 fixed-tag capability</td>
+                    <td><code>claim_ceiling=instrumented</code></td>
+                    <td>13 项均有 source evidence；不是 selected-workload runtime 结论。</td>
+                  </tr>
+                  <tr>
+                    <td>P8.1 parent / R1</td>
+                    <td><code>yellow_p8_1_matrix_trace_invalid</code><br><code>candidate_green_p8_1_r1_official_mtp_observe_only_matrix</code></td>
+                    <td>父轮 shared-prefix miss 保留；R1 在 frozen body/repair gate 下得到 exact 49,152 hit。</td>
+                  </tr>
+                  <tr>
+                    <td>P8.2-K0-R1</td>
+                    <td><code>candidate_green_p8_2_k0_order_balanced_prefix_cache_baseline</code></td>
+                    <td>20/20 request、6/6 measured pair；timing 只作描述性统计。</td>
+                  </tr>
+                  <tr>
+                    <td>P8.2-K1</td>
+                    <td><code>candidate_blocked_p8_2_k1_frozen_stack_import_incompatible</code></td>
+                    <td>零 NPU 导入门有效阻断，不修改 frozen stack 强行运行。</td>
+                  </tr>
+                  <tr>
+                    <td>P8.2-K1A initial / R2</td>
+                    <td><code>red_p8_2_k1a_simple_cpu_offload_no_success</code><br><code>candidate_ready_p8_2_k1a_r2_allocator_capacity</code></td>
+                    <td>32 GiB/rank 失败；随后接受 128 blocks/rank 精确容量点。</td>
+                  </tr>
+                  <tr>
+                    <td>P8.2-K1A-R4-R1</td>
+                    <td><code>candidate_green_p8_2_k1a_r4_r1_offline_store_only_closeout</code></td>
+                    <td>接受 D2H store-only；父 runtime RED 与 H2D open 同时保留。</td>
+                  </tr>
+                  <tr>
+                    <td>P8.2-K1A-R15</td>
+                    <td><code>red_p8_2_k1a_r5_f1_r15_h2d_evidence_incomplete</code></td>
+                    <td>restore 已完成且 H2D 8/8；历史 RED 来自旧 live-pending 8/8 判据。</td>
+                  </tr>
+                  <tr>
+                    <td>P8.2-K1A-R16</td>
+                    <td><code>red_p8_2_k1a_r5_f1_r16_async_completion_trace_incomplete</code></td>
+                    <td>formal grade 保留；机制结论因只读 319-event residency family 而无效。</td>
+                  </tr>
+                  <tr>
+                    <td>P8.2-K1A-R17</td>
+                    <td><code>green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed</code></td>
+                    <td>完整 1,369-event replay，same-worker D2H/H2D completion 闭合。</td>
+                  </tr>
+                  <tr>
+                    <td>P8.3-I0 / I0-R1</td>
+                    <td><code>candidate_green_p8_3_i0_checkpoint_inventory</code><br><code>candidate_green_p8_3_i0_r1_unclassified_taxonomy</code></td>
+                    <td>inventory/taxonomy 绿；TP4 runtime claim 仍禁止。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+
+        <section class="section" id="contract" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">02</div>
+            <div class="section-title">
+              <h2>实验合同：哪些量被冻结，哪些结论被禁止</h2>
+              <p>R17 的绿色只在这组 runtime、模型、容量、请求与单 lifecycle 约束内成立。</p>
+            </div>
+            <div class="section-tag">Frozen experiment envelope</div>
+          </div>
+
+          <div class="contract-grid">
+            <div class="panel">
+              <div class="panel-head blue">
+                <span>运行底座与 accepted-capacity 条件</span>
+                <small>DEEPSEEK-V4-FLASH W8A8-MTP</small>
+              </div>
+              <div class="panel-body">
+                <div class="spec-grid">
+                  <div class="spec">
+                    <span>Accelerator</span>
+                    <strong>8× Ascend 910B1</strong>
+                    <em>TP8 + Expert Parallel</em>
+                  </div>
+                  <div class="spec">
+                    <span>vLLM / Ascend</span>
+                    <strong>0.22.1 / 0.22.1rc1</strong>
+                    <em>fixed commits 0decac0 / 5f6faa0</em>
+                  </div>
+                  <div class="spec">
+                    <span>Runtime stack</span>
+                    <strong>CANN 9.0.0</strong>
+                    <em>PyTorch / torch-npu 2.10.0</em>
+                  </div>
+                  <div class="spec">
+                    <span>CPU tier capacity</span>
+                    <strong>128 blocks/rank</strong>
+                    <em>430,604,288 bytes/rank</em>
+                  </div>
+                  <div class="spec">
+                    <span>Shared / restore</span>
+                    <strong>32K / 16K tokens</strong>
+                    <em>restore logical target = 128 hash blocks</em>
+                  </div>
+                  <div class="spec">
+                    <span>Pressure request</span>
+                    <strong>36,800 tokens</strong>
+                    <em>request-local in-flight trigger + intentional abort</em>
+                  </div>
+                  <div class="spec">
+                    <span>KV geometry</span>
+                    <strong>3,364,096 B/block</strong>
+                    <em>44 unique tensors；base block=128 tokens</em>
+                  </div>
+                  <div class="spec">
+                    <span>Lifecycle</span>
+                    <strong>1 formal run</strong>
+                    <em>zero retry / zero sweep / no run02</em>
+                  </div>
+                  <div class="spec">
+                    <span>R15 requests</span>
+                    <strong>3 + 1 abort</strong>
+                    <em>warmup / prime / pressure / restore follower</em>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head red">
+                <span>全阶段 claim boundary</span>
+                <small>FAIL CLOSED</small>
+              </div>
+              <div class="panel-body">
+                <ul class="guard-list">
+                  <li>不把 H2D 1,076,510,720 bytes 自动解释为 TTFT / TPOT / throughput 收益。</li>
+                  <li>不把 compress-aware pairing repair 写成跨模型、跨版本唯一普遍根因。</li>
+                  <li>不把 128 logical hash blocks 等同于每个 KV group 都有 128 个 physical keys。</li>
+                  <li>不从 K1A mechanism green 自动授权 K2、P8.3-I1、P8.4、P8.5 或 P9。</li>
+                  <li>不把 checkpoint file bytes 代填为 runtime materialized bytes 或 TP4 HBM budget。</li>
+                  <li>R16 formal RED 保留；只 supersede 其基于不完整 selector 的机制结论。</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="observe" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">03</div>
+            <div class="section-title">
+              <h2>P8.0 / P8.1：先把“能观测”做成可验证资产</h2>
+              <p>从 fixed-tag source evidence、离线 schema/toolchain，到 selected workload 的 4K–131K request join。</p>
+            </div>
+            <div class="section-tag">Capability &amp; observation</div>
+          </div>
+
+          <div class="metric-strip">
+            <div class="metric">
+              <span>Fixed-tag capabilities</span>
+              <strong>13</strong>
+              <em>7 available_uninstrumented + 6 instrumented</em>
+            </div>
+            <div class="metric">
+              <span>Offline tracer bullet</span>
+              <strong>8 events</strong>
+              <em>2 objects / 5 no-op decisions / validation errors=0</em>
+            </div>
+            <div class="metric">
+              <span>P8.1-R1 request matrix</span>
+              <strong>6 / 6</strong>
+              <em>4K×2、64K prime/follower、131K×2；output=64</em>
+            </div>
+            <div class="metric">
+              <span>MTP per-request continuity</span>
+              <strong>+32 × 6</strong>
+              <em>draft / accepted / drafts counters 全部连续</em>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-head blue">
+                <span>P8.0 能力矩阵与工具链</span>
+                <small>CLAIM CEILING = INSTRUMENTED</small>
+              </div>
+              <div class="panel-body">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>资产</th>
+                      <th>实测 / 核验</th>
+                      <th>有效结论</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>vLLM v0.22.1</td>
+                      <td class="num">commit 0decac0</td>
+                      <td>固定 tag 与预期 commit 精确一致</td>
+                    </tr>
+                    <tr>
+                      <td>vLLM-Ascend v0.22.1rc1</td>
+                      <td class="num">commit 5f6faa0</td>
+                      <td>固定 tag 与预期 commit 精确一致</td>
+                    </tr>
+                    <tr>
+                      <td>Source capability</td>
+                      <td class="num">13 / 13</td>
+                      <td>0 unsupported；但初始 selected_workload runtime 仍独立门控</td>
+                    </tr>
+                    <tr>
+                      <td>State Runtime fixture</td>
+                      <td class="num">8 events / 0 error</td>
+                      <td>schema、registry、policy、replay、bundle 可以逐字节重建</td>
+                    </tr>
+                    <tr>
+                      <td>显式未知</td>
+                      <td class="num">2 warnings</td>
+                      <td>ambiguous bytes 保留为 warning，不猜测补值</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head green">
+                <span>P8.1-R1 selected workload observation</span>
+                <small>CANDIDATE GREEN</small>
+              </div>
+              <div class="panel-body">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>检查项</th>
+                      <th>结果</th>
+                      <th>范围</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>请求正确性</td>
+                      <td class="num good">6/6 HTTP 200</td>
+                      <td>每条生成 64 tokens，finish=length</td>
+                    </tr>
+                    <tr>
+                      <td>输入矩阵</td>
+                      <td class="num">4K / 64K / 131K</td>
+                      <td>单 session 顺序请求</td>
+                    </tr>
+                    <tr>
+                      <td>共享前缀 follower</td>
+                      <td class="num good">49,152 hits</td>
+                      <td>64K follower；exact expected hits</td>
+                    </tr>
+                    <tr>
+                      <td>其他请求 prefix hit</td>
+                      <td class="num">0</td>
+                      <td>isolated 与 prime 均保持零命中</td>
+                    </tr>
+                    <tr>
+                      <td>Request↔runtime object join</td>
+                      <td class="num good">complete</td>
+                      <td>device/rank identity unavailable，未伪造</td>
+                    </tr>
+                    <tr>
+                      <td>Queue / health</td>
+                      <td class="num good">6/6 healthy</td>
+                      <td>前后 running=0、waiting=0</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="boundary-note">
+            <strong>P8.1 的结论等级：</strong>这是 request correctness、trace order、counter continuity
+            与 request↔runtime-object join 证据；不是设备/rank 级 join，也不是性能比较。
+          </div>
+        </section>
+
+        <section class="section" id="prefix" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">04</div>
+            <div class="section-title">
+              <h2>P8.2-K0 / K1：Prefix Cache 对照成立，旧 offload 路径有效阻断</h2>
+              <p>K0 证明单变量控制与机制命中；K1 证明 frozen-stack 的直达路径不可导入。</p>
+            </div>
+            <div class="section-tag">Prefix baseline &amp; negative gate</div>
+          </div>
+
+          <div class="metric-strip">
+            <div class="metric">
+              <span>K0 total requests</span>
+              <strong>20 / 20</strong>
+              <em>三 lifecycle；包含 warmup 与 measured</em>
+            </div>
+            <div class="metric">
+              <span>Measured exact pairs</span>
+              <strong>6 / 6</strong>
+              <em>On/Off order-balanced，body pairing exact</em>
+            </div>
+            <div class="metric">
+              <span>Prefix On hits</span>
+              <strong>49,152</strong>
+              <em>6/6 measured On request 命中 exact</em>
+            </div>
+            <div class="metric">
+              <span>Prefix Off hits</span>
+              <strong>0</strong>
+              <em>resolved control exact；single-variable argv exact</em>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-head green">
+                <span>K0 描述性统计（64K exact reuse）</span>
+                <small>6 SAMPLES / MODE · NOT A CAUSAL PERFORMANCE CLAIM</small>
+              </div>
+              <div class="panel-body">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>指标（mean）</th>
+                      <th>Prefix Off</th>
+                      <th>Prefix On</th>
+                      <th>描述性差异</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>TTFT</td>
+                      <td class="num">6,542.85 ms</td>
+                      <td class="num">1,739.29 ms</td>
+                      <td class="num good">−73.4%</td>
+                    </tr>
+                    <tr>
+                      <td>E2EL</td>
+                      <td class="num">19,409.03 ms</td>
+                      <td class="num">14,522.00 ms</td>
+                      <td class="num good">−25.2%</td>
+                    </tr>
+                    <tr>
+                      <td>Output throughput</td>
+                      <td class="num">3.298 tok/s</td>
+                      <td class="num">4.408 tok/s</td>
+                      <td class="num good">+33.6%</td>
+                    </tr>
+                    <tr>
+                      <td>TPOT</td>
+                      <td class="num">204.22 ms</td>
+                      <td class="num">202.90 ms</td>
+                      <td class="num">−0.6%</td>
+                    </tr>
+                    <tr>
+                      <td>TTFT P95</td>
+                      <td class="num">6,676.13 ms</td>
+                      <td class="num">1,763.58 ms</td>
+                      <td class="num">描述性</td>
+                    </tr>
+                    <tr>
+                      <td>E2EL P95</td>
+                      <td class="num">19,749.33 ms</td>
+                      <td class="num">14,760.45 ms</td>
+                      <td class="num">描述性</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <article class="result-card filterable" data-state="negative">
+              <div class="result-meta">
+                <span>P8.2-K1 / frozen compatibility review</span>
+                <span class="state-pill negative">有效阻断</span>
+              </div>
+              <h3>OffloadingConnector + NPUOffloadingSpec 不兼容当前冻结栈</h3>
+              <p>
+                请求配置中的 <strong>vllm_ascend.kv_offload.npu.NPUOffloadingSpec</strong>
+                依赖 `vllm.v1.kv_offload.abstract`；当前 vLLM 0.22.1 导入解析为 null，
+                产生 ModuleNotFoundError。审计在 <strong>npu_started=false /
+                vllm_started=false / model_request_sent=false</strong> 处完成，直接转向
+                SimpleCPUOffloadConnector（K1A）。
+              </p>
+            </article>
+          </div>
+          <div class="boundary-note">
+            <strong>K0 的差异可以展示，但不能升格：</strong>本页保留原始 mean / P95 与描述性百分比，
+            其 formal timing boundary 仍是“descriptive only”；它不等于 K1A offload 收益，
+            更不能替代受控性能 A/B。
+          </div>
+        </section>
+
+        <section class="section" id="k1a" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">05</div>
+            <div class="section-title">
+              <h2>K1A：从 32 GiB/rank 失败，到精确容量与真实迁移</h2>
+              <p>主线实质进展是把“大容量猜测”收缩到可分配几何，再把 store-only 追到 H2D restore。</p>
+            </div>
+            <div class="section-tag">Capacity → D2H → H2D</div>
+          </div>
+
+          <div class="k1a-story">
+            <div>
+              <article class="result-card filterable" data-state="negative">
+                <div class="result-meta">
+                  <span>Initial runtime</span>
+                  <span class="state-pill negative">RED / 有效负结论</span>
+                </div>
+                <h3>32 GiB/rank 不是可接受起点</h3>
+                <p>初始配置总 CPU tier 256 GiB，host memory preflight 虽过，但 pinned allocation
+                  以错误码 <strong>207001</strong> 失败；0/6 请求、D2H/H2D=0。</p>
+              </article>
+
+              <div class="capacity-stack" aria-label="八 rank pinned allocator envelope">
+                <div class="capacity-wave" style="--fill:25%">
+                  <span>32 blocks / rank</span>
+                  <strong>107,651,072 B</strong>
+                  <em>8/8 clean</em>
+                </div>
+                <div class="capacity-wave" style="--fill:50%">
+                  <span>64 blocks / rank</span>
+                  <strong>215,302,144 B</strong>
+                  <em>8/8 clean</em>
+                </div>
+                <div class="capacity-wave" style="--fill:75%">
+                  <span>96 blocks / rank</span>
+                  <strong>322,953,216 B</strong>
+                  <em>8/8 clean</em>
+                </div>
+                <div class="capacity-wave" style="--fill:100%">
+                  <span>128 blocks / rank</span>
+                  <strong>430,604,288 B</strong>
+                  <em>8/8 clean · accepted</em>
+                </div>
+              </div>
+            </div>
+
+            <div class="timeline">
+              <div class="timeline-row">
+                <div class="round">R2</div>
+                <div class="timeline-copy">
+                  <strong>几何与 allocator envelope 精确闭合</strong>
+                  <span>8 rank、44 tensor、3,364,096 bytes/block；128 blocks 对应 16,384 restore tokens，
+                    总 host pinned candidate 3,444,834,304 bytes。</span>
+                </div>
+                <div class="timeline-value">CAPACITY READY</div>
+              </div>
+              <div class="timeline-row">
+                <div class="round">R3–R4</div>
+                <div class="timeline-copy">
+                  <strong>D2H store-only 被接受</strong>
+                  <span>同一 accepted capacity 上 5/6 请求，D2H 8/8、41 store completions、
+                    7,239,534,592 bytes；CPU hit/load/H2D 仍为 0。</span>
+                </div>
+                <div class="timeline-value">D2H 8 / 8</div>
+              </div>
+              <div class="timeline-row negative">
+                <div class="round">F1 R1–R10</div>
+                <div class="timeline-copy">
+                  <strong>中途 CPU-only 窗口、终点 target-loss 与 geometry/keyspace 误差被拆开</strong>
+                  <span>131K calibration 在 scheduler progress 看到 CPU-only；fixed pressure=36,800。
+                    后续逐步修正 request-end gate、logical keyspace、effective group geometry 与 cache-stamp lineage。</span>
+                </div>
+                <div class="timeline-value">WINDOW FOUND</div>
+              </div>
+              <div class="timeline-row">
+                <div class="round">R11</div>
+                <div class="timeline-copy">
+                  <strong>EAGLE-aware lookup 首次得到 exact 16K logical CPU hit</strong>
+                  <span>restore_cpu_hit_exact=true、restore_cpu_hit_tokens_max=16,384；
+                    D2H 8/8，但 load 尚未调度。</span>
+                </div>
+                <div class="timeline-value">CPU HIT 16K</div>
+              </div>
+              <div class="timeline-row negative">
+                <div class="round">R12–R13</div>
+                <div class="timeline-copy">
+                  <strong>阻塞收敛为 compress geometry pairing IndexError</strong>
+                  <span>`update_state_after_alloc` 在 FA group pairing 上越界；raw block_size=128
+                    与 compress-aware effective geometry 不一致。</span>
+                </div>
+                <div class="timeline-value">INDEX ERROR</div>
+              </div>
+              <div class="timeline-row">
+                <div class="round">R14–R15</div>
+                <div class="timeline-copy">
+                  <strong>repair、_reqs_to_load 与 H2D path 被逐步归因</strong>
+                  <span>R14 已出现 H2D 1.08GB；R15 证明 delayed_external_prefill →
+                    pairing repair → `_reqs_to_load` → load scheduled → restore completed。</span>
+                </div>
+                <div class="timeline-value">H2D OBSERVED</div>
+              </div>
+              <div class="timeline-row negative">
+                <div class="round">R16</div>
+                <div class="timeline-copy">
+                  <strong>一次不完整 selector 产生无效机制 RED</strong>
+                  <span>只读 10 个 `h2d-residency.*` / 319 events，遗漏 `trace.*` 中 1,050 个
+                    async events；formal RED 保留，机制结论标为 inconclusive。</span>
+                </div>
+                <div class="timeline-value">SOURCE FAULT</div>
+              </div>
+              <div class="timeline-row">
+                <div class="round">R17</div>
+                <div class="timeline-copy">
+                  <strong>完整双轨迹源重放，same-worker completion 闭合</strong>
+                  <span>20 files / 1,369 events，23 项 R15 replay parity 全匹配；D2H/H2D
+                    submitted、enqueued、copy returned、poll returned、completed 均 8/8。</span>
+                </div>
+                <div class="timeline-value">GREEN / CLOSED</div>
+              </div>
+            </div>
+          </div>
+
+          <details style="margin-top:14px">
+            <summary>为什么 R1–R16 的 RED / BLOCKED 仍是有效结果</summary>
+            <div class="details-body">
+              这些轮次依次排除了“容量必然不足”“fixed pressure 不可复现”“目标必须是 128 个物理 FA key”
+              “Prefix Cache 命中等于 H2D”“最后一次 decode update 可以代表整个 restore”“live-pending
+              瞬时可见性等于 async completion”等错误解释。最终 R17 的 GREEN 依赖这些诊断轮把目标单位、
+              触发窗口、logical/physical keyspace、compress ratio、update/load step、原始轨迹文件族和
+              completion 语义逐项收紧；因此历史 grade 不删除，但不再把每次 RED 当作同一种失败。
+            </div>
+          </details>
+        </section>
+
+        <section class="section" id="mechanism" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">06</div>
+            <div class="section-title">
+              <h2>R17 机制闭环：同一 lifecycle 的完整证据链</h2>
+              <p>R17 不重新运行 NPU，而是用 R15 完整双文件族原始轨迹恢复被 R16 遗漏的 async 边。</p>
+            </div>
+            <div class="section-tag">Mechanism terminal</div>
+          </div>
+
+          <div class="mechanism" aria-label="KV offload restore 因果链">
+            <div class="mechanism-step">
+              <small>01 / PRIME</small>
+              <strong>Target store</strong>
+              <span><b>40 physical target keys</b><br>32 FA keys + logical 16K coverage</span>
+            </div>
+            <div class="mechanism-step">
+              <small>02 / PRESSURE</small>
+              <strong>CPU-only window</strong>
+              <span><b>14 physical + logical window events</b><br>GPU eviction observed</span>
+            </div>
+            <div class="mechanism-step">
+              <small>03 / LOOKUP</small>
+              <strong>Logical CPU hit</strong>
+              <span><b>16,384 tokens</b><br>128 logical hash blocks exact</span>
+            </div>
+            <div class="mechanism-step">
+              <small>04 / ALLOC</small>
+              <strong>Compress-aware repair</strong>
+              <span><b>predicted pairs=40</b><br>repair applied，IndexError 不再出现</span>
+            </div>
+            <div class="mechanism-step">
+              <small>05 / UPDATE</small>
+              <strong>_reqs_to_load</strong>
+              <span><b>delayed_external_prefill</b><br>num_external=16,384</span>
+            </div>
+            <div class="mechanism-step">
+              <small>06 / COPY</small>
+              <strong>H2D restore</strong>
+              <span><b>8/8 workers</b><br>1,076,510,720 bytes，0 failure</span>
+            </div>
+            <div class="mechanism-step">
+              <small>07 / TERMINAL</small>
+              <strong>Request completed</strong>
+              <span><b>restore_request_completed</b><br>resource recovery exact</span>
+            </div>
+          </div>
+
+          <div class="evidence-grid">
+            <div class="panel">
+              <div class="panel-head green">
+                <span>R17 same-worker completion evidence</span>
+                <small>FULL REPLAY = 1,369 EVENTS</small>
+              </div>
+              <div class="panel-body">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>方向</th>
+                      <th>Submitted</th>
+                      <th>Enqueued</th>
+                      <th>Copy entered</th>
+                      <th>Copy returned</th>
+                      <th>Poll returned</th>
+                      <th>Completed</th>
+                      <th>Bytes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>D2H</strong></td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num">4,386,781,184</td>
+                    </tr>
+                    <tr>
+                      <td><strong>H2D</strong></td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num good">8</td>
+                      <td class="num">1,076,510,720</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="worker-grid" aria-label="H2D 八 worker 完成状态">
+                  <div class="worker">H2D 01 ✓</div>
+                  <div class="worker">H2D 02 ✓</div>
+                  <div class="worker">H2D 03 ✓</div>
+                  <div class="worker diagnostic">H2D 04 ✓*</div>
+                  <div class="worker">H2D 05 ✓</div>
+                  <div class="worker">H2D 06 ✓</div>
+                  <div class="worker">H2D 07 ✓</div>
+                  <div class="worker">H2D 08 ✓</div>
+                </div>
+                <div class="boundary-note">
+                  * H2D worker 04 没有观察到 live-pending 中间态，但具有 submitted、enqueued、
+                  copy-entered、copy-returned、poll-entered、poll-returned 与 completed。
+                  R17 合同明确 live-pending 仅作诊断，不是 completion 硬门。
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head blue">
+                <span>轨迹覆盖与不变性</span>
+                <small>R16 → R17</small>
+              </div>
+              <div class="panel-body">
+                <table>
+                  <tbody>
+                    <tr>
+                      <td>Async transfer family</td>
+                      <td class="num">10 files / 1,050 rows</td>
+                    </tr>
+                    <tr>
+                      <td>Residency family</td>
+                      <td class="num">10 files / 319 rows</td>
+                    </tr>
+                    <tr>
+                      <td>R17 full replay</td>
+                      <td class="num good">1,369 events</td>
+                    </tr>
+                    <tr>
+                      <td>Required key events</td>
+                      <td class="num good">11 / 11 nonzero</td>
+                    </tr>
+                    <tr>
+                      <td>R15 replay fields</td>
+                      <td class="num good">23 / 23 matched</td>
+                    </tr>
+                    <tr>
+                      <td>Raw trace before / after</td>
+                      <td class="num good">unchanged</td>
+                    </tr>
+                    <tr>
+                      <td>Async copy failures</td>
+                      <td class="num good">0</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="expert" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">07</div>
+            <div class="section-title">
+              <h2>P8.3-I0：专家资产已经“盘清”，runtime budget 尚未“算清”</h2>
+              <p>checkpoint-first inventory 与未分类 taxonomy 已通过；hotness、materialized bytes、TP4 ownership 仍需独立证据。</p>
+            </div>
+            <div class="section-tag">Expert / TP4 track</div>
+          </div>
+
+          <div class="inventory-grid">
+            <div class="inventory-metric">
+              <span>Checkpoint shards</span>
+              <strong>70</strong>
+              <em>full-shard SHA-256；missing shard=0</em>
+            </div>
+            <div class="inventory-metric">
+              <span>Indexed / header tensors</span>
+              <strong>103,176</strong>
+              <em>missing=0；duplicate=0；wrong-shard=0</em>
+            </div>
+            <div class="inventory-metric">
+              <span>Logical checkpoint bytes</span>
+              <strong>279.399 GiB</strong>
+              <em>300,002,377,534 bytes</em>
+            </div>
+            <div class="inventory-metric">
+              <span>Unclassified taxonomy</span>
+              <strong>1,135</strong>
+              <em>12,319,364,956 bytes / 39 groups / 4.106%</em>
+            </div>
+          </div>
+
+          <div class="two-col" style="margin-top:14px">
+            <article class="result-card filterable" data-state="validated">
+              <div class="result-meta">
+                <span>P8.3-I0 / I0-R1</span>
+                <span class="state-pill">已验证</span>
+              </div>
+              <h3>Inventory 与 taxonomy 具有全量守恒和可重放 provenance</h3>
+              <p>索引与 header tensor 数完全一致；omitted tensor/group/bytes 均为 0。
+                I0-R1 39 组 taxonomy byte-for-byte 可重放，checkpoint index 与 1,792-file
+                source inventory 在离线复核前后不变。</p>
+            </article>
+
+            <article class="result-card filterable" data-state="open">
+              <div class="result-meta">
+                <span>TP4 runtime feasibility</span>
+                <span class="state-pill open">开放门</span>
+              </div>
+              <h3>不能用 checkpoint bytes 直接替代 runtime residency budget</h3>
+              <p>`materialized_bytes_complete=false`，TP4 owner 只是 planning candidate；
+                仍需 non-expert/shared 常驻、hot expert cache、双 staging buffer、KV pool、
+                graph/workspace/collective 与 fragmentation reserve 的真实预算。</p>
+            </article>
+          </div>
+
+          <div class="boundary-note">
+            <strong>P8.3 当前结论：</strong>“盘点完整、分类守恒”已经成立；“TP4 可运行、专家可热迁移、
+            EPLB/static placement 有收益”均未成立。I1 Level-A hotness/runtime trace 仍需单独服务器授权。
+          </div>
+        </section>
+
+        <section class="section" id="boundary" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">08</div>
+            <div class="section-title">
+              <h2>有效结论与不可外推项</h2>
+              <p>本页的“绿色”是边界内机制结论，不是生产化、性能化或跨 runtime 泛化结论。</p>
+            </div>
+            <div class="section-tag">Claim boundary</div>
+          </div>
+
+          <div class="claims-grid">
+            <div class="panel">
+              <div class="panel-head green">
+                <span>当前证据支持</span>
+                <small>ACCEPTED</small>
+              </div>
+              <div class="panel-body">
+                <ul class="claim-list">
+                  <li>固定 vLLM/vLLM-Ascend tag 的 13 项 capability 有本地 source evidence。</li>
+                  <li>selected workload 的 observe-only request/MTP/prefix proxy trace 可对齐。</li>
+                  <li>Prefix Cache On/Off 控制、body pairing 与 order balance 精确成立。</li>
+                  <li>每 rank 128 blocks / 430,604,288 bytes 的八 rank pinned envelope 成立。</li>
+                  <li>SimpleCPUOffload 的 D2H store 与 H2D restore 在单 lifecycle 内真实发生。</li>
+                  <li>exact 16K logical CPU hit 经 `_reqs_to_load` 进入 H2D，并完成 8 worker copy。</li>
+                  <li>checkpoint inventory/taxonomy 在文件级 provenance 与 bytes 守恒上成立。</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head red">
+                <span>当前证据不支持</span>
+                <small>NOT CLAIMED</small>
+              </div>
+              <div class="panel-body">
+                <ul class="claim-list no">
+                  <li>K1A offload 对 TTFT、TPOT、throughput、HBM headroom 有正收益。</li>
+                  <li>R13 的 compress geometry mismatch 是所有模型/版本的唯一根因。</li>
+                  <li>accepted 128 blocks 是最大容量，或扩大容量一定更优。</li>
+                  <li>R17 机制闭环自动授权 UCM / External KV / SSD cold tier。</li>
+                  <li>checkpoint 279.399 GiB 等于 TP4 runtime materialized footprint。</li>
+                  <li>已有 per-expert hotness、reuse distance、static placement A/B 或 miss penalty。</li>
+                  <li>四卡 full-model expert-residency 已达到 path_smoke 或 production readiness。</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="next" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">09</div>
+            <div class="section-title">
+              <h2>开放门与后续实质推进</h2>
+              <p>R17 自身没有自动解锁下一轮；用户随后单独授权 K2-R0，开发机已完成合同和代码，当前只待一次服务器实机。</p>
+            </div>
+            <div class="section-tag">Decision queue</div>
+          </div>
+
+          <div class="next-grid">
+            <article class="next-card" data-order="1">
+              <small>CURRENT SERVER TASK</small>
+              <strong>执行 K2-R0 UCM DRAM-first 路径</strong>
+              <p>固定 pinned UCM、一个 TP8+EP+MTP lifecycle 和 exact 32K
+                prime/follower，验证 save → external DRAM hit → Cache load/H2D →
+                completion；延迟只作描述，不作为路径实现门。</p>
+            </article>
+            <article class="next-card" data-order="2">
+              <small>LOCAL CLOSEOUT</small>
+              <strong>R17 真值面已更新</strong>
+              <p>readiness、P8 分层计划、工作记录、问题点和下一步已从
+                pending replay 更新为 mechanism closed；R15/R16 historical grade
+                与边界继续保留。</p>
+            </article>
+            <article class="next-card" data-order="3">
+              <small>NOT CURRENTLY AUTHORIZED</small>
+              <strong>保留 Expert / TP4 独立路线</strong>
+              <p>P8.3-I0 的 1,135 tensor taxonomy、materialized bytes 和 TP4 budget
+                仍需独立推进；不得与 K2-R0 在同一 lifecycle 混跑。</p>
+            </article>
+          </div>
+
+          <div class="update-protocol">
+            <div class="protocol-step">
+              <b>UPDATE 01</b>
+              <strong>先验收 bounded package</strong>
+              <span>核对 grade、bytes/SHA、manifest、cleanup 与 claim boundary。</span>
+            </div>
+            <div class="protocol-step">
+              <b>UPDATE 02</b>
+              <strong>只添加已验证数字</strong>
+              <span>每个指标保留单位、sample、条件与证据路径；不从聊天百分比反推绝对值。</span>
+            </div>
+            <div class="protocol-step">
+              <b>UPDATE 03</b>
+              <strong>保留历史负结论</strong>
+              <span>formal grade 不改写；若被 supersede，明确只 supersede 哪个 claim。</span>
+            </div>
+            <div class="protocol-step">
+              <b>UPDATE 04</b>
+              <strong>重新判定开放门</strong>
+              <span>不因单轮 GREEN 自动解锁下一阶段；每次服务器任务单独授权。</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="evidence" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">10</div>
+            <div class="section-title">
+              <h2>主要证据索引</h2>
+              <p>优先链接项目内冻结合同；服务器 bounded package 记录绝对路径，便于后续复核。</p>
+            </div>
+            <div class="section-tag">Evidence routing</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head blue">
+              <span>项目内真值面与服务器回包</span>
+              <small>LOCAL / SERVER-RECEIVED</small>
+            </div>
+            <div class="panel-body">
+              <div class="evidence-list">
+                <div class="evidence-item">
+                  <b>P8 总计划</b>
+                  <a href="../docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md">../docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md</a>
+                  <span>工程路线与 gate</span>
+                </div>
+                <div class="evidence-item">
+                  <b>P8 readiness</b>
+                  <a href="../benchmarks/deepseek_v4_flash/p5_readiness_card.yaml">../benchmarks/deepseek_v4_flash/p5_readiness_card.yaml</a>
+                  <span>阶段状态真值</span>
+                </div>
+                <div class="evidence-item">
+                  <b>P8.0 capability</b>
+                  <a href="../benchmarks/deepseek_v4_flash/p8/source_probes/vllm-v0.22.1__vllm-ascend-v0.22.1rc1/runtime_capability_matrix.yaml">../benchmarks/deepseek_v4_flash/p8/source_probes/.../runtime_capability_matrix.yaml</a>
+                  <span>13 项 fixed-tag</span>
+                </div>
+                <div class="evidence-item">
+                  <b>Offline tracer</b>
+                  <a href="../benchmarks/deepseek_v4_flash/p8/offline_tracer_bullet/manifest.yaml">../benchmarks/deepseek_v4_flash/p8/offline_tracer_bullet/manifest.yaml</a>
+                  <span>toolchain-only</span>
+                </div>
+                <div class="evidence-item">
+                  <b>P8.1-R1</b>
+                  <code>/Volumes/SSD1/Inbox/2026-07-17/p8_1_r1_official_mtp_observe_only_matrix_20260717_green</code>
+                  <span>6/6 observe-only</span>
+                </div>
+                <div class="evidence-item">
+                  <b>P8.2-K0</b>
+                  <code>/Volumes/SSD1/Inbox/2026-07-17/p8_2_k0_r1_offline_refinalization_20260717_candidate_green</code>
+                  <span>order-balanced baseline</span>
+                </div>
+                <div class="evidence-item">
+                  <b>P8.2-K1</b>
+                  <code>/Volumes/SSD1/Inbox/2026-07-17/p8_2_k1_frozen_stack_import_compatibility_review_20260717_blocked</code>
+                  <span>valid blocked</span>
+                </div>
+                <div class="evidence-item">
+                  <b>K1A R2 / I0-R1</b>
+                  <code>/Volumes/SSD1/Inbox/2026-07-17/p8_dual_track_k1a_r2_i0_r1_taxonomy_20260717</code>
+                  <span>capacity + taxonomy</span>
+                </div>
+                <div class="evidence-item">
+                  <b>K1A store-only</b>
+                  <code>/Volumes/SSD1/Inbox/2026-07-21/p8_2_k1a_r4_r1_store_only_20260721_run01</code>
+                  <span>D2H accepted</span>
+                </div>
+                <div class="evidence-item">
+                  <b>K1A R15</b>
+                  <code>/Volumes/SSD1/Inbox/2026-07-27/p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725_run01</code>
+                  <span>restore lineage</span>
+                </div>
+                <div class="evidence-item">
+                  <b>K1A R17</b>
+                  <code>/Volumes/SSD1/Inbox/2026-07-28/p8_2_k1a_r5_f1_r17_full_trace_source_replay_2026_0727_run01</code>
+                  <span>mechanism closed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <details style="margin-top:14px">
+            <summary>本页的持续更新原则</summary>
+            <div class="details-body">
+              页面以 bounded package 与仓库合同为事实源；新增结果时应同时写入任务 ID、运行条件、formal
+              grade、关键绝对值、claim boundary 和证据路径。若新结果只改变历史解释，不得删除旧 formal
+              grade；应写成“历史结果保留 + 指定 claim 被 supersede”。任何性能数字必须标注是否 controlled
+              A/B、sample 数和是否只作描述性参考。
+            </div>
+          </details>
+        </section>
+
+        <footer class="page-footer">
+          <strong>AK-Infer-Lab · P8 Layered Engineering Prototype Evidence Dashboard</strong><br>
+          数据截点：2026-07-28。当前最高结论等级：KV warm-tier
+          <code>instrumented_path / restore_h2d_mechanism_closed</code>；不是
+          controlled performance A/B、hardware recommendation 或 production readiness。
+          K2-R0 仅为开发完成、待服务器实机，不在本页冒充已验证结果。
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <button class="to-top" id="toTop" type="button" aria-label="返回顶部">↑</button>
+
+  <script>
+    (() => {
+      const progress = document.getElementById("scrollProgress");
+      const toTop = document.getElementById("toTop");
+      const navLinks = Array.from(document.querySelectorAll(".rail-nav a"));
+      const sections = Array.from(document.querySelectorAll("[data-nav-section]"));
+      const filterButtons = Array.from(document.querySelectorAll("[data-filter]"));
+      const filterable = Array.from(document.querySelectorAll(".filterable"));
+
+      const updateScroll = () => {
+        const doc = document.documentElement;
+        const max = Math.max(1, doc.scrollHeight - doc.clientHeight);
+        const ratio = Math.min(1, Math.max(0, doc.scrollTop / max));
+        progress.style.width = `${ratio * 100}%`;
+        toTop.classList.toggle("visible", doc.scrollTop > 700);
+      };
+
+      window.addEventListener("scroll", updateScroll, { passive: true });
+      updateScroll();
+
+      toTop.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      document.getElementById("printButton").addEventListener("click", () => {
+        window.print();
+      });
+
+      filterButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const filter = button.dataset.filter;
+          filterButtons.forEach((item) => item.classList.toggle("active", item === button));
+          filterable.forEach((card) => {
+            card.classList.toggle("hidden", filter !== "all" && card.dataset.state !== filter);
+          });
+        });
+      });
+
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver((entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          if (!visible) return;
+          navLinks.forEach((link) => {
+            link.classList.toggle("active", link.getAttribute("href") === `#${visible.target.id}`);
+          });
+        }, {
+          rootMargin: "-12% 0px -72% 0px",
+          threshold: [0, .1, .25]
+        });
+        sections.forEach((section) => observer.observe(section));
+      }
+    })();
+  </script>
+</body>
+</html>

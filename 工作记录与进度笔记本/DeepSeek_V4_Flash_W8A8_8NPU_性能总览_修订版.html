@@ -4,26 +4,26 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <link rel="icon" href="data:,"/>
-<title>DeepSeek-V4-Flash W8A8-MTP 八卡性能总览｜P6 实测领导汇报版</title>
+<title>DeepSeek-V4-Flash W8A8-MTP 八卡性能总览｜P6 全阶段实测汇报</title>
 <style>
   :root{
-    --red:#a50000;
-    --red-2:#c21d17;
-    --red-soft:#fff0ed;
-    --blue:#004c98;
+    --red:#9f1417;
+    --red-2:#c9342e;
+    --red-soft:#fbe9e5;
+    --blue:#14518b;
     --blue-dark:#173d67;
-    --blue-soft:#e7eff9;
-    --green:#2d6d24;
-    --green-soft:#e8f3df;
-    --yellow:#fff0b8;
-    --yellow-soft:#fff8df;
-    --ink:#17191b;
-    --muted:#5b6166;
-    --line:#74787b;
-    --line-soft:#b8bbbd;
-    --gray-0:#fff;
-    --gray-1:#f3f4f5;
-    --gray-2:#e4e6e8;
+    --blue-soft:#e6eef7;
+    --green:#2f6f3e;
+    --green-soft:#e4f0e5;
+    --amber:#9a6700;
+    --amber-soft:#fff1c7;
+    --ink:#191c1f;
+    --muted:#5c6268;
+    --line:#777c80;
+    --line-soft:#b9bdc0;
+    --paper:#fffdfa;
+    --gray:#f0f1f2;
+    --nav:#252a2e;
   }
   *{box-sizing:border-box}
   html,body{
@@ -31,453 +31,207 @@
     width:100%;
     height:100%;
     overflow:hidden;
-    background:#dfe2e5;
+    background:#d7dade;
     color:var(--ink);
-    font-family:"Source Han Sans SC","Microsoft YaHei","PingFang SC",sans-serif;
+    font-family:"Avenir Next","PingFang SC","Microsoft YaHei",sans-serif;
   }
   body{display:flex;align-items:center;justify-content:center}
+  button,input{font:inherit}
   #stage{
     position:relative;
-    width:1920px;
-    height:1080px;
+    width:1600px;
+    height:900px;
     overflow:hidden;
     transform-origin:center center;
-    border:1px solid #555;
-    background:#fff;
+    border:1px solid #555b60;
+    background:var(--paper);
+    box-shadow:0 24px 70px rgba(20,25,30,.22);
   }
-  .slide{
+  .report-page{
     position:absolute;
     inset:0;
-    display:grid;
-    grid-template-rows:118px 1fr 88px 25px;
-    gap:10px;
-    padding:24px 32px 18px;
+    display:none;
+    grid-template-rows:auto 1fr auto;
+    gap:14px;
+    padding:28px 42px 24px;
+    overflow:hidden;
     background:
-      linear-gradient(90deg,rgba(165,0,0,.025) 1px,transparent 1px),
-      linear-gradient(rgba(23,61,103,.018) 1px,transparent 1px),
-      #fff;
+      linear-gradient(90deg,rgba(159,20,23,.025) 1px,transparent 1px),
+      linear-gradient(rgba(20,81,139,.018) 1px,transparent 1px),
+      var(--paper);
     background-size:42px 42px;
   }
-
-  .header{
+  .report-page.active{display:grid;animation:page-in .28s ease-out}
+  @keyframes page-in{from{opacity:.2;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .page-head{
     display:grid;
-    grid-template-columns:minmax(0,1fr) 620px;
-    gap:22px;
-    min-height:0;
-    border-bottom:3px solid var(--red);
-    padding-bottom:8px;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:28px;
+    align-items:end;
+    min-height:94px;
+    padding-bottom:11px;
+    border-bottom:4px solid var(--red);
   }
   .eyebrow{
-    margin:0 0 3px;
+    margin:0 0 5px;
     color:var(--blue);
-    font-size:11px;
-    font-weight:900;
-    letter-spacing:.13em;
+    font:800 11px/1.1 "Avenir Next Condensed","Arial Narrow",sans-serif;
+    letter-spacing:.16em;
     text-transform:uppercase;
   }
-  .title{
-    margin:0 0 4px;
+  h1,h2,h3,p{margin-top:0}
+  .page-head h1,.page-head h2{
+    margin:0;
     color:var(--red);
     font-family:"STSong","Songti SC","Source Han Serif SC",serif;
-    font-size:31px;
-    line-height:1.03;
     font-weight:900;
-    letter-spacing:-.8px;
-    white-space:nowrap;
+    letter-spacing:-.035em;
   }
-  .subtitle{
+  .page-head h1{font-size:39px;line-height:1.02}
+  .page-head h2{font-size:34px;line-height:1.05}
+  .head-note{
+    max-width:520px;
     margin:0;
-    color:#303438;
-    font-size:13.7px;
-    line-height:1.28;
+    color:#42484d;
+    font-size:13px;
+    line-height:1.42;
+    text-align:right;
   }
-  .subtitle b{color:var(--blue)}
-  .header-side{
-    display:grid;
-    grid-template-rows:29px 1fr;
-    gap:6px;
-    min-width:0;
-  }
-  .data-actions{
+  .head-note b{color:var(--blue)}
+  .page-body{min-height:0}
+  .page-foot{
     display:flex;
     align-items:center;
-    justify-content:flex-end;
-    gap:7px;
-    min-width:0;
-  }
-  .data-stamp{
-    color:var(--muted);
+    justify-content:space-between;
+    gap:24px;
+    min-height:28px;
+    border-top:1px solid #a8acae;
+    padding-top:7px;
+    color:#676d72;
     font-size:9.5px;
-    line-height:1;
-    white-space:nowrap;
+    line-height:1.25;
   }
-  .import-label,.import-status{
+  .page-foot b{color:#40464b}
+  .page-foot span:last-child{white-space:nowrap;text-align:right}
+  .deck-nav{
+    position:absolute;
+    z-index:20;
+    right:12px;
+    top:50%;
+    display:grid;
+    gap:7px;
+    transform:translateY(-50%);
+  }
+  .deck-nav button{
+    width:18px;
+    height:18px;
+    border:1px solid rgba(255,255,255,.75);
+    border-radius:50%;
+    padding:0;
+    background:var(--nav);
+    color:#fff;
+    cursor:pointer;
+    font-size:8px;
+    font-weight:900;
+    box-shadow:0 1px 5px rgba(0,0,0,.28);
+  }
+  .deck-nav button.active{border-color:var(--red);background:var(--red);transform:scale(1.18)}
+  .deck-help{
+    position:absolute;
+    z-index:20;
+    right:16px;
+    bottom:10px;
+    color:#777d82;
+    font-size:8px;
+    letter-spacing:.05em;
+  }
+  .pill{
     display:inline-flex;
     align-items:center;
-    justify-content:center;
-    height:27px;
-    border:1px solid #666;
-    font-size:9.5px;
-    font-weight:900;
-    white-space:nowrap;
-  }
-  .import-label{
-    padding:0 9px;
-    background:var(--yellow);
-    color:#252525;
-    cursor:pointer;
-  }
-  .import-label:hover{border-color:var(--red);color:var(--red)}
-  .import-label input{display:none}
-  .import-status{
-    min-width:92px;
-    max-width:126px;
-    padding:0 7px;
-    overflow:hidden;
-    background:#fff;
-    color:#875300;
-    text-overflow:ellipsis;
-  }
-  .import-status.ready{
-    border-color:#5d8b42;
-    background:var(--green-soft);
-    color:var(--green);
-  }
-  .header-meta{
-    display:grid;
-    grid-template-columns:1.25fr 1fr 1fr;
-    min-height:0;
-    border:1px solid var(--line);
-    background:#fff;
-  }
-  .meta-cell{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    min-width:0;
-    padding:6px 11px;
-    border-right:1px solid var(--line-soft);
-  }
-  .meta-cell:last-child{border-right:0}
-  .meta-k{
-    color:var(--muted);
-    font-size:9px;
-    font-weight:800;
+    gap:6px;
+    border:1px solid currentColor;
+    padding:4px 8px;
+    font:900 9px/1 "Avenir Next Condensed","Arial Narrow",sans-serif;
+    letter-spacing:.08em;
     text-transform:uppercase;
   }
-  .meta-v{
-    margin:2px 0 1px;
-    color:var(--blue-dark);
-    font-size:21px;
-    line-height:1;
-    font-weight:950;
-    font-variant-numeric:tabular-nums;
-  }
-  .meta-cell:first-child .meta-v{color:var(--red)}
-  .meta-s{color:#565b5f;font-size:9px;line-height:1.15}
+  .pill.green{color:var(--green);background:var(--green-soft)}
+  .pill.amber{color:var(--amber);background:var(--amber-soft)}
+  .pill.red{color:var(--red);background:var(--red-soft)}
 
-  .main{
+  /* Page 1 */
+  .executive{
     display:grid;
-    grid-template-rows:116px 1fr;
-    gap:10px;
-    min-height:0;
+    grid-template-rows:126px 1fr 112px;
+    gap:12px;
+    height:100%;
   }
-  .effect-strip{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:10px;
-    min-height:0;
-  }
-  .effect-card{
+  .hero-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .hero-metric{
     position:relative;
     display:grid;
     grid-template-columns:1fr auto;
     grid-template-rows:auto 1fr auto;
-    min-width:0;
     overflow:hidden;
     border:1px solid var(--line);
     background:#fff;
-    padding:10px 13px 9px 17px;
+    padding:12px 15px 10px 20px;
   }
-  .effect-card:before{
-    content:"";
-    position:absolute;
-    inset:0 auto 0 0;
-    width:6px;
-    background:var(--blue);
-  }
-  .effect-card.good:before{background:var(--green)}
-  .effect-k{
+  .hero-metric:before{content:"";position:absolute;inset:0 auto 0 0;width:7px;background:var(--green)}
+  .hero-metric.amber:before{background:var(--amber)}
+  .hero-k{
     grid-column:1/-1;
-    color:#50555a;
-    font-size:10px;
-    font-weight:900;
-    letter-spacing:.07em;
+    color:#545a5f;
+    font:900 10px/1.2 "Avenir Next Condensed","Arial Narrow",sans-serif;
+    letter-spacing:.08em;
     text-transform:uppercase;
   }
-  .effect-v{
+  .hero-v{
     align-self:center;
-    color:var(--blue-dark);
-    font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
-    font-size:41px;
-    line-height:.95;
-    font-weight:950;
+    color:var(--green);
+    font:950 43px/.92 "Avenir Next Condensed","Arial Narrow",sans-serif;
+    letter-spacing:-.04em;
     font-variant-numeric:tabular-nums;
-    letter-spacing:-1px;
   }
-  .effect-card.good .effect-v{color:var(--green)}
-  .effect-unit{
-    align-self:end;
-    margin-bottom:3px;
-    color:#484d51;
-    font-size:11px;
-    font-weight:900;
-  }
-  .effect-note{
-    grid-column:1/-1;
-    margin-top:3px;
-    color:var(--muted);
-    font-size:9.5px;
-    line-height:1.18;
-  }
-  .effect-note b{color:var(--ink)}
-
-  .content-grid{
-    display:grid;
-    grid-template-columns:minmax(0,1.38fr) minmax(0,1fr);
-    gap:10px;
-    min-height:0;
-  }
-  .panel{
-    display:flex;
-    flex-direction:column;
-    min-width:0;
-    min-height:0;
-    overflow:hidden;
-    border:1px solid var(--line);
-    background:#fff;
-  }
+  .hero-metric.amber .hero-v{color:var(--amber)}
+  .hero-u{align-self:end;margin-bottom:4px;color:#4f555a;font-size:10px;font-weight:900}
+  .hero-s{grid-column:1/-1;color:var(--muted);font-size:9.5px;line-height:1.2}
+  .overview-grid{display:grid;grid-template-columns:1.23fr .77fr;gap:12px;min-height:0}
+  .panel{min-width:0;min-height:0;border:1px solid var(--line);background:#fff;overflow:hidden}
   .panel-title{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:10px;
-    min-height:34px;
-    padding:0 10px;
+    gap:16px;
+    min-height:37px;
+    padding:0 12px;
     border-bottom:1px solid var(--line);
-    background:var(--yellow);
-    color:#1e2022;
-    font-size:14.5px;
-    line-height:1.1;
+    background:var(--amber-soft);
+    font-size:14px;
     font-weight:900;
   }
-  .panel-title .idx{margin-right:7px;color:var(--red)}
-  .panel-title small{
-    color:#555b60;
-    font-size:9px;
-    font-weight:800;
-    letter-spacing:.03em;
-    white-space:nowrap;
-  }
-  .table-panel-body{
-    display:grid;
-    grid-template-rows:42px 1fr 38px;
-    gap:5px;
-    height:100%;
-    min-height:0;
-    padding:6px 8px 7px;
-  }
-  .source-line{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    min-width:0;
-    border:1px solid #ab9b72;
-    background:var(--yellow-soft);
-    padding:5px 7px;
-    color:#4c4638;
-    font-size:9.4px;
-    line-height:1.22;
-  }
-  .source-line b{color:var(--red)}
-  .source-badge{
-    flex:0 0 auto;
-    border:1px solid #65864f;
-    background:var(--green-soft);
-    padding:3px 6px;
-    color:var(--green);
-    font-size:8.7px;
-    font-weight:900;
-    white-space:nowrap;
-  }
-  .table-wrap{min-height:0}
-  table{width:100%;border-collapse:collapse}
-  .abs-table{
-    height:100%;
-    table-layout:fixed;
-    font-variant-numeric:tabular-nums;
-  }
-  .abs-table col.cell{width:164px}
-  .abs-table col.val{width:70px}
-  .abs-table col.delta{width:56px}
-  .abs-table th,.abs-table td{
-    border:1px solid #85898c;
-    padding:3px 4px;
-    text-align:center;
-    vertical-align:middle;
-    font-size:10.2px;
-    line-height:1.06;
-  }
-  .abs-table thead tr:first-child th{height:25px;font-size:10.5px}
-  .abs-table thead tr:nth-child(2) th{height:23px;background:var(--gray-1);font-size:9.3px}
-  .abs-table th{font-weight:900}
-  .abs-table th.group-e2el{background:#dce8f6;color:#163f70}
-  .abs-table th.group-tpot{background:#f5deda;color:#8b1212}
-  .abs-table th.group-tps{background:#e3f0db;color:#285f0c}
-  .abs-table td.cell-label{
-    background:#fafafa;
-    padding-left:7px;
-    text-align:left;
-  }
-  .abs-table td.cell-label b{display:block;font-size:10.4px}
-  .abs-table td.cell-label span{display:block;margin-top:2px;color:#666;font-size:8.4px}
-  .abs-table td.value{color:#26292c;font-weight:800}
-  .abs-table td[data-mode="on"]{background:#edf4fc;color:#12487b}
-  .abs-table td.delta-down{
-    background:var(--green-soft);
-    color:var(--green);
-    font-size:10.5px;
-    font-weight:950;
-  }
-  .abs-table td.delta-up{
-    background:var(--green-soft);
-    color:var(--green);
-    font-size:10.5px;
-    font-weight:950;
-  }
-  .abs-table td.missing{background:#fff5df;color:#8a5700}
-  .table-foot{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:5px;
-  }
-  .table-foot div{
-    display:flex;
-    align-items:center;
-    border:1px solid #aaa;
-    background:#fafafa;
-    padding:4px 6px;
-    color:#565b60;
-    font-size:8.7px;
-    line-height:1.18;
-  }
-  .table-foot b{color:var(--blue)}
-  .table-foot .boundary{border-left:4px solid var(--red);background:#fff5f3}
-
-  .prefix-panel-body{
-    display:grid;
-    grid-template-rows:48px 1fr 64px;
-    gap:5px;
-    height:100%;
-    min-height:0;
-    padding:6px 8px 7px;
-  }
-  .prefix-headline{
-    display:grid;
-    grid-template-columns:1fr auto;
-    gap:8px;
-    align-items:center;
-    border:1px solid #7d9870;
-    border-left:6px solid var(--green);
-    background:linear-gradient(90deg,var(--green-soft),#f8fbf6);
-    padding:5px 8px;
-  }
-  .prefix-headline strong{
-    display:block;
-    color:var(--green);
-    font-size:11.4px;
-    line-height:1.05;
-  }
-  .prefix-headline span{
-    display:block;
-    margin-top:3px;
-    color:#4e5b4b;
-    font-size:8.9px;
-    line-height:1.15;
-  }
-  .prefix-proof{
-    border:1px solid #668359;
-    background:#fff;
-    padding:5px 7px;
-    color:var(--green)!important;
-    font-size:9px!important;
-    font-weight:950;
-    white-space:nowrap;
-  }
-  .prefix-table-wrap{min-height:0}
-  .prefix-table{
-    height:100%;
-    table-layout:fixed;
-    font-variant-numeric:tabular-nums;
-  }
-  .prefix-table col.workload{width:83px}
-  .prefix-table col.lcp{width:115px}
-  .prefix-table col.hit{width:63px}
-  .prefix-table col.ttft{width:133px}
-  .prefix-table col.delta{width:61px}
-  .prefix-table col.evidence{width:62px}
-  .prefix-table th,.prefix-table td{
-    border:1px solid #85898c;
-    padding:3px 4px;
-    text-align:center;
-    vertical-align:middle;
-    font-size:9.4px;
-    line-height:1.08;
-  }
-  .prefix-table thead tr:first-child th{height:25px;background:#dfe8dc;color:#294f24;font-size:9.8px}
-  .prefix-table thead tr:nth-child(2) th{height:23px;background:var(--gray-1);font-size:8.7px}
-  .prefix-table th{font-weight:950}
-  .prefix-table td:first-child{
-    background:#fafafa;
-    color:#26292c;
-    font-weight:900;
-  }
-  .prefix-table td:first-child span{display:block;margin-top:2px;color:#666;font-size:8px;font-weight:700}
-  .prefix-table td.lcp-cell{font-size:8.8px;font-weight:850}
-  .prefix-table td.off-hit{background:#f7f7f7;color:#555;font-weight:900}
-  .prefix-table td.on-hit{background:var(--blue-soft);color:var(--blue);font-weight:950}
-  .prefix-table tr.primary td.on-hit,
-  .prefix-table tr.primary td.ttft-delta,
-  .prefix-table tr.primary td.evidence-primary{background:var(--green-soft);color:var(--green)}
-  .prefix-table td.ttft-pair{font-size:9px;font-weight:850;white-space:nowrap}
-  .prefix-table td.ttft-delta{font-weight:950}
-  .prefix-table td.evidence-primary{font-size:8.5px;font-weight:950}
-  .prefix-table td.evidence-boundary{background:var(--yellow-soft);color:#795700;font-size:8.5px;font-weight:900}
-  .prefix-table tr.primary{box-shadow:inset 4px 0 0 var(--green)}
-  .prefix-foot{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:5px;
-  }
-  .prefix-foot div{
-    display:flex;
-    align-items:center;
-    border:1px solid #969a9d;
-    padding:5px 7px;
-    color:#4f5559;
-    font-size:8.6px;
-    line-height:1.18;
-  }
-  .prefix-foot b{color:var(--green)}
-  .prefix-foot .prefix-boundary{border-left:4px solid #b57b00;background:var(--yellow-soft)}
-  .prefix-foot .prefix-boundary b{color:#795700}
-
+  .panel-title small{color:#62686d;font-size:9px;letter-spacing:.05em}
+  .chain{display:grid;grid-template-columns:repeat(3,1fr);height:calc(100% - 37px)}
+  .chain-card{position:relative;padding:19px 17px 15px;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
+  .chain-card:nth-child(3n){border-right:0}
+  .chain-card:nth-child(n+4){border-bottom:0}
+  .chain-card .step{position:absolute;right:12px;top:8px;color:#e5e6e7;font:900 43px/1 "Avenir Next Condensed","Arial Narrow",sans-serif}
+  .chain-card h3{position:relative;margin:13px 0 7px;color:var(--blue-dark);font-size:15px}
+  .chain-card .big{color:var(--green);font:900 26px/1 "Avenir Next Condensed","Arial Narrow",sans-serif}
+  .chain-card.blocked .big{color:var(--amber)}
+  .chain-card p{margin:7px 0 0;color:#555b60;font-size:10px;line-height:1.3}
+  .config-panel{display:grid;grid-template-rows:37px 1fr}
+  .config-list{display:grid;grid-template-columns:1fr 1fr}
+  .config-item{padding:12px 13px;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
+  .config-item:nth-child(2n){border-right:0}
+  .config-item:nth-last-child(-n+2){border-bottom:0}
+  .config-item small{display:block;color:var(--muted);font-size:8.5px;text-transform:uppercase}
+  .config-item strong{display:block;margin-top:4px;color:var(--blue-dark);font-size:12.5px;line-height:1.16}
+  .config-item span{display:block;margin-top:3px;color:#676d72;font-size:8.5px;line-height:1.16}
   .summary{
     display:grid;
-    grid-template-columns:112px repeat(4,1fr);
-    min-height:0;
-    border:1px solid #6f7376;
+    grid-template-columns:106px repeat(4,1fr);
+    border:1px solid var(--line);
     background:#fff;
   }
   .summary-head{
@@ -486,400 +240,495 @@
     justify-content:center;
     background:var(--red);
     color:#fff;
-    font-family:"STSong","Songti SC","Source Han Serif SC",serif;
-    font-size:24px;
+    font-family:"STSong","Songti SC",serif;
+    font-size:23px;
     font-weight:900;
-    letter-spacing:2px;
+    letter-spacing:.12em;
   }
   .summary-item{
     display:flex;
     align-items:center;
-    border-left:1px solid #85898c;
-    padding:6px 9px;
-    color:#33383c;
-    font-size:10.7px;
-    line-height:1.23;
+    border-left:1px solid var(--line);
+    padding:9px 11px;
+    color:#363b40;
+    font-size:10.5px;
+    line-height:1.3;
   }
   .summary-item b{color:var(--blue)}
   .summary-item .good{color:var(--green);font-weight:900}
-  .summary-item .red{color:var(--red);font-weight:900}
-  .summary-item[data-summary="prefix"]{background:linear-gradient(90deg,var(--green-soft),#fff)}
+  .summary-item .warn{color:var(--amber);font-weight:900}
 
-  .footer{
-    display:grid;
-    grid-template-columns:1fr auto;
-    gap:18px;
-    align-items:end;
-    min-width:0;
-    border-top:1px solid #aaa;
-    padding-top:3px;
-    color:#686d71;
-    font-size:8.7px;
-    line-height:11px;
+  /* Common tables */
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th,td{border:1px solid #888d90;text-align:center;vertical-align:middle}
+  th{background:var(--blue-soft);color:var(--blue-dark);font-weight:900}
+  td:first-child{text-align:left;background:#fafafa;font-weight:850}
+  .table-note{
+    border:1px solid #a89d7c;
+    border-left:5px solid var(--amber);
+    background:#fff9e9;
+    padding:7px 10px;
+    color:#595343;
+    font-size:9.5px;
+    line-height:1.3;
   }
-  .footer b{color:#4a4f53}
-  .footer div:last-child{text-align:right;white-space:nowrap}
+  .table-note b{color:var(--red)}
+
+  /* Page 2 */
+  .baseline-layout{display:grid;grid-template-rows:82px 1fr 50px;gap:10px;height:100%}
+  .ladder{display:grid;grid-template-columns:1.2fr repeat(5,1fr);border:1px solid var(--line);background:#fff}
+  .ladder-label{display:flex;flex-direction:column;justify-content:center;padding:10px 13px;background:var(--blue-dark);color:#fff}
+  .ladder-label strong{font:900 15px/1.1 "Avenir Next Condensed","Arial Narrow",sans-serif}
+  .ladder-label span{margin-top:5px;font-size:9px;opacity:.78}
+  .ladder-step{display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid var(--line-soft)}
+  .ladder-step strong{color:var(--green);font:900 22px/1 "Avenir Next Condensed","Arial Narrow",sans-serif}
+  .ladder-step span{margin-top:5px;color:#646a6f;font-size:8.5px}
+  .baseline-table{height:100%;table-layout:fixed}
+  .baseline-table th,.baseline-table td{padding:3px 5px;font-size:9.5px;line-height:1.05}
+  .baseline-table thead tr:first-child th{height:28px}
+  .baseline-table thead tr:nth-child(2) th{height:24px;background:var(--gray);font-size:8.6px}
+  .baseline-table td.context{color:var(--blue);font-weight:900}
+  .baseline-table td.queue{background:#fff7e3}
+  .baseline-table tr.group-start td{border-top:2px solid var(--blue)}
+  .baseline-foot{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  /* Page 3 */
+  .mtp-layout{display:grid;grid-template-rows:82px 1fr 50px;gap:10px;height:100%}
+  .mtp-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .mini-stat{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;border:1px solid var(--line);background:#fff;padding:10px 13px}
+  .mini-stat strong{color:var(--green);font:950 31px/1 "Avenir Next Condensed","Arial Narrow",sans-serif}
+  .mini-stat div{color:#474d52;font-size:10px;line-height:1.2}
+  .mini-stat small{display:block;color:var(--muted);font-size:8.5px}
+  .abs-table{height:100%;table-layout:fixed}
+  .abs-table th,.abs-table td{padding:4px 5px;font-size:10px;line-height:1.08}
+  .abs-table thead tr:first-child th{height:30px}
+  .abs-table thead tr:nth-child(2) th{height:26px;background:var(--gray);font-size:9px}
+  .abs-table th.group-e2el{background:#dce8f6;color:#163f70}
+  .abs-table th.group-tpot{background:#f5deda;color:#8b1212}
+  .abs-table th.group-tps{background:#e3f0db;color:#285f0c}
+  .abs-table td:first-child span{display:block;margin-top:2px;color:#666;font-size:8px}
+  .abs-table td[data-mode="on"]{background:#edf4fc;color:#12487b;font-weight:850}
+  .delta-down,.delta-up{background:var(--green-soft)!important;color:var(--green)!important;font-weight:950}
+  .mtp-foot{display:grid;grid-template-columns:1.1fr .9fr;gap:10px}
+  .data-action{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #7d9870;background:var(--green-soft);padding:7px 10px;font-size:9px;color:#455646}
+  .data-action label{border:1px solid var(--green);background:#fff;padding:5px 8px;color:var(--green);font-weight:900;cursor:pointer;white-space:nowrap}
+  .data-action input{display:none}
+  #mtpImportStatus{font-weight:900}
+
+  /* Page 4 */
+  .prefix-layout{display:grid;grid-template-rows:76px 1fr 84px;gap:10px;height:100%}
+  .prefix-banner{display:grid;grid-template-columns:1fr repeat(3,190px);border:1px solid var(--line);background:#fff}
+  .prefix-banner-main{display:flex;flex-direction:column;justify-content:center;padding:10px 15px;border-left:7px solid var(--green);background:linear-gradient(90deg,var(--green-soft),#fff)}
+  .prefix-banner-main strong{color:var(--green);font-size:15px}
+  .prefix-banner-main span{margin-top:4px;color:#566058;font-size:9px}
+  .prefix-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid var(--line-soft)}
+  .prefix-stat strong{color:var(--blue-dark);font:950 25px/1 "Avenir Next Condensed","Arial Narrow",sans-serif}
+  .prefix-stat span{margin-top:4px;color:var(--muted);font-size:8px;text-transform:uppercase}
+  .prefix-table{height:100%;table-layout:fixed}
+  .prefix-table th,.prefix-table td{padding:4px 5px;font-size:9.7px;line-height:1.08}
+  .prefix-table thead tr:first-child th{height:30px;background:#dfe8dc;color:#294f24}
+  .prefix-table thead tr:nth-child(2) th{height:25px;background:var(--gray);font-size:8.8px}
+  .prefix-table td:first-child span{display:block;margin-top:2px;color:#666;font-size:8px}
+  .prefix-table .off-hit{background:#f5f5f5;color:#555;font-weight:900}
+  .prefix-table .on-hit{background:var(--blue-soft);color:var(--blue);font-weight:950}
+  .prefix-table tr.primary{box-shadow:inset 6px 0 0 var(--green)}
+  .prefix-table tr.primary .on-hit,.prefix-table tr.primary .ttft-delta,.prefix-table tr.primary .role{background:var(--green-soft);color:var(--green)}
+  .prefix-table .role{font-weight:900}
+  .prefix-table .boundary-role{background:var(--amber-soft);color:var(--amber)}
+  .prefix-bottom{display:grid;grid-template-columns:1.15fr .85fr;gap:10px}
+  .lineage{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--line);background:#fff}
+  .lineage-item{display:flex;flex-direction:column;justify-content:center;padding:8px 9px;border-right:1px solid var(--line-soft)}
+  .lineage-item:last-child{border-right:0}
+  .lineage-item small{color:var(--muted);font-size:7.8px}
+  .lineage-item strong{margin-top:3px;font-size:9.5px}
+  .lineage-item.green strong{color:var(--green)}
+  .lineage-item.red strong{color:var(--red)}
+  .lineage-item.amber strong{color:var(--amber)}
+
+  /* Page 5 */
+  .evidence-layout{display:grid;grid-template-columns:1.08fr .92fr;grid-template-rows:1fr 188px;gap:12px;height:100%}
+  .profile-panel,.closure-panel,.package-panel,.boundary-panel{border:1px solid var(--line);background:#fff;overflow:hidden}
+  .profile-panel{display:grid;grid-template-rows:37px 88px 1fr}
+  .profile-stats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+  .profile-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid var(--line-soft)}
+  .profile-stat:last-child{border-right:0}
+  .profile-stat strong{color:var(--blue-dark);font:950 25px/1 "Avenir Next Condensed","Arial Narrow",sans-serif}
+  .profile-stat span{margin-top:5px;color:var(--muted);font-size:8px}
+  .profile-table{height:100%;table-layout:fixed}
+  .profile-table th,.profile-table td{padding:5px 6px;font-size:9.4px;line-height:1.12}
+  .closure-panel{display:grid;grid-template-rows:37px 1fr}
+  .closure-body{display:grid;grid-template-rows:auto 1fr auto;gap:9px;padding:13px}
+  .block-card{border:1px solid #ba8a26;border-left:8px solid var(--amber);background:var(--amber-soft);padding:12px}
+  .block-card strong{display:block;color:var(--amber);font:900 19px/1.1 "Avenir Next Condensed","Arial Narrow",sans-serif}
+  .block-card p{margin:7px 0 0;color:#5d543f;font-size:10.5px;line-height:1.36}
+  .equation{display:flex;align-items:center;justify-content:center;border:1px dashed #a47a20;background:#fffaf0;color:var(--red);font:950 27px/1 "Avenir Next Condensed","Arial Narrow",sans-serif}
+  .no-run{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line)}
+  .no-run div{padding:7px;border-right:1px solid var(--line-soft);text-align:center}
+  .no-run div:last-child{border-right:0}
+  .no-run strong{display:block;color:var(--red);font-size:12px}
+  .no-run span{display:block;margin-top:3px;color:var(--muted);font-size:7.5px}
+  .package-panel{display:grid;grid-template-rows:37px 1fr}
+  .package-table{height:100%;table-layout:fixed}
+  .package-table th,.package-table td{padding:4px 6px;font-size:8.6px;line-height:1.1}
+  .package-table td:first-child{font-weight:900}
+  .package-table th,.package-table td{overflow-wrap:anywhere;word-break:break-word}
+  .boundary-panel{display:grid;grid-template-rows:37px 1fr}
+  .boundary-grid{display:grid;grid-template-columns:repeat(4,1fr);height:100%}
+  .boundary-card{padding:12px;border-right:1px solid var(--line-soft)}
+  .boundary-card:last-child{border-right:0}
+  .boundary-card h3{margin:0 0 7px;color:var(--blue-dark);font-size:11px}
+  .boundary-card p{margin:0;color:#5b6166;font-size:8.7px;line-height:1.25}
 
   @media print{
-    html,body{overflow:visible;background:#fff}
-    #stage{border:0;transform:none!important}
-    .data-actions{visibility:hidden}
+    html,body{width:auto;height:auto;overflow:visible;background:#fff}
+    body{display:block}
+    #stage{width:1600px;height:auto;overflow:visible;border:0;box-shadow:none;transform:none!important}
+    .report-page{position:relative;display:grid!important;width:1600px;height:900px;page-break-after:always}
+    .deck-nav,.deck-help,.data-action label{display:none}
     @page{size:16in 9in;margin:0}
   }
 </style>
 </head>
 <body>
-<div aria-label="DeepSeek-V4-Flash W8A8-MTP 八卡 P6 实测性能总览" id="stage" role="document">
-<main class="slide">
-<header class="header">
-  <div>
-    <div class="eyebrow">AK-INFER-LAB · P6 DEEPSEEK-V4-FLASH · MEASURED ON ASCEND</div>
-    <h1 class="title">MTP 将逐 Token 生成时延近乎减半，八卡长上下文推理进入可量化性能阶段</h1>
-    <p class="subtitle">Atlas 800T A2 · Ascend 910B1 ×8 · DeepSeek-V4-Flash W8A8 · TP8 + EP。<b>性能主结论取 P6.3A matched MTP Off/On 实测</b>；P6.3B-R4-R1 补充显式 Prefix Cache 机制闭环与命中边界。</p>
-  </div>
-  <div class="header-side">
-    <div class="data-actions">
-      <span class="data-stamp">原始文件仅在浏览器本地解析，不上传</span>
-      <label class="import-label">导入 mode_cell_summary.tsv<input accept=".tsv,.csv,.txt,text/tab-separated-values,text/csv" id="mtpTsvInput" type="file"/></label>
-      <span class="import-status ready" id="mtpImportStatus">静态值已写入</span>
-    </div>
-    <div class="header-meta">
-      <div class="meta-cell"><span class="meta-k">模型 / checkpoint</span><span class="meta-v">284B / 13B Active</span><span class="meta-s">70 shards · 279.41 GiB · ascend W8A8</span></div>
-      <div class="meta-cell"><span class="meta-k">实测上下文边界</span><span class="meta-v">131,072</span><span class="meta-s">input tokens + 64 output · 5/5 first-pass</span></div>
-      <div class="meta-cell"><span class="meta-k">硬件与并行</span><span class="meta-v">8 × 64GB</span><span class="meta-s">Atlas 800T A2 · TP8 + Expert Parallel</span></div>
-    </div>
-  </div>
-</header>
+<div id="stage" role="document" aria-label="DeepSeek-V4-Flash W8A8-MTP 八卡 P6 全阶段实测汇报">
+  <nav class="deck-nav" aria-label="页面导航">
+    <button class="active" data-page="0" aria-label="第 1 页">1</button>
+    <button data-page="1" aria-label="第 2 页">2</button>
+    <button data-page="2" aria-label="第 3 页">3</button>
+    <button data-page="3" aria-label="第 4 页">4</button>
+    <button data-page="4" aria-label="第 5 页">5</button>
+  </nav>
+  <div class="deck-help">← → / PgUp PgDn</div>
 
-<section class="main">
-  <div class="effect-strip" aria-label="MTP 核心性能效应">
-    <article class="effect-card good">
-      <div class="effect-k">TPOT · 24 paired batch relative mean</div>
-      <div class="effect-v">−47.0%</div><div class="effect-unit">ms / token</div>
-      <div class="effect-note">8-cell 均值范围 <b>−45.9% 至 −48.3%</b>；24/24 batch 均下降。</div>
-    </article>
-    <article class="effect-card good">
-      <div class="effect-k">E2EL · 24 paired batch relative mean</div>
-      <div class="effect-v">−40.9%</div><div class="effect-unit">end-to-end</div>
-      <div class="effect-note">8-cell 均值范围 <b>−30.0% 至 −47.0%</b>；长输入受 Prefill 占比稀释。</div>
-    </article>
-    <article class="effect-card good">
-      <div class="effect-k">Batch output throughput · relative mean</div>
-      <div class="effect-v">+71.0%</div><div class="effect-unit">tok / s</div>
-      <div class="effect-note">8-cell 均值范围 <b>+42.8% 至 +89.2%</b>；不是设备峰值吞吐。</div>
-    </article>
-    <article class="effect-card good">
-      <div class="effect-k">Direction consistency · all three metrics</div>
-      <div class="effect-v">24 / 24</div><div class="effect-unit">paired batches</div>
-      <div class="effect-note">E2EL↓、TPOT↓、batch output throughput↑；MTP accepted token Δ=<b>4,896</b>。</div>
-    </article>
-  </div>
-
-  <div class="content-grid">
-    <article class="panel">
-      <div class="panel-title"><span><span class="idx">01</span>MTP Off / On 绝对性能与 matched 相对变化</span><small>8 CELLS · 48/48 BATCHES · 108/108 REQUESTS</small></div>
-      <div class="table-panel-body">
-        <div class="source-line">
-          <span><b>事实源：</b>P6.3A <code>mode_cell_summary.tsv</code> 的 mode-cell mean + <code>paired_batch_summary.tsv</code> 的 paired relative mean；未从百分比反推绝对值。</span>
-          <span class="source-badge">CLEAN · BODY PAIRED · 0 RETRY</span>
-        </div>
-        <div class="table-wrap">
-          <table aria-label="MTP on off absolute and relative metrics" class="abs-table">
-            <colgroup><col class="cell"/><col class="val"/><col class="val"/><col class="delta"/><col class="val"/><col class="val"/><col class="delta"/><col class="val"/><col class="val"/><col class="delta"/></colgroup>
-            <thead>
-              <tr><th rowspan="2">Workload Cell</th><th class="group-e2el" colspan="3">E2EL（ms）</th><th class="group-tpot" colspan="3">TPOT（ms/token）</th><th class="group-tps" colspan="3">Batch Output Throughput（tok/s）</th></tr>
-              <tr><th>Off</th><th>On</th><th>Δ</th><th>Off</th><th>On</th><th>Δ</th><th>Off</th><th>On</th><th>Δ</th></tr>
-            </thead>
-            <tbody>
-              <tr data-cell-row="short_prefill">
-                <td class="cell-label"><b>Short Prefill</b><span>4K + 64 · C1</span></td>
-                <td class="value" data-cell="short_prefill" data-metric="e2el" data-mode="off">24,427.9</td>
-                <td class="value" data-cell="short_prefill" data-metric="e2el" data-mode="on">13,389.3</td>
-                <td class="delta-down">−45.1%</td>
-                <td class="value" data-cell="short_prefill" data-metric="tpot" data-mode="off">381.42</td>
-                <td class="value" data-cell="short_prefill" data-metric="tpot" data-mode="on">205.93</td>
-                <td class="delta-down">−45.9%</td>
-                <td class="value" data-cell="short_prefill" data-metric="throughput" data-mode="off">2.62</td>
-                <td class="value" data-cell="short_prefill" data-metric="throughput" data-mode="on">4.78</td>
-                <td class="delta-up">+82.6%</td>
-              </tr>
-              <tr data-cell-row="short_decode">
-                <td class="cell-label"><b>Short Decode</b><span>4K + 256 · C1</span></td>
-                <td class="value" data-cell="short_decode" data-metric="e2el" data-mode="off">96,449.5</td>
-                <td class="value" data-cell="short_decode" data-metric="e2el" data-mode="on">52,075.7</td>
-                <td class="delta-down">−46.0%</td>
-                <td class="value" data-cell="short_decode" data-metric="tpot" data-mode="off">376.69</td>
-                <td class="value" data-cell="short_decode" data-metric="tpot" data-mode="on">202.59</td>
-                <td class="delta-down">−46.2%</td>
-                <td class="value" data-cell="short_decode" data-metric="throughput" data-mode="off">2.65</td>
-                <td class="value" data-cell="short_decode" data-metric="throughput" data-mode="on">4.92</td>
-                <td class="delta-up">+85.2%</td>
-              </tr>
-              <tr data-cell-row="short_decode_c8">
-                <td class="cell-label"><b>Short Decode · C8</b><span>4K + 256 · C8</span></td>
-                <td class="value" data-cell="short_decode_c8" data-metric="e2el" data-mode="off">431,357.2</td>
-                <td class="value" data-cell="short_decode_c8" data-metric="e2el" data-mode="on">228,470.6</td>
-                <td class="delta-down">−47.0%</td>
-                <td class="value" data-cell="short_decode_c8" data-metric="tpot" data-mode="off">374.99</td>
-                <td class="value" data-cell="short_decode_c8" data-metric="tpot" data-mode="on">197.48</td>
-                <td class="delta-down">−47.3%</td>
-                <td class="value" data-cell="short_decode_c8" data-metric="throughput" data-mode="off">2.67</td>
-                <td class="value" data-cell="short_decode_c8" data-metric="throughput" data-mode="on">5.04</td>
-                <td class="delta-up">+89.2%</td>
-              </tr>
-              <tr data-cell-row="mid_prefill">
-                <td class="cell-label"><b>Mid Prefill</b><span>64K + 64 · C1</span></td>
-                <td class="value" data-cell="mid_prefill" data-metric="e2el" data-mode="off">29,649.0</td>
-                <td class="value" data-cell="mid_prefill" data-metric="e2el" data-mode="on">18,985.0</td>
-                <td class="delta-down">−36.0%</td>
-                <td class="value" data-cell="mid_prefill" data-metric="tpot" data-mode="off">372.51</td>
-                <td class="value" data-cell="mid_prefill" data-metric="tpot" data-mode="on">199.46</td>
-                <td class="delta-down">−46.5%</td>
-                <td class="value" data-cell="mid_prefill" data-metric="throughput" data-mode="off">2.16</td>
-                <td class="value" data-cell="mid_prefill" data-metric="throughput" data-mode="on">3.37</td>
-                <td class="delta-up">+56.1%</td>
-              </tr>
-              <tr data-cell-row="mid_prefill_c4">
-                <td class="cell-label"><b>Mid Prefill · C4</b><span>64K + 64 · C4</span></td>
-                <td class="value" data-cell="mid_prefill_c4" data-metric="e2el" data-mode="off">74,394.5</td>
-                <td class="value" data-cell="mid_prefill_c4" data-metric="e2el" data-mode="on">47,776.0</td>
-                <td class="delta-down">−35.7%</td>
-                <td class="value" data-cell="mid_prefill_c4" data-metric="tpot" data-mode="off">374.05</td>
-                <td class="value" data-cell="mid_prefill_c4" data-metric="tpot" data-mode="on">200.91</td>
-                <td class="delta-down">−46.3%</td>
-                <td class="value" data-cell="mid_prefill_c4" data-metric="throughput" data-mode="off">2.15</td>
-                <td class="value" data-cell="mid_prefill_c4" data-metric="throughput" data-mode="on">3.35</td>
-                <td class="delta-up">+55.9%</td>
-              </tr>
-              <tr data-cell-row="mid_decode">
-                <td class="cell-label"><b>Mid Decode</b><span>64K + 256 · C1</span></td>
-                <td class="value" data-cell="mid_decode" data-metric="e2el" data-mode="off">103,319.8</td>
-                <td class="value" data-cell="mid_decode" data-metric="e2el" data-mode="on">56,894.2</td>
-                <td class="delta-down">−44.9%</td>
-                <td class="value" data-cell="mid_decode" data-metric="tpot" data-mode="off">379.96</td>
-                <td class="value" data-cell="mid_decode" data-metric="tpot" data-mode="on">197.74</td>
-                <td class="delta-down">−47.9%</td>
-                <td class="value" data-cell="mid_decode" data-metric="throughput" data-mode="off">2.48</td>
-                <td class="value" data-cell="mid_decode" data-metric="throughput" data-mode="on">4.50</td>
-                <td class="delta-up">+81.6%</td>
-              </tr>
-              <tr data-cell-row="long_prefill">
-                <td class="cell-label"><b>Long Prefill</b><span>128K + 64 · C1</span></td>
-                <td class="value" data-cell="long_prefill" data-metric="e2el" data-mode="off">36,504.7</td>
-                <td class="value" data-cell="long_prefill" data-metric="e2el" data-mode="on">25,564.7</td>
-                <td class="delta-down">−30.0%</td>
-                <td class="value" data-cell="long_prefill" data-metric="tpot" data-mode="off">378.61</td>
-                <td class="value" data-cell="long_prefill" data-metric="tpot" data-mode="on">199.99</td>
-                <td class="delta-down">−47.2%</td>
-                <td class="value" data-cell="long_prefill" data-metric="throughput" data-mode="off">1.75</td>
-                <td class="value" data-cell="long_prefill" data-metric="throughput" data-mode="on">2.50</td>
-                <td class="delta-up">+42.8%</td>
-              </tr>
-              <tr data-cell-row="long_decode">
-                <td class="cell-label"><b>Long Decode</b><span>128K + 256 · C1</span></td>
-                <td class="value" data-cell="long_decode" data-metric="e2el" data-mode="off">111,313.2</td>
-                <td class="value" data-cell="long_decode" data-metric="e2el" data-mode="on">63,693.4</td>
-                <td class="delta-down">−42.8%</td>
-                <td class="value" data-cell="long_decode" data-metric="tpot" data-mode="off">385.18</td>
-                <td class="value" data-cell="long_decode" data-metric="tpot" data-mode="on">199.03</td>
-                <td class="delta-down">−48.3%</td>
-                <td class="value" data-cell="long_decode" data-metric="throughput" data-mode="off">2.30</td>
-                <td class="value" data-cell="long_decode" data-metric="throughput" data-mode="on">4.02</td>
-                <td class="delta-up">+74.7%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="table-foot">
-          <div><b>绝对值口径：</b>E2EL / TPOT 为 mode-cell request mean；batch output throughput 为 3 个 measured batch 的 mean。</div>
-          <div class="boundary"><b>Δ 口径：</b>3 个 paired batch 内 request median 相对变化的均值；C4/C8 含 max_num_seqs=1 的服务端排队。</div>
-        </div>
+  <main class="report-page active" data-title="阶段总览">
+    <header class="page-head">
+      <div>
+        <div class="eyebrow">AK-INFER-LAB · P6 DEEPSEEK-V4-FLASH · VERIFIED 2026-07-28</div>
+        <h1>P6 主线证据闭环：128K 可用、MTP 解码提速、Prefix 命中机制可观测</h1>
       </div>
-    </article>
-
-    <article class="panel">
-      <div class="panel-title"><span><span class="idx">02</span>Prefix Cache Off / On 命中与 TTFT matched 明细</span><small>P6.3B-R4-R1 · 8 GROUPS · 48 MEASURED</small></div>
-      <div class="prefix-panel-body">
-        <div class="prefix-headline">
-          <div><strong>显式 Prefix Cache 开关产生了可观测机制效应</strong><span>resolved false → true · same R2 hybrid-KV repair · 16K LCM · canonical body paired</span></div>
-          <span class="prefix-proof">64 / 64 · Off hit=0 · On primary 9 / 9</span>
-        </div>
-        <div class="prefix-table-wrap">
-          <table aria-label="P6.3B-R4-R1 explicit Prefix Cache matched evidence" class="prefix-table">
-            <colgroup><col class="workload"/><col class="lcp"/><col class="hit"/><col class="hit"/><col class="ttft"/><col class="delta"/><col class="evidence"/></colgroup>
-            <thead>
-              <tr><th rowspan="2">Input · Prefix</th><th rowspan="2">Token-LCP /<br/>16K floor</th><th colspan="2">Hit / measured request</th><th rowspan="2">TTFT mean<br/>Off → On（ms）</th><th rowspan="2">Paired<br/>TTFT Δ</th><th rowspan="2">证据角色</th></tr>
-              <tr><th>Off</th><th>On</th></tr>
-            </thead>
-            <tbody>
-              <tr data-prefix-row="ctx4096_prefix50">
-                <td>4K · 50%<span>3/3 matched</span></td><td class="lcp-cell">2,048 / 0</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">416.2 → 417.4</td><td class="ttft-delta">+0.3%</td><td class="evidence-boundary">Boundary</td>
-              </tr>
-              <tr data-prefix-row="ctx4096_prefix90">
-                <td>4K · 90%<span>3/3 matched</span></td><td class="lcp-cell">3,584 / 0</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">405.0 → 415.7</td><td class="ttft-delta">+2.7%</td><td class="evidence-boundary">Boundary</td>
-              </tr>
-              <tr data-prefix-row="ctx32768_prefix50">
-                <td>32K · 50%<span>3/3 matched</span></td><td class="lcp-cell">16,384 / 16,384</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">3,255.6 → 3,251.4</td><td class="ttft-delta">−0.1%</td><td class="evidence-boundary">Boundary</td>
-              </tr>
-              <tr class="primary" data-prefix-row="ctx32768_prefix90">
-                <td>32K · 90%<span>3/3 matched</span></td><td class="lcp-cell">29,440 / 16,384</td><td class="off-hit">0</td><td class="on-hit">16,384</td><td class="ttft-pair">3,199.4 → 1,645.7</td><td class="ttft-delta">−48.6%</td><td class="evidence-primary">Primary</td>
-              </tr>
-              <tr data-prefix-row="ctx65536_prefix50">
-                <td>64K · 50%<span>3/3 matched</span></td><td class="lcp-cell">32,768 / 32,768</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">6,362.9 → 6,478.8</td><td class="ttft-delta">+1.8%</td><td class="evidence-boundary">Boundary</td>
-              </tr>
-              <tr class="primary" data-prefix-row="ctx65536_prefix90">
-                <td>64K · 90%<span>3/3 matched</span></td><td class="lcp-cell">58,880 / 49,152</td><td class="off-hit">0</td><td class="on-hit">49,152</td><td class="ttft-pair">6,399.3 → 1,734.6</td><td class="ttft-delta">−72.9%</td><td class="evidence-primary">Primary</td>
-              </tr>
-              <tr data-prefix-row="ctx131072_prefix50">
-                <td>128K · 50%<span>3/3 matched</span></td><td class="lcp-cell">65,536 / 65,536</td><td class="off-hit">0</td><td class="on-hit">0</td><td class="ttft-pair">12,924.6 → 13,008.2</td><td class="ttft-delta">+0.6%</td><td class="evidence-boundary">Boundary</td>
-              </tr>
-              <tr class="primary" data-prefix-row="ctx131072_prefix90">
-                <td>128K · 90%<span>3/3 matched</span></td><td class="lcp-cell">117,889 / 114,688</td><td class="off-hit">0</td><td class="on-hit">114,688</td><td class="ttft-pair">12,826.0 → 1,873.7</td><td class="ttft-delta">−85.4%</td><td class="evidence-primary">Primary</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="prefix-foot">
-          <div><b>主证据：</b>32K/64K/128K × 90% 的 9/9 follower 全部正命中，且每请求 hit 严格等于 token-LCP 的 16K floor。</div>
-          <div class="prefix-boundary"><b>边界：</b>其余 15 条 boundary 仍为零命中；其中三个 50% 长上下文组虽有非零 floor 仍未命中。TTFT Δ 仅作固定 Off→On 描述，<b>不是普遍 Prefix Cache 性能收益</b>。</div>
-        </div>
+      <p class="head-note">Atlas 800T A2 · Ascend 910B1 ×8 · DeepSeek-V4-Flash W8A8-MTP。<b>P6 主线与五份计划交付物已关闭</b>；P6.3C 以严格单变量不可行的 blocked 终态关闭，不等于所有候选实验均 green。</p>
+    </header>
+    <section class="page-body executive">
+      <div class="hero-metrics" aria-label="阶段核心数据">
+        <article class="hero-metric"><div class="hero-k">Official stable input</div><div class="hero-v">131,072</div><div class="hero-u">tokens</div><div class="hero-s">4096 / 32768 / 65536 / 98304 / 131072 + 64，5/5 首次成功。</div></article>
+        <article class="hero-metric"><div class="hero-k">MTP TPOT · paired relative mean</div><div class="hero-v">−47.0%</div><div class="hero-u">ms / token</div><div class="hero-s">24/24 paired batch 方向一致；8-cell 范围 −45.9% 至 −48.3%。</div></article>
+        <article class="hero-metric"><div class="hero-k">MTP batch output throughput</div><div class="hero-v">+71.0%</div><div class="hero-u">tok / s</div><div class="hero-s">24/24 paired batch 均提高；固定 Off→On 的描述性机制证据。</div></article>
+        <article class="hero-metric amber"><div class="hero-k">Prefix Cache primary hit</div><div class="hero-v">9 / 9</div><div class="hero-u">followers</div><div class="hero-s">Off hit=0；On 命中 16K / 48K / 112K，另 15 条 boundary 仍为 0。</div></article>
       </div>
-    </article>
-  </div>
-</section>
+      <div class="overview-grid">
+        <article class="panel">
+          <div class="panel-title"><span>P6 evidence chain · 验收结果</span><small>MAINLINE CLOSED · HISTORICAL NEGATIVE PROVENANCE PRESERVED</small></div>
+          <div class="chain">
+            <div class="chain-card"><span class="step">01</span><span class="pill green">GREEN</span><h3>P6.1C-R1 · Official Context</h3><div class="big">5 / 5</div><p>五档 official input + 64 output 均首次成功，最高稳定输入 131072。</p></div>
+            <div class="chain-card"><span class="step">02</span><span class="pill green">GREEN</span><h3>P6.1 · Unprofiled</h3><div class="big">90 / 90</div><p>18 cells、24 measured batches、零 retry；用户侧 streaming 性能 reference。</p></div>
+            <div class="chain-card"><span class="step">03</span><span class="pill green">GREEN</span><h3>P6.2 · Profiled</h3><div class="big">3 × 136</div><p>三个代表 cell；每 cell 136 SQLite，6 行 phase-memory、八卡覆盖。</p></div>
+            <div class="chain-card"><span class="step">04</span><span class="pill green">GREEN</span><h3>P6.3A · MTP Matched A/B</h3><div class="big">108 / 108</div><p>48/48 batches、24/24 paired batch 三项方向一致；accepted Δ=4896。</p></div>
+            <div class="chain-card"><span class="step">05</span><span class="pill green">GREEN</span><h3>P6.3B-R4-R1 · Prefix</h3><div class="big">64 / 64</div><p>显式 false/true、same R2 repair；primary 9/9，boundary 0/15。</p></div>
+            <div class="chain-card blocked"><span class="step">06</span><span class="pill amber">BLOCKED</span><h3>P6.3C · Chunked Prefill</h3><div class="big">STRICT GATE</div><p>4096 &lt; 135168；Off 侧在 resolved config 前失败，未创建伪 matched A/B。</p></div>
+          </div>
+        </article>
+        <article class="panel config-panel">
+          <div class="panel-title"><span>冻结实验条件</span><small>ALL ACCEPTED P6 REFERENCES</small></div>
+          <div class="config-list">
+            <div class="config-item"><small>Model</small><strong>DeepSeek-V4-Flash W8A8-MTP</strong><span>quantization=ascend · 70 shards · checkpoint 约 279.4 GiB</span></div>
+            <div class="config-item"><small>Hardware / topology</small><strong>8 × Ascend 910B1 · TP8 + EP</strong><span>Atlas 800T A2 · 64GB HBM/card</span></div>
+            <div class="config-item"><small>Runtime pin</small><strong>vLLM 0.22.1+empty</strong><span>0decac0d… · vLLM-Ascend 0.22.1rc1@5f6faa0c…</span></div>
+            <div class="config-item"><small>MTP / graph</small><strong>num_speculative_tokens=1</strong><span>FULL_DECODE_ONLY · task-local MTP overlay</span></div>
+            <div class="config-item"><small>Scheduler</small><strong>max_model_len=135168</strong><span>batched_tokens=4096 · max_num_seqs=1 · block=128</span></div>
+            <div class="config-item"><small>Request protocol</small><strong>Streaming · temperature=0</strong><span>ignore_eos · fixed output · exact HTTP/token/SSE gates</span></div>
+            <div class="config-item"><small>Default feature state</small><strong>Chunked Prefill + Prefix Cache ON</strong><span>P6.3A 保持；P6.3B 仅显式切 Prefix Cache</span></div>
+            <div class="config-item"><small>Evidence hygiene</small><strong>No generated content retained</strong><span>token IDs/raw logs/profiler traces 留服务器</span></div>
+          </div>
+        </article>
+      </div>
+      <div class="summary" aria-label="核心结论">
+        <div class="summary-head">结论</div>
+        <div class="summary-item"><span><b>运行边界：</b>冻结 official 配置完成 <span class="good">131072+64+c1</span>，它是功能/稳定性容量事实，不是剩余 KV headroom。</span></div>
+        <div class="summary-item"><span><b>用户性能：</b>P6.1 MTP-on TPOT 约 <span class="good">198–205 ms/token</span>；并发 E2EL 含 max_num_seqs=1 排队。</span></div>
+        <div class="summary-item"><span><b>机制效应：</b>P6.3A 的 TPOT/E2EL/批输出吞吐均方向一致；P6.3B 只接受 primary scope 命中机制。</span></div>
+        <div class="summary-item"><span><b>终态边界：</b>P6.3C 是 <span class="warn">有效 blocked</span>；不得改变第二参数制造 Chunked Prefill A/B。</span></div>
+      </div>
+    </section>
+    <footer class="page-foot"><span><b>事实源：</b>P6 artifact manifest / baseline contract / accepted workloads / developer-reviewed bounded packages。</span><span>数据运行 2026-07-14—16 · 页面复核 2026-07-28 · Page 1 / 5</span></footer>
+  </main>
 
-<section class="summary">
-  <div class="summary-head">核心结论</div>
-  <div class="summary-item"><span><b>总体效应：</b>在冻结的 W8A8 / TP8+EP 配置下，MTP 在 24 个 paired batch 中一致降低 E2EL 与 TPOT 并提高 batch output throughput，三项相对变化均值分别为 <span class="good">−40.9%、−47.0%、+71.0%</span>。</span></div>
-  <div class="summary-item"><span><b>绝对性能：</b>8 个 cell 的 TPOT 由 <span class="red">372.51–385.18</span> ms/token 收敛至 <b>197.48–205.93</b> ms/token；128K+256 C1 的 E2EL 由 111.31 s 降至 63.69 s。</span></div>
-  <div class="summary-item"><span><b>证据强度：</b>P6.3A 为 108/108 matched request、24/24 paired batch 方向一致；固定 Off→On、每 cell 3 repeat，结论保持描述性。</span></div>
-  <div class="summary-item" data-summary="prefix"><span><b>Prefix Cache：</b><span class="good">显式 Prefix Cache 开关产生了可观测机制效应</span>：Off hit=0，On primary 9/9；TTFT 描述性下降 48.6% / 72.9% / 85.4%，boundary 0/15。</span></div>
-</section>
+  <main class="report-page" data-title="P6.1 基线">
+    <header class="page-head">
+      <div>
+        <div class="eyebrow">P6.1C-R1 + P6.1 · OFFICIAL CONTEXT &amp; UNPROFILED STREAMING REFERENCE</div>
+        <h2>18-cell 基线：MTP-on 解码稳定在约 200 ms/token，并发主要体现串行排队</h2>
+      </div>
+      <p class="head-note">P6.1：<b>18/18 cells、24/24 measured batches、90/90 measured requests、0 retry</b>。表内是服务器回传 `matrix_cell_summary.tsv` 的 mean；C4/C8 因 `max_num_seqs=1`，逐请求 TTFT/E2EL 包含排队，不构成并发扩展性结论。</p>
+    </header>
+    <section class="page-body baseline-layout">
+      <div class="ladder" aria-label="Official context ladder">
+        <div class="ladder-label"><strong>P6.1C-R1 OFFICIAL LADDER</strong><span>output=64 · concurrency=1 · first attempt · retry=0</span></div>
+        <div class="ladder-step"><strong>4,096</strong><span>PASS · accepted Δ32</span></div>
+        <div class="ladder-step"><strong>32,768</strong><span>PASS · accepted Δ32</span></div>
+        <div class="ladder-step"><strong>65,536</strong><span>PASS · accepted Δ32</span></div>
+        <div class="ladder-step"><strong>98,304</strong><span>PASS · accepted Δ32</span></div>
+        <div class="ladder-step"><strong>131,072</strong><span>PASS · accepted Δ32</span></div>
+      </div>
+      <table class="baseline-table" aria-label="P6.1 18-cell unprofiled baseline">
+        <thead>
+          <tr><th rowspan="2">Input</th><th rowspan="2">Output</th><th rowspan="2">C</th><th rowspan="2">Request n</th><th colspan="4">Request / batch mean</th><th rowspan="2">证据解释</th></tr>
+          <tr><th>TTFT (ms)</th><th>TPOT (ms/token)</th><th>E2EL (s)</th><th>Batch output (tok/s)</th></tr>
+        </thead>
+        <tbody>
+          <tr class="group-start"><td class="context">4K</td><td>64</td><td>1</td><td>3</td><td>411.1</td><td>203.30</td><td>13.22</td><td>4.84</td><td>C1 · 3 repeats</td></tr>
+          <tr><td class="context">4K</td><td>64</td><td>4</td><td>4</td><td class="queue">20,266.0</td><td>202.51</td><td class="queue">33.02</td><td>4.86</td><td>queue included</td></tr>
+          <tr><td class="context">4K</td><td>64</td><td>8</td><td>8</td><td class="queue">46,746.9</td><td>202.15</td><td class="queue">59.48</td><td>4.87</td><td>queue included</td></tr>
+          <tr><td class="context">4K</td><td>256</td><td>1</td><td>1</td><td>401.2</td><td>198.09</td><td>50.91</td><td>5.03</td><td>single observation</td></tr>
+          <tr><td class="context">4K</td><td>256</td><td>4</td><td>4</td><td class="queue">77,352.4</td><td>199.70</td><td class="queue">128.28</td><td>4.99</td><td>queue included</td></tr>
+          <tr><td class="context">4K</td><td>256</td><td>8</td><td>8</td><td class="queue">179,029.0</td><td>201.49</td><td class="queue">230.41</td><td>4.94</td><td>queue included</td></tr>
+          <tr class="group-start"><td class="context">64K</td><td>64</td><td>1</td><td>1</td><td>6,584.4</td><td>202.83</td><td>19.36</td><td>3.30</td><td>single observation</td></tr>
+          <tr><td class="context">64K</td><td>64</td><td>4</td><td>12</td><td class="queue">35,489.8</td><td>202.85</td><td class="queue">48.27</td><td>3.32</td><td>3 batches · queue</td></tr>
+          <tr><td class="context">64K</td><td>64</td><td>8</td><td>8</td><td class="queue">74,041.4</td><td>202.54</td><td class="queue">86.80</td><td>3.32</td><td>queue included</td></tr>
+          <tr><td class="context">64K</td><td>256</td><td>1</td><td>1</td><td>6,534.9</td><td>199.50</td><td>57.41</td><td>4.46</td><td>single observation</td></tr>
+          <tr><td class="context">64K</td><td>256</td><td>4</td><td>4</td><td class="queue">91,843.6</td><td>197.96</td><td class="queue">142.32</td><td>4.50</td><td>queue included</td></tr>
+          <tr><td class="context">64K</td><td>256</td><td>8</td><td>8</td><td class="queue">208,982.5</td><td>200.04</td><td class="queue">259.99</td><td>4.45</td><td>queue included</td></tr>
+          <tr class="group-start"><td class="context">128K</td><td>64</td><td>1</td><td>3</td><td>13,084.3</td><td>201.84</td><td>25.80</td><td>2.48</td><td>C1 · 3 repeats</td></tr>
+          <tr><td class="context">128K</td><td>64</td><td>4</td><td>4</td><td class="queue">51,571.8</td><td>201.36</td><td class="queue">64.26</td><td>2.49</td><td>queue included</td></tr>
+          <tr><td class="context">128K</td><td>64</td><td>8</td><td>8</td><td class="queue">102,964.1</td><td>201.14</td><td class="queue">115.64</td><td>2.49</td><td>queue included</td></tr>
+          <tr><td class="context">128K</td><td>256</td><td>1</td><td>1</td><td>13,107.5</td><td>199.05</td><td>63.87</td><td>4.01</td><td>single observation</td></tr>
+          <tr><td class="context">128K</td><td>256</td><td>4</td><td>4</td><td class="queue">108,999.8</td><td>201.64</td><td class="queue">160.42</td><td>3.97</td><td>queue included</td></tr>
+          <tr><td class="context">128K</td><td>256</td><td>8</td><td>8</td><td class="queue">244,757.9</td><td>204.91</td><td class="queue">297.01</td><td>3.91</td><td>queue included</td></tr>
+        </tbody>
+      </table>
+      <div class="baseline-foot">
+        <div class="table-note"><b>指标口径：</b>TTFT=请求发出到首 token；TPOT=(末 token−首 token)/(N−1)；E2EL=请求端到端；batch output throughput=该 batch 总输出 token / batch wall time。</div>
+        <div class="table-note"><b>有效结论：</b>C1 下输入从 4K 增至 128K，TTFT 约 0.41s→13.08s；TPOT 仍约 198–203ms/token。C4/C8 batch throughput 基本不扩展，符合 `max_num_seqs=1` 的串行服务边界。</div>
+      </div>
+    </section>
+    <footer class="page-foot"><span><b>边界：</b>客户端 SSE 同一 chunk 的 token 共享到达时间；0-gap ITL 是传输观测，不是 0 NPU decode latency。</span><span>P6.1 accepted_token_delta=6,624 · cleanup clean · Page 2 / 5</span></footer>
+  </main>
 
-<footer class="footer">
-  <div><b>脚注：</b>P6.2 仅有 LOW-confidence AI Core raw metric，不作 utilization(%)；61,436–61,447 MB/card 为 whole-device occupancy；R3 on-vs-on 与 R4 root-squash blocked 保留，R4-R1 已接受 green；首次 localhost proxy 中断为零请求 pre-run，不计入性能结论。</div>
-  <div>数据快照 2026-07-16 · P6.1 / P6.3A / P6.3B-R4-R1 · V5</div>
-</footer>
-</main>
+  <main class="report-page" data-title="P6.3A MTP">
+    <header class="page-head">
+      <div>
+        <div class="eyebrow">P6.3A · STRICT MATCHED MTP OFF / ON · UNPROFILED</div>
+        <h2>MTP 主要改变 Decode：8 个 cell 的 TPOT 近乎减半，长 Prefill 稀释 E2EL 改善</h2>
+      </div>
+      <p class="head-note">两个 fresh lifecycle，固定 <b>MTP Off→On</b>；除 `speculative_config={method:mtp,num_speculative_tokens:1}` 外 server argv、body、顺序和指标一致。8 cells × 3 batches/mode，108/108 measured requests，0 retry。</p>
+    </header>
+    <section class="page-body mtp-layout">
+      <div class="mtp-strip">
+        <div class="mini-stat"><strong>−47.0%</strong><div>TPOT paired relative mean<small>24/24 batch 下降</small></div></div>
+        <div class="mini-stat"><strong>−40.9%</strong><div>E2EL paired relative mean<small>范围 −30.0% 至 −47.0%</small></div></div>
+        <div class="mini-stat"><strong>+71.0%</strong><div>Batch output throughput<small>范围 +42.8% 至 +89.2%</small></div></div>
+        <div class="mini-stat"><strong>4,896</strong><div>MTP accepted token Δ<small>MTP-on measured run</small></div></div>
+      </div>
+      <table class="abs-table" aria-label="MTP on off absolute and relative metrics">
+        <thead>
+          <tr><th rowspan="2">Workload Cell</th><th class="group-e2el" colspan="3">E2EL（ms）</th><th class="group-tpot" colspan="3">TPOT（ms/token）</th><th class="group-tps" colspan="3">Batch Output Throughput（tok/s）</th></tr>
+          <tr><th>Off</th><th>On</th><th>Δ</th><th>Off</th><th>On</th><th>Δ</th><th>Off</th><th>On</th><th>Δ</th></tr>
+        </thead>
+        <tbody>
+          <tr data-cell-row="short_prefill"><td><b>Short Prefill</b><span>4K + 64 · C1</span></td><td data-cell="short_prefill" data-metric="e2el" data-mode="off">24,427.9</td><td data-cell="short_prefill" data-metric="e2el" data-mode="on">13,389.3</td><td class="delta-down">−45.1%</td><td data-cell="short_prefill" data-metric="tpot" data-mode="off">381.42</td><td data-cell="short_prefill" data-metric="tpot" data-mode="on">205.93</td><td class="delta-down">−45.9%</td><td data-cell="short_prefill" data-metric="throughput" data-mode="off">2.62</td><td data-cell="short_prefill" data-metric="throughput" data-mode="on">4.78</td><td class="delta-up">+82.6%</td></tr>
+          <tr data-cell-row="short_decode"><td><b>Short Decode</b><span>4K + 256 · C1</span></td><td data-cell="short_decode" data-metric="e2el" data-mode="off">96,449.5</td><td data-cell="short_decode" data-metric="e2el" data-mode="on">52,075.7</td><td class="delta-down">−46.0%</td><td data-cell="short_decode" data-metric="tpot" data-mode="off">376.69</td><td data-cell="short_decode" data-metric="tpot" data-mode="on">202.59</td><td class="delta-down">−46.2%</td><td data-cell="short_decode" data-metric="throughput" data-mode="off">2.65</td><td data-cell="short_decode" data-metric="throughput" data-mode="on">4.92</td><td class="delta-up">+85.2%</td></tr>
+          <tr data-cell-row="short_decode_c8"><td><b>Short Decode · C8</b><span>4K + 256 · C8</span></td><td data-cell="short_decode_c8" data-metric="e2el" data-mode="off">431,357.2</td><td data-cell="short_decode_c8" data-metric="e2el" data-mode="on">228,470.6</td><td class="delta-down">−47.0%</td><td data-cell="short_decode_c8" data-metric="tpot" data-mode="off">374.99</td><td data-cell="short_decode_c8" data-metric="tpot" data-mode="on">197.48</td><td class="delta-down">−47.3%</td><td data-cell="short_decode_c8" data-metric="throughput" data-mode="off">2.67</td><td data-cell="short_decode_c8" data-metric="throughput" data-mode="on">5.04</td><td class="delta-up">+89.2%</td></tr>
+          <tr data-cell-row="mid_prefill"><td><b>Mid Prefill</b><span>64K + 64 · C1</span></td><td data-cell="mid_prefill" data-metric="e2el" data-mode="off">29,649.0</td><td data-cell="mid_prefill" data-metric="e2el" data-mode="on">18,985.0</td><td class="delta-down">−36.0%</td><td data-cell="mid_prefill" data-metric="tpot" data-mode="off">372.51</td><td data-cell="mid_prefill" data-metric="tpot" data-mode="on">199.46</td><td class="delta-down">−46.5%</td><td data-cell="mid_prefill" data-metric="throughput" data-mode="off">2.16</td><td data-cell="mid_prefill" data-metric="throughput" data-mode="on">3.37</td><td class="delta-up">+56.1%</td></tr>
+          <tr data-cell-row="mid_prefill_c4"><td><b>Mid Prefill · C4</b><span>64K + 64 · C4</span></td><td data-cell="mid_prefill_c4" data-metric="e2el" data-mode="off">74,394.5</td><td data-cell="mid_prefill_c4" data-metric="e2el" data-mode="on">47,776.0</td><td class="delta-down">−35.7%</td><td data-cell="mid_prefill_c4" data-metric="tpot" data-mode="off">374.05</td><td data-cell="mid_prefill_c4" data-metric="tpot" data-mode="on">200.91</td><td class="delta-down">−46.3%</td><td data-cell="mid_prefill_c4" data-metric="throughput" data-mode="off">2.15</td><td data-cell="mid_prefill_c4" data-metric="throughput" data-mode="on">3.35</td><td class="delta-up">+55.9%</td></tr>
+          <tr data-cell-row="mid_decode"><td><b>Mid Decode</b><span>64K + 256 · C1</span></td><td data-cell="mid_decode" data-metric="e2el" data-mode="off">103,319.8</td><td data-cell="mid_decode" data-metric="e2el" data-mode="on">56,894.2</td><td class="delta-down">−44.9%</td><td data-cell="mid_decode" data-metric="tpot" data-mode="off">379.96</td><td data-cell="mid_decode" data-metric="tpot" data-mode="on">197.74</td><td class="delta-down">−47.9%</td><td data-cell="mid_decode" data-metric="throughput" data-mode="off">2.48</td><td data-cell="mid_decode" data-metric="throughput" data-mode="on">4.50</td><td class="delta-up">+81.6%</td></tr>
+          <tr data-cell-row="long_prefill"><td><b>Long Prefill</b><span>128K + 64 · C1</span></td><td data-cell="long_prefill" data-metric="e2el" data-mode="off">36,504.7</td><td data-cell="long_prefill" data-metric="e2el" data-mode="on">25,564.7</td><td class="delta-down">−30.0%</td><td data-cell="long_prefill" data-metric="tpot" data-mode="off">378.61</td><td data-cell="long_prefill" data-metric="tpot" data-mode="on">199.99</td><td class="delta-down">−47.2%</td><td data-cell="long_prefill" data-metric="throughput" data-mode="off">1.75</td><td data-cell="long_prefill" data-metric="throughput" data-mode="on">2.50</td><td class="delta-up">+42.8%</td></tr>
+          <tr data-cell-row="long_decode"><td><b>Long Decode</b><span>128K + 256 · C1</span></td><td data-cell="long_decode" data-metric="e2el" data-mode="off">111,313.2</td><td data-cell="long_decode" data-metric="e2el" data-mode="on">63,693.4</td><td class="delta-down">−42.8%</td><td data-cell="long_decode" data-metric="tpot" data-mode="off">385.18</td><td data-cell="long_decode" data-metric="tpot" data-mode="on">199.03</td><td class="delta-down">−48.3%</td><td data-cell="long_decode" data-metric="throughput" data-mode="off">2.30</td><td data-cell="long_decode" data-metric="throughput" data-mode="on">4.02</td><td class="delta-up">+74.7%</td></tr>
+        </tbody>
+      </table>
+      <div class="mtp-foot">
+        <div class="table-note"><b>解释：</b>MTP-on 的 TTFT 并未形成一致改善；收益集中在 decode。Prefill-heavy 的 128K+64 E2EL 只下降 30.0%，但 TPOT 仍下降 47.2%，说明输入阶段占比稀释端到端变化。</div>
+        <div class="data-action"><span>静态值来自已验收结果包；可在本浏览器重新导入同一 `mode_cell_summary.tsv` 核对 48 个绝对值。<br/><b id="mtpImportStatus">静态值已写入 · 未导入</b></span><label>本地导入 TSV<input id="mtpTsvInput" type="file" accept=".tsv,.txt,text/tab-separated-values"/></label></div>
+      </div>
+    </section>
+    <footer class="page-foot"><span><b>边界：</b>Δ 是 3 个 paired batch 内 request median relative delta 的均值；固定顺序、3 repeats、无显著性检验，不是随机化因果或普遍加速。</span><span>事实源：mode_cell_summary.tsv + paired_batch_summary.tsv · Page 3 / 5</span></footer>
+  </main>
+
+  <main class="report-page" data-title="P6.3B Prefix Cache">
+    <header class="page-head">
+      <div>
+        <div class="eyebrow">P6.3B-R4-R1 · EXPLICIT PREFIX CACHE FALSE / TRUE · SAME R2 HYBRID-KV REPAIR</div>
+        <h2>Prefix Cache 机制只在三组 90% 长前缀形成精确命中，边界组仍为零</h2>
+      </div>
+      <p class="head-note">两个 fresh lifecycle，固定 Prefix Cache Off→On；显式 `--no-enable-prefix-caching` / `--enable-prefix-caching`，resolved=false/true。8 groups，每组每 mode 1 prime + 3 measured follower，<b>64/64 request</b>。</p>
+    </header>
+    <section class="page-body prefix-layout">
+      <div class="prefix-banner">
+        <div class="prefix-banner-main"><strong>显式 Prefix Cache 开关产生了可观测机制效应</strong><span>canonical body byte-paired · token-LCP frozen · hybrid LCM=16,384 · MTP/health/queue/cleanup all pass</span></div>
+        <div class="prefix-stat"><strong>Off hit=0</strong><span>all off requests</span></div>
+        <div class="prefix-stat"><strong>On 9 / 9</strong><span>primary positive</span></div>
+        <div class="prefix-stat"><strong>0 / 15</strong><span>boundary positive</span></div>
+      </div>
+      <table class="prefix-table" aria-label="P6.3B-R4-R1 explicit Prefix Cache matched evidence">
+        <thead>
+          <tr><th rowspan="2">Input · Prefix</th><th rowspan="2">Actual token-LCP /<br/>16K floor</th><th colspan="2">Hit / measured request</th><th rowspan="2">TTFT mean Off → On (ms)</th><th rowspan="2">Paired TTFT Δ</th><th rowspan="2">证据角色</th></tr>
+          <tr><th>Off</th><th>On</th></tr>
+        </thead>
+        <tbody>
+          <tr data-prefix-row="ctx4096_prefix50"><td>4K · 50%<span>3/3 matched</span></td><td>2,048 / 0</td><td class="off-hit">0</td><td class="on-hit">0</td><td>416.2 → 417.4</td><td class="ttft-delta">+0.3%</td><td class="role boundary-role">Boundary</td></tr>
+          <tr data-prefix-row="ctx4096_prefix90"><td>4K · 90%<span>3/3 matched</span></td><td>3,584 / 0</td><td class="off-hit">0</td><td class="on-hit">0</td><td>405.0 → 415.7</td><td class="ttft-delta">+2.7%</td><td class="role boundary-role">Boundary</td></tr>
+          <tr data-prefix-row="ctx32768_prefix50"><td>32K · 50%<span>3/3 matched</span></td><td>16,384 / 16,384</td><td class="off-hit">0</td><td class="on-hit">0</td><td>3,255.6 → 3,251.4</td><td class="ttft-delta">−0.1%</td><td class="role boundary-role">Boundary</td></tr>
+          <tr class="primary" data-prefix-row="ctx32768_prefix90"><td>32K · 90%<span>3/3 matched</span></td><td>29,440 / 16,384</td><td class="off-hit">0</td><td class="on-hit">16,384</td><td>3,199.4 → 1,645.7</td><td class="ttft-delta">−48.6%</td><td class="role">Primary</td></tr>
+          <tr data-prefix-row="ctx65536_prefix50"><td>64K · 50%<span>3/3 matched</span></td><td>32,768 / 32,768</td><td class="off-hit">0</td><td class="on-hit">0</td><td>6,362.9 → 6,478.8</td><td class="ttft-delta">+1.8%</td><td class="role boundary-role">Boundary</td></tr>
+          <tr class="primary" data-prefix-row="ctx65536_prefix90"><td>64K · 90%<span>3/3 matched</span></td><td>58,880 / 49,152</td><td class="off-hit">0</td><td class="on-hit">49,152</td><td>6,399.3 → 1,734.6</td><td class="ttft-delta">−72.9%</td><td class="role">Primary</td></tr>
+          <tr data-prefix-row="ctx131072_prefix50"><td>128K · 50%<span>3/3 matched</span></td><td>65,536 / 65,536</td><td class="off-hit">0</td><td class="on-hit">0</td><td>12,924.6 → 13,008.2</td><td class="ttft-delta">+0.6%</td><td class="role boundary-role">Boundary</td></tr>
+          <tr class="primary" data-prefix-row="ctx131072_prefix90"><td>128K · 90%<span>3/3 matched</span></td><td>117,889 / 114,688</td><td class="off-hit">0</td><td class="on-hit">114,688</td><td>12,826.0 → 1,873.7</td><td class="ttft-delta">−85.4%</td><td class="role">Primary</td></tr>
+        </tbody>
+      </table>
+      <div class="prefix-bottom">
+        <div class="lineage" aria-label="P6.3B lineage">
+          <div class="lineage-item amber"><small>ORIGINAL</small><strong>YELLOW · zero hit</strong></div>
+          <div class="lineage-item red"><small>R1</small><strong>RED · import order</strong></div>
+          <div class="lineage-item green"><small>R2</small><strong>GREEN · repair</strong></div>
+          <div class="lineage-item amber"><small>R3</small><strong>YELLOW · on-vs-on</strong></div>
+          <div class="lineage-item amber"><small>R4</small><strong>BLOCKED · NFS</strong></div>
+          <div class="lineage-item green"><small>R4-R1</small><strong>GREEN · explicit A/B</strong></div>
+        </div>
+        <div class="table-note"><b>严格边界：</b>其余 15 条 boundary 仍为零命中；三个 50% 长上下文组即便有非零 16K floor 也未命中。TTFT 只作固定 Off→On 描述，<b>不是普遍 Prefix Cache 性能收益</b>。</div>
+      </div>
+    </section>
+    <footer class="page-foot"><span><b>执行偏差：</b>首次调用因 localhost `no_proxy` 缺失在 0 request 前中止；最终 2 个 measured lifecycle fresh 执行，机制 green 保留但不升级为性能 green。</span><span>16 prime + 48 measured · MTP accepted Δ=1024/mode · Page 4 / 5</span></footer>
+  </main>
+
+  <main class="report-page" data-title="P6.2 与收口">
+    <header class="page-head">
+      <div>
+        <div class="eyebrow">P6.2 PROFILED EVIDENCE + P6.3C FEASIBILITY + REPOSITORY CLOSEOUT</div>
+        <h2>Profiler 链路可用，但不替代性能基线；Chunked Prefill 严格 A/B 被配置关系阻断</h2>
+      </div>
+      <p class="head-note">P6.2 证明 operator / phase memory / transfer / request-device aggregate 证据管道可工作；P6.3C 证明冻结 profile 下不能只切一个布尔值完成 Off/On。<b>二者都是有效终态，不应被改写为性能归因或遗漏实验。</b></p>
+    </header>
+    <section class="page-body evidence-layout">
+      <article class="profile-panel">
+        <div class="panel-title"><span>P6.2 · Profiled evidence</span><small>3/3 FIRST ATTEMPT · RETRY 0 · CLEANUP CLEAN</small></div>
+        <div class="profile-stats">
+          <div class="profile-stat"><strong>3 × 136</strong><span>cells × SQLite files</span></div>
+          <div class="profile-stat"><strong>6</strong><span>phase-memory rows</span></div>
+          <div class="profile-stat"><strong>8 / 8</strong><span>minimum device coverage</span></div>
+          <div class="profile-stat"><strong>0</strong><span>parse failures</span></div>
+        </div>
+        <table class="profile-table" aria-label="P6.2 profiled cell summary">
+          <thead><tr><th>Cell</th><th>Input + Output</th><th>MTP accepted Δ</th><th>Diagnostic TTFT</th><th>Diagnostic TPOT</th><th>Diagnostic E2EL</th><th>HBM total max</th></tr></thead>
+          <tbody>
+            <tr><td>short_prefill</td><td>4096 + 64</td><td>32</td><td>418.9 ms</td><td>213.12 ms/token</td><td>13.85 s</td><td>491,621 MB / 8 cards</td></tr>
+            <tr><td>long_prefill</td><td>131072 + 64</td><td>32</td><td>13,558.1 ms</td><td>210.18 ms/token</td><td>26.80 s</td><td>491,635 MB / 8 cards</td></tr>
+            <tr><td>decode_heavy</td><td>4096 + 256</td><td>128</td><td>427.3 ms</td><td>212.97 ms/token</td><td>54.73 s</td><td>491,626 MB / 8 cards</td></tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="closure-panel">
+        <div class="panel-title"><span>P6.3C · strict-single-variable feasibility</span><small>COMPLETED LOCAL FROZEN-SOURCE AUDIT</small></div>
+        <div class="closure-body">
+          <div class="block-card"><span class="pill amber">blocked_p6_3c_not_strict_single_variable</span><strong>显式布尔存在，但 Off 侧无法形成 resolved config</strong><p>CLI 同时提供 `--enable-chunked-prefill` 和 `--no-enable-chunked-prefill`。然而 frozen SchedulerConfig 在 Chunked Prefill=false 且 token budget 小于 max model length 时，于任何请求前抛错。</p></div>
+          <div class="equation">max_num_batched_tokens 4,096 &lt; max_model_len 135,168</div>
+          <div class="no-run">
+            <div><strong>0</strong><span>WORKLOAD</span></div>
+            <div><strong>0</strong><span>MODE RUNNER</span></div>
+            <div><strong>0</strong><span>REQUEST BODY</span></div>
+            <div><strong>0</strong><span>NPU REQUEST</span></div>
+          </div>
+        </div>
+      </article>
+      <article class="package-panel">
+        <div class="panel-title"><span>Accepted bounded evidence packages / audit</span><small>RAW SERVER ARTIFACTS NOT INCLUDED</small></div>
+        <table class="package-table" aria-label="P6 accepted evidence packages">
+          <thead><tr><th>Stage</th><th>Task / evidence role</th><th>Files / bytes</th><th>Aggregate SHA-256</th><th>Accepted grade</th></tr></thead>
+          <tbody>
+            <tr><td>P6.1C-R1</td><td>Official context ladder</td><td>13 / 47,955</td><td>e03639bd43b7…</td><td>green_mtp_official_context_ladder</td></tr>
+            <tr><td>P6.1</td><td>Unprofiled performance reference</td><td>8 / 67,917</td><td>5110750ad684…</td><td>green_mtp_unprofiled_baseline</td></tr>
+            <tr><td>P6.2</td><td>Profiled evidence pipeline</td><td>11 / 17,501</td><td>9bf348373ee7…</td><td>green_mtp_profiled_evidence</td></tr>
+            <tr><td>P6.3A</td><td>Matched MTP Off / On</td><td>7 / 42,877</td><td>f853a86a7c7c…</td><td>green_p6_3a_mtp_matched_ab</td></tr>
+            <tr><td>P6.3B-R4-R1</td><td>Explicit Prefix Cache control</td><td>10 / 44,550</td><td>a1b966194eb2…</td><td>green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab</td></tr>
+            <tr><td>P6.3C</td><td>Frozen-source feasibility audit</td><td>1 / 7,489</td><td>aeb91adc8b0b…</td><td>blocked_p6_3c_not_strict_single_variable</td></tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="boundary-panel">
+        <div class="panel-title"><span>Evidence boundary · 四个状态轴不混写</span><small>P6 → P7 / P8 / P9</small></div>
+        <div class="boundary-grid">
+          <div class="boundary-card"><h3>Functional / stability</h3><p>131072+64 首次成功，health、queue、MTP counter 与 cleanup 完整；不代表 KV headroom 已完整量化。</p></div>
+          <div class="boundary-card"><h3>User performance</h3><p>只取 P6.1 unprofiled streaming；P6.2 profiler-wrapped timing 不回填性能表。</p></div>
+          <div class="boundary-card"><h3>Mechanism</h3><p>MTP 为 fixed-order descriptive effect；Prefix 只接受三组 primary 命中，不接受 universal benefit。</p></div>
+          <div class="boundary-card"><h3>Hardware attribution</h3><p>whole-device HBM ≠ KV bytes / HBM traffic；P6 不形成 bottleneck 或 hardware priority claim。</p></div>
+        </div>
+      </article>
+    </section>
+    <footer class="page-foot"><span><b>P6 终态：</b>主线与五份交付物已关闭；P6.3D max_num_seqs 与 P6.4 MindIE 为可选/条件项，不阻塞当前 vLLM-Ascend reference。</span><span>P6 artifact manifest date 2026-07-16 · Page 5 / 5</span></footer>
+  </main>
 </div>
-
 <script>
-(function(){
-  const stage=document.getElementById('stage');
-  function fit(){
-    const s=Math.min(window.innerWidth/1920,window.innerHeight/1080);
-    stage.style.transform='scale('+s+')';
-  }
-  window.addEventListener('resize',fit,{passive:true});
-  fit();
-})();
-</script>
+(() => {
+  const stage = document.getElementById("stage");
+  const pages = Array.from(document.querySelectorAll(".report-page"));
+  const navButtons = Array.from(document.querySelectorAll(".deck-nav button"));
+  let pageIndex = 0;
 
-<script>
-(function(){
-  const input=document.getElementById('mtpTsvInput');
-  const status=document.getElementById('mtpImportStatus');
-  if(!input||!status) return;
-  const expected=['short_prefill','short_decode','short_decode_c8','mid_prefill','mid_prefill_c4','mid_decode','long_prefill','long_decode'];
-  const normalize=s=>String(s??'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'');
-  const parseMetricMean=v=>{
-    const raw=String(v??'').trim();
-    const unquoted=raw.startsWith('"')&&raw.endsWith('"')?raw.slice(1,-1).replace(/""/g,'"'):raw;
-    try{
-      const parsed=JSON.parse(unquoted);
-      if(parsed&&Number.isFinite(Number(parsed.mean)))return Number(parsed.mean);
-    }catch(_){ /* flat numeric TSV/CSV remains supported */ }
-    const m=unquoted.replace(/,/g,'').match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/);
-    return m?Number(m[0]):NaN;
-  };
-  const findHeader=(headers, exact, includesAll, excludes=[])=>{
-    const nh=headers.map(h=>normalize(h));
-    for(const e of exact){const i=nh.indexOf(e);if(i>=0)return i;}
-    const candidates=[];
-    nh.forEach((h,i)=>{
-      if(includesAll.every(x=>h.includes(x)) && excludes.every(x=>!h.includes(x))) candidates.push(i);
-    });
-    if(!candidates.length)return -1;
-    const score=i=>{
-      const h=nh[i]; let s=0;
-      if(h.includes('mean')||h.includes('avg')||h.includes('average'))s+=5;
-      if(h.includes('median'))s+=3;
-      if(h.includes('ms')||h.includes('tps')||h.includes('tokenpersecond')||h.includes('tokenspersecond'))s+=2;
-      return s;
-    };
-    candidates.sort((a,b)=>score(b)-score(a));
-    return candidates[0];
-  };
-  const canonicalCell=v=>{
-    const n=normalize(v);
-    const exact=expected.find(x=>n===normalize(x));
-    if(exact)return exact;
-    return [...expected].sort((a,b)=>normalize(b).length-normalize(a).length).find(x=>n.includes(normalize(x))) || '';
-  };
-  const canonicalMode=v=>{
-    const n=normalize(v);
-    if(n.includes('off')||n.includes('disable')||n==='0'||n==='false'||n==='baseline')return 'off';
-    if(n.includes('on')||n.includes('enable')||n==='1'||n==='true'||n==='mtp')return 'on';
-    return '';
-  };
-  const fmt=(v,metric)=>{
-    if(!Number.isFinite(v))return '—';
-    if(metric==='e2el')return v.toLocaleString('en-US',{maximumFractionDigits:1,minimumFractionDigits:1});
-    return v.toLocaleString('en-US',{maximumFractionDigits:2,minimumFractionDigits:2});
-  };
-  function fill(cell,mode,metric,value){
-    const el=document.querySelector('[data-cell="'+cell+'"][data-mode="'+mode+'"][data-metric="'+metric+'"]');
-    if(!el||!Number.isFinite(value))return false;
-    el.textContent=fmt(value,metric);
-    el.classList.remove('missing');
-    return true;
+  function fitStage(){
+    if (window.matchMedia("print").matches) return;
+    const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    stage.style.transform = `scale(${scale})`;
   }
-  input.addEventListener('change',()=>{
-    const file=input.files&&input.files[0];
-    if(!file)return;
-    status.textContent='解析中…';
-    const reader=new FileReader();
-    reader.onerror=()=>{status.textContent='读取失败';};
-    reader.onload=()=>{
-      try{
-        const text=String(reader.result||'').replace(/^\uFEFF/,'').trim();
-        const first=(text.split(/\r?\n/,1)[0]||'');
-        const delim=(first.split('\t').length>=first.split(',').length)?'\t':',';
-        const lines=text.split(/\r?\n/).filter(x=>x.trim());
-        const splitLine=line=>delim==='\t'?line.split('\t'):line.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/).map(x=>x.replace(/^\"|\"$/g,''));
-        const headers=splitLine(lines[0]).map(x=>x.trim());
-        const cellI=findHeader(headers,['cellid','workloadcell','cell','scenario','workload'],['cell'],['delta','pct']);
-        const modeI=findHeader(headers,['mode','mtpmode','condition'],['mode'],['delta']);
-        const e2elI=findHeader(headers,['e2elmsmean','meane2elms','e2elmeanms','e2elms','e2el'],['e2el'],['delta','pct','percent','ratio']);
-        const tpotI=findHeader(headers,['tpotmsmean','meantpotms','tpotmeanms','tpotms','tpot'],['tpot'],['delta','pct','percent','ratio']);
-        let thrI=findHeader(headers,['batchoutputtokenspersecond','batchoutputthroughputmean','batchoutputthroughputtokenspersecond','batchoutputthroughputtps','outputthroughputmean','batchoutputthroughput'],['output','throughput'],['delta','pct','percent','ratio']);
-        if(thrI<0)thrI=findHeader(headers,['outputtps','batchtps'],['tps'],['delta','pct','percent','ratio']);
-        if(cellI<0||modeI<0||e2elI<0||tpotI<0||thrI<0){
-          throw new Error('未识别列：需要 cell_id、mode、E2EL、TPOT、batch output throughput');
+  function showPage(index){
+    pageIndex = Math.max(0, Math.min(pages.length - 1, index));
+    pages.forEach((page, i) => page.classList.toggle("active", i === pageIndex));
+    navButtons.forEach((button, i) => button.classList.toggle("active", i === pageIndex));
+    document.title = `DeepSeek-V4-Flash P6｜${pages[pageIndex].dataset.title}`;
+  }
+  navButtons.forEach((button, index) => button.addEventListener("click", () => showPage(index)));
+  window.addEventListener("keydown", event => {
+    if (["ArrowRight","ArrowDown","PageDown"].includes(event.key)) { event.preventDefault(); showPage(pageIndex + 1); }
+    if (["ArrowLeft","ArrowUp","PageUp"].includes(event.key)) { event.preventDefault(); showPage(pageIndex - 1); }
+    if (event.key === "Home") showPage(0);
+    if (event.key === "End") showPage(pages.length - 1);
+  });
+  window.addEventListener("resize", fitStage);
+  fitStage();
+
+  const input = document.getElementById("mtpTsvInput");
+  const status = document.getElementById("mtpImportStatus");
+  function meanValue(raw){
+    const normalized = raw.startsWith("\"") && raw.endsWith("\"")
+      ? raw.slice(1, -1).replace(/""/g, "\"")
+      : raw;
+    const value = JSON.parse(normalized);
+    return Number(value.mean);
+  }
+  function formatMetric(metric, value){
+    if (metric === "e2el") return value.toLocaleString("en-US", {minimumFractionDigits:1, maximumFractionDigits:1});
+    if (metric === "tpot") return value.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+    return value.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  if (input) input.addEventListener("change", async event => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+      const lines = (await file.text()).trim().split(/\r?\n/);
+      const headers = lines[0].split("\t");
+      const index = name => headers.indexOf(name);
+      const required = ["mode","cell_id","e2el_ms","tpot_ms","batch_output_tokens_per_second"];
+      if (required.some(name => index(name) < 0)) throw new Error("TSV 列不完整");
+      let rows = 0;
+      let values = 0;
+      for (const line of lines.slice(1)) {
+        const fields = line.split("\t");
+        const mode = fields[index("mode")].replace("mtp_", "");
+        const cell = fields[index("cell_id")];
+        const metrics = {
+          e2el: meanValue(fields[index("e2el_ms")]),
+          tpot: meanValue(fields[index("tpot_ms")]),
+          throughput: meanValue(fields[index("batch_output_tokens_per_second")])
+        };
+        rows += 1;
+        for (const [metric, value] of Object.entries(metrics)) {
+          const target = document.querySelector(`[data-cell="${cell}"][data-metric="${metric}"][data-mode="${mode}"]`);
+          if (target) { target.textContent = formatMetric(metric, value); values += 1; }
         }
-        let cells=0, values=0;
-        for(const line of lines.slice(1)){
-          const row=splitLine(line);
-          const cell=canonicalCell(row[cellI]);
-          const mode=canonicalMode(row[modeI]);
-          if(!cell||!mode)continue;
-          let rowFilled=0;
-          rowFilled+=fill(cell,mode,'e2el',parseMetricMean(row[e2elI]))?1:0;
-          rowFilled+=fill(cell,mode,'tpot',parseMetricMean(row[tpotI]))?1:0;
-          rowFilled+=fill(cell,mode,'throughput',parseMetricMean(row[thrI]))?1:0;
-          if(rowFilled){cells++;values+=rowFilled;}
-        }
-        if(!values)throw new Error('未匹配到 8 个 workload cell / off-on mode');
-        status.textContent='已填 '+cells+'/16 行';
-        status.classList.add('ready');
-      }catch(err){
-        console.error(err);
-        status.classList.remove('ready');
-        status.textContent='列名/数据不匹配';
-        status.title=String(err&&err.message||err);
       }
-    };
-    reader.readAsText(file,'utf-8');
+      if (rows !== 16 || values !== 48) throw new Error(`识别 ${rows}/16 行、${values}/48 个值`);
+      status.textContent = `${file.name} · 16/16 行 · 48/48 值`;
+      status.style.color = "var(--green)";
+    } catch (error) {
+      status.textContent = `导入失败：${error.message}`;
+      status.style.color = "var(--red)";
+    }
   });
 })();
 </script>

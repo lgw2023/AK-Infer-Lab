@@ -69,8 +69,9 @@ target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 
 | `13_P0_P4_数据资产成果包索引.md` | P0-P4 硬件性能与推理观测数据资产成果包入口，串联审计计划、审计结果正文、静态仪表盘和副本关系。 |
 | `14_Qwen3_5_4B_vLLM_AISBench_性能指标记录.md` | P1.28-P1.30 Qwen3.5-4B / vLLM AISBench 风格性能指标、phase memory matrix、server stats 和边界记录。 |
 | `16_P6_阶段复盘与P6_3进入评估.md` | P6.0-P6.3B evidence chain、结果包索引、声明边界和 P6.3C/P7-P9 路线复审入口。 |
-| `P6_阶段证据链仪表盘_2026_0715.html` | P6.1C-R1/P6.1/P6.2/P6.3A 已验收证据、P6.3A paired delta 与当前 P6.3B 合同的静态可视化。 |
-| `DeepSeek_V4_Flash_W8A8_8NPU_性能总览_修订版.html` | P6.3A MTP 性能与 P6.3B-R4-R1 Prefix Cache 八组 matched hit/TTFT 的并列双主表领导汇报页。 |
+| `P6_阶段证据链仪表盘_2026_0715.html` | P6 主线 closeout 证据控制台：冻结配置、P6.1C-R1/P6.1/P6.2/P6.3A/P6.3B-R4-R1 green、P6.3C strict-single-variable blocked、P6.3B lineage、结果包与 P7-P9 边界。 |
+| `DeepSeek_V4_Flash_W8A8_8NPU_性能总览_修订版.html` | 五页 16:9 P6 全阶段实测领导汇报：18-cell unprofiled baseline、MTP Off/On 绝对值与 paired delta、Prefix Cache 八组命中/TTFT、profiled evidence、Chunked Prefill feasibility 与 artifact closeout。 |
+| `P8_阶段主要结果与证据链仪表盘_2026_0728.html` | P8 分层工程原型静态证据控制台：P8.0/P8.1/K0、K1/K1A 历史 lineage、R17 restore/H2D 机制闭环、claim boundary、当前 K2-R0 与 Expert/TP4 开放门。 |
 | `ak_infer_lab_p0_p4_data_asset_audit_2026_0708.txt` | P0-P4 数据资产全量审计结果正文，作为成果包主读文本版本。 |
 | `P0_P4_硬件性能与推理观测数据资产仪表盘_2026_0708.html` | P0-P4 数据资产全量审计的静态可视化仪表盘，作为成果包主展示版本。 |
 | `p1_inference_contracts/` | workload、schema、handoff、fixture、prompt。 |

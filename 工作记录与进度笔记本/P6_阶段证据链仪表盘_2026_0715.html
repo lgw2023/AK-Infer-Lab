@@ -1,350 +1,521 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:,">
-  <title>AK-Infer-Lab · P6 Evidence Console</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="icon" href="data:,"/>
+  <title>AK-Infer-Lab · P6 Evidence Console · Closeout</title>
   <style>
-    :root {
-      --ink: #0b0d0e;
-      --panel: #111516;
-      --panel-2: #171c1d;
-      --line: #303738;
-      --muted: #8e9997;
-      --paper: #e9ede8;
-      --green: #a9f04d;
-      --green-dim: #557e2b;
-      --cyan: #64d8d4;
-      --amber: #f1b85b;
-      --red: #e4705b;
-      --mono: "IBM Plex Mono", "SFMono-Regular", "Noto Sans Mono CJK SC", monospace;
-      --body: "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", sans-serif;
+    :root{
+      --bg:#090c0d;
+      --panel:#111516;
+      --panel-2:#161b1c;
+      --line:#303738;
+      --paper:#eef3ef;
+      --muted:#87918d;
+      --green:#a9f04d;
+      --green-dim:#5e8d2b;
+      --cyan:#5bd4d7;
+      --amber:#f1b85b;
+      --red:#ef6c66;
+      --violet:#a997e8;
+      --mono:"Avenir Next Condensed","DIN Alternate","Arial Narrow",sans-serif;
+      --body:"Avenir Next","PingFang SC","Microsoft YaHei",sans-serif;
     }
-
-    * { box-sizing: border-box; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      margin: 0;
-      color: var(--paper);
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      min-width:320px;
       background:
-        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
-        radial-gradient(circle at 84% 8%, rgba(100,216,212,.10), transparent 28rem),
-        var(--ink);
-      background-size: 32px 32px, 32px 32px, auto, auto;
-      font-family: var(--body);
-      line-height: 1.58;
+        radial-gradient(circle at 12% 7%,rgba(91,212,215,.08),transparent 22rem),
+        radial-gradient(circle at 88% 30%,rgba(169,240,77,.06),transparent 28rem),
+        var(--bg);
+      color:var(--paper);
+      font-family:var(--body);
     }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: .16;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.86' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
-      mix-blend-mode: soft-light;
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      pointer-events:none;
+      opacity:.28;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+      background-size:32px 32px;
     }
-
-    main {
-      width: min(1480px, calc(100% - 40px));
-      margin: 0 auto;
-      padding: 32px 0 72px;
+    main{width:min(1480px,calc(100% - 56px));margin:0 auto;padding:28px 0 60px}
+    a{color:inherit}
+    h1,h2,h3,p{margin-top:0}
+    code{font-family:var(--mono);color:var(--cyan)}
+    .masthead{
+      position:relative;
+      display:grid;
+      grid-template-columns:1.28fr .72fr;
+      min-height:430px;
+      overflow:hidden;
+      border:1px solid var(--line);
+      background:linear-gradient(135deg,rgba(17,21,22,.98),rgba(8,11,12,.86));
     }
-
-    .masthead {
-      min-height: 410px;
-      border: 1px solid var(--line);
-      position: relative;
-      overflow: hidden;
-      display: grid;
-      grid-template-columns: 1.35fr .65fr;
-      background: linear-gradient(135deg, rgba(17,21,22,.96), rgba(11,13,14,.82));
+    .masthead::after{
+      content:"P6";
+      position:absolute;
+      right:-26px;
+      bottom:-108px;
+      color:transparent;
+      -webkit-text-stroke:1px rgba(169,240,77,.18);
+      font:900 350px/.9 var(--mono);
+      letter-spacing:-.13em;
     }
-
-    .masthead::after {
-      content: "P6";
-      position: absolute;
-      right: -22px;
-      bottom: -96px;
-      color: transparent;
-      -webkit-text-stroke: 1px rgba(169,240,77,.22);
-      font: 900 330px/1 var(--mono);
-      letter-spacing: -.12em;
+    .hero-copy{position:relative;z-index:1;padding:45px 50px}
+    .eyebrow,.section-id,.tag,.metric-label,.stamp,th{
+      font-family:var(--mono);
+      letter-spacing:.11em;
+      text-transform:uppercase;
     }
-
-    .hero-copy { padding: 42px 48px; position: relative; z-index: 1; }
-
-    .eyebrow, .section-id, .tag, .metric-label, th, .stamp {
-      font-family: var(--mono);
-      text-transform: uppercase;
-      letter-spacing: .12em;
+    .eyebrow{color:var(--green);font-size:12px}
+    h1{
+      max-width:930px;
+      margin:32px 0 26px;
+      font:800 clamp(46px,6.3vw,92px)/.92 var(--mono);
+      letter-spacing:-.065em;
     }
-
-    .eyebrow { color: var(--green); font-size: 12px; }
-
-    h1 {
-      margin: 32px 0 24px;
-      max-width: 900px;
-      font: 700 clamp(42px, 6.2vw, 92px)/.94 var(--mono);
-      letter-spacing: -.065em;
+    .hero-copy p{max-width:850px;margin:0;color:#c2cbc6;font-size:17px;line-height:1.55}
+    .hero-copy b{color:var(--paper)}
+    .hero-status{
+      position:relative;
+      z-index:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:30px;
+      border-left:1px solid var(--line);
+      padding:42px 34px;
+      background:rgba(6,9,9,.58);
     }
+    .status-light{display:inline-flex;align-items:center;gap:12px;color:var(--green);font:800 13px var(--mono)}
+    .status-light::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 18px var(--green)}
+    .status-stack{display:grid;gap:13px}
+    .status-row{border-top:1px solid var(--line);padding-top:12px}
+    .status-row small{display:block;color:var(--muted);font:10px var(--mono);letter-spacing:.08em}
+    .status-row strong{display:block;margin-top:3px;font:700 15px/1.25 var(--mono)}
+    .status-row strong.green{color:var(--green)}
+    .status-row strong.amber{color:var(--amber)}
+    section{margin-top:26px;border:1px solid var(--line);background:rgba(17,21,22,.94)}
+    .section-head{display:flex;align-items:end;justify-content:space-between;gap:24px;padding:24px 28px;border-bottom:1px solid var(--line)}
+    .section-head h2{margin:0;font:800 clamp(25px,3vw,42px)/1 var(--mono);letter-spacing:-.04em}
+    .section-id{margin-bottom:7px;color:var(--cyan);font-size:10px}
+    .section-note{max-width:650px;margin:0;color:var(--muted);font-size:13px;line-height:1.45;text-align:right}
+    .tag{display:inline-flex;border:1px solid currentColor;padding:5px 8px;font-size:8px;font-weight:900}
+    .tag.green{color:var(--green)}
+    .tag.amber{color:var(--amber)}
+    .tag.red{color:var(--red)}
 
-    .hero-copy p { max-width: 820px; color: #c5ccc8; font-size: 18px; }
+    .evidence-rail{display:grid;grid-template-columns:repeat(3,1fr)}
+    .gate{position:relative;min-height:235px;padding:25px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .gate:nth-child(3n){border-right:0}
+    .gate:nth-child(n+4){border-bottom:0}
+    .gate::before{content:attr(data-step);position:absolute;right:17px;top:13px;color:#272e2f;font:900 62px/1 var(--mono)}
+    .gate h3{position:relative;margin:35px 0 8px;font:800 20px/1.15 var(--mono)}
+    .gate .big{color:var(--green);font:900 33px/1 var(--mono)}
+    .gate.blocked .big{color:var(--amber)}
+    .gate p{margin:10px 0 0;color:#b2bbb6;font-size:12px;line-height:1.48}
+    .gate code{display:block;margin-top:10px;font-size:10px}
+    .metric-grid{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line)}
+    .metric{padding:19px 20px;border-right:1px solid var(--line)}
+    .metric:last-child{border-right:0}
+    .metric-label{display:block;color:var(--muted);font-size:8px}
+    .metric-value{display:block;margin-top:7px;font:800 24px/1 var(--mono)}
 
-    .hero-status {
-      border-left: 1px solid var(--line);
-      padding: 40px 34px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-      z-index: 1;
-      background: rgba(7,10,10,.55);
+    .config-grid{display:grid;grid-template-columns:repeat(4,1fr)}
+    .config{min-height:125px;padding:22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .config:nth-child(4n){border-right:0}
+    .config:nth-child(n+5){border-bottom:0}
+    .config small{display:block;color:var(--muted);font:9px var(--mono);letter-spacing:.06em}
+    .config strong{display:block;margin-top:9px;color:var(--cyan);font:800 17px/1.15 var(--mono)}
+    .config span{display:block;margin-top:7px;color:#a9b2ad;font-size:11px;line-height:1.35}
+
+    .baseline-layout{display:grid;grid-template-columns:1.12fr .88fr}
+    .baseline-table-wrap{padding:25px;border-right:1px solid var(--line);overflow:auto}
+    table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+    th,td{border:1px solid var(--line);padding:8px 10px;text-align:center;vertical-align:middle}
+    th{background:#171d1e;color:var(--cyan);font-size:9px}
+    td{font-size:11px}
+    td:first-child{text-align:left;font-weight:800}
+    tr.highlight td{background:rgba(169,240,77,.045)}
+    .baseline-insight{display:grid;grid-template-rows:repeat(4,1fr)}
+    .insight{padding:24px;border-bottom:1px solid var(--line)}
+    .insight:last-child{border-bottom:0}
+    .insight small{color:var(--muted);font:9px var(--mono)}
+    .insight strong{display:block;margin-top:7px;color:var(--green);font:900 24px/1 var(--mono)}
+    .insight p{margin:8px 0 0;color:#adb7b1;font-size:11px;line-height:1.4}
+
+    .chart-wrap{padding:28px;overflow-x:auto}
+    .chart-head,.chart-row{min-width:960px;display:grid;grid-template-columns:200px 1fr 1fr 120px;gap:18px;align-items:center}
+    .chart-head{padding:0 10px 12px;color:var(--muted);font:9px var(--mono)}
+    .chart-row{padding:12px 10px;border-top:1px solid rgba(48,55,56,.75)}
+    .cell-name strong{display:block;font:700 13px var(--mono)}
+    .cell-name small{color:var(--muted);font:9px var(--mono)}
+    .bar-track{height:12px;background:#252b2c;overflow:hidden}
+    .bar{height:100%;width:calc(var(--value)*1%);transform-origin:left;animation:grow .8s ease-out both}
+    .bar.e2el{background:var(--cyan)}
+    .bar.throughput{background:var(--green)}
+    .bar-label{margin-top:5px;color:#cbd2cf;font:9px var(--mono)}
+    .tp-note{text-align:right;color:var(--amber);font:800 13px var(--mono)}
+    @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+    .chart-summary{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+    .chart-summary div{padding:18px 22px;border-right:1px solid var(--line)}
+    .chart-summary div:last-child{border-right:0}
+    .chart-summary small{display:block;color:var(--muted);font:8px var(--mono)}
+    .chart-summary strong{display:block;margin-top:6px;color:var(--green);font:800 22px var(--mono)}
+    .chart-summary span{display:block;margin-top:4px;color:#9fa9a3;font-size:10px}
+
+    .prefix-layout{display:grid;grid-template-columns:1.16fr .84fr}
+    .prefix-table-wrap{padding:25px;border-right:1px solid var(--line);overflow:auto}
+    .prefix-table th,.prefix-table td{padding:7px 8px;font-size:10px}
+    .prefix-table tr.primary td{background:rgba(169,240,77,.07)}
+    .prefix-table tr.primary td:nth-child(4),.prefix-table tr.primary td:nth-child(6){color:var(--green);font-weight:900}
+    .prefix-table .boundary{color:var(--amber)}
+    .prefix-readout{display:grid;grid-template-rows:auto 1fr auto}
+    .prefix-callout{padding:25px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,rgba(169,240,77,.08),transparent)}
+    .prefix-callout strong{display:block;color:var(--green);font:800 23px/1.1 var(--mono)}
+    .prefix-callout p{margin:10px 0 0;color:#b2bbb5;font-size:12px;line-height:1.5}
+    .prefix-kpis{display:grid;grid-template-columns:1fr 1fr}
+    .prefix-kpi{padding:22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .prefix-kpi:nth-child(2n){border-right:0}
+    .prefix-kpi:nth-last-child(-n+2){border-bottom:0}
+    .prefix-kpi small{display:block;color:var(--muted);font:8px var(--mono)}
+    .prefix-kpi strong{display:block;margin-top:7px;font:900 24px/1 var(--mono)}
+    .prefix-kpi.green strong{color:var(--green)}
+    .prefix-kpi.amber strong{color:var(--amber)}
+    .prefix-boundary{padding:20px 24px;border-top:1px solid var(--line);color:#b0b9b4;font-size:11px;line-height:1.45}
+    .prefix-boundary b{color:var(--amber)}
+
+    .dual{display:grid;grid-template-columns:1fr 1fr}
+    .dual-card{min-width:0;padding:27px;border-right:1px solid var(--line);overflow-x:auto}
+    .dual-card:last-child{border-right:0}
+    .dual-card h3{margin:15px 0 8px;font:800 23px/1.1 var(--mono)}
+    .dual-card p{color:#adb6b1;font-size:12px;line-height:1.5}
+    .profile-strip{display:grid;grid-template-columns:repeat(4,1fr);margin-top:20px;border:1px solid var(--line)}
+    .profile-stat{padding:17px;border-right:1px solid var(--line);text-align:center}
+    .profile-stat:last-child{border-right:0}
+    .profile-stat strong{display:block;color:var(--cyan);font:900 23px/1 var(--mono)}
+    .profile-stat span{display:block;margin-top:5px;color:var(--muted);font:8px var(--mono)}
+    .profile-table{margin-top:18px}
+    .profile-table th,.profile-table td{padding:7px 6px;font-size:9px}
+    .blocked-card{margin-top:18px;border:1px solid #755b29;border-left:7px solid var(--amber);background:rgba(241,184,91,.07);padding:20px}
+    .blocked-card strong{display:block;color:var(--amber);font:900 21px/1.1 var(--mono)}
+    .blocked-card .equation{margin:15px 0;border:1px dashed #83662c;padding:16px;text-align:center;color:var(--red);font:900 25px/1 var(--mono)}
+    .blocked-card p{margin:0}
+    .zero-grid{display:grid;grid-template-columns:repeat(4,1fr);margin-top:15px;border:1px solid var(--line)}
+    .zero-grid div{padding:10px;border-right:1px solid var(--line);text-align:center}
+    .zero-grid div:last-child{border-right:0}
+    .zero-grid strong{color:var(--red);font:800 17px var(--mono)}
+    .zero-grid span{display:block;color:var(--muted);font:8px var(--mono)}
+
+    .lineage{padding:28px;overflow-x:auto}
+    .lineage-row{min-width:1080px;display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+    .lineage-item{position:relative;min-height:145px;border:1px solid var(--line);padding:20px;background:var(--panel-2)}
+    .lineage-item::after{content:"→";position:absolute;right:-19px;top:50%;z-index:2;color:var(--green);font:800 22px var(--mono)}
+    .lineage-item:last-child::after{display:none}
+    .lineage-item small{display:block;color:var(--muted);font:8px var(--mono)}
+    .lineage-item strong{display:block;margin:10px 0 7px;font:800 15px/1.2 var(--mono)}
+    .lineage-item.green strong{color:var(--green)}
+    .lineage-item.red strong{color:var(--red)}
+    .lineage-item.amber strong{color:var(--amber)}
+    .lineage-item p{margin:0;color:#9fa9a3;font-size:10px;line-height:1.35}
+
+    .package-wrap{padding:26px;overflow:auto}
+    .package-table th,.package-table td{font-size:9.5px}
+    .package-table td.grade-green{color:var(--green);font-family:var(--mono)}
+    .package-table td.grade-amber{color:var(--amber);font-family:var(--mono)}
+    .route{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+    .route-card{padding:21px;border-right:1px solid var(--line)}
+    .route-card:last-child{border-right:0}
+    .route-card h3{margin:0 0 9px;font:800 15px var(--mono)}
+    .route-card p{margin:0;color:var(--muted);font-size:10px;line-height:1.4}
+    .route-card.closed h3{color:var(--green)}
+    .route-card.open h3{color:var(--amber)}
+    footer{margin-top:26px;border:1px solid var(--line);padding:27px;color:var(--muted);font-size:11px;line-height:1.5}
+    footer strong{color:var(--paper)}
+    .stamp{float:right;color:var(--green);font-size:9px}
+
+    @media(max-width:980px){
+      main{width:min(100% - 24px,1480px)}
+      .masthead,.baseline-layout,.prefix-layout,.dual{grid-template-columns:1fr}
+      .hero-status{border-left:0;border-top:1px solid var(--line)}
+      .evidence-rail{grid-template-columns:repeat(2,1fr)}
+      .gate:nth-child(3n){border-right:1px solid var(--line)}
+      .gate:nth-child(2n){border-right:0}
+      .gate:nth-child(n+4){border-bottom:1px solid var(--line)}
+      .gate:nth-last-child(-n+2){border-bottom:0}
+      .metric-grid,.config-grid{grid-template-columns:repeat(2,1fr)}
+      .metric:nth-child(2n),.config:nth-child(2n){border-right:0}
+      .baseline-table-wrap,.prefix-table-wrap,.dual-card{border-right:0;border-bottom:1px solid var(--line)}
+      .route{grid-template-columns:repeat(2,1fr)}
     }
-
-    .status-light {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      font: 700 13px var(--mono);
-      color: var(--green);
+    @media(max-width:620px){
+      .hero-copy{padding:30px 24px}
+      h1{font-size:48px}
+      .section-head{align-items:start;flex-direction:column}
+      .section-note{text-align:left}
+      .evidence-rail,.metric-grid,.config-grid,.chart-summary,.profile-strip,.route{grid-template-columns:1fr}
+      .gate,.metric,.config,.chart-summary div,.profile-stat,.route-card{border-right:0!important;border-bottom:1px solid var(--line)!important}
+      .gate:last-child,.metric:last-child,.config:last-child,.chart-summary div:last-child,.profile-stat:last-child,.route-card:last-child{border-bottom:0!important}
+      .prefix-kpis{grid-template-columns:1fr}
+      .prefix-kpi{border-right:0}
     }
-
-    .status-light::before {
-      content: "";
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 18px var(--green);
-    }
-
-    .status-stack { display: grid; gap: 12px; }
-    .status-row { border-top: 1px solid var(--line); padding-top: 12px; }
-    .status-row small { color: var(--muted); display: block; font: 11px var(--mono); }
-    .status-row strong { font: 600 15px var(--mono); }
-
-    section { margin-top: 26px; border: 1px solid var(--line); background: rgba(17,21,22,.92); }
-    .section-head { display: flex; justify-content: space-between; gap: 24px; padding: 24px 28px; border-bottom: 1px solid var(--line); }
-    .section-head h2 { margin: 0; font: 700 clamp(24px, 3vw, 40px)/1 var(--mono); letter-spacing: -.035em; }
-    .section-id { color: var(--cyan); font-size: 11px; }
-    .section-note { color: var(--muted); max-width: 620px; font-size: 14px; text-align: right; }
-
-    .evidence-rail { display: grid; grid-template-columns: repeat(4, 1fr); }
-    .gate { min-height: 290px; padding: 26px; border-right: 1px solid var(--line); position: relative; }
-    .gate:last-child { border-right: 0; }
-    .gate::before { content: attr(data-step); position: absolute; top: 18px; right: 20px; color: #2a3131; font: 800 66px/1 var(--mono); }
-    .tag { display: inline-block; border: 1px solid var(--green-dim); color: var(--green); padding: 5px 8px; font-size: 9px; }
-    .gate h3 { margin: 42px 0 10px; font: 700 22px/1.15 var(--mono); }
-    .gate .big { margin: 20px 0 6px; color: var(--green); font: 700 36px/1 var(--mono); }
-    .gate p { color: #b5bdb9; font-size: 13px; }
-    .gate code { color: var(--cyan); font-family: var(--mono); font-size: 11px; }
-
-    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); }
-    .metric { padding: 22px 26px; border-right: 1px solid var(--line); }
-    .metric:last-child { border-right: 0; }
-    .metric-label { color: var(--muted); font-size: 9px; }
-    .metric-value { display: block; margin-top: 8px; font: 700 28px/1 var(--mono); }
-
-    .chart-wrap { padding: 28px; overflow-x: auto; }
-    .chart-head, .chart-row { min-width: 920px; display: grid; grid-template-columns: 190px 1fr 1fr 140px; gap: 18px; align-items: center; }
-    .chart-head { padding: 0 10px 12px; color: var(--muted); font: 10px var(--mono); }
-    .chart-row { padding: 12px 10px; border-top: 1px solid rgba(48,55,56,.7); }
-    .cell-name strong { display: block; font: 600 13px var(--mono); }
-    .cell-name small { color: var(--muted); font: 10px var(--mono); }
-    .bar-track { height: 12px; background: #252b2c; position: relative; overflow: hidden; }
-    .bar { height: 100%; width: calc(var(--value) * 1%); transform-origin: left; animation: grow .8s ease-out both; }
-    .bar.e2el { background: var(--cyan); }
-    .bar.throughput { background: var(--green); }
-    .bar-label { margin-top: 5px; color: #cbd2cf; font: 10px var(--mono); }
-    .tp-note { text-align: right; color: var(--amber); font: 700 13px var(--mono); }
-
-    @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-
-    .ab-layout { display: grid; grid-template-columns: 1.15fr .85fr; }
-    .matrix { display: grid; grid-template-columns: 130px repeat(2, 1fr); border-right: 1px solid var(--line); }
-    .matrix > div { padding: 16px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-    .matrix > div:nth-child(3n) { border-right: 0; }
-    .matrix .axis { color: var(--muted); font: 10px var(--mono); }
-    .matrix .context { color: var(--cyan); font: 700 15px var(--mono); }
-    .matrix .cell { min-height: 86px; background: linear-gradient(135deg, rgba(169,240,77,.08), transparent); }
-    .matrix .cell strong { color: var(--green); font: 700 18px var(--mono); }
-    .matrix .cell small { display: block; color: var(--muted); font: 10px var(--mono); margin-top: 7px; }
-    .contract { padding: 28px; }
-    .contract h3 { margin: 0 0 18px; font: 700 20px var(--mono); }
-    .contract ol { margin: 0; padding-left: 22px; color: #bbc4bf; }
-    .contract li { margin: 12px 0; }
-    .contract code { color: var(--green); font-family: var(--mono); }
-
-    .boundary-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
-    .boundary { padding: 24px; border-right: 1px solid var(--line); }
-    .boundary:last-child { border-right: 0; }
-    .boundary h3 { margin: 0; font: 700 16px var(--mono); }
-    .boundary .state { display: block; margin: 16px 0; font: 700 12px var(--mono); }
-    .state.green { color: var(--green); }
-    .state.amber { color: var(--amber); }
-    .boundary p { color: var(--muted); font-size: 12px; }
-
-    .route { padding: 30px; display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 16px; align-items: center; }
-    .route-node { min-height: 150px; border: 1px solid var(--line); padding: 22px; }
-    .route-node.current { border-color: var(--amber); background: rgba(241,184,91,.06); }
-    .route-node h3 { margin: 0 0 12px; font: 700 17px var(--mono); }
-    .route-node p { color: var(--muted); font-size: 12px; }
-    .arrow { color: var(--green); font: 700 26px var(--mono); }
-
-    footer { margin-top: 26px; padding: 28px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; }
-    footer strong { color: var(--paper); }
-    .stamp { color: var(--green); font-size: 10px; float: right; }
-
-    @media (max-width: 980px) {
-      .masthead, .ab-layout { grid-template-columns: 1fr; }
-      .hero-status { border-left: 0; border-top: 1px solid var(--line); gap: 30px; }
-      .evidence-rail, .metric-grid, .boundary-grid { grid-template-columns: repeat(2, 1fr); }
-      .gate:nth-child(2), .metric:nth-child(2), .boundary:nth-child(2) { border-right: 0; }
-      .matrix { border-right: 0; }
-      .route { grid-template-columns: 1fr; }
-      .arrow { transform: rotate(90deg); text-align: center; }
-    }
-
-    @media (max-width: 620px) {
-      main { width: min(100% - 20px, 1480px); padding-top: 10px; }
-      .hero-copy { padding: 30px 24px; }
-      .section-head { flex-direction: column; }
-      .section-note { text-align: left; }
-      .evidence-rail, .metric-grid, .boundary-grid { grid-template-columns: 1fr; }
-      .gate, .metric, .boundary { border-right: 0; border-bottom: 1px solid var(--line); }
-      .matrix { grid-template-columns: 100px repeat(2, 1fr); }
-      .matrix > div { padding: 12px 10px; }
-    }
-
-    @media print {
-      body { background: #fff; color: #111; }
-      body::before { display: none; }
-      section, .masthead, footer { break-inside: avoid; background: #fff; color: #111; }
-      .hero-status { background: #fff; }
+    @media print{
+      body{background:#fff;color:#111}
+      body::before{display:none}
+      main{width:100%;padding:0}
+      section,.masthead,footer{break-inside:avoid;background:#fff;color:#111}
+      .hero-status{background:#fff}
+      .gate p,.config span,.insight p,.prefix-callout p,.dual-card p,.lineage-item p{color:#333}
     }
   </style>
 </head>
 <body>
-  <main>
-    <header class="masthead">
-      <div class="hero-copy">
-        <div class="eyebrow">AK-INFER-LAB / EVIDENCE CONSOLE / 2026-07-15</div>
-        <h1>P6<br>EVIDENCE<br>CHAIN</h1>
-        <p>DeepSeek-V4-Flash W8A8-MTP · Atlas 800T A2 · 8×64GB。这里区分已验收的服务器结果、开发机复核与当前仅获授权的下一任务。</p>
+<main>
+  <header class="masthead">
+    <div class="hero-copy">
+      <div class="eyebrow">AK-INFER-LAB / P6 EVIDENCE CONSOLE / CLOSEOUT SNAPSHOT</div>
+      <h1>P6<br/>EVIDENCE<br/>CHAIN</h1>
+      <p>DeepSeek-V4-Flash W8A8-MTP · Atlas 800T A2 · Ascend 910B1 ×8。<b>主线 reference、核心机制门和五份计划交付物已经关闭</b>；P6.3C 以严格单变量 blocked 终态关闭。这里同时保留所有重要 green、yellow、red 与 blocked provenance，避免把“阶段可继续”写成“所有实验都 green”。</p>
+    </div>
+    <aside class="hero-status">
+      <div class="status-light">P6 MAINLINE CLOSED · VERIFIED 2026-07-28</div>
+      <div class="status-stack">
+        <div class="status-row"><small>REFERENCE</small><strong class="green">P6.1C-R1 + P6.1 + P6.2 GREEN</strong></div>
+        <div class="status-row"><small>MECHANISM</small><strong class="green">P6.3A + P6.3B-R4-R1 GREEN</strong></div>
+        <div class="status-row"><small>CONDITIONAL</small><strong class="amber">P6.3C STRICT SINGLE-VARIABLE BLOCKED</strong></div>
+        <div class="status-row"><small>OPTIONAL / AVAILABILITY-GATED</small><strong>P6.3D MAX_NUM_SEQS · P6.4 MINDIE</strong></div>
+        <div class="status-row"><small>ACTIVE PROJECT CONTEXT</small><strong>P8 MAY CONSUME P6 · P7 STILL NEEDS ITS OWN CLOSEOUT</strong></div>
       </div>
-      <aside class="hero-status">
-        <div class="status-light">P6.0—P6.3A GREEN · P6.3B YELLOW · R1 RED</div>
-        <div class="status-stack">
-          <div class="status-row"><small>CURRENT TASK</small><strong>P6.3B-R2 DEFERRED INSTALL</strong></div>
-          <div class="status-row"><small>EXECUTION</small><strong>AUTHORIZED · SERVER PENDING</strong></div>
-          <div class="status-row"><small>CLAIM BOUNDARY</small><strong>POSITIVE HIT ONLY</strong></div>
-          <div class="status-row"><small>NEXT LOCK</small><strong>NO AUTO FULL A/B / P6.3C / P8</strong></div>
+    </aside>
+  </header>
+
+  <section aria-labelledby="chain-title">
+    <div class="section-head">
+      <div><div class="section-id">01 / ACCEPTED &amp; TERMINAL GATES</div><h2 id="chain-title">六个核心门，五绿一项有效 blocked</h2></div>
+      <p class="section-note">绿色表示开发机已经接受对应服务器证据；amber blocked 表示可行性问题已得到确定答案，并非等待重跑。所有结论都受 exact workload 与 evidence scope 约束。</p>
+    </div>
+    <div class="evidence-rail">
+      <article class="gate" data-step="01"><span class="tag green">GREEN</span><h3>Official Context</h3><div class="big">131,072</div><p>4096 / 32768 / 65536 / 98304 / 131072 + 64 五档均首次成功；functional / stability gate 关闭。</p><code>P6.1C-R1</code></article>
+      <article class="gate" data-step="02"><span class="tag green">GREEN</span><h3>Unprofiled Baseline</h3><div class="big">90 / 90</div><p>18 cells、24 measured batches、零 retry；TTFT / TPOT / ITL / E2EL / streaming throughput reference 成立。</p><code>P6.1</code></article>
+      <article class="gate" data-step="03"><span class="tag green">GREEN</span><h3>Profiled Evidence</h3><div class="big">3 × 136</div><p>3 representative cells；每 cell 136 SQLite，6 行 phase-memory，八卡 coverage 与 full aggregate 完整。</p><code>P6.2</code></article>
+      <article class="gate" data-step="04"><span class="tag green">GREEN</span><h3>Matched MTP A/B</h3><div class="big">24 / 24</div><p>108/108 request；paired E2EL↓、TPOT↓、batch output throughput↑ 全部方向一致。</p><code>P6.3A</code></article>
+      <article class="gate" data-step="05"><span class="tag green">GREEN</span><h3>Explicit Prefix Cache</h3><div class="big">9 / 9</div><p>64/64 request；Off hit=0，On primary 9/9 精确命中，另 15 条 boundary follower 仍为 0。</p><code>P6.3B-R4-R1</code></article>
+      <article class="gate blocked" data-step="06"><span class="tag amber">BLOCKED</span><h3>Chunked Prefill</h3><div class="big">4096 &lt; 135168</div><p>Off 侧 pre-request validation 失败；改变 token budget 或 max model length 都是禁止的第二变量。</p><code>P6.3C</code></article>
+    </div>
+    <div class="metric-grid">
+      <div class="metric"><span class="metric-label">official contexts</span><span class="metric-value">5 / 5</span></div>
+      <div class="metric"><span class="metric-label">baseline cells</span><span class="metric-value">18 / 18</span></div>
+      <div class="metric"><span class="metric-label">profiled cells</span><span class="metric-value">3 / 3</span></div>
+      <div class="metric"><span class="metric-label">mtp measured</span><span class="metric-value">108 / 108</span></div>
+      <div class="metric"><span class="metric-label">prefix requests</span><span class="metric-value">64 / 64</span></div>
+      <div class="metric"><span class="metric-label">p6.3c requests</span><span class="metric-value">0</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="config-title">
+    <div class="section-head">
+      <div><div class="section-id">02 / FROZEN EXPERIMENT PROFILE</div><h2 id="config-title">比较前先冻结运行栈</h2></div>
+      <p class="section-note">以下是 P6 accepted reference 的共同配置。P6.3A 只切 MTP；P6.3B-R4-R1 只切显式 Prefix Cache，并在两侧使用同一个 R2 hybrid-KV repair。</p>
+    </div>
+    <div class="config-grid">
+      <div class="config"><small>MODEL / QUANTIZATION</small><strong>DeepSeek-V4-Flash W8A8-MTP</strong><span>`quantization=ascend` · 70 shards · checkpoint 约 279.4 GiB</span></div>
+      <div class="config"><small>HARDWARE / PARALLEL</small><strong>8 × 910B1 · TP8 + EP</strong><span>Atlas 800T A2 · 64GB HBM/card · DP1</span></div>
+      <div class="config"><small>RUNTIME PIN</small><strong>vLLM 0.22.1+empty</strong><span>`0decac0d…` · vLLM-Ascend 0.22.1rc1 `5f6faa0c…`</span></div>
+      <div class="config"><small>MTP / GRAPH</small><strong>num_speculative_tokens=1</strong><span>method=mtp · FULL_DECODE_ONLY · task-local overlay</span></div>
+      <div class="config"><small>SCHEDULER</small><strong>135168 / 4096 / 1</strong><span>max_model_len / max_num_batched_tokens / max_num_seqs · block=128</span></div>
+      <div class="config"><small>FEATURE DEFAULT</small><strong>Chunked Prefill + Prefix ON</strong><span>P6.3B 只显式切 Prefix；P6.3C 审计显式 Chunked on/off</span></div>
+      <div class="config"><small>REQUEST</small><strong>Streaming · temperature=0</strong><span>ignore_eos · min=max output · exact token / finish / SSE done</span></div>
+      <div class="config"><small>HYGIENE</small><strong>No generated content packaged</strong><span>request bodies / token IDs / raw logs / profiler traces 留服务器</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="baseline-title">
+    <div class="section-head">
+      <div><div class="section-id">03 / P6.1 USER PERFORMANCE REFERENCE</div><h2 id="baseline-title">C1 六个代表 cell 的实测绝对值</h2></div>
+      <p class="section-note">取 P6.1 `matrix_cell_summary.tsv` 的 mean。完整矩阵覆盖 4K / 64K / 128K × output 64 / 256 × C1 / C4 / C8；此处突出不含服务端并发排队的 C1 读数。</p>
+    </div>
+    <div class="baseline-layout">
+      <div class="baseline-table-wrap">
+        <table aria-label="P6.1 concurrency one baseline">
+          <thead><tr><th>Input</th><th>Output</th><th>Request n</th><th>TTFT mean</th><th>TPOT mean</th><th>E2EL mean</th><th>Batch output</th></tr></thead>
+          <tbody>
+            <tr class="highlight"><td>4K</td><td>64</td><td>3</td><td>411.1 ms</td><td>203.30 ms/token</td><td>13.22 s</td><td>4.84 tok/s</td></tr>
+            <tr><td>4K</td><td>256</td><td>1</td><td>401.2 ms</td><td>198.09 ms/token</td><td>50.91 s</td><td>5.03 tok/s</td></tr>
+            <tr class="highlight"><td>64K</td><td>64</td><td>1</td><td>6,584.4 ms</td><td>202.83 ms/token</td><td>19.36 s</td><td>3.30 tok/s</td></tr>
+            <tr><td>64K</td><td>256</td><td>1</td><td>6,534.9 ms</td><td>199.50 ms/token</td><td>57.41 s</td><td>4.46 tok/s</td></tr>
+            <tr class="highlight"><td>128K</td><td>64</td><td>3</td><td>13,084.3 ms</td><td>201.84 ms/token</td><td>25.80 s</td><td>2.48 tok/s</td></tr>
+            <tr><td>128K</td><td>256</td><td>1</td><td>13,107.5 ms</td><td>199.05 ms/token</td><td>63.87 s</td><td>4.01 tok/s</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="baseline-insight">
+        <div class="insight"><small>TTFT / INPUT SCALE</small><strong>0.41s → 13.08s</strong><p>output=64、C1 时从 4K 到 128K；主要反映 prefill 增长。</p></div>
+        <div class="insight"><small>TPOT / DECODE BAND</small><strong>198–203 ms/token</strong><p>C1 六格相对稳定；输入长度没有把 decode TPOT 推离该区间。</p></div>
+        <div class="insight"><small>CONCURRENCY BOUNDARY</small><strong>max_num_seqs = 1</strong><p>C4/C8 的 E2EL/TTFT 含排队；batch throughput 基本不随并发扩展。</p></div>
+        <div class="insight"><small>MEASUREMENT COMPLETENESS</small><strong>24 batches · 90 requests</strong><p>所有 token、finish、health、queue、MTP counter continuity 与 cleanup 门通过。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="mtp-title">
+    <div class="section-head">
+      <div><div class="section-id">04 / P6.3A MATCHED MTP READOUT</div><h2 id="mtp-title">MTP-on 描述性差异</h2></div>
+      <p class="section-note">条长使用 paired relative delta 的绝对百分比。E2EL / TPOT 越低越好，batch output throughput 越高越好。固定 Off→On、每 cell 3 repeats、无显著性检验。</p>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-head"><span>CELL</span><span>E2EL ↓</span><span>BATCH OUTPUT THROUGHPUT ↑</span><span>TPOT ↓</span></div>
+      <div class="chart-row"><div class="cell-name"><strong>short_prefill</strong><small>4K + 64 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:45.1"></div></div><div class="bar-label">−45.1%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:82.6"></div></div><div class="bar-label">+82.6%</div></div><div class="tp-note">−45.9%</div></div>
+      <div class="chart-row"><div class="cell-name"><strong>short_decode</strong><small>4K + 256 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:46"></div></div><div class="bar-label">−46.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:85.2"></div></div><div class="bar-label">+85.2%</div></div><div class="tp-note">−46.2%</div></div>
+      <div class="chart-row"><div class="cell-name"><strong>short_decode_c8</strong><small>4K + 256 · C8</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:47"></div></div><div class="bar-label">−47.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:89.2"></div></div><div class="bar-label">+89.2%</div></div><div class="tp-note">−47.3%</div></div>
+      <div class="chart-row"><div class="cell-name"><strong>mid_prefill</strong><small>64K + 64 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:36"></div></div><div class="bar-label">−36.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:56.1"></div></div><div class="bar-label">+56.1%</div></div><div class="tp-note">−46.5%</div></div>
+      <div class="chart-row"><div class="cell-name"><strong>mid_prefill_c4</strong><small>64K + 64 · C4</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:35.7"></div></div><div class="bar-label">−35.7%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:55.9"></div></div><div class="bar-label">+55.9%</div></div><div class="tp-note">−46.3%</div></div>
+      <div class="chart-row"><div class="cell-name"><strong>mid_decode</strong><small>64K + 256 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:44.9"></div></div><div class="bar-label">−44.9%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:81.6"></div></div><div class="bar-label">+81.6%</div></div><div class="tp-note">−47.9%</div></div>
+      <div class="chart-row"><div class="cell-name"><strong>long_prefill</strong><small>128K + 64 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:30"></div></div><div class="bar-label">−30.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:42.8"></div></div><div class="bar-label">+42.8%</div></div><div class="tp-note">−47.2%</div></div>
+      <div class="chart-row"><div class="cell-name"><strong>long_decode</strong><small>128K + 256 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:42.8"></div></div><div class="bar-label">−42.8%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:74.7"></div></div><div class="bar-label">+74.7%</div></div><div class="tp-note">−48.3%</div></div>
+    </div>
+    <div class="chart-summary">
+      <div><small>TPOT RELATIVE MEAN</small><strong>−47.0%</strong><span>24/24 paired batch 下降</span></div>
+      <div><small>E2EL RELATIVE MEAN</small><strong>−40.9%</strong><span>Prefill-heavy 改善较小</span></div>
+      <div><small>BATCH OUTPUT RELATIVE MEAN</small><strong>+71.0%</strong><span>不是设备峰值 throughput</span></div>
+      <div><small>MTP ACCEPTED TOKEN DELTA</small><strong>4,896</strong><span>mtp-on measured run</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="prefix-title">
+    <div class="section-head">
+      <div><div class="section-id">05 / P6.3B-R4-R1 EXPLICIT PREFIX CACHE</div><h2 id="prefix-title">精确命中只出现在 primary scope</h2></div>
+      <p class="section-note">8 groups × 2 modes；每 group 每 mode 1 prime + 3 measured follower。Off/On 均使用 same R2 hybrid-KV repair，canonical bodies 跨 mode 字节相同。</p>
+    </div>
+    <div class="prefix-layout">
+      <div class="prefix-table-wrap">
+        <table class="prefix-table" aria-label="P6.3B prefix groups">
+          <thead><tr><th>Input · Prefix</th><th>Token-LCP / 16K floor</th><th>Off hit</th><th>On hit</th><th>TTFT Off → On</th><th>Paired Δ</th></tr></thead>
+          <tbody>
+            <tr><td>4K · 50%</td><td>2,048 / 0</td><td>0</td><td>0</td><td>416.2 → 417.4 ms</td><td class="boundary">+0.3%</td></tr>
+            <tr><td>4K · 90%</td><td>3,584 / 0</td><td>0</td><td>0</td><td>405.0 → 415.7 ms</td><td class="boundary">+2.7%</td></tr>
+            <tr><td>32K · 50%</td><td>16,384 / 16,384</td><td>0</td><td>0</td><td>3,255.6 → 3,251.4 ms</td><td class="boundary">−0.1%</td></tr>
+            <tr class="primary"><td>32K · 90%</td><td>29,440 / 16,384</td><td>0</td><td>16,384</td><td>3,199.4 → 1,645.7 ms</td><td>−48.6%</td></tr>
+            <tr><td>64K · 50%</td><td>32,768 / 32,768</td><td>0</td><td>0</td><td>6,362.9 → 6,478.8 ms</td><td class="boundary">+1.8%</td></tr>
+            <tr class="primary"><td>64K · 90%</td><td>58,880 / 49,152</td><td>0</td><td>49,152</td><td>6,399.3 → 1,734.6 ms</td><td>−72.9%</td></tr>
+            <tr><td>128K · 50%</td><td>65,536 / 65,536</td><td>0</td><td>0</td><td>12,924.6 → 13,008.2 ms</td><td class="boundary">+0.6%</td></tr>
+            <tr class="primary"><td>128K · 90%</td><td>117,889 / 114,688</td><td>0</td><td>114,688</td><td>12,826.0 → 1,873.7 ms</td><td>−85.4%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prefix-readout">
+        <div class="prefix-callout"><strong>显式 Prefix Cache 开关产生可观测机制效应</strong><p>resolved false→true；三个 primary group 的每次 hit 都严格等于 actual token-LCP 向下取整到 16K hybrid LCM。</p></div>
+        <div class="prefix-kpis">
+          <div class="prefix-kpi green"><small>REQUESTS</small><strong>64 / 64</strong></div>
+          <div class="prefix-kpi green"><small>PRIMARY POSITIVE</small><strong>9 / 9</strong></div>
+          <div class="prefix-kpi"><small>OFF HIT TOTAL</small><strong>0</strong></div>
+          <div class="prefix-kpi amber"><small>BOUNDARY POSITIVE</small><strong>0 / 15</strong></div>
+          <div class="prefix-kpi green"><small>ON HIT TOTAL</small><strong>540,672</strong></div>
+          <div class="prefix-kpi"><small>MTP ACCEPTED DELTA</small><strong>1,024 / mode</strong></div>
         </div>
-      </aside>
-    </header>
+        <div class="prefix-boundary"><b>禁止外推：</b>50% 长上下文虽有非零 floor 仍然不命中；固定 Off→On 的 TTFT 变化只能作为 primary scope 描述性读数，不形成 universal hit、统计显著或普遍性能收益。</div>
+      </div>
+    </div>
+  </section>
 
-    <section aria-labelledby="chain-title">
-      <div class="section-head">
-        <div><div class="section-id">01 / CLOSED GATES</div><h2 id="chain-title">四层证据链</h2></div>
-        <div class="section-note">绿色表示开发机已接受的服务器证据，不表示更宽的性能、容量或因果结论。</div>
-      </div>
-      <div class="evidence-rail">
-        <article class="gate" data-step="01"><span class="tag">GREEN</span><h3>Official Context</h3><div class="big">131072</div><p>五档输入 + 固定 64 输出全部首次成功；冻结配置下 functional/capacity/stability gate 关闭。</p><code>P6.1C-R1</code></article>
-        <article class="gate" data-step="02"><span class="tag">GREEN</span><h3>Unprofiled Baseline</h3><div class="big">90 / 90</div><p>18 cells、24 measured batches、零 retry；TTFT/TPOT/ITL/E2EL 与 streaming throughput reference 成立。</p><code>P6.1</code></article>
-        <article class="gate" data-step="03"><span class="tag">GREEN</span><h3>Profiled Evidence</h3><div class="big">3 × 136</div><p>三个代表 cell、每 cell 136 SQLite；full request-device aggregate 与八卡 phase-memory 完整。</p><code>P6.2</code></article>
-        <article class="gate" data-step="04"><span class="tag">GREEN</span><h3>Matched MTP A/B</h3><div class="big">24 / 24</div><p>全部 paired batches 方向一致；接受 fixed-order workload 内的描述性 mechanism effect。</p><code>P6.3A</code></article>
-      </div>
-      <div class="metric-grid">
-        <div class="metric"><span class="metric-label">official requests</span><span class="metric-value">5 / 5</span></div>
-        <div class="metric"><span class="metric-label">unprofiled cells</span><span class="metric-value">18 / 18</span></div>
-        <div class="metric"><span class="metric-label">phase memory</span><span class="metric-value">6 rows</span></div>
-        <div class="metric"><span class="metric-label">mtp accepted delta</span><span class="metric-value">4896</span></div>
-      </div>
-    </section>
-
-    <section aria-labelledby="mtp-title">
-      <div class="section-head">
-        <div><div class="section-id">02 / P6.3A READOUT</div><h2 id="mtp-title">MTP-on 描述性差异</h2></div>
-        <div class="section-note">条形长度为绝对百分比。E2EL/TPOT 越低越好；throughput 越高越好。固定 off→on 顺序、3 repeats、无显著性检验。</div>
-      </div>
-      <div class="chart-wrap">
-        <div class="chart-head"><span>CELL</span><span>E2EL ↓</span><span>BATCH OUTPUT THROUGHPUT ↑</span><span>TPOT ↓</span></div>
-        <div class="chart-row"><div class="cell-name"><strong>short_prefill</strong><small>4K + 64 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:45.1"></div></div><div class="bar-label">−45.1%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:82.6"></div></div><div class="bar-label">+82.6%</div></div><div class="tp-note">−45.9%</div></div>
-        <div class="chart-row"><div class="cell-name"><strong>short_decode</strong><small>4K + 256 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:46"></div></div><div class="bar-label">−46.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:85.2"></div></div><div class="bar-label">+85.2%</div></div><div class="tp-note">−46.2%</div></div>
-        <div class="chart-row"><div class="cell-name"><strong>short_decode_c8</strong><small>4K + 256 · c8</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:47"></div></div><div class="bar-label">−47.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:89.2"></div></div><div class="bar-label">+89.2%</div></div><div class="tp-note">−47.3%</div></div>
-        <div class="chart-row"><div class="cell-name"><strong>mid_prefill</strong><small>64K + 64 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:36"></div></div><div class="bar-label">−36.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:56.1"></div></div><div class="bar-label">+56.1%</div></div><div class="tp-note">−46.5%</div></div>
-        <div class="chart-row"><div class="cell-name"><strong>mid_prefill_c4</strong><small>64K + 64 · c4</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:35.7"></div></div><div class="bar-label">−35.7%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:55.9"></div></div><div class="bar-label">+55.9%</div></div><div class="tp-note">−46.3%</div></div>
-        <div class="chart-row"><div class="cell-name"><strong>mid_decode</strong><small>64K + 256 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:44.9"></div></div><div class="bar-label">−44.9%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:81.6"></div></div><div class="bar-label">+81.6%</div></div><div class="tp-note">−47.9%</div></div>
-        <div class="chart-row"><div class="cell-name"><strong>long_prefill</strong><small>128K + 64 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:30"></div></div><div class="bar-label">−30.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:42.8"></div></div><div class="bar-label">+42.8%</div></div><div class="tp-note">−47.2%</div></div>
-        <div class="chart-row"><div class="cell-name"><strong>long_decode</strong><small>128K + 256 · c1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:42.8"></div></div><div class="bar-label">−42.8%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:74.7"></div></div><div class="bar-label">+74.7%</div></div><div class="tp-note">−48.3%</div></div>
-      </div>
-    </section>
-
-    <section aria-labelledby="ab-title">
-      <div class="section-head">
-        <div><div class="section-id">03 / YELLOW → R1 RED → R2 REPAIR</div><h2 id="ab-title">P6.3B Zero-Hit Boundary</h2></div>
-        <div class="section-note">原 matched A/B 为 query-positive/hit-zero yellow；R1 因 eager sitecustomize 导入顺序在 ready 前 red、0/12 request。当前授权 R2 延迟安装 frozen hybrid-KV+MTP repair。</div>
-      </div>
-      <div class="ab-layout">
-        <div class="matrix" role="table" aria-label="P6.3B context and prefix ratio matrix">
-          <div class="axis">CONTEXT</div><div class="axis">50% TARGET</div><div class="axis">90% TARGET</div>
-          <div class="context">4K</div><div class="cell"><strong>2048</strong><small>aligned shared tokens</small></div><div class="cell"><strong>3584</strong><small>aligned shared tokens</small></div>
-          <div class="context">32K</div><div class="cell"><strong>16384</strong><small>aligned shared tokens</small></div><div class="cell"><strong>29440</strong><small>aligned shared tokens</small></div>
-          <div class="context">64K</div><div class="cell"><strong>32768</strong><small>aligned shared tokens</small></div><div class="cell"><strong>58880</strong><small>aligned shared tokens</small></div>
-          <div class="context">128K</div><div class="cell"><strong>65536</strong><small>aligned shared tokens</small></div><div class="cell"><strong>117888</strong><small>aligned shared tokens</small></div>
+  <section aria-labelledby="profile-title">
+    <div class="section-head">
+      <div><div class="section-id">06 / PROFILED EVIDENCE &amp; STRICT FEASIBILITY</div><h2 id="profile-title">一项证明“可观测”，一项证明“不能严格比较”</h2></div>
+      <p class="section-note">P6.2 与 P6.3C 都是重要有效结果：前者关闭证据链可用性门，后者关闭 strict single-variable 可行性门。两者都不应被强行改写成性能收益。</p>
+    </div>
+    <div class="dual">
+      <article class="dual-card">
+        <span class="tag green">P6.2 GREEN</span>
+        <h3>Profiled operator / memory / transfer pipeline</h3>
+        <p>三个 fresh profiled cell 均首次成功；full request-device aggregate 全部 exit 0，`heavy_joins_skipped=false`，phase-memory 6 行且每行覆盖八卡，parse failure=0。</p>
+        <div class="profile-strip">
+          <div class="profile-stat"><strong>3 / 3</strong><span>CELLS</span></div>
+          <div class="profile-stat"><strong>136</strong><span>SQLITE / CELL</span></div>
+          <div class="profile-stat"><strong>6</strong><span>PHASE ROWS</span></div>
+          <div class="profile-stat"><strong>8 / 8</strong><span>DEVICE COVERAGE</span></div>
         </div>
-        <div class="contract">
-          <h3>R2 硬合同 / 1 lifecycle</h3>
-          <ol>
-            <li>Ascend MLA/SWA spec 替换后再安装 repair</li>
-            <li>双 spec 精确 manager 映射 preflight</li>
-            <li>task-local vLLM <code>#44082</code> + Ascend <code>#11107</code></li>
-            <li><code>32K / 64K / 128K × 90%</code></li>
-            <li>每 group：1 prime + 3 measured follower</li>
-            <li>总计：3 prime / 9 measured / 12 requests</li>
-            <li>9/9 measured follower hit delta &gt; 0</li>
-            <li>0 retry；retention unset；无 profiler/HBM sampler</li>
-          </ol>
+        <table class="profile-table" aria-label="Profiled cells">
+          <thead><tr><th>Cell</th><th>Shape</th><th>Accepted Δ</th><th>Diagnostic TTFT</th><th>Diagnostic E2EL</th><th>HBM max / 8 cards</th></tr></thead>
+          <tbody>
+            <tr><td>short_prefill</td><td>4096+64</td><td>32</td><td>418.9ms</td><td>13.85s</td><td>491,621MB</td></tr>
+            <tr><td>long_prefill</td><td>131072+64</td><td>32</td><td>13,558.1ms</td><td>26.80s</td><td>491,635MB</td></tr>
+            <tr><td>decode_heavy</td><td>4096+256</td><td>128</td><td>427.3ms</td><td>54.73s</td><td>491,626MB</td></tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="dual-card">
+        <span class="tag amber">P6.3C BLOCKED</span>
+        <h3>Chunked Prefill strict-single-variable feasibility</h3>
+        <p>冻结 CLI 确实暴露显式 on/off 布尔；但 `SchedulerConfig.verify_max_model_len()` 在 Chunked Prefill=false 且 batched-token budget 小于 max model length 时，于任何 request 与 resolved false 证据之前拒绝配置。</p>
+        <div class="blocked-card">
+          <strong>blocked_p6_3c_not_strict_single_variable</strong>
+          <div class="equation">4,096 &lt; 135,168</div>
+          <p>唯一规避是把 `max_num_batched_tokens` 增至至少 135168，或把 `max_model_len` 降至最多 4096；两者都是禁止的第二变量，因此不得制造 matched A/B。</p>
         </div>
-      </div>
-    </section>
+        <div class="zero-grid">
+          <div><strong>0</strong><span>WORKLOAD</span></div>
+          <div><strong>0</strong><span>MODE RUNNER</span></div>
+          <div><strong>0</strong><span>REQUEST BODY</span></div>
+          <div><strong>0</strong><span>NPU REQUEST</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
 
-    <section aria-labelledby="boundary-title">
-      <div class="section-head">
-        <div><div class="section-id">04 / EVIDENCE BOUNDARY</div><h2 id="boundary-title">四个状态轴不混写</h2></div>
-        <div class="section-note">尤其是 HBM：整卡 occupancy 不是 KV object bytes，也不是 HBM traffic。</div>
+  <section aria-labelledby="lineage-title">
+    <div class="section-head">
+      <div><div class="section-id">07 / P6.3B PROVENANCE</div><h2 id="lineage-title">负证据没有被 green 覆盖</h2></div>
+      <p class="section-note">最终 R4-R1 green 只关闭显式 Prefix Cache matched mechanism gate。历史 zero-hit、import-order、on-vs-on 和 NFS root-squash 仍是可复用的工程事实。</p>
+    </div>
+    <div class="lineage">
+      <div class="lineage-row">
+        <article class="lineage-item amber"><small>ORIGINAL P6.3B</small><strong>YELLOW · 64/64 but zero hit</strong><p>query positive，hit delta 全为 0；不能接受机制效应。</p></article>
+        <article class="lineage-item red"><small>R1</small><strong>RED · import order</strong><p>sitecustomize eager import 固结基类 spec key；0/12 request。</p></article>
+        <article class="lineage-item green"><small>R2</small><strong>GREEN · deferred repair</strong><p>3 prime + 9 measured；9/9 positive hit，证明修复可达。</p></article>
+        <article class="lineage-item amber"><small>R3</small><strong>YELLOW · on-vs-on</strong><p>Off 侧省略 flag 继承 default=true；两侧 hit 相同。</p></article>
+        <article class="lineage-item amber"><small>R4</small><strong>BLOCKED · NFS ownership</strong><p>`cp -a` 在 root-squash 上 EPERM；0 lifecycle，0 request。</p></article>
+        <article class="lineage-item green"><small>R4-R1</small><strong>GREEN · explicit Off / On</strong><p>ownership-safe copy；64/64、Off hit=0、primary 9/9。</p></article>
       </div>
-      <div class="boundary-grid">
-        <article class="boundary"><h3>Functional</h3><span class="state green">GREEN</span><p>冻结配置下 131072+64 成功、健康、queue、MTP 与 cleanup 完整。</p></article>
-        <article class="boundary"><h3>User Performance</h3><span class="state green">GREEN</span><p>P6.1 unprofiled streaming reference；不由 profiled latency 回填。</p></article>
-        <article class="boundary"><h3>Mechanism</h3><span class="state amber">MTP GREEN / PREFIX YELLOW</span><p>P6.3A 已关闭；P6.3B query-positive/hit-zero，R1 ready 前 red，R2 只验证 compatibility repair。</p></article>
-        <article class="boundary"><h3>Physical HBM</h3><span class="state amber">BOUNDED SIDEBAND</span><p>npu-smi 仅作 event-aligned 旁证；逻辑 KV capacity 需独立指标。</p></article>
-      </div>
-    </section>
+    </div>
+  </section>
 
-    <section aria-labelledby="route-title">
-      <div class="section-head">
-        <div><div class="section-id">05 / DEPENDENCY ROUTE</div><h2 id="route-title">下一跳由证据决定</h2></div>
-        <div class="section-note">R2 positive hit 是恢复 P6.3B matched A/B 的前置；P8.2 K0 仍需可信 Prefix Cache baseline。</div>
-      </div>
-      <div class="route">
-        <div class="route-node"><h3>P6.3A · MTP</h3><p>开发机已接受 green。保留 fixed-order 与小样本限制。</p></div>
-        <div class="arrow">→</div>
-        <div class="route-node current"><h3>P6.3B-R2 · Hybrid-KV</h3><p>当前唯一服务器任务。deferred install + bounded positive-hit gate。</p></div>
-        <div class="arrow">→</div>
-        <div class="route-node"><h3>P8.2 · K0</h3><p>消费 Prefix Cache baseline；KV offload/UCM 与 real move 仍需独立合同。</p></div>
-      </div>
-    </section>
+  <section aria-labelledby="package-title">
+    <div class="section-head">
+      <div><div class="section-id">08 / ACCEPTED ARTIFACTS</div><h2 id="package-title">结果包、哈希与声明边界</h2></div>
+      <p class="section-note">小结果包只包含 bounded operational metadata；raw metrics/logs/request bodies/profiler artifacts 留服务器。P6.3C 是仓库内 frozen-source audit，不含运行结果。</p>
+    </div>
+    <div class="package-wrap">
+      <table class="package-table" aria-label="P6 accepted packages">
+        <thead><tr><th>Stage</th><th>Task / role</th><th>Coverage</th><th>Files / bytes</th><th>Aggregate SHA-256</th><th>Accepted grade</th></tr></thead>
+        <tbody>
+          <tr><td>P6.1C-R1</td><td>Official context ladder</td><td>5/5 contexts</td><td>13 / 47,955</td><td>e03639bd43b71112…</td><td class="grade-green">green_mtp_official_context_ladder</td></tr>
+          <tr><td>P6.1</td><td>Unprofiled performance reference</td><td>18 cells · 90 requests</td><td>8 / 67,917</td><td>5110750ad684770e…</td><td class="grade-green">green_mtp_unprofiled_baseline</td></tr>
+          <tr><td>P6.2</td><td>Profiled evidence chain</td><td>3 cells · 408 SQLite</td><td>11 / 17,501</td><td>9bf348373ee7ab66…</td><td class="grade-green">green_mtp_profiled_evidence</td></tr>
+          <tr><td>P6.3A</td><td>Matched MTP Off / On</td><td>48 batches · 108 requests</td><td>7 / 42,877</td><td>f853a86a7c7cbca5…</td><td class="grade-green">green_p6_3a_mtp_matched_ab</td></tr>
+          <tr><td>P6.3B-R4-R1</td><td>Explicit Prefix Cache Off / On</td><td>64 requests · 9/9 primary</td><td>10 / 44,550</td><td>a1b966194eb2b0d0…</td><td class="grade-green">green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab</td></tr>
+          <tr><td>P6.3C</td><td>Frozen-source feasibility</td><td>no executable workload</td><td>1 / 7,489</td><td>aeb91adc8b0b4327…</td><td class="grade-amber">blocked_p6_3c_not_strict_single_variable</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="route">
+      <div class="route-card closed"><h3>P6 MAINLINE · CLOSED</h3><p>Reference 与核心机制输入可被后续阶段消费；不是所有候选项都 green。</p></div>
+      <div class="route-card open"><h3>P7 · SEPARATE CLOSEOUT</h3><p>capacity boundary、scheduler / max_num_seqs 与硬件边界仍需自己的证据门。</p></div>
+      <div class="route-card closed"><h3>P8 · MAY CONSUME P6</h3><p>Prefix baseline、MTP official reference 与 trace pipeline 可作为垂直原型输入。</p></div>
+      <div class="route-card open"><h3>P9 · NOT UNLOCKED BY P6 ALONE</h3><p>没有 P7/P8 校准，不输出 bottleneck attribution 或 hardware priority。</p></div>
+    </div>
+  </section>
 
-    <footer>
-      <span class="stamp">SNAPSHOT / 2026-07-15 / DEV-CONTROL MACHINE</span>
-      <strong>来源边界：</strong>P6.1C-R1、P6.1、P6.2、P6.3A green、P6.3B yellow 与 P6.3B-R1 ready 前 red 小结果包/开发机复核；服务器 raw logs/metrics/profiler artifacts 保留在服务器。本页不代表 P6.3B-R2 已执行，不代表 Prefix Cache performance effect、P8 real move、bottleneck attribution 或 P9 hardware priority 已成立。
-    </footer>
-  </main>
+  <footer>
+    <span class="stamp">SNAPSHOT / VERIFIED 2026-07-28 / DEV-CONTROL MACHINE</span>
+    <strong>来源边界：</strong>P6 artifact manifest、baseline contract、P6.1C-R1/P6.1/P6.2/P6.3A/P6.3B-R4-R1 completed workloads、P6.3C frozen-source audit、阶段复盘与开发机接收小结果包。服务器 raw logs/metrics/request bodies/profiler artifacts 继续留服务器。本页不宣称普遍优化收益、随机化因果、统计显著、KV object bytes、HBM traffic、hardware bottleneck 或 P7/P9 已关闭。
+  </footer>
+</main>
 </body>
 </html>
