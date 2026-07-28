@@ -130,7 +130,7 @@ context=4096/65536/131072; output=64/256; concurrency=1/4/8
 zero retry; no HBM sampler; no profiler
 ```
 
-P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性能 reference；P6.2 已建立 profiled evidence reference；P6.3A 已关闭 matched MTP mechanism gate；P6.3B-R4-R1 已关闭 primary scope 的 explicit Prefix Cache mechanism gate。P6.3C 因 frozen `4096 < 135168` 配置在 off 侧触发 vLLM validation，已记录为 `blocked_p6_3c_not_strict_single_variable`。后续 P8.1-R1/P8.2-K0/K1A 均固定 Chunked Prefill-on，不重开 P6.3C，也不把该选择写成性能比较。
+P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性能 reference；P6.2 已建立 profiled evidence reference；P6.3A 已关闭 matched MTP mechanism gate；P6.3B-R4-R1 已关闭 primary scope 的 explicit Prefix Cache mechanism gate。原 P6.3C 因 frozen `4096 < 135168` 配置在 off 侧触发 vLLM validation，保留为 `blocked_p6_3c_not_strict_single_variable`；其范围仅限原 135168/4096/1 参考不能直接 A/B。独立 P6.3C-R1 已冻结 69632/69632/2、Prefix=false 和三组双请求，待服务器实测。
 
 状态门：
 
@@ -140,7 +140,7 @@ P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性�
 
 ## 5. P6：八卡 Reference Baseline
 
-八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point。P6.1 unprofiled、P6.2 profiled evidence、P6.3A 与 P6.3B-R4-R1 已完成；P6.3C 条件项的严格单变量可行性已 blocked，未创建可执行 workload。
+八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point。P6.1 unprofiled、P6.2 profiled evidence、P6.3A 与 P6.3B-R4-R1 已完成；原 P6.3C blocked 审计不变，P6.3C-R1 多请求 scheduler-pressure workload 已独立创建但尚无 NPU 结果。
 
 ### 5.1 Baseline freeze
 
@@ -160,7 +160,7 @@ P6.1 已记录 TTFT、TPOT、ITL、E2EL、throughput、server stats 和 token co
 
 ### 5.4 单变量对照
 
-顺序改为 matched MTP、purpose-built Prefix Cache、条件式 Chunked Prefill；`max_num_seqs` 是可选 scheduler/capacity sweep，`max_model_len` 后移到 P7 capacity boundary。P6.3C 已实证 `4096 < 135168` 使严格单布尔对照不可执行，因而以 `blocked_p6_3c_not_strict_single_variable` 停止，不另建调参后的伪 A/B。
+顺序改为 matched MTP、purpose-built Prefix Cache、条件式 Chunked Prefill；`max_num_seqs` 是可选 scheduler/capacity sweep，`max_model_len` 后移到 P7 capacity boundary。原 P6.3C 已实证 `4096 < 135168` 使原参考严格单布尔对照不可执行，因而以 `blocked_p6_3c_not_strict_single_variable` 保留。独立 R1 不把单请求预算直接提高到 135168，而在两侧共同冻结 69632/69632/2，使用总 Prefill 超预算的双请求获得机制辨识力。
 
 P6.3A 已完成的 matched 集覆盖 `4096/65536/131072` context、`64/256` output 和
 c1/c4/c8 代表并发，共 8 cell；`mtp_off` 与 `mtp_on` 各执行 3 个 batch/cell，合计
@@ -317,16 +317,16 @@ boundaries:
 
 ## 10. 当前下一步
 
-截至 2026-07-23，当前唯一服务器任务已经推进到
-`p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725`。R9 已证明 finish-time
-sliding-window block table 不是 target lineage 的权威来源；R10 在真实 cache stamp 时按 runtime
-sparse mask 捕获并即时归因 target keys，只授权 accepted-capacity、fixed-context、单 lifecycle
-的实机验证。以下较早描述仅保留阶段 lineage，若与本段冲突以本段和
+截至 2026-07-28，当前唯一服务器任务是
+`p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01`。它只授权共同冻结
+69632/69632/2、Prefix=false 的三组双请求，以 mechanism Off→On 和 performance
+Off→On→On→Off 六个 fresh lifecycle 执行，零 retry。P8 K2-R0 已开发但排队。
+以下较早描述仅保留阶段 lineage，若与本段冲突以本段和
 `通信模块/docs/developer-to-server.md` 为准。
 
 完整 K1A-R3 lineage 作为 provenance 保留，不因 R4 离线收口改写。
 
 1. P6.1C-R1 official、P6.1 unprofiled performance、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache control 已完成并验收。
-2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A-R2 capacity 与 P8.3-I0-R1 taxonomy 已在各自边界闭合。K1A 完整 lineage 保留，R3-R2-R2-R1-R1-R1 为 store-only yellow，R4 为 source-matcher blocked，R4-R1 为 offline store-only closeout green，R5-F0 为 candidate-ready feasibility，R5-L1/R1 red 保留。当前 handoff 只授权 R10 的 runtime cache-stamp lineage 实机闭环：`formal_model_lifecycle_count_exact:1`、`model_request_count_min:3`、`model_request_count_max:4`、`pressure_request_count_exact:1`、`request_retry_count_exact:0`、`next_task_authorized:false`、`result_transfer_authorized:true`；外发前仍须报告完整清单并由用户选择单一渠道。
-3. P6.3C Chunked Prefill on/off 已完成冻结源码审计：显式双布尔 CLI 存在，但 `4096 < 135168` 使 off 侧在 resolved config 前失败，结论为 `blocked_p6_3c_not_strict_single_variable`。
+2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A/K2 lineage 与 P8.3-I0-R1 taxonomy 均按各自边界保留。当前 handoff 只授权 P6.3C-R1 的六个 fresh lifecycle、90 个 engine request、48 个 batched HTTP call 和零 retry；外发前仍须报告完整清单并由用户选择单一渠道。
+3. 原 P6.3C Chunked Prefill on/off 冻结源码审计继续为 `blocked_p6_3c_not_strict_single_variable`；独立 R1 当前为 `developed_awaiting_server_run01`，不得提前列为正向成果。
 4. P8.3-I0/I0-R1 已完成 inventory/taxonomy 窄边界；P8.3-I1 hotness/runtime trace、P7 与 P9 均需新授权。

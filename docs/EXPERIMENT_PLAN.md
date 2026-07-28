@@ -90,7 +90,8 @@ P8.2-K1A-R5-F1-R17: green_restore_h2d_mechanism_closed / k1a_f1_closed
 P8.2-K2-R0: developer_ready_ucm_dram_external_prefix_path / one_lifecycle_authorized
 P8.3-I0: green_p8_3_i0_checkpoint_inventory_budget_incomplete
 P8.3-I0-R1: green_p8_3_i0_r1_unclassified_taxonomy
-P6.3C: blocked_p6_3c_not_strict_single_variable, no executable workload
+P6.3C: blocked_p6_3c_not_strict_single_variable for the original 135168/4096/1 reference only
+P6.3C-R1: developed_awaiting_server_run01, independent 69632/69632/2 two-request scheduler-pressure matched A/B
 ```
 
 K1A 原 `1 lifecycle / 6 requests` 契约已消费并以 pinned allocator 首错收口；K1A-R1 probe-invalid、R2
@@ -101,9 +102,8 @@ target-lost red 均保留。当前 F1-R2 只读取 calibration/L2 原始轨迹�
 context 改动、sweep 或 eager fallback。
 
 server-local Git 管理最终验收已完成。P6 五份汇总交付物已物化，历史 no-MTP P8 baseline 保留；
-`通信模块/docs/developer-to-server.md` 已清空旧 R9 内容并写入唯一 K1A-R5-F1-R10 handoff；服务器只需同步 `main` 后运行 R10 server-task driver，不得重跑 R9、补代码、调整 capacity/context、sweep 或创建 run02。结果包外发仍需按完整清单选择单一渠道。P6.3C frozen-source 审计已确认
-`max_num_batched_tokens=4096 < max_model_len=135168`，vLLM 在 Chunked Prefill off 时会于 resolved config 前拒绝该组合；
-因而以 `blocked_p6_3c_not_strict_single_variable` 停止，不创建 P6.3C workload；后续已关闭和当前 P8 workload 均固定 Chunked Prefill-on，不重开该 A/B。
+`通信模块/docs/developer-to-server.md` 已清空旧任务并写入唯一 P6.3C-R1 handoff；服务器只需同步 `main` 后运行 R1 server-task driver，不得补代码、调整冻结参数、改变请求体、sweep、retry 或混跑 K2-R0。结果包外发仍需按完整清单选择单一渠道。原 P6.3C frozen-source 审计确认
+`max_num_batched_tokens=4096 < max_model_len=135168` 时 Off 侧会于 resolved config 前被拒绝；该结论仅关闭“直接接在 P6.1 后的 131K+c1 严格单变量 A/B”。独立 R1 在两侧共同冻结 `69632 / 69632 / 2`、Prefix Cache=false，使用三组双请求形成调度压力，分别采集只读 scheduler 机制证据与无 observer/profiler 的顺序平衡性能证据。
 
 mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context、P6.1 unprofiled 性能门与 P6.2 profiled evidence 门均已关闭。P6.3 结果继续独立于 P8.1；外部开发机不运行 NPU。
 
@@ -311,7 +311,7 @@ request-device aggregate exit=0 且未使用 skip-heavy-joins fallback；phase-m
 
 1. P6.3A matched MTP on/off。
 2. P6.3B purpose-built repeated-prefix Prefix Cache on/off。
-3. P6.3C Chunked Prefill on/off 已因 `4096 < 135168` 的 frozen validation 约束记录为 `blocked_p6_3c_not_strict_single_variable`，不执行伪 A/B。
+3. 原 P6.3C Chunked Prefill on/off 因 `4096 < 135168` 的 frozen validation 约束记录为 `blocked_p6_3c_not_strict_single_variable`，仅关闭原参考配置的伪 A/B；独立 P6.3C-R1 采用共同冻结的 `69632 / 69632 / 2` 多请求调度压力环境。
 4. P6.3D 可选 `max_num_seqs` scheduler/capacity sweep。
 
 `max_model_len` 移入 P7 capacity boundary，不再是 P6.3 必做性能 A/B。每组必须使用相同请求集、
@@ -463,4 +463,4 @@ simulator_validation_report.md
 8. P7 工具链预研可继续，但不得外推 full-model runtime。
 9. P9 最后消费统一 trace、inventory、simulation 与 TP4 closure 证据，输出硬件优先级。
 
-当前唯一服务器任务是 `p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725`；R10/R11 不得重跑。R12 不构成 P8.2 通配授权，也不授权 retry、context 调整、sweep、第二 lifecycle、K2、P8.3-I1 或 P9。P6.3C 保持 blocked，不得通过第二变量重开。
+当前唯一服务器任务是 `p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01`。原 P6.3C blocked 审计不重跑、不覆盖；R1 只允许既定六个 fresh lifecycle、三组双请求、零 retry，K2-R0 保持排队，不与本轮混跑。

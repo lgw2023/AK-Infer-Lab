@@ -615,16 +615,168 @@
       grid-template-columns: 1.07fr .93fr;
     }
 
+    .profile-layout .module-body {
+      padding: 5px 6px;
+    }
+
+    .profile-layout .metric-row {
+      gap: 4px;
+    }
+
+    .profile-layout .metric {
+      min-height: 43px;
+      padding: 4px 5px;
+    }
+
+    .profile-layout .metric .label {
+      font-size: 8.5px;
+    }
+
+    .profile-layout .metric .value {
+      font-size: 16px;
+    }
+
+    .profile-layout .tight td,
+    .profile-layout .tight th {
+      padding: 1px 3px;
+      font-size: 8.8px;
+      line-height: 1.08;
+    }
+
+    .profile-layout .micro td,
+    .profile-layout .micro th {
+      padding: 1px 2px;
+      font-size: 7.7px;
+      line-height: 1.02;
+    }
+
+    .profile-layout .source-line {
+      margin-top: 4px;
+      padding-top: 3px;
+      font-size: 7.8px;
+      line-height: 1.12;
+    }
+
+    .profile-layout .callout {
+      padding: 6px 8px;
+      font-size: 9px;
+      line-height: 1.22;
+    }
+
+    .profile-reading-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      margin-top: 5px;
+    }
+
+    .profile-reading {
+      border: 1px solid #8a8a8a;
+      background: #fbfaf5;
+      padding: 6px 7px;
+      min-height: 73px;
+    }
+
+    .profile-reading strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--blue);
+      font-size: 9px;
+      line-height: 1.1;
+    }
+
+    .profile-reading p {
+      margin: 0;
+      color: #303030;
+      font-size: 8.1px;
+      line-height: 1.22;
+      text-align: justify;
+      text-justify: inter-ideograph;
+    }
+
+    .term-definition {
+      margin-top: 5px;
+      border: 1px solid #777;
+      border-left: 7px solid var(--blue);
+      background: var(--blue-soft);
+      padding: 6px 8px;
+      color: #252525;
+      font-size: 9px;
+      line-height: 1.22;
+      text-align: justify;
+      text-justify: inter-ideograph;
+    }
+
+    .term-definition strong {
+      color: var(--blue);
+    }
+
+    .chunk-paths {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .chunk-path {
+      border: 1px solid #777;
+      background: #f8f8f8;
+      padding: 5px 6px;
+      min-height: 60px;
+    }
+
+    .chunk-path.on {
+      border-top: 4px solid var(--good);
+      background: #f4fbf4;
+    }
+
+    .chunk-path.off {
+      border-top: 4px solid var(--red);
+      background: #fff5f5;
+    }
+
+    .chunk-path strong {
+      display: block;
+      color: #222;
+      font-size: 9.2px;
+      line-height: 1.1;
+    }
+
+    .chunk-path span {
+      display: block;
+      margin-top: 2px;
+      color: #333;
+      font-size: 8.2px;
+      line-height: 1.18;
+    }
+
     .equation {
-      margin: 8px 0;
+      margin: 5px 0;
       border: 1px dashed #9a6200;
       background: #fff8eb;
-      padding: 10px;
+      padding: 7px;
       color: var(--red);
       text-align: center;
-      font-size: 25px;
+      font-size: 21px;
       line-height: 1;
       font-weight: 900;
+    }
+
+    .profile-layout .zero-grid {
+      gap: 4px;
+      margin-top: 5px !important;
+    }
+
+    .profile-layout .zero {
+      padding: 5px 4px;
+    }
+
+    .profile-layout .zero strong {
+      font-size: 17px;
+    }
+
+    .profile-layout .zero span {
+      font-size: 7px;
     }
 
     .zero-grid {
@@ -751,6 +903,22 @@
       line-height: 1.22;
     }
 
+    .research-note {
+      margin: 12px 0 0;
+      padding: 11px 13px;
+      border-left: 4px solid var(--red);
+      background: #fbfaf5;
+      color: #292929;
+      font-size: 11px;
+      line-height: 1.5;
+      text-align: justify;
+      text-justify: inter-ideograph;
+    }
+
+    .research-note strong {
+      color: var(--red);
+    }
+
     .summary {
       display: grid;
       grid-template-columns: 86px 1fr;
@@ -773,6 +941,16 @@
       padding: 7px 10px 7px 23px;
       font-size: 11px;
       line-height: 1.28;
+    }
+
+    .summary p {
+      margin: 0;
+      padding: 8px 12px;
+      color: #262626;
+      font-size: 11px;
+      line-height: 1.35;
+      text-align: justify;
+      text-justify: inter-ideograph;
     }
 
     .footer {
@@ -812,6 +990,337 @@
     .slide > *:not(.page-watermark) {
       position: relative;
       z-index: 1;
+    }
+
+    .appendix-slide .content {
+      grid-template-rows: 1fr;
+    }
+
+    .appendix-slide .module-body {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 6px;
+      padding: 6px 7px;
+    }
+
+    .appendix-table {
+      height: 100%;
+      table-layout: fixed;
+    }
+
+    .appendix-table th,
+    .appendix-table td {
+      padding: 2px 3px;
+      font-size: 8.7px;
+      line-height: 1.08;
+      vertical-align: middle;
+    }
+
+    .appendix-table td:first-child {
+      font-weight: 800;
+    }
+
+    .appendix-table tr.context-start td {
+      border-top: 2px solid var(--blue);
+    }
+
+    .appendix-table td.off {
+      background: #f5f5f5;
+    }
+
+    .appendix-table td.on {
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-weight: 800;
+    }
+
+    .appendix-table td.effect {
+      background: var(--green);
+      color: var(--good);
+      font-weight: 900;
+    }
+
+    .appendix-table td.neutral {
+      background: #fff8e8;
+      color: var(--warn);
+      font-weight: 800;
+    }
+
+    .appendix-note-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .appendix-note {
+      border: 1px solid #999;
+      border-left: 5px solid var(--red);
+      background: #fbfaf5;
+      padding: 6px 8px;
+      color: #333;
+      font-size: 9px;
+      line-height: 1.25;
+      text-align: justify;
+      text-justify: inter-ideograph;
+    }
+
+    .appendix-note strong {
+      color: var(--red);
+    }
+
+    .phase-label {
+      font-weight: 900;
+    }
+
+    .phase-label.prefill {
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
+    .phase-label.decode {
+      background: var(--green);
+      color: var(--good);
+    }
+
+    .plain-summary-content {
+      grid-template-rows: 210px minmax(0, 1fr);
+    }
+
+    .plain-summary-content .module-body {
+      padding: 7px 8px;
+    }
+
+    .outcome-flow {
+      display: grid;
+      grid-template-columns: .82fr 34px 2.15fr 34px .95fr;
+      gap: 5px;
+      height: 100%;
+      align-items: stretch;
+    }
+
+    .outcome-flow-arrow {
+      display: grid;
+      place-items: center;
+      color: var(--red);
+      font-size: 27px;
+      font-weight: 900;
+    }
+
+    .outcome-flow-node {
+      min-width: 0;
+      border: 1px solid #777;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .outcome-flow-node.platform {
+      border-top: 5px solid var(--blue);
+      background: var(--blue-soft);
+    }
+
+    .outcome-flow-node.synthesis {
+      border-top: 5px solid var(--good);
+      background: var(--green);
+    }
+
+    .outcome-flow-node small {
+      color: #4a4a4a;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+
+    .outcome-flow-node strong {
+      margin-top: 5px;
+      color: var(--blue);
+      font-size: 15px;
+      line-height: 1.12;
+    }
+
+    .outcome-flow-node.synthesis strong {
+      color: var(--good);
+    }
+
+    .outcome-flow-node p {
+      margin: 6px 0 0;
+      color: #272727;
+      font-size: 9px;
+      line-height: 1.28;
+    }
+
+    .outcome-flow-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-top: 7px;
+    }
+
+    .outcome-flow-tags span {
+      border: 1px solid #8a8a8a;
+      background: #fff;
+      padding: 2px 4px;
+      color: #333;
+      font-size: 7.5px;
+      font-weight: 800;
+    }
+
+    .outcome-flow-branches {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .outcome-flow-branch {
+      position: relative;
+      min-width: 0;
+      border: 1px solid #777;
+      background: #fafafa;
+      padding: 8px;
+    }
+
+    .outcome-flow-branch::before {
+      content: attr(data-step);
+      position: absolute;
+      right: 6px;
+      top: 3px;
+      color: #e5e5e5;
+      font-size: 29px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .outcome-flow-branch small,
+    .outcome-flow-branch strong,
+    .outcome-flow-branch p {
+      position: relative;
+      z-index: 1;
+    }
+
+    .outcome-flow-branch small {
+      display: block;
+      color: var(--red);
+      font-size: 8px;
+      font-weight: 900;
+    }
+
+    .outcome-flow-branch strong {
+      display: block;
+      margin-top: 4px;
+      color: #111;
+      font-size: 12px;
+      line-height: 1.15;
+    }
+
+    .outcome-flow-branch p {
+      margin: 5px 0 0;
+      color: #333;
+      font-size: 8.5px;
+      line-height: 1.24;
+    }
+
+    .plain-summary-results {
+      display: grid;
+      grid-template-columns: 1.55fr .95fr;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .plain-result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 6px;
+      min-height: 0;
+    }
+
+    .plain-result-card {
+      min-width: 0;
+      border: 1px solid #777;
+      border-left: 6px solid var(--blue);
+      background: #fbfbfb;
+      padding: 8px 9px;
+    }
+
+    .plain-result-card:nth-child(2),
+    .plain-result-card:nth-child(3) {
+      border-left-color: var(--good);
+    }
+
+    .plain-result-card small {
+      display: block;
+      color: #555;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .06em;
+    }
+
+    .plain-result-card h3 {
+      margin: 3px 0 0;
+      color: #222;
+      font-size: 11px;
+      line-height: 1.15;
+    }
+
+    .plain-result-card .plain-result-value {
+      margin-top: 5px;
+      color: var(--red);
+      font-size: 19px;
+      line-height: 1;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .plain-result-card p {
+      margin: 5px 0 0;
+      color: #303030;
+      font-size: 8.4px;
+      line-height: 1.26;
+    }
+
+    .paper-abstract {
+      display: grid;
+      grid-template-rows: auto 1fr 1fr;
+      min-height: 0;
+      border: 1px solid #777;
+      background: #fff;
+    }
+
+    .paper-abstract-heading {
+      padding: 6px 8px;
+      border-bottom: 1px solid #777;
+      background: var(--yellow);
+      font-size: 13px;
+      line-height: 1.15;
+      font-weight: 900;
+    }
+
+    .paper-abstract-section {
+      min-height: 0;
+      padding: 8px 10px;
+    }
+
+    .paper-abstract-section + .paper-abstract-section {
+      border-top: 1px dashed #999;
+    }
+
+    .paper-abstract-section strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--red);
+      font-size: 10px;
+    }
+
+    .paper-abstract-section p {
+      margin: 0;
+      color: #272727;
+      font-family: "Songti SC", "STSong", "SimSun", serif;
+      font-size: 9.2px;
+      line-height: 1.42;
+      text-align: justify;
+      text-justify: inter-ideograph;
     }
 
     @media (max-width: 900px) {
@@ -865,12 +1374,16 @@
     <nav class="nav" aria-label="slides">
       <a href="#s1">1 总览</a>
       <a href="#s2">2 条件</a>
-      <a href="#s3">3 基线</a>
-      <a href="#s4">4 MTP</a>
-      <a href="#s5">5 Prefix</a>
-      <a href="#s6">6 Profile/可行性</a>
-      <a href="#s7">7 Provenance</a>
-      <a href="#s8">8 资产/边界</a>
+      <a href="#s3">3 基线结论</a>
+      <a href="#s4">4 基线全表</a>
+      <a href="#s5">5 MTP 结论</a>
+      <a href="#s6">6 MTP 全表</a>
+      <a href="#s7">7 Prefix 结论</a>
+      <a href="#s8">8 Prefix 全表</a>
+      <a href="#s9">9 Profile/可行性</a>
+      <a href="#s10">10 Provenance</a>
+      <a href="#s11">11 成果图解</a>
+      <a href="#s12">12 资产/边界</a>
       <button type="button" onclick="window.print()">打印/PDF</button>
     </nav>
   </div>
@@ -878,17 +1391,17 @@
   <main class="deck">
     <section class="slide" id="s1" aria-label="P6 阶段关闭总览">
       <div class="page-watermark">01</div>
-      <h1>P6 阶段结论：主线五项交付关闭，P6.3C 以严格单变量 blocked 终态关闭</h1>
+      <h1>P6 阶段摘要：冻结八卡推理栈完成五项证据任务，并形成一项严格单变量不可行结论</h1>
       <div class="content grid-3">
         <div class="module span-2">
-          <div class="module-title">六个核心证据门：五项 GREEN + 一项有效 BLOCKED</div>
+          <div class="module-title">研究结果概览：五项完成性证据与一项配置可行性结论</div>
           <div class="module-body gate-grid">
-            <article class="gate" data-step="01"><span class="tag ok">GREEN</span><h3>P6.1C-R1 · Official Context</h3><div class="big">131,072</div><p>4096 / 32768 / 65536 / 98304 / 131072 + 64 五档均首次成功。</p></article>
-            <article class="gate" data-step="02"><span class="tag ok">GREEN</span><h3>P6.1 · Unprofiled Baseline</h3><div class="big">90 / 90</div><p>18 cells、24 measured batches、零 retry；用户性能 reference 成立。</p></article>
-            <article class="gate" data-step="03"><span class="tag ok">GREEN</span><h3>P6.2 · Profiled Evidence</h3><div class="big">3 × 136</div><p>3 representative cells；每 cell 136 SQLite，phase-memory 与八卡覆盖完整。</p></article>
-            <article class="gate" data-step="04"><span class="tag ok">GREEN</span><h3>P6.3A · Matched MTP A/B</h3><div class="big">24 / 24</div><p>108/108 request；paired E2EL↓、TPOT↓、batch output throughput↑。</p></article>
-            <article class="gate" data-step="05"><span class="tag ok">GREEN</span><h3>P6.3B-R4-R1 · Prefix Cache</h3><div class="big">9 / 9</div><p>64/64 request；Off hit=0，On primary 9/9 精确命中。</p></article>
-            <article class="gate" data-step="06"><span class="tag warn">BLOCKED</span><h3>P6.3C · Chunked Prefill</h3><div class="big">4096 &lt; 135168</div><p>Off 侧 pre-request validation 失败；禁止改变第二变量制造 A/B。</p></article>
+            <article class="gate" data-step="01"><span class="tag ok">GREEN</span><h3>P6.1C-R1 · Official Context</h3><div class="big">131,072</div><p>输出固定为 64 token、并发度固定为 1 时，五个输入长度均首次完成，最高稳定输入达到 131,072 token。</p></article>
+            <article class="gate" data-step="02"><span class="tag ok">GREEN</span><h3>P6.1 · Unprofiled Baseline</h3><div class="big">90 / 90</div><p>18 个工作负载单元共完成 24 个测量批次和 90 个流式请求，建立了未受 profiler 干扰的用户侧性能基线。</p></article>
+            <article class="gate" data-step="03"><span class="tag ok">GREEN</span><h3>P6.2 · Profiled Evidence</h3><div class="big">3 × 136</div><p>三个代表性工作负载分别获得 136 个 SQLite 文件，并完成阶段内存记录和八卡设备覆盖，诊断证据链完整。</p></article>
+            <article class="gate" data-step="04"><span class="tag ok">GREEN</span><h3>P6.3A · Matched MTP A/B</h3><div class="big">24 / 24</div><p>108 个测量请求全部成功；24 个配对批次的端到端时延和每令牌时间均下降，批输出吞吐均提高。</p></article>
+            <article class="gate" data-step="05"><span class="tag ok">GREEN</span><h3>P6.3B-R4-R1 · Prefix Cache</h3><div class="big">9 / 9</div><p>64 个请求全部完成。关闭缓存时总命中量为 0，开启缓存后预先定义的 9 个主要跟随请求均精确命中。</p></article>
+            <article class="gate" data-step="06"><span class="tag warn">AUDIT + OPEN R1</span><h3>P6.3C · Chunked Prefill</h3><div class="big">原配置 blocked</div><p>原 135168/4096/1 配置不能直接 A/B；独立 R1 已冻结 69632/69632/2 双请求压力环境，待服务器实测。</p></article>
           </div>
         </div>
 
@@ -898,32 +1411,30 @@
             <table class="tight">
               <tr><th>层级</th><th>当前判断</th></tr>
               <tr><td>P6 主线</td><td><span class="tag ok">CLOSED</span> reference 与核心机制输入可供后续阶段消费</td></tr>
-              <tr><td>P6.3C</td><td><span class="tag warn">VALID BLOCKED</span> 已得到明确可行性答案，不等待调参重跑</td></tr>
+              <tr><td>原 P6.3C</td><td><span class="tag warn">VALID BLOCKED</span> 仅关闭原 P6.1 参考配置的直接对照</td></tr>
+              <tr><td>P6.3C-R1</td><td><span class="tag plan">DEVELOPED</span> 新冻结的多请求调度压力 A/B 待实机</td></tr>
               <tr><td>P6.3D / P6.4</td><td><span class="tag plan">OPTIONAL</span> max_num_seqs / MindIE 受条件与可用性门约束</td></tr>
               <tr><td>P7</td><td><span class="tag risk">SEPARATE</span> capacity / scheduler / hardware boundary 仍需独立关闭</td></tr>
               <tr><td>P8</td><td><span class="tag ok">CONSUMER</span> 可使用 P6 Prefix、MTP 与 trace reference</td></tr>
               <tr><td>P9</td><td><span class="tag risk">NOT UNLOCKED</span> P6 单独不能支持 bottleneck attribution</td></tr>
             </table>
-            <div class="source-line">重要口径：不能把“P6 主线关闭”写成“P6 所有候选实验全部 green”。历史 yellow / red / blocked provenance 必须保留。</div>
+            <div class="source-line">阶段关闭指既有五项证据任务已有可复核结果，并不表示所有候选实验均获得正向结果。原 P6.3C blocked 与 P6.3B 中间失败继续作为研究记录；P6.3C-R1 是新的开放结果链，不覆盖旧审计。</div>
           </div>
         </div>
       </div>
       <div class="summary">
-        <div class="summary-label">结论</div>
-        <ul>
-          <li><b>五项 accepted green：</b>P6.1C-R1、P6.1、P6.2、P6.3A、P6.3B-R4-R1；P6.3C 是有审计依据的终态 blocked。</li>
-          <li>开发机验证只能接受仓库合同与服务器小结果包，不替代真实 NPU 证据；本汇报不外推普遍优化收益。</li>
-        </ul>
+        <div class="summary-label">摘要</div>
+        <p>在冻结的 DeepSeek-V4-Flash W8A8-MTP 八卡环境中，P6 已建立 131K 长上下文稳定性、18-cell 未剖析性能基线、可用的 profiler 诊断链，以及 MTP 和 Prefix Cache 的受限机制证据。原 P6.3C 只证明 135168/4096/1 参考配置不能直接形成 Off/On；独立 R1 尚待服务器实测。已完成结果不支持将样本内变化外推为普遍优化收益。</p>
       </div>
-      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>DeepSeek-V4-Flash W8A8-MTP · 8× Ascend 910B1</span><span class="slide-index">Page 1 / 8</span></div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>DeepSeek-V4-Flash W8A8-MTP · 8× Ascend 910B1</span><span class="slide-index">Page 1 / 12</span></div>
     </section>
 
     <section class="slide" id="s2" aria-label="冻结实验条件">
       <div class="page-watermark">02</div>
-      <h1>实验条件：所有比较先冻结软硬件栈，再只改变合同指定变量</h1>
+      <h1>实验设计：冻结软硬件环境、请求协议和指标定义，以单变量对照识别机制效应</h1>
       <div class="content grid-3">
         <div class="module span-2">
-          <div class="module-title">P6 accepted reference 的共同冻结配置</div>
+          <div class="module-title">共同实验条件：模型、硬件、运行时、调度器与请求协议</div>
           <div class="module-body config-grid">
             <div class="config"><small>MODEL / QUANTIZATION</small><strong>DeepSeek-V4-Flash W8A8-MTP</strong><span><code>quantization=ascend</code> · 70 shards · checkpoint 约 279.4 GiB</span></div>
             <div class="config"><small>HARDWARE / PARALLEL</small><strong>8 × 910B1 · TP8 + EP</strong><span>Atlas 800T A2 · 64GB HBM/card · DP1</span></div>
@@ -937,35 +1448,33 @@
         </div>
 
         <div class="module">
-          <div class="module-title blue">Matched A/B 的变量边界</div>
+          <div class="module-title blue">对照策略与有效性约束</div>
           <div class="module-body">
             <table class="tight">
               <tr><th>任务</th><th>唯一变化</th><th>固定项</th></tr>
               <tr><td>P6.3A</td><td class="blue-text">MTP Off → On</td><td>模型、graph、context、请求、Prefix、顺序</td></tr>
               <tr><td>P6.3B-R4-R1</td><td class="blue-text">Prefix false → true</td><td>same R2 repair、MTP、bodies、顺序</td></tr>
-              <tr><td>P6.3C</td><td class="warn-text">Chunked false → true</td><td>若强迫第二参数变化，门立即失败</td></tr>
+              <tr><td>原 P6.3C</td><td class="warn-text">Chunked false → true</td><td>135168/4096/1 下 Off 无法启动</td></tr>
+              <tr><td>P6.3C-R1</td><td class="blue-text">Chunked false → true</td><td>两侧共同冻结 69632/69632/2、Prefix=false、双请求</td></tr>
             </table>
-            <div class="callout green" style="margin-top:8px"><strong>请求证据统一门</strong><br>HTTP 200、prompt / generated / streamed tokens 精确、finish reason、SSE done、health / queue、MTP counters 与 cleanup。</div>
-            <div class="callout warn" style="margin-top:8px"><strong>测量边界</strong><br>P6.1 是 unprofiled 用户性能 reference；P6.2 profiled latency 只是诊断值；P6.3A/B 为固定顺序描述性 A/B，无随机化和显著性检验。</div>
+            <div class="callout green" style="margin-top:8px"><strong>请求级有效性标准</strong><br>每个成功样本均要求 HTTP 200、输入与输出 token 数准确、完成原因正确、SSE 结束标记存在，并同时满足健康状态、队列、MTP 计数连续性和清理要求。</div>
+            <div class="callout warn" style="margin-top:8px"><strong>测量性质</strong><br>P6.1 提供未剖析的用户侧性能基线；P6.2 时延仅用于 profiler 诊断。P6.3A/B 采用固定执行顺序，未随机化且未进行显著性检验，因此只能作描述性配对解释。</div>
           </div>
         </div>
       </div>
       <div class="summary">
         <div class="summary-label">方法</div>
-        <ul>
-          <li>变量身份、server argv、resolved config、request-body pairing、source/runner/server-command hash 与 cleanup 均进入证据合同。</li>
-          <li>P6.3B 两侧使用同一个 R2 hybrid-KV repair；P6.3C 不允许以调大 token budget 或缩短 context 绕过失败。</li>
-        </ul>
+        <p>本阶段将启动参数、解析配置、请求体配对、源码/运行器哈希和清理状态纳入同一合同。P6.3A 仅改变 MTP，P6.3B-R4-R1 仅改变 Prefix Cache。原 P6.3C 不允许在 P6.1 参考上再改第二参数；独立 R1 则为两侧共同建立新的 69632/69632/2 调度环境，只以 Chunked Prefill 布尔值作为 A/B 差异。</p>
       </div>
-      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Frozen Runtime &amp; Single-variable Contract</span><span class="slide-index">Page 2 / 8</span></div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Frozen Runtime &amp; Single-variable Contract</span><span class="slide-index">Page 2 / 12</span></div>
     </section>
 
     <section class="slide" id="s3" aria-label="P6.1 稳定性与性能基线">
       <div class="page-watermark">03</div>
-      <h1>P6.1：131K 官方上下文首次成功，18-cell unprofiled 用户性能基线完整关闭</h1>
+      <h1>长上下文与性能基线：131K 输入稳定完成，输入扩展主要增加首令牌时延</h1>
       <div class="content rows-2">
         <div class="module">
-          <div class="module-title green">P6.1C-R1 Official Context Ladder · 五档均 first-attempt GREEN</div>
+          <div class="module-title green">P6.1C-R1 长上下文阶梯：五个输入长度均于首次执行完成</div>
           <div class="module-body">
             <div class="ladder">
               <div class="ladder-step"><strong>4,096</strong><span>+64 · C1 · GREEN</span></div>
@@ -982,12 +1491,13 @@
               <div class="metric"><div class="label">Accepted token Δ</div><div class="value">6,624</div></div>
               <div class="metric"><div class="label">Retry</div><div class="value">0</div></div>
             </div>
+            <p class="research-note"><strong>实验设计与观察。</strong>长上下文阶梯将输出长度固定为 64 token、并发度固定为 1，并从 4,096 token 逐级扩展至 131,072 token，以区分输入规模带来的稳定性变化。五档均在首次执行中满足 HTTP、token、完成状态、MTP 计数和清理要求，因此 131,072 token 被接受为该冻结栈的最高已验证稳定输入，而不是根据模型配置推算出的理论上限。</p>
           </div>
         </div>
 
         <div class="baseline-layout">
           <div class="module">
-            <div class="module-title">P6.1 C1 六个代表 cell 的 mean 实测绝对值</div>
+            <div class="module-title">P6.1 并发度 1 的六个代表性工作负载：实测均值</div>
             <div class="module-body">
               <table aria-label="P6.1 concurrency one baseline">
                 <thead><tr><th>Input</th><th>Output</th><th class="num">Request n</th><th class="num">TTFT mean</th><th class="num">TPOT mean</th><th class="num">E2EL mean</th><th class="num">Batch output</th></tr></thead>
@@ -1000,33 +1510,74 @@
                   <tr><td>128K</td><td>256</td><td class="num">1</td><td class="num">13,107.5 ms</td><td class="num">199.05 ms/token</td><td class="num">63.87 s</td><td class="num">4.01 tok/s</td></tr>
                 </tbody>
               </table>
-              <div class="source-line">数据源：accepted P6.1 <code>matrix_cell_summary.tsv</code> mean。完整矩阵为 4K / 64K / 128K × output 64 / 256 × C1 / C4 / C8；此表突出 C1。</div>
+              <div class="source-line">表中数值取自已验收 P6.1 <code>matrix_cell_summary.tsv</code> 的均值。完整矩阵由 4K、64K、128K 三个输入长度，64、256 两个输出长度以及 1、4、8 三个并发度组合而成；此处列出并发度 1，以减少排队对解释的干扰。</div>
             </div>
           </div>
           <div class="insight-stack">
-            <div class="insight"><small>TTFT / INPUT SCALE</small><strong>0.41s → 13.08s</strong><p>output=64、C1 时从 4K 到 128K，主要反映 prefill 增长。</p></div>
-            <div class="insight"><small>TPOT / DECODE BAND</small><strong>198–203 ms/token</strong><p>C1 六格相对稳定；输入长度未把 decode TPOT 推离该区间。</p></div>
-            <div class="insight"><small>CONCURRENCY BOUNDARY</small><strong>max_num_seqs = 1</strong><p>C4/C8 的 E2EL/TTFT 含排队，batch throughput 基本不随并发扩展。</p></div>
-            <div class="insight"><small>MEASUREMENT COMPLETENESS</small><strong>24 batches · 90 requests</strong><p>token、finish、health、queue、MTP counter continuity 与 cleanup 全过。</p></div>
+            <div class="insight"><small>TTFT / INPUT SCALE</small><strong>0.41s → 13.08s</strong><p>在输出 64 token、并发度 1 时，输入由 4K 增至 128K 使首令牌时延显著增加，反映输入处理工作量随上下文长度扩展。</p></div>
+            <div class="insight"><small>TPOT / DECODE BAND</small><strong>198–203 ms/token</strong><p>六个并发度 1 单元的每输出令牌时间集中在该区间，说明输入长度对稳态解码速度的影响有限。</p></div>
+            <div class="insight"><small>CONCURRENCY BOUNDARY</small><strong>max_num_seqs = 1</strong><p>并发度 4 和 8 的端到端时延包含排队，且批输出吞吐基本不扩展，因此这些样本不能用于评价设备并行能力。</p></div>
+            <div class="insight"><small>MEASUREMENT COMPLETENESS</small><strong>24 batches · 90 requests</strong><p>所有样本均通过 token 数、完成状态、健康与队列状态、MTP 计数连续性和清理验证。</p></div>
           </div>
         </div>
       </div>
       <div class="summary">
-        <div class="summary-label">观察</div>
-        <ul>
-          <li>冻结栈在官方 131072 输入 + 64 输出上达到最高稳定档；P6.1 形成后续机制 A/B 的 unprofiled reference。</li>
-          <li>长输入主要推高 TTFT；C1 decode TPOT 仍在约 198–203 ms/token。C4/C8 数据含排队，不能解释为设备并行扩展。</li>
-        </ul>
+        <div class="summary-label">结果</div>
+        <p>冻结栈在 131,072-token 输入、64-token 输出和并发度 1 的条件下稳定完成，从而建立了后续机制比较的长上下文运行边界。未剖析基线显示，4K 到 128K 的输入扩展主要将首令牌时延从约 0.41 s 推高至 13.08 s，而每输出令牌时间仍维持在 198–203 ms/token。由于并发样本受到单序列调度限制，其时延增长应解释为排队效应，而非硬件并行扩展结果。</p>
       </div>
-      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.1C-R1 + P6.1 Unprofiled Reference</span><span class="slide-index">Page 3 / 8</span></div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.1C-R1 + P6.1 Unprofiled Reference</span><span class="slide-index">Page 3 / 12</span></div>
     </section>
 
-    <section class="slide" id="s4" aria-label="P6.3A Matched MTP 结果">
+    <section class="slide appendix-slide" id="s4" aria-label="P6.1 18-cell 完整基线数据">
       <div class="page-watermark">04</div>
-      <h1>P6.3A：Matched MTP Off→On 的 24/24 paired batches 全部方向一致</h1>
+      <h1>P6.1 数据附录：18 个工作负载单元的未剖析流式性能均值全部保留</h1>
+      <div class="content">
+        <div class="module">
+          <div class="module-title blue">完整矩阵：3 个输入长度 × 2 个输出长度 × 3 个并发度</div>
+          <div class="module-body">
+            <table class="appendix-table" aria-label="P6.1 complete 18 cell baseline">
+              <thead><tr><th>Input</th><th>Output</th><th>C</th><th>Request n</th><th>Batch n</th><th class="num">TTFT mean</th><th class="num">TPOT mean</th><th class="num">E2EL mean</th><th class="num">Batch output</th><th>Interpretation</th></tr></thead>
+              <tbody>
+                <tr class="context-start"><td>4K</td><td>64</td><td>1</td><td>3</td><td>3</td><td class="num">411.1 ms</td><td class="num">203.30 ms/tok</td><td class="num">13.22 s</td><td class="num">4.84 tok/s</td><td>C1 · 3 repeats</td></tr>
+                <tr><td>4K</td><td>64</td><td>4</td><td>4</td><td>1</td><td class="num">20,266.0 ms</td><td class="num">202.51 ms/tok</td><td class="num">33.02 s</td><td class="num">4.86 tok/s</td><td>queue included</td></tr>
+                <tr><td>4K</td><td>64</td><td>8</td><td>8</td><td>1</td><td class="num">46,746.9 ms</td><td class="num">202.15 ms/tok</td><td class="num">59.48 s</td><td class="num">4.87 tok/s</td><td>queue included</td></tr>
+                <tr><td>4K</td><td>256</td><td>1</td><td>1</td><td>1</td><td class="num">401.2 ms</td><td class="num">198.09 ms/tok</td><td class="num">50.91 s</td><td class="num">5.03 tok/s</td><td>single observation</td></tr>
+                <tr><td>4K</td><td>256</td><td>4</td><td>4</td><td>1</td><td class="num">77,352.4 ms</td><td class="num">199.70 ms/tok</td><td class="num">128.28 s</td><td class="num">4.99 tok/s</td><td>queue included</td></tr>
+                <tr><td>4K</td><td>256</td><td>8</td><td>8</td><td>1</td><td class="num">179,029.0 ms</td><td class="num">201.49 ms/tok</td><td class="num">230.41 s</td><td class="num">4.94 tok/s</td><td>queue included</td></tr>
+                <tr class="context-start"><td>64K</td><td>64</td><td>1</td><td>1</td><td>1</td><td class="num">6,584.4 ms</td><td class="num">202.83 ms/tok</td><td class="num">19.36 s</td><td class="num">3.30 tok/s</td><td>single observation</td></tr>
+                <tr><td>64K</td><td>64</td><td>4</td><td>12</td><td>3</td><td class="num">35,489.8 ms</td><td class="num">202.85 ms/tok</td><td class="num">48.27 s</td><td class="num">3.32 tok/s</td><td>3 batches · queue</td></tr>
+                <tr><td>64K</td><td>64</td><td>8</td><td>8</td><td>1</td><td class="num">74,041.4 ms</td><td class="num">202.54 ms/tok</td><td class="num">86.80 s</td><td class="num">3.32 tok/s</td><td>queue included</td></tr>
+                <tr><td>64K</td><td>256</td><td>1</td><td>1</td><td>1</td><td class="num">6,534.9 ms</td><td class="num">199.50 ms/tok</td><td class="num">57.41 s</td><td class="num">4.46 tok/s</td><td>single observation</td></tr>
+                <tr><td>64K</td><td>256</td><td>4</td><td>4</td><td>1</td><td class="num">91,843.6 ms</td><td class="num">197.96 ms/tok</td><td class="num">142.32 s</td><td class="num">4.50 tok/s</td><td>queue included</td></tr>
+                <tr><td>64K</td><td>256</td><td>8</td><td>8</td><td>1</td><td class="num">208,982.5 ms</td><td class="num">200.04 ms/tok</td><td class="num">259.99 s</td><td class="num">4.45 tok/s</td><td>queue included</td></tr>
+                <tr class="context-start"><td>128K</td><td>64</td><td>1</td><td>3</td><td>3</td><td class="num">13,084.3 ms</td><td class="num">201.84 ms/tok</td><td class="num">25.80 s</td><td class="num">2.48 tok/s</td><td>C1 · 3 repeats</td></tr>
+                <tr><td>128K</td><td>64</td><td>4</td><td>4</td><td>1</td><td class="num">51,571.8 ms</td><td class="num">201.36 ms/tok</td><td class="num">64.26 s</td><td class="num">2.49 tok/s</td><td>queue included</td></tr>
+                <tr><td>128K</td><td>64</td><td>8</td><td>8</td><td>1</td><td class="num">102,964.1 ms</td><td class="num">201.14 ms/tok</td><td class="num">115.64 s</td><td class="num">2.49 tok/s</td><td>queue included</td></tr>
+                <tr><td>128K</td><td>256</td><td>1</td><td>1</td><td>1</td><td class="num">13,107.5 ms</td><td class="num">199.05 ms/tok</td><td class="num">63.87 s</td><td class="num">4.01 tok/s</td><td>single observation</td></tr>
+                <tr><td>128K</td><td>256</td><td>4</td><td>4</td><td>1</td><td class="num">108,999.8 ms</td><td class="num">201.64 ms/tok</td><td class="num">160.42 s</td><td class="num">3.97 tok/s</td><td>queue included</td></tr>
+                <tr><td>128K</td><td>256</td><td>8</td><td>8</td><td>1</td><td class="num">244,757.9 ms</td><td class="num">204.91 ms/tok</td><td class="num">297.01 s</td><td class="num">3.91 tok/s</td><td>queue included</td></tr>
+              </tbody>
+            </table>
+            <div class="appendix-note-grid">
+              <div class="appendix-note"><strong>绝对结果。</strong>并发度 1、输出 64 token 时，输入从 4K 增至 128K 使 TTFT 从 411.1 ms 增至 13,084.3 ms，E2EL 从 13.22 s 增至 25.80 s；TPOT 仅由 203.30 变为 201.84 ms/token。</div>
+              <div class="appendix-note"><strong>调度边界。</strong>C4/C8 的逐请求 TTFT 和 E2EL 包含 <code>max_num_seqs=1</code> 下的串行排队，批输出吞吐没有随并发度等比例上升。本表因此是冻结调度策略的用户观测，不是并行扩展性测量。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">数据说明</div>
+        <p>本页与性能总览的 P6.1 全表逐行对应，恢复了此前仪表盘仅展示的六个并发度 1 代表单元之外的 12 个 C4/C8 单元。所有均值来自已验收的 <code>matrix_cell_summary.tsv</code>；18/18 cells、24/24 batches 和 90/90 requests 均成功且没有请求级重试。</p>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.1 Complete 18-Cell Data</span><span class="slide-index">Page 4 / 12</span></div>
+    </section>
+
+    <section class="slide" id="s5" aria-label="P6.3A Matched MTP 结果">
+      <div class="page-watermark">05</div>
+      <h1>MTP 配对结果：24 个批次的解码指标一致改善，长输入降低端到端收益占比</h1>
       <div class="content grid-3">
         <div class="module span-2">
-          <div class="module-title">八个代表 cell 的 paired relative delta</div>
+          <div class="module-title">八个代表性工作负载的批内配对相对变化</div>
           <div class="module-body">
             <table class="ab-table tight" aria-label="P6.3A matched MTP deltas">
               <thead><tr><th>Cell</th><th>Shape</th><th>E2EL ↓</th><th>Batch output throughput ↑</th><th class="num">TPOT ↓</th></tr></thead>
@@ -1045,7 +1596,7 @@
         </div>
 
         <div class="module">
-          <div class="module-title blue">结果完整性与解释边界</div>
+          <div class="module-title blue">样本覆盖、效应量与统计解释</div>
           <div class="module-body">
             <div class="metric-row" style="grid-template-columns:1fr 1fr">
               <div class="metric"><div class="label">Measured requests</div><div class="value">108 / 108</div></div>
@@ -1055,26 +1606,57 @@
               <div class="metric"><div class="label">Batch output rel. mean</div><div class="value">+71.0%</div></div>
               <div class="metric"><div class="label">MTP accepted token Δ</div><div class="value">4,896</div></div>
             </div>
-            <div class="callout warn" style="margin-top:8px"><strong>仅接受 matched 描述性机制效应</strong><br>顺序固定 Off→On；每 cell 3 repeats；无随机化、无显著性检验。batch output throughput 不是设备峰值 throughput。</div>
+            <div class="callout warn" style="margin-top:8px"><strong>效应量仅描述当前配对样本</strong><br>实验顺序固定为 Off→On，每个工作负载重复三个批次，未采用随机化或显著性检验。批输出吞吐反映该批次的墙钟处理率，不代表设备峰值吞吐。</div>
           </div>
         </div>
       </div>
       <div class="summary">
-        <div class="summary-label">结论</div>
-        <ul>
-          <li>在冻结 stack 与 exact bodies 下，MTP-on 的 24/24 paired batches 均呈 E2EL↓、TPOT↓、batch output throughput↑。</li>
-          <li>该证据支持 P6.3A scope 内的描述性机制效果；不自动证明随机化因果、统计显著或所有工作负载上的普遍收益。</li>
-        </ul>
+        <div class="summary-label">结果</div>
+        <p>在服务器参数和请求体保持一致时，启用 MTP 后 24/24 个配对批次的每输出令牌时间均下降，平均相对降幅为 47.0%；端到端时延平均下降 40.9%，批输出吞吐平均提高 71.0%。128K+64 单元的 TPOT 下降 47.2%，而 E2EL 仅下降 30.0%，表明较长的输入处理阶段稀释了解码加速对总时延的贡献。该结果支持 P6.3A 范围内的描述性机制效应，但不构成随机化因果或统计显著性结论。</p>
       </div>
-      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3A Matched MTP Off / On</span><span class="slide-index">Page 4 / 8</span></div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3A Matched MTP Off / On</span><span class="slide-index">Page 5 / 12</span></div>
     </section>
 
-    <section class="slide" id="s5" aria-label="P6.3B Prefix Cache 结果">
-      <div class="page-watermark">05</div>
-      <h1>P6.3B-R4-R1：显式 Prefix Cache 的精确命中只出现在 primary scope</h1>
+    <section class="slide appendix-slide" id="s6" aria-label="P6.3A MTP 完整绝对数据">
+      <div class="page-watermark">06</div>
+      <h1>P6.3A 数据附录：64 个绝对单元均值与配对效应共同定位 MTP 的作用阶段</h1>
+      <div class="content">
+        <div class="module">
+          <div class="module-title blue">MTP Off / On 完整指标：TTFT、E2EL、TPOT 与批输出吞吐</div>
+          <div class="module-body">
+            <table class="appendix-table" aria-label="P6.3A complete absolute and paired metrics">
+              <thead><tr><th>Cell</th><th>Shape</th><th>Requests / mode</th><th class="num">TTFT Off → On</th><th class="num">TTFT Δ</th><th class="num">E2EL Off → On</th><th class="num">E2EL Δ</th><th class="num">TPOT Off → On</th><th class="num">TPOT Δ</th><th class="num">Batch output Off → On</th><th class="num">Output Δ</th></tr></thead>
+              <tbody>
+                <tr><td>Short Prefill</td><td>4K+64 · C1</td><td>3 / 3</td><td class="num">398.0 → 415.4 ms</td><td class="num neutral">+4.4%</td><td class="num">24.428 → 13.389 s</td><td class="num effect">−45.1%</td><td class="num">381.42 → 205.93</td><td class="num effect">−45.9%</td><td class="num">2.62 → 4.78</td><td class="num effect">+82.6%</td></tr>
+                <tr><td>Short Decode</td><td>4K+256 · C1</td><td>3 / 3</td><td class="num">394.4 → 415.7 ms</td><td class="num neutral">+5.4%</td><td class="num">96.450 → 52.076 s</td><td class="num effect">−46.0%</td><td class="num">376.69 → 202.59</td><td class="num effect">−46.2%</td><td class="num">2.65 → 4.92</td><td class="num effect">+85.2%</td></tr>
+                <tr><td>Short Decode · C8</td><td>4K+256 · C8</td><td>24 / 24</td><td class="num">335,734.3 → 178,113.0 ms</td><td class="num effect">−46.9%</td><td class="num">431.357 → 228.471 s</td><td class="num effect">−47.0%</td><td class="num">374.99 → 197.48</td><td class="num effect">−47.3%</td><td class="num">2.67 → 5.04</td><td class="num effect">+89.2%</td></tr>
+                <tr><td>Mid Prefill</td><td>64K+64 · C1</td><td>3 / 3</td><td class="num">6,180.6 → 6,419.0 ms</td><td class="num neutral">+3.9%</td><td class="num">29.649 → 18.985 s</td><td class="num effect">−36.0%</td><td class="num">372.51 → 199.46</td><td class="num effect">−46.5%</td><td class="num">2.16 → 3.37</td><td class="num effect">+56.1%</td></tr>
+                <tr><td>Mid Prefill · C4</td><td>64K+64 · C4</td><td>12 / 12</td><td class="num">50,829.4 → 35,118.4 ms</td><td class="num effect">−30.9%</td><td class="num">74.395 → 47.776 s</td><td class="num effect">−35.7%</td><td class="num">374.05 → 200.91</td><td class="num effect">−46.3%</td><td class="num">2.15 → 3.35</td><td class="num effect">+55.9%</td></tr>
+                <tr><td>Mid Decode</td><td>64K+256 · C1</td><td>3 / 3</td><td class="num">6,431.0 → 6,469.5 ms</td><td class="num neutral">+0.8%</td><td class="num">103.320 → 56.894 s</td><td class="num effect">−44.9%</td><td class="num">379.96 → 197.74</td><td class="num effect">−47.9%</td><td class="num">2.48 → 4.50</td><td class="num effect">+81.6%</td></tr>
+                <tr><td>Long Prefill</td><td>128K+64 · C1</td><td>3 / 3</td><td class="num">12,651.8 → 12,964.8 ms</td><td class="num neutral">+2.5%</td><td class="num">36.505 → 25.565 s</td><td class="num effect">−30.0%</td><td class="num">378.61 → 199.99</td><td class="num effect">−47.2%</td><td class="num">1.75 → 2.50</td><td class="num effect">+42.8%</td></tr>
+                <tr><td>Long Decode</td><td>128K+256 · C1</td><td>3 / 3</td><td class="num">13,092.1 → 12,939.8 ms</td><td class="num neutral">−1.0%</td><td class="num">111.313 → 63.693 s</td><td class="num effect">−42.8%</td><td class="num">385.18 → 199.03</td><td class="num effect">−48.3%</td><td class="num">2.30 → 4.02</td><td class="num effect">+74.7%</td></tr>
+              </tbody>
+            </table>
+            <div class="appendix-note-grid">
+              <div class="appendix-note"><strong>完整性。</strong>八个 cell、两种模式和四个指标形成 64 个绝对均值；54/54 个请求在每种模式下成功，48/48 个测量批次和 24/24 个配对批次完整。TTFT 绝对值此前未在仪表盘中呈现，本页与性能总览数据附录逐项对应。</div>
+              <div class="appendix-note"><strong>解释。</strong>并发度 1 单元的 TTFT 变化为 −1.0% 至 +5.4%，而 TPOT 均下降 45.9%–48.3%。C4/C8 的 TTFT 下降包含排队缩短。数据支持 MTP 主要影响 decode 的解释，但固定 Off→On 顺序和三次重复不足以建立随机化因果。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">结果</div>
+        <p>MTP On 对首令牌时间没有形成跨单元一致改善，却在所有八个单元中近乎将 TPOT 减半。prefill-heavy 的 128K+64 单元中，TPOT 下降 47.2%，E2EL 仅下降 30.0%；这一差异进一步表明，输入处理时间占比决定了解码优化能够转化为多少端到端收益。</p>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3A Complete Absolute Data</span><span class="slide-index">Page 6 / 12</span></div>
+    </section>
+
+    <section class="slide" id="s7" aria-label="P6.3B Prefix Cache 结果">
+      <div class="page-watermark">07</div>
+      <h1>Prefix Cache 配对结果：精确复用仅见于三组 90% 长前缀，边界样本保持零命中</h1>
       <div class="content prefix-layout">
         <div class="module">
-          <div class="module-title">8 groups × 2 modes · same R2 repair · canonical bodies byte-identical</div>
+          <div class="module-title">实验设计：八个前缀组、两种显式缓存状态、同一 R2 修复与字节一致请求体</div>
           <div class="module-body">
             <table class="prefix-table tight" aria-label="P6.3B prefix groups">
               <thead><tr><th>Input · Prefix</th><th class="num">Token-LCP / 16K floor</th><th class="num">Off hit</th><th class="num">On hit</th><th class="num">TTFT Off → On</th><th class="num">Paired Δ</th></tr></thead>
@@ -1089,12 +1671,13 @@
                 <tr class="primary"><td>128K · 90%</td><td class="num">117,889 / 114,688</td><td class="num">0</td><td class="num hit">114,688</td><td class="num">12,826.0 → 1,873.7 ms</td><td class="num hit">−85.4%</td></tr>
               </tbody>
             </table>
-            <div class="source-line">每 group 每 mode：1 prime + 3 measured follower。三个 primary group 的每次 hit 均严格等于 actual token-LCP 向下取整到 16K hybrid LCM。</div>
+            <div class="source-line">每个前缀组在每种模式下均先发送一个预置请求，再发送三个测量跟随请求。三个主要组的每次命中量均等于实际 token 最长公共前缀向下取整至 16,384-token hybrid-KV 对齐单位后的结果。</div>
+            <p class="research-note"><strong>结果模式。</strong>命中并未随“存在共享前缀”这一条件自动出现。4K 组因公共前缀小于一个 16K 对齐单位而保持零命中；32K、64K 和 128K 的 50% 组虽然具有非零对齐下界，仍未观察到复用；只有三组 90% 长前缀同时表现出精确命中与明显 TTFT 下降。该分层结果说明，缓存开启是必要条件，但前缀长度和块对齐并非充分条件。</p>
           </div>
         </div>
 
         <div class="module">
-          <div class="module-title blue">机制读数与不可外推边界</div>
+          <div class="module-title blue">命中模式与解释边界</div>
           <div class="module-body">
             <div class="kpi-grid">
               <div class="kpi"><small>REQUESTS</small><strong>64 / 64</strong></div>
@@ -1104,27 +1687,58 @@
               <div class="kpi"><small>ON HIT TOTAL</small><strong>540,672</strong></div>
               <div class="kpi"><small>MTP ACCEPTED Δ</small><strong>1,024 / mode</strong></div>
             </div>
-            <div class="callout green" style="margin-top:8px"><strong>显式开关产生可观测机制效应</strong><br>resolved Prefix Cache false→true；Off hit total=0；On primary 9/9 exact positive。</div>
-            <div class="callout warn" style="margin-top:8px"><strong>禁止外推</strong><br>50% 长上下文虽有非零 16K floor 仍不命中；固定 Off→On 的 TTFT 只作为 primary scope 描述性读数，不形成 universal hit 或普遍性能收益。</div>
+            <div class="callout green" style="margin-top:8px"><strong>显式状态差异对应预期命中差异</strong><br>Prefix Cache 解析值由 false 变为 true 后，关闭侧总命中量保持为 0，开启侧三个主要组的 9 个测量跟随请求全部出现精确正命中。</div>
+            <div class="callout warn" style="margin-top:8px"><strong>机制效应具有样本边界</strong><br>三个 50% 长上下文组即使具有非零 16K 对齐下界仍未命中。固定 Off→On 顺序下的 TTFT 变化仅描述主要样本，不能推广为所有共享前缀的命中或普遍性能收益。</div>
           </div>
         </div>
       </div>
       <div class="summary">
-        <div class="summary-label">结论</div>
-        <ul>
-          <li>same R2 hybrid-KV repair 下，显式 Prefix Off/On 成为真正单变量；On 侧 32K/64K/128K ×90% 三组的每请求 hit 分别为 16,384 / 49,152 / 114,688。</li>
-          <li>另 15 条 boundary follower 仍为零命中，说明机制效应有严格 scope，不能宣传为“所有共享前缀都命中”。</li>
-        </ul>
+        <div class="summary-label">结果</div>
+        <p>在两侧采用同一 R2 hybrid-KV 修复并显式控制 Prefix Cache 状态后，32K、64K 和 128K 的 90% 前缀组分别观察到每请求 16,384、49,152 和 114,688 token 的命中，且三个主要组共 9/9 个跟随请求均符合预定对齐规则。与此同时，另外 15 个边界跟随请求仍为零命中。该对照证明缓存机制在指定主要样本中可被触发，但同时表明共享前缀长度和对齐下界不足以保证普遍命中。</p>
       </div>
-      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3B-R4-R1 Explicit Prefix Cache Off / On</span><span class="slide-index">Page 5 / 8</span></div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3B-R4-R1 Explicit Prefix Cache Off / On</span><span class="slide-index">Page 7 / 12</span></div>
     </section>
 
-    <section class="slide" id="s6" aria-label="P6.2 Profiled evidence 与 P6.3C 可行性">
-      <div class="page-watermark">06</div>
-      <h1>P6.2 与 P6.3C：一项证明证据链可观测，一项证明不能严格单变量比较</h1>
+    <section class="slide appendix-slide" id="s8" aria-label="P6.3B Prefix Cache 完整性能数据">
+      <div class="page-watermark">08</div>
+      <h1>P6.3B 数据附录：命中改变 prefill 时延，TPOT 基本不变，端到端收益随可复用前缀增长</h1>
+      <div class="content">
+        <div class="module">
+          <div class="module-title green">八个前缀组的命中、TPOT、E2EL 与请求输出速率</div>
+          <div class="module-body">
+            <table class="appendix-table" aria-label="P6.3B complete latency and output metrics">
+              <thead><tr><th>Input · Prefix</th><th class="num">Hit / follower</th><th class="num">TTFT Off → On</th><th class="num">TTFT Δ</th><th class="num">TPOT Off → On</th><th class="num">TPOT Δ</th><th class="num">E2EL Off → On</th><th class="num">E2EL Δ</th><th class="num">Output tok/s Off → On</th><th class="num">Output Δ</th></tr></thead>
+              <tbody>
+                <tr><td>4K · 50%</td><td class="num">0</td><td class="num">416.2 → 417.4 ms</td><td class="num neutral">+0.3%</td><td class="num">202.21 → 203.98</td><td class="num neutral">+0.9%</td><td class="num">13.156 → 13.268 s</td><td class="num neutral">+0.9%</td><td class="num">4.86 → 4.82</td><td class="num neutral">−0.8%</td></tr>
+                <tr><td>4K · 90%</td><td class="num">0</td><td class="num">405.0 → 415.7 ms</td><td class="num neutral">+2.7%</td><td class="num">200.03 → 201.19</td><td class="num neutral">+0.6%</td><td class="num">13.007 → 13.091 s</td><td class="num neutral">+0.6%</td><td class="num">4.92 → 4.89</td><td class="num neutral">−0.6%</td></tr>
+                <tr><td>32K · 50%</td><td class="num">0</td><td class="num">3,255.6 → 3,251.4 ms</td><td class="num neutral">−0.1%</td><td class="num">201.98 → 203.91</td><td class="num neutral">+1.0%</td><td class="num">15.981 → 16.098 s</td><td class="num neutral">+0.7%</td><td class="num">4.00 → 3.98</td><td class="num neutral">−0.7%</td></tr>
+                <tr><td>32K · 90%</td><td class="num effect">16,384</td><td class="num">3,199.4 → 1,645.7 ms</td><td class="num effect">−48.6%</td><td class="num">200.40 → 200.74</td><td class="num neutral">+0.2%</td><td class="num">15.825 → 14.293 s</td><td class="num effect">−9.7%</td><td class="num">4.04 → 4.48</td><td class="num effect">+10.7%</td></tr>
+                <tr><td>64K · 50%</td><td class="num">0</td><td class="num">6,362.9 → 6,478.8 ms</td><td class="num neutral">+1.8%</td><td class="num">198.87 → 200.77</td><td class="num neutral">+1.0%</td><td class="num">18.892 → 19.128 s</td><td class="num neutral">+1.2%</td><td class="num">3.39 → 3.35</td><td class="num neutral">−1.2%</td></tr>
+                <tr><td>64K · 90%</td><td class="num effect">49,152</td><td class="num">6,399.3 → 1,734.6 ms</td><td class="num effect">−72.9%</td><td class="num">199.94 → 201.75</td><td class="num neutral">+0.9%</td><td class="num">18.996 → 14.445 s</td><td class="num effect">−24.0%</td><td class="num">3.37 → 4.43</td><td class="num effect">+31.5%</td></tr>
+                <tr><td>128K · 50%</td><td class="num">0</td><td class="num">12,924.6 → 13,008.2 ms</td><td class="num neutral">+0.6%</td><td class="num">199.71 → 200.12</td><td class="num neutral">+0.2%</td><td class="num">25.506 → 25.616 s</td><td class="num neutral">+0.4%</td><td class="num">2.51 → 2.50</td><td class="num neutral">−0.4%</td></tr>
+                <tr><td>128K · 90%</td><td class="num effect">114,688</td><td class="num">12,826.0 → 1,873.7 ms</td><td class="num effect">−85.4%</td><td class="num">198.62 → 199.95</td><td class="num neutral">+0.7%</td><td class="num">25.339 → 14.471 s</td><td class="num effect">−42.9%</td><td class="num">2.53 → 4.42</td><td class="num effect">+75.1%</td></tr>
+              </tbody>
+            </table>
+            <div class="appendix-note-grid">
+              <div class="appendix-note"><strong>阶段定位。</strong>三个 primary 组的 TTFT 下降 48.6%、72.9% 和 85.4%，但 TPOT 仅变化 +0.2%、+0.9% 和 +0.7%。因此 E2EL 的下降来自 prefill 复用，而不是解码阶段加速；可复用前缀越长，端到端改善越大。</div>
+              <div class="appendix-note"><strong>零命中对照。</strong>五个 boundary 组的 E2EL 变化仅 +0.4% 至 +1.2%（32K·50% 为 +0.7%），输出速率也近似不变。命中机制与时延模式相互吻合，但固定 Off→On 顺序仍不支持普遍性能收益或统计显著性结论。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">结果</div>
+        <p>完整指标确认了 Prefix Cache 的作用位置：精确命中主要减少首令牌前的共享输入计算，对后续每令牌解码时间没有实质性改善。32K、64K 和 128K 的 90% 前缀组分别使 E2EL 下降 9.7%、24.0% 和 42.9%，但该描述只适用于 9 个预定义主要跟随请求；其余 15 个边界请求仍为零命中。</p>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3B Complete Latency Data</span><span class="slide-index">Page 8 / 12</span></div>
+    </section>
+
+    <section class="slide" id="s9" aria-label="P6.2 Profiled evidence 与 P6.3C 可行性">
+      <div class="page-watermark">09</div>
+      <h1>诊断证据与实验重构：原参考配置不能直接对照，独立多请求压力 A/B 已就绪</h1>
       <div class="content grid-2 profile-layout">
         <div class="module">
-          <div class="module-title green">P6.2 GREEN · Profiled operator / memory / transfer pipeline</div>
+          <div class="module-title green">P6.2 诊断结果：算子、阶段内存、传输与请求—设备聚合链路完整</div>
           <div class="module-body">
             <div class="metric-row">
               <div class="metric"><div class="label">Profiled cells</div><div class="value">3 / 3</div></div>
@@ -1140,62 +1754,87 @@
                 <tr><td>decode_heavy</td><td>4096+256</td><td class="num">128</td><td class="num">427.3ms</td><td class="num">54.73s</td><td class="num">491,626MB</td></tr>
               </tbody>
             </table>
-            <div class="callout green" style="margin-top:8px"><strong>证据链闭合</strong><br>三个 fresh profiled cell 均首次成功；full request-device aggregate exit 0，<code>heavy_joins_skipped=false</code>，phase-memory 每行覆盖八卡，parse failure=0。</div>
-            <div class="callout warn" style="margin-top:8px"><strong>解释边界</strong><br>上述 latency 是带 profiler 的诊断值，不是 P6.1 用户性能 baseline；不从 aggregate 直接推断 KV object bytes、HBM traffic 或 hardware bottleneck。</div>
+            <table class="micro" style="margin-top:7px" aria-label="P6.2 six phase memory rows">
+              <thead><tr><th>Cell</th><th>Phase</th><th class="num">Samples</th><th class="num">Host RSS max</th><th class="num">Host PSS max</th><th class="num">HBM avg / max</th><th class="num">Free min</th></tr></thead>
+              <tbody>
+                <tr><td>short_prefill</td><td class="phase-label prefill">prefill</td><td class="num">1</td><td class="num">86,711.5MB</td><td class="num">61,887.5MB</td><td class="num">491,620 / 491,620MB</td><td class="num">32,668MB</td></tr>
+                <tr><td>short_prefill</td><td class="phase-label decode">decode</td><td class="num">3</td><td class="num">86,727.9MB</td><td class="num">61,903.8MB</td><td class="num">491,620 / 491,621MB</td><td class="num">32,667MB</td></tr>
+                <tr><td>long_prefill</td><td class="phase-label prefill">prefill</td><td class="num">3</td><td class="num">86,820.1MB</td><td class="num">61,981.8MB</td><td class="num">491,625 / 491,630MB</td><td class="num">32,658MB</td></tr>
+                <tr><td>long_prefill</td><td class="phase-label decode">decode</td><td class="num">4</td><td class="num">86,822.3MB</td><td class="num">61,982.1MB</td><td class="num">491,632 / 491,635MB</td><td class="num">32,653MB</td></tr>
+                <tr><td>decode_heavy</td><td class="phase-label prefill">prefill</td><td class="num">1</td><td class="num">86,972.1MB</td><td class="num">62,107.4MB</td><td class="num">491,621 / 491,621MB</td><td class="num">32,667MB</td></tr>
+                <tr><td>decode_heavy</td><td class="phase-label decode">decode</td><td class="num">11</td><td class="num">87,000.0MB</td><td class="num">62,132.6MB</td><td class="num">491,622 / 491,626MB</td><td class="num">32,662MB</td></tr>
+              </tbody>
+            </table>
+            <div class="source-line">每行设备覆盖均为 8/8、解析失败均为 0。三类请求分别聚合 341,360、981,670 和 3,259,639 条 AICore metric row；每个 cell 形成 1 行 request-device、10 行 top-op 和 1 行 metric summary。行数说明证据规模，不等于硬件利用率。</div>
+            <table class="micro" style="margin-top:7px" aria-label="P6.2 request device aggregate detail">
+              <thead><tr><th>Cell</th><th class="num">AICore rows</th><th class="num">Request-device</th><th class="num">Top-op</th><th class="num">Metric summary</th><th class="num">Aggregate elapsed</th><th class="num">Heavy joins skipped</th></tr></thead>
+              <tbody>
+                <tr><td>short_prefill</td><td class="num">341,360</td><td class="num">1</td><td class="num">10</td><td class="num">1</td><td class="num">10.617 s</td><td class="num">0</td></tr>
+                <tr><td>long_prefill</td><td class="num">981,670</td><td class="num">1</td><td class="num">10</td><td class="num">1</td><td class="num">21.690 s</td><td class="num">0</td></tr>
+                <tr><td>decode_heavy</td><td class="num">3,259,639</td><td class="num">1</td><td class="num">10</td><td class="num">1</td><td class="num">44.353 s</td><td class="num">0</td></tr>
+              </tbody>
+            </table>
+            <div class="profile-reading-grid" aria-label="P6.2 metrics interpretation">
+              <div class="profile-reading"><strong>请求与 MTP 指标</strong><p><code>Accepted Δ</code> 是测量请求期间 MTP 接受 token 计数器的增量，用于确认推测解码确实活动；它不是输出 token 数或加速百分比。TTFT 与 E2EL 包含 profiler 开销，只用于定位请求阶段。</p></div>
+              <div class="profile-reading"><strong>Host 与 HBM 指标</strong><p>RSS/PSS 是 vLLM 根进程及其后代的主机内存占用；HBM 是 8 卡整机占用总和。样本窗口内 HBM 最大值约 491.62 GB，单卡最高使用率约 93.78%，但不能换算为单请求 KV 字节或 HBM 流量。</p></div>
+              <div class="profile-reading"><strong>算子、传输与聚合指标</strong><p>AICore row、top-op 与 MTE/Ascend task 记录证明设备事件能被请求窗口连接；<code>heavy joins skipped=0</code> 表示完整聚合未降级。记录行数和聚合耗时不等于利用率、带宽或瓶颈占比。</p></div>
+            </div>
           </div>
         </div>
 
         <div class="module">
-          <div class="module-title red">P6.3C BLOCKED · Chunked Prefill strict-single-variable feasibility</div>
+          <div class="module-title red">原 P6.3C 审计 + P6.3C-R1：保留 blocked，并新建有机制辨识力的压力对照</div>
           <div class="module-body">
             <table class="tight">
               <tr><th>审计项</th><th>冻结版本结论</th></tr>
               <tr><td>CLI boolean</td><td><span class="tag ok">EXPLICIT</span> on/off 均有可审计表达</td></tr>
               <tr><td>Off-side validation</td><td><span class="tag risk">REJECTED</span> request 前即失败</td></tr>
-              <tr><td>唯一绕过</td><td>提高 <code>max_num_batched_tokens</code> 或降低 <code>max_model_len</code></td></tr>
-              <tr><td>合同判断</td><td>两种绕过都引入禁止的第二变量</td></tr>
+              <tr><td>原审计范围</td><td><code>135168 / 4096 / 1</code> 完全不变，不能直接接 P6.1</td></tr>
+              <tr><td>合同判断</td><td>原 P6.3C blocked 保留，不外推为机制不可研究</td></tr>
               <tr><td>最终 grade</td><td class="warn-text">blocked_p6_3c_not_strict_single_variable</td></tr>
             </table>
+            <div class="term-definition"><strong>Chunked Prefill 是什么？</strong> Prefill 是模型读取整段输入并建立初始 KV Cache 的阶段。Chunked Prefill 将长输入切成多个不超过调度 token 预算的小块，分多轮送入调度器；它改变输入计算的调度粒度，不是 Prefix Cache 的前缀复用，也不是 MTP 的推测解码。</div>
+            <div class="chunk-paths" aria-label="Chunked Prefill on and off behavior under frozen scheduler limits">
+              <div class="chunk-path on"><strong>ON · 冻结参考可运行</strong><span>131,072-token 输入可按每轮至多 4,096 个调度 token 分块处理，因此小批预算与长模型上下文可以同时成立。</span></div>
+              <div class="chunk-path off"><strong>OFF · 配置校验拒绝</strong><span>不允许分块时，冻结调度器要求 token 预算足以覆盖最大模型长度；4,096 无法覆盖 135,168，故在启动请求前失败。</span></div>
+            </div>
             <div class="equation">4,096 &lt; 135,168</div>
-            <div class="callout warn"><strong>不能制造 matched A/B</strong><br><code>SchedulerConfig.verify_max_model_len()</code> 在 Chunked Prefill=false 且 batched-token budget 小于 max model length 时，于 request 和 resolved false 证据之前拒绝配置。</div>
+            <div class="callout warn"><strong>为何不能只把单请求预算提高到 135,168？</strong><br>Off 可启动要求 B≥L，单请求又有 P≤L，因此必有 B≥P；输入可完整装入一个调度批次，即使 On 也未必真实分块。这样的参数合法，却缺少机制辨识力。R1 改用两侧共同冻结的新环境和总 Prefill 超预算的双请求。</div>
             <div class="zero-grid" style="margin-top:8px">
-              <div class="zero"><strong>0</strong><span>WORKLOAD</span></div>
-              <div class="zero"><strong>0</strong><span>MODE RUNNER</span></div>
-              <div class="zero"><strong>0</strong><span>REQUEST BODY</span></div>
-              <div class="zero"><strong>0</strong><span>NPU REQUEST</span></div>
+              <div class="zero"><strong>32K+32K</strong><span>65,536 · 无压力对照</span></div>
+              <div class="zero"><strong>64K+32K</strong><span>98,304 · 非对称压力</span></div>
+              <div class="zero"><strong>48K+48K</strong><span>98,304 · 对称压力</span></div>
+              <div class="zero"><strong>2 TRACKS</strong><span>observer 机制 · 无 observer 性能</span></div>
             </div>
           </div>
         </div>
       </div>
       <div class="summary">
-        <div class="summary-label">结论</div>
-        <ul>
-          <li>P6.2 关闭“profiled 证据链是否可用”的门；P6.3C 关闭“Chunked Prefill 是否能严格单变量 A/B”的门。</li>
-          <li>blocked 是有效终态，不撤销 P6.1C-R1、P6.1、P6.2、P6.3A 或 P6.3B-R4-R1 green，也不授权改变第二参数重跑。</li>
-        </ul>
+        <div class="summary-label">讨论</div>
+        <p>P6.2 只证明诊断链路可观测，不形成硬件瓶颈归因。原 P6.3C 的有效结论严格限于 <code>135168/4096/1</code>：Off 侧不能启动，故没有 131K+c1 严格单变量对照。P6.3C-R1 两侧共同冻结 <code>69632/69632/2</code> 与 Prefix=false；机制轨道直接记录每轮 scheduled token、chunk、队列和次序，性能轨道按 Off→On→On→Off 测 TTFT、E2EL、TPOT、ITL、批吞吐与完成差。当前仅为已开发、待服务器实测。</p>
       </div>
-      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Profiled Evidence + Strict Feasibility</span><span class="slide-index">Page 6 / 8</span></div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Profiled Evidence + Strict Feasibility</span><span class="slide-index">Page 9 / 12</span></div>
     </section>
 
-    <section class="slide" id="s7" aria-label="P6.3B 历史证据链">
-      <div class="page-watermark">07</div>
-      <h1>P6.3B Provenance：最终 GREEN 不覆盖中间 yellow / red / blocked 的工程事实</h1>
+    <section class="slide" id="s10" aria-label="P6.3B 历史证据链">
+      <div class="page-watermark">10</div>
+      <h1>负结果与修复链：Prefix Cache 的最终结论依赖对零命中、导入顺序和运行环境偏差的逐步排除</h1>
       <div class="content rows-2">
         <div class="module">
-          <div class="module-title">从 zero-hit 到 explicit Prefix Cache matched A/B 的完整修复链</div>
+          <div class="module-title">从零命中到显式缓存对照：六轮证据如何收敛为可解释结果</div>
           <div class="module-body lineage">
-            <article class="lineage-item"><span class="tag warn">YELLOW</span><small> ORIGINAL P6.3B</small><strong>64/64 but zero hit</strong><p>query positive，hit delta 全为 0；不能接受机制效应。</p></article>
-            <article class="lineage-item"><span class="tag risk">RED</span><small> R1</small><strong>Import order</strong><p>sitecustomize eager import 固结基类 spec key；0/12 request。</p></article>
-            <article class="lineage-item"><span class="tag ok">GREEN</span><small> R2</small><strong>Deferred repair</strong><p>3 prime + 9 measured；9/9 positive hit，证明修复可达。</p></article>
-            <article class="lineage-item"><span class="tag warn">YELLOW</span><small> R3</small><strong>On-vs-on</strong><p>Off 侧省略 flag 继承 default=true；两侧 hit 相同。</p></article>
-            <article class="lineage-item"><span class="tag warn">BLOCKED</span><small> R4</small><strong>NFS ownership</strong><p><code>cp -a</code> 在 root-squash 上 EPERM；0 lifecycle，0 request。</p></article>
-            <article class="lineage-item"><span class="tag ok">GREEN</span><small> R4-R1</small><strong>Explicit Off / On</strong><p>ownership-safe copy；64/64、Off hit=0、primary 9/9。</p></article>
+            <article class="lineage-item"><span class="tag warn">YELLOW</span><small> ORIGINAL P6.3B</small><strong>64/64 but zero hit</strong><p>所有请求虽完成且查询条件为正，但命中增量均为 0，因此没有形成缓存机制证据。</p></article>
+            <article class="lineage-item"><span class="tag risk">RED</span><small> R1</small><strong>Import order</strong><p>过早导入使基类 spec key 在修复前固化，服务未能产生任何测量请求，暴露了导入顺序缺陷。</p></article>
+            <article class="lineage-item"><span class="tag ok">GREEN</span><small> R2</small><strong>Deferred repair</strong><p>延迟修复后，三个预置请求和九个测量请求全部执行，9/9 正命中证明修复路径可达。</p></article>
+            <article class="lineage-item"><span class="tag warn">YELLOW</span><small> R3</small><strong>On-vs-on</strong><p>关闭侧因省略参数而继承默认开启状态，两侧命中相同，说明省略参数不能代表有效对照。</p></article>
+            <article class="lineage-item"><span class="tag warn">BLOCKED</span><small> R4</small><strong>NFS ownership</strong><p>NFS root-squash 使保留所有权的复制操作失败，服务生命周期未启动，识别出与模型机制无关的环境障碍。</p></article>
+            <article class="lineage-item"><span class="tag ok">GREEN</span><small> R4-R1</small><strong>Explicit Off / On</strong><p>改用不保留所有权的复制方式后，64/64 请求成功；关闭侧零命中，开启侧主要样本 9/9 命中。</p></article>
           </div>
         </div>
 
         <div class="content grid-3">
           <div class="module">
-            <div class="module-title blue">为什么必须保留负证据</div>
+            <div class="module-title blue">负结果对内部有效性的贡献</div>
             <div class="module-body">
               <ul class="compact">
                 <li>zero hit 证明“query positive”不等于“机制已命中”。</li>
@@ -1206,7 +1845,7 @@
             </div>
           </div>
           <div class="module">
-            <div class="module-title green">R4-R1 关闭了什么</div>
+            <div class="module-title green">最终对照能够支持的结论</div>
             <div class="module-body">
               <ul class="compact">
                 <li>显式 Prefix false / true。</li>
@@ -1218,7 +1857,7 @@
             </div>
           </div>
           <div class="module">
-            <div class="module-title red">R4-R1 没有关闭什么</div>
+            <div class="module-title red">现有设计仍不能回答的问题</div>
             <div class="module-body">
               <ul class="compact">
                 <li>没有证明普遍共享前缀必然命中。</li>
@@ -1232,21 +1871,106 @@
         </div>
       </div>
       <div class="summary">
-        <div class="summary-label">治理</div>
-        <ul>
-          <li>最终 accepted grade 是 <b>green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab</b>，但其 claim boundary 仅限 primary scope mechanism effect。</li>
-          <li>把中间失败保留下来，可让后续 P8 的 Prefix、hybrid-KV、NFS copy 与 import-order 合同直接复用这些已知风险。</li>
-        </ul>
+        <div class="summary-label">讨论</div>
+        <p>P6.3B-R4-R1 的最终证据只在显式缓存状态、相同 R2 修复和字节配对请求体同时满足时成立。此前的零命中、导入顺序错误、默认值混淆和 NFS 复制失败分别排除了查询成功、修复可达、对照身份和环境可移植性方面的替代解释。保留这些负结果不仅维持证据来源的可追溯性，也为后续 P8 实验提供了必须复用的风险控制条件。</p>
       </div>
-      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3B Repair &amp; Provenance Chain</span><span class="slide-index">Page 7 / 8</span></div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3B Repair &amp; Provenance Chain</span><span class="slide-index">Page 10 / 12</span></div>
     </section>
 
-    <section class="slide" id="s8" aria-label="P6 接受资产与后续边界">
-      <div class="page-watermark">08</div>
-      <h1>P6 接受资产：六份终态证据进入仓库真值面，后续阶段按边界消费</h1>
+    <section class="slide" id="s11" aria-label="P6 已完成成果图解，不含待执行 P6.3C-R1">
+      <div class="page-watermark">11</div>
+      <h1>P6 已完成成果：131K 基线、MTP 与 Prefix Cache 证据；P6.3C-R1 尚未计入</h1>
+      <div class="content plain-summary-content">
+        <div class="module">
+          <div class="module-title blue">实验流程架构：在同一冻结平台上依次建立“可运行、可测量、可解释、可复现”的证据链</div>
+          <div class="module-body outcome-flow">
+            <div class="outcome-flow-node platform">
+              <small>FROZEN PLATFORM</small>
+              <strong>统一实验底座</strong>
+              <p>DeepSeek-V4-Flash W8A8-MTP 部署于 8 张 Ascend 910B1，采用 TP8+EP、流式输出和固定调度配置。</p>
+              <div class="outcome-flow-tags"><span>8×910B1</span><span>W8A8</span><span>TP8+EP</span><span>MTP</span></div>
+            </div>
+            <div class="outcome-flow-arrow" aria-hidden="true">→</div>
+            <div class="outcome-flow-branches">
+              <article class="outcome-flow-branch" data-step="1">
+                <small>BASELINE</small>
+                <strong>上下文阶梯与性能矩阵</strong>
+                <p>先逐级扩大输入长度，再组合输入、输出与并发度，建立未受 profiler 干扰的用户侧基线。</p>
+              </article>
+              <article class="outcome-flow-branch" data-step="2">
+                <small>OBSERVABILITY</small>
+                <strong>代表请求诊断剖析</strong>
+                <p>选择短输入、长输入和长输出三类请求，将请求阶段连接到八卡内存、算子与设备事件。</p>
+              </article>
+              <article class="outcome-flow-branch" data-step="3">
+                <small>MECHANISM A/B</small>
+                <strong>单变量机制对照</strong>
+                <p>在请求体和其余运行参数保持一致时，分别切换多令牌预测（MTP）与前缀缓存（Prefix Cache），比较配对结果。</p>
+              </article>
+            </div>
+            <div class="outcome-flow-arrow" aria-hidden="true">→</div>
+            <div class="outcome-flow-node synthesis">
+              <small>EMPIRICAL OUTCOME</small>
+              <strong>四类成果汇合</strong>
+              <p>长上下文稳定运行；性能基线完整；MTP 降低解码耗时；Prefix Cache 复用长前缀；诊断链覆盖八卡。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="plain-summary-results">
+          <div class="plain-result-grid" aria-label="P6 completed key results">
+            <article class="plain-result-card">
+              <small>01 · LONG-CONTEXT BASELINE</small>
+              <h3>约 13.1 万 token 输入稳定完成，18 组基线全部闭合</h3>
+              <div class="plain-result-value">131,072 token</div>
+              <p>五档上下文首次执行均成功；P6.1 完成 18/18 个工作负载组合、24/24 个测量批次和 90/90 个流式请求。并发度 1 时，每输出 token 耗时（TPOT）集中在 198–203 ms。</p>
+            </article>
+            <article class="plain-result-card">
+              <small>02 · MTP MATCHED EFFECT</small>
+              <h3>MTP（多令牌预测）主要缩短逐 token 解码阶段</h3>
+              <div class="plain-result-value">TPOT −47.0%</div>
+              <p>8 个配对组合共 108/108 请求成功；24/24 个配对批次方向一致。MTP 开启后，端到端时延（E2EL）平均下降 40.9%，批输出吞吐平均提高 71.0%。</p>
+            </article>
+            <article class="plain-result-card">
+              <small>03 · PREFIX REUSE</small>
+              <h3>Prefix Cache（前缀缓存）精确复用长输入</h3>
+              <div class="plain-result-value">16K · 48K · 112K</div>
+              <p>32K、64K 和 128K 三组 90% 共享前缀样本的 9/9 个跟随请求全部命中，实际复用 16,384、49,152 和 114,688 token；首 token 时延（TTFT）分别下降 48.6%、72.9% 和 85.4%。</p>
+            </article>
+            <article class="plain-result-card">
+              <small>04 · EIGHT-DEVICE TRACE</small>
+              <h3>请求、阶段内存、算子与设备记录可以完整连接</h3>
+              <div class="plain-result-value">3/3 · 408 数据库 · 8/8</div>
+              <p>短输入、长输入与长输出三类代表请求均首次完成。每个请求生成 136 份 profiler 数据库，用于保存算子和设备事件；六条阶段内存记录均覆盖八张卡，解析失败数为 0。</p>
+            </article>
+          </div>
+
+          <article class="paper-abstract">
+            <div class="paper-abstract-heading">论文式实验摘要：方法与结果</div>
+            <section class="paper-abstract-section">
+              <strong>方法</strong>
+              <p>研究在冻结的模型、量化方式、八卡并行拓扑、运行时版本和请求协议下进行。基线实验系统改变输入长度、输出长度与并发度；诊断实验选取三类代表性请求；机制实验则保持请求体及非目标参数一致，仅切换多令牌预测（MTP）或前缀缓存（Prefix Cache）状态。所有请求均以 token 数、结束原因、流式响应完成标记、服务健康、队列与 MTP 计数连续性共同判定。</p>
+            </section>
+            <section class="paper-abstract-section">
+              <strong>结果</strong>
+              <p>冻结系统完成了 131,072-token 输入并形成 90 个请求的性能基线。配对实验显示，MTP 的主要作用体现在解码阶段，平均 TPOT 降低 47.0%；Prefix Cache 在三组 90% 长前缀中产生与 16K 对齐规则一致的精确复用。三类 profiler 请求进一步证实，请求级观测能够贯通至八卡设备记录。P6.3C-R1 尚无服务器结果，因此本页不把 Chunked Prefill 列为已完成正向成果。</p>
+            </section>
+          </article>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">结论</div>
+        <p>P6 已把 DeepSeek-V4-Flash W8A8-MTP 的八卡推理从“能够启动”推进到“能够稳定承载 131K 长输入、能够以统一指标测量性能、能够通过配对实验分辨解码与前缀复用机制、并能够把请求连接到八卡诊断记录”。这些成果共同构成后续系统实验可直接复用的实测基础。</p>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Completed Results · Plain-language Evidence Architecture</span><span class="slide-index">Page 11 / 12</span></div>
+    </section>
+
+    <section class="slide" id="s12" aria-label="P6 接受资产与后续边界">
+      <div class="page-watermark">12</div>
+      <h1>证据综合与结论：六份终态材料保留，P6.3C-R1 另起开放结果链</h1>
       <div class="content rows-2">
         <div class="module">
-          <div class="module-title">Accepted artifacts · 结果包、覆盖范围、聚合哈希与 grade</div>
+          <div class="module-title">数据与证据可用性：结果包覆盖范围、聚合哈希与最终分级</div>
           <div class="module-body">
             <table class="micro" aria-label="P6 accepted packages">
               <thead><tr><th>Stage</th><th>Task / role</th><th>Coverage</th><th class="num">Files / bytes</th><th>Aggregate SHA-256</th><th>Accepted grade</th></tr></thead>
@@ -1257,27 +1981,26 @@
                 <tr><td>P6.3A</td><td>Matched MTP Off / On</td><td>48 batches · 108 requests</td><td class="num">7 / 42,877</td><td><code>f853a86a7c7cbca5…</code></td><td class="green-text">green_p6_3a_mtp_matched_ab</td></tr>
                 <tr><td>P6.3B-R4-R1</td><td>Explicit Prefix Cache Off / On</td><td>64 requests · 9/9 primary</td><td class="num">10 / 44,550</td><td><code>a1b966194eb2b0d0…</code></td><td class="green-text">green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab</td></tr>
                 <tr><td>P6.3C</td><td>Frozen-source feasibility</td><td>no executable workload</td><td class="num">1 / 7,489</td><td><code>aeb91adc8b0b4327…</code></td><td class="warn-text">blocked_p6_3c_not_strict_single_variable</td></tr>
+                <tr><td>P6.3C-R1</td><td>Scheduler-pressure matched A/B</td><td>3 cells · 2 tracks</td><td class="num">待 run01</td><td><code>not yet produced</code></td><td class="blue-text">developed_awaiting_server_run01</td></tr>
               </tbody>
             </table>
-            <div class="source-line">小结果包只包含 bounded operational metadata；raw metrics / logs / request bodies / profiler artifacts 留服务器。P6.3C 是仓库内 frozen-source audit，不含运行结果。</div>
+            <div class="source-line">原六份终态材料不变。P6.3C 是冻结源码/配置审计，无 NPU 请求；P6.3C-R1 是独立开放实验，服务器结果包与哈希尚未产生，不计入 accepted package。</div>
+            <p class="research-note"><strong>证据可用性。</strong>既有材料覆盖稳定性、用户性能、诊断可观测性、MTP、Prefix Cache 和原参考配置可行性边界。R1 将另外回答 Chunked Prefill 是否真实改变多请求调度、是否减轻短请求阻塞，以及对吞吐与请求时延的描述性影响；在 run01 验收前不形成机制或性能结论。</p>
           </div>
         </div>
 
         <div class="content grid-4">
-          <div class="route-card closed"><h3>P6 MAINLINE · CLOSED</h3><p>Reference 与核心机制输入可被后续阶段消费；不是所有候选项都 green。</p></div>
-          <div class="route-card"><h3>P7 · SEPARATE CLOSEOUT</h3><p>Capacity boundary、scheduler / max_num_seqs 与硬件边界仍需自己的证据门。</p></div>
-          <div class="route-card closed"><h3>P8 · MAY CONSUME P6</h3><p>Prefix baseline、MTP official reference 与 trace pipeline 可作为垂直原型输入。</p></div>
-          <div class="route-card"><h3>P9 · NOT UNLOCKED BY P6 ALONE</h3><p>没有 P7/P8 校准，不输出 bottleneck attribution 或 hardware priority。</p></div>
+          <div class="route-card closed"><h3>P6 MAINLINE · CLOSED</h3><p>P6 已提供可复核的稳定性、用户性能和机制参考，后续阶段可以在其限定范围内复用；这不表示所有候选实验均为正向结果。</p></div>
+          <div class="route-card"><h3>P6.3C-R1 · OPEN</h3><p>69632/69632/2 双请求压力 A/B 已开发待实机；可并入 P7 scheduler calibration，但必须保持独立结果链。</p></div>
+          <div class="route-card closed"><h3>P8 · MAY CONSUME P6</h3><p>P8 可将 Prefix Cache 基线、官方 MTP 参考和 trace 管道作为垂直原型的先验条件，但仍须完成自身的机制验证。</p></div>
+          <div class="route-card"><h3>P9 · NOT UNLOCKED BY P6 ALONE</h3><p>在缺少 P7 容量校准和 P8 机制闭环时，P6 数据不足以支持系统瓶颈归因或硬件优化优先级。</p></div>
         </div>
       </div>
       <div class="summary">
-        <div class="summary-label">边界</div>
-        <ul>
-          <li><b>可交付：</b>官方长上下文稳定性、unprofiled reference、profiled evidence、MTP matched 描述、Prefix primary-scope mechanism、Chunked strict feasibility。</li>
-          <li><b>不可宣称：</b>普遍优化收益、随机化因果、统计显著、KV object bytes、HBM traffic、hardware bottleneck，或 P7/P9 已关闭。</li>
-        </ul>
+        <div class="summary-label">结论</div>
+        <p>P6 的既有交付结论包括 131,072-token 稳定输入、约 198–205 ms/token 的未剖析解码参考、MTP 描述性配对效应、Prefix Cache 的 9/9 主要样本命中和八卡诊断链。原 P6.1 配置下 Chunked Prefill Off 无法启动，故未形成 131K+c1 严格单变量对照；该结果不排除重新冻结的多请求调度压力 A/B。R1 尚待实测，现有证据仍不支持普遍收益或硬件瓶颈归因。</p>
       </div>
-      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Accepted Artifacts &amp; Downstream Boundaries</span><span class="slide-index">Page 8 / 8</span></div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Accepted Artifacts &amp; Downstream Boundaries</span><span class="slide-index">Page 12 / 12</span></div>
     </section>
   </main>
 

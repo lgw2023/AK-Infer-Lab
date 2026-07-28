@@ -4,8 +4,8 @@
 
 当前执行覆盖：
 `local_artifact_state=k2_r0_ucm_dram_external_prefix_path_prepared`；
-`server_execution_state=authorized_pinned_ucm_single_lifecycle`；
-`current_task_id=p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728`。
+`server_execution_state=queued_not_current_handoff`；
+`current_task_id=p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01`。
 
 R17 已以
 `green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed` 接受 K1A-F1 的
@@ -14,14 +14,14 @@ accepted-capacity 机制链：canonical 1369 events，D2H/H2D completed worker
 保留，但其 selector 只读 319 个 residency events，机制结论已由 R17 full replay
 supersede。K1A-F1 不再继续迭代。
 
-当前进入 K2 的首个可运行切片：固定 UCM
+K2 的首个可运行切片已经开发：固定 UCM
 `develop@01cbf9b71892c88319862fa57f195b0bef93fa6f`，在隔离 server-local venv
 安装，禁用 vLLM 内部 Prefix Cache，使用 `UCMConnector + Cache|Posix` 的 8 GiB
 DRAM-first pipeline，在一个 TP8+EP+MTP lifecycle 内执行 unrelated warmup、32K
 prime 和 byte-identical 32K follower。实现门是
 `UCM save → DRAM external hit → Cache load → H2D load → follower complete`；
 延迟如实记录，但其差值正负不是路径实现门，pairing repair 的唯一/普遍根因也不是
-K2 前置条件。K3、P8.3-I1 与下一轮仍未授权。
+K2 前置条件。K2-R0 当前排队，不与 P6.3C-R1 混跑；K3、P8.3-I1 与下一轮仍未授权。
 
 状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_f1_r17_restore_h2d_mechanism_closed / p8_2_k2_r0_ucm_dram_external_prefix_path_ready / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 
@@ -42,10 +42,10 @@ R9 的历史合同与入口仍由
 `run_deepseek_p8_2_k1a_r5_f1_r9_effective_group_geometry.sh` 和
 `run_deepseek_p8_2_k1a_r5_f1_r9_server_task.sh` 冻结保留；它们不是当前执行入口。
 
-当前唯一服务器任务是
-`p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728`。它固定 pinned UCM
-source、隔离 venv、一个 TP8 lifecycle、三条串行请求和零 retry/sweep；服务器不得
-补代码或临场换版本。R15/R16/R17 均已消费，不得重跑。
+当前仓库唯一服务器任务是
+`p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01`。K2-R0 固定的 pinned UCM
+source、隔离 venv、一个 TP8 lifecycle 和三条串行请求合同保持已开发、排队状态；本轮服务器不得
+执行 K2 或临场换版本。R15/R16/R17 均已消费，不得重跑。
 
 当前执行合同由 `p8_2_k1a_r5_f1_r17_full_trace_source_replay_audit.yaml`、
 `p8_2_k1a_r5_f1_r17_full_trace_source_replay.yaml`、

@@ -1,0 +1,15 @@
+diff --git a/vllm_ascend/distributed/kv_transfer/__init__.py b/vllm_ascend/distributed/kv_transfer/__init__.py
+--- a/vllm_ascend/distributed/kv_transfer/__init__.py
++++ b/vllm_ascend/distributed/kv_transfer/__init__.py
+@@ -77,5 +77,11 @@ def register_connector():
+         KVConnectorFactory.register_connector(
+             "SimpleCPUOffloadConnector",
+             "vllm_ascend.distributed.kv_transfer.kv_pool.simple_cpu_offload.simple_cpu_offload_connector",  # noqa: E501
+             "AscendSimpleCPUOffloadConnector",
+         )
++
++        # P6.3C-R1 task-local read-only scheduler observer. The wrapper emits
++        # scheduling facts and returns the original Scheduler.schedule result.
++        from p6_3c_r1_scheduler_observer import install_p6_3c_r1_scheduler_observer
++
++        install_p6_3c_r1_scheduler_observer()

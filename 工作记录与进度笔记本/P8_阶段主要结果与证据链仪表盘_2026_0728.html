@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
-  <title>P8 分层工程原型｜主要结果与证据链仪表盘</title>
+  <title>P8 分层工程原型｜阶段性实验研究与主要结果</title>
   <style>
     :root {
       --paper: #f2efe6;
@@ -44,6 +44,7 @@
 
     body {
       margin: 0;
+      overflow-x: hidden;
       background:
         linear-gradient(90deg, rgba(18, 59, 93, .035) 1px, transparent 1px),
         linear-gradient(rgba(174, 48, 39, .025) 1px, transparent 1px),
@@ -513,6 +514,244 @@
       line-height: 1.55;
     }
 
+    .article-abstract {
+      position: relative;
+      z-index: 1;
+      max-width: 1160px;
+      margin: 34px 0 0;
+      padding: 24px 28px 25px 32px;
+      border: 1px solid var(--line);
+      border-left: 8px solid var(--red);
+      background: rgba(251, 250, 245, .9);
+      box-shadow: 0 12px 30px rgba(19, 31, 40, .08);
+    }
+
+    .article-abstract::before {
+      content: "ABSTRACT";
+      position: absolute;
+      right: 18px;
+      top: 14px;
+      color: rgba(18, 59, 93, .12);
+      font-family: var(--condensed);
+      font-size: 32px;
+      font-weight: 950;
+      letter-spacing: .08em;
+    }
+
+    .article-abstract h2 {
+      position: relative;
+      margin: 0 0 13px;
+      color: var(--navy-2);
+      font-family: var(--serif);
+      font-size: 23px;
+      line-height: 1.2;
+    }
+
+    .article-abstract p {
+      position: relative;
+      max-width: 1040px;
+      margin: 0;
+      color: #3f474d;
+      font-family: var(--serif);
+      font-size: 14px;
+      line-height: 1.9;
+      text-align: justify;
+    }
+
+    .article-abstract p + p {
+      margin-top: 11px;
+    }
+
+    .article-abstract strong {
+      color: var(--red-dark);
+      font-family: var(--sans);
+      font-size: 12px;
+      letter-spacing: .02em;
+    }
+
+    .keywords {
+      margin-top: 14px !important;
+      padding-top: 12px;
+      border-top: 1px solid var(--line-soft);
+      color: var(--muted) !important;
+      font-family: var(--sans) !important;
+      font-size: 11px !important;
+      text-align: left !important;
+    }
+
+    .manuscript-block {
+      position: relative;
+      margin: 0 0 18px;
+      padding: clamp(24px, 3vw, 38px) clamp(24px, 3.5vw, 48px);
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(90deg, rgba(18, 59, 93, .035), transparent 22%),
+        rgba(251, 250, 245, .97);
+      box-shadow: 0 9px 24px rgba(19, 31, 40, .07);
+    }
+
+    .manuscript-block::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: var(--navy);
+    }
+
+    .manuscript-label {
+      margin: 0 0 9px;
+      color: var(--red);
+      font-family: var(--condensed);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .manuscript-block h3 {
+      max-width: 980px;
+      margin: 0 0 18px;
+      color: var(--navy-2);
+      font-family: var(--serif);
+      font-size: clamp(21px, 2.2vw, 31px);
+      line-height: 1.28;
+      letter-spacing: -.015em;
+    }
+
+    .manuscript-copy {
+      max-width: 1120px;
+    }
+
+    .manuscript-copy p {
+      margin: 0;
+      color: #3f474d;
+      font-family: var(--serif);
+      font-size: 15px;
+      line-height: 1.92;
+      text-align: justify;
+    }
+
+    .manuscript-copy p + p {
+      margin-top: 13px;
+    }
+
+    .manuscript-copy strong {
+      color: var(--navy-2);
+      font-family: var(--sans);
+      font-size: 13px;
+    }
+
+    .manuscript-copy code {
+      font-size: .82em;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .research-question {
+      margin: 17px 0;
+      padding: 15px 18px;
+      border-left: 4px solid var(--amber);
+      background: var(--amber-soft);
+      color: #563a16;
+      font-family: var(--serif);
+      font-size: 14px;
+      line-height: 1.78;
+    }
+
+    .section-conclusion {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-top: 1px solid var(--green);
+      border-bottom: 1px solid var(--green);
+      background: var(--green-soft);
+      color: #254a38;
+      font-family: var(--serif);
+      font-size: 14px;
+      line-height: 1.78;
+    }
+
+    .section-conclusion strong {
+      color: var(--green);
+      font-family: var(--sans);
+      font-size: 12px;
+      letter-spacing: .04em;
+    }
+
+    .methods-note {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      margin: 14px 0 18px;
+      border: 1px solid var(--line);
+      background: var(--paper-2);
+    }
+
+    .methods-note > div {
+      min-height: 116px;
+      padding: 16px;
+      border-right: 1px solid var(--line-soft);
+    }
+
+    .methods-note > div:last-child {
+      border-right: 0;
+    }
+
+    .methods-note small {
+      display: block;
+      color: var(--red);
+      font-family: var(--condensed);
+      font-size: 9px;
+      font-weight: 950;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .methods-note strong {
+      display: block;
+      margin: 7px 0 6px;
+      color: var(--navy-2);
+      font-family: var(--serif);
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .methods-note span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .table-caption,
+    .figure-caption {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-family: var(--serif);
+      font-size: 11px;
+      line-height: 1.65;
+    }
+
+    .table-caption strong,
+    .figure-caption strong {
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 10px;
+    }
+
+    .term-note {
+      margin-top: 14px;
+      padding: 13px 16px;
+      border: 1px dashed var(--line);
+      background: rgba(255, 255, 255, .64);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.7;
+    }
+
+    .term-note strong {
+      color: var(--navy);
+    }
+
     .section-tag {
       color: var(--muted);
       font-family: var(--condensed);
@@ -566,6 +805,7 @@
 
     .panel-body {
       padding: 17px;
+      overflow-x: auto;
     }
 
     .executive-grid {
@@ -1218,6 +1458,260 @@
       font-style: normal;
     }
 
+    .completed-result-lead {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .completed-result-answer {
+      position: relative;
+      overflow: hidden;
+      min-height: 230px;
+      padding: 28px 30px;
+      border: 1px solid #163f5f;
+      background:
+        radial-gradient(circle at 95% 0%, rgba(229, 184, 76, .28), transparent 35%),
+        linear-gradient(145deg, #0b314d, #08253c);
+      color: #fff;
+    }
+
+    .completed-result-answer::after {
+      content: "YES";
+      position: absolute;
+      right: 18px;
+      bottom: -24px;
+      color: rgba(255, 255, 255, .06);
+      font-family: var(--condensed);
+      font-size: 128px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -.06em;
+    }
+
+    .completed-result-answer small {
+      color: #efc66d;
+      font-family: var(--condensed);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .completed-result-answer h3 {
+      position: relative;
+      z-index: 1;
+      max-width: 850px;
+      margin: 16px 0 12px;
+      color: #fff;
+      font-family: var(--serif);
+      font-size: clamp(24px, 2.5vw, 40px);
+      line-height: 1.12;
+    }
+
+    .completed-result-answer p {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0;
+      color: #c9d7df;
+      font-size: 12px;
+      line-height: 1.75;
+    }
+
+    .decode-proof {
+      display: grid;
+      grid-template-rows: repeat(4, 1fr);
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .decode-proof-item {
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      padding: 13px 15px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .decode-proof-item:last-child {
+      border-bottom: 0;
+    }
+
+    .decode-proof-item b {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--green-soft);
+      color: var(--green);
+      font-family: var(--condensed);
+      font-size: 13px;
+    }
+
+    .decode-proof-item strong {
+      display: block;
+      color: var(--navy-2);
+      font-size: 12px;
+    }
+
+    .decode-proof-item span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.45;
+    }
+
+    .architecture-frame {
+      margin: 14px 0 0;
+      border: 1px solid var(--line);
+      background: #f5f1e8;
+      box-shadow: 0 16px 42px rgba(19, 31, 40, .08);
+    }
+
+    .architecture-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .architecture-titlebar strong {
+      color: var(--navy-2);
+      font-family: var(--serif);
+      font-size: 15px;
+    }
+
+    .architecture-titlebar span {
+      color: var(--muted);
+      font-family: var(--condensed);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .architecture-scroll {
+      overflow-x: auto;
+      padding: 10px;
+    }
+
+    .architecture-svg {
+      display: block;
+      min-width: 1180px;
+      width: 100%;
+      height: auto;
+      font-family: var(--sans);
+    }
+
+    .architecture-svg .lane-label {
+      font-family: var(--condensed);
+      font-size: 18px;
+      font-weight: 950;
+      letter-spacing: .05em;
+    }
+
+    .architecture-svg .node-kicker {
+      font-family: var(--condensed);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .08em;
+    }
+
+    .architecture-svg .node-title {
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .architecture-svg .node-copy {
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .architecture-svg .flow-label {
+      font-family: var(--condensed);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .06em;
+    }
+
+    .completed-matrix {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .completed-matrix article {
+      position: relative;
+      min-height: 205px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .completed-matrix article::before {
+      content: attr(data-number);
+      position: absolute;
+      right: 12px;
+      top: 3px;
+      color: rgba(18, 59, 93, .08);
+      font-family: var(--condensed);
+      font-size: 58px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .completed-matrix small {
+      position: relative;
+      color: var(--red);
+      font-family: var(--condensed);
+      font-size: 9px;
+      font-weight: 950;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .completed-matrix strong {
+      position: relative;
+      display: block;
+      max-width: 85%;
+      margin-top: 12px;
+      color: var(--navy-2);
+      font-family: var(--serif);
+      font-size: 19px;
+      line-height: 1.16;
+    }
+
+    .completed-matrix p {
+      position: relative;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.65;
+    }
+
+    .completed-matrix em {
+      display: inline-block;
+      margin-top: 11px;
+      padding: 4px 7px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-family: var(--condensed);
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 950;
+    }
+
     .claims-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1370,6 +1864,7 @@
 
     details .details-body {
       padding: 15px;
+      overflow-x: auto;
       color: var(--muted);
       font-size: 10px;
       line-height: 1.65;
@@ -1458,7 +1953,8 @@
 
       .hero-grid,
       .contract-grid,
-      .evidence-grid {
+      .evidence-grid,
+      .completed-result-lead {
         grid-template-columns: 1fr;
       }
 
@@ -1467,8 +1963,21 @@
       }
 
       .metric-strip,
-      .inventory-grid {
+      .inventory-grid,
+      .completed-matrix {
         grid-template-columns: repeat(2, 1fr);
+      }
+
+      .methods-note {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .methods-note > div:nth-child(2) {
+        border-right: 0;
+      }
+
+      .methods-note > div:nth-child(-n + 2) {
+        border-bottom: 1px solid var(--line-soft);
       }
 
       .k1a-story {
@@ -1533,8 +2042,17 @@
       .executive-grid,
       .two-col,
       .claims-grid,
-      .next-grid {
+      .next-grid,
+      .completed-matrix {
         grid-template-columns: 1fr;
+      }
+
+      .article-abstract {
+        padding-right: 24px;
+      }
+
+      .article-abstract::before {
+        display: none;
       }
 
       .hero-note > div {
@@ -1602,31 +2120,35 @@
       }
 
       .hero h1 {
+        max-width: 100%;
         font-size: 46px;
+        overflow-wrap: anywhere;
       }
 
       .hero h1 small {
         max-width: 100%;
         font-size: 19px;
-        word-break: break-all;
+        overflow-wrap: anywhere;
+        word-break: normal;
       }
 
       .hero-grid,
       .hero-grid > *,
       .hero-status,
       .status-body {
-        width: calc(100vw - 43px);
-        max-width: calc(100vw - 43px);
+        width: 100%;
+        max-width: 100%;
         min-width: 0;
       }
 
       .eyebrow,
       .hero-lead,
       .hero h1 small {
-        width: calc(100vw - 43px);
-        max-width: calc(100vw - 43px);
+        width: 100%;
+        max-width: 100%;
         white-space: normal;
-        word-break: break-all;
+        overflow-wrap: anywhere;
+        word-break: normal;
       }
 
       .status-banner {
@@ -1647,8 +2169,60 @@
       .inventory-grid,
       .capacity-stack,
       .spec-grid,
-      .update-protocol {
+      .update-protocol,
+      .methods-note {
         grid-template-columns: 1fr;
+      }
+
+      .article-abstract {
+        width: 100%;
+        max-width: 100%;
+        padding: 20px 18px 20px 21px;
+      }
+
+      .data-stamp {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .toolbar-actions {
+        width: 100%;
+      }
+
+      .article-abstract p,
+      .manuscript-copy p {
+        text-align: left;
+      }
+
+      .manuscript-block {
+        padding: 23px 20px 24px 23px;
+      }
+
+      .section-title,
+      .completed-result-answer,
+      .completed-result-answer h3,
+      .manuscript-block,
+      .manuscript-block h3 {
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+
+      .completed-result-answer {
+        padding: 24px 20px;
+      }
+
+      .completed-result-answer p {
+        font-size: 11px;
+      }
+
+      .methods-note > div {
+        border-right: 0;
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .methods-note > div:last-child {
+        border-bottom: 0;
       }
 
       .status-cell {
@@ -1748,21 +2322,22 @@
   <div class="shell">
     <aside class="side-rail" aria-label="页面导航">
       <div class="rail-brand">
-        <p class="rail-kicker">AK-Infer-Lab / Evidence Ledger</p>
+        <p class="rail-kicker">AK-Infer-Lab / Research Record</p>
         <strong>P8 分层工程原型</strong>
-        <span>主要结果、实验合同、机制证据与开放门的持续记录页</span>
+        <span>以研究问题、实验设计、定量结果和证据边界组织的阶段性研究记录</span>
       </div>
       <nav class="rail-nav">
-        <a href="#overview" data-index="01">阶段判断</a>
-        <a href="#contract" data-index="02">实验合同</a>
-        <a href="#observe" data-index="03">P8.0 / P8.1</a>
-        <a href="#prefix" data-index="04">P8.2-K0 / K1</a>
-        <a href="#k1a" data-index="05">K1A 容量与演进</a>
-        <a href="#mechanism" data-index="06">R17 机制闭环</a>
-        <a href="#expert" data-index="07">P8.3 专家资产</a>
-        <a href="#boundary" data-index="08">结论边界</a>
-        <a href="#next" data-index="09">开放门与下一步</a>
-        <a href="#evidence" data-index="10">证据索引</a>
+        <a href="#overview" data-index="01">研究概述</a>
+        <a href="#contract" data-index="02">研究设计</a>
+        <a href="#observe" data-index="03">观测基础</a>
+        <a href="#prefix" data-index="04">缓存对照</a>
+        <a href="#k1a" data-index="05">迁移实验序列</a>
+        <a href="#mechanism" data-index="06">机制证据</a>
+        <a href="#expert" data-index="07">专家资产计量</a>
+        <a href="#completed" data-index="08">已完成成果图解</a>
+        <a href="#boundary" data-index="09">综合讨论</a>
+        <a href="#next" data-index="10">后续研究</a>
+        <a href="#evidence" data-index="11">证据与附录</a>
       </nav>
       <div class="rail-legend">
         <div class="legend-item"><span class="legend-dot"></span><span>已验证：当前边界内可接受</span></div>
@@ -1779,7 +2354,7 @@
     <div class="page">
       <header class="topbar">
         <div class="data-stamp">
-          数据截点：<strong>2026-07-28 / R17 已验收，K2-R0 已开发待实机</strong> · 页面不读取网络资源
+          数据截点：<strong>2026-07-28 / R17 已验收，K2-R0 已开发并排队</strong> · 页面不读取网络资源
         </div>
         <div class="toolbar-actions">
           <div class="filter-group" aria-label="结果筛选">
@@ -1799,21 +2374,21 @@
               <p class="eyebrow">DeepSeek-V4-Flash W8A8-MTP · Ascend 910B1 · TP8</p>
               <h1>
                 P8
-                <small>从“能力存在”推进到“KV DRAM warm tier 真实迁移闭环”</small>
+                <small>DeepSeek-V4-Flash 分层推理原型的阶段性实验研究</small>
               </h1>
               <p class="hero-lead">
-                P8 的主要有效进展不是若干轮 grade 颜色变化，而是把
-                <strong>source capability → observe-only trace → Prefix Cache 对照 →
-                精确 CPU capacity → D2H store → logical CPU hit → H2D restore</strong>
-                连成了同一条可追溯证据链。R17 已在既有 accepted-capacity 单 lifecycle
-                上关闭 KV warm-tier 机制问题；专家分层路线已完成 checkpoint inventory，
-                但 TP4 materialized budget 与 runtime hotness 仍是开放门。
+                本阶段研究围绕一个可检验的问题展开：在固定的软件栈、模型、并行配置和单次
+                runtime lifecycle 内，能否将注意力 KV 状态从 NPU HBM 迁移至 CPU DRAM，
+                随后由共享前缀请求重新命中并完整恢复至 HBM，并让模型继续生成。研究先建立
+                请求级观测能力和 Prefix Cache 对照，再测定可接受的 pinned-host 容量，最后
+                通过完整原始轨迹重放验证 D2H store、logical CPU hit、H2D restore 与
+                64-token decode completion 的连续机制链。
               </p>
             </div>
             <div class="hero-status" aria-label="阶段关键数字">
               <div class="status-banner">
-                <span>Current stage verdict</span>
-                <b>MECHANISM CLOSED</b>
+                <span>当前主要研究结论</span>
+                <b>KV WARM-TIER 机制证据闭合</b>
               </div>
               <div class="status-body">
                 <div class="status-cell">
@@ -1839,22 +2414,50 @@
               </div>
             </div>
           </div>
+          <article class="article-abstract">
+            <h2>摘要</h2>
+            <p><strong>研究目的。</strong>本研究评估 DeepSeek-V4-Flash W8A8-MTP 在
+              8×Ascend 910B1、TP8+EP 环境中的分层状态管理可行性，重点考察 CPU DRAM
+              是否能够作为 KV cache 的 warm tier，以及外移后的 KV 状态能否由后续请求
+              可靠恢复。</p>
+            <p><strong>方法与结果。</strong>实验采用逐级收敛设计。P8.0–P8.1 首先确认
+              13 项 source capability，并以 6 条 4K–131K 请求验证 request、MTP 与
+              prefix counter 的同 session 对齐。K0 采用 6 组顺序平衡的 64K matched
+              pairs，比对 Prefix Cache On/Off；On 条件下 6/6 请求均命中 49,152 tokens，
+              平均 TTFT 由 6,542.85 ms 降至 1,739.29 ms，但该时延结果仅作描述性参考。
+              K1A 随后将最初不可分配的 32 GiB/rank 方案收缩为
+              128 blocks/rank（430,604,288 bytes/rank）的八 rank 可接受容量，并在
+              单 lifecycle 内观测到 4,386,781,184 bytes D2H 与
+              1,076,510,720 bytes H2D 传输。R17 对 20 个原始轨迹文件中的 1,369 个事件
+              进行完整重放，确认 8/8 D2H 与 8/8 H2D worker 均经过 submitted、copy、
+              poll 和 completed 终态，且 async failure 为 0。完成恢复的同一请求随后进入
+              decode-like 执行步骤，生成并流式返回 64 tokens。</p>
+            <p><strong>结论。</strong>在冻结实验条件下，CPU DRAM 作为 KV warm tier 的
+              store/restore 机制以及恢复后继续 decode 已经获得请求、驻留、逻辑命中、
+              异步拷贝和输出完成五类相互一致的证据。
+              该结论证明机制可达，不等同于性能收益、最大容量、生产可用性或跨版本泛化。
+              P8.3 的 checkpoint inventory 已完整守恒，但 TP4 runtime residency budget
+              仍缺少 materialized bytes、hotness 与 placement A/B 数据。</p>
+            <p class="keywords"><strong>关键词：</strong>DeepSeek-V4-Flash；KV cache
+              offload；CPU DRAM warm tier；Ascend 910B1；Prefix Cache；H2D restore；
+              expert checkpoint inventory</p>
+          </article>
           <div class="hero-note">
             <div>
-              <b>已关闭</b>
-              <span>SimpleCPUOffload 的 8-rank D2H store 与 DRAM→HBM restore 机制。</span>
+              <b>主要发现</b>
+              <span>真实推理 KV 完成 HBM→DRAM→HBM 往返，同一请求继续生成 64 tokens。</span>
             </div>
             <div>
-              <b>已保留</b>
-              <span>K1 frozen-stack import blocked、R16 selector fault 等有效负结论及 provenance。</span>
+              <b>方法学价值</b>
+              <span>K1 import incompatibility 与 R16 selector fault 明确了可复现实验的必要边界。</span>
             </div>
             <div>
-              <b>未外推</b>
-              <span>不宣称性能收益、唯一根因、生产可用性，也不把 1.08GB copy 当成收益。</span>
+              <b>解释边界</b>
+              <span>1.003 GiB H2D 是传输发生的证据，不能直接解释为时延或吞吐收益。</span>
             </div>
             <div>
-              <b>仍开放</b>
-              <span>K2-R0 external KV 已单独授权并待实机；P8.3-I1、P8.4、P8.5 / TP4 仍未授权。</span>
+              <b>未完成问题</b>
+              <span>External KV、expert hotness、TP4 runtime budget 与分层性能 A/B 仍需独立实验。</span>
             </div>
           </div>
         </section>
@@ -1863,11 +2466,41 @@
           <div class="section-head">
             <div class="section-index">01</div>
             <div class="section-title">
-              <h2>阶段判断：主线已形成，终局尚未到达</h2>
-              <p>把“已验证”“有效负结论”“开放门”分开，避免用单一完成率掩盖证据边界。</p>
+              <h2>研究概述：从可观测性到 KV warm-tier 机制验证</h2>
+              <p>本节概括 P8 的研究问题、主要贡献与尚未解决的问题；状态颜色仅作为证据分类。</p>
             </div>
-            <div class="section-tag">Executive readout</div>
+            <div class="section-tag">Introduction &amp; contribution</div>
           </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">研究背景与核心问题</p>
+            <h3>大模型状态分层的关键并非“发生过一次拷贝”，而是能否证明可重用状态经历完整、可归因的迁移与恢复</h3>
+            <div class="manuscript-copy">
+              <p>DeepSeek-V4-Flash 的长上下文推理同时受到 HBM 容量、Prefix Cache
+                复用和异步数据搬运的约束。单独观察到 CPU 驻留、prefix hit 或 H2D 字节量，
+                都不足以证明 CPU DRAM 已经构成有效的 KV warm tier：CPU 驻留可能是请求结束后的
+                残留状态，prefix hit 可能来自 HBM 内缓存，H2D 事件也可能与目标请求无关。因此，
+                P8 将研究问题拆为四个相互依赖的证据层级：运行时能力是否存在，请求与 runtime
+                counter 是否能够对齐，CPU tier 是否具有可接受的分配容量，以及同一目标 KV 状态
+                是否按 D2H store、logical CPU hit、load scheduling 和 H2D completion 的顺序
+                完成迁移。</p>
+              <p>阶段性结果表明，前三个层级已经为最后的机制判断提供了充分的实验基础。
+                P8.1 建立了请求级观测链；K0 证明 shared-prefix 负载确实触发预期的缓存命中；
+                K1A-R2 将过大的容量假设收缩为八 rank 均可分配的 128 blocks/rank；
+                R17 则在 R15 同一 formal lifecycle 的完整原始轨迹上重建出 1,369 个事件，
+                并确认 D2H 与 H2D 各 8 个 worker 均到达 completed 终态；对应的
+                restore follower 继续完成 64-token decode。五类证据相互一致，支持
+                “KV warm-tier store/restore 及恢复后继续生成在冻结条件下可达”这一结论。</p>
+              <p>该结论的范围是机制验证，而非系统性能定论。K0 的 TTFT 和 E2EL 差异来自
+                Prefix Cache On/Off 的描述性对照，不是 CPU offload 的性能 A/B；R17 的
+                1.003 GiB H2D 证明数据发生了回迁，却没有给出回迁对端到端时延、吞吐或 HBM
+                headroom 的净效应。与此同时，P8.3 仅完成 checkpoint 资产计量和 taxonomy
+                守恒，尚不足以判断 TP4 expert residency 的运行可行性。</p>
+            </div>
+            <div class="section-conclusion"><strong>阶段性结论。</strong>
+              P8 已完成 KV warm-tier 的机制级证据闭环，并形成可复用的观测与容量基线；
+              性能收益、External KV 路径和 expert/TP4 runtime budget 仍属于独立研究问题。</div>
+          </article>
 
           <div class="executive-grid">
             <article class="result-card filterable" data-state="validated">
@@ -1945,9 +2578,12 @@
               <span>需真实 expert bytes、hotness、latency 与 TP4 ownership 输入。</span>
             </div>
           </div>
+          <p class="figure-caption"><strong>图 1｜P8 研究路线及证据状态。</strong>
+            绿色表示在冻结边界内已有直接证据；橙色表示形成了可解释的负结果或方法修正；
+            灰色表示尚无足够实验数据。该图不表达各阶段的工作量比例。</p>
 
           <details style="margin-top:14px">
-            <summary>主要任务与 formal grade 台账（保留历史 provenance）</summary>
+            <summary>附录 A：主要任务与 formal grade 台账（保留历史 provenance）</summary>
             <div class="details-body">
               <table>
                 <thead>
@@ -2018,10 +2654,64 @@
           <div class="section-head">
             <div class="section-index">02</div>
             <div class="section-title">
-              <h2>实验合同：哪些量被冻结，哪些结论被禁止</h2>
-              <p>R17 的绿色只在这组 runtime、模型、容量、请求与单 lifecycle 约束内成立。</p>
+              <h2>研究设计与实验条件</h2>
+              <p>模型、软件版本、并行方式、请求结构和容量均被冻结，以限制跨轮诊断中的混杂因素。</p>
             </div>
-            <div class="section-tag">Frozen experiment envelope</div>
+            <div class="section-tag">Methods</div>
+          </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">研究设计</p>
+            <h3>采用递进式机制验证，而不是将所有变量压入一次性能测试</h3>
+            <div class="manuscript-copy">
+              <p>研究对象为 DeepSeek-V4-Flash W8A8-MTP，运行于 8×Ascend 910B1，
+                采用 TP8 与 Expert Parallel。软件环境固定为 vLLM 0.22.1
+                （commit 0decac0）、vLLM-Ascend 0.22.1rc1（commit 5f6faa0）、
+                CANN 9.0.0 以及 PyTorch/torch-npu 2.10.0。冻结版本的目的不是宣称该组合
+                代表所有部署环境，而是保证同一机制问题在连续诊断轮中具有可比的代码语义。</p>
+              <p>实验按证据强度分为三类。第一类是 P8.0–P8.1 的 observe-only
+                观测实验，只验证 source capability、请求正确性和 counter 对齐，不解释性能。
+                第二类是 K0 的顺序平衡 matched-pair 对照，仅改变 Prefix Cache 开关，
+                用于验证共享前缀的命中行为，并报告描述性时延。第三类是 K1A 的机制诊断：
+                先测定 pinned-host allocator envelope，再构造 target prime、in-flight
+                pressure 和 restore follower，使目标 KV 状态在一个 formal lifecycle 内经历
+                GPU 驱逐、CPU 命中和 H2D 恢复。R17 没有再次启动 NPU，而是对 R15 已冻结的
+                双轨迹文件族进行只读重放，以排除 R16 source selector 不完整造成的观测偏差。</p>
+              <p>K1A 的 accepted capacity 固定为每 rank 128 个 CPU blocks，即
+                430,604,288 bytes/rank，八 rank 合计 3,444,834,304 bytes。每个 base block
+                对应 128 tokens，44 个 unique KV tensors 合计 3,364,096 bytes/block。
+                目标请求采用 32K shared prefix，其中 restore 预期匹配 16,384 tokens；
+                pressure 请求在 36,800 tokens 的 request-local progress 条件下触发并有意中止，
+                以保留 CPU-only 窗口，再在 engine idle 和 post-abort gate 通过后发送
+                restore follower。</p>
+            </div>
+            <div class="research-question"><strong>主要判定问题。</strong>
+              只有当目标 KV 的物理驻留、logical CPU hit、load scheduling 和同 worker
+              async completion 能够在同一证据链中对齐时，才接受 H2D restore 机制成立。
+              单独的 prefix counter、CPU-only snapshot 或传输字节量均不满足这一判据。</div>
+          </article>
+
+          <div class="methods-note" aria-label="实验设计摘要">
+            <div>
+              <small>Study object</small>
+              <strong>固定模型与软件栈</strong>
+              <span>DeepSeek-V4-Flash W8A8-MTP；8×910B1；TP8+EP；固定 vLLM、Ascend 和 CANN 版本。</span>
+            </div>
+            <div>
+              <small>Observation</small>
+              <strong>请求级可观测性</strong>
+              <span>4K、64K、131K 请求矩阵；HTTP、MTP、prefix counter、queue 与 trace order。</span>
+            </div>
+            <div>
+              <small>Controlled baseline</small>
+              <strong>Prefix Cache 单变量对照</strong>
+              <span>6 组 64K matched pairs；On/Off 顺序平衡；时延只作描述性比较。</span>
+            </div>
+            <div>
+              <small>Mechanism test</small>
+              <strong>单 lifecycle store/restore</strong>
+              <span>prime → pressure/abort → idle gate → restore；零重试、零参数 sweep。</span>
+            </div>
           </div>
 
           <div class="contract-grid">
@@ -2098,17 +2788,55 @@
               </div>
             </div>
           </div>
+          <div class="term-note"><strong>指标定义。</strong>
+            TTFT（time to first token）表示从请求发出到首个输出 token 的时延；
+            E2EL（end-to-end latency）表示完整请求时延；TPOT（time per output token）
+            表示输出阶段平均单 token 时延。D2H 表示从 NPU HBM 向 pinned CPU DRAM 的迁移，
+            H2D 表示反向恢复。Prefix hit 是 token-counter proxy，不等同于物理 KV object
+            bytes。Formal grade 是任务合同下的验收标签，而不是跨实验可直接比较的质量分数。</div>
         </section>
 
         <section class="section" id="observe" data-nav-section>
           <div class="section-head">
             <div class="section-index">03</div>
             <div class="section-title">
-              <h2>P8.0 / P8.1：先把“能观测”做成可验证资产</h2>
-              <p>从 fixed-tag source evidence、离线 schema/toolchain，到 selected workload 的 4K–131K request join。</p>
+              <h2>观测基础：从 source capability 到请求级证据对齐</h2>
+              <p>P8.0 建立可观测性底座，P8.1 检验该底座能否在真实 selected workload 中形成一致记录。</p>
             </div>
-            <div class="section-tag">Capability &amp; observation</div>
+            <div class="section-tag">Methods &amp; observational results</div>
           </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">P8.0–P8.1 / 观测研究</p>
+            <h3>在讨论 offload 机制之前，首先验证每条请求是否能与 MTP 活动、Prefix Cache proxy 和 runtime object 建立可重放对应</h3>
+            <div class="manuscript-copy">
+              <p><strong>实验设置。</strong>P8.0 在固定 vLLM 与 vLLM-Ascend tag 上审计
+                13 项运行时能力，其中 7 项属于 available-but-uninstrumented，6 项已有
+                instrumentation；没有能力被误报为 unsupported。随后使用离线 tracer
+                fixture 验证 schema、registry、policy、replay 和 bundle 生成链。该 fixture
+                包含 8 个事件和 2 个对象，产生 5 次符合预期的 no-op decision、2 条显式
+                warning，validation error 为 0。warning 对应无法唯一归因的 bytes，系统保留
+                unknown 状态而不猜测填值。</p>
+              <p><strong>请求矩阵。</strong>P8.1-R1 在单一 session 中按顺序发送 6 条请求：
+                4,096-token isolated A、65,536-token shared prime、65,536-token shared
+                follower、131,072-token isolated A、4,096-token isolated B 和
+                131,072-token isolated B。每条请求均要求生成 64 tokens。shared follower
+                与 prime 共享 49,152 tokens 的冻结前缀，其余请求不设计复用，因此 expected
+                prefix hits 分别为 49,152 和 0。</p>
+              <p><strong>观测结果。</strong>6 条请求全部返回 HTTP 200，prompt token 与
+                streamed/generated token 数均符合合同，finish reason 均为 length。MTP 的
+                num_draft_tokens、num_accepted_tokens 和 num_drafts 在每条请求上均增加
+                32，且累计计数从 0 连续增长到 192。shared follower 的 prefix hit
+                恰为 49,152，而 prime 和 4 条 isolated 请求均为 0。请求与 runtime object
+                的 join 已完成，前后 queue 状态均为 running=0、waiting=0；设备号和 rank
+                identity 在当前 trace 中不可用，因此没有构造虚假的 device-level join。</p>
+              <p><strong>解释。</strong>这些结果说明观测链能够区分“有意设计的复用请求”和
+                “应保持零命中的隔离请求”，并能将 MTP counter 增量归属到单个 request slot。
+                因而，后续 K0/K1A 使用的 prefix hit 和 request-local progress 不是孤立的全局
+                累计值。与此同时，本实验没有采集物理 KV object bytes，也没有形成 device/rank
+                级 identity，所以结论限于请求正确性、事件顺序和 counter continuity。</p>
+            </div>
+          </article>
 
           <div class="metric-strip">
             <div class="metric">
@@ -2233,17 +2961,65 @@
             <strong>P8.1 的结论等级：</strong>这是 request correctness、trace order、counter continuity
             与 request↔runtime-object join 证据；不是设备/rank 级 join，也不是性能比较。
           </div>
+          <div class="section-conclusion"><strong>本节结论。</strong>
+            P8.0–P8.1 建立了后续机制实验所需的最小观测可信度：请求输入、输出、MTP 活动和
+            shared-prefix hit 可以在同一 session 中精确对齐；尚未观测到的 device/rank
+            identity 与物理 bytes 被明确保留为未知。</div>
         </section>
 
         <section class="section" id="prefix" data-nav-section>
           <div class="section-head">
             <div class="section-index">04</div>
             <div class="section-title">
-              <h2>P8.2-K0 / K1：Prefix Cache 对照成立，旧 offload 路径有效阻断</h2>
-              <p>K0 证明单变量控制与机制命中；K1 证明 frozen-stack 的直达路径不可导入。</p>
+              <h2>Prefix Cache 对照与 frozen-stack 兼容性审查</h2>
+              <p>K0 验证共享前缀负载与单变量控制；K1 确定旧 offload connector 在当前冻结栈中的适用边界。</p>
             </div>
-            <div class="section-tag">Prefix baseline &amp; negative gate</div>
+            <div class="section-tag">Controlled baseline &amp; compatibility</div>
           </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">P8.2-K0 / 对照实验</p>
+            <h3>共享前缀命中显著缩短首 token 等待，但该基线回答的是 Prefix Cache 行为，而不是 CPU offload 性能</h3>
+            <div class="manuscript-copy">
+              <p><strong>实验设置。</strong>K0 在三个 lifecycle 中完成 20 条成功请求，包括
+                4 条 warmup、4 条 prime 和 12 条 measured request。12 条 measured request
+                被组成 6 组 64K exact-reuse matched pairs，每组只改变 Prefix Cache On/Off
+                一个启动开关；请求 body 配对、server argv 单变量约束和 On/Off 执行顺序均通过
+                精确审计。所有请求均满足 HTTP 200、输入/输出 token 数、MTP activity、queue
+                health 和 finish reason 合同。</p>
+              <p><strong>缓存命中结果。</strong>Prefix Cache On 条件下，6 条 measured
+                follower 均命中 49,152 tokens；Off 条件下全部为 0，warmup 和 prime 请求也没有
+                非预期命中。由此可知，该工作负载确实在 On 条件触发冻结的共享前缀复用，而 Off
+                条件构成有效 control。这个结果为后续 restore follower 的 logical match
+                设计提供了经验基线。</p>
+              <p><strong>描述性时延结果。</strong>Prefix Cache On 的平均 TTFT 为
+                1,739.29 ms，Off 为 6,542.85 ms，描述性差异为 −73.4%；平均 E2EL
+                从 19,409.03 ms 降至 14,522.00 ms（−25.2%），output throughput
+                从 3.298 tok/s 增至 4.408 tok/s（+33.6%）。相比之下，TPOT 仅由
+                204.22 ms 变为 202.90 ms（−0.6%）。这一模式与“前缀复用主要减少
+                prefill 工作，而非明显改变 decode 单 token 成本”的解释一致，但样本量仅为
+                每模式 6 条，且本任务的 formal contract 明确拒绝 performance reference，
+                因而不能据此作显著性、因果性或部署收益判断。</p>
+            </div>
+          </article>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">P8.2-K1 / 兼容性研究</p>
+            <h3>旧 OffloadingConnector 路径在启动前即违反冻结依赖合同，阻断结果缩小了可行实现空间</h3>
+            <div class="manuscript-copy">
+              <p>K1 尝试加载
+                <code>vllm_ascend.kv_offload.npu.NPUOffloadingSpec</code>。该实现依赖
+                <code>vllm.v1.kv_offload.abstract</code>，而冻结的 vLLM 0.22.1 中不存在
+                相应模块，因此 import resolution 为 null，并产生
+                <code>ModuleNotFoundError</code>。审计在 NPU、vLLM 和 model request 启动前
+                fail closed，记录为 npu_started=false、vllm_started=false 和
+                model_request_sent=false。</p>
+              <p>该结果不是“运行时 offload 性能失败”，而是可复现的软件兼容性边界。
+                在不修改 frozen stack 的前提下，旧 OffloadingConnector 不能作为本阶段的
+                实验对象。因此后续研究转向当前栈可解析的 SimpleCPUOffloadConnector（K1A），
+                避免通过临时修改依赖掩盖真实接口条件。</p>
+            </div>
+          </article>
 
           <div class="metric-strip">
             <div class="metric">
@@ -2341,22 +3117,77 @@
               </p>
             </article>
           </div>
+          <p class="table-caption"><strong>表 1｜K0 Prefix Cache On/Off 描述性统计。</strong>
+            每种模式 n=6。TTFT 与 E2EL 的 P95 分别为 Off 6,676.13/19,749.33 ms，
+            On 1,763.58/14,760.45 ms。统计值用于刻画本次负载，不构成 CPU offload
+            或生产部署的性能结论。</p>
           <div class="boundary-note">
             <strong>K0 的差异可以展示，但不能升格：</strong>本页保留原始 mean / P95 与描述性百分比，
             其 formal timing boundary 仍是“descriptive only”；它不等于 K1A offload 收益，
             更不能替代受控性能 A/B。
           </div>
+          <div class="section-conclusion"><strong>本节结论。</strong>
+            K0 证明 64K shared-prefix 工作负载与单变量控制有效，并显示命中主要影响
+            prefill 相关时延；K1 则证明旧 NPUOffloadingSpec 与冻结软件栈不兼容。
+            两项结果共同支持将机制研究迁移到 SimpleCPUOffloadConnector，但不支持
+            对 CPU offload 性能作任何推断。</div>
         </section>
 
         <section class="section" id="k1a" data-nav-section>
           <div class="section-head">
             <div class="section-index">05</div>
             <div class="section-title">
-              <h2>K1A：从 32 GiB/rank 失败，到精确容量与真实迁移</h2>
-              <p>主线实质进展是把“大容量猜测”收缩到可分配几何，再把 store-only 追到 H2D restore。</p>
+              <h2>CPU offload 实验序列：容量定标、驻留窗口与恢复路径</h2>
+              <p>K1A 通过连续诊断将初始分配失败逐步收敛为可接受容量，并从 D2H store-only 推进到完整 H2D restore。</p>
             </div>
-            <div class="section-tag">Capacity → D2H → H2D</div>
+            <div class="section-tag">Sequential mechanism study</div>
           </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">P8.2-K1A / 纵向诊断实验</p>
+            <h3>容量、目标身份和异步完成语义必须逐项固定，才能把“CPU 中有数据”提升为“目标 KV 已完成可复用恢复”</h3>
+            <div class="manuscript-copy">
+              <p><strong>容量定标。</strong>K1A 初始方案为每 rank 32 GiB CPU tier，
+                八 rank 合计 256 GiB。虽然 host-memory preflight 通过，ACL pinned-host
+                allocation 仍以错误码 207001 失败，正式请求数为 0，D2H/H2D 均为 0。
+                R2 因而不再直接启动模型，而是先从 KV tensor geometry 推导容量：44 个
+                unique tensors 在一个 128-token base block 上合计占用 3,364,096 bytes。
+                随后依次测试 32、64、96 和 128 blocks/rank，四个波次的八个 rank 均分配
+                成功并清理完成。最高测试点 128 blocks/rank 对应
+                430,604,288 bytes/rank 和 16,384 restore tokens，被定义为 accepted
+                capacity。它是“已验证可分配的最高测试点”，不是系统最大容量。</p>
+              <p><strong>从 store-only 到 target lineage。</strong>R3–R4 在 accepted
+                capacity 上完成 5/6 请求，记录到 41 次 store completion 和
+                7,239,534,592 bytes D2H，八个 D2H worker 均完成；但 CPU hit、load
+                和 H2D 均为 0。因此，该轮只证明 KV 能被写入 CPU tier。后续 F1-R1–R10
+                通过 131K calibration 和固定 36,800-token pressure 对齐中途驻留状态，
+                发现完整 CPU-only 窗口可以早于 endpoint 的 target-lost 判断出现。
+                这一差异说明 request-end endpoint 不能替代 mid-request observation，
+                也促使研究分别追踪 physical key、logical hash block、cache stamp 和
+                effective group geometry。</p>
+              <p><strong>恢复路径收敛。</strong>R11 使用 EAGLE-aware lookup 首次获得
+                16,384-token exact logical CPU hit，但 load 尚未调度。R12–R13 将阻断点
+                定位到 <code>update_state_after_alloc</code>：代码使用 raw
+                block_size=128 进行 GPU/CPU pairing，而 FlashAttention compress
+                geometry 的有效分组更粗，导致 <code>IndexError</code>。R14–R15 保留
+                prefill step lineage，应用 compress-aware pairing repair，并观测到
+                <code>delayed_external_prefill → _reqs_to_load → load scheduled</code>
+                的连续路径。R15 的 4 个请求角色为 warmup、target prime、pressure 和
+                restore follower；其中 pressure 在 CPU-only trigger 后有意中止，另外
+                3 条请求成功，restore follower 返回 HTTP 200。</p>
+              <p><strong>完整证据重建。</strong>R16 只选择 10 个 residency 文件中的
+                319 个事件，遗漏另 10 个 async transfer 文件中的 1,050 个事件，因而得到
+                “completion trace incomplete”的历史 RED。R17 只读重放 R15 的完整
+                20 文件族，并与 R15 的 23 个关键字段逐项核对。重放结果恢复了
+                submitted、enqueued、copy-entered、copy-returned、poll-returned 和
+                completed 边，最终判定 H2D restore 机制成立。R16 的 formal grade 仍保留，
+                但其基于不完整 source selector 的机制解释被 R17 supersede。</p>
+            </div>
+            <div class="section-conclusion"><strong>纵向实验结论。</strong>
+              K1A 的有效进展不是简单地由 RED 变为 GREEN，而是依次确定了可分配容量、
+              中途 CPU-only 观测点、logical/physical identity、compress-aware pairing
+              和 async completion 语义。每一步都消除了一个足以造成错误归因的替代解释。</div>
+          </article>
 
           <div class="k1a-story">
             <div>
@@ -2471,7 +3302,7 @@
           </div>
 
           <details style="margin-top:14px">
-            <summary>为什么 R1–R16 的 RED / BLOCKED 仍是有效结果</summary>
+            <summary>附录 B：为什么 R1–R16 的 RED / BLOCKED 仍是有效结果</summary>
             <div class="details-body">
               这些轮次依次排除了“容量必然不足”“fixed pressure 不可复现”“目标必须是 128 个物理 FA key”
               “Prefix Cache 命中等于 H2D”“最后一次 decode update 可以代表整个 restore”“live-pending
@@ -2486,11 +3317,51 @@
           <div class="section-head">
             <div class="section-index">06</div>
             <div class="section-title">
-              <h2>R17 机制闭环：同一 lifecycle 的完整证据链</h2>
-              <p>R17 不重新运行 NPU，而是用 R15 完整双文件族原始轨迹恢复被 R16 遗漏的 async 边。</p>
+              <h2>完整轨迹重放对 KV 恢复机制的验证</h2>
+              <p>R17 将请求语义、KV 驻留、load scheduling 与异步 worker completion 统一到同一 lifecycle。</p>
             </div>
-            <div class="section-tag">Mechanism terminal</div>
+            <div class="section-tag">Primary mechanism result</div>
           </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">P8.2-K1A-R17 / 主要结果</p>
+            <h3>完整双轨迹源表明，目标 KV 在 CPU 命中后进入 load queue，并由八个 H2D worker 全部完成回迁</h3>
+            <div class="manuscript-copy">
+              <p><strong>分析方法。</strong>R17 没有产生新的 NPU lifecycle，而是将 R15
+                保留的两个原始 trace family 合并重放：10 个 async-transfer 文件包含
+                1,050 行，10 个 residency 文件包含 319 行，总计 1,369 个事件。分析程序首先
+                验证 parent contract、文件 hash 和 23 个 R15 replay field 不变，然后要求
+                11 类关键事件均非零。这样可以同时回答两个问题：目标 KV 是否真的处于 CPU-only
+                可恢复状态，以及负责恢复的异步 worker 是否完成了拷贝和轮询终态。</p>
+              <p><strong>目标与调度证据。</strong>target prime 形成 40 个 physical target
+                keys；轨迹中出现 14 个同时满足 physical 与 logical 条件的 CPU-only window
+                event。restore follower 随后获得 16,384-token exact logical CPU hit，
+                等价于 128 个 logical hash blocks。compress-aware repair 预测并构造 40 个
+                GPU/CPU pairs，未再出现 R13 的 IndexError。该请求以
+                <code>delayed_external_prefill</code> 进入
+                <code>_reqs_to_load</code>，其中 <code>num_external=16,384</code>，
+                随后记录到 load scheduling 和 restore request completion。</p>
+              <p><strong>传输与完成结果。</strong>D2H 方向累计传输
+                4,386,781,184 bytes（约 4.086 GiB），H2D 方向传输
+                1,076,510,720 bytes（约 1.003 GiB）。两个方向各有 8 个 worker，
+                且每个 worker 都具有 submitted、enqueued、copy-entered、
+                copy-returned、poll-returned 和 completed 证据；异步拷贝失败数为 0。
+                D2H 与 H2D 字节量不要求相等，因为 D2H 汇总的是压力阶段写入 CPU tier 的
+                store population，而 H2D 只恢复 follower 命中的目标子集。</p>
+              <p><strong>异步语义解释。</strong>H2D worker 04 没有捕获
+                live-pending 中间态，但其 copy、poll 和 completed 边全部存在。异步状态可能
+                在两个采样点之间完成，因此“没有观察到 pending”不能推出“没有完成拷贝”。
+                R17 将 live-pending 定义为诊断字段，把 same-worker completed 作为硬判据，
+                从而避免以瞬时采样替代终态证据。原始 trace 在分析前后保持不变，资源清理也与
+                parent 报告一致。</p>
+              <p><strong>统计与因果边界。</strong>这些结果支持
+                <code>green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed</code>，
+                即在 R15 accepted-capacity 单 lifecycle 内，目标 KV 的 H2D restore
+                机制成立。由于 R17 是单 lifecycle 的机制重放，且没有设置 offload On/Off
+                性能对照，研究不估计均值差异、置信区间或生产负载效应，也不声称
+                compress geometry 是跨模型的唯一根因。</p>
+            </div>
+          </article>
 
           <div class="mechanism" aria-label="KV offload restore 因果链">
             <div class="mechanism-step">
@@ -2525,10 +3396,13 @@
             </div>
             <div class="mechanism-step">
               <small>07 / TERMINAL</small>
-              <strong>Request completed</strong>
-              <span><b>restore_request_completed</b><br>resource recovery exact</span>
+              <strong>Decode completed</strong>
+              <span><b>generated=64 / streamed=64</b><br>HTTP 200 · finish=length</span>
             </div>
           </div>
+          <p class="figure-caption"><strong>图 2｜R17 中目标 KV 的可观测迁移链。</strong>
+            箭头顺序表示证据上的先后依赖，并非各阶段的持续时间比例。physical key 数、
+            logical hash block 数和 token coverage 属于不同几何层级，不能互相直接替换。</p>
 
           <div class="evidence-grid">
             <div class="panel">
@@ -2632,17 +3506,57 @@
               </div>
             </div>
           </div>
+          <p class="table-caption"><strong>表 2｜R17 same-worker 异步完成证据。</strong>
+            D2H 与 H2D 均覆盖 8 个 direction-local worker；H2D worker 04 缺少
+            live-pending 瞬时观测，但具有 copy 和 completion 的完整终态证据，因此不影响
+            机制判定。</p>
+          <div class="section-conclusion"><strong>本节结论。</strong>
+            R17 证明了 selected target 在同一 formal lifecycle 中完成
+            HBM→CPU DRAM store、logical CPU hit、load scheduling 和 CPU DRAM→HBM
+            restore；R15 的同一 restore follower 在恢复后继续生成并返回 64 tokens。
+            结论是往返路径、完成语义和恢复后 decode 均成立，不是性能优越性或生产就绪性结论。</div>
         </section>
 
         <section class="section" id="expert" data-nav-section>
           <div class="section-head">
             <div class="section-index">07</div>
             <div class="section-title">
-              <h2>P8.3-I0：专家资产已经“盘清”，runtime budget 尚未“算清”</h2>
-              <p>checkpoint-first inventory 与未分类 taxonomy 已通过；hotness、materialized bytes、TP4 ownership 仍需独立证据。</p>
+              <h2>Expert checkpoint 资产计量与 TP4 可行性边界</h2>
+              <p>P8.3-I0 完成文件级和 tensor 级守恒审计，但 checkpoint logical bytes 不能直接替代 runtime residency。</p>
             </div>
-            <div class="section-tag">Expert / TP4 track</div>
+            <div class="section-tag">Asset inventory study</div>
           </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">P8.3-I0 / 离线资产研究</p>
+            <h3>Checkpoint inventory 已达到文件和字节守恒，但仍缺少决定 TP4 residency 的运行时量</h3>
+            <div class="manuscript-copy">
+              <p><strong>研究目的与方法。</strong>P8.3 的目标是为 expert 分层和 TP4
+                placement 建立可信的资产底数，而不是直接启动四卡 full-model 实验。I0 从
+                <code>quant_model_weights.safetensors.index.json</code> 解析 tensor-to-shard
+                映射，并以 safetensors header 独立复核 tensor 数、shape、dtype 与 logical
+                bytes。索引文件通过显式路径和唯一自动发现得到同一结果，文件大小为
+                9,952,750 bytes；审计过程不复制、不改写 checkpoint，也不使用临时模型副本。</p>
+              <p><strong>计量结果。</strong>模型由 70 个 checkpoint shards 构成，共索引
+                103,176 个 tensors，logical checkpoint bytes 为
+                300,002,377,534 bytes（279.399 GiB）。index 和 header 的 tensor 数完全一致，
+                missing、duplicate、wrong-shard 以及 omitted tensor/group/bytes 均为 0。
+                全量 shard hash 和 1,792-file source inventory 为后续复核提供了 provenance，
+                且离线分类前后文件保持不变。</p>
+              <p><strong>未分类项处理。</strong>初始规则无法直接归类的 1,135 个 tensors
+                合计 12,319,364,956 bytes，占 tensor 数约 1.10%、checkpoint bytes 的
+                4.106%。I0-R1 将这些对象按名称和结构归入 39 个 taxonomy groups，并实现
+                byte-for-byte 重放守恒。这里的 taxonomy 解决的是“资产被遗漏或混入错误类别”
+                的问题，不代表这些 tensors 在运行时具有相同的驻留生命周期。</p>
+              <p><strong>可行性边界。</strong>Checkpoint logical bytes 描述磁盘序列化资产，
+                runtime materialized bytes 还受到 dtype materialization、tensor parallel
+                ownership、padding/alignment、通信 buffer 和 allocator fragmentation 的影响。
+                当前 <code>materialized_bytes_complete=false</code>，也没有 per-expert
+                hotness、reuse distance 或 miss penalty。因而 279.399 GiB 不能直接除以 4
+                得到 TP4 HBM 预算，更不能据此宣称 expert hot migration、EPLB 或 static
+                placement 有收益。</p>
+            </div>
+          </article>
 
           <div class="inventory-grid">
             <div class="inventory-metric">
@@ -2695,17 +3609,289 @@
             <strong>P8.3 当前结论：</strong>“盘点完整、分类守恒”已经成立；“TP4 可运行、专家可热迁移、
             EPLB/static placement 有收益”均未成立。I1 Level-A hotness/runtime trace 仍需单独服务器授权。
           </div>
+          <div class="section-conclusion"><strong>本节结论。</strong>
+            P8.3-I0 为 expert 分层研究提供了完整且可重放的 checkpoint 资产基线；
+            TP4 feasibility 必须等待 materialized footprint、runtime ownership、
+            hotness 和 buffer/fragmentation budget 的直接测量。</div>
+        </section>
+
+        <section class="section" id="completed" data-nav-section>
+          <div class="section-head">
+            <div class="section-index">08</div>
+            <div class="section-title">
+              <h2>已完成结果：真实推理中的 KV 卸载、恢复与继续生成</h2>
+              <p>以流程架构图和论文式实验叙述，集中呈现 P8 已经获得的主要实测结果。</p>
+            </div>
+            <div class="section-tag">Completed results · illustrated</div>
+          </div>
+
+          <div class="completed-result-lead">
+            <article class="completed-result-answer">
+              <small>核心问题的实验证据回答</small>
+              <h3>DRAM 中的 KV 恢复到 HBM 后，模型继续完成了 decode</h3>
+              <p>在真实 DeepSeek-V4-Flash 推理生命周期中，恢复请求先命中 CPU DRAM 中的
+                16,384-token KV 前缀，经八个 H2D worker 搬回 HBM；同一请求随后进入
+                decode-like 执行步骤，并成功生成、流式返回 64 个新 token。该结果把
+                “数据已经搬回设备”与“模型继续使用该状态完成生成”连接成一条可观测的请求链。</p>
+            </article>
+            <div class="decode-proof" aria-label="恢复后继续 decode 的四项直接证据">
+              <div class="decode-proof-item">
+                <b>16K</b>
+                <div><strong>恢复请求命中 CPU KV</strong><span>exact logical CPU hit = 16,384 tokens</span></div>
+              </div>
+              <div class="decode-proof-item">
+                <b>8/8</b>
+                <div><strong>八个 H2D worker 全部完成</strong><span>1,076,510,720 bytes，async failure = 0</span></div>
+              </div>
+              <div class="decode-proof-item">
+                <b>15</b>
+                <div><strong>恢复步骤后观测到 decode-like 步骤</strong><span>delayed_external_prefill 之后连续进入 decode 阶段</span></div>
+              </div>
+              <div class="decode-proof-item">
+                <b>64</b>
+                <div><strong>恢复请求完成新 token 生成</strong><span>HTTP 200；generated=64；streamed=64；finish=length</span></div>
+              </div>
+            </div>
+          </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">P8.2-K1A / 实验设计与主要结果</p>
+            <h3>在单一真实模型生命周期内，对同一批 KV 状态实施“生成—卸载—命中—恢复—继续生成”的顺序验证</h3>
+            <div class="manuscript-copy">
+              <p><strong>研究目的。</strong>本实验检验大模型推理过程中已经生成的 KV Cache
+                是否能够从 NPU HBM 迁移至 CPU DRAM，并在后续共享前缀请求到来时重新被识别、
+                调度回 HBM，继而支持该请求继续生成新 token。KV Cache 是模型为已经读过的
+                上下文保存的注意力中间状态；复用这些状态可以避免重新计算相同前缀。为使数据迁移
+                与模型请求之间具有明确对应关系，实验直接从真实 <em>target prime</em> 请求
+                产生的 KV 状态中捕获可追踪的物理 key 与逻辑前缀。</p>
+              <p><strong>实验条件。</strong>研究对象为 DeepSeek-V4-Flash W8A8-MTP，
+                运行于 8×Ascend 910B1，采用 TP8 与 Expert Parallel。软件环境固定为
+                vLLM 0.22.1、vLLM-Ascend 0.22.1rc1、CANN 9.0.0 和
+                PyTorch/torch-npu 2.10.0。CPU warm tier 容量固定为每 rank 128 blocks，
+                即 430,604,288 bytes/rank；八 rank 合计 3,444,834,304 bytes。
+                一个 lifecycle 内依次执行 warmup、32,768-token target prime、
+                36,800-token pressure 和 32,768-token restore follower 四个请求角色。</p>
+              <p><strong>实验过程。</strong><em>Target prime</em> 首先产生真实 KV Cache，
+                并形成 40 个可归因的 physical target keys。随后，pressure 请求推动目标状态
+                离开 HBM；轨迹记录到目标 KV 的 CPU-only 驻留窗口以及 D2H store 完成。
+                在引擎恢复空闲后，<em>restore follower</em> 携带相同共享前缀到达，
+                对 CPU tier 产生 16,384-token 的精确逻辑命中。调度器为这些状态分配新的
+                HBM 槽位，compress-aware pairing 构造 40 对 CPU/HBM block 映射，
+                并将请求加入 <code>_reqs_to_load</code>。</p>
+              <p><strong>主要结果。</strong>D2H 方向的八个 worker 全部完成，累计记录
+                4,386,781,184 bytes（4.086 GiB）；恢复阶段的八个 H2D worker 同样全部完成，
+                累计搬运 1,076,510,720 bytes（1.003 GiB），异步拷贝失败数为 0。
+                恢复请求的执行序列以 <code>delayed_external_prefill</code> 开始，随后观测到
+                15 个 <code>decode_like</code> 步骤。最终，该请求以 HTTP 200 返回，
+                generated token count 与 streamed token count 均为 64，
+                <code>finish_reason=length</code>。其首 token 时延为 1,887.16 ms，
+                端到端时延为 14,732.70 ms。</p>
+              <p><strong>结果解释。</strong>上述观测构成同一恢复请求内部的连续证据：
+                CPU DRAM 中的前缀被识别为可复用状态，load scheduling 将其送入 H2D
+                队列，八个 worker 完成向 HBM 的数据恢复，模型执行随后从恢复性 prefill
+                过渡到 decode，并完成 64-token 输出。因此，P8 已经实测完成了真实推理
+                KV Cache 的 HBM→CPU DRAM→HBM 往返路径，以及恢复后继续 decode 的执行闭环。</p>
+            </div>
+          </article>
+
+          <figure class="architecture-frame">
+            <div class="architecture-titlebar">
+              <strong>真实推理 KV 状态往返与继续生成：实验流程架构图</strong>
+              <span>R15 runtime evidence + R17 complete trace replay</span>
+            </div>
+            <div class="architecture-scroll">
+              <svg class="architecture-svg" viewBox="0 0 1440 610" role="img"
+                aria-labelledby="completedFlowTitle completedFlowDesc">
+                <title id="completedFlowTitle">DeepSeek-V4-Flash KV Cache 从 HBM 卸载到 CPU DRAM、恢复到 HBM并继续 decode 的流程</title>
+                <desc id="completedFlowDesc">真实 target prime 请求产生 KV，pressure 请求促成 D2H store，restore follower 命中 CPU KV，调度 H2D 恢复，模型随后完成 64 token decode。</desc>
+                <defs>
+                  <marker id="arrowGold" viewBox="0 0 10 10" refX="8.5" refY="5"
+                    markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#c48617"></path>
+                  </marker>
+                  <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+                    <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#13202a" flood-opacity=".14"></feDropShadow>
+                  </filter>
+                </defs>
+
+                <rect x="20" y="25" width="1400" height="164" rx="8" fill="#0b314d"></rect>
+                <rect x="20" y="215" width="1400" height="164" rx="8" fill="#e8dfcd"></rect>
+                <rect x="20" y="405" width="1400" height="174" rx="8" fill="#e8f0ea"></rect>
+                <text x="42" y="57" class="lane-label" fill="#ffffff">NPU HBM · 模型计算与高速 KV 状态</text>
+                <text x="42" y="247" class="lane-label" fill="#7b4b08">CPU DRAM · 可复用的 KV warm tier</text>
+                <text x="42" y="437" class="lane-label" fill="#21543d">恢复后的模型执行与输出</text>
+
+                <g filter="url(#softShadow)">
+                  <rect x="60" y="80" width="245" height="82" rx="8" fill="#ffffff"></rect>
+                  <text x="80" y="104" class="node-kicker" fill="#9b2f2f">01 · TARGET PRIME</text>
+                  <text x="80" y="129" class="node-title" fill="#082a45">真实请求产生 KV</text>
+                  <text x="80" y="150" class="node-copy" fill="#59636a">32,768-token prompt + 64-token decode</text>
+                </g>
+
+                <g filter="url(#softShadow)">
+                  <rect x="370" y="270" width="245" height="82" rx="8" fill="#ffffff"></rect>
+                  <text x="390" y="294" class="node-kicker" fill="#9b2f2f">02 · D2H STORE</text>
+                  <text x="390" y="319" class="node-title" fill="#082a45">KV 写入 CPU DRAM</text>
+                  <text x="390" y="340" class="node-copy" fill="#59636a">8/8 workers · 4.086 GiB observed</text>
+                </g>
+
+                <g filter="url(#softShadow)">
+                  <rect x="675" y="270" width="245" height="82" rx="8" fill="#ffffff"></rect>
+                  <text x="695" y="294" class="node-kicker" fill="#9b2f2f">03 · CPU-ONLY WINDOW</text>
+                  <text x="695" y="319" class="node-title" fill="#082a45">目标状态驻留 DRAM</text>
+                  <text x="695" y="340" class="node-copy" fill="#59636a">40 physical keys · 16,384 logical tokens</text>
+                </g>
+
+                <g filter="url(#softShadow)">
+                  <rect x="980" y="270" width="245" height="82" rx="8" fill="#ffffff"></rect>
+                  <text x="1000" y="294" class="node-kicker" fill="#9b2f2f">04 · RESTORE FOLLOWER</text>
+                  <text x="1000" y="319" class="node-title" fill="#082a45">共享前缀命中 CPU KV</text>
+                  <text x="1000" y="340" class="node-copy" fill="#59636a">exact logical CPU hit = 16,384 tokens</text>
+                </g>
+
+                <g filter="url(#softShadow)">
+                  <rect x="850" y="80" width="245" height="82" rx="8" fill="#ffffff"></rect>
+                  <text x="870" y="104" class="node-kicker" fill="#9b2f2f">05 · LOAD SCHEDULING</text>
+                  <text x="870" y="129" class="node-title" fill="#082a45">分配 HBM 槽位</text>
+                  <text x="870" y="150" class="node-copy" fill="#59636a">40 pairs · delayed external → load queue</text>
+                </g>
+
+                <g filter="url(#softShadow)">
+                  <rect x="1145" y="80" width="245" height="82" rx="8" fill="#ffffff"></rect>
+                  <text x="1165" y="104" class="node-kicker" fill="#9b2f2f">06 · H2D RESTORE</text>
+                  <text x="1165" y="129" class="node-title" fill="#082a45">KV 恢复至 HBM</text>
+                  <text x="1165" y="150" class="node-copy" fill="#59636a">8/8 workers · 1.003 GiB · 0 failure</text>
+                </g>
+
+                <g filter="url(#softShadow)">
+                  <rect x="805" y="465" width="270" height="86" rx="8" fill="#ffffff"></rect>
+                  <text x="825" y="489" class="node-kicker" fill="#267353">07 · DECODE CONTINUES</text>
+                  <text x="825" y="515" class="node-title" fill="#082a45">模型继续生成新 token</text>
+                  <text x="825" y="537" class="node-copy" fill="#59636a">15 observed decode-like steps</text>
+                </g>
+
+                <g filter="url(#softShadow)">
+                  <rect x="1120" y="465" width="270" height="86" rx="8" fill="#ffffff"></rect>
+                  <text x="1140" y="489" class="node-kicker" fill="#267353">08 · REQUEST COMPLETED</text>
+                  <text x="1140" y="515" class="node-title" fill="#082a45">64 个新 token 返回</text>
+                  <text x="1140" y="537" class="node-copy" fill="#59636a">HTTP 200 · streamed=64 · finish=length</text>
+                </g>
+
+                <path d="M 305 121 C 340 121, 335 311, 370 311" fill="none" stroke="#c48617"
+                  stroke-width="4" marker-end="url(#arrowGold)"></path>
+                <path d="M 615 311 L 675 311" fill="none" stroke="#c48617"
+                  stroke-width="4" marker-end="url(#arrowGold)"></path>
+                <path d="M 920 311 L 980 311" fill="none" stroke="#c48617"
+                  stroke-width="4" marker-end="url(#arrowGold)"></path>
+                <path d="M 1102 270 C 1102 202, 972 201, 972 162" fill="none" stroke="#c48617"
+                  stroke-width="4" marker-end="url(#arrowGold)"></path>
+                <path d="M 1095 121 L 1145 121" fill="none" stroke="#c48617"
+                  stroke-width="4" marker-end="url(#arrowGold)"></path>
+                <path d="M 1268 162 C 1268 250, 940 376, 940 465" fill="none" stroke="#267353"
+                  stroke-width="4" marker-end="url(#arrowGold)"></path>
+                <path d="M 1075 508 L 1120 508" fill="none" stroke="#267353"
+                  stroke-width="4" marker-end="url(#arrowGold)"></path>
+
+                <text x="315" y="205" class="flow-label" fill="#8b5209">PRESSURE 触发迁移</text>
+                <text x="935" y="203" class="flow-label" fill="#8b5209">_REQS_TO_LOAD</text>
+                <text x="1050" y="402" class="flow-label" fill="#267353">恢复完成后进入模型执行</text>
+              </svg>
+            </div>
+            <figcaption class="figure-caption"><strong>图 3｜P8 已完成的真实推理 KV 往返与继续生成闭环。</strong>
+              上层表示 NPU HBM，中层表示 CPU DRAM warm tier，下层表示恢复后的模型执行与输出。
+              所有节点来自同一个 R15 formal lifecycle；R17 对 20 个原始轨迹文件中的
+              1,369 个事件完成一致性重放。</figcaption>
+          </figure>
+
+          <div class="completed-matrix" aria-label="P8 已完成成果摘要">
+            <article data-number="01">
+              <small>观测能力</small>
+              <strong>请求与运行时事件可以逐请求对应</strong>
+              <p>固定栈 13 项 capability 完成审计；P8.1 的 6 条真实请求全部 HTTP 200，
+                shared follower 精确命中 49,152 tokens，MTP 计数连续。</p>
+              <em>6 / 6 requests</em>
+            </article>
+            <article data-number="02">
+              <small>共享前缀复用</small>
+              <strong>Prefix Cache 单变量对照成立</strong>
+              <p>6 组 64K exact-reuse matched pairs 中，On 条件全部命中 49,152 tokens，
+                Off 条件均为 0；平均 TTFT 的描述性结果为 6,542.85→1,739.29 ms。</p>
+              <em>6 / 6 exact pairs</em>
+            </article>
+            <article data-number="03">
+              <small>KV warm tier</small>
+              <strong>HBM→DRAM→HBM 路径完整闭合</strong>
+              <p>目标 KV 在压力阶段写入 CPU DRAM，后续请求精确命中 16,384 tokens，
+                进入 load queue，并由 8/8 H2D worker 完成恢复。</p>
+              <em>1.003 GiB H2D</em>
+            </article>
+            <article data-number="04">
+              <small>恢复后模型执行</small>
+              <strong>同一请求继续 decode 并完成输出</strong>
+              <p>恢复性 prefill 之后观测到 15 个 decode-like 步骤；恢复请求生成并流式返回
+                64 tokens，HTTP 200，finish reason 为 length。</p>
+              <em>64 / 64 tokens</em>
+            </article>
+            <article data-number="05">
+              <small>Expert 资产计量</small>
+              <strong>Checkpoint inventory 完成全量守恒</strong>
+              <p>70 个 shards 中的 103,176 个 tensors 与 header 逐项一致，合计
+                300,002,377,534 bytes；1,135 个初始未分类 tensors 已归入 39 组 taxonomy。</p>
+              <em>103,176 tensors</em>
+            </article>
+          </div>
+
+          <div class="section-conclusion"><strong>本章结论。</strong>
+            P8 已经在真实 DeepSeek-V4-Flash 推理请求中完成并观测到 KV Cache 从 HBM
+            卸载至 CPU DRAM、后续共享前缀请求在 CPU tier 命中、KV 恢复至 HBM，以及模型
+            基于该恢复状态继续 decode 并完成 64-token 输出的完整执行过程。</div>
         </section>
 
         <section class="section" id="boundary" data-nav-section>
           <div class="section-head">
-            <div class="section-index">08</div>
+            <div class="section-index">09</div>
             <div class="section-title">
-              <h2>有效结论与不可外推项</h2>
-              <p>本页的“绿色”是边界内机制结论，不是生产化、性能化或跨 runtime 泛化结论。</p>
+              <h2>综合讨论、研究意义与局限性</h2>
+              <p>机制证据的内部一致性已经形成，但样本规模、对照设计和运行时覆盖限制了外部推断。</p>
             </div>
-            <div class="section-tag">Claim boundary</div>
+            <div class="section-tag">Discussion &amp; limitations</div>
           </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">综合讨论</p>
+            <h3>P8 的主要贡献是建立“状态身份—驻留—调度—完成”的证据方法，并据此验证 KV warm tier 的机制可达性</h3>
+            <div class="manuscript-copy">
+              <p><strong>主要发现。</strong>本阶段最强结论来自 K1A-R17：在固定模型、TP8
+                并行、accepted CPU capacity 和单 lifecycle 条件下，目标 KV 状态先从 HBM
+                写入 CPU DRAM，随后被 restore follower 以 16,384-token logical hit 命中，
+                进入 <code>_reqs_to_load</code>，并由八个 H2D worker 全部完成回迁。
+                同一 restore follower 随后出现 decode-like 执行步骤，并生成、流式返回
+                64 tokens。该链同时具有 physical key、logical hash block、request role、
+                load step、same-worker completion 和模型输出证据，因而比单一 prefix counter
+                或传输总字节更能排除替代解释。</p>
+              <p><strong>方法学意义。</strong>R1–R17 表明，大模型分层状态实验容易受到三类
+                观测错误影响。第一类是时间点错位，例如 mid-request CPU-only window 与
+                post-request endpoint target-loss 并不矛盾。第二类是几何错位，例如 128 个
+                logical hash blocks 不能直接解释为每个 FA group 都有 128 个 physical keys。
+                第三类是事件源不完整，例如 R16 只读取 residency family，遗漏 async-transfer
+                family 后错误否定 completion。将请求本地进度、状态身份和完整事件源写入实验
+                合同，是本阶段可复用的方法贡献。</p>
+              <p><strong>与性能结果的关系。</strong>K0 的数据表明 shared-prefix hit 与
+                TTFT/E2EL 的明显降低同时出现，而 TPOT 基本不变。这为 prefill reuse 的
+                行为合理性提供了描述性支持，但 K0 没有启用 CPU offload，R17 又没有设置
+                offload On/Off 对照。因此，两组结果不能拼接成“CPU warm tier 提升性能”的
+                因果论证。要回答该问题，需要在同一 connector、相同请求体和相同容量下进行
+                多 lifecycle 的随机化或顺序平衡 A/B，并同时报告 HBM headroom、TTFT、E2EL、
+                TPOT、throughput 和迁移重叠率。</p>
+              <p><strong>局限性。</strong>R17 重放的是 R15 单个 formal lifecycle，证明了
+                已有样本中的机制闭合，但没有独立重复实验，也没有估计失败率或置信区间。
+                128 blocks/rank 只是四个 allocator 测试点中的最高 clean point，不代表上限。
+                compress-aware repair 的必要性在当前模型与版本中得到证据，但尚未跨模型或跨
+                vLLM 版本验证。P8.3 使用 checkpoint logical bytes，未观测 TP4 materialized
+                footprint 和 runtime hotness。上述限制共同决定了当前结论应表述为
+                instrumented-path mechanism evidence，而非 production readiness。</p>
+            </div>
+          </article>
 
           <div class="claims-grid">
             <div class="panel">
@@ -2744,22 +3930,55 @@
               </div>
             </div>
           </div>
+          <div class="section-conclusion"><strong>讨论结论。</strong>
+            当前证据足以支持冻结边界内的 KV warm-tier 机制结论，并支持将完整轨迹源、
+            request-local progress 与 same-worker completion 作为后续实验的固定方法；
+            性能、可靠性、容量上限和跨环境泛化仍需新的对照与重复实验。</div>
         </section>
 
         <section class="section" id="next" data-nav-section>
           <div class="section-head">
-            <div class="section-index">09</div>
+            <div class="section-index">10</div>
             <div class="section-title">
-              <h2>开放门与后续实质推进</h2>
-              <p>R17 自身没有自动解锁下一轮；用户随后单独授权 K2-R0，开发机已完成合同和代码，当前只待一次服务器实机。</p>
+              <h2>后续研究问题与实验优先级</h2>
+              <p>后续工作应分别回答 connector 可迁移性、性能效应和 expert/TP4 可行性，避免在同一 lifecycle 混合变量。</p>
             </div>
-            <div class="section-tag">Decision queue</div>
+            <div class="section-tag">Future work</div>
           </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">研究议程</p>
+            <h3>下一阶段应从“机制在一个实现中成立”推进到“机制可迁移、收益可量化、expert 预算可计算”</h3>
+            <div class="manuscript-copy">
+              <p><strong>第一优先级：External KV 路径复现。</strong>K2-R0 以 UCM
+                DRAM-first connector 为独立研究对象，保持 DeepSeek-V4-Flash、TP8+EP+MTP
+                和 32K prime/follower 请求不变，验证 save、external DRAM hit、
+                Cache load/H2D 和 completion。该实验的主要终点仍是路径与完成语义，
+                延迟只作描述性记录。若 K2 能在不同 connector 上重现同类证据链，将提高
+                KV warm-tier 结论的实现可迁移性；若失败，则应首先区分接口、keyspace 和
+                async source 的差异，而不是直接归因于硬件。</p>
+              <p><strong>第二优先级：受控性能 A/B。</strong>在 connector 机制稳定后，
+                应设计多 lifecycle、顺序平衡的 offload On/Off 实验。控制模型、请求 body、
+                context、output tokens、并发度、CPU capacity 与 keep-alive 状态，联合报告
+                TTFT、E2EL、TPOT、throughput、D2H/H2D bytes、copy/compute overlap 和 HBM
+                headroom。只有此类数据才能判断 warm tier 的净收益及其适用负载区间。</p>
+              <p><strong>第三优先级：Expert/TP4 runtime budget。</strong>P8.3-I1 应先采集
+                per-expert invocation frequency、reuse distance、load bytes、resident
+                lifetime 和 miss penalty，再结合 TP4 ownership 计算 non-expert/shared
+                常驻项、hot expert cache、双 staging buffer、KV pool、graph/workspace、
+                collective buffer 与 fragmentation reserve。完成这些量之后，P8.4–P8.6
+                的 placement simulation、static/EPLB A/B 和真实 mover 才具有可解释输入。</p>
+              <p>三条路线必须保持独立授权和独立 lifecycle。K1A 的 GREEN 不能自动解锁
+                K2、P8.3-I1 或后续 mover；反之，checkpoint inventory 的完整性也不能作为
+                KV connector 性能的旁证。每轮更新应保留任务 ID、冻结条件、样本量、绝对值、
+                formal grade、claim boundary 和原始证据路径。</p>
+            </div>
+          </article>
 
           <div class="next-grid">
             <article class="next-card" data-order="1">
-              <small>CURRENT SERVER TASK</small>
-              <strong>执行 K2-R0 UCM DRAM-first 路径</strong>
+              <small>P8 QUEUED · NOT CURRENT HANDOFF</small>
+              <strong>K2-R0 UCM DRAM-first 路径保持待实机</strong>
               <p>固定 pinned UCM、一个 TP8+EP+MTP lifecycle 和 exact 32K
                 prime/follower，验证 save → external DRAM hit → Cache load/H2D →
                 completion；延迟只作描述，不作为路径实现门。</p>
@@ -2801,17 +4020,38 @@
               <span>不因单轮 GREEN 自动解锁下一阶段；每次服务器任务单独授权。</span>
             </div>
           </div>
+          <p class="figure-caption"><strong>更新规则。</strong>
+            本页将新结果写入相应研究问题，而不是仅追加 grade。若新证据改变历史解释，
+            旧 grade 和原始路径继续保留，并明确注明被 supersede 的仅是哪一项 claim。</p>
         </section>
 
         <section class="section" id="evidence" data-nav-section>
           <div class="section-head">
-            <div class="section-index">10</div>
+            <div class="section-index">11</div>
             <div class="section-title">
-              <h2>主要证据索引</h2>
-              <p>优先链接项目内冻结合同；服务器 bounded package 记录绝对路径，便于后续复核。</p>
+              <h2>数据可用性、复现边界与证据索引</h2>
+              <p>项目内合同定义实验设计，服务器 bounded package 提供可复核摘要；大型原始轨迹继续留在服务器。</p>
             </div>
-            <div class="section-tag">Evidence routing</div>
+            <div class="section-tag">Data availability &amp; provenance</div>
           </div>
+
+          <article class="manuscript-block">
+            <p class="manuscript-label">Data availability statement</p>
+            <h3>所有主要结论均可路由到冻结合同或服务器回包，原始大体量证据不由本页面复制</h3>
+            <div class="manuscript-copy">
+              <p>本页面不读取网络资源，所有数字来自项目仓库中的 frozen contract、source
+                probe、readiness card 或已接收的服务器 bounded package。每个 package
+                通过文件大小、SHA-256、manifest 和 formal grade 保留 provenance。
+                R17 的 bounded package 不保留生成内容、token IDs、raw process IDs 或
+                raw hash values；worker identity 使用 direction-local ordinal 表示。</p>
+              <p>完整 vLLM log、原始请求体和大体量 trace 仍按项目规则保留在 Ascend
+                服务器，本地只保存可在小负载通信边界内传输的摘要和清单。因此，本页面可以
+                复核“报告了哪些结果、数字是否与 bounded evidence 一致”，但不替代对服务器
+                原始 trace 的逐事件再分析。R17 的结论之所以可接受，是因为服务器在原地完成了
+                1,369-event replay，并返回 source coverage、worker rollup 和 parent parity
+                摘要，而不是因为本地页面重新运行了 NPU 实验。</p>
+            </div>
+          </article>
 
           <div class="panel">
             <div class="panel-head blue">
@@ -2880,7 +4120,7 @@
           </div>
 
           <details style="margin-top:14px">
-            <summary>本页的持续更新原则</summary>
+            <summary>附录 C：本页的持续更新原则</summary>
             <div class="details-body">
               页面以 bounded package 与仓库合同为事实源；新增结果时应同时写入任务 ID、运行条件、formal
               grade、关键绝对值、claim boundary 和证据路径。若新结果只改变历史解释，不得删除旧 formal
@@ -2895,7 +4135,7 @@
           数据截点：2026-07-28。当前最高结论等级：KV warm-tier
           <code>instrumented_path / restore_h2d_mechanism_closed</code>；不是
           controlled performance A/B、hardware recommendation 或 production readiness。
-          K2-R0 仅为开发完成、待服务器实机，不在本页冒充已验证结果。
+          K2-R0 仅为开发完成、排队待服务器实机，不在本页冒充已验证结果；当前仓库唯一交接已切换到独立 P6.3C-R1 scheduler-pressure matched A/B。
         </footer>
       </main>
     </div>

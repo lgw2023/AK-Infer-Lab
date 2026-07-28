@@ -20,8 +20,8 @@ request=`0/64`，不形成机制证据。P6.3B-R4-R1 随后完成并由开发机
 `green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`：ownership-safe copy、same R2 repair、显式
 `--no-enable-prefix-caching` / `--enable-prefix-caching`、live config 与 token-LCP 门全部通过；64/64 request
 成功，off hit=0，on primary 9/9 正命中且逐请求符合 16K LCM floor。其余 15 条 boundary 仍为零命中，
-故不声明普遍命中或性能收益。P6.3C 已收口为
-`blocked_p6_3c_not_strict_single_variable`，P8.1-R1 与 P8.2-K0 已 green，K1 冻结源路径 blocked。
+故不声明普遍命中或性能收益。原 P6.3C 已收口为
+`blocked_p6_3c_not_strict_single_variable`，其范围仅限原 `135168 / 4096 / 1` 参考配置不能直接形成 Off/On；独立 P6.3C-R1 已重新冻结 `69632 / 69632 / 2` 并开发三组双请求 scheduler-pressure matched A/B，当前待服务器实测。P8.1-R1 与 P8.2-K0 已 green，K1 冻结源路径 blocked。
 K1A 32 GiB/rank 容量点 red，K1A-R1 probe-invalid red；K1A-R2 的 8-rank geometry、
 128-block pinned capacity 与离线重放已接受为 `ready_p8_2_k1a_r2_allocator_capacity`。
 P8.3-I0-R1 taxonomy 已接受 green，但 TP4 budget incomplete。K1A-R3-R1 已关闭 R3 双文件 provenance，
@@ -66,7 +66,7 @@ P6.3B-R4-R1 已关闭的历史合同为
 repair/安装门、resolved false/true、真实 token-LCP、on primary 9/9 positive hit、off hit=0 与 body pairing
 全部通过，其余 15 个 on follower 作为 boundary diagnosis 保留 zero hit。后续 P8.1-R1 handoff 已消费并获
 `green_p8_1_r1_official_mtp_observe_only_matrix`，P8.2-K0 也已 green；该六请求 observe-only 任务不再是
-current。K1A-R3 因 handoff schema 混读在零 NPU/零请求处 provenance blocked；K1A-R3-R1 关闭该门后因非可移植 `%q` 命令身份在 vLLM 前 contract red；K1A-R3-R2 关闭 canonical argv 门后又因未证明 Ascend checkout 路径在零 NPU 处 source-contract blocked。K1A-R3-R2-R1 进入 runtime 后以 1/6 成功、D2H submit 无 completion 保留 partial yellow。R3-R2-R2、R3-R2-R2-R1 与 R3-R2-R2-R1-R1 blocked provenance 保留；当前 handoff 为 R3-R2-R2-R1-R1-R1 causal exception refinalization + conditional same-capacity replay，最多一个 lifecycle/六请求/零 retry，禁止 profiler、behavior patch、容量搜索、K2/P8.3-I1/P9；结果包需对完整清单单独选渠道。
+current。K1A-R3 因 handoff schema 混读在零 NPU/零请求处 provenance blocked；K1A-R3-R1 关闭该门后因非可移植 `%q` 命令身份在 vLLM 前 contract red；后续完整 K1A/K2 lineage 作为 P8 历史与排队任务保留。当前 handoff 已切换为独立 P6.3C-R1：六个 fresh lifecycle、三组双请求、零 retry，禁止 profiler、参数/body 改动、K2/P8.3-I1/P9 混跑；结果包需对完整清单单独选渠道。
 
 首轮在仅 NPU 6、7 空闲的条件下以 TP2 做启动诊断，所有请求均未进入推理阶段。`vLLM 0.18.0 / vLLM-Ascend 0.18.0` 先后暴露 `mtp` 不受支持，以及 `DeepseekV4Config` 缺少 `kv_lora_rank` 的架构错配；最终最高成功输入为 `0`，不能形成容量、性能或瓶颈结论。
 
@@ -175,5 +175,5 @@ EPLB/static map 是 placement 支点，不是 offload。没有 expert identity�
 2. P6.1 unprofiled 已验收为 `green_mtp_unprofiled_baseline`，不重跑。
 3. P6.2 已验收为 `green_mtp_profiled_evidence`，不把 profiled latency 当性能基线。
 4. P6.3A 已验收为 `green_p6_3a_mtp_matched_ab`；原 P6.3B yellow、R1 red、R3 on-vs-on yellow 与 R4 root-squash blocked 保留，R2 已验收为 `green_p6_3b_r2_hybrid_kv_repair`，R4-R1 已验收为 `green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`。
-5. 当前 handoff 只授权 K1A-R3-R2-R2 零 NPU parent forensics/source semantics，并只在无直接确定性首错时保持 canonical argv/R2 provenance/body/accepted capacity 执行最多一个 formal lifecycle、六请求、零 retry；P8.3-I1 和 K2 继续关闭，P6.3C 保持 blocked。任何新产物仍需先列出精确路径、完整清单、bytes、SHA-256、敏感性、可用方法和推荐理由，
+5. 当前 handoff 只授权 P6.3C-R1：两侧共同固定 `max_model_len=69632`、`max_num_batched_tokens=69632`、`max_num_seqs=2`、Prefix Cache=false 及其余模型/量化/MTP/graph/block 参数，只改变 Chunked Prefill 显式布尔值；按 mechanism Off→On 与 performance Off→On→On→Off 共六个 fresh lifecycle 执行 32K+32K、64K+32K、48K+48K，零 retry。原 P6.3C blocked 保留，K2-R0 排队且不得与本轮混跑。任何新产物仍需先列出精确路径、完整清单、bytes、SHA-256、敏感性、可用方法和推荐理由，
    再等待用户为完整范围选择 `email`、`upload-api` 或 `server-local`。

@@ -20,7 +20,7 @@ DeepSeek 模型与 v0.18.0、v0.20.2rc1 的失败保留为历史证据。独立 
 
 ### 场景 A：单机八卡官方基准
 
-目标是形成 DeepSeek-V4-Flash W8A8-MTP 在 Ascend 上的可信八卡基线。模型使用 vLLM-Ascend A2/A3 参考路径和 `--quantization ascend`；当前 official context、unprofiled performance、profiled evidence、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 已建立。P6.3B 完整保留 query-positive/hit-zero、import-order red、repair green、invalid on-vs-on、root-squash blocked 与最终 explicit-control green lineage；最终机制结论限于 primary 9/9 positive hit，不从固定顺序或 boundary zero-hit 外推普遍性能收益。P6.3C 已因 frozen `4096 < 135168` 组合无法保持 Chunked Prefill off 的严格单变量而收口为 `blocked_p6_3c_not_strict_single_variable`。
+目标是形成 DeepSeek-V4-Flash W8A8-MTP 在 Ascend 上的可信八卡基线。模型使用 vLLM-Ascend A2/A3 参考路径和 `--quantization ascend`；当前 official context、unprofiled performance、profiled evidence、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 已建立。P6.3B 完整保留 query-positive/hit-zero、import-order red、repair green、invalid on-vs-on、root-squash blocked 与最终 explicit-control green lineage；最终机制结论限于 primary 9/9 positive hit，不从固定顺序或 boundary zero-hit 外推普遍性能收益。原 P6.3C 仅证明 frozen `max_model_len=135168 / max_num_batched_tokens=4096 / max_num_seqs=1` 下 Off 侧不能启动，故不能直接接在 P6.1 后形成 131K+c1 严格单变量 A/B；独立的 P6.3C-R1 已重新冻结 `69632 / 69632 / 2`、显式关闭 Prefix Cache，并以 32K+32K、64K+32K、48K+48K 双请求开展 scheduler-pressure matched A/B，当前为开发完成、待服务器实测。
 
 ### 场景 B：单卡/双卡极限硬件实验
 
@@ -72,7 +72,7 @@ AK-Infer-Lab/
 
 ## 当前状态摘要
 
-P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell、P6.3A matched MTP on/off 和 P6.3B-R4-R1 explicit Prefix Cache control。P8.1-R1 已由开发机接受 `green_p8_1_r1_official_mtp_observe_only_matrix`。P8.2-K0-R1 使用不变的 29-file raw evidence 离线修正 finalizer 后，15 项逐请求 predicate 均为 20/20，开发机已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`；该结果仍不是 performance reference 或 offload evidence。K1 `OffloadingConnector + NPUOffloadingSpec` 冻结源路径保持 `blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A 的 source/import/registration 门已过，但冻结 32 GiB/rank 在服务就绪前以 `aclrtMallocHostWithCfg / 207001` 失败，0/6 请求，开发机只接受为该容量点的 `red_p8_2_k1a_simple_cpu_offload_no_success`，不宣判普通 DRAM 不足、唯一 pinned-pool 根因或整个 connector 不支持。P6.3C 继续保持 strict-single-variable blocked。
+P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell、P6.3A matched MTP on/off 和 P6.3B-R4-R1 explicit Prefix Cache control。P8.1-R1 已由开发机接受 `green_p8_1_r1_official_mtp_observe_only_matrix`。P8.2-K0-R1 使用不变的 29-file raw evidence 离线修正 finalizer 后，15 项逐请求 predicate 均为 20/20，开发机已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`；该结果仍不是 performance reference 或 offload evidence。K1 `OffloadingConnector + NPUOffloadingSpec` 冻结源路径保持 `blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A 的 source/import/registration 门已过，但冻结 32 GiB/rank 在服务就绪前以 `aclrtMallocHostWithCfg / 207001` 失败，0/6 请求，开发机只接受为该容量点的 `red_p8_2_k1a_simple_cpu_offload_no_success`，不宣判普通 DRAM 不足、唯一 pinned-pool 根因或整个 connector 不支持。原 P6.3C 审计继续保持 blocked；新的 P6.3C-R1 多请求调度压力实验包已开发，尚无 NPU 结果，不得写成 Chunked Prefill 正向成果。
 
 P8 现显式分成两条并行依赖。P8.3-I0-R1 已在 bounded taxonomy 边界接受为
 `green_p8_3_i0_r1_unclassified_taxonomy`，但 `1135` tensor / `12319364956 bytes` 的分类结果不能自动
@@ -97,10 +97,9 @@ P8.2-K1A-R4-R1 已关闭同证据离线 store-only source-binding 门，R5-F0 fe
 controller-red 与 R5-L1-R1 target-lost red 均保留。F1-R1 随后执行一次 131072 calibration 和一次
 36800 fixed L2；F1-R2 raw trace 已确认 fixed L2 在 pressure 后约 2.953s 出现 69 个完整
 `CPU=64/GPU=0` snapshot，约 17.945s 后才发生首个 CPU target eviction，而旧 controller 只在请求结束后
-采到 `CPU=54/GPU=0`。因此接受 observation-point mismatch，不接受唯一根因或 H2D。当前唯一服务器任务
-F1-R3 固定 36800：运行中锁存 request-local CPU-only 窗口，中止 pressure，等待 engine idle 并复核窗口，
-随后只允许一个 restore follower。不得 sweep、retry、并发 restore 或启动第二 lifecycle；性能、K2 与
-P8.3-I1 仍未解锁。
+采到 `CPU=54/GPU=0`。因此接受 observation-point mismatch，不接受唯一根因或 H2D。该 P8 lineage
+继续保留；K2-R0 已开发但排队。当前唯一服务器任务已切换为 P6.3C-R1 的六个 fresh lifecycle：
+mechanism Off→On 与 performance Off→On→On→Off，固定三组双请求、零 retry；不得与 P8、P9 混跑。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 
@@ -120,7 +119,7 @@ P8.3-I1 仍未解锁。
 
 ## 最小开工路径
 
-1. P5/P6 runtime、official context、unprofiled/profiled reference 与 matched controls 已关闭；mixed checkpoint 不再参与，P6.3C 保留严格单变量 blocked。
+1. P5/P6 runtime、official context、unprofiled/profiled reference 与既有 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C 保留为“原参考配置不能直接 A/B”的 blocked 审计，当前服务器任务是独立 P6.3C-R1 scheduler-pressure matched A/B。
 2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-R2 capacity ready，完整 R3 lineage 保留；R4-R1 offline store-only closeout green，R5-F0 ready，R5-L1/R1 red。F1-R2 已证明 fixed 36800 的中途 CPU-only 窗口与 post-request gate 错位；当前只执行一次 F1-R3 in-flight trigger→abort→idle→restore lifecycle，K2 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。

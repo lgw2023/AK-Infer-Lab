@@ -154,12 +154,15 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
         "npu_or_vllm_started": False,
         "requests_sent": 0,
     }
-    assert not list(
+    r1_workloads = list(
         (REPO_ROOT / "benchmarks/deepseek_v4_flash/workloads").glob("p6_3c*.yaml")
     )
+    assert [path.name for path in r1_workloads] == [
+        "p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml"
+    ]
 
 
-def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
+def test_current_truth_surfaces_preserve_p6_3c_and_authorize_separate_r1():
     readiness = yaml.safe_load(
         (
             REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
@@ -172,15 +175,20 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k1a_r5_f1_r15_restore_step_lineage.yaml"
+        "p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K1A-R5-F1-R15_restore_step_lineage"
+        "P6.3C-R1_chunked_prefill_scheduler_pressure_matched_ab"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
     )
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
+    assert readiness["acceptance"]["p6_3c_r1_grade"] == (
+        "developed_awaiting_server_run01"
+    )
+    assert readiness["acceptance"]["p6_3c_r1_execution_authorized"] is True
+    assert readiness["acceptance"]["p6_3c_r1_formal_model_lifecycle_count_exact"] == 6
     assert readiness["acceptance"]["p8_1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is False
@@ -207,13 +215,18 @@ def test_current_truth_surfaces_keep_p6_3c_blocked_during_k1a_review():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert "task_id: p8_2_k1a_r5_f1_r15_restore_step_lineage_2026_0725" in handoff
-    assert "execution_mode: authorized_single_lifecycle_restore_step_lineage" in handoff
+    assert (
+        "task_id: p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01"
+        in handoff
+    )
+    assert (
+        "execution_mode: authorized_six_fresh_lifecycle_mechanism_and_balanced_performance_tracks"
+        in handoff
+    )
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
     assert "runtime_or_dependency_mutation_authorized: false" in handoff
-    assert "green_p8_1_r1_official_mtp_observe_only_matrix" in handoff
-    assert "model_request_count_max: 4" in handoff
+    assert "engine_request_count_exact: 90" in handoff
 
     truth_paths = (
         REPO_ROOT / "docs/EXPERIMENT_PLAN.md",

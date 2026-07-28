@@ -184,6 +184,7 @@ artifacts:
   completed_p6_3b_r4_workload: workloads/p6_3b_r4_explicit_prefix_cache_matched_ab.yaml
   completed_p6_3b_r4_r1_workload: workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml
   p6_3c_feasibility_audit: p6_3c_chunked_prefill_feasibility_audit.yaml
+  current_p6_3c_r1_workload: workloads/p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml
   p6_baseline_contract: p6/p6_baseline_contract.yaml
   p6_unprofiled_baseline_report: p6/p6_unprofiled_baseline_report.md
   p6_profiled_evidence_report: p6/p6_profiled_evidence_report.md
@@ -233,10 +234,10 @@ artifacts:
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
-  next_stage_candidate: P8.2-K2-R0_ucm_dram_external_prefix_path
-  current_server_handoff_task: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
-  current_server_handoff_execution_mode: authorized_run02_dependency_recovery_then_single_lifecycle_dram_external_prefix_path
+  next_workload: workloads/p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml
+  next_stage_candidate: P6.3C-R1_chunked_prefill_scheduler_pressure_matched_ab
+  current_server_handoff_task: p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01
+  current_server_handoff_execution_mode: authorized_six_fresh_lifecycle_mechanism_and_balanced_performance_tracks
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -350,8 +351,9 @@ boundaries:
   - P6.3B-R4 stopped before vLLM launch because cp -a could not preserve ownership on the new root-squashed NFS mount; its 0/64 blocked result is not Prefix Cache or hybrid-KV mechanism evidence.
   - P6.3B-R4-R1 completed as green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab: all 64 requests succeeded, explicit Prefix Cache off produced zero hits, and the three primary on groups produced 9/9 positive hits exactly aligned to the 16K hybrid LCM under the same R2 repair.
   - The fifteen boundary followers still produced zero hits, so R4-R1 proves an explicit Prefix Cache mechanism effect for the primary groups but does not establish universal repeated-prefix hits or a general performance benefit.
-  - P6.3C frozen-source feasibility completed as blocked_p6_3c_not_strict_single_variable: explicit on/off CLI flags exist, but frozen max_num_batched_tokens=4096 is smaller than max_model_len=135168, so the off side is rejected before resolved runtime config unless a forbidden second variable changes.
-  - No P6.3C executable workload, mode runner, request body or server task was created; 4096 < 135168 is a source/config gate result, not an NPU result, and it does not revoke any accepted P6 green.
+  - P6.3C frozen-source feasibility remains blocked_p6_3c_not_strict_single_variable: it proves only that the original 135168/4096/1 P6 reference cannot directly form an Off/On comparison because Off is rejected before resolved runtime config.
+  - The original P6.3C has no executable workload or NPU result and remains immutable audit provenance; it does not exclude a separately frozen scheduler-pressure environment.
+  - P6.3C-R1 is developed_awaiting_server_run01 with both sides frozen at 69632/69632/2, Prefix Cache explicitly disabled, three two-request cells, a read-only scheduler-observer mechanism track and an observer/profiler-free Off-On-On-Off performance track.
   - The P6 evidence chain and all five planned consolidated deliverables are complete; this materialization reused accepted repository evidence and did not run a new NPU task.
   - The historical no-MTP baseline and the published official-MTP single-request tracer remain preserved; the latter was superseded before execution by the bounded P8.1 matrix.
   - P8.1 completed as yellow_p8_1_matrix_trace_invalid: all six requests and MTP/health/queue/trace/replay/join gates passed, but the 65536 follower produced Prefix hit 0 instead of the expected 49152.
@@ -736,8 +738,8 @@ acceptance:
   p8_2_k1a_r5_f1_r16_next_task_authorized: false
   p8_2_k1a_r5_f1_r17_next_task_authorized: false
   p8_2_k2_r0_grade: blocked_run01_dependency_preflight_run02_repair_authorized
-  p8_2_k2_r0_execution_authorized: true
-  p8_2_k2_r0_npu_execution_authorized: true
+  p8_2_k2_r0_execution_authorized: false
+  p8_2_k2_r0_npu_execution_authorized: false
   p8_2_k2_r0_formal_model_lifecycle_count_exact: 1
   p8_2_k2_r0_model_request_count_exact: 3
   p8_2_k2_r0_request_retry_count_exact: 0
@@ -749,10 +751,10 @@ acceptance:
   p8_2_k2_r0_run01_model_request_count: 0
   p8_2_k2_r0_run01_npu_touched: false
   p8_2_k2_r0_run01_failure: git_dubious_ownership_on_incomplete_nobody_owned_source
-  p8_2_k2_r0_run02_authorized: true
+  p8_2_k2_r0_run02_authorized: false
   p8_2_k2_r0_run02_dependency_recovery_automated: true
   p8_2_k2_r0_next_task_authorized: false
-  current_task_scoped_authorization: P8.2-K2-R0_pinned_ucm_dram_external_prefix_path
+  current_task_scoped_authorization: P6.3C-R1_chunked_prefill_scheduler_pressure_matched_ab
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory
@@ -784,6 +786,13 @@ acceptance:
   p6_3b_mechanism_baseline: true
   p6_3c_feasibility_grade: blocked_p6_3c_not_strict_single_variable
   p6_3c_execution_authorized: false
+  p6_3c_r1_grade: developed_awaiting_server_run01
+  p6_3c_r1_execution_authorized: true
+  p6_3c_r1_npu_execution_authorized: true
+  p6_3c_r1_formal_model_lifecycle_count_exact: 6
+  p6_3c_r1_engine_request_count_exact: 90
+  p6_3c_r1_batched_http_call_count_exact: 48
+  p6_3c_r1_request_retry_count_exact: 0
   server_sync_review_authorized: true
   standing_npu_and_vllm_consumption_authorization: true
   next_task_authorized: false

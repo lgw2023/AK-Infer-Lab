@@ -95,7 +95,8 @@
     color:#42484d;
     font-size:13px;
     line-height:1.42;
-    text-align:right;
+    text-align:justify;
+    text-justify:inter-ideograph;
   }
   .head-note b{color:var(--blue)}
   .page-body{min-height:0}
@@ -379,6 +380,36 @@
   .boundary-card h3{margin:0 0 7px;color:var(--blue-dark);font-size:11px}
   .boundary-card p{margin:0;color:#5b6166;font-size:8.7px;line-height:1.25}
 
+  /* Quantitative appendix pages */
+  .detail-layout{display:grid;grid-template-rows:74px 1fr 92px;gap:10px;height:100%}
+  .detail-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .detail-stat{display:flex;align-items:center;gap:12px;border:1px solid var(--line);background:#fff;padding:9px 12px}
+  .detail-stat strong{color:var(--blue-dark);font:950 28px/1 "Avenir Next Condensed","Arial Narrow",sans-serif;white-space:nowrap}
+  .detail-stat span{color:#4f565b;font-size:9px;line-height:1.2}
+  .detail-stat small{display:block;margin-top:3px;color:var(--muted);font-size:8px}
+  .detail-table{height:100%;table-layout:fixed}
+  .detail-table th,.detail-table td{padding:5px 6px;font-size:9.3px;line-height:1.1}
+  .detail-table th{height:28px}
+  .detail-table td:first-child span{display:block;margin-top:2px;color:#687077;font-size:7.8px}
+  .detail-table .off{background:#f5f5f5}
+  .detail-table .on{background:#edf4fc;color:var(--blue);font-weight:850}
+  .detail-table .primary-value{background:var(--green-soft);color:var(--green);font-weight:950}
+  .detail-table .neutral-value{background:#fff8e8;color:#775b1a;font-weight:850}
+  .detail-notes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .detail-notes .table-note{font-size:9.3px;line-height:1.32}
+  .profile-detail-layout{display:grid;grid-template-rows:1fr 166px;gap:10px;height:100%}
+  .profile-detail-main{display:grid;grid-template-rows:38px 1fr;border:1px solid var(--line);background:#fff;overflow:hidden}
+  .phase-table{height:100%;table-layout:fixed}
+  .phase-table th,.phase-table td{padding:5px 6px;font-size:9px;line-height:1.08}
+  .phase-table tr.phase-start td{border-top:2px solid var(--blue)}
+  .phase-table td.prefill{background:#edf4fc;color:var(--blue);font-weight:900}
+  .phase-table td.decode{background:var(--green-soft);color:var(--green);font-weight:900}
+  .profile-detail-bottom{display:grid;grid-template-columns:1.22fr .78fr;gap:10px}
+  .aggregate-panel{display:grid;grid-template-rows:34px 1fr;border:1px solid var(--line);background:#fff;overflow:hidden}
+  .aggregate-panel .panel-title{min-height:34px}
+  .aggregate-table{height:100%;table-layout:fixed}
+  .aggregate-table th,.aggregate-table td{padding:4px 5px;font-size:8.8px;line-height:1.08}
+
   @media print{
     html,body{width:auto;height:auto;overflow:visible;background:#fff}
     body{display:block}
@@ -397,6 +428,9 @@
     <button data-page="2" aria-label="第 3 页">3</button>
     <button data-page="3" aria-label="第 4 页">4</button>
     <button data-page="4" aria-label="第 5 页">5</button>
+    <button data-page="5" aria-label="第 6 页">6</button>
+    <button data-page="6" aria-label="第 7 页">7</button>
+    <button data-page="7" aria-label="第 8 页">8</button>
   </nav>
   <div class="deck-help">← → / PgUp PgDn</div>
 
@@ -404,27 +438,27 @@
     <header class="page-head">
       <div>
         <div class="eyebrow">AK-INFER-LAB · P6 DEEPSEEK-V4-FLASH · VERIFIED 2026-07-28</div>
-        <h1>P6 主线证据闭环：128K 可用、MTP 解码提速、Prefix 命中机制可观测</h1>
+        <h1>P6 阶段研究结论：131K 上下文稳定运行，并识别出 MTP 与 Prefix Cache 的受限机制效应</h1>
       </div>
-      <p class="head-note">Atlas 800T A2 · Ascend 910B1 ×8 · DeepSeek-V4-Flash W8A8-MTP。<b>P6 主线与五份计划交付物已关闭</b>；P6.3C 以严格单变量不可行的 blocked 终态关闭，不等于所有候选实验均 green。</p>
+      <p class="head-note">本阶段在 Atlas 800T A2（8 × Ascend 910B1）上评估 DeepSeek-V4-Flash W8A8-MTP 的长上下文稳定性、未剖析用户性能以及两类已完成推理机制。原 P6.3C 仅证明 135168/4096/1 参考配置不能直接形成 Chunked Prefill Off/On；独立 P6.3C-R1 多请求调度压力实验已开发，尚待服务器实测。</p>
     </header>
     <section class="page-body executive">
       <div class="hero-metrics" aria-label="阶段核心数据">
-        <article class="hero-metric"><div class="hero-k">Official stable input</div><div class="hero-v">131,072</div><div class="hero-u">tokens</div><div class="hero-s">4096 / 32768 / 65536 / 98304 / 131072 + 64，5/5 首次成功。</div></article>
-        <article class="hero-metric"><div class="hero-k">MTP TPOT · paired relative mean</div><div class="hero-v">−47.0%</div><div class="hero-u">ms / token</div><div class="hero-s">24/24 paired batch 方向一致；8-cell 范围 −45.9% 至 −48.3%。</div></article>
-        <article class="hero-metric"><div class="hero-k">MTP batch output throughput</div><div class="hero-v">+71.0%</div><div class="hero-u">tok / s</div><div class="hero-s">24/24 paired batch 均提高；固定 Off→On 的描述性机制证据。</div></article>
-        <article class="hero-metric amber"><div class="hero-k">Prefix Cache primary hit</div><div class="hero-v">9 / 9</div><div class="hero-u">followers</div><div class="hero-s">Off hit=0；On 命中 16K / 48K / 112K，另 15 条 boundary 仍为 0。</div></article>
+        <article class="hero-metric"><div class="hero-k">Official stable input</div><div class="hero-v">131,072</div><div class="hero-u">tokens</div><div class="hero-s">在输出 64 token、并发度 1 的条件下，五档输入均于首次执行完成，最高验证到 131,072 token。</div></article>
+        <article class="hero-metric"><div class="hero-k">MTP TPOT · paired relative mean</div><div class="hero-v">−47.0%</div><div class="hero-u">ms / token</div><div class="hero-s">24 个配对批次的每输出令牌时间均下降；八个工作负载单元的降幅为 45.9%–48.3%。</div></article>
+        <article class="hero-metric"><div class="hero-k">MTP batch output throughput</div><div class="hero-v">+71.0%</div><div class="hero-u">tok / s</div><div class="hero-s">24 个配对批次的批输出吞吐均提高；该统计量描述固定 Off→On 顺序下的样本内变化。</div></article>
+        <article class="hero-metric amber"><div class="hero-k">Prefix Cache primary hit</div><div class="hero-v">9 / 9</div><div class="hero-u">followers</div><div class="hero-s">关闭缓存时命中量为 0；启用后仅三组 90% 长前缀的 9 个主要样本出现精确命中，其余 15 个边界样本仍为 0。</div></article>
       </div>
       <div class="overview-grid">
         <article class="panel">
           <div class="panel-title"><span>P6 evidence chain · 验收结果</span><small>MAINLINE CLOSED · HISTORICAL NEGATIVE PROVENANCE PRESERVED</small></div>
           <div class="chain">
-            <div class="chain-card"><span class="step">01</span><span class="pill green">GREEN</span><h3>P6.1C-R1 · Official Context</h3><div class="big">5 / 5</div><p>五档 official input + 64 output 均首次成功，最高稳定输入 131072。</p></div>
-            <div class="chain-card"><span class="step">02</span><span class="pill green">GREEN</span><h3>P6.1 · Unprofiled</h3><div class="big">90 / 90</div><p>18 cells、24 measured batches、零 retry；用户侧 streaming 性能 reference。</p></div>
-            <div class="chain-card"><span class="step">03</span><span class="pill green">GREEN</span><h3>P6.2 · Profiled</h3><div class="big">3 × 136</div><p>三个代表 cell；每 cell 136 SQLite，6 行 phase-memory、八卡覆盖。</p></div>
-            <div class="chain-card"><span class="step">04</span><span class="pill green">GREEN</span><h3>P6.3A · MTP Matched A/B</h3><div class="big">108 / 108</div><p>48/48 batches、24/24 paired batch 三项方向一致；accepted Δ=4896。</p></div>
-            <div class="chain-card"><span class="step">05</span><span class="pill green">GREEN</span><h3>P6.3B-R4-R1 · Prefix</h3><div class="big">64 / 64</div><p>显式 false/true、same R2 repair；primary 9/9，boundary 0/15。</p></div>
-            <div class="chain-card blocked"><span class="step">06</span><span class="pill amber">BLOCKED</span><h3>P6.3C · Chunked Prefill</h3><div class="big">STRICT GATE</div><p>4096 &lt; 135168；Off 侧在 resolved config 前失败，未创建伪 matched A/B。</p></div>
+            <div class="chain-card"><span class="step">01</span><span class="pill green">GREEN</span><h3>P6.1C-R1 · Official Context</h3><div class="big">5 / 5</div><p>五个输入长度均在输出 64 token 的同一协议下首次成功，由此确认冻结栈可稳定处理 131,072-token 输入。</p></div>
+            <div class="chain-card"><span class="step">02</span><span class="pill green">GREEN</span><h3>P6.1 · Unprofiled</h3><div class="big">90 / 90</div><p>18 个工作负载单元共完成 24 个测量批次和 90 个请求，构成未受 profiler 干扰的流式性能基线。</p></div>
+            <div class="chain-card"><span class="step">03</span><span class="pill green">GREEN</span><h3>P6.2 · Profiled</h3><div class="big">3 × 136</div><p>三个代表性工作负载分别生成 136 个 SQLite 文件，并完成阶段内存与八卡设备覆盖，验证了诊断证据链的完整性。</p></div>
+            <div class="chain-card"><span class="step">04</span><span class="pill green">GREEN</span><h3>P6.3A · MTP Matched A/B</h3><div class="big">108 / 108</div><p>108 个请求全部成功；24 个配对批次在端到端时延、每令牌时间和批输出吞吐三个指标上均呈一致方向。</p></div>
+            <div class="chain-card"><span class="step">05</span><span class="pill green">GREEN</span><h3>P6.3B-R4-R1 · Prefix</h3><div class="big">64 / 64</div><p>在两侧采用同一 R2 修复的前提下，显式关闭缓存得到零命中，显式开启后主要样本 9/9 精确命中。</p></div>
+            <div class="chain-card blocked"><span class="step">06</span><span class="pill amber">AUDIT + OPEN R1</span><h3>P6.3C · Chunked Prefill</h3><div class="big">原配置 BLOCKED</div><p>原 135168/4096/1 配置不能直接 A/B；R1 另行冻结 69632/69632/2，采用三组双请求压力，当前不计入已完成成果。</p></div>
           </div>
         </article>
         <article class="panel config-panel">
@@ -443,22 +477,22 @@
       </div>
       <div class="summary" aria-label="核心结论">
         <div class="summary-head">结论</div>
-        <div class="summary-item"><span><b>运行边界：</b>冻结 official 配置完成 <span class="good">131072+64+c1</span>，它是功能/稳定性容量事实，不是剩余 KV headroom。</span></div>
-        <div class="summary-item"><span><b>用户性能：</b>P6.1 MTP-on TPOT 约 <span class="good">198–205 ms/token</span>；并发 E2EL 含 max_num_seqs=1 排队。</span></div>
-        <div class="summary-item"><span><b>机制效应：</b>P6.3A 的 TPOT/E2EL/批输出吞吐均方向一致；P6.3B 只接受 primary scope 命中机制。</span></div>
-        <div class="summary-item"><span><b>终态边界：</b>P6.3C 是 <span class="warn">有效 blocked</span>；不得改变第二参数制造 Chunked Prefill A/B。</span></div>
+        <div class="summary-item"><span><b>稳定性结论：</b>冻结配置已完成 <span class="good">131072+64、并发度 1</span> 的首次成功运行。该结果证明可执行性与稳定性，但不量化剩余 KV 缓存容量。</span></div>
+        <div class="summary-item"><span><b>性能结论：</b>P6.1 中启用 MTP 后的每输出令牌时间为 <span class="good">198–205 ms/token</span>。并发条件下的端到端时延包含 <code>max_num_seqs=1</code> 引入的排队时间。</span></div>
+        <div class="summary-item"><span><b>机制结论：</b>P6.3A 显示 MTP 的主要效应位于解码阶段；P6.3B 仅证明指定 90% 长前缀样本能够命中缓存，不能推广至所有共享前缀。</span></div>
+        <div class="summary-item"><span><b>可行性结论：</b>原 P6.3C 的 <span class="warn">blocked</span> 只关闭原参考配置的直接 A/B；R1 在两侧共同冻结新的调度环境，尚无结果，不支持提前声称 Chunked Prefill 收益。</span></div>
       </div>
     </section>
-    <footer class="page-foot"><span><b>事实源：</b>P6 artifact manifest / baseline contract / accepted workloads / developer-reviewed bounded packages。</span><span>数据运行 2026-07-14—16 · 页面复核 2026-07-28 · Page 1 / 5</span></footer>
+    <footer class="page-foot"><span><b>事实源：</b>P6 artifact manifest / baseline contract / accepted workloads / developer-reviewed bounded packages。</span><span>数据运行 2026-07-14—16 · 页面复核 2026-07-28 · Page 1 / 8</span></footer>
   </main>
 
   <main class="report-page" data-title="P6.1 基线">
     <header class="page-head">
       <div>
         <div class="eyebrow">P6.1C-R1 + P6.1 · OFFICIAL CONTEXT &amp; UNPROFILED STREAMING REFERENCE</div>
-        <h2>18-cell 基线：MTP-on 解码稳定在约 200 ms/token，并发主要体现串行排队</h2>
+        <h2>未剖析性能结果：输入长度主要影响首令牌时延，解码阶段维持约 200 ms/token</h2>
       </div>
-      <p class="head-note">P6.1：<b>18/18 cells、24/24 measured batches、90/90 measured requests、0 retry</b>。表内是服务器回传 `matrix_cell_summary.tsv` 的 mean；C4/C8 因 `max_num_seqs=1`，逐请求 TTFT/E2EL 包含排队，不构成并发扩展性结论。</p>
+      <p class="head-note">P6.1 采用 3 个输入长度、2 个输出长度和 3 个并发度组成的 18-cell 矩阵，共完成 24 个测量批次和 90 个请求，未发生重试。表中报告服务器结果文件 <code>matrix_cell_summary.tsv</code> 的均值。由于调度器固定 <code>max_num_seqs=1</code>，并发度 4 和 8 的首令牌时延与端到端时延包含串行排队，不能据此评价并行扩展能力。</p>
     </header>
     <section class="page-body baseline-layout">
       <div class="ladder" aria-label="Official context ladder">
@@ -496,20 +530,20 @@
         </tbody>
       </table>
       <div class="baseline-foot">
-        <div class="table-note"><b>指标口径：</b>TTFT=请求发出到首 token；TPOT=(末 token−首 token)/(N−1)；E2EL=请求端到端；batch output throughput=该 batch 总输出 token / batch wall time。</div>
-        <div class="table-note"><b>有效结论：</b>C1 下输入从 4K 增至 128K，TTFT 约 0.41s→13.08s；TPOT 仍约 198–203ms/token。C4/C8 batch throughput 基本不扩展，符合 `max_num_seqs=1` 的串行服务边界。</div>
+        <div class="table-note"><b>指标定义：</b>首令牌时延（TTFT）为请求发出至首个 token 到达的时间；每输出令牌时间（TPOT）按首末 token 到达时间除以相邻间隔数计算；端到端时延（E2EL）覆盖完整请求；批输出吞吐为批内总输出 token 数除以批处理墙钟时间。</div>
+        <div class="table-note"><b>结果解释：</b>在并发度 1、输出 64 token 时，输入由 4K 增至 128K 使 TTFT 从约 0.41 s 增至 13.08 s，而 TPOT 保持在 198–203 ms/token。并发度升高后批输出吞吐未相应扩展，这与单序列调度约束一致。</div>
       </div>
     </section>
-    <footer class="page-foot"><span><b>边界：</b>客户端 SSE 同一 chunk 的 token 共享到达时间；0-gap ITL 是传输观测，不是 0 NPU decode latency。</span><span>P6.1 accepted_token_delta=6,624 · cleanup clean · Page 2 / 5</span></footer>
+    <footer class="page-foot"><span><b>边界：</b>客户端 SSE 同一 chunk 的 token 共享到达时间；0-gap ITL 是传输观测，不是 0 NPU decode latency。</span><span>P6.1 accepted_token_delta=6,624 · cleanup clean · Page 2 / 8</span></footer>
   </main>
 
   <main class="report-page" data-title="P6.3A MTP">
     <header class="page-head">
       <div>
         <div class="eyebrow">P6.3A · STRICT MATCHED MTP OFF / ON · UNPROFILED</div>
-        <h2>MTP 主要改变 Decode：8 个 cell 的 TPOT 近乎减半，长 Prefill 稀释 E2EL 改善</h2>
+        <h2>MTP 配对比较：解码时间稳定下降约 47%，输入阶段占比决定端到端改善幅度</h2>
       </div>
-      <p class="head-note">两个 fresh lifecycle，固定 <b>MTP Off→On</b>；除 `speculative_config={method:mtp,num_speculative_tokens:1}` 外 server argv、body、顺序和指标一致。8 cells × 3 batches/mode，108/108 measured requests，0 retry。</p>
+      <p class="head-note">P6.3A 在两个独立服务生命周期中依次执行 MTP Off 与 On。除 <code>speculative_config={method:mtp,num_speculative_tokens:1}</code> 外，服务器参数、请求体、请求顺序和指标计算均保持一致。八个工作负载单元在每种模式下各重复三个批次，共有 108/108 个测量请求成功，且无请求级重试。</p>
     </header>
     <section class="page-body mtp-layout">
       <div class="mtp-strip">
@@ -535,24 +569,60 @@
         </tbody>
       </table>
       <div class="mtp-foot">
-        <div class="table-note"><b>解释：</b>MTP-on 的 TTFT 并未形成一致改善；收益集中在 decode。Prefill-heavy 的 128K+64 E2EL 只下降 30.0%，但 TPOT 仍下降 47.2%，说明输入阶段占比稀释端到端变化。</div>
+        <div class="table-note"><b>结果解释：</b>MTP-on 对 TTFT 未表现出一致方向，说明其主要作用不在输入处理阶段。以 128K+64 为例，TPOT 下降 47.2%，但 E2EL 仅下降 30.0%；输入阶段在总时延中的占比越高，解码加速对端到端指标的贡献越容易被稀释。</div>
         <div class="data-action"><span>静态值来自已验收结果包；可在本浏览器重新导入同一 `mode_cell_summary.tsv` 核对 48 个绝对值。<br/><b id="mtpImportStatus">静态值已写入 · 未导入</b></span><label>本地导入 TSV<input id="mtpTsvInput" type="file" accept=".tsv,.txt,text/tab-separated-values"/></label></div>
       </div>
     </section>
-    <footer class="page-foot"><span><b>边界：</b>Δ 是 3 个 paired batch 内 request median relative delta 的均值；固定顺序、3 repeats、无显著性检验，不是随机化因果或普遍加速。</span><span>事实源：mode_cell_summary.tsv + paired_batch_summary.tsv · Page 3 / 5</span></footer>
+    <footer class="page-foot"><span><b>统计边界：</b>相对变化量为三个配对批次中请求中位数相对变化的均值。固定 Off→On 顺序、每单元三次重复且未进行显著性检验，因此结果属于样本内描述性证据，不支持随机化因果或普遍加速结论。</span><span>事实源：mode_cell_summary.tsv + paired_batch_summary.tsv · Page 3 / 8</span></footer>
+  </main>
+
+  <main class="report-page" data-title="P6.3A MTP 完整数据">
+    <header class="page-head">
+      <div>
+        <div class="eyebrow">P6.3A · QUANTITATIVE APPENDIX · ABSOLUTE TTFT + PAIRED EFFECT</div>
+        <h2>MTP 完整数据补充：并发度 1 的 TTFT 未一致下降，主要收益来自解码阶段</h2>
+      </div>
+      <p class="head-note">本页补回主结果页未能容纳的 16 个 TTFT 绝对均值，并将其与三个配对批次的相对变化并列。每种模式包含 54 个测量请求和 24 个测量批次，所有请求均成功。并发度 4 和 8 的 TTFT 包含 <code>max_num_seqs=1</code> 所致排队，因此只用于说明端到端调度结果。</p>
+    </header>
+    <section class="page-body detail-layout">
+      <div class="detail-strip">
+        <div class="detail-stat"><strong>54 / 54</strong><span>requests per mode<small>108/108 measured requests</small></span></div>
+        <div class="detail-stat"><strong>24 / 24</strong><span>paired batches<small>8 cells × 3 repeats</small></span></div>
+        <div class="detail-stat"><strong>64</strong><span>absolute cell means<small>TTFT / E2EL / TPOT / batch output</small></span></div>
+        <div class="detail-stat"><strong>0</strong><span>request-level retry<small>two fresh lifecycles</small></span></div>
+      </div>
+      <table class="detail-table" aria-label="P6.3A complete TTFT absolute and paired data">
+        <thead><tr><th>Workload cell</th><th>Shape</th><th>Requests / mode</th><th>TTFT Off mean</th><th>TTFT On mean</th><th>Paired TTFT Δ</th><th>E2EL paired Δ</th><th>TPOT paired Δ</th><th>Batch output paired Δ</th></tr></thead>
+        <tbody>
+          <tr><td>Short Prefill<span>short_prefill</span></td><td>4K + 64 · C1</td><td>3 / 3</td><td class="off">398.0 ms</td><td class="on">415.4 ms</td><td class="neutral-value">+4.4%</td><td class="primary-value">−45.1%</td><td class="primary-value">−45.9%</td><td class="primary-value">+82.6%</td></tr>
+          <tr><td>Short Decode<span>short_decode</span></td><td>4K + 256 · C1</td><td>3 / 3</td><td class="off">394.4 ms</td><td class="on">415.7 ms</td><td class="neutral-value">+5.4%</td><td class="primary-value">−46.0%</td><td class="primary-value">−46.2%</td><td class="primary-value">+85.2%</td></tr>
+          <tr><td>Short Decode · C8<span>short_decode_c8</span></td><td>4K + 256 · C8</td><td>24 / 24</td><td class="off">335,734.3 ms</td><td class="on">178,113.0 ms</td><td class="primary-value">−46.9%</td><td class="primary-value">−47.0%</td><td class="primary-value">−47.3%</td><td class="primary-value">+89.2%</td></tr>
+          <tr><td>Mid Prefill<span>mid_prefill</span></td><td>64K + 64 · C1</td><td>3 / 3</td><td class="off">6,180.6 ms</td><td class="on">6,419.0 ms</td><td class="neutral-value">+3.9%</td><td class="primary-value">−36.0%</td><td class="primary-value">−46.5%</td><td class="primary-value">+56.1%</td></tr>
+          <tr><td>Mid Prefill · C4<span>mid_prefill_c4</span></td><td>64K + 64 · C4</td><td>12 / 12</td><td class="off">50,829.4 ms</td><td class="on">35,118.4 ms</td><td class="primary-value">−30.9%</td><td class="primary-value">−35.7%</td><td class="primary-value">−46.3%</td><td class="primary-value">+55.9%</td></tr>
+          <tr><td>Mid Decode<span>mid_decode</span></td><td>64K + 256 · C1</td><td>3 / 3</td><td class="off">6,431.0 ms</td><td class="on">6,469.5 ms</td><td class="neutral-value">+0.8%</td><td class="primary-value">−44.9%</td><td class="primary-value">−47.9%</td><td class="primary-value">+81.6%</td></tr>
+          <tr><td>Long Prefill<span>long_prefill</span></td><td>128K + 64 · C1</td><td>3 / 3</td><td class="off">12,651.8 ms</td><td class="on">12,964.8 ms</td><td class="neutral-value">+2.5%</td><td class="primary-value">−30.0%</td><td class="primary-value">−47.2%</td><td class="primary-value">+42.8%</td></tr>
+          <tr><td>Long Decode<span>long_decode</span></td><td>128K + 256 · C1</td><td>3 / 3</td><td class="off">13,092.1 ms</td><td class="on">12,939.8 ms</td><td class="neutral-value">−1.0%</td><td class="primary-value">−42.8%</td><td class="primary-value">−48.3%</td><td class="primary-value">+74.7%</td></tr>
+        </tbody>
+      </table>
+      <div class="detail-notes">
+        <div class="table-note"><b>结果模式：</b>四个并发度 1 的 prefill/short-decode 单元中，MTP On 的 TTFT 变化为 +2.5% 至 +5.4%；long_decode 为 −1.0%。相反，所有单元的 TPOT 均下降 45.9%–48.3%，说明可重复的主要效应位于首令牌之后的解码阶段。</div>
+        <div class="table-note"><b>排队解释：</b>short_decode_c8 与 mid_prefill_c4 的 TTFT 分别下降 46.9% 和 30.9%，但这些数值包含单序列调度下的排队缩短，不能被解释为 prefill 内核本身的等比例加速。绝对均值来自 <code>mode_cell_summary.tsv</code>，相对量来自 <code>paired_batch_summary.tsv</code>。</div>
+      </div>
+    </section>
+    <footer class="page-foot"><span><b>完整性：</b>主结果页的 48 个 E2EL/TPOT/批输出均值与本页 16 个 TTFT 均值共同构成 8 cell × 2 mode × 4 metric 的 64 个绝对单元均值。</span><span>P6.3A quantitative appendix · Page 4 / 8</span></footer>
   </main>
 
   <main class="report-page" data-title="P6.3B Prefix Cache">
     <header class="page-head">
       <div>
         <div class="eyebrow">P6.3B-R4-R1 · EXPLICIT PREFIX CACHE FALSE / TRUE · SAME R2 HYBRID-KV REPAIR</div>
-        <h2>Prefix Cache 机制只在三组 90% 长前缀形成精确命中，边界组仍为零</h2>
+        <h2>Prefix Cache 配对比较：精确命中仅见于三组 90% 长前缀，边界样本未观察到复用</h2>
       </div>
-      <p class="head-note">两个 fresh lifecycle，固定 Prefix Cache Off→On；显式 `--no-enable-prefix-caching` / `--enable-prefix-caching`，resolved=false/true。8 groups，每组每 mode 1 prime + 3 measured follower，<b>64/64 request</b>。</p>
+      <p class="head-note">P6.3B-R4-R1 在两个独立服务生命周期中依次显式关闭和开启 Prefix Cache，并核验运行时配置分别解析为 false 与 true。八个前缀组在每种模式下包含一个预置请求和三个测量跟随请求，共 64/64 个请求成功；两侧使用相同的 R2 hybrid-KV 修复和字节一致的规范请求体。</p>
     </header>
     <section class="page-body prefix-layout">
       <div class="prefix-banner">
-        <div class="prefix-banner-main"><strong>显式 Prefix Cache 开关产生了可观测机制效应</strong><span>canonical body byte-paired · token-LCP frozen · hybrid LCM=16,384 · MTP/health/queue/cleanup all pass</span></div>
+        <div class="prefix-banner-main"><strong>显式 Prefix Cache 开关产生了可观测机制效应，但该效应仅见于预先定义的主要样本</strong><span>请求体按字节配对，token 最长公共前缀固定，hybrid-KV 最小公倍数为 16,384 token；MTP、健康状态、队列和清理证据均通过。</span></div>
         <div class="prefix-stat"><strong>Off hit=0</strong><span>all off requests</span></div>
         <div class="prefix-stat"><strong>On 9 / 9</strong><span>primary positive</span></div>
         <div class="prefix-stat"><strong>0 / 15</strong><span>boundary positive</span></div>
@@ -582,19 +652,96 @@
           <div class="lineage-item amber"><small>R4</small><strong>BLOCKED · NFS</strong></div>
           <div class="lineage-item green"><small>R4-R1</small><strong>GREEN · explicit A/B</strong></div>
         </div>
-        <div class="table-note"><b>严格边界：</b>其余 15 条 boundary 仍为零命中；三个 50% 长上下文组即便有非零 16K floor 也未命中。TTFT 只作固定 Off→On 描述，<b>不是普遍 Prefix Cache 性能收益</b>。</div>
+        <div class="table-note"><b>结果解释与边界：</b>32K、64K 和 128K 的 90% 前缀组分别命中 16,384、49,152 和 114,688 token，且关闭侧总命中量为 0。其余 15 条 boundary 仍为零命中；三个 50% 长上下文组即使具有非零 16K 对齐下界也没有复用。因此 TTFT 变化仅描述这些主要样本，<b>不是普遍 Prefix Cache 性能收益</b>。</div>
       </div>
     </section>
-    <footer class="page-foot"><span><b>执行偏差：</b>首次调用因 localhost `no_proxy` 缺失在 0 request 前中止；最终 2 个 measured lifecycle fresh 执行，机制 green 保留但不升级为性能 green。</span><span>16 prime + 48 measured · MTP accepted Δ=1024/mode · Page 4 / 5</span></footer>
+    <footer class="page-foot"><span><b>执行偏差：</b>首次调用因 localhost `no_proxy` 缺失在 0 request 前中止；最终 2 个 measured lifecycle fresh 执行，机制 green 保留但不升级为性能 green。</span><span>16 prime + 48 measured · MTP accepted Δ=1024/mode · Page 5 / 8</span></footer>
+  </main>
+
+  <main class="report-page" data-title="P6.3B Prefix 完整数据">
+    <header class="page-head">
+      <div>
+        <div class="eyebrow">P6.3B-R4-R1 · QUANTITATIVE APPENDIX · LATENCY + OUTPUT RATE</div>
+        <h2>Prefix Cache 完整数据补充：命中主要降低 prefill 等待，而解码 TPOT 基本保持不变</h2>
+      </div>
+      <p class="head-note">本页补回八个前缀组的 TPOT、E2EL 与请求输出速率绝对均值和配对相对变化。每个单元的 Off/On 均包含三个按槽位配对的测量请求；表中命中量为每个测量跟随请求的 token 数。该页用于解释机制作用位置，不将固定顺序下的时延变化升级为普遍性能结论。</p>
+    </header>
+    <section class="page-body detail-layout">
+      <div class="detail-strip">
+        <div class="detail-stat"><strong>24</strong><span>measured followers / mode<small>3 followers × 8 groups</small></span></div>
+        <div class="detail-stat"><strong>8 / mode</strong><span>prime requests<small>32 requests per lifecycle</small></span></div>
+        <div class="detail-stat"><strong>540,672</strong><span>On measured hit total<small>Off measured hit total = 0</small></span></div>
+        <div class="detail-stat"><strong>16,384</strong><span>hybrid-KV alignment unit<small>token-LCP floor</small></span></div>
+      </div>
+      <table class="detail-table" aria-label="P6.3B complete latency and output rate data">
+        <thead><tr><th>Input · Prefix</th><th>Hit / follower</th><th>TPOT Off → On</th><th>TPOT paired Δ</th><th>E2EL Off → On</th><th>E2EL paired Δ</th><th>Output tok/s Off → On</th><th>Output paired Δ</th></tr></thead>
+        <tbody>
+          <tr><td>4K · 50%<span>boundary · 3/3 pairs</span></td><td>0</td><td>202.21 → 203.98</td><td class="neutral-value">+0.9%</td><td>13.156 → 13.268 s</td><td class="neutral-value">+0.9%</td><td>4.86 → 4.82</td><td class="neutral-value">−0.8%</td></tr>
+          <tr><td>4K · 90%<span>boundary · 3/3 pairs</span></td><td>0</td><td>200.03 → 201.19</td><td class="neutral-value">+0.6%</td><td>13.007 → 13.091 s</td><td class="neutral-value">+0.6%</td><td>4.92 → 4.89</td><td class="neutral-value">−0.6%</td></tr>
+          <tr><td>32K · 50%<span>boundary · 3/3 pairs</span></td><td>0</td><td>201.98 → 203.91</td><td class="neutral-value">+1.0%</td><td>15.981 → 16.098 s</td><td class="neutral-value">+0.7%</td><td>4.00 → 3.98</td><td class="neutral-value">−0.7%</td></tr>
+          <tr><td>32K · 90%<span>primary · 3/3 pairs</span></td><td class="primary-value">16,384</td><td>200.40 → 200.74</td><td class="neutral-value">+0.2%</td><td>15.825 → 14.293 s</td><td class="primary-value">−9.7%</td><td>4.04 → 4.48</td><td class="primary-value">+10.7%</td></tr>
+          <tr><td>64K · 50%<span>boundary · 3/3 pairs</span></td><td>0</td><td>198.87 → 200.77</td><td class="neutral-value">+1.0%</td><td>18.892 → 19.128 s</td><td class="neutral-value">+1.2%</td><td>3.39 → 3.35</td><td class="neutral-value">−1.2%</td></tr>
+          <tr><td>64K · 90%<span>primary · 3/3 pairs</span></td><td class="primary-value">49,152</td><td>199.94 → 201.75</td><td class="neutral-value">+0.9%</td><td>18.996 → 14.445 s</td><td class="primary-value">−24.0%</td><td>3.37 → 4.43</td><td class="primary-value">+31.5%</td></tr>
+          <tr><td>128K · 50%<span>boundary · 3/3 pairs</span></td><td>0</td><td>199.71 → 200.12</td><td class="neutral-value">+0.2%</td><td>25.506 → 25.616 s</td><td class="neutral-value">+0.4%</td><td>2.51 → 2.50</td><td class="neutral-value">−0.4%</td></tr>
+          <tr><td>128K · 90%<span>primary · 3/3 pairs</span></td><td class="primary-value">114,688</td><td>198.62 → 199.95</td><td class="neutral-value">+0.7%</td><td>25.339 → 14.471 s</td><td class="primary-value">−42.9%</td><td>2.53 → 4.42</td><td class="primary-value">+75.1%</td></tr>
+        </tbody>
+      </table>
+      <div class="detail-notes">
+        <div class="table-note"><b>作用位置：</b>三个 primary 组的 TPOT 仅变化 +0.2%、+0.9% 和 +0.7%，而 TTFT 分别下降 48.6%、72.9% 和 85.4%。因此 E2EL 与输出速率的改善主要来自共享 prefill 工作被复用，而不是解码循环变快。</div>
+        <div class="table-note"><b>对照边界：</b>五个 boundary 组的 E2EL 变化为 +0.4% 至 +1.2%（32K·50% 为 +0.7%），输出速率也近似不变；这与其零命中状态一致。绝对均值来自 <code>mode_group_summary.tsv</code>，配对量来自 <code>paired_request_summary.tsv</code>。</div>
+      </div>
+    </section>
+    <footer class="page-foot"><span><b>解释：</b>命中量和 TTFT 构成主要机制证据；TPOT、E2EL 与输出速率用于定位影响阶段。固定 Off→On 顺序仍限制因果外推。</span><span>P6.3B quantitative appendix · Page 6 / 8</span></footer>
+  </main>
+
+  <main class="report-page" data-title="P6.2 Profiler 完整数据">
+    <header class="page-head">
+      <div>
+        <div class="eyebrow">P6.2 · QUANTITATIVE APPENDIX · PHASE MEMORY + REQUEST–DEVICE AGGREGATE</div>
+        <h2>Profiler 完整数据补充：六个阶段记录覆盖八卡，三类请求均形成设备聚合结果</h2>
+      </div>
+      <p class="head-note">P6.2 对 short_prefill、long_prefill 和 decode_heavy 各执行一次带 profiler 的请求。本页恢复六行阶段内存统计以及请求—设备聚合的具体行数。整机 HBM 读数是八卡设备占用之和，采样窗口在 prefill/decode 边界可能重复计数；它们只验证诊断链路，不代表 KV 对象字节数或未剖析性能。</p>
+    </header>
+    <section class="page-body profile-detail-layout">
+      <article class="profile-detail-main">
+        <div class="panel-title"><span>Phase memory summary · 6 / 6 rows</span><small>DEVICE COVERAGE MIN=8 · PARSE FAILURE=0</small></div>
+        <table class="phase-table" aria-label="P6.2 six phase memory rows">
+          <thead><tr><th>Cell</th><th>Phase</th><th>Samples</th><th>Device coverage</th><th>Host RSS max</th><th>Host PSS max</th><th>HBM total avg</th><th>HBM total max</th><th>HBM free min</th><th>Max device usage</th></tr></thead>
+          <tbody>
+            <tr class="phase-start"><td>short_prefill</td><td class="prefill">prefill</td><td>1</td><td>8</td><td>86,711.5 MB</td><td>61,887.5 MB</td><td>491,620.0 MB</td><td>491,620 MB</td><td>32,668 MB</td><td>93.771%</td></tr>
+            <tr><td>short_prefill</td><td class="decode">decode</td><td>3</td><td>8</td><td>86,727.9 MB</td><td>61,903.8 MB</td><td>491,620.0 MB</td><td>491,621 MB</td><td>32,667 MB</td><td>93.771%</td></tr>
+            <tr class="phase-start"><td>long_prefill</td><td class="prefill">prefill</td><td>3</td><td>8</td><td>86,820.1 MB</td><td>61,981.8 MB</td><td>491,625.3 MB</td><td>491,630 MB</td><td>32,658 MB</td><td>93.773%</td></tr>
+            <tr><td>long_prefill</td><td class="decode">decode</td><td>4</td><td>8</td><td>86,822.3 MB</td><td>61,982.1 MB</td><td>491,632.3 MB</td><td>491,635 MB</td><td>32,653 MB</td><td>93.776%</td></tr>
+            <tr class="phase-start"><td>decode_heavy</td><td class="prefill">prefill</td><td>1</td><td>8</td><td>86,972.1 MB</td><td>62,107.4 MB</td><td>491,621.0 MB</td><td>491,621 MB</td><td>32,667 MB</td><td>93.771%</td></tr>
+            <tr><td>decode_heavy</td><td class="decode">decode</td><td>11</td><td>8</td><td>87,000.0 MB</td><td>62,132.6 MB</td><td>491,621.8 MB</td><td>491,626 MB</td><td>32,662 MB</td><td>93.777%</td></tr>
+          </tbody>
+        </table>
+      </article>
+      <div class="profile-detail-bottom">
+        <article class="aggregate-panel">
+          <div class="panel-title"><span>Request–device aggregate and operator inventory</span><small>ALL AGGREGATE STATUS AVAILABLE</small></div>
+          <table class="aggregate-table" aria-label="P6.2 request device aggregate detail">
+            <thead><tr><th>Cell</th><th>AICore metric rows</th><th>Request-device rows</th><th>Top-op rows</th><th>Metric summary rows</th><th>Aggregation elapsed</th><th>Heavy joins skipped</th></tr></thead>
+            <tbody>
+              <tr><td>short_prefill</td><td>341,360</td><td>1</td><td>10</td><td>1</td><td>10.617 s</td><td>0</td></tr>
+              <tr><td>long_prefill</td><td>981,670</td><td>1</td><td>10</td><td>1</td><td>21.690 s</td><td>0</td></tr>
+              <tr><td>decode_heavy</td><td>3,259,639</td><td>1</td><td>10</td><td>1</td><td>44.353 s</td><td>0</td></tr>
+            </tbody>
+          </table>
+        </article>
+        <div class="table-note"><b>证据解释：</b>每个 cell 均产生 136 个 SQLite 文件，并分别形成 1 行 request-device 聚合、10 行 top-op 摘要和 1 行 metric 摘要。AICore 行数随输入或输出工作量增加，但这里的行数与 profiler 聚合时间仅说明证据规模，不能直接解释为计算利用率、HBM 流量或硬件瓶颈。</div>
+      </div>
+    </section>
+    <footer class="page-foot"><span><b>方法边界：</b>profiled timing 仅用于诊断；性能结论仍以 P6.1 未剖析基线为准。phase-memory 的边界重叠采样策略为 counted in both phases。</span><span>P6.2 quantitative appendix · Page 7 / 8</span></footer>
   </main>
 
   <main class="report-page" data-title="P6.2 与收口">
     <header class="page-head">
       <div>
         <div class="eyebrow">P6.2 PROFILED EVIDENCE + P6.3C FEASIBILITY + REPOSITORY CLOSEOUT</div>
-        <h2>Profiler 链路可用，但不替代性能基线；Chunked Prefill 严格 A/B 被配置关系阻断</h2>
+        <h2>证据综合：原参考配置不能直接对照，Chunked Prefill 多请求压力 R1 已独立就绪</h2>
       </div>
-      <p class="head-note">P6.2 证明 operator / phase memory / transfer / request-device aggregate 证据管道可工作；P6.3C 证明冻结 profile 下不能只切一个布尔值完成 Off/On。<b>二者都是有效终态，不应被改写为性能归因或遗漏实验。</b></p>
+      <p class="head-note">P6.2 证明诊断证据链可用。原 P6.3C 审计只表明原 135168/4096/1 配置仅切 Chunked Prefill 布尔值时 Off 侧不能启动。P6.3C-R1 保留旧审计并重新冻结 69632/69632/2、Prefix Cache=false，以双请求总 Prefill 超预算建立机制与性能两条证据轨道。</p>
     </header>
     <section class="page-body evidence-layout">
       <article class="profile-panel">
@@ -615,15 +762,15 @@
         </table>
       </article>
       <article class="closure-panel">
-        <div class="panel-title"><span>P6.3C · strict-single-variable feasibility</span><small>COMPLETED LOCAL FROZEN-SOURCE AUDIT</small></div>
+        <div class="panel-title"><span>P6.3C audit + P6.3C-R1</span><small>OLD AUDIT PRESERVED · R1 AWAITING SERVER</small></div>
         <div class="closure-body">
-          <div class="block-card"><span class="pill amber">blocked_p6_3c_not_strict_single_variable</span><strong>显式布尔存在，但 Off 侧无法形成 resolved config</strong><p>CLI 同时提供 `--enable-chunked-prefill` 和 `--no-enable-chunked-prefill`。然而 frozen SchedulerConfig 在 Chunked Prefill=false 且 token budget 小于 max model length 时，于任何请求前抛错。</p></div>
+          <div class="block-card"><span class="pill amber">blocked_p6_3c_not_strict_single_variable</span><strong>原 131K+c1 参考不能直接 A/B；不是研究终点</strong><p>原配置中 Off 于请求前被拒绝。R1 两侧共同固定 69,632-token context/budget、max_num_seqs=2、Prefix=false，只切 Chunked Prefill；单请求提高预算因 B≥P、可能不分块而被排除。</p></div>
           <div class="equation">max_num_batched_tokens 4,096 &lt; max_model_len 135,168</div>
           <div class="no-run">
-            <div><strong>0</strong><span>WORKLOAD</span></div>
-            <div><strong>0</strong><span>MODE RUNNER</span></div>
-            <div><strong>0</strong><span>REQUEST BODY</span></div>
-            <div><strong>0</strong><span>NPU REQUEST</span></div>
+            <div><strong>0</strong><span>原审计 NPU 请求</span></div>
+            <div><strong>32K+32K</strong><span>低于预算</span></div>
+            <div><strong>64K+32K</strong><span>非对称压力</span></div>
+            <div><strong>48K+48K</strong><span>对称压力</span></div>
           </div>
         </div>
       </article>
@@ -644,14 +791,14 @@
       <article class="boundary-panel">
         <div class="panel-title"><span>Evidence boundary · 四个状态轴不混写</span><small>P6 → P7 / P8 / P9</small></div>
         <div class="boundary-grid">
-          <div class="boundary-card"><h3>Functional / stability</h3><p>131072+64 首次成功，health、queue、MTP counter 与 cleanup 完整；不代表 KV headroom 已完整量化。</p></div>
-          <div class="boundary-card"><h3>User performance</h3><p>只取 P6.1 unprofiled streaming；P6.2 profiler-wrapped timing 不回填性能表。</p></div>
-          <div class="boundary-card"><h3>Mechanism</h3><p>MTP 为 fixed-order descriptive effect；Prefix 只接受三组 primary 命中，不接受 universal benefit。</p></div>
-          <div class="boundary-card"><h3>Hardware attribution</h3><p>whole-device HBM ≠ KV bytes / HBM traffic；P6 不形成 bottleneck 或 hardware priority claim。</p></div>
+          <div class="boundary-card"><h3>功能与稳定性</h3><p>131072+64 请求在首次执行中完成，健康状态、队列、MTP 计数器和清理证据均完整；该观察不等于已量化剩余 KV 缓存余量。</p></div>
+          <div class="boundary-card"><h3>用户侧性能</h3><p>性能参考仅采用 P6.1 的未剖析流式测量。P6.2 包含 profiler 额外开销，其时延仅用于诊断，不回填性能基线。</p></div>
+          <div class="boundary-card"><h3>机制效应</h3><p>MTP 与 Prefix Cache 结论均有样本边界；Chunked Prefill R1 尚待 observer 证明实际分块，当前没有机制或收益结论。</p></div>
+          <div class="boundary-card"><h3>硬件归因</h3><p>八卡整机 HBM 读数不能替代 KV 对象字节数或 HBM 流量。P6 因此不提出硬件瓶颈或硬件优化优先级。</p></div>
         </div>
       </article>
     </section>
-    <footer class="page-foot"><span><b>P6 终态：</b>主线与五份交付物已关闭；P6.3D max_num_seqs 与 P6.4 MindIE 为可选/条件项，不阻塞当前 vLLM-Ascend reference。</span><span>P6 artifact manifest date 2026-07-16 · Page 5 / 5</span></footer>
+    <footer class="page-foot"><span><b>P6 边界：</b>既有主线与交付物已关闭；原 P6.3C blocked 保留，P6.3C-R1 作为独立开放结果链待服务器 run01，不覆盖旧审计。</span><span>P6 artifact manifest date 2026-07-16 · Page 8 / 8</span></footer>
   </main>
 </div>
 <script>
