@@ -236,7 +236,7 @@ artifacts:
   next_workload: workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
   next_stage_candidate: P8.2-K2-R0_ucm_dram_external_prefix_path
   current_server_handoff_task: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
-  current_server_handoff_execution_mode: authorized_pinned_ucm_dependency_and_single_lifecycle_dram_external_prefix_path
+  current_server_handoff_execution_mode: authorized_run02_dependency_recovery_then_single_lifecycle_dram_external_prefix_path
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -735,7 +735,7 @@ acceptance:
   p8_2_k1a_r5_f1_r15_next_task_authorized: false
   p8_2_k1a_r5_f1_r16_next_task_authorized: false
   p8_2_k1a_r5_f1_r17_next_task_authorized: false
-  p8_2_k2_r0_grade: pending_server_execution
+  p8_2_k2_r0_grade: blocked_run01_dependency_preflight_run02_repair_authorized
   p8_2_k2_r0_execution_authorized: true
   p8_2_k2_r0_npu_execution_authorized: true
   p8_2_k2_r0_formal_model_lifecycle_count_exact: 1
@@ -745,6 +745,12 @@ acceptance:
   p8_2_k2_r0_ucm_source_commit: 01cbf9b71892c88319862fa57f195b0bef93fa6f
   p8_2_k2_r0_ucm_store_pipeline: Cache|Posix
   p8_2_k2_r0_performance_benefit_required: false
+  p8_2_k2_r0_run01_formal_model_lifecycle_count: 0
+  p8_2_k2_r0_run01_model_request_count: 0
+  p8_2_k2_r0_run01_npu_touched: false
+  p8_2_k2_r0_run01_failure: git_dubious_ownership_on_incomplete_nobody_owned_source
+  p8_2_k2_r0_run02_authorized: true
+  p8_2_k2_r0_run02_dependency_recovery_automated: true
   p8_2_k2_r0_next_task_authorized: false
   current_task_scoped_authorization: P8.2-K2-R0_pinned_ucm_dram_external_prefix_path
   p8_3_technical_dependency_on_k1a: false

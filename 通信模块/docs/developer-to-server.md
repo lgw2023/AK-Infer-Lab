@@ -1,188 +1,334 @@
 # Developer to Server
 
-## 当前唯一服务器动作：P8.2-K2-R0 — 跑通 UCM DRAM-first 外部前缀对象链
+## 当前唯一服务器动作：P8.2-K2-R0 run02 — 修复 UCM 依赖现场后跑原定 DRAM-first 外部前缀链
 
 ```text
 task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
-execution_mode: authorized_pinned_ucm_dependency_and_single_lifecycle_dram_external_prefix_path
+execution_attempt: run02_explicit_dependency_repair
+execution_mode: authorized_run02_dependency_recovery_then_single_lifecycle_dram_external_prefix_path
 server_execution_authorized: true
 server_sync_review_authorized: true
+dependency_repair_authorized: true
 dependency_install_authorized: true
 dependency_install_scope: isolated_server_local_venv_only
 base_conda_environment_mutation_authorized: false
 server_side_code_edit_authorized: false
-npu_execution_authorized: true
+global_git_safe_directory_mutation_authorized: false
+invalid_dependency_state_deletion_authorized: false
+invalid_dependency_state_quarantine_authorized: true
+npu_execution_authorized_after_dependency_ready_only: true
 npu_card_ids: [0,1,2,3,4,5,6,7]
 formal_model_lifecycle_count_exact: 1
 model_request_count_exact: 3
 request_retry_count_exact: 0
 profiler_authorized: false
 parameter_sweep_authorized: false
-run02_authorized: false
+run01_rerun_authorized: false
+run02_authorized: true
+run03_authorized: false
 result_transfer_authorized: true
 transfer_method_selected: false
 automatic_transfer_allowed: false
 bounded_transfer_max_bytes: 71680
 next_task_authorized: false
+k2_r1_authorized: false
 k3_authorized: false
 p8_3_i1_authorized: false
 ```
 
-本文件已经清空 R17 的旧执行内容，只描述当前 K2-R0。服务器助手不需要设计实验、
-补写代码、临场换依赖版本或把结果“调成绿色”；开发机已经把依赖安装、请求生成、
-唯一 lifecycle、UCM 路径判定、资源恢复、结果归并和有界清单写进唯一入口。
+本文件已清空旧 K2-R0 run01 执行说明，只保留当前修复后的 run02。服务器助手不需要
+分析设计、补写代码、修改 UCM 源码、改变实验参数或手工修复目录；开发机已把半克隆
+源码隔离、毒化 venv 隔离、精确提交重建、导入验证、原子发布、NPU no-touch 失败语义、
+单 lifecycle、三请求、资源恢复和有界报告全部写入唯一入口。
 
-## 一、先理解本轮目标，避免按错误预设执行
+## 一、先读结论：run01 没有运行到 UCM 机制，也没有触碰 NPU
 
-### 1. 项目全局位置
-
-R17 已在服务器以零 NPU 全轨迹重放正式接受：
+run01 的正式结果是：
 
 ```text
-grade = green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed
-canonical trace events = 1369
-D2H workers/completed = 8/8
-H2D workers/completed = 8/8
-H2D bytes = 1076510720
-async copy failures = 0
+grade = blocked_p8_2_k2_r0_dependency_or_startup_preflight
+path_class = not_executed
+formal_model_lifecycle_count = 0
+request_count = 0
+successful_request_count = 0
+npu_stop_attempted = false（由 stopped_card_ids=[] 与完整 keep-alive 现场确认）
+stopped_card_ids = []
+restored_card_ids = []
+keep_alive_marker_count = 16
+keep_alive_restored_exact = true
+port_7000_listener_count = 0
+vllm_residual_process_count = 0
+cleanup_status = clean
 ```
 
-这关闭了 K1A-F1 的 accepted-capacity 机制链：
+这不是 UCM DRAM store/hit/load 机制失败；该机制在 run01 根本没有开始。唯一已证实的
+失败链是：
 
 ```text
-physical CPU-only target
-→ logical CPU hit
-→ allocate/update
-→ _reqs_to_load
-→ load schedule
-→ H2D copy
-→ restore completion
+目标 UCM 源码目录已存在，但 owner=nobody
+→ Git 以 dubious ownership 拒绝读取
+→ 目录实际只有不完整 .git，工作树未 checkout
+→ setup.py / pyproject.toml 不存在
+→ pip install 失败
+→ ucm import probe 失败
+→ 在停 keep-alive、启动 vLLM、发送请求之前结束
 ```
 
-因此本轮不再改 K1A observer，不再追 pairing repair 的“唯一根因”，也不重跑
-R15/R16/R17。P8 当前开始 K2 的首个可运行切片：把 KV/Prefix 从 vLLM 内部 cache
-路径推进到 UCM 管理的外部前缀对象，并在同一进程生命周期内实际跑通：
+run01 的旧入口另有两个会放大问题的缺陷，本轮已一并修掉：
+
+1. 旧入口只判断 `.git` 是否存在，没有验证 owner、remote、HEAD、tracked-clean 和必要
+   源文件。
+2. 旧入口在调用依赖函数时关闭了失败即停，使 checkout/install 的失败可能继续向下。
+3. 旧入口在 `pip install` 失败后仍无条件写成功 marker，可能让后续尝试误判为已安装。
+4. 旧 build log 只追加不清空，可能把不同尝试混成一个日志。
+
+run01 关键父证据（服务器本地原对象应继续保留，不删除、不覆盖）：
 
 ```text
-prime 生成 KV
-→ UCM save
-→ UCM Cache(DRAM) 持有外部前缀对象
-→ byte-identical follower 做 external lookup/hit
-→ UCM Cache load
-→ H2D load
-→ follower 推理完成
+7d51625e1585c51edad64f9b914c08fc6276826451eb86026699c8a720ab1b6a  dependency_and_environment_summary.json
+19615a9c3ed3baa78e55369716d9ef3a72a4723cec31b7bfcfaf0b8aa270d449  grading_summary.json
+7bae57307f2d4e6860c2e485423951c5651ea38d9a6e0b1b2e0ed2f4f838aa45  resource_recovery_summary.json
+345caf05d0d5f275e146027e39beac81f05ab47fb8eb013df0a632749f79ca13  candidate_manifest.server_local.json
+dde10605c70b78784fe661e55dfa4fdc1b3de52932815491aa6281698848aa3e  task_grade.txt
 ```
 
-### 2. 本轮验收边界
-
-性能收益不是本轮实现通过的前置条件。服务器必须如实记录 prime/follower 的 TTFT、
-TPOT、ITL P95 和 E2EL，但当前 Atlas A2 机器上的延迟差值正负不决定上述路径是否已经
-实现。不得因为当前机器未加速就把“代码跑通、方法实现、环境测通”判为失败；也不得
-反向把一次延迟改善外推为其他硬件上的普遍收益。
-
-同样，pairing repair 是否为唯一或普遍根因不是本轮门槛。R17 的机制证据作为已关闭
-parent 保留；K2-R0 要回答的是 UCM 外部对象路径能否在当前 DeepSeek-V4-Flash /
-vLLM-Ascend / 910B 环境真实安装、启动、store、hit、load 和完成推理。
-
-## 二、开发机已经写好的实现
-
-服务器只运行，不修改以下文件：
+服务器父目录：
 
 ```text
-唯一服务器入口：
+/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run01
+```
+
+## 二、本轮代码实际做了什么
+
+唯一入口：
+
+```text
 tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh
-
-单 lifecycle：
-tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh
-
-请求、指标归因、finalize、package：
-tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
-
-workload：
-benchmarks/deepseek_v4_flash/workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
-
-审计合同：
-benchmarks/deepseek_v4_flash/p8_2_k2_r0_ucm_dram_external_prefix_path_audit.yaml
-
-本地合同测试：
-tests/inference_contracts/test_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
 ```
 
-唯一入口自动完成：
+它现在严格执行下面的状态机：
 
 ```text
-Git HEAD/origin/main/tracked-clean gate
-→ 精确 UCM source commit 获取/复用
-→ server_local 隔离 venv 创建
-→ UCM Ascend native extension 安装与 import probe
-→ dependency/environment provenance
-→ stop keep-alive 0–7
-→ task-local vllm_ascend overlay + 既有 MTP positions CPU patch
-→ UCM config 与 vLLM 命令生成
-→ 单个 TP8+EP+MTP lifecycle 启动
-→ warmup / prime / exact follower 顺序请求
-→ 每请求前后 UCM/vLLM metrics 快照
-→ server cleanup
-→ same-card keep-alive restore
-→ port/process/worktree recovery check
-→ path finalize
-→ 9-payload + 1-manifest 有界包
-→ copy-ready report
+验证 repo main / HEAD=origin/main / tracked-clean
+→ 强制 RESULT_DIR basename 必须等于 ..._run02
+→ 为 run02 新建并截断 attempt-local dependency log
+→ 检查既有 UCM source：
+     全树 owner 必须等于当前 UID
+     origin URL 必须精确匹配
+     HEAD 必须等于 pinned commit
+     tracked files 必须 clean
+     pyproject.toml/setup.py/5 个关键集成源文件必须存在
+→ 不合格 source 只移动到同父目录 quarantine，不删除、不信任、不执行其 Git
+→ 在 current-user-owned staging 目录 clone/fetch/checkout 精确 commit
+→ staging 完整验证后在同一父目录原子 rename 到正式 source
+→ 检查既有隔离 venv：
+     全树 owner 必须等于当前 UID
+     marker 必须精确等于 pinned commit
+     ucm/vllm/vllm_ascend/wrapt/两种 connector 必须完整 import
+→ 不合格 venv 只移动到同父目录 quarantine，不删除
+→ 在 staging venv 安装 wrapt==1.17.2 和 pinned UCM
+→ 先完成完整 import probe，再原子写 marker
+→ staging venv 完整验证后原子 rename 到正式 venv
+→ 正式路径再次 import probe
+→ 只有全部依赖 ready 才停 0–7 keep-alive 并启动一个 TP8 lifecycle
+→ warmup / prime / follower 三请求
+→ cleanup、同卡恢复、finalize、package、完整回报
 ```
 
-服务器助手禁止：
-
-- 修改 Python、Bash、YAML、依赖源码、模型或 base conda 环境；
-- 将 UCM 安装进 base conda 环境或系统 Python；
-- 自选 UCM tag/branch/commit、PyPI wheel 或其他 connector；
-- 打开 vLLM 内部 Prefix Cache；
-- 改 context、output、并发、TP/EP、MTP、cache 容量或请求顺序；
-- 重试请求、做参数 sweep、加 profiler、启动第二个 lifecycle；
-- 删除已存在的 run01、创建 run02 或临场复制结果；
-- 重跑 R15/R16/R17；
-- 自动进入 K2-R1、K3、P8.3-I1、P8.4、P8.5 或 P9；
-- 自动邮件、自动上传或只发一封“待确认”状态邮件。
-
-### 2.1 当前提交中的固定输入 SHA-256
-
-同步到交接指定的 `main` 后，先核对以下输入；任一不匹配都不要停卡或启动模型：
+入口明确不会执行：
 
 ```text
-d92bd266a86e1c59a080d1f5f4df8e0b283b89d48200d8c94e005108d41a0b93  benchmarks/deepseek_v4_flash/p8_2_k2_r0_ucm_dram_external_prefix_path_audit.yaml
-469e708e4b623eaed624dd34580e9a63344ccb02c441a0770fb4514c5961ed5b  benchmarks/deepseek_v4_flash/workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
-b92aa3f8abcdd170a0b2bbdcbf5e81804b81070e1c76ca8595a8d1a9b162a8ee  tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
-a017dd8d921f88af56cdb098785cf689cea6f6cb27879b4c2f843438133c191f  tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh
-51627b40981d0551b0f8c7eecb100efff3e351def35ccbf346bc53bb58c9009b  tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh
-b0a46e848cc19ba3106ac1e7e026bf1c752afd1d33317a743dc42143a9bee9f3  tests/inference_contracts/test_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
-75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1  benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+git config --global --add safe.directory ...
+chown/chmod 修补不可信目录
+rm -rf 删除旧源码或旧 venv
+修改 base conda 环境
+修改 UCM 源码
+复用未通过 import probe 的 marker
+依赖失败后停卡或启动模型
 ```
 
-## 三、固定依赖与为什么选它
+不得执行 `git config --global --add safe.directory`。这既会扩大 Git 信任范围，又不能
+证明 `nobody` 所有的半克隆目录可写、完整或属于本次任务。脚本会把该目录移动到
+`quarantine` 后，以当前执行用户重新构造可信对象。
 
-本轮固定官方 UCM 源码：
+## 三、唯一执行步骤
+
+### 3.1 同步并只检查，不要先运行
+
+```bash
+cd /data/node0_disk1/liguowei/AK-Infer-Lab
+git fetch origin
+git switch main
+git pull --ff-only origin main
+
+git status --short --branch
+git rev-parse HEAD
+git rev-parse origin/main
+git rev-list --left-right --count HEAD...origin/main
+git status --porcelain --untracked-files=no
+```
+
+必须满足：
 
 ```text
-repository: https://github.com/ModelEngine-Group/unified-cache-management.git
-commit: 01cbf9b71892c88319862fa57f195b0bef93fa6f
-source provenance branch: develop
-source license: MIT
-package: uc-manager
-PLATFORM: ascend
-ENABLE_SPARSE: false
-ENABLE_UCM_PATCH: 1
-UCM_ENGINE_TYPE: vllm-ascend.a2
+branch = main
+HEAD = origin/main
+ahead/behind = 0 0
+tracked-clean = true
 ```
 
-这个精确提交已包含本轮所需的当前实现面：
+`server_local/` 的 run01、UCM 目录、venv、quarantine 和日志是 Git ignored 运行产物；
+它们可以存在。禁止为了 tracked-clean 删除它们。
 
-- vLLM/vLLM-Ascend 0.22.1 monkey patch；
-- Ascend hybrid/compressed cache allocation recovery；
-- MTP speculative decoding 与 multi-group load failure recovery；
-- Ascend variable block-size 支持；
-- 多 rank 共享 cache load failure 传播；
-- DeepSeek V4 Flash Prefix Cache 的 vLLM-Ascend 支持登记。
+### 3.2 核对 run01 父证据仍在
 
-安装位置固定为服务器本地、Git ignored 的隔离目录：
+```bash
+cd /data/node0_disk1/liguowei/AK-Infer-Lab
+PARENT=server_local/p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run01
+test -d "${PARENT}"
+sha256sum \
+  "${PARENT}/dependency_and_environment_summary.json" \
+  "${PARENT}/grading_summary.json" \
+  "${PARENT}/resource_recovery_summary.json" \
+  "${PARENT}/candidate_manifest.server_local.json" \
+  "${PARENT}/task_grade.txt"
+```
+
+若父证据缺失或 SHA 不匹配：不要运行 run02，不要补造父证据，原样回报。
+
+### 3.3 核对当前代码输入
+
+同步后对以下文件计算 SHA-256，并与本交接第十节的最终 inventory 比较：
+
+```bash
+sha256sum \
+  benchmarks/deepseek_v4_flash/p8_2_k2_r0_ucm_dram_external_prefix_path_audit.yaml \
+  benchmarks/deepseek_v4_flash/workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml \
+  benchmarks/deepseek_v4_flash/p5_readiness_card.yaml \
+  tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py \
+  tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh \
+  tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh \
+  tests/inference_contracts/test_deepseek_p8_2_k2_r0_ucm_dram_prefix.py \
+  benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+```
+
+任一不匹配：不要停卡、不要启动模型、不要现场改代码。
+
+### 3.4 先跑本地合同验证与 audit-only
+
+```bash
+cd /data/node0_disk1/liguowei/AK-Infer-Lab
+
+.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python -m pytest -q \
+  tests/inference_contracts/test_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
+
+.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python -m py_compile \
+  tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
+
+bash -n tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh
+bash -n tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh
+
+P8_2_K2_R0_SERVER_TASK_AUDIT_ONLY=1 \
+  bash tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh \
+  /tmp/p8_2_k2_r0_audit_only
+```
+
+audit-only 必须明确出现：
+
+```text
+dependency_repair_attempt=run02_explicit
+expected_result_basename=p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run02
+global_git_safe_directory_mutation=false
+invalid_dependency_state_action=quarantine_then_atomic_rebuild
+dependency_log_attempt_local_and_truncated=true
+install_marker_written_after_import_probe_only=true
+preflight_failure_npu_touch=false
+formal_model_lifecycle_count_exact=1
+model_request_count_exact=3
+request_retry_count_exact=0
+```
+
+### 3.5 唯一正式命令
+
+先确认 run02 不存在：
+
+```bash
+cd /data/node0_disk1/liguowei/AK-Infer-Lab
+RESULT=/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run02
+test ! -e "${RESULT}"
+```
+
+然后仅执行一次：
+
+```bash
+bash tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh "${RESULT}"
+```
+
+不要手工预先 clone、chown、pip install、写 marker、停卡、创建结果目录或重定向另一个
+build log；这些动作都由入口管理。
+
+## 四、依赖修复的判读方法
+
+正式报告中的 `dependency_and_environment_summary.json` 必须优先检查：
+
+```text
+dependency_attempt = run02_explicit_repair
+dependency_log_truncated_before_attempt = true
+global_git_safe_directory_mutated = false
+expected_current_user_uid = 当前执行 UID
+ucm_source_tree_owned_by_current_user = true
+ucm_source_remote_url = https://github.com/ModelEngine-Group/unified-cache-management.git
+ucm_source_head = 01cbf9b71892c88319862fa57f195b0bef93fa6f
+ucm_source_tracked_clean = true
+ucm_source_validation_complete = true
+所有 ucm_source_required_files = true
+ucm_install_marker_value = 01cbf9b71892c88319862fa57f195b0bef93fa6f
+ucm_install_marker_valid = true
+python_import_probe 含 uc-manager/vllm/vllm-ascend/wrapt/UCMConnector/UCMConnectorV1
+```
+
+`provision_events` 的合法路径包括：
+
+```text
+run01 毒化现场仍在：
+  quarantined source
+  quarantined venv（如旧 venv marker/import 无效）
+  staging_created source
+  promoted source
+  staging_created venv
+  promoted venv
+
+或目标在同步前已被可信地修复：
+  reused source
+  reused venv
+```
+
+若 clone、checkout、build 或 import 再失败：
+
+- 脚本会把失败 staging 移入 quarantine；
+- run02 仍生成正式 blocked 包；
+- keep-alive 保持运行，不调用 stop；
+- 不创建 lifecycle，不发送请求；
+- `resource_state` 应为 `dependency_preflight_failed_before_npu_touch`；
+- 原样回报 attempt-local build log 绝对路径、bytes、依赖摘要和 quarantine paths；
+- 不得换 UCM commit、换 PyPI 包、改源码、手工写 marker 或创建 run03。
+
+## 五、依赖通过后保持不变的机制目标
+
+固定 UCM：
+
+```text
+repository = https://github.com/ModelEngine-Group/unified-cache-management.git
+commit = 01cbf9b71892c88319862fa57f195b0bef93fa6f
+package = uc-manager
+PLATFORM = ascend
+ENABLE_SPARSE = false
+ENABLE_UCM_PATCH = 1
+UCM_ENGINE_TYPE = vllm-ascend.a2
+wrapt = 1.17.2
+```
+
+固定隔离位置：
 
 ```text
 source:
@@ -191,27 +337,34 @@ source:
 venv:
 /data/node0_disk1/liguowei/AK-Infer-Lab/server_local/python_envs/ucm-vllm-ascend0221-01cbf9b
 
-build log:
-/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/ucm_dependency_build_p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728.log
+run02 build log:
+/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/ucm_dependency_build_p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run02.log
 ```
 
-隔离 venv 使用 base vLLM-Ascend 环境的 system-site-packages，但只在隔离 venv 内安装
-`wrapt==1.17.2` 和 pinned UCM。本轮不得改写：
+base conda 只作为 system-site-packages 来源，禁止修改：
 
 ```text
 /data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 ```
 
-若服务器不能访问 GitHub、native extension 构建失败、import probe 失败，唯一入口会
-保留 build log，在 run01 中形成正式 blocked package，并恢复所有资源。不要换源、换
-commit、手改代码或创建 run02；原样回报 dependency status 和 log 的服务器路径。
+固定机制链：
 
-## 四、固定 UCM 与请求合同
+```text
+prime 生成 KV
+→ UCM save/cache dump
+→ Cache(DRAM) 持有外部前缀对象
+→ byte-identical follower external lookup/hit
+→ Cache load
+→ H2D load
+→ follower 推理完成
+```
 
-### 4.1 UCM DRAM-first pipeline
+性能收益不是本轮实现通过的前置条件。TTFT、TPOT、ITL P95、E2EL 仍须如实记录，
+但本机延迟差值的正负不决定上述路径是否实现，也不得外推到其他硬件。
+
+固定 UCM store：
 
 ```yaml
-ucm_connector_name: UcmPipelineStore
 store_pipeline: Cache|Posix
 cache_buffer_capacity_gb: 8
 posix_capacity_gb: 32
@@ -227,11 +380,7 @@ persist_token_threshold: 0
 load_tokens_threshold: 2048
 ```
 
-Posix backend 仅在本轮 result runtime 下；8 GiB DRAM cache 是第一层。本轮期望
-32K exact follower 从 Cache 层命中而不从 Posix 回读。`use_gdr=false` 是当前机器的
-保守、可运行选择，仍须形成 Cache→HBM 的 H2D load。
-
-### 4.2 vLLM 固定项
+固定 vLLM：
 
 ```text
 model = /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
@@ -247,201 +396,161 @@ block size = 128
 chunked prefill = enabled
 internal prefix cache = disabled
 kv connector = UCMConnector
-kv connector module = ucm.integration.vllm.ucm_connector
 kv role = kv_both
 port = 7000
 ```
 
-### 4.3 唯一三条请求
+唯一三请求：
 
 ```text
-1. warmup:
-   unrelated 4096-token context + 64 output
-
-2. prime:
-   exact 32768-token context + 64 output
-
-3. follower:
-   与 prime request body byte-identical
-   exact 32768-token reused prefix + 64 output
+1. warmup：unrelated 4096 context + 64 output
+2. prime：32768 context + 64 output
+3. follower：与 prime 请求体 byte-identical，32768 exact reuse + 64 output
 ```
 
-全部串行、concurrency=1、零 retry。请求体 SHA 只留服务器 raw runtime，不进有界包；
-生成文本、request IDs、token IDs 也不进有界包。
+## 六、keep-alive 操作规则
 
-## 五、实际执行顺序
-
-### 5.1 同步并证明 Git 现场
+依赖预检阶段不需要 NPU，必须保持 keep-alive 运行。只有入口确认 source、venv、
+marker 和 import 全部 ready 后，才会自动执行：
 
 ```bash
-cd /data/node0_disk1/liguowei/AK-Infer-Lab
-git fetch origin main
-git checkout main
-git merge --ff-only origin/main
-git rev-parse HEAD
-git rev-parse origin/main
-git rev-list --left-right --count HEAD...origin/main
-git status --porcelain --untracked-files=no
-```
-
-必须满足：
-
-```text
-HEAD = origin/main
-ahead/behind = 0 0
-tracked-clean = true
-```
-
-未跟踪的历史 `server_local/` 结果可以存在；不得删除 parent 或其他任务结果。
-
-### 5.2 零 NPU audit-only
-
-```bash
-cd /data/node0_disk1/liguowei/AK-Infer-Lab
-AUDIT_DIR=/tmp/p8_2_k2_r0_audit
-mkdir -p "${AUDIT_DIR}"
-P8_2_K2_R0_SERVER_TASK_AUDIT_ONLY=1 \
-  bash tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh \
-  "${AUDIT_DIR}"
-```
-
-audit-only 不安装依赖、不停卡、不启动 vLLM、不发请求。确认输出至少含：
-
-```text
-task_id=p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
-ucm_commit=01cbf9b71892c88319862fa57f195b0bef93fa6f
-base_conda_environment_mutation=false
-formal_model_lifecycle_count_exact=1
-model_request_count_exact=3
-request_retry_count_exact=0
-internal_prefix_cache_enabled=false
-performance_benefit_required=false
-unique_root_cause_required=false
-result_transfer_authorized=true
-automatic_transfer_allowed=false
-next_task_authorized=false
-```
-
-### 5.3 唯一正式 run01
-
-```bash
-cd /data/node0_disk1/liguowei/AK-Infer-Lab
-RESULT_DIR=/data/node0_disk1/liguowei/AK-Infer-Lab/server_local/p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run01
-test ! -e "${RESULT_DIR}"
-bash tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh \
-  "${RESULT_DIR}"
-```
-
-只执行一次。即使返回非零，先确认 keep-alive、端口、vLLM residual 和结果包，再原样
-回报；不得自动再跑。
-
-## 六、keep-alive 是常规资源管理，不是异常
-
-本轮使用 NPU 0–7，允许且要求入口在正式 lifecycle 前停止这八卡的低优先级
-keep-alive。停止本身不需要特殊解释；关键是每个成功、失败、中断或提前退出路径都
-恢复完全相同的 0–7。
-
-唯一入口实际调用：
-
-```bash
-# Stop the low-priority keep-alive workload on the selected cards.
+# Stop the low-priority keep-alive workload on exactly cards 0–7.
 bash /data/node0_disk1/Public/npu_stop.sh 0 1 2 3 4 5 6 7
+```
 
-# Restart the keep-alive workload on the same selected cards.
+任务成功、失败、中断或提前退出后，入口必须自动恢复同一集合：
+
+```bash
+# Restart the low-priority keep-alive workload on exactly cards 0–7.
 bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ```
 
-服务器报告必须写明：
+服务器报告必须区分两种合法状态：
 
 ```text
-stopped_card_ids
-restored_card_ids
-stop_exit_code
-restart_exit_code
-keep_alive_marker_count / expected=16
-keep_alive_restored_exact
-port_7000_listener_count
-vllm_residual_process_count
-tracked_worktree_clean
-cleanup_status
+依赖预检失败：
+  npu_stop_attempted=false
+  formal_model_lifecycle_started=false
+  stopped_card_ids=[]
+  restored_card_ids=[]
+  keep_alive_restored_exact=true
+  resource_state=dependency_preflight_failed_before_npu_touch
+
+依赖通过且 lifecycle 已运行：
+  npu_stop_attempted=true
+  formal_model_lifecycle_started=true
+  stopped_card_ids=[0,1,2,3,4,5,6,7]
+  restored_card_ids=[0,1,2,3,4,5,6,7]
+  keep_alive_restored_exact=true
+  resource_state=npu_lifecycle_cleanup_and_same_card_restore_exact
 ```
 
-## 七、如何判读，不要只报一个颜色
+停 keep-alive 本身不是严重事项；需要用卡时正常停即可，关键是只停任务所需卡，并在
+所有退出路径恢复完全相同的卡集。
 
-### 7.1 完整实现
+## 七、机制验收字段
 
-下列事实全部成立时，正式 grade：
+依赖与 lifecycle 成功后，检查：
 
 ```text
-implemented_p8_2_k2_r0_ucm_dram_external_prefix_path
+formal_model_lifecycle_count = 1
+request_count = 3
+successful_request_count = 3
+request_retry_count = 0
+
+prime_save_bytes_delta > 0
+prime_cache_dump_bytes_delta > 0
+
+follower_ucm_hit_tokens_delta > 0
+follower_gpu_hbm_hit_tokens_delta = 0
+follower_cache_lookup_hit_blocks_delta > 0
+follower_cache_load_bytes_delta > 0
+follower_load_bytes_delta > 0
+follower_posix_s2h_bytes_delta = 0
+
+error_counter_delta_total = 0
+positive_external_lookup_line_count > 0
+port_7000_listener_count = 0
+vllm_residual_process_count = 0
+tracked_worktree_clean = true
+cleanup_status = clean
 ```
 
-所需事实：
+完整满足时：
 
 ```text
-3/3 requests HTTP/token/SSE exact and successful
-prime save_bytes_delta > 0
-prime cache_dump_bytes_delta > 0
-follower ucm_hit_tokens_delta > 0
-follower gpu_hbm_hit_tokens_delta = 0
-follower cache_lookup_hit_blocks_delta > 0
-follower cache_load_bytes_delta > 0
-follower load_bytes_delta > 0
-follower posix_s2h_bytes_delta = 0
-UCM error/invalid counter delta total = 0
-server log corroborates external hit > 0
-cleanup = clean
-same-card recovery = exact
+grade = implemented_p8_2_k2_r0_ucm_dram_external_prefix_path
+path_class = ucm_cache_store_dram_hit_then_h2d_load
+mechanism_implemented = true
 ```
 
-这表示在当前服务器已实际跑通：
+不满足时按实际字段报告，不得人为改成 implemented。无论 grade 如何：
 
 ```text
-UCM save → DRAM external hit → Cache load → H2D load → inference completion
+performance_benefit_claimed = false
+unique_root_cause_claimed = false
+next_task_authorized = false
+k2_r1_authorized = false
+k3_authorized = false
+p8_3_i1_authorized = false
 ```
 
-无论 follower 延迟相对 prime 是快、慢还是接近，都不改变上述实现事实；延迟只作为
-该硬件/该配置的一次实测描述回报。
+## 八、服务器助手禁止事项
 
-### 7.2 部分实现或结构阻断
+- 不修改任何仓库文件、UCM 源码、模型、base conda 环境或系统 Python；
+- 不设置 global/system/local `safe.directory`；
+- 不 chown/chmod、删除或覆盖 run01、旧 source、旧 venv、quarantine；
+- 不换 UCM branch/tag/commit，不改安装选项；
+- 不打开 vLLM internal Prefix Cache；
+- 不改 context/output/concurrency/TP/EP/MTP/cache 容量/请求顺序；
+- 不手工重试请求，不做 sweep，不加 profiler，不启动第二个 lifecycle；
+- 不重跑 run01，不创建 run03；
+- 不进入 K2-R1、K3、P8.3-I1 或其他下一阶段；
+- 不自动发邮件、上传，或先发一封“待确认”状态邮件。
 
-若已有 external hit 和 H2D load，但不是 DRAM-first，或 recovery/evidence 不完整：
+## 九、完整回报要求
+
+正式命令结束后一次性回报：
+
+1. HEAD、origin/main、ahead/behind、tracked-clean；
+2. run01 五个父文件的现场 SHA-256 与 parent grade；
+3. 当前八个固定输入文件的 SHA-256；
+4. pytest、py_compile、两个 `bash -n`、audit-only 结果；
+5. dependency status、attempt-local log 路径/bytes；
+6. current UID、source root owner、全树 owner 判定、remote、HEAD、clean、必要文件；
+7. provision events，尤其 quarantine/staging/promoted/reused 的完整有界清单；
+8. venv owner、marker、import probe 与 base conda 未修改证明；
+9. 是否在依赖 ready 前触碰 NPU；
+10. lifecycle/request/retry 数及三请求 HTTP/token/SSE/延迟；
+11. prime store/dump 与 follower hit/load/Posix/HBM/error/log 指标；
+12. path_class、mechanism_implemented、grade 与 claim boundary；
+13. cleanup、7000、vLLM residual、停卡/恢复卡集、keep-alive marker；
+14. `result_summary.md` 绝对路径；
+15. 完整候选文件逐项 bytes、完整 SHA-256、sensitivity；
+16. payload/manifest/transfer 总数和总 bytes，逐文件复验结论；
+17. raw build log、vLLM log、metrics、请求体、请求 ID、token ID、生成内容的服务器路径，
+    不把它们放进有界包；
+18. 明确 `next_task_authorized=false`，完成后暂停。
+
+如果依赖失败，报告最后一段最多 12KB 的有界 build log 摘要即可；不要把完整 log 放进
+有界包或邮件。
+
+## 十、当前提交固定输入 SHA-256
 
 ```text
-partial_p8_2_k2_r0_ucm_external_hit_non_dram_or_incomplete_recovery
+7ea5ab6e4a518cd4ea0b9bf22a2d8e0a2a1939662cf1608f8799cb055ff0d8ca  benchmarks/deepseek_v4_flash/p8_2_k2_r0_ucm_dram_external_prefix_path_audit.yaml
+bcc57ddb453898066c240ab395f24c39b88d5caf321b326ca606d9027bca6a32  benchmarks/deepseek_v4_flash/workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
+43ecad24e7f98a1a2be3243635edd38b7592a17e9e45cf004dd19c9f6ace26f1  benchmarks/deepseek_v4_flash/p5_readiness_card.yaml
+7b309560c815b08877a4fc86aac7c54d095b506f87ee1f9cc81a9bad99ae669b  tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
+a017dd8d921f88af56cdb098785cf689cea6f6cb27879b4c2f843438133c191f  tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh
+edf3f3c8ec256e1ec4b19b4a217b15d77ffd836aa17c425f6dba84d0d86fd861  tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh
+de50f34011b67f26bfc729f35ecc9661dab8deed6babd88effeec671454168d1  tests/inference_contracts/test_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
+75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1  benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
 ```
 
-若依赖安装或 server startup 前被阻断且没有请求：
+## 十一、有界结果与传输纪律
 
-```text
-blocked_p8_2_k2_r0_dependency_or_startup_preflight
-```
-
-其他请求/机制不完整：
-
-```text
-incomplete_p8_2_k2_r0_ucm_external_prefix_path
-```
-
-这些不是让服务器助手“修颜色”的指令。请同时报告完成到哪一条机制边、首个未成立
-事实和原始日志路径；开发机据此决定下一轮。
-
-## 八、原始证据与有界包
-
-以下均留服务器本地，不进入小包：
-
-```text
-runtime/vllm_server.log
-runtime/raw_metrics/*.prom
-runtime/request_results.jsonl
-runtime/request body/manifest
-runtime/UCM logs
-runtime/UCM Posix backend
-dependency build log
-生成内容、request IDs、token IDs、raw hash
-```
-
-有界包固定 9 个 payload：
+大产物全部留服务器。候选包只能包含：
 
 ```text
 cleanup_status.txt
@@ -453,63 +562,26 @@ result_summary.md
 task_grade.txt
 ucm_metric_deltas.tsv
 ucm_path_summary.json
-```
-
-加 1 个 manifest：
-
-```text
 candidate_manifest.server_local.json
 ```
 
-总大小必须 `<=71680 bytes`；每个文件都要报 relative path、bytes、完整 SHA-256、
-sensitivity。统一 sensitivity：
+每个文件必须：
 
 ```text
-bounded_operational_metadata_no_content_or_token_ids
+sensitivity = bounded_operational_metadata_no_content_or_token_ids
 ```
 
-## 九、服务器最终回报清单
-
-请一次性完整回报，不要只回 grade：
-
-1. `HEAD`、`origin/main`、ahead/behind、tracked-clean；
-2. audit-only 完整合同字段；
-3. UCM URL、expected/actual commit、source path、tracked-clean；
-4. isolated venv path、`uc-manager`/vLLM/vLLM-Ascend/wrapt 版本、
-   `base_conda_environment_mutated=false`；
-5. dependency install/import probe 状态；失败时 build log 绝对路径和末段有界摘要；
-6. formal lifecycle count、request count、success count、retry count；
-7. warmup/prime/follower 的 HTTP、token、SSE、TTFT、TPOT、ITL P95、E2EL；
-8. prime 的 save/cache dump bytes delta；
-9. follower 的 UCM hit tokens、HBM hit tokens、Cache hit blocks、
-   Cache load bytes、connector load bytes、Posix S2H bytes；
-10. UCM error/invalid counter delta total与外部命中日志 corroboration；
-11. `path_class`、`mechanism_implemented`、正式 grade；
-12. stopped/restored card sets、16 marker、7000、vLLM residual、tracked-clean、
-    cleanup；
-13. `result_summary.md` 绝对路径；
-14. 完整 9-payload + manifest 清单：每文件 bytes、完整 SHA-256、sensitivity，
-    以及 payload/transfer 总字节；
-15. `generated_content_retained=false`、`request_ids_retained=false`、
-    `token_ids_retained=false`、raw artifacts 的服务器绝对路径；
-16. available methods=`email/upload-api/server-local`，推荐 `server-local` 及理由，
-    然后暂停等待用户对完整清单选择一种渠道。
-
-入口终端会输出：
+完整包不超过 71680 bytes。先报告完整 inventory、总大小、SHA-256、敏感级别和以下三种
+方法：
 
 ```text
-K2_R0_SERVER_REPORT_BEGIN
-...
-K2_R0_SERVER_REPORT_END
+email
+upload-api
+server-local
 ```
 
-请保留这两个 marker，并把其中内容与上述清单合并成一次完整回报。
+推荐 `server-local`，因为包已在服务器且当前需要先审查完整内容。即使
+`result_transfer_authorized=true`，也不等于已经选择传输方式。必须等用户对完整范围
+明确选择一种方式；不得自动发送、自动上传或在失败后自动切换方法。
 
-`result_transfer_authorized: true` 只表示完整有界包具备被选择传输的资格，不等于已经
-选择渠道。没有用户对这一次完整 inventory 的明确 `email / upload-api /
-server-local` 选择前，禁止外发。
-
-## 十、终止条件
-
-完成 run01、资源恢复、结果 package、完整回报后暂停。不得自行开始 K2-R1、K3、
-P8.3-I1 或任何额外 lifecycle；下一轮必须由开发机结合本轮真实机制边重新设计。
+正式任务完成后暂停，等待用户选择传输方式或下发下一任务。

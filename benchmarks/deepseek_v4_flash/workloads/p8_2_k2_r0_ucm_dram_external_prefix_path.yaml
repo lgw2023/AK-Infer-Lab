@@ -10,6 +10,18 @@ stage_contract:
   claim_boundary: single_lifecycle_ucm_external_prefix_store_lookup_load_and_dram_first_path_observation
   performance_benefit_required: false
   unique_root_cause_required: false
+  execution_attempt: run02_explicit_dependency_repair
+
+dependency_recovery:
+  parent_run01_grade: blocked_p8_2_k2_r0_dependency_or_startup_preflight
+  parent_run01_lifecycle_count: 0
+  parent_run01_request_count: 0
+  invalid_existing_state_action: quarantine_then_rebuild
+  deletion_authorized: false
+  global_safe_directory_mutation_authorized: false
+  source_and_venv_atomic_promotion_required: true
+  install_marker_after_import_probe_required: true
+  preflight_failure_must_leave_keep_alive_running: true
 
 parents:
   p8_2_k0: green_p8_2_k0_order_balanced_prefix_cache_baseline
@@ -108,6 +120,7 @@ authorization:
   request_retry_count_exact: 0
   profiler_authorized: false
   parameter_sweep_authorized: false
+  run02_authorized: true
   k3_authorized: false
   p8_3_i1_authorized: false
   next_task_authorized: false

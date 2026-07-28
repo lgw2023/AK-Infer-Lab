@@ -2,6 +2,30 @@ schema_version: 1
 task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
 stage: P8.2-K2-R0
 
+repair_round:
+  attempt: run02
+  explicitly_authorized: true
+  parent_run01_grade: blocked_p8_2_k2_r0_dependency_or_startup_preflight
+  parent_run01_path_class: not_executed
+  parent_run01_npu_touched: false
+  parent_run01_failure_chain:
+    - preexisting_source_directory_owned_by_nobody
+    - git_dubious_ownership_rejected_repository
+    - source_directory_contained_only_partial_git_state
+    - package_metadata_absent
+    - ucm_install_and_import_probe_failed
+  repair_contract:
+    global_git_safe_directory_mutation: false
+    invalid_source_action: quarantine_without_deletion
+    invalid_venv_action: quarantine_without_deletion
+    source_clone_owner: current_execution_user
+    source_validation_before_promotion: true
+    venv_import_validation_before_promotion: true
+    install_marker_after_import_probe_only: true
+    promotion: atomic_rename_within_same_parent
+    dependency_log: attempt_local_truncated_before_run
+    dependency_failure_npu_touch: false
+
 developer_decision:
   k1a_f1_closed_by_r17: true
   k1a_f1_grade: green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed
@@ -36,6 +60,7 @@ implementation:
   dependency_provisioning_automated: true
   lifecycle_and_cleanup_automated: true
   result_finalization_and_manifest_automated: true
+  poisoned_dependency_state_recovery_automated: true
 
 evidence:
   path_events:

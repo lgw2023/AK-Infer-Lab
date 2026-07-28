@@ -23,6 +23,11 @@ AUDIT = (
     / "benchmarks/deepseek_v4_flash/"
     / "p8_2_k2_r0_ucm_dram_external_prefix_path_audit.yaml"
 )
+SERVER_DRIVER = (
+    ROOT
+    / "tools/inference_contracts/"
+    / "run_deepseek_p8_2_k2_r0_server_task.sh"
+)
 HANDOFF = ROOT / "通信模块/docs/developer-to-server.md"
 READINESS = (
     ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
@@ -44,6 +49,25 @@ def _request(role: str, delta: dict[str, float]) -> dict:
         "e2el_ms": 730.0,
         "counter_delta": delta,
     }
+
+
+def _write_no_touch_recovery(artifact: Path) -> None:
+    (artifact / "resource_recovery_summary.json").write_text(
+        json.dumps(
+            {
+                "stopped_card_ids": [],
+                "restored_card_ids": [],
+                "keep_alive_restored_exact": True,
+                "port_7000_listener_count": 0,
+                "vllm_residual_process_count": 0,
+                "tracked_worktree_clean": True,
+                "npu_stop_attempted": False,
+                "formal_model_lifecycle_started": False,
+                "preflight_failed_before_npu_touch": True,
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def test_contract_targets_real_ucm_path_without_performance_precondition() -> None:
@@ -146,6 +170,42 @@ def test_finalize_accepts_dram_hit_and_h2d_load_independent_of_latency(
     assert manifest["transfer_total_bytes"] <= 71680
 
 
+def test_finalize_records_exact_preflight_failure_before_npu_touch(
+    tmp_path: Path,
+) -> None:
+    artifact = tmp_path / "result"
+    artifact.mkdir()
+    (artifact / "cleanup_status.txt").write_text("clean\n", encoding="utf-8")
+    (artifact / "dependency_and_environment_summary.json").write_text(
+        '{"dependency_status":"dependency_failed"}\n',
+        encoding="utf-8",
+    )
+    _write_no_touch_recovery(artifact)
+    grade = finalize(artifact)
+    assert grade == "blocked_p8_2_k2_r0_dependency_or_startup_preflight"
+    grading = json.loads(
+        (artifact / "grading_summary.json").read_text(encoding="utf-8")
+    )
+    assert grading["resource_recovery_exact"] is True
+    assert grading["resource_state"] == (
+        "dependency_preflight_failed_before_npu_touch"
+    )
+
+
+def test_server_driver_repairs_poisoned_dependency_state_atomically() -> None:
+    text = SERVER_DRIVER.read_text(encoding="utf-8")
+    assert "EXPECTED_RUN_LABEL=${TASK_ID}_run02" in text
+    assert "quarantine_path" in text
+    assert "tree_owned_by_current_user" in text
+    assert "global_git_safe_directory_mutated" in text
+    assert "dependency_log_truncated_before_attempt" in text
+    assert "install_marker_written_after_import_probe_only" in text
+    assert "git config --global" not in text
+    marker_write = text.index('mv -- "${marker_tmp}"')
+    import_probe = text.index('ucm_import_probe "${env_stage}/bin/python"')
+    assert import_probe < marker_write
+
+
 def test_handoff_is_current_only_and_operationally_complete() -> None:
     text = HANDOFF.read_text(encoding="utf-8")
     assert text.count("## 当前唯一服务器动作：") == 1
@@ -155,4 +215,7 @@ def test_handoff_is_current_only_and_operationally_complete() -> None:
     assert "npu_stop.sh 0 1 2 3 4 5 6 7" in text
     assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in text
     assert "性能收益不是本轮实现通过的前置条件" in text
+    assert "run02_authorized: true" in text
+    assert "不得执行 `git config --global --add safe.directory`" in text
+    assert "quarantine" in text
     assert "transfer_method_selected: false" in text

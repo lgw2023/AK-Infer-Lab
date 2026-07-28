@@ -435,6 +435,9 @@ def finalize(artifact_dir: Path) -> str:
     prime_delta = prime.get("counter_delta") or {}
     follower_delta = follower.get("counter_delta") or {}
     recovery = _safe_json(artifact_dir / "resource_recovery_summary.json")
+    dependency = _safe_json(
+        artifact_dir / "dependency_and_environment_summary.json"
+    )
     cleanup = (
         (artifact_dir / "cleanup_status.txt")
         .read_text(encoding="utf-8")
@@ -479,7 +482,7 @@ def finalize(artifact_dir: Path) -> str:
     external_log_corroborated = (
         log_summary["positive_external_lookup_line_count"] > 0
     )
-    recovery_exact = all(
+    lifecycle_recovery_exact = all(
         (
             recovery.get("stopped_card_ids") == list(range(8)),
             recovery.get("restored_card_ids") == list(range(8)),
@@ -489,6 +492,26 @@ def finalize(artifact_dir: Path) -> str:
             recovery.get("tracked_worktree_clean") is True,
         )
     )
+    preflight_no_touch_exact = all(
+        (
+            recovery.get("preflight_failed_before_npu_touch") is True,
+            recovery.get("npu_stop_attempted") is False,
+            recovery.get("formal_model_lifecycle_started") is False,
+            recovery.get("stopped_card_ids") == [],
+            recovery.get("restored_card_ids") == [],
+            recovery.get("keep_alive_restored_exact") is True,
+            recovery.get("port_7000_listener_count") == 0,
+            recovery.get("vllm_residual_process_count") == 0,
+            recovery.get("tracked_worktree_clean") is True,
+        )
+    )
+    recovery_exact = lifecycle_recovery_exact or preflight_no_touch_exact
+    if lifecycle_recovery_exact:
+        resource_state = "npu_lifecycle_cleanup_and_same_card_restore_exact"
+    elif preflight_no_touch_exact:
+        resource_state = "dependency_preflight_failed_before_npu_touch"
+    else:
+        resource_state = "resource_recovery_or_no_touch_evidence_incomplete"
     mechanism_implemented = all(
         (
             request_success_exact,
@@ -625,6 +648,18 @@ def finalize(artifact_dir: Path) -> str:
         "unique_root_cause_claimed": False,
         "cleanup_status": cleanup,
         "resource_recovery_exact": recovery_exact,
+        "resource_state": resource_state,
+        "dependency_status": dependency.get("dependency_status", "unknown"),
+        "dependency_attempt": dependency.get("dependency_attempt"),
+        "ucm_source_validation_complete": dependency.get(
+            "ucm_source_validation_complete"
+        ),
+        "ucm_install_marker_valid": dependency.get(
+            "ucm_install_marker_valid"
+        ),
+        "quarantine_path_count": len(
+            dependency.get("quarantine_paths") or []
+        ),
         "next_task_authorized": False,
         "k3_authorized": False,
         "p8_3_i1_authorized": False,
@@ -642,6 +677,10 @@ def finalize(artifact_dir: Path) -> str:
         "# P8.2-K2-R0 UCM DRAM-first external prefix path\n\n"
         f"- grade: `{grade}`\n"
         f"- path: `{path_class}`\n"
+        f"- dependency: "
+        f"`{dependency.get('dependency_status', 'unknown')}`; "
+        f"attempt: `{dependency.get('dependency_attempt')}`\n"
+        f"- resource state: `{resource_state}`\n"
         f"- requests: `{len(rows)}`; successful: "
         f"`{sum(row.get('status') == 'success' for row in rows)}`\n"
         f"- external hit tokens on follower: "
