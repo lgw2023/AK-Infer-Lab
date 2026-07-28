@@ -1,521 +1,1302 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link rel="icon" href="data:,"/>
-  <title>AK-Infer-Lab · P6 Evidence Console · Closeout</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>AK-Infer-Lab P6 阶段证据链领导汇报 2026-07-28</title>
   <style>
-    :root{
-      --bg:#090c0d;
-      --panel:#111516;
-      --panel-2:#161b1c;
-      --line:#303738;
-      --paper:#eef3ef;
-      --muted:#87918d;
-      --green:#a9f04d;
-      --green-dim:#5e8d2b;
-      --cyan:#5bd4d7;
-      --amber:#f1b85b;
-      --red:#ef6c66;
-      --violet:#a997e8;
-      --mono:"Avenir Next Condensed","DIN Alternate","Arial Narrow",sans-serif;
-      --body:"Avenir Next","PingFang SC","Microsoft YaHei",sans-serif;
+    :root {
+      --red: #b00000;
+      --red-dark: #8f0000;
+      --blue: #0033cc;
+      --blue-soft: #e8efff;
+      --yellow: #fff4c2;
+      --green: #e7f4df;
+      --gray-0: #ffffff;
+      --gray-1: #f4f4f4;
+      --gray-2: #e4e4e4;
+      --gray-3: #999999;
+      --gray-4: #666666;
+      --black: #101010;
+      --good: #006a38;
+      --warn: #a55300;
     }
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{
-      margin:0;
-      min-width:320px;
-      background:
-        radial-gradient(circle at 12% 7%,rgba(91,212,215,.08),transparent 22rem),
-        radial-gradient(circle at 88% 30%,rgba(169,240,77,.06),transparent 28rem),
-        var(--bg);
-      color:var(--paper);
-      font-family:var(--body);
-    }
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      z-index:-1;
-      pointer-events:none;
-      opacity:.28;
-      background-image:
-        linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
-      background-size:32px 32px;
-    }
-    main{width:min(1480px,calc(100% - 56px));margin:0 auto;padding:28px 0 60px}
-    a{color:inherit}
-    h1,h2,h3,p{margin-top:0}
-    code{font-family:var(--mono);color:var(--cyan)}
-    .masthead{
-      position:relative;
-      display:grid;
-      grid-template-columns:1.28fr .72fr;
-      min-height:430px;
-      overflow:hidden;
-      border:1px solid var(--line);
-      background:linear-gradient(135deg,rgba(17,21,22,.98),rgba(8,11,12,.86));
-    }
-    .masthead::after{
-      content:"P6";
-      position:absolute;
-      right:-26px;
-      bottom:-108px;
-      color:transparent;
-      -webkit-text-stroke:1px rgba(169,240,77,.18);
-      font:900 350px/.9 var(--mono);
-      letter-spacing:-.13em;
-    }
-    .hero-copy{position:relative;z-index:1;padding:45px 50px}
-    .eyebrow,.section-id,.tag,.metric-label,.stamp,th{
-      font-family:var(--mono);
-      letter-spacing:.11em;
-      text-transform:uppercase;
-    }
-    .eyebrow{color:var(--green);font-size:12px}
-    h1{
-      max-width:930px;
-      margin:32px 0 26px;
-      font:800 clamp(46px,6.3vw,92px)/.92 var(--mono);
-      letter-spacing:-.065em;
-    }
-    .hero-copy p{max-width:850px;margin:0;color:#c2cbc6;font-size:17px;line-height:1.55}
-    .hero-copy b{color:var(--paper)}
-    .hero-status{
-      position:relative;
-      z-index:1;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-      gap:30px;
-      border-left:1px solid var(--line);
-      padding:42px 34px;
-      background:rgba(6,9,9,.58);
-    }
-    .status-light{display:inline-flex;align-items:center;gap:12px;color:var(--green);font:800 13px var(--mono)}
-    .status-light::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 18px var(--green)}
-    .status-stack{display:grid;gap:13px}
-    .status-row{border-top:1px solid var(--line);padding-top:12px}
-    .status-row small{display:block;color:var(--muted);font:10px var(--mono);letter-spacing:.08em}
-    .status-row strong{display:block;margin-top:3px;font:700 15px/1.25 var(--mono)}
-    .status-row strong.green{color:var(--green)}
-    .status-row strong.amber{color:var(--amber)}
-    section{margin-top:26px;border:1px solid var(--line);background:rgba(17,21,22,.94)}
-    .section-head{display:flex;align-items:end;justify-content:space-between;gap:24px;padding:24px 28px;border-bottom:1px solid var(--line)}
-    .section-head h2{margin:0;font:800 clamp(25px,3vw,42px)/1 var(--mono);letter-spacing:-.04em}
-    .section-id{margin-bottom:7px;color:var(--cyan);font-size:10px}
-    .section-note{max-width:650px;margin:0;color:var(--muted);font-size:13px;line-height:1.45;text-align:right}
-    .tag{display:inline-flex;border:1px solid currentColor;padding:5px 8px;font-size:8px;font-weight:900}
-    .tag.green{color:var(--green)}
-    .tag.amber{color:var(--amber)}
-    .tag.red{color:var(--red)}
 
-    .evidence-rail{display:grid;grid-template-columns:repeat(3,1fr)}
-    .gate{position:relative;min-height:235px;padding:25px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
-    .gate:nth-child(3n){border-right:0}
-    .gate:nth-child(n+4){border-bottom:0}
-    .gate::before{content:attr(data-step);position:absolute;right:17px;top:13px;color:#272e2f;font:900 62px/1 var(--mono)}
-    .gate h3{position:relative;margin:35px 0 8px;font:800 20px/1.15 var(--mono)}
-    .gate .big{color:var(--green);font:900 33px/1 var(--mono)}
-    .gate.blocked .big{color:var(--amber)}
-    .gate p{margin:10px 0 0;color:#b2bbb6;font-size:12px;line-height:1.48}
-    .gate code{display:block;margin-top:10px;font-size:10px}
-    .metric-grid{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line)}
-    .metric{padding:19px 20px;border-right:1px solid var(--line)}
-    .metric:last-child{border-right:0}
-    .metric-label{display:block;color:var(--muted);font-size:8px}
-    .metric-value{display:block;margin-top:7px;font:800 24px/1 var(--mono)}
-
-    .config-grid{display:grid;grid-template-columns:repeat(4,1fr)}
-    .config{min-height:125px;padding:22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
-    .config:nth-child(4n){border-right:0}
-    .config:nth-child(n+5){border-bottom:0}
-    .config small{display:block;color:var(--muted);font:9px var(--mono);letter-spacing:.06em}
-    .config strong{display:block;margin-top:9px;color:var(--cyan);font:800 17px/1.15 var(--mono)}
-    .config span{display:block;margin-top:7px;color:#a9b2ad;font-size:11px;line-height:1.35}
-
-    .baseline-layout{display:grid;grid-template-columns:1.12fr .88fr}
-    .baseline-table-wrap{padding:25px;border-right:1px solid var(--line);overflow:auto}
-    table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-    th,td{border:1px solid var(--line);padding:8px 10px;text-align:center;vertical-align:middle}
-    th{background:#171d1e;color:var(--cyan);font-size:9px}
-    td{font-size:11px}
-    td:first-child{text-align:left;font-weight:800}
-    tr.highlight td{background:rgba(169,240,77,.045)}
-    .baseline-insight{display:grid;grid-template-rows:repeat(4,1fr)}
-    .insight{padding:24px;border-bottom:1px solid var(--line)}
-    .insight:last-child{border-bottom:0}
-    .insight small{color:var(--muted);font:9px var(--mono)}
-    .insight strong{display:block;margin-top:7px;color:var(--green);font:900 24px/1 var(--mono)}
-    .insight p{margin:8px 0 0;color:#adb7b1;font-size:11px;line-height:1.4}
-
-    .chart-wrap{padding:28px;overflow-x:auto}
-    .chart-head,.chart-row{min-width:960px;display:grid;grid-template-columns:200px 1fr 1fr 120px;gap:18px;align-items:center}
-    .chart-head{padding:0 10px 12px;color:var(--muted);font:9px var(--mono)}
-    .chart-row{padding:12px 10px;border-top:1px solid rgba(48,55,56,.75)}
-    .cell-name strong{display:block;font:700 13px var(--mono)}
-    .cell-name small{color:var(--muted);font:9px var(--mono)}
-    .bar-track{height:12px;background:#252b2c;overflow:hidden}
-    .bar{height:100%;width:calc(var(--value)*1%);transform-origin:left;animation:grow .8s ease-out both}
-    .bar.e2el{background:var(--cyan)}
-    .bar.throughput{background:var(--green)}
-    .bar-label{margin-top:5px;color:#cbd2cf;font:9px var(--mono)}
-    .tp-note{text-align:right;color:var(--amber);font:800 13px var(--mono)}
-    @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-    .chart-summary{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
-    .chart-summary div{padding:18px 22px;border-right:1px solid var(--line)}
-    .chart-summary div:last-child{border-right:0}
-    .chart-summary small{display:block;color:var(--muted);font:8px var(--mono)}
-    .chart-summary strong{display:block;margin-top:6px;color:var(--green);font:800 22px var(--mono)}
-    .chart-summary span{display:block;margin-top:4px;color:#9fa9a3;font-size:10px}
-
-    .prefix-layout{display:grid;grid-template-columns:1.16fr .84fr}
-    .prefix-table-wrap{padding:25px;border-right:1px solid var(--line);overflow:auto}
-    .prefix-table th,.prefix-table td{padding:7px 8px;font-size:10px}
-    .prefix-table tr.primary td{background:rgba(169,240,77,.07)}
-    .prefix-table tr.primary td:nth-child(4),.prefix-table tr.primary td:nth-child(6){color:var(--green);font-weight:900}
-    .prefix-table .boundary{color:var(--amber)}
-    .prefix-readout{display:grid;grid-template-rows:auto 1fr auto}
-    .prefix-callout{padding:25px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,rgba(169,240,77,.08),transparent)}
-    .prefix-callout strong{display:block;color:var(--green);font:800 23px/1.1 var(--mono)}
-    .prefix-callout p{margin:10px 0 0;color:#b2bbb5;font-size:12px;line-height:1.5}
-    .prefix-kpis{display:grid;grid-template-columns:1fr 1fr}
-    .prefix-kpi{padding:22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
-    .prefix-kpi:nth-child(2n){border-right:0}
-    .prefix-kpi:nth-last-child(-n+2){border-bottom:0}
-    .prefix-kpi small{display:block;color:var(--muted);font:8px var(--mono)}
-    .prefix-kpi strong{display:block;margin-top:7px;font:900 24px/1 var(--mono)}
-    .prefix-kpi.green strong{color:var(--green)}
-    .prefix-kpi.amber strong{color:var(--amber)}
-    .prefix-boundary{padding:20px 24px;border-top:1px solid var(--line);color:#b0b9b4;font-size:11px;line-height:1.45}
-    .prefix-boundary b{color:var(--amber)}
-
-    .dual{display:grid;grid-template-columns:1fr 1fr}
-    .dual-card{min-width:0;padding:27px;border-right:1px solid var(--line);overflow-x:auto}
-    .dual-card:last-child{border-right:0}
-    .dual-card h3{margin:15px 0 8px;font:800 23px/1.1 var(--mono)}
-    .dual-card p{color:#adb6b1;font-size:12px;line-height:1.5}
-    .profile-strip{display:grid;grid-template-columns:repeat(4,1fr);margin-top:20px;border:1px solid var(--line)}
-    .profile-stat{padding:17px;border-right:1px solid var(--line);text-align:center}
-    .profile-stat:last-child{border-right:0}
-    .profile-stat strong{display:block;color:var(--cyan);font:900 23px/1 var(--mono)}
-    .profile-stat span{display:block;margin-top:5px;color:var(--muted);font:8px var(--mono)}
-    .profile-table{margin-top:18px}
-    .profile-table th,.profile-table td{padding:7px 6px;font-size:9px}
-    .blocked-card{margin-top:18px;border:1px solid #755b29;border-left:7px solid var(--amber);background:rgba(241,184,91,.07);padding:20px}
-    .blocked-card strong{display:block;color:var(--amber);font:900 21px/1.1 var(--mono)}
-    .blocked-card .equation{margin:15px 0;border:1px dashed #83662c;padding:16px;text-align:center;color:var(--red);font:900 25px/1 var(--mono)}
-    .blocked-card p{margin:0}
-    .zero-grid{display:grid;grid-template-columns:repeat(4,1fr);margin-top:15px;border:1px solid var(--line)}
-    .zero-grid div{padding:10px;border-right:1px solid var(--line);text-align:center}
-    .zero-grid div:last-child{border-right:0}
-    .zero-grid strong{color:var(--red);font:800 17px var(--mono)}
-    .zero-grid span{display:block;color:var(--muted);font:8px var(--mono)}
-
-    .lineage{padding:28px;overflow-x:auto}
-    .lineage-row{min-width:1080px;display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
-    .lineage-item{position:relative;min-height:145px;border:1px solid var(--line);padding:20px;background:var(--panel-2)}
-    .lineage-item::after{content:"→";position:absolute;right:-19px;top:50%;z-index:2;color:var(--green);font:800 22px var(--mono)}
-    .lineage-item:last-child::after{display:none}
-    .lineage-item small{display:block;color:var(--muted);font:8px var(--mono)}
-    .lineage-item strong{display:block;margin:10px 0 7px;font:800 15px/1.2 var(--mono)}
-    .lineage-item.green strong{color:var(--green)}
-    .lineage-item.red strong{color:var(--red)}
-    .lineage-item.amber strong{color:var(--amber)}
-    .lineage-item p{margin:0;color:#9fa9a3;font-size:10px;line-height:1.35}
-
-    .package-wrap{padding:26px;overflow:auto}
-    .package-table th,.package-table td{font-size:9.5px}
-    .package-table td.grade-green{color:var(--green);font-family:var(--mono)}
-    .package-table td.grade-amber{color:var(--amber);font-family:var(--mono)}
-    .route{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
-    .route-card{padding:21px;border-right:1px solid var(--line)}
-    .route-card:last-child{border-right:0}
-    .route-card h3{margin:0 0 9px;font:800 15px var(--mono)}
-    .route-card p{margin:0;color:var(--muted);font-size:10px;line-height:1.4}
-    .route-card.closed h3{color:var(--green)}
-    .route-card.open h3{color:var(--amber)}
-    footer{margin-top:26px;border:1px solid var(--line);padding:27px;color:var(--muted);font-size:11px;line-height:1.5}
-    footer strong{color:var(--paper)}
-    .stamp{float:right;color:var(--green);font-size:9px}
-
-    @media(max-width:980px){
-      main{width:min(100% - 24px,1480px)}
-      .masthead,.baseline-layout,.prefix-layout,.dual{grid-template-columns:1fr}
-      .hero-status{border-left:0;border-top:1px solid var(--line)}
-      .evidence-rail{grid-template-columns:repeat(2,1fr)}
-      .gate:nth-child(3n){border-right:1px solid var(--line)}
-      .gate:nth-child(2n){border-right:0}
-      .gate:nth-child(n+4){border-bottom:1px solid var(--line)}
-      .gate:nth-last-child(-n+2){border-bottom:0}
-      .metric-grid,.config-grid{grid-template-columns:repeat(2,1fr)}
-      .metric:nth-child(2n),.config:nth-child(2n){border-right:0}
-      .baseline-table-wrap,.prefix-table-wrap,.dual-card{border-right:0;border-bottom:1px solid var(--line)}
-      .route{grid-template-columns:repeat(2,1fr)}
+    * {
+      box-sizing: border-box;
     }
-    @media(max-width:620px){
-      .hero-copy{padding:30px 24px}
-      h1{font-size:48px}
-      .section-head{align-items:start;flex-direction:column}
-      .section-note{text-align:left}
-      .evidence-rail,.metric-grid,.config-grid,.chart-summary,.profile-strip,.route{grid-template-columns:1fr}
-      .gate,.metric,.config,.chart-summary div,.profile-stat,.route-card{border-right:0!important;border-bottom:1px solid var(--line)!important}
-      .gate:last-child,.metric:last-child,.config:last-child,.chart-summary div:last-child,.profile-stat:last-child,.route-card:last-child{border-bottom:0!important}
-      .prefix-kpis{grid-template-columns:1fr}
-      .prefix-kpi{border-right:0}
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 52px;
     }
-    @media print{
-      body{background:#fff;color:#111}
-      body::before{display:none}
-      main{width:100%;padding:0}
-      section,.masthead,footer{break-inside:avoid;background:#fff;color:#111}
-      .hero-status{background:#fff}
-      .gate p,.config span,.insight p,.prefix-callout p,.dual-card p,.lineage-item p{color:#333}
+
+    body {
+      margin: 0;
+      background: #d9d9d9;
+      color: var(--black);
+      font-family: "Microsoft YaHei", "PingFang SC", "Heiti SC", sans-serif;
+      letter-spacing: 0;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 16px;
+      background: #f2f2f2;
+      border-bottom: 1px solid #777;
+      font-size: 12px;
+    }
+
+    .toolbar strong {
+      color: var(--red);
+      font-size: 14px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .nav a,
+    .toolbar button {
+      border: 1px solid #777;
+      background: #fff;
+      color: #111;
+      padding: 4px 8px;
+      text-decoration: none;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .nav a:hover,
+    .nav a:focus-visible,
+    .toolbar button:hover,
+    .toolbar button:focus-visible {
+      border-color: var(--red);
+      color: var(--red);
+      outline: 0;
+    }
+
+    .deck {
+      display: grid;
+      gap: 26px;
+      justify-items: center;
+      padding: 24px;
+    }
+
+    .slide {
+      position: relative;
+      width: min(96vw, 1440px);
+      aspect-ratio: 16 / 9;
+      scroll-margin-top: 48px;
+      background: var(--gray-0);
+      border: 1px solid #555;
+      display: grid;
+      grid-template-rows: 72px 1fr 70px 22px;
+      gap: 8px;
+      padding: 20px 26px 14px;
+      overflow: hidden;
+    }
+
+    .slide h1 {
+      margin: 0;
+      color: var(--red);
+      font-size: clamp(22px, 2.05vw, 34px);
+      line-height: 1.12;
+      font-weight: 800;
+      border-bottom: 2px solid var(--red);
+      padding-bottom: 8px;
+    }
+
+    .content {
+      min-height: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .grid-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .rows-2 {
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    .span-4 {
+      grid-column: span 4;
+    }
+
+    .module {
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid #777;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .module-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 30px;
+      padding: 5px 8px;
+      border-bottom: 1px solid #777;
+      background: var(--yellow);
+      color: #111;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .module-title.blue {
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
+    .module-title.green {
+      background: var(--green);
+      color: #174a20;
+    }
+
+    .module-title.red {
+      background: #ffe7e7;
+      color: var(--red);
+    }
+
+    .module-body {
+      flex: 1;
+      min-height: 0;
+      padding: 7px 8px;
+      font-size: 11px;
+      line-height: 1.28;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+    }
+
+    th,
+    td {
+      border: 1px solid #888;
+      padding: 3px 4px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--yellow);
+      font-weight: 800;
+      color: #111;
+    }
+
+    td.num,
+    th.num {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .tight td,
+    .tight th {
+      padding: 2px 3px;
+      font-size: 9.7px;
+    }
+
+    .micro td,
+    .micro th {
+      padding: 2px 3px;
+      font-size: 8.8px;
+      line-height: 1.12;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .metric-row.six {
+      grid-template-columns: repeat(6, 1fr);
+    }
+
+    .metric {
+      border: 1px solid #777;
+      background: #f8f8f8;
+      padding: 6px 7px;
+      min-height: 54px;
+    }
+
+    .metric .label {
+      color: #333;
+      font-size: 9.5px;
+      line-height: 1.15;
+    }
+
+    .metric .value {
+      margin-top: 3px;
+      color: var(--red);
+      font-size: 18px;
+      line-height: 1.05;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .metric .note {
+      margin-top: 2px;
+      color: #333;
+      font-size: 9px;
+    }
+
+    .blue-text {
+      color: var(--blue);
+      font-weight: 800;
+    }
+
+    .red-text {
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    .green-text {
+      color: var(--good);
+      font-weight: 800;
+    }
+
+    .warn-text {
+      color: var(--warn);
+      font-weight: 800;
+    }
+
+    .tag {
+      display: inline-block;
+      border: 1px solid #777;
+      background: #fff;
+      padding: 1px 5px;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .tag.ok {
+      background: #e5f6e7;
+      color: var(--good);
+    }
+
+    .tag.risk {
+      background: #ffe5e5;
+      color: var(--red);
+    }
+
+    .tag.plan {
+      background: #e8efff;
+      color: var(--blue);
+    }
+
+    .tag.warn {
+      background: #fff0d9;
+      color: var(--warn);
+    }
+
+    .gate-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .gate {
+      min-height: 0;
+      border: 1px solid #777;
+      background: #f7f7f7;
+      padding: 8px;
+      position: relative;
+      min-width: 0;
+    }
+
+    .gate::after {
+      content: attr(data-step);
+      position: absolute;
+      right: 7px;
+      bottom: -2px;
+      color: #e6e6e6;
+      font-size: 42px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .gate h3 {
+      position: relative;
+      z-index: 1;
+      margin: 7px 0 3px;
+      color: var(--blue);
+      font-size: 13px;
+      line-height: 1.15;
+    }
+
+    .gate .big {
+      position: relative;
+      z-index: 1;
+      color: var(--red);
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .gate p {
+      position: relative;
+      z-index: 1;
+      margin: 5px 0 0;
+      font-size: 9.5px;
+      line-height: 1.22;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: 1fr 1fr;
+      gap: 7px;
+      min-height: 0;
+    }
+
+    .config {
+      border: 1px solid #777;
+      background: #f8f8f8;
+      padding: 8px;
+      min-width: 0;
+    }
+
+    .config small {
+      display: block;
+      color: #555;
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .config strong {
+      display: block;
+      margin-top: 5px;
+      color: var(--blue);
+      font-size: 13px;
+      line-height: 1.18;
+    }
+
+    .config span {
+      display: block;
+      margin-top: 5px;
+      font-size: 9.5px;
+      line-height: 1.25;
+    }
+
+    .ladder {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .ladder-step {
+      border: 1px solid #777;
+      background: var(--green);
+      padding: 7px 5px;
+      text-align: center;
+      position: relative;
+    }
+
+    .ladder-step::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -7px;
+      width: 8px;
+      height: 1px;
+      background: #777;
+    }
+
+    .ladder-step:last-child::after {
+      display: none;
+    }
+
+    .ladder-step strong {
+      display: block;
+      color: var(--good);
+      font-size: 16px;
+    }
+
+    .ladder-step span {
+      display: block;
+      margin-top: 3px;
+      font-size: 9px;
+    }
+
+    .baseline-layout {
+      display: grid;
+      grid-template-columns: 1.45fr .55fr;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .insight-stack {
+      display: grid;
+      grid-template-rows: repeat(4, 1fr);
+      gap: 6px;
+      min-height: 0;
+    }
+
+    .insight {
+      border: 1px solid #777;
+      background: #f8f8f8;
+      padding: 7px;
+    }
+
+    .insight small {
+      display: block;
+      color: #555;
+      font-size: 8.5px;
+      font-weight: 800;
+    }
+
+    .insight strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--red);
+      font-size: 17px;
+      line-height: 1.05;
+    }
+
+    .insight p {
+      margin: 3px 0 0;
+      font-size: 9px;
+      line-height: 1.2;
+    }
+
+    .ab-table td {
+      vertical-align: middle;
+    }
+
+    .bar-cell {
+      min-width: 122px;
+    }
+
+    .bar {
+      height: 9px;
+      background: #e6e6e6;
+      border: 1px solid #999;
+      position: relative;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: var(--blue);
+    }
+
+    .bar > span.green {
+      background: var(--good);
+    }
+
+    .bar-note {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2px;
+      color: #333;
+      font-size: 8.5px;
+    }
+
+    .prefix-layout {
+      display: grid;
+      grid-template-columns: 1.42fr .58fr;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .prefix-table tr.primary td {
+      background: #e7f4df;
+      font-weight: 700;
+    }
+
+    .prefix-table td.hit {
+      color: var(--good);
+      font-weight: 900;
+    }
+
+    .prefix-table td.boundary {
+      color: var(--warn);
+      font-weight: 800;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .kpi {
+      border: 1px solid #777;
+      background: #f8f8f8;
+      padding: 7px;
+      min-height: 55px;
+    }
+
+    .kpi small {
+      display: block;
+      color: #555;
+      font-size: 8.5px;
+    }
+
+    .kpi strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--red);
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .callout {
+      border: 1px solid #777;
+      border-left: 7px solid var(--red);
+      background: #fff;
+      padding: 8px 10px;
+      font-size: 10px;
+      line-height: 1.3;
+    }
+
+    .callout.green {
+      border-left-color: var(--good);
+      background: #f4fbf4;
+    }
+
+    .callout.warn {
+      border-left-color: var(--warn);
+      background: #fff8eb;
+    }
+
+    .callout strong {
+      color: var(--red);
+    }
+
+    .callout.green strong {
+      color: var(--good);
+    }
+
+    .callout.warn strong {
+      color: var(--warn);
+    }
+
+    .profile-layout {
+      grid-template-columns: 1.07fr .93fr;
+    }
+
+    .equation {
+      margin: 8px 0;
+      border: 1px dashed #9a6200;
+      background: #fff8eb;
+      padding: 10px;
+      color: var(--red);
+      text-align: center;
+      font-size: 25px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .zero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .zero {
+      border: 1px solid #777;
+      background: #f8f8f8;
+      padding: 6px;
+      text-align: center;
+    }
+
+    .zero strong {
+      display: block;
+      color: var(--red);
+      font-size: 18px;
+    }
+
+    .zero span {
+      font-size: 8px;
+    }
+
+    .lineage {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      align-items: stretch;
+    }
+
+    .lineage-item {
+      min-width: 0;
+      border: 1px solid #777;
+      background: #f7f7f7;
+      padding: 8px;
+      position: relative;
+    }
+
+    .lineage-item::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -7px;
+      width: 8px;
+      height: 1px;
+      background: #777;
+    }
+
+    .lineage-item:last-child::after {
+      display: none;
+    }
+
+    .lineage-item small {
+      color: #555;
+      font-size: 8.5px;
+      font-weight: 800;
+    }
+
+    .lineage-item strong {
+      display: block;
+      margin: 6px 0 5px;
+      color: var(--blue);
+      font-size: 12px;
+      line-height: 1.15;
+    }
+
+    .lineage-item p {
+      margin: 0;
+      font-size: 9px;
+      line-height: 1.25;
+    }
+
+    .route {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .route-card {
+      border: 1px solid #777;
+      background: #f8f8f8;
+      padding: 7px;
+    }
+
+    .route-card h3 {
+      margin: 0 0 5px;
+      color: var(--red);
+      font-size: 12px;
+    }
+
+    .route-card.closed h3 {
+      color: var(--good);
+    }
+
+    .route-card p {
+      margin: 0;
+      font-size: 9px;
+      line-height: 1.22;
+    }
+
+    ul.compact {
+      margin: 0;
+      padding-left: 16px;
+    }
+
+    ul.compact li {
+      margin: 0 0 3px;
+    }
+
+    code {
+      color: var(--blue);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: .92em;
+    }
+
+    .source-line {
+      margin-top: 6px;
+      padding-top: 5px;
+      border-top: 1px dashed #999;
+      color: #444;
+      font-size: 9px;
+      line-height: 1.22;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 86px 1fr;
+      border: 1px solid #777;
+      background: #fff;
+      min-height: 0;
+    }
+
+    .summary-label {
+      display: grid;
+      place-items: center;
+      background: var(--red);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .summary ul {
+      margin: 0;
+      padding: 7px 10px 7px 23px;
+      font-size: 11px;
+      line-height: 1.28;
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      color: #333;
+      font-size: 10px;
+      align-items: center;
+      border-top: 1px solid #999;
+      padding-top: 4px;
+    }
+
+    .footer span:nth-child(2) {
+      text-align: center;
+    }
+
+    .footer span:nth-child(3) {
+      text-align: right;
+    }
+
+    .slide-index {
+      color: var(--red);
+      font-weight: 900;
+    }
+
+    .page-watermark {
+      position: absolute;
+      right: 22px;
+      top: 88px;
+      color: #efefef;
+      font-size: 64px;
+      font-weight: 900;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .slide > *:not(.page-watermark) {
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 900px) {
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .slide {
+        width: 1280px;
+        transform-origin: top center;
+      }
+
+      .deck {
+        overflow-x: auto;
+        justify-items: start;
+      }
+    }
+
+    @media print {
+      @page {
+        size: landscape;
+        margin: 0;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .toolbar {
+        display: none;
+      }
+
+      .deck {
+        padding: 0;
+        gap: 0;
+      }
+
+      .slide {
+        width: 100vw;
+        height: 100vh;
+        page-break-after: always;
+        border: 0;
+      }
     }
   </style>
 </head>
 <body>
-<main>
-  <header class="masthead">
-    <div class="hero-copy">
-      <div class="eyebrow">AK-INFER-LAB / P6 EVIDENCE CONSOLE / CLOSEOUT SNAPSHOT</div>
-      <h1>P6<br/>EVIDENCE<br/>CHAIN</h1>
-      <p>DeepSeek-V4-Flash W8A8-MTP · Atlas 800T A2 · Ascend 910B1 ×8。<b>主线 reference、核心机制门和五份计划交付物已经关闭</b>；P6.3C 以严格单变量 blocked 终态关闭。这里同时保留所有重要 green、yellow、red 与 blocked provenance，避免把“阶段可继续”写成“所有实验都 green”。</p>
-    </div>
-    <aside class="hero-status">
-      <div class="status-light">P6 MAINLINE CLOSED · VERIFIED 2026-07-28</div>
-      <div class="status-stack">
-        <div class="status-row"><small>REFERENCE</small><strong class="green">P6.1C-R1 + P6.1 + P6.2 GREEN</strong></div>
-        <div class="status-row"><small>MECHANISM</small><strong class="green">P6.3A + P6.3B-R4-R1 GREEN</strong></div>
-        <div class="status-row"><small>CONDITIONAL</small><strong class="amber">P6.3C STRICT SINGLE-VARIABLE BLOCKED</strong></div>
-        <div class="status-row"><small>OPTIONAL / AVAILABILITY-GATED</small><strong>P6.3D MAX_NUM_SEQS · P6.4 MINDIE</strong></div>
-        <div class="status-row"><small>ACTIVE PROJECT CONTEXT</small><strong>P8 MAY CONSUME P6 · P7 STILL NEEDS ITS OWN CLOSEOUT</strong></div>
-      </div>
-    </aside>
-  </header>
+  <div class="toolbar">
+    <div><strong>AK-Infer-Lab P6 阶段证据链领导汇报</strong> ｜ 2026-07-28 ｜ 固定 16:9 仿 PPT 页面</div>
+    <nav class="nav" aria-label="slides">
+      <a href="#s1">1 总览</a>
+      <a href="#s2">2 条件</a>
+      <a href="#s3">3 基线</a>
+      <a href="#s4">4 MTP</a>
+      <a href="#s5">5 Prefix</a>
+      <a href="#s6">6 Profile/可行性</a>
+      <a href="#s7">7 Provenance</a>
+      <a href="#s8">8 资产/边界</a>
+      <button type="button" onclick="window.print()">打印/PDF</button>
+    </nav>
+  </div>
 
-  <section aria-labelledby="chain-title">
-    <div class="section-head">
-      <div><div class="section-id">01 / ACCEPTED &amp; TERMINAL GATES</div><h2 id="chain-title">六个核心门，五绿一项有效 blocked</h2></div>
-      <p class="section-note">绿色表示开发机已经接受对应服务器证据；amber blocked 表示可行性问题已得到确定答案，并非等待重跑。所有结论都受 exact workload 与 evidence scope 约束。</p>
-    </div>
-    <div class="evidence-rail">
-      <article class="gate" data-step="01"><span class="tag green">GREEN</span><h3>Official Context</h3><div class="big">131,072</div><p>4096 / 32768 / 65536 / 98304 / 131072 + 64 五档均首次成功；functional / stability gate 关闭。</p><code>P6.1C-R1</code></article>
-      <article class="gate" data-step="02"><span class="tag green">GREEN</span><h3>Unprofiled Baseline</h3><div class="big">90 / 90</div><p>18 cells、24 measured batches、零 retry；TTFT / TPOT / ITL / E2EL / streaming throughput reference 成立。</p><code>P6.1</code></article>
-      <article class="gate" data-step="03"><span class="tag green">GREEN</span><h3>Profiled Evidence</h3><div class="big">3 × 136</div><p>3 representative cells；每 cell 136 SQLite，6 行 phase-memory，八卡 coverage 与 full aggregate 完整。</p><code>P6.2</code></article>
-      <article class="gate" data-step="04"><span class="tag green">GREEN</span><h3>Matched MTP A/B</h3><div class="big">24 / 24</div><p>108/108 request；paired E2EL↓、TPOT↓、batch output throughput↑ 全部方向一致。</p><code>P6.3A</code></article>
-      <article class="gate" data-step="05"><span class="tag green">GREEN</span><h3>Explicit Prefix Cache</h3><div class="big">9 / 9</div><p>64/64 request；Off hit=0，On primary 9/9 精确命中，另 15 条 boundary follower 仍为 0。</p><code>P6.3B-R4-R1</code></article>
-      <article class="gate blocked" data-step="06"><span class="tag amber">BLOCKED</span><h3>Chunked Prefill</h3><div class="big">4096 &lt; 135168</div><p>Off 侧 pre-request validation 失败；改变 token budget 或 max model length 都是禁止的第二变量。</p><code>P6.3C</code></article>
-    </div>
-    <div class="metric-grid">
-      <div class="metric"><span class="metric-label">official contexts</span><span class="metric-value">5 / 5</span></div>
-      <div class="metric"><span class="metric-label">baseline cells</span><span class="metric-value">18 / 18</span></div>
-      <div class="metric"><span class="metric-label">profiled cells</span><span class="metric-value">3 / 3</span></div>
-      <div class="metric"><span class="metric-label">mtp measured</span><span class="metric-value">108 / 108</span></div>
-      <div class="metric"><span class="metric-label">prefix requests</span><span class="metric-value">64 / 64</span></div>
-      <div class="metric"><span class="metric-label">p6.3c requests</span><span class="metric-value">0</span></div>
-    </div>
-  </section>
-
-  <section aria-labelledby="config-title">
-    <div class="section-head">
-      <div><div class="section-id">02 / FROZEN EXPERIMENT PROFILE</div><h2 id="config-title">比较前先冻结运行栈</h2></div>
-      <p class="section-note">以下是 P6 accepted reference 的共同配置。P6.3A 只切 MTP；P6.3B-R4-R1 只切显式 Prefix Cache，并在两侧使用同一个 R2 hybrid-KV repair。</p>
-    </div>
-    <div class="config-grid">
-      <div class="config"><small>MODEL / QUANTIZATION</small><strong>DeepSeek-V4-Flash W8A8-MTP</strong><span>`quantization=ascend` · 70 shards · checkpoint 约 279.4 GiB</span></div>
-      <div class="config"><small>HARDWARE / PARALLEL</small><strong>8 × 910B1 · TP8 + EP</strong><span>Atlas 800T A2 · 64GB HBM/card · DP1</span></div>
-      <div class="config"><small>RUNTIME PIN</small><strong>vLLM 0.22.1+empty</strong><span>`0decac0d…` · vLLM-Ascend 0.22.1rc1 `5f6faa0c…`</span></div>
-      <div class="config"><small>MTP / GRAPH</small><strong>num_speculative_tokens=1</strong><span>method=mtp · FULL_DECODE_ONLY · task-local overlay</span></div>
-      <div class="config"><small>SCHEDULER</small><strong>135168 / 4096 / 1</strong><span>max_model_len / max_num_batched_tokens / max_num_seqs · block=128</span></div>
-      <div class="config"><small>FEATURE DEFAULT</small><strong>Chunked Prefill + Prefix ON</strong><span>P6.3B 只显式切 Prefix；P6.3C 审计显式 Chunked on/off</span></div>
-      <div class="config"><small>REQUEST</small><strong>Streaming · temperature=0</strong><span>ignore_eos · min=max output · exact token / finish / SSE done</span></div>
-      <div class="config"><small>HYGIENE</small><strong>No generated content packaged</strong><span>request bodies / token IDs / raw logs / profiler traces 留服务器</span></div>
-    </div>
-  </section>
-
-  <section aria-labelledby="baseline-title">
-    <div class="section-head">
-      <div><div class="section-id">03 / P6.1 USER PERFORMANCE REFERENCE</div><h2 id="baseline-title">C1 六个代表 cell 的实测绝对值</h2></div>
-      <p class="section-note">取 P6.1 `matrix_cell_summary.tsv` 的 mean。完整矩阵覆盖 4K / 64K / 128K × output 64 / 256 × C1 / C4 / C8；此处突出不含服务端并发排队的 C1 读数。</p>
-    </div>
-    <div class="baseline-layout">
-      <div class="baseline-table-wrap">
-        <table aria-label="P6.1 concurrency one baseline">
-          <thead><tr><th>Input</th><th>Output</th><th>Request n</th><th>TTFT mean</th><th>TPOT mean</th><th>E2EL mean</th><th>Batch output</th></tr></thead>
-          <tbody>
-            <tr class="highlight"><td>4K</td><td>64</td><td>3</td><td>411.1 ms</td><td>203.30 ms/token</td><td>13.22 s</td><td>4.84 tok/s</td></tr>
-            <tr><td>4K</td><td>256</td><td>1</td><td>401.2 ms</td><td>198.09 ms/token</td><td>50.91 s</td><td>5.03 tok/s</td></tr>
-            <tr class="highlight"><td>64K</td><td>64</td><td>1</td><td>6,584.4 ms</td><td>202.83 ms/token</td><td>19.36 s</td><td>3.30 tok/s</td></tr>
-            <tr><td>64K</td><td>256</td><td>1</td><td>6,534.9 ms</td><td>199.50 ms/token</td><td>57.41 s</td><td>4.46 tok/s</td></tr>
-            <tr class="highlight"><td>128K</td><td>64</td><td>3</td><td>13,084.3 ms</td><td>201.84 ms/token</td><td>25.80 s</td><td>2.48 tok/s</td></tr>
-            <tr><td>128K</td><td>256</td><td>1</td><td>13,107.5 ms</td><td>199.05 ms/token</td><td>63.87 s</td><td>4.01 tok/s</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="baseline-insight">
-        <div class="insight"><small>TTFT / INPUT SCALE</small><strong>0.41s → 13.08s</strong><p>output=64、C1 时从 4K 到 128K；主要反映 prefill 增长。</p></div>
-        <div class="insight"><small>TPOT / DECODE BAND</small><strong>198–203 ms/token</strong><p>C1 六格相对稳定；输入长度没有把 decode TPOT 推离该区间。</p></div>
-        <div class="insight"><small>CONCURRENCY BOUNDARY</small><strong>max_num_seqs = 1</strong><p>C4/C8 的 E2EL/TTFT 含排队；batch throughput 基本不随并发扩展。</p></div>
-        <div class="insight"><small>MEASUREMENT COMPLETENESS</small><strong>24 batches · 90 requests</strong><p>所有 token、finish、health、queue、MTP counter continuity 与 cleanup 门通过。</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section aria-labelledby="mtp-title">
-    <div class="section-head">
-      <div><div class="section-id">04 / P6.3A MATCHED MTP READOUT</div><h2 id="mtp-title">MTP-on 描述性差异</h2></div>
-      <p class="section-note">条长使用 paired relative delta 的绝对百分比。E2EL / TPOT 越低越好，batch output throughput 越高越好。固定 Off→On、每 cell 3 repeats、无显著性检验。</p>
-    </div>
-    <div class="chart-wrap">
-      <div class="chart-head"><span>CELL</span><span>E2EL ↓</span><span>BATCH OUTPUT THROUGHPUT ↑</span><span>TPOT ↓</span></div>
-      <div class="chart-row"><div class="cell-name"><strong>short_prefill</strong><small>4K + 64 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:45.1"></div></div><div class="bar-label">−45.1%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:82.6"></div></div><div class="bar-label">+82.6%</div></div><div class="tp-note">−45.9%</div></div>
-      <div class="chart-row"><div class="cell-name"><strong>short_decode</strong><small>4K + 256 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:46"></div></div><div class="bar-label">−46.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:85.2"></div></div><div class="bar-label">+85.2%</div></div><div class="tp-note">−46.2%</div></div>
-      <div class="chart-row"><div class="cell-name"><strong>short_decode_c8</strong><small>4K + 256 · C8</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:47"></div></div><div class="bar-label">−47.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:89.2"></div></div><div class="bar-label">+89.2%</div></div><div class="tp-note">−47.3%</div></div>
-      <div class="chart-row"><div class="cell-name"><strong>mid_prefill</strong><small>64K + 64 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:36"></div></div><div class="bar-label">−36.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:56.1"></div></div><div class="bar-label">+56.1%</div></div><div class="tp-note">−46.5%</div></div>
-      <div class="chart-row"><div class="cell-name"><strong>mid_prefill_c4</strong><small>64K + 64 · C4</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:35.7"></div></div><div class="bar-label">−35.7%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:55.9"></div></div><div class="bar-label">+55.9%</div></div><div class="tp-note">−46.3%</div></div>
-      <div class="chart-row"><div class="cell-name"><strong>mid_decode</strong><small>64K + 256 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:44.9"></div></div><div class="bar-label">−44.9%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:81.6"></div></div><div class="bar-label">+81.6%</div></div><div class="tp-note">−47.9%</div></div>
-      <div class="chart-row"><div class="cell-name"><strong>long_prefill</strong><small>128K + 64 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:30"></div></div><div class="bar-label">−30.0%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:42.8"></div></div><div class="bar-label">+42.8%</div></div><div class="tp-note">−47.2%</div></div>
-      <div class="chart-row"><div class="cell-name"><strong>long_decode</strong><small>128K + 256 · C1</small></div><div><div class="bar-track"><div class="bar e2el" style="--value:42.8"></div></div><div class="bar-label">−42.8%</div></div><div><div class="bar-track"><div class="bar throughput" style="--value:74.7"></div></div><div class="bar-label">+74.7%</div></div><div class="tp-note">−48.3%</div></div>
-    </div>
-    <div class="chart-summary">
-      <div><small>TPOT RELATIVE MEAN</small><strong>−47.0%</strong><span>24/24 paired batch 下降</span></div>
-      <div><small>E2EL RELATIVE MEAN</small><strong>−40.9%</strong><span>Prefill-heavy 改善较小</span></div>
-      <div><small>BATCH OUTPUT RELATIVE MEAN</small><strong>+71.0%</strong><span>不是设备峰值 throughput</span></div>
-      <div><small>MTP ACCEPTED TOKEN DELTA</small><strong>4,896</strong><span>mtp-on measured run</span></div>
-    </div>
-  </section>
-
-  <section aria-labelledby="prefix-title">
-    <div class="section-head">
-      <div><div class="section-id">05 / P6.3B-R4-R1 EXPLICIT PREFIX CACHE</div><h2 id="prefix-title">精确命中只出现在 primary scope</h2></div>
-      <p class="section-note">8 groups × 2 modes；每 group 每 mode 1 prime + 3 measured follower。Off/On 均使用 same R2 hybrid-KV repair，canonical bodies 跨 mode 字节相同。</p>
-    </div>
-    <div class="prefix-layout">
-      <div class="prefix-table-wrap">
-        <table class="prefix-table" aria-label="P6.3B prefix groups">
-          <thead><tr><th>Input · Prefix</th><th>Token-LCP / 16K floor</th><th>Off hit</th><th>On hit</th><th>TTFT Off → On</th><th>Paired Δ</th></tr></thead>
-          <tbody>
-            <tr><td>4K · 50%</td><td>2,048 / 0</td><td>0</td><td>0</td><td>416.2 → 417.4 ms</td><td class="boundary">+0.3%</td></tr>
-            <tr><td>4K · 90%</td><td>3,584 / 0</td><td>0</td><td>0</td><td>405.0 → 415.7 ms</td><td class="boundary">+2.7%</td></tr>
-            <tr><td>32K · 50%</td><td>16,384 / 16,384</td><td>0</td><td>0</td><td>3,255.6 → 3,251.4 ms</td><td class="boundary">−0.1%</td></tr>
-            <tr class="primary"><td>32K · 90%</td><td>29,440 / 16,384</td><td>0</td><td>16,384</td><td>3,199.4 → 1,645.7 ms</td><td>−48.6%</td></tr>
-            <tr><td>64K · 50%</td><td>32,768 / 32,768</td><td>0</td><td>0</td><td>6,362.9 → 6,478.8 ms</td><td class="boundary">+1.8%</td></tr>
-            <tr class="primary"><td>64K · 90%</td><td>58,880 / 49,152</td><td>0</td><td>49,152</td><td>6,399.3 → 1,734.6 ms</td><td>−72.9%</td></tr>
-            <tr><td>128K · 50%</td><td>65,536 / 65,536</td><td>0</td><td>0</td><td>12,924.6 → 13,008.2 ms</td><td class="boundary">+0.6%</td></tr>
-            <tr class="primary"><td>128K · 90%</td><td>117,889 / 114,688</td><td>0</td><td>114,688</td><td>12,826.0 → 1,873.7 ms</td><td>−85.4%</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="prefix-readout">
-        <div class="prefix-callout"><strong>显式 Prefix Cache 开关产生可观测机制效应</strong><p>resolved false→true；三个 primary group 的每次 hit 都严格等于 actual token-LCP 向下取整到 16K hybrid LCM。</p></div>
-        <div class="prefix-kpis">
-          <div class="prefix-kpi green"><small>REQUESTS</small><strong>64 / 64</strong></div>
-          <div class="prefix-kpi green"><small>PRIMARY POSITIVE</small><strong>9 / 9</strong></div>
-          <div class="prefix-kpi"><small>OFF HIT TOTAL</small><strong>0</strong></div>
-          <div class="prefix-kpi amber"><small>BOUNDARY POSITIVE</small><strong>0 / 15</strong></div>
-          <div class="prefix-kpi green"><small>ON HIT TOTAL</small><strong>540,672</strong></div>
-          <div class="prefix-kpi"><small>MTP ACCEPTED DELTA</small><strong>1,024 / mode</strong></div>
+  <main class="deck">
+    <section class="slide" id="s1" aria-label="P6 阶段关闭总览">
+      <div class="page-watermark">01</div>
+      <h1>P6 阶段结论：主线五项交付关闭，P6.3C 以严格单变量 blocked 终态关闭</h1>
+      <div class="content grid-3">
+        <div class="module span-2">
+          <div class="module-title">六个核心证据门：五项 GREEN + 一项有效 BLOCKED</div>
+          <div class="module-body gate-grid">
+            <article class="gate" data-step="01"><span class="tag ok">GREEN</span><h3>P6.1C-R1 · Official Context</h3><div class="big">131,072</div><p>4096 / 32768 / 65536 / 98304 / 131072 + 64 五档均首次成功。</p></article>
+            <article class="gate" data-step="02"><span class="tag ok">GREEN</span><h3>P6.1 · Unprofiled Baseline</h3><div class="big">90 / 90</div><p>18 cells、24 measured batches、零 retry；用户性能 reference 成立。</p></article>
+            <article class="gate" data-step="03"><span class="tag ok">GREEN</span><h3>P6.2 · Profiled Evidence</h3><div class="big">3 × 136</div><p>3 representative cells；每 cell 136 SQLite，phase-memory 与八卡覆盖完整。</p></article>
+            <article class="gate" data-step="04"><span class="tag ok">GREEN</span><h3>P6.3A · Matched MTP A/B</h3><div class="big">24 / 24</div><p>108/108 request；paired E2EL↓、TPOT↓、batch output throughput↑。</p></article>
+            <article class="gate" data-step="05"><span class="tag ok">GREEN</span><h3>P6.3B-R4-R1 · Prefix Cache</h3><div class="big">9 / 9</div><p>64/64 request；Off hit=0，On primary 9/9 精确命中。</p></article>
+            <article class="gate" data-step="06"><span class="tag warn">BLOCKED</span><h3>P6.3C · Chunked Prefill</h3><div class="big">4096 &lt; 135168</div><p>Off 侧 pre-request validation 失败；禁止改变第二变量制造 A/B。</p></article>
+          </div>
         </div>
-        <div class="prefix-boundary"><b>禁止外推：</b>50% 长上下文虽有非零 floor 仍然不命中；固定 Off→On 的 TTFT 变化只能作为 primary scope 描述性读数，不形成 universal hit、统计显著或普遍性能收益。</div>
+
+        <div class="module">
+          <div class="module-title blue">阶段口径与后续关系</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>层级</th><th>当前判断</th></tr>
+              <tr><td>P6 主线</td><td><span class="tag ok">CLOSED</span> reference 与核心机制输入可供后续阶段消费</td></tr>
+              <tr><td>P6.3C</td><td><span class="tag warn">VALID BLOCKED</span> 已得到明确可行性答案，不等待调参重跑</td></tr>
+              <tr><td>P6.3D / P6.4</td><td><span class="tag plan">OPTIONAL</span> max_num_seqs / MindIE 受条件与可用性门约束</td></tr>
+              <tr><td>P7</td><td><span class="tag risk">SEPARATE</span> capacity / scheduler / hardware boundary 仍需独立关闭</td></tr>
+              <tr><td>P8</td><td><span class="tag ok">CONSUMER</span> 可使用 P6 Prefix、MTP 与 trace reference</td></tr>
+              <tr><td>P9</td><td><span class="tag risk">NOT UNLOCKED</span> P6 单独不能支持 bottleneck attribution</td></tr>
+            </table>
+            <div class="source-line">重要口径：不能把“P6 主线关闭”写成“P6 所有候选实验全部 green”。历史 yellow / red / blocked provenance 必须保留。</div>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
-
-  <section aria-labelledby="profile-title">
-    <div class="section-head">
-      <div><div class="section-id">06 / PROFILED EVIDENCE &amp; STRICT FEASIBILITY</div><h2 id="profile-title">一项证明“可观测”，一项证明“不能严格比较”</h2></div>
-      <p class="section-note">P6.2 与 P6.3C 都是重要有效结果：前者关闭证据链可用性门，后者关闭 strict single-variable 可行性门。两者都不应被强行改写成性能收益。</p>
-    </div>
-    <div class="dual">
-      <article class="dual-card">
-        <span class="tag green">P6.2 GREEN</span>
-        <h3>Profiled operator / memory / transfer pipeline</h3>
-        <p>三个 fresh profiled cell 均首次成功；full request-device aggregate 全部 exit 0，`heavy_joins_skipped=false`，phase-memory 6 行且每行覆盖八卡，parse failure=0。</p>
-        <div class="profile-strip">
-          <div class="profile-stat"><strong>3 / 3</strong><span>CELLS</span></div>
-          <div class="profile-stat"><strong>136</strong><span>SQLITE / CELL</span></div>
-          <div class="profile-stat"><strong>6</strong><span>PHASE ROWS</span></div>
-          <div class="profile-stat"><strong>8 / 8</strong><span>DEVICE COVERAGE</span></div>
-        </div>
-        <table class="profile-table" aria-label="Profiled cells">
-          <thead><tr><th>Cell</th><th>Shape</th><th>Accepted Δ</th><th>Diagnostic TTFT</th><th>Diagnostic E2EL</th><th>HBM max / 8 cards</th></tr></thead>
-          <tbody>
-            <tr><td>short_prefill</td><td>4096+64</td><td>32</td><td>418.9ms</td><td>13.85s</td><td>491,621MB</td></tr>
-            <tr><td>long_prefill</td><td>131072+64</td><td>32</td><td>13,558.1ms</td><td>26.80s</td><td>491,635MB</td></tr>
-            <tr><td>decode_heavy</td><td>4096+256</td><td>128</td><td>427.3ms</td><td>54.73s</td><td>491,626MB</td></tr>
-          </tbody>
-        </table>
-      </article>
-      <article class="dual-card">
-        <span class="tag amber">P6.3C BLOCKED</span>
-        <h3>Chunked Prefill strict-single-variable feasibility</h3>
-        <p>冻结 CLI 确实暴露显式 on/off 布尔；但 `SchedulerConfig.verify_max_model_len()` 在 Chunked Prefill=false 且 batched-token budget 小于 max model length 时，于任何 request 与 resolved false 证据之前拒绝配置。</p>
-        <div class="blocked-card">
-          <strong>blocked_p6_3c_not_strict_single_variable</strong>
-          <div class="equation">4,096 &lt; 135,168</div>
-          <p>唯一规避是把 `max_num_batched_tokens` 增至至少 135168，或把 `max_model_len` 降至最多 4096；两者都是禁止的第二变量，因此不得制造 matched A/B。</p>
-        </div>
-        <div class="zero-grid">
-          <div><strong>0</strong><span>WORKLOAD</span></div>
-          <div><strong>0</strong><span>MODE RUNNER</span></div>
-          <div><strong>0</strong><span>REQUEST BODY</span></div>
-          <div><strong>0</strong><span>NPU REQUEST</span></div>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <section aria-labelledby="lineage-title">
-    <div class="section-head">
-      <div><div class="section-id">07 / P6.3B PROVENANCE</div><h2 id="lineage-title">负证据没有被 green 覆盖</h2></div>
-      <p class="section-note">最终 R4-R1 green 只关闭显式 Prefix Cache matched mechanism gate。历史 zero-hit、import-order、on-vs-on 和 NFS root-squash 仍是可复用的工程事实。</p>
-    </div>
-    <div class="lineage">
-      <div class="lineage-row">
-        <article class="lineage-item amber"><small>ORIGINAL P6.3B</small><strong>YELLOW · 64/64 but zero hit</strong><p>query positive，hit delta 全为 0；不能接受机制效应。</p></article>
-        <article class="lineage-item red"><small>R1</small><strong>RED · import order</strong><p>sitecustomize eager import 固结基类 spec key；0/12 request。</p></article>
-        <article class="lineage-item green"><small>R2</small><strong>GREEN · deferred repair</strong><p>3 prime + 9 measured；9/9 positive hit，证明修复可达。</p></article>
-        <article class="lineage-item amber"><small>R3</small><strong>YELLOW · on-vs-on</strong><p>Off 侧省略 flag 继承 default=true；两侧 hit 相同。</p></article>
-        <article class="lineage-item amber"><small>R4</small><strong>BLOCKED · NFS ownership</strong><p>`cp -a` 在 root-squash 上 EPERM；0 lifecycle，0 request。</p></article>
-        <article class="lineage-item green"><small>R4-R1</small><strong>GREEN · explicit Off / On</strong><p>ownership-safe copy；64/64、Off hit=0、primary 9/9。</p></article>
+      <div class="summary">
+        <div class="summary-label">结论</div>
+        <ul>
+          <li><b>五项 accepted green：</b>P6.1C-R1、P6.1、P6.2、P6.3A、P6.3B-R4-R1；P6.3C 是有审计依据的终态 blocked。</li>
+          <li>开发机验证只能接受仓库合同与服务器小结果包，不替代真实 NPU 证据；本汇报不外推普遍优化收益。</li>
+        </ul>
       </div>
-    </div>
-  </section>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>DeepSeek-V4-Flash W8A8-MTP · 8× Ascend 910B1</span><span class="slide-index">Page 1 / 8</span></div>
+    </section>
 
-  <section aria-labelledby="package-title">
-    <div class="section-head">
-      <div><div class="section-id">08 / ACCEPTED ARTIFACTS</div><h2 id="package-title">结果包、哈希与声明边界</h2></div>
-      <p class="section-note">小结果包只包含 bounded operational metadata；raw metrics/logs/request bodies/profiler artifacts 留服务器。P6.3C 是仓库内 frozen-source audit，不含运行结果。</p>
-    </div>
-    <div class="package-wrap">
-      <table class="package-table" aria-label="P6 accepted packages">
-        <thead><tr><th>Stage</th><th>Task / role</th><th>Coverage</th><th>Files / bytes</th><th>Aggregate SHA-256</th><th>Accepted grade</th></tr></thead>
-        <tbody>
-          <tr><td>P6.1C-R1</td><td>Official context ladder</td><td>5/5 contexts</td><td>13 / 47,955</td><td>e03639bd43b71112…</td><td class="grade-green">green_mtp_official_context_ladder</td></tr>
-          <tr><td>P6.1</td><td>Unprofiled performance reference</td><td>18 cells · 90 requests</td><td>8 / 67,917</td><td>5110750ad684770e…</td><td class="grade-green">green_mtp_unprofiled_baseline</td></tr>
-          <tr><td>P6.2</td><td>Profiled evidence chain</td><td>3 cells · 408 SQLite</td><td>11 / 17,501</td><td>9bf348373ee7ab66…</td><td class="grade-green">green_mtp_profiled_evidence</td></tr>
-          <tr><td>P6.3A</td><td>Matched MTP Off / On</td><td>48 batches · 108 requests</td><td>7 / 42,877</td><td>f853a86a7c7cbca5…</td><td class="grade-green">green_p6_3a_mtp_matched_ab</td></tr>
-          <tr><td>P6.3B-R4-R1</td><td>Explicit Prefix Cache Off / On</td><td>64 requests · 9/9 primary</td><td>10 / 44,550</td><td>a1b966194eb2b0d0…</td><td class="grade-green">green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab</td></tr>
-          <tr><td>P6.3C</td><td>Frozen-source feasibility</td><td>no executable workload</td><td>1 / 7,489</td><td>aeb91adc8b0b4327…</td><td class="grade-amber">blocked_p6_3c_not_strict_single_variable</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="route">
-      <div class="route-card closed"><h3>P6 MAINLINE · CLOSED</h3><p>Reference 与核心机制输入可被后续阶段消费；不是所有候选项都 green。</p></div>
-      <div class="route-card open"><h3>P7 · SEPARATE CLOSEOUT</h3><p>capacity boundary、scheduler / max_num_seqs 与硬件边界仍需自己的证据门。</p></div>
-      <div class="route-card closed"><h3>P8 · MAY CONSUME P6</h3><p>Prefix baseline、MTP official reference 与 trace pipeline 可作为垂直原型输入。</p></div>
-      <div class="route-card open"><h3>P9 · NOT UNLOCKED BY P6 ALONE</h3><p>没有 P7/P8 校准，不输出 bottleneck attribution 或 hardware priority。</p></div>
-    </div>
-  </section>
+    <section class="slide" id="s2" aria-label="冻结实验条件">
+      <div class="page-watermark">02</div>
+      <h1>实验条件：所有比较先冻结软硬件栈，再只改变合同指定变量</h1>
+      <div class="content grid-3">
+        <div class="module span-2">
+          <div class="module-title">P6 accepted reference 的共同冻结配置</div>
+          <div class="module-body config-grid">
+            <div class="config"><small>MODEL / QUANTIZATION</small><strong>DeepSeek-V4-Flash W8A8-MTP</strong><span><code>quantization=ascend</code> · 70 shards · checkpoint 约 279.4 GiB</span></div>
+            <div class="config"><small>HARDWARE / PARALLEL</small><strong>8 × 910B1 · TP8 + EP</strong><span>Atlas 800T A2 · 64GB HBM/card · DP1</span></div>
+            <div class="config"><small>RUNTIME PIN</small><strong>vLLM 0.22.1+empty</strong><span><code>0decac0d…</code> · vLLM-Ascend 0.22.1rc1 <code>5f6faa0c…</code></span></div>
+            <div class="config"><small>MTP / GRAPH</small><strong>num_speculative_tokens=1</strong><span>method=mtp · FULL_DECODE_ONLY · task-local overlay</span></div>
+            <div class="config"><small>SCHEDULER</small><strong>135168 / 4096 / 1</strong><span>max_model_len / max_num_batched_tokens / max_num_seqs · block=128</span></div>
+            <div class="config"><small>FEATURE DEFAULT</small><strong>Chunked Prefill + Prefix ON</strong><span>P6.3B 只切 Prefix；P6.3C 审计显式 Chunked on/off</span></div>
+            <div class="config"><small>REQUEST</small><strong>Streaming · temperature=0</strong><span>ignore_eos · min=max output · exact token / finish / SSE done</span></div>
+            <div class="config"><small>HYGIENE</small><strong>No generated content packaged</strong><span>request bodies / token IDs / raw logs / profiler traces 留服务器</span></div>
+          </div>
+        </div>
 
-  <footer>
-    <span class="stamp">SNAPSHOT / VERIFIED 2026-07-28 / DEV-CONTROL MACHINE</span>
-    <strong>来源边界：</strong>P6 artifact manifest、baseline contract、P6.1C-R1/P6.1/P6.2/P6.3A/P6.3B-R4-R1 completed workloads、P6.3C frozen-source audit、阶段复盘与开发机接收小结果包。服务器 raw logs/metrics/request bodies/profiler artifacts 继续留服务器。本页不宣称普遍优化收益、随机化因果、统计显著、KV object bytes、HBM traffic、hardware bottleneck 或 P7/P9 已关闭。
-  </footer>
-</main>
+        <div class="module">
+          <div class="module-title blue">Matched A/B 的变量边界</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>任务</th><th>唯一变化</th><th>固定项</th></tr>
+              <tr><td>P6.3A</td><td class="blue-text">MTP Off → On</td><td>模型、graph、context、请求、Prefix、顺序</td></tr>
+              <tr><td>P6.3B-R4-R1</td><td class="blue-text">Prefix false → true</td><td>same R2 repair、MTP、bodies、顺序</td></tr>
+              <tr><td>P6.3C</td><td class="warn-text">Chunked false → true</td><td>若强迫第二参数变化，门立即失败</td></tr>
+            </table>
+            <div class="callout green" style="margin-top:8px"><strong>请求证据统一门</strong><br>HTTP 200、prompt / generated / streamed tokens 精确、finish reason、SSE done、health / queue、MTP counters 与 cleanup。</div>
+            <div class="callout warn" style="margin-top:8px"><strong>测量边界</strong><br>P6.1 是 unprofiled 用户性能 reference；P6.2 profiled latency 只是诊断值；P6.3A/B 为固定顺序描述性 A/B，无随机化和显著性检验。</div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">方法</div>
+        <ul>
+          <li>变量身份、server argv、resolved config、request-body pairing、source/runner/server-command hash 与 cleanup 均进入证据合同。</li>
+          <li>P6.3B 两侧使用同一个 R2 hybrid-KV repair；P6.3C 不允许以调大 token budget 或缩短 context 绕过失败。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Frozen Runtime &amp; Single-variable Contract</span><span class="slide-index">Page 2 / 8</span></div>
+    </section>
+
+    <section class="slide" id="s3" aria-label="P6.1 稳定性与性能基线">
+      <div class="page-watermark">03</div>
+      <h1>P6.1：131K 官方上下文首次成功，18-cell unprofiled 用户性能基线完整关闭</h1>
+      <div class="content rows-2">
+        <div class="module">
+          <div class="module-title green">P6.1C-R1 Official Context Ladder · 五档均 first-attempt GREEN</div>
+          <div class="module-body">
+            <div class="ladder">
+              <div class="ladder-step"><strong>4,096</strong><span>+64 · C1 · GREEN</span></div>
+              <div class="ladder-step"><strong>32,768</strong><span>+64 · C1 · GREEN</span></div>
+              <div class="ladder-step"><strong>65,536</strong><span>+64 · C1 · GREEN</span></div>
+              <div class="ladder-step"><strong>98,304</strong><span>+64 · C1 · GREEN</span></div>
+              <div class="ladder-step"><strong>131,072</strong><span>+64 · C1 · GREEN</span></div>
+            </div>
+            <div class="metric-row six" style="margin-top:7px">
+              <div class="metric"><div class="label">Highest stable input</div><div class="value">131,072</div></div>
+              <div class="metric"><div class="label">Baseline cells</div><div class="value">18 / 18</div></div>
+              <div class="metric"><div class="label">Measured batches</div><div class="value">24 / 24</div></div>
+              <div class="metric"><div class="label">Measured requests</div><div class="value">90 / 90</div></div>
+              <div class="metric"><div class="label">Accepted token Δ</div><div class="value">6,624</div></div>
+              <div class="metric"><div class="label">Retry</div><div class="value">0</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="baseline-layout">
+          <div class="module">
+            <div class="module-title">P6.1 C1 六个代表 cell 的 mean 实测绝对值</div>
+            <div class="module-body">
+              <table aria-label="P6.1 concurrency one baseline">
+                <thead><tr><th>Input</th><th>Output</th><th class="num">Request n</th><th class="num">TTFT mean</th><th class="num">TPOT mean</th><th class="num">E2EL mean</th><th class="num">Batch output</th></tr></thead>
+                <tbody>
+                  <tr><td>4K</td><td>64</td><td class="num">3</td><td class="num">411.1 ms</td><td class="num">203.30 ms/token</td><td class="num">13.22 s</td><td class="num">4.84 tok/s</td></tr>
+                  <tr><td>4K</td><td>256</td><td class="num">1</td><td class="num">401.2 ms</td><td class="num">198.09 ms/token</td><td class="num">50.91 s</td><td class="num">5.03 tok/s</td></tr>
+                  <tr><td>64K</td><td>64</td><td class="num">1</td><td class="num">6,584.4 ms</td><td class="num">202.83 ms/token</td><td class="num">19.36 s</td><td class="num">3.30 tok/s</td></tr>
+                  <tr><td>64K</td><td>256</td><td class="num">1</td><td class="num">6,534.9 ms</td><td class="num">199.50 ms/token</td><td class="num">57.41 s</td><td class="num">4.46 tok/s</td></tr>
+                  <tr><td>128K</td><td>64</td><td class="num">3</td><td class="num">13,084.3 ms</td><td class="num">201.84 ms/token</td><td class="num">25.80 s</td><td class="num">2.48 tok/s</td></tr>
+                  <tr><td>128K</td><td>256</td><td class="num">1</td><td class="num">13,107.5 ms</td><td class="num">199.05 ms/token</td><td class="num">63.87 s</td><td class="num">4.01 tok/s</td></tr>
+                </tbody>
+              </table>
+              <div class="source-line">数据源：accepted P6.1 <code>matrix_cell_summary.tsv</code> mean。完整矩阵为 4K / 64K / 128K × output 64 / 256 × C1 / C4 / C8；此表突出 C1。</div>
+            </div>
+          </div>
+          <div class="insight-stack">
+            <div class="insight"><small>TTFT / INPUT SCALE</small><strong>0.41s → 13.08s</strong><p>output=64、C1 时从 4K 到 128K，主要反映 prefill 增长。</p></div>
+            <div class="insight"><small>TPOT / DECODE BAND</small><strong>198–203 ms/token</strong><p>C1 六格相对稳定；输入长度未把 decode TPOT 推离该区间。</p></div>
+            <div class="insight"><small>CONCURRENCY BOUNDARY</small><strong>max_num_seqs = 1</strong><p>C4/C8 的 E2EL/TTFT 含排队，batch throughput 基本不随并发扩展。</p></div>
+            <div class="insight"><small>MEASUREMENT COMPLETENESS</small><strong>24 batches · 90 requests</strong><p>token、finish、health、queue、MTP counter continuity 与 cleanup 全过。</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">观察</div>
+        <ul>
+          <li>冻结栈在官方 131072 输入 + 64 输出上达到最高稳定档；P6.1 形成后续机制 A/B 的 unprofiled reference。</li>
+          <li>长输入主要推高 TTFT；C1 decode TPOT 仍在约 198–203 ms/token。C4/C8 数据含排队，不能解释为设备并行扩展。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.1C-R1 + P6.1 Unprofiled Reference</span><span class="slide-index">Page 3 / 8</span></div>
+    </section>
+
+    <section class="slide" id="s4" aria-label="P6.3A Matched MTP 结果">
+      <div class="page-watermark">04</div>
+      <h1>P6.3A：Matched MTP Off→On 的 24/24 paired batches 全部方向一致</h1>
+      <div class="content grid-3">
+        <div class="module span-2">
+          <div class="module-title">八个代表 cell 的 paired relative delta</div>
+          <div class="module-body">
+            <table class="ab-table tight" aria-label="P6.3A matched MTP deltas">
+              <thead><tr><th>Cell</th><th>Shape</th><th>E2EL ↓</th><th>Batch output throughput ↑</th><th class="num">TPOT ↓</th></tr></thead>
+              <tbody>
+                <tr><td>short_prefill</td><td>4K + 64 · C1</td><td class="bar-cell"><div class="bar"><span style="width:45.1%"></span></div><div class="bar-note"><span>Off→On</span><b>−45.1%</b></div></td><td class="bar-cell"><div class="bar"><span class="green" style="width:82.6%"></span></div><div class="bar-note"><span>Off→On</span><b>+82.6%</b></div></td><td class="num green-text">−45.9%</td></tr>
+                <tr><td>short_decode</td><td>4K + 256 · C1</td><td><div class="bar"><span style="width:46%"></span></div><div class="bar-note"><span>Off→On</span><b>−46.0%</b></div></td><td><div class="bar"><span class="green" style="width:85.2%"></span></div><div class="bar-note"><span>Off→On</span><b>+85.2%</b></div></td><td class="num green-text">−46.2%</td></tr>
+                <tr><td>short_decode_c8</td><td>4K + 256 · C8</td><td><div class="bar"><span style="width:47%"></span></div><div class="bar-note"><span>Off→On</span><b>−47.0%</b></div></td><td><div class="bar"><span class="green" style="width:89.2%"></span></div><div class="bar-note"><span>Off→On</span><b>+89.2%</b></div></td><td class="num green-text">−47.3%</td></tr>
+                <tr><td>mid_prefill</td><td>64K + 64 · C1</td><td><div class="bar"><span style="width:36%"></span></div><div class="bar-note"><span>Off→On</span><b>−36.0%</b></div></td><td><div class="bar"><span class="green" style="width:56.1%"></span></div><div class="bar-note"><span>Off→On</span><b>+56.1%</b></div></td><td class="num green-text">−46.5%</td></tr>
+                <tr><td>mid_prefill_c4</td><td>64K + 64 · C4</td><td><div class="bar"><span style="width:35.7%"></span></div><div class="bar-note"><span>Off→On</span><b>−35.7%</b></div></td><td><div class="bar"><span class="green" style="width:55.9%"></span></div><div class="bar-note"><span>Off→On</span><b>+55.9%</b></div></td><td class="num green-text">−46.3%</td></tr>
+                <tr><td>mid_decode</td><td>64K + 256 · C1</td><td><div class="bar"><span style="width:44.9%"></span></div><div class="bar-note"><span>Off→On</span><b>−44.9%</b></div></td><td><div class="bar"><span class="green" style="width:81.6%"></span></div><div class="bar-note"><span>Off→On</span><b>+81.6%</b></div></td><td class="num green-text">−47.9%</td></tr>
+                <tr><td>long_prefill</td><td>128K + 64 · C1</td><td><div class="bar"><span style="width:30%"></span></div><div class="bar-note"><span>Off→On</span><b>−30.0%</b></div></td><td><div class="bar"><span class="green" style="width:42.8%"></span></div><div class="bar-note"><span>Off→On</span><b>+42.8%</b></div></td><td class="num green-text">−47.2%</td></tr>
+                <tr><td>long_decode</td><td>128K + 256 · C1</td><td><div class="bar"><span style="width:42.8%"></span></div><div class="bar-note"><span>Off→On</span><b>−42.8%</b></div></td><td><div class="bar"><span class="green" style="width:74.7%"></span></div><div class="bar-note"><span>Off→On</span><b>+74.7%</b></div></td><td class="num green-text">−48.3%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title blue">结果完整性与解释边界</div>
+          <div class="module-body">
+            <div class="metric-row" style="grid-template-columns:1fr 1fr">
+              <div class="metric"><div class="label">Measured requests</div><div class="value">108 / 108</div></div>
+              <div class="metric"><div class="label">Paired batches</div><div class="value">24 / 24</div></div>
+              <div class="metric"><div class="label">TPOT rel. mean</div><div class="value">−47.0%</div></div>
+              <div class="metric"><div class="label">E2EL rel. mean</div><div class="value">−40.9%</div></div>
+              <div class="metric"><div class="label">Batch output rel. mean</div><div class="value">+71.0%</div></div>
+              <div class="metric"><div class="label">MTP accepted token Δ</div><div class="value">4,896</div></div>
+            </div>
+            <div class="callout warn" style="margin-top:8px"><strong>仅接受 matched 描述性机制效应</strong><br>顺序固定 Off→On；每 cell 3 repeats；无随机化、无显著性检验。batch output throughput 不是设备峰值 throughput。</div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">结论</div>
+        <ul>
+          <li>在冻结 stack 与 exact bodies 下，MTP-on 的 24/24 paired batches 均呈 E2EL↓、TPOT↓、batch output throughput↑。</li>
+          <li>该证据支持 P6.3A scope 内的描述性机制效果；不自动证明随机化因果、统计显著或所有工作负载上的普遍收益。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3A Matched MTP Off / On</span><span class="slide-index">Page 4 / 8</span></div>
+    </section>
+
+    <section class="slide" id="s5" aria-label="P6.3B Prefix Cache 结果">
+      <div class="page-watermark">05</div>
+      <h1>P6.3B-R4-R1：显式 Prefix Cache 的精确命中只出现在 primary scope</h1>
+      <div class="content prefix-layout">
+        <div class="module">
+          <div class="module-title">8 groups × 2 modes · same R2 repair · canonical bodies byte-identical</div>
+          <div class="module-body">
+            <table class="prefix-table tight" aria-label="P6.3B prefix groups">
+              <thead><tr><th>Input · Prefix</th><th class="num">Token-LCP / 16K floor</th><th class="num">Off hit</th><th class="num">On hit</th><th class="num">TTFT Off → On</th><th class="num">Paired Δ</th></tr></thead>
+              <tbody>
+                <tr><td>4K · 50%</td><td class="num">2,048 / 0</td><td class="num">0</td><td class="num">0</td><td class="num">416.2 → 417.4 ms</td><td class="num boundary">+0.3%</td></tr>
+                <tr><td>4K · 90%</td><td class="num">3,584 / 0</td><td class="num">0</td><td class="num">0</td><td class="num">405.0 → 415.7 ms</td><td class="num boundary">+2.7%</td></tr>
+                <tr><td>32K · 50%</td><td class="num">16,384 / 16,384</td><td class="num">0</td><td class="num">0</td><td class="num">3,255.6 → 3,251.4 ms</td><td class="num boundary">−0.1%</td></tr>
+                <tr class="primary"><td>32K · 90%</td><td class="num">29,440 / 16,384</td><td class="num">0</td><td class="num hit">16,384</td><td class="num">3,199.4 → 1,645.7 ms</td><td class="num hit">−48.6%</td></tr>
+                <tr><td>64K · 50%</td><td class="num">32,768 / 32,768</td><td class="num">0</td><td class="num">0</td><td class="num">6,362.9 → 6,478.8 ms</td><td class="num boundary">+1.8%</td></tr>
+                <tr class="primary"><td>64K · 90%</td><td class="num">58,880 / 49,152</td><td class="num">0</td><td class="num hit">49,152</td><td class="num">6,399.3 → 1,734.6 ms</td><td class="num hit">−72.9%</td></tr>
+                <tr><td>128K · 50%</td><td class="num">65,536 / 65,536</td><td class="num">0</td><td class="num">0</td><td class="num">12,924.6 → 13,008.2 ms</td><td class="num boundary">+0.6%</td></tr>
+                <tr class="primary"><td>128K · 90%</td><td class="num">117,889 / 114,688</td><td class="num">0</td><td class="num hit">114,688</td><td class="num">12,826.0 → 1,873.7 ms</td><td class="num hit">−85.4%</td></tr>
+              </tbody>
+            </table>
+            <div class="source-line">每 group 每 mode：1 prime + 3 measured follower。三个 primary group 的每次 hit 均严格等于 actual token-LCP 向下取整到 16K hybrid LCM。</div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title blue">机制读数与不可外推边界</div>
+          <div class="module-body">
+            <div class="kpi-grid">
+              <div class="kpi"><small>REQUESTS</small><strong>64 / 64</strong></div>
+              <div class="kpi"><small>PRIMARY POSITIVE</small><strong>9 / 9</strong></div>
+              <div class="kpi"><small>OFF HIT TOTAL</small><strong>0</strong></div>
+              <div class="kpi"><small>BOUNDARY POSITIVE</small><strong>0 / 15</strong></div>
+              <div class="kpi"><small>ON HIT TOTAL</small><strong>540,672</strong></div>
+              <div class="kpi"><small>MTP ACCEPTED Δ</small><strong>1,024 / mode</strong></div>
+            </div>
+            <div class="callout green" style="margin-top:8px"><strong>显式开关产生可观测机制效应</strong><br>resolved Prefix Cache false→true；Off hit total=0；On primary 9/9 exact positive。</div>
+            <div class="callout warn" style="margin-top:8px"><strong>禁止外推</strong><br>50% 长上下文虽有非零 16K floor 仍不命中；固定 Off→On 的 TTFT 只作为 primary scope 描述性读数，不形成 universal hit 或普遍性能收益。</div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">结论</div>
+        <ul>
+          <li>same R2 hybrid-KV repair 下，显式 Prefix Off/On 成为真正单变量；On 侧 32K/64K/128K ×90% 三组的每请求 hit 分别为 16,384 / 49,152 / 114,688。</li>
+          <li>另 15 条 boundary follower 仍为零命中，说明机制效应有严格 scope，不能宣传为“所有共享前缀都命中”。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3B-R4-R1 Explicit Prefix Cache Off / On</span><span class="slide-index">Page 5 / 8</span></div>
+    </section>
+
+    <section class="slide" id="s6" aria-label="P6.2 Profiled evidence 与 P6.3C 可行性">
+      <div class="page-watermark">06</div>
+      <h1>P6.2 与 P6.3C：一项证明证据链可观测，一项证明不能严格单变量比较</h1>
+      <div class="content grid-2 profile-layout">
+        <div class="module">
+          <div class="module-title green">P6.2 GREEN · Profiled operator / memory / transfer pipeline</div>
+          <div class="module-body">
+            <div class="metric-row">
+              <div class="metric"><div class="label">Profiled cells</div><div class="value">3 / 3</div></div>
+              <div class="metric"><div class="label">SQLite / cell</div><div class="value">136</div></div>
+              <div class="metric"><div class="label">Phase rows</div><div class="value">6</div></div>
+              <div class="metric"><div class="label">Device coverage</div><div class="value">8 / 8</div></div>
+            </div>
+            <table class="tight" style="margin-top:8px" aria-label="Profiled cells">
+              <thead><tr><th>Cell</th><th>Shape</th><th class="num">Accepted Δ</th><th class="num">Diagnostic TTFT</th><th class="num">Diagnostic E2EL</th><th class="num">HBM max / 8 cards</th></tr></thead>
+              <tbody>
+                <tr><td>short_prefill</td><td>4096+64</td><td class="num">32</td><td class="num">418.9ms</td><td class="num">13.85s</td><td class="num">491,621MB</td></tr>
+                <tr><td>long_prefill</td><td>131072+64</td><td class="num">32</td><td class="num">13,558.1ms</td><td class="num">26.80s</td><td class="num">491,635MB</td></tr>
+                <tr><td>decode_heavy</td><td>4096+256</td><td class="num">128</td><td class="num">427.3ms</td><td class="num">54.73s</td><td class="num">491,626MB</td></tr>
+              </tbody>
+            </table>
+            <div class="callout green" style="margin-top:8px"><strong>证据链闭合</strong><br>三个 fresh profiled cell 均首次成功；full request-device aggregate exit 0，<code>heavy_joins_skipped=false</code>，phase-memory 每行覆盖八卡，parse failure=0。</div>
+            <div class="callout warn" style="margin-top:8px"><strong>解释边界</strong><br>上述 latency 是带 profiler 的诊断值，不是 P6.1 用户性能 baseline；不从 aggregate 直接推断 KV object bytes、HBM traffic 或 hardware bottleneck。</div>
+          </div>
+        </div>
+
+        <div class="module">
+          <div class="module-title red">P6.3C BLOCKED · Chunked Prefill strict-single-variable feasibility</div>
+          <div class="module-body">
+            <table class="tight">
+              <tr><th>审计项</th><th>冻结版本结论</th></tr>
+              <tr><td>CLI boolean</td><td><span class="tag ok">EXPLICIT</span> on/off 均有可审计表达</td></tr>
+              <tr><td>Off-side validation</td><td><span class="tag risk">REJECTED</span> request 前即失败</td></tr>
+              <tr><td>唯一绕过</td><td>提高 <code>max_num_batched_tokens</code> 或降低 <code>max_model_len</code></td></tr>
+              <tr><td>合同判断</td><td>两种绕过都引入禁止的第二变量</td></tr>
+              <tr><td>最终 grade</td><td class="warn-text">blocked_p6_3c_not_strict_single_variable</td></tr>
+            </table>
+            <div class="equation">4,096 &lt; 135,168</div>
+            <div class="callout warn"><strong>不能制造 matched A/B</strong><br><code>SchedulerConfig.verify_max_model_len()</code> 在 Chunked Prefill=false 且 batched-token budget 小于 max model length 时，于 request 和 resolved false 证据之前拒绝配置。</div>
+            <div class="zero-grid" style="margin-top:8px">
+              <div class="zero"><strong>0</strong><span>WORKLOAD</span></div>
+              <div class="zero"><strong>0</strong><span>MODE RUNNER</span></div>
+              <div class="zero"><strong>0</strong><span>REQUEST BODY</span></div>
+              <div class="zero"><strong>0</strong><span>NPU REQUEST</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">结论</div>
+        <ul>
+          <li>P6.2 关闭“profiled 证据链是否可用”的门；P6.3C 关闭“Chunked Prefill 是否能严格单变量 A/B”的门。</li>
+          <li>blocked 是有效终态，不撤销 P6.1C-R1、P6.1、P6.2、P6.3A 或 P6.3B-R4-R1 green，也不授权改变第二参数重跑。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Profiled Evidence + Strict Feasibility</span><span class="slide-index">Page 6 / 8</span></div>
+    </section>
+
+    <section class="slide" id="s7" aria-label="P6.3B 历史证据链">
+      <div class="page-watermark">07</div>
+      <h1>P6.3B Provenance：最终 GREEN 不覆盖中间 yellow / red / blocked 的工程事实</h1>
+      <div class="content rows-2">
+        <div class="module">
+          <div class="module-title">从 zero-hit 到 explicit Prefix Cache matched A/B 的完整修复链</div>
+          <div class="module-body lineage">
+            <article class="lineage-item"><span class="tag warn">YELLOW</span><small> ORIGINAL P6.3B</small><strong>64/64 but zero hit</strong><p>query positive，hit delta 全为 0；不能接受机制效应。</p></article>
+            <article class="lineage-item"><span class="tag risk">RED</span><small> R1</small><strong>Import order</strong><p>sitecustomize eager import 固结基类 spec key；0/12 request。</p></article>
+            <article class="lineage-item"><span class="tag ok">GREEN</span><small> R2</small><strong>Deferred repair</strong><p>3 prime + 9 measured；9/9 positive hit，证明修复可达。</p></article>
+            <article class="lineage-item"><span class="tag warn">YELLOW</span><small> R3</small><strong>On-vs-on</strong><p>Off 侧省略 flag 继承 default=true；两侧 hit 相同。</p></article>
+            <article class="lineage-item"><span class="tag warn">BLOCKED</span><small> R4</small><strong>NFS ownership</strong><p><code>cp -a</code> 在 root-squash 上 EPERM；0 lifecycle，0 request。</p></article>
+            <article class="lineage-item"><span class="tag ok">GREEN</span><small> R4-R1</small><strong>Explicit Off / On</strong><p>ownership-safe copy；64/64、Off hit=0、primary 9/9。</p></article>
+          </div>
+        </div>
+
+        <div class="content grid-3">
+          <div class="module">
+            <div class="module-title blue">为什么必须保留负证据</div>
+            <div class="module-body">
+              <ul class="compact">
+                <li>zero hit 证明“query positive”不等于“机制已命中”。</li>
+                <li>R1 暴露 import-order 会固结 hybrid-KV spec key。</li>
+                <li>R3 证明省略 flag 不能代表 Prefix Cache off。</li>
+                <li>R4 证明 NFS root-squash 会破坏 <code>cp -a</code>。</li>
+              </ul>
+            </div>
+          </div>
+          <div class="module">
+            <div class="module-title green">R4-R1 关闭了什么</div>
+            <div class="module-body">
+              <ul class="compact">
+                <li>显式 Prefix false / true。</li>
+                <li>same R2 hybrid-KV repair。</li>
+                <li>跨 mode canonical bodies 字节相同。</li>
+                <li>64/64 request 与 cleanup 全过。</li>
+                <li>三个 primary group 9/9 exact hit。</li>
+              </ul>
+            </div>
+          </div>
+          <div class="module">
+            <div class="module-title red">R4-R1 没有关闭什么</div>
+            <div class="module-body">
+              <ul class="compact">
+                <li>没有证明普遍共享前缀必然命中。</li>
+                <li>没有随机化或消除固定顺序偏差。</li>
+                <li>没有统计显著性分析。</li>
+                <li>没有证明硬件瓶颈或通用性能收益。</li>
+                <li>没有撤销历史 provenance。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">治理</div>
+        <ul>
+          <li>最终 accepted grade 是 <b>green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab</b>，但其 claim boundary 仅限 primary scope mechanism effect。</li>
+          <li>把中间失败保留下来，可让后续 P8 的 Prefix、hybrid-KV、NFS copy 与 import-order 合同直接复用这些已知风险。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3B Repair &amp; Provenance Chain</span><span class="slide-index">Page 7 / 8</span></div>
+    </section>
+
+    <section class="slide" id="s8" aria-label="P6 接受资产与后续边界">
+      <div class="page-watermark">08</div>
+      <h1>P6 接受资产：六份终态证据进入仓库真值面，后续阶段按边界消费</h1>
+      <div class="content rows-2">
+        <div class="module">
+          <div class="module-title">Accepted artifacts · 结果包、覆盖范围、聚合哈希与 grade</div>
+          <div class="module-body">
+            <table class="micro" aria-label="P6 accepted packages">
+              <thead><tr><th>Stage</th><th>Task / role</th><th>Coverage</th><th class="num">Files / bytes</th><th>Aggregate SHA-256</th><th>Accepted grade</th></tr></thead>
+              <tbody>
+                <tr><td>P6.1C-R1</td><td>Official context ladder</td><td>5/5 contexts</td><td class="num">13 / 47,955</td><td><code>e03639bd43b71112…</code></td><td class="green-text">green_mtp_official_context_ladder</td></tr>
+                <tr><td>P6.1</td><td>Unprofiled performance reference</td><td>18 cells · 90 requests</td><td class="num">8 / 67,917</td><td><code>5110750ad684770e…</code></td><td class="green-text">green_mtp_unprofiled_baseline</td></tr>
+                <tr><td>P6.2</td><td>Profiled evidence chain</td><td>3 cells · 408 SQLite</td><td class="num">11 / 17,501</td><td><code>9bf348373ee7ab66…</code></td><td class="green-text">green_mtp_profiled_evidence</td></tr>
+                <tr><td>P6.3A</td><td>Matched MTP Off / On</td><td>48 batches · 108 requests</td><td class="num">7 / 42,877</td><td><code>f853a86a7c7cbca5…</code></td><td class="green-text">green_p6_3a_mtp_matched_ab</td></tr>
+                <tr><td>P6.3B-R4-R1</td><td>Explicit Prefix Cache Off / On</td><td>64 requests · 9/9 primary</td><td class="num">10 / 44,550</td><td><code>a1b966194eb2b0d0…</code></td><td class="green-text">green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab</td></tr>
+                <tr><td>P6.3C</td><td>Frozen-source feasibility</td><td>no executable workload</td><td class="num">1 / 7,489</td><td><code>aeb91adc8b0b4327…</code></td><td class="warn-text">blocked_p6_3c_not_strict_single_variable</td></tr>
+              </tbody>
+            </table>
+            <div class="source-line">小结果包只包含 bounded operational metadata；raw metrics / logs / request bodies / profiler artifacts 留服务器。P6.3C 是仓库内 frozen-source audit，不含运行结果。</div>
+          </div>
+        </div>
+
+        <div class="content grid-4">
+          <div class="route-card closed"><h3>P6 MAINLINE · CLOSED</h3><p>Reference 与核心机制输入可被后续阶段消费；不是所有候选项都 green。</p></div>
+          <div class="route-card"><h3>P7 · SEPARATE CLOSEOUT</h3><p>Capacity boundary、scheduler / max_num_seqs 与硬件边界仍需自己的证据门。</p></div>
+          <div class="route-card closed"><h3>P8 · MAY CONSUME P6</h3><p>Prefix baseline、MTP official reference 与 trace pipeline 可作为垂直原型输入。</p></div>
+          <div class="route-card"><h3>P9 · NOT UNLOCKED BY P6 ALONE</h3><p>没有 P7/P8 校准，不输出 bottleneck attribution 或 hardware priority。</p></div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary-label">边界</div>
+        <ul>
+          <li><b>可交付：</b>官方长上下文稳定性、unprofiled reference、profiled evidence、MTP matched 描述、Prefix primary-scope mechanism、Chunked strict feasibility。</li>
+          <li><b>不可宣称：</b>普遍优化收益、随机化因果、统计显著、KV object bytes、HBM traffic、hardware bottleneck，或 P7/P9 已关闭。</li>
+        </ul>
+      </div>
+      <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Accepted Artifacts &amp; Downstream Boundaries</span><span class="slide-index">Page 8 / 8</span></div>
+    </section>
+  </main>
+
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    window.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const center = window.scrollY + window.innerHeight / 2;
+      let current = slides.reduce((best, slide, index) => {
+        const slideCenter = slide.offsetTop + slide.offsetHeight / 2;
+        return Math.abs(slideCenter - center) < Math.abs(slides[best].offsetTop + slides[best].offsetHeight / 2 - center) ? index : best;
+      }, 0);
+      if (event.key === "ArrowRight" || event.key === "PageDown") current = Math.min(slides.length - 1, current + 1);
+      if (event.key === "ArrowLeft" || event.key === "PageUp") current = Math.max(0, current - 1);
+      if (event.key === "Home") current = 0;
+      if (event.key === "End") current = slides.length - 1;
+      slides[current].scrollIntoView({behavior: "smooth", block: "start"});
+    });
+  </script>
 </body>
 </html>
