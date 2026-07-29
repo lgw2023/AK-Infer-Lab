@@ -12,6 +12,7 @@
 ```yaml
 handoff_file: 通信模块/docs/developer-to-server.P6.md
 dispatch_revision: p6_3c_r1_sha_gate_reissue_2026_0729_r1
+redispatch_content_commit_floor: 684c6a7f836644185dbee1cfb5f391c8a29960e4
 task_id: p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01
 stage: P6.3C-R1
 status: redispatched_after_pre_npu_sha_gate_stop_awaiting_server_run01
@@ -49,6 +50,16 @@ NPU 实验。服务器回报的实际文件 SHA 为：
 交叉核对，三者的本交接第 9 项实际都已经是 `...f261a3...`，无法从该提交复现服务器
 看到的 `...f262a3...`。因此本次不修改正确的 patch 文件，也不允许服务器临场改 hash；
 安全处置是发布一个新的交接修订，并废止此前聊天中粘贴、缓存或另存的 P6 执行文本。
+
+本修订内容首次进入本地 `main` 的提交为：
+
+```text
+684c6a7f836644185dbee1cfb5f391c8a29960e4
+```
+
+服务器同步后的 HEAD 必须包含该提交；提交主题属于同一共享主线上的 K2 修复，不改变
+本文件仍是唯一 P6 执行真值，也不授权执行通用 handoff。后续独立 docs 提交只负责固化
+这条 P6 重派发边界，不改实验代码或 K2 任务。
 
 本次仍使用 `run01`，因为上一轮没有创建正式结果目录、没有通过 audit-only、没有进入
 driver，也没有触发 NPU。服务器必须只以重新同步后的 Git tracked 文件
@@ -220,6 +231,8 @@ CORRECT_SHA_LINE='75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509eb
 STALE_SHA='75156e56ce06554cfca79aef92167ec78521a28902f90389f8f26''2a3d509ebc1'
 
 git diff --exit-code HEAD -- "${P6_HANDOFF}"
+git merge-base --is-ancestor \
+  684c6a7f836644185dbee1cfb5f391c8a29960e4 HEAD
 test "$(git show "HEAD:${P6_HANDOFF}" | grep -Fxc "${CORRECT_SHA_LINE}")" = 1
 test "$(grep -Fxc "${CORRECT_SHA_LINE}" "${P6_HANDOFF}")" = 1
 ! grep -Fq "${STALE_SHA}" "${P6_HANDOFF}"
