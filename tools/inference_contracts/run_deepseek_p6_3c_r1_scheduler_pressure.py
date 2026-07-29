@@ -21,6 +21,7 @@ if str(REPO_ROOT) not in sys.path:
 from tools.inference_contracts.p6_3c_r1_scheduler_observer import (
     summarize_scheduler_rows,
 )
+from tools.inference_contracts.p6_3c_local_http_transport import open_loopback
 
 
 TASK_ID = "p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01"
@@ -341,8 +342,9 @@ def _process_alive(pid: int) -> bool:
 
 def _get(base_url: str, path: str, timeout: float = 10.0) -> tuple[int | None, bytes]:
     try:
-        with urllib.request.urlopen(
-            base_url.rstrip("/") + path, timeout=timeout
+        with open_loopback(
+            base_url.rstrip("/") + path,
+            timeout=timeout,
         ) as response:
             return int(response.status), response.read()
     except Exception:
@@ -471,7 +473,7 @@ def _stream_batched_request(
     bounded_error_path: Path | None = None
     request_start_ns = time.monotonic_ns()
     try:
-        with urllib.request.urlopen(request, timeout=7200) as response:
+        with open_loopback(request, timeout=7200) as response:
             http_status = int(response.status)
             for raw_line in response:
                 now_ns = time.monotonic_ns()

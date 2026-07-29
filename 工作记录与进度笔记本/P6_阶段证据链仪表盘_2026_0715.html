@@ -1414,7 +1414,8 @@
               <tr><td>原 P6.3C</td><td><span class="tag warn">VALID BLOCKED</span> 仅关闭原 P6.1 参考配置的直接对照</td></tr>
               <tr><td>P6.3C-R1</td><td><span class="tag risk">STARTUP RED</span> 69632/69632/2 在 KV-cache 初始化阶段停止，0 request</td></tr>
               <tr><td>P6.3C-R2</td><td><span class="tag red">PRE-START</span> run01 overlay 布局失败，0 ready / 0 request / recovery clean</td></tr>
-              <tr><td>P6.3C-R2-F1</td><td><span class="tag plan">DEVELOPED</span> 科学合同不变；真实包解析与停卡前物化 overlay 预检待实机</td></tr>
+              <tr><td>P6.3C-R2-F1</td><td><span class="tag red">RUNNER RED</span> overlay 与 vLLM 启动通过；loopback health 被代理误路由，0 request</td></tr>
+              <tr><td>P6.3C-R2-F2</td><td><span class="tag plan">DEVELOPED</span> 科学合同不变；shell/Python 全链路 direct-loopback 待实机</td></tr>
               <tr><td>P6.3D / P6.4</td><td><span class="tag plan">OPTIONAL</span> max_num_seqs / MindIE 受条件与可用性门约束</td></tr>
               <tr><td>P7</td><td><span class="tag risk">SEPARATE</span> capacity / scheduler / hardware boundary 仍需独立关闭</td></tr>
               <tr><td>P8</td><td><span class="tag ok">CONSUMER</span> 可使用 P6 Prefix、MTP 与 trace reference</td></tr>
@@ -1986,11 +1987,12 @@
                 <tr><td>P6.3C</td><td>Frozen-source feasibility</td><td>no executable workload</td><td class="num">1 / 7,489</td><td><code>aeb91adc8b0b4327…</code></td><td class="warn-text">blocked_p6_3c_not_strict_single_variable</td></tr>
                 <tr><td>P6.3C-R1</td><td>Scheduler-pressure startup evidence</td><td>0 request · 0 scheduler step</td><td class="num">12 / 17,941</td><td><code>per-file SHA verified</code></td><td class="red-text">red_p6_3c_r1_scheduler_pressure_no_success</td></tr>
                 <tr><td>P6.3C-R2</td><td>Capacity-calibrated matched A/B</td><td>run01 pre-start</td><td class="num">0 / 90</td><td><code>runtime overlay not materialized</code></td><td class="red-text">pre-start failure · recovery clean</td></tr>
-                <tr><td>P6.3C-R2-F1</td><td>Runtime-layout-portable matched A/B</td><td>3 cells · 2 tracks</td><td class="num">待 run01</td><td><code>science contract unchanged</code></td><td class="blue-text">developed_awaiting_server_run01</td></tr>
+                <tr><td>P6.3C-R2-F1</td><td>Runtime-layout-portable matched A/B</td><td>vLLM ready · 0 request</td><td class="num">0 / 90</td><td><code>direct health 200 · proxy path 504</code></td><td class="red-text">runner_local_loopback_proxy_failure</td></tr>
+                <tr><td>P6.3C-R2-F2</td><td>Loopback-proxy-safe matched A/B</td><td>3 cells · 2 tracks</td><td class="num">待 run01</td><td><code>science contract unchanged</code></td><td class="blue-text">developed_awaiting_server_run01</td></tr>
               </tbody>
             </table>
-            <div class="source-line">原六份主线材料不变。P6.3C 是冻结源码/配置审计；P6.3C-R1 结果包只证明共同环境启动失败；P6.3C-R2 尚未产生服务器结果包。</div>
-            <p class="research-note"><strong>证据可用性。</strong>既有材料覆盖稳定性、用户性能、诊断可观测性、MTP、Prefix Cache 和原参考配置可行性边界。R2-F1 将在 R2 科学合同不变的前提下回答 Chunked Prefill 是否真实改变多请求调度、是否减轻短请求阻塞，以及对吞吐与请求时延的描述性影响；在 R2-F1 run01 验收前不形成机制或性能结论。</p>
+            <div class="source-line">原六份主线材料不变。P6.3C 是冻结源码/配置审计；P6.3C-R1 只证明共同环境启动失败；R2 与 R2-F1 分别关闭 overlay 和 loopback transport 运行器问题，均未产生 Chunked Prefill 机制证据。</div>
+            <p class="research-note"><strong>证据可用性。</strong>既有材料覆盖稳定性、用户性能、诊断可观测性、MTP、Prefix Cache 和原参考配置可行性边界。R2-F2 将在 R2 科学合同不变的前提下回答 Chunked Prefill 是否真实改变多请求调度、是否减轻短请求阻塞，以及对吞吐与请求时延的描述性影响；在 R2-F2 run01 验收前不形成机制或性能结论。</p>
           </div>
         </div>
 

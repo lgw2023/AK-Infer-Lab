@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
+from threading import Thread
 
+import pytest
 import yaml
 
 
@@ -26,6 +29,21 @@ F1_SERVER_TASK = (
     REPO_ROOT
     / "tools/inference_contracts/"
     "run_deepseek_p6_3c_r2_f1_server_task.sh"
+)
+F2_SERVER_TASK = (
+    REPO_ROOT
+    / "tools/inference_contracts/"
+    "run_deepseek_p6_3c_r2_f2_server_task.sh"
+)
+F1_WORKLOAD = (
+    REPO_ROOT
+    / "benchmarks/deepseek_v4_flash/workloads/"
+    "p6_3c_r2_f1_runtime_layout_portable_matched_ab.yaml"
+)
+F2_WORKLOAD = (
+    REPO_ROOT
+    / "benchmarks/deepseek_v4_flash/workloads/"
+    "p6_3c_r2_f2_loopback_proxy_safe_matched_ab.yaml"
 )
 P6_HANDOFF = REPO_ROOT / "通信模块/docs/developer-to-server.P6.md"
 
@@ -282,6 +300,115 @@ def test_r2_f1_server_audit_preserves_science_contract_and_new_lineage():
     ) == 3
 
 
+def test_r2_f2_inherits_science_contract_and_only_repairs_local_transport():
+    f1 = yaml.safe_load(F1_WORKLOAD.read_text(encoding="utf-8"))
+    f2 = yaml.safe_load(F2_WORKLOAD.read_text(encoding="utf-8"))
+
+    assert f2["stage"] == "P6.3C-R2-F2"
+    assert f2["scientific_contract"]["changed"] is False
+    for key in (
+        "max_model_len",
+        "max_num_batched_tokens",
+        "max_num_seqs",
+        "prefix_cache_enabled",
+        "shared_hybrid_kv_repair_both_modes",
+        "only_ab_difference",
+        "cells",
+        "lifecycle_order",
+        "exact_totals",
+    ):
+        assert f2["scientific_contract"][key] == f1["scientific_contract"][key]
+    transport = f2["loopback_transport_repair"]
+    assert transport["base_url"] == "http://127.0.0.1:7000"
+    assert transport["non_loopback_host_allowed"] is False
+    assert transport["shell"]["curl_noproxy_all"] is True
+    assert transport["shell"]["curl_empty_proxy"] is True
+    assert transport["python"]["proxy_handler"] == "empty"
+    assert transport["python"]["environment_proxy_lookup_allowed"] is False
+
+
+def test_python_loopback_transport_ignores_broken_environment_proxy(
+    monkeypatch,
+):
+    from tools.inference_contracts.p6_3c_local_http_transport import (
+        open_loopback,
+        transport_contract,
+        validate_loopback_url,
+    )
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"direct-loopback")
+
+        def log_message(self, *_args):
+            return
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base_url = f"http://127.0.0.1:{server.server_port}"
+    monkeypatch.setenv("HTTP_PROXY", "http://127.0.0.1:1")
+    monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:1")
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost,::1")
+    monkeypatch.setenv("no_proxy", "127.0.0.1,localhost,::1")
+    try:
+        with open_loopback(base_url + "/health", timeout=2) as response:
+            assert response.status == 200
+            assert response.read() == b"direct-loopback"
+        contract = transport_contract(base_url)
+    finally:
+        server.shutdown()
+        thread.join(timeout=2)
+        server.server_close()
+
+    assert contract["python_proxy_handler"] == "empty"
+    assert contract["python_environment_proxy_lookup_allowed"] is False
+    assert contract["environment_proxy_values_recorded"] is False
+    assert contract["NO_PROXY_loopback_entries_complete"] is True
+    assert contract["no_proxy_loopback_entries_complete"] is True
+    with pytest.raises(ValueError):
+        validate_loopback_url("http://example.com:7000")
+
+
+def test_r2_f2_audit_freezes_proxy_safe_transport_and_science_contract():
+    result_dir = (
+        "/audit/"
+        "p6_3c_r2_f2_chunked_prefill_loopback_proxy_safe_"
+        "2026_0730_run01"
+    )
+    completed = subprocess.run(
+        ["bash", str(F2_SERVER_TASK), result_dir],
+        cwd=REPO_ROOT,
+        env={
+            **os.environ,
+            "PYTHON_BIN": "python",
+            "P6_3C_SERVER_TASK_AUDIT_ONLY": "1",
+        },
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    output = completed.stdout
+    assert (
+        "task_id=p6_3c_r2_f2_chunked_prefill_loopback_proxy_safe_"
+        "2026_0730_run01"
+    ) in output
+    assert "experiment_label=P6_3C_R2_F2" in output
+    assert output.count("max_model_len=12288") == 6
+    assert output.count("shell_local_http_proxy=explicitly_disabled") == 6
+    assert output.count("python_local_http_proxy_handler=empty") == 6
+    assert output.count(
+        "server_argv_sha256="
+        "568b32b1b105c0113a28cd71efe1b905dc5afd86690158e63c5bcbe9da55bb10"
+    ) == 3
+    assert output.count(
+        "server_argv_sha256="
+        "cb6687044ed1ad4d6661f90ff16b7c9686e8c3ef15e1300b67e40ad00383b017"
+    ) == 3
+
+
 def test_p6_handoff_asset_gate_matches_current_bytes():
     text = P6_HANDOFF.read_text(encoding="utf-8")
     rows = re.findall(
@@ -289,17 +416,18 @@ def test_p6_handoff_asset_gate_matches_current_bytes():
         text,
         re.MULTILINE,
     )
-    assert len(rows) == 21
+    assert len(rows) == 23
     for _, relative_path, expected_bytes, expected_sha256 in rows:
         payload = (REPO_ROOT / relative_path).read_bytes()
         assert len(payload) == int(expected_bytes)
         assert hashlib.sha256(payload).hexdigest() == expected_sha256
     assert "75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1" in text
     assert "75156e56ce06554cfca79aef92167ec78521a28902f90389f8f262a3d509ebc1" not in text
-    assert "若 K2、K3、P8.3、P9、其他 P6" in text
+    assert "若有 K2、K3、P8.3、P9、其他 P6" in text
     assert (
-        "p6_3c_r2_f1_chunked_prefill_runtime_layout_portable_"
-        "2026_0729_run01"
+        "p6_3c_r2_f2_chunked_prefill_loopback_proxy_safe_"
+        "2026_0730_run01"
     ) in text
     assert "server_side_path_wrapper_authorized: false" in text
-    assert "symlinks=0:escapes=0" in text
+    assert "shell_local_http_proxy=explicitly_disabled" in text
+    assert "python_local_http_proxy_handler=empty" in text

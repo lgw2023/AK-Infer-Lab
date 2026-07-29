@@ -1,0 +1,117 @@
+schema_version: 1
+workload_id: p6_3c_r2_f2_chunked_prefill_loopback_proxy_safe_matched_ab
+task_id: p6_3c_r2_f2_chunked_prefill_loopback_proxy_safe_2026_0730_run01
+date: "2026-07-30"
+stage: P6.3C-R2-F2
+title: Chunked Prefill loopback-proxy-safe capacity-calibrated matched A/B
+
+scientific_contract:
+  inherited_from: benchmarks/deepseek_v4_flash/workloads/p6_3c_r2_f1_runtime_layout_portable_matched_ab.yaml
+  changed: false
+  max_model_len: 12288
+  max_num_batched_tokens: 12288
+  max_num_seqs: 2
+  prefix_cache_enabled: false
+  shared_hybrid_kv_repair_both_modes: true
+  only_ab_difference:
+    off: --no-enable-chunked-prefill
+    on: --enable-chunked-prefill
+  cells:
+    - {cell_id: no_pressure_4k_4k, simultaneous_prompt_tokens: [4096, 4096]}
+    - {cell_id: asymmetric_pressure_10k_6k, simultaneous_prompt_tokens: [10240, 6144]}
+    - {cell_id: symmetric_pressure_8k_8k, simultaneous_prompt_tokens: [8192, 8192]}
+  lifecycle_order:
+    - mechanism_off
+    - mechanism_on
+    - performance_off
+    - performance_on
+    - performance_on
+    - performance_off
+  exact_totals:
+    fresh_model_lifecycles: 6
+    engine_requests: 90
+    batched_http_calls: 48
+    retries: 0
+
+parent_run:
+  task_id: p6_3c_r2_f1_chunked_prefill_runtime_layout_portable_2026_0729_run01
+  reported_grade: red_p6_3c_r2_f1_scheduler_pressure_no_success
+  accepted_project_classification: runner_local_loopback_proxy_failure_after_vllm_startup
+  runtime_layout_resolved: true
+  runtime_overlay_preflight_complete: true
+  vllm_application_startup_complete: true
+  direct_loopback_health_http_status: 200
+  inherited_proxy_health_http_status: 504
+  engine_requests_actual: 0
+  scheduler_steps_actual: 0
+  chunked_prefill_evidence_produced: false
+  resource_recovery_clean: true
+  result_preserved: true
+  retry_or_overwrite: false
+
+runtime_layout_repair:
+  inherited_unchanged_from_r2_f1: true
+  target_environment_package_resolution: importlib_find_spec_then_realpath
+  overlay_copy_semantics: materialized_copy_dereference_symlinks_no_ownership
+  package_root_symlink_allowed: false
+  overlay_realpath_escape_allowed: false
+  base_environment_mutation_allowed: false
+  site_packages_mutation_allowed: false
+  before_npu_stop_preflight_preserved: true
+
+loopback_transport_repair:
+  base_url: http://127.0.0.1:7000
+  non_loopback_host_allowed: false
+  shell:
+    NO_PROXY_entries_required: [127.0.0.1, localhost, "::1"]
+    no_proxy_entries_required: [127.0.0.1, localhost, "::1"]
+    curl_noproxy_all: true
+    curl_empty_proxy: true
+    covered_paths:
+      - readiness_health
+      - metrics_preflight
+      - cleanup_health_probe
+  python:
+    proxy_handler: empty
+    environment_proxy_lookup_allowed: false
+    covered_paths:
+      - health_get
+      - metrics_snapshots
+      - streaming_v1_completions
+  readiness:
+    timeout_seconds: 900
+    curl_max_time_seconds: 2
+    poll_interval_seconds: 5
+    previous_45_minute_proxy_wait_preserved: false
+  credential_and_proxy_value_recording_allowed: false
+  evidence:
+    - lifecycles/*/runtime/loopback_transport_contract.json
+    - lifecycles/*/runtime/server_ready_probe_summary.tsv
+    - loopback_transport_summary.tsv
+
+failure_semantics:
+  unstarted_lifecycle_status: not_run
+  unstarted_lifecycle_is_cleanup_failure: false
+  attempted_lifecycle_exit_recorded_on_every_exit: true
+  empty_scheduler_or_request_evidence_value: not_observed
+  non_loopback_host_failure: fail_closed_before_vllm_startup
+  post_isolation_not_ready_grade: red_p6_3c_r2_f2_server_not_ready_after_loopback_proxy_isolation
+  candidate_requires_loopback_transport_all_six_lifecycles: true
+
+stop_policy:
+  first_failure_stops_later_lifecycles: true
+  retry_allowed: false
+  run02_allowed: false
+  parameter_or_cell_sweep_allowed: false
+  server_side_code_edit_allowed: false
+  server_side_environment_edit_allowed: false
+  server_side_path_wrapper_allowed: false
+  concurrent_npu_task_allowed: false
+  automatic_result_transfer_allowed: false
+  next_task_authorized: false
+
+execution_state:
+  status: developed_awaiting_server_run01_after_global_task_coordination
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  developer_review_required: true

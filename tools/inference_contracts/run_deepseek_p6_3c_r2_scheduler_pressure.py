@@ -71,6 +71,21 @@ STARTUP_FIELDS = (
     "model_weight_gb_max_observed",
     "maximum_concurrency",
 )
+LOOPBACK_TRANSPORT_FIELDS = (
+    "lifecycle_id",
+    "track",
+    "mode",
+    "base_url",
+    "loopback_url_validated",
+    "shell_curl_noproxy_all",
+    "shell_curl_empty_proxy",
+    "python_proxy_handler",
+    "python_environment_proxy_lookup_allowed",
+    "NO_PROXY_loopback_entries_complete",
+    "no_proxy_loopback_entries_complete",
+    "environment_proxy_variable_names_present",
+    "environment_proxy_values_recorded",
+)
 
 def build_run_plan() -> dict[str, list[dict[str, Any]]]:
     plan: dict[str, list[dict[str, Any]]] = {}
@@ -287,29 +302,51 @@ def _mapped_grade(grade: str) -> str:
             "red_p6_3c_r2_scheduler_pressure_evidence_incomplete"
         ),
     }.get(grade, grade)
-    if "_r2_f1_" not in TASK_ID:
-        return r2_grade
-    return {
-        (
-            "candidate_green_p6_3c_r2_chunked_prefill_"
-            "capacity_calibrated_matched_ab"
-        ): (
-            "candidate_green_p6_3c_r2_f1_chunked_prefill_"
-            "runtime_layout_portable_matched_ab"
-        ),
-        "red_p6_3c_r2_startup_kv_capacity_no_success": (
-            "red_p6_3c_r2_f1_startup_kv_capacity_no_success"
-        ),
-        "red_p6_3c_r2_scheduler_pressure_no_success": (
-            "red_p6_3c_r2_f1_scheduler_pressure_no_success"
-        ),
-        "yellow_p6_3c_r2_scheduler_pressure_partial": (
-            "yellow_p6_3c_r2_f1_scheduler_pressure_partial"
-        ),
-        "red_p6_3c_r2_scheduler_pressure_evidence_incomplete": (
-            "red_p6_3c_r2_f1_scheduler_pressure_evidence_incomplete"
-        ),
-    }.get(r2_grade, r2_grade)
+    if "_r2_f2_" in TASK_ID:
+        return {
+            (
+                "candidate_green_p6_3c_r2_chunked_prefill_"
+                "capacity_calibrated_matched_ab"
+            ): (
+                "candidate_green_p6_3c_r2_f2_chunked_prefill_"
+                "loopback_proxy_safe_matched_ab"
+            ),
+            "red_p6_3c_r2_startup_kv_capacity_no_success": (
+                "red_p6_3c_r2_f2_startup_kv_capacity_no_success"
+            ),
+            "red_p6_3c_r2_scheduler_pressure_no_success": (
+                "red_p6_3c_r2_f2_scheduler_pressure_no_success"
+            ),
+            "yellow_p6_3c_r2_scheduler_pressure_partial": (
+                "yellow_p6_3c_r2_f2_scheduler_pressure_partial"
+            ),
+            "red_p6_3c_r2_scheduler_pressure_evidence_incomplete": (
+                "red_p6_3c_r2_f2_scheduler_pressure_evidence_incomplete"
+            ),
+        }.get(r2_grade, r2_grade)
+    if "_r2_f1_" in TASK_ID:
+        return {
+            (
+                "candidate_green_p6_3c_r2_chunked_prefill_"
+                "capacity_calibrated_matched_ab"
+            ): (
+                "candidate_green_p6_3c_r2_f1_chunked_prefill_"
+                "runtime_layout_portable_matched_ab"
+            ),
+            "red_p6_3c_r2_startup_kv_capacity_no_success": (
+                "red_p6_3c_r2_f1_startup_kv_capacity_no_success"
+            ),
+            "red_p6_3c_r2_scheduler_pressure_no_success": (
+                "red_p6_3c_r2_f1_scheduler_pressure_no_success"
+            ),
+            "yellow_p6_3c_r2_scheduler_pressure_partial": (
+                "yellow_p6_3c_r2_f1_scheduler_pressure_partial"
+            ),
+            "red_p6_3c_r2_scheduler_pressure_evidence_incomplete": (
+                "red_p6_3c_r2_f1_scheduler_pressure_evidence_incomplete"
+            ),
+        }.get(r2_grade, r2_grade)
+    return r2_grade
 
 
 def _startup_rows(artifact_dir: Path) -> list[dict[str, Any]]:
@@ -333,6 +370,50 @@ def _startup_rows(artifact_dir: Path) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def _loopback_transport_rows(artifact_dir: Path) -> list[dict[str, Any]]:
+    rows = []
+    for lifecycle in base.LIFECYCLE_SCHEDULE:
+        path = (
+            artifact_dir
+            / "lifecycles"
+            / lifecycle["lifecycle_id"]
+            / "runtime"
+            / "loopback_transport_contract.json"
+        )
+        if not path.is_file():
+            continue
+        contract = json.loads(path.read_text(encoding="utf-8"))
+        rows.append(
+            {
+                "lifecycle_id": lifecycle["lifecycle_id"],
+                "track": lifecycle["track"],
+                "mode": lifecycle["mode"],
+                **contract,
+                "environment_proxy_variable_names_present": ",".join(
+                    contract.get(
+                        "environment_proxy_variable_names_present", []
+                    )
+                ),
+            }
+        )
+    return rows
+
+
+def _loopback_transport_complete(rows: list[dict[str, Any]]) -> bool:
+    return len(rows) == len(base.LIFECYCLE_SCHEDULE) and all(
+        row.get("base_url") == "http://127.0.0.1:7000"
+        and row.get("loopback_url_validated") is True
+        and row.get("shell_curl_noproxy_all") is True
+        and row.get("shell_curl_empty_proxy") is True
+        and row.get("python_proxy_handler") == "empty"
+        and row.get("python_environment_proxy_lookup_allowed") is False
+        and row.get("NO_PROXY_loopback_entries_complete") is True
+        and row.get("no_proxy_loopback_entries_complete") is True
+        and row.get("environment_proxy_values_recorded") is False
+        for row in rows
+    )
 
 
 def _repair_identity_exact(artifact_dir: Path) -> bool:
@@ -452,13 +533,20 @@ def _write_result_summary(
     ]
     startup_rows = _startup_rows(artifact_dir)
     first_startup = startup_rows[0] if startup_rows else {}
+    transport_rows = _loopback_transport_rows(artifact_dir)
+    transport_complete = _loopback_transport_complete(transport_rows)
     lineage_line = (
-        "- P6.3C-R2 run01 的启动前 overlay 失败保持不变；"
-        "本任务是科学合同不变的 R2-F1 运行器修复结果链。"
-        if "_r2_f1_" in TASK_ID
+        "- P6.3C-R2-F1 的本地代理误路由保持为独立审计；"
+        "本任务是科学合同不变的 R2-F2 本地传输修复结果链。"
+        if "_r2_f2_" in TASK_ID
         else (
-            "- 原 P6.3C blocked 与 P6.3C-R1 RED 均保持不变，"
-            "本任务是独立 R2 结果链。"
+            "- P6.3C-R2 run01 的启动前 overlay 失败保持不变；"
+            "本任务是科学合同不变的 R2-F1 运行器修复结果链。"
+            if "_r2_f1_" in TASK_ID
+            else (
+                "- 原 P6.3C blocked 与 P6.3C-R1 RED 均保持不变，"
+                "本任务是独立 R2 结果链。"
+            )
         )
     )
     lines = [
@@ -482,6 +570,11 @@ def _write_result_summary(
             f"available KV=`{first_startup.get('available_kv_cache_gib')}` GiB，"
             f"required KV=`{first_startup.get('required_kv_cache_gib')}` GiB，"
             f"class=`{first_startup.get('startup_failure_class')}`。"
+        ),
+        (
+            "- 本地 HTTP 传输门："
+            f"`{transport_complete}`；证据 lifecycle="
+            f"`{len(transport_rows)}/6`；代理值未写入制品。"
         ),
         "",
         "## 机制轨道",
@@ -533,9 +626,16 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
         startup_rows,
         list(STARTUP_FIELDS),
     )
+    transport_rows = _loopback_transport_rows(artifact_dir)
+    base._write_tsv(
+        artifact_dir / "loopback_transport_summary.tsv",
+        transport_rows,
+        list(LOOPBACK_TRANSPORT_FIELDS),
+    )
     grading = base.finalize_artifacts(artifact_dir)
     repair_exact = _repair_identity_exact(artifact_dir)
     runtime_layout = _runtime_layout_evidence(artifact_dir)
+    transport_complete = _loopback_transport_complete(transport_rows)
     startup_complete = (
         len(startup_rows) == len(base.LIFECYCLE_SCHEDULE)
         and all(row.get("server_ready") is True for row in startup_rows)
@@ -552,11 +652,16 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
         and int(grading.get("successful_request_count") or 0) == 0
         and "runtime_overlay_preparation_failed" in first_failure
     ):
-        grade = (
-            "red_p6_3c_r2_f1_runtime_overlay_preparation_no_success"
-            if "_r2_f1_" in TASK_ID
-            else "red_p6_3c_r2_runtime_overlay_preparation_no_success"
-        )
+        if "_r2_f2_" in TASK_ID:
+            grade = (
+                "red_p6_3c_r2_f2_runtime_overlay_preparation_no_success"
+            )
+        elif "_r2_f1_" in TASK_ID:
+            grade = (
+                "red_p6_3c_r2_f1_runtime_overlay_preparation_no_success"
+            )
+        else:
+            grade = "red_p6_3c_r2_runtime_overlay_preparation_no_success"
     elif grade != "red_cleanup_incomplete" and any(
         row.get("startup_failure_class") == "insufficient_kv_cache_capacity"
         for row in startup_rows
@@ -564,10 +669,22 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
         grade = _mapped_grade(
             "red_p6_3c_r2_startup_kv_capacity_no_success"
         )
+    elif (
+        "_r2_f2_" in TASK_ID
+        and grade != "red_cleanup_incomplete"
+        and int(grading.get("successful_request_count") or 0) == 0
+        and transport_rows
+        and any(row.get("server_ready") is False for row in startup_rows)
+    ):
+        grade = (
+            "red_p6_3c_r2_f2_server_not_ready_after_"
+            "loopback_proxy_isolation"
+        )
     elif grade.startswith("candidate_green") and not (
         startup_complete
         and repair_exact
         and runtime_layout["runtime_layout_gate_complete"]
+        and ("_r2_f2_" not in TASK_ID or transport_complete)
     ):
         grade = _mapped_grade(
             "red_p6_3c_r2_scheduler_pressure_evidence_incomplete"
@@ -583,6 +700,13 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
             "startup_resource_summary_count": len(startup_rows),
             "startup_resource_gate_complete": startup_complete,
             "shared_hybrid_kv_repair_exact_all_lifecycles": repair_exact,
+            "loopback_transport_summary_count": len(transport_rows),
+            "loopback_transport_gate_complete": transport_complete,
+            "parent_p6_3c_r2_f1_grade_preserved": (
+                "runner_local_loopback_proxy_failure_after_vllm_startup"
+                if "_r2_f2_" in TASK_ID
+                else None
+            ),
             **runtime_layout,
         }
     )
@@ -605,6 +729,9 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
             "max_num_batched_tokens": MAX_NUM_BATCHED_TOKENS,
             "max_num_seqs": MAX_NUM_SEQS,
             "shared_hybrid_kv_repair_enabled": True,
+            "local_http_transport_sha256": base._optional_repo_sha256(
+                "tools/inference_contracts/p6_3c_local_http_transport.py"
+            ),
             "runtime_layout_sha256": (
                 base._sha256_path(artifact_dir / "runtime_layout.json")
                 if (artifact_dir / "runtime_layout.json").is_file()
@@ -648,6 +775,7 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
 R2_BOUNDED_CANDIDATES = (
     *base.BOUNDED_CANDIDATES[:-2],
     "startup_resource_summary.tsv",
+    "loopback_transport_summary.tsv",
     "runtime_layout.json",
     "runtime_overlay_preflight_manifest.json",
     *base.BOUNDED_CANDIDATES[-2:],

@@ -221,6 +221,10 @@ PY
     printf '%s\n' 'startup_resource_summary:'
     cat "${RESULT_DIR}/startup_resource_summary.tsv"
   fi
+  if test -f "${RESULT_DIR}/loopback_transport_summary.tsv"; then
+    printf '%s\n' 'loopback_transport_summary:'
+    cat "${RESULT_DIR}/loopback_transport_summary.tsv"
+  fi
   printf '%s\n' 'mechanism_scheduler_summary:'
   cat "${RESULT_DIR}/mechanism_scheduler_summary.json"
   printf '%s\n' 'performance_mode_cell_summary:'

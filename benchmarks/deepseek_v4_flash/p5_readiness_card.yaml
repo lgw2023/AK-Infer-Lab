@@ -357,7 +357,8 @@ boundaries:
   - The original P6.3C has no executable workload or NPU result and remains immutable audit provenance; it does not exclude a separately frozen scheduler-pressure environment.
   - P6.3C-R1 completed red_p6_3c_r1_scheduler_pressure_no_success: mechanism_01 stopped during EngineCore KV-cache initialization with 8.27 GiB available versus 36.66 GiB required, so 0/90 requests and 0 scheduler steps form startup evidence only, not a Chunked Prefill mechanism or performance result.
   - P6.3C-R2 run01 stopped before vLLM startup because the task-local overlay did not materialize the mixed editable-vLLM/site-packages-vLLM-Ascend installation. It produced 0 ready lifecycle, 0 request and 0 scheduler step while global keep-alive, port, process and Git recovery were clean; this is runtime-overlay preparation evidence, not a Chunked Prefill, capacity or cleanup conclusion.
-  - P6.3C-R2-F1 is developed_awaiting_server_run01_after_global_task_coordination: it preserves the exact 12288/12288/2 capacity envelope, shared repair, three cells, lifecycle order and one explicit Chunked Prefill boolean, while resolving real package roots and materializing/patching a no-symlink overlay before NPU stop.
+  - P6.3C-R2-F1 completed runner_local_loopback_proxy_failure_after_vllm_startup: mixed-install resolution, the 1644-file no-symlink overlay and vLLM startup succeeded, but the local health client inherited the server proxy and returned 504 while an explicit direct probe returned 200; 0/90 requests and 0 scheduler steps provide no Chunked Prefill evidence.
+  - P6.3C-R2-F2 is developed_awaiting_server_run01_after_global_task_coordination: it preserves the exact 12288/12288/2 science contract and F1 layout repair, makes shell and Python health/metrics/completion/cleanup traffic explicitly direct-loopback, and requires six credential-free transport-contract rows before any candidate result.
   - The P6 evidence chain and all five planned consolidated deliverables are complete; this materialization reused accepted repository evidence and did not run a new NPU task.
   - The historical no-MTP baseline and the published official-MTP single-request tracer remain preserved; the latter was superseded before execution by the bounded P8.1 matrix.
   - P8.1 completed as yellow_p8_1_matrix_trace_invalid: all six requests and MTP/health/queue/trace/replay/join gates passed, but the 65536 follower produced Prefix hit 0 instead of the expected 49152.
@@ -839,13 +840,24 @@ acceptance:
   p6_3c_r2_batched_http_call_count_actual: 0
   p6_3c_r2_scheduler_steps_actual: 0
   p6_3c_r2_global_resource_recovery_clean: true
-  p6_3c_r2_f1_grade: developed_awaiting_server_run01_after_global_task_coordination
-  p6_3c_r2_f1_execution_authorized: conditional_after_no_conflict_confirmation
-  p6_3c_r2_f1_npu_execution_authorized: conditional_after_no_conflict_confirmation
+  p6_3c_r2_f1_grade: runner_local_loopback_proxy_failure_after_vllm_startup
+  p6_3c_r2_f1_execution_authorized: false_consumed
+  p6_3c_r2_f1_npu_execution_authorized: false_consumed
   p6_3c_r2_f1_formal_model_lifecycle_count_exact: 6
   p6_3c_r2_f1_engine_request_count_exact: 90
   p6_3c_r2_f1_batched_http_call_count_exact: 48
   p6_3c_r2_f1_request_retry_count_exact: 0
+  p6_3c_r2_f1_vllm_application_startup_complete: true
+  p6_3c_r2_f1_engine_request_count_actual: 0
+  p6_3c_r2_f1_scheduler_steps_actual: 0
+  p6_3c_r2_f1_global_resource_recovery_clean: true
+  p6_3c_r2_f2_grade: developed_awaiting_server_run01_after_global_task_coordination
+  p6_3c_r2_f2_execution_authorized: conditional_after_no_conflict_confirmation
+  p6_3c_r2_f2_npu_execution_authorized: conditional_after_no_conflict_confirmation
+  p6_3c_r2_f2_formal_model_lifecycle_count_exact: 6
+  p6_3c_r2_f2_engine_request_count_exact: 90
+  p6_3c_r2_f2_batched_http_call_count_exact: 48
+  p6_3c_r2_f2_request_retry_count_exact: 0
   p6_3c_r2_formal_model_lifecycle_count_exact: 6
   p6_3c_r2_engine_request_count_exact: 90
   p6_3c_r2_batched_http_call_count_exact: 48

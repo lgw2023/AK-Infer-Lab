@@ -103,7 +103,8 @@ CacheStore，但 8 GiB 只能容纳 1296 个当前 shard，低于 pinned source 
 用户已在四节点 NFS export 启用 `no_root_squash` 并验证新对象为 `root:shareddata (0:3000)`；
 通用 handoff 当前管理 K2-R0 run04：复用 run01–run03 已关闭的 NFS、依赖和容量门，
 修复 FAWA split-aware POSIX GC 几何后只执行一个三请求 external-prefix lifecycle。P6.3C-R1
-启动 RED 与 R2 run01 启动前 overlay 失败均已保留；P6.3C-R2-F1 已开发但必须等待 K2 完全收口，不与其混跑。
+启动 RED、R2 run01 启动前 overlay 失败和 R2-F1 模型启动后 loopback proxy 误路由均已
+保留；P6.3C-R2-F2 已开发但必须等待 K2 完全收口，不与其混跑。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 
@@ -123,7 +124,7 @@ CacheStore，但 8 GiB 只能容纳 1296 个当前 shard，低于 pinned source 
 
 ## 最小开工路径
 
-1. P5/P6 runtime、official context、unprofiled/profiled reference 与既有 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C blocked、P6.3C-R1 启动 RED 与 P6.3C-R2 run01 启动前 overlay 失败均保留；科学合同不变的 P6.3C-R2-F1 已开发并等待全局互斥确认。
+1. P5/P6 runtime、official context、unprofiled/profiled reference 与既有 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C blocked、P6.3C-R1 启动 RED、P6.3C-R2 run01 启动前 overlay 失败和 R2-F1 模型启动后 loopback proxy 误路由均保留；科学合同不变的 P6.3C-R2-F2 已开发并等待全局互斥确认。
 2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-F1 已由 R17 闭合 warm-tier restore/H2D。当前只执行 K2-R0 run03 的 UCM `save → DRAM external hit → Cache load/H2D → follower completion` 单 lifecycle；K2-R1/K3 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。

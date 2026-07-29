@@ -20,10 +20,10 @@ test -f "${OVERLAY_BUILDER}"
 
 if test "${P6_3C_SERVER_TASK_AUDIT_ONLY:-${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}}" != 1; then
   test -x "${ENV_PREFIX}/bin/python"
-  preflight_root=$(mktemp -d /tmp/p6_3c_r2_f1_preflight.XXXXXX)
+  preflight_root=$(mktemp -d /tmp/p6_3c_r2_preflight.XXXXXX)
   cleanup_preflight() {
     case "${preflight_root}" in
-      /tmp/p6_3c_r2_f1_preflight.*)
+      /tmp/p6_3c_r2_preflight.*)
         rm -rf -- "${preflight_root}"
         ;;
       *)

@@ -95,7 +95,8 @@ P8.3-I0-R1: green_p8_3_i0_r1_unclassified_taxonomy
 P6.3C: blocked_p6_3c_not_strict_single_variable for the original 135168/4096/1 reference only
 P6.3C-R1: red_p6_3c_r1_scheduler_pressure_no_success, 69632/69632/2 common environment failed KV-cache startup before scheduler
 P6.3C-R2: run01_runtime_overlay_preparation_failed_before_vllm_startup, 0 request / 0 scheduler evidence / global recovery clean
-P6.3C-R2-F1: developed_awaiting_server_run01, unchanged 12288/12288/2 science contract with portable real-package resolution and pre-NPU materialized-overlay patch preflight
+P6.3C-R2-F1: runner_local_loopback_proxy_failure_after_vllm_startup, runtime layout and vLLM startup passed but inherited proxy returned 504 for local health; 0 request / 0 scheduler evidence / recovery clean
+P6.3C-R2-F2: developed_awaiting_server_run01, unchanged 12288/12288/2 science contract with F1 layout repair plus explicit direct-loopback shell/Python health, metrics, completions and cleanup transport
 ```
 
 K1A 原 `1 lifecycle / 6 requests` 契约已消费并以 pinned allocator 首错收口；K1A-R1 probe-invalid、R2

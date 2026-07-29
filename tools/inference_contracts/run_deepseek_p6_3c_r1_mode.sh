@@ -35,6 +35,7 @@ SERVED_MODEL_NAME=${SERVED_MODEL_NAME:-deepseek-v4-flash-w8a8-mtp}
 HOST=${HOST:-127.0.0.1}
 PORT=${PORT:-7000}
 REQUEST_RUNNER=${REQUEST_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r1_scheduler_pressure.py}
+LOCAL_HTTP_TRANSPORT=${P6_3C_LOCAL_HTTP_TRANSPORT:-${SCRIPT_DIR}/p6_3c_local_http_transport.py}
 ARGV_IDENTITY=${ARGV_IDENTITY:-${SCRIPT_DIR}/canonicalize_server_argv.py}
 MTP_PATCH=${MTP_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch}
 OBSERVER=${OBSERVER:-${SCRIPT_DIR}/p6_3c_r1_scheduler_observer.py}
@@ -56,6 +57,27 @@ OVERLAY_ROOT=${RUNTIME_DIR}/overlay_root
 TRACE_DIR=${RUNTIME_DIR}/scheduler_trace
 HYBRID_DIAGNOSTIC_PATH=${RUNTIME_DIR}/hybrid_kv_runtime_diagnostic.jsonl
 server_pid=
+
+if test "${HOST}" != 127.0.0.1; then
+  echo "P6.3C requires HOST=127.0.0.1 for proxy-isolated local HTTP" >&2
+  exit 64
+fi
+
+append_loopback_no_proxy() {
+  local current=$1
+  local entry
+  for entry in 127.0.0.1 localhost ::1; do
+    case ",${current}," in
+      *",${entry},"*) ;;
+      *) current=${current:+${current},}${entry} ;;
+    esac
+  done
+  printf '%s' "${current}"
+}
+
+export NO_PROXY=$(append_loopback_no_proxy "${NO_PROXY:-}")
+export no_proxy=$(append_loopback_no_proxy "${no_proxy:-}")
+LOCAL_CURL=(curl --noproxy '*' --proxy '')
 
 cmd=(
   "${VLLM_BIN}" serve "${MODEL_PATH}"
@@ -103,6 +125,10 @@ audit_contract() {
   printf 'observer=%s\n' "$([ "${TRACK}" = mechanism ] && printf enabled || printf disabled)"
   printf 'profiler=disabled\n'
   printf 'request_retry_count=0\n'
+  printf 'local_http_host=127.0.0.1\n'
+  printf 'shell_local_http_proxy=explicitly_disabled\n'
+  printf 'python_local_http_proxy_handler=empty\n'
+  printf 'loopback_no_proxy_env=NO_PROXY_and_no_proxy\n'
   "${PYTHON_BIN}" "${ARGV_IDENTITY}" -- "${cmd[@]}" |
     sed 's/^/server_argv_sha256=/'
 }
@@ -117,6 +143,7 @@ test ! -e "${LIFECYCLE_DIR}"
 test -x "${PYTHON_BIN}"
 test -x "${VLLM_BIN}"
 test -f "${REQUEST_RUNNER}"
+test -f "${LOCAL_HTTP_TRANSPORT}"
 test -f "${ARGV_IDENTITY}"
 test -f "${MTP_PATCH}"
 test -f "${OBSERVER}"
@@ -170,7 +197,8 @@ cleanup_mode() {
   if test -n "${server_pid}" && kill -0 "${server_pid}" 2>/dev/null; then
     cleanup=incomplete
   fi
-  if curl -fsS --max-time 2 "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then
+  if "${LOCAL_CURL[@]}" -fsS --max-time 2 \
+    "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then
     cleanup=incomplete
   fi
   printf '%s\n' "${cleanup}" > "${LIFECYCLE_DIR}/cleanup_status.txt"
@@ -300,6 +328,11 @@ printf '\n' >> "${RUNTIME_DIR}/server_command.txt"
   --output "${RUNTIME_DIR}/server_argv.json" -- "${cmd[@]}" \
   > "${RUNTIME_DIR}/server_argv_sha256.txt"
 
+"${PYTHON_BIN}" "${LOCAL_HTTP_TRANSPORT}" \
+  --base-url "http://${HOST}:${PORT}" \
+  --output "${RUNTIME_DIR}/loopback_transport_contract.json" \
+  --require-no-proxy-env
+
 if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
   P6_3B_R2_ENABLE_HYBRID_KV_PATCH=1 \
   P6_3B_R2_HYBRID_KV_DIAGNOSTIC_PATH="${HYBRID_DIAGNOSTIC_PATH}" \
@@ -401,15 +434,26 @@ assert evidence["prefix_cache_on_absent"]
 PY
 
 ready_exit=1
-for _ in $(seq 1 180); do
+ready_attempt_count=0
+ready_started_seconds=${SECONDS}
+ready_deadline_seconds=$((SECONDS + 900))
+while test "${SECONDS}" -lt "${ready_deadline_seconds}"; do
+  ready_attempt_count=$((ready_attempt_count + 1))
   kill -0 "${server_pid}" 2>/dev/null || break
-  if curl -fsS --max-time 5 "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then
+  if "${LOCAL_CURL[@]}" -fsS --max-time 2 \
+    "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then
     ready_exit=0
     break
   fi
-  sleep 10
+  sleep 5
 done
+ready_elapsed_seconds=$((SECONDS - ready_started_seconds))
 printf '%s\n' "${ready_exit}" > "${RUNTIME_DIR}/server_ready_exit_code.txt"
+printf 'ready_exit\tattempt_count\telapsed_seconds\ttimeout_seconds\tproxy_mode\n' \
+  > "${RUNTIME_DIR}/server_ready_probe_summary.tsv"
+printf '%s\t%s\t%s\t900\texplicit_direct_loopback\n' \
+  "${ready_exit}" "${ready_attempt_count}" "${ready_elapsed_seconds}" \
+  >> "${RUNTIME_DIR}/server_ready_probe_summary.tsv"
 "${PYTHON_BIN}" "${STARTUP_SUMMARY_RUNNER}" \
   --log "${RUNTIME_DIR}/vllm_server.log" \
   --output "${RUNTIME_DIR}/startup_resource_summary.json" \
@@ -426,7 +470,8 @@ if test "${ready_exit}" -ne 0; then
   exit 2
 fi
 
-curl -fsS "http://${HOST}:${PORT}/metrics" > "${RUNTIME_DIR}/metrics_preflight.prom"
+"${LOCAL_CURL[@]}" -fsS --max-time 10 \
+  "http://${HOST}:${PORT}/metrics" > "${RUNTIME_DIR}/metrics_preflight.prom"
 for metric in \
   vllm:spec_decode_num_drafts_total \
   vllm:spec_decode_num_draft_tokens_total \
