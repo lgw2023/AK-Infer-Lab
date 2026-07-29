@@ -87,7 +87,7 @@ P8.2-K1A-R5-F1-R7: red_pressure_completed_without_trigger / operational_recovery
 P8.2-K1A-R5-F1-R8: red_target_store_lineage_unobservable_before_pressure / physical_geometry_contract_invalid / accepted_capacity_not_invalidated
 P8.2-K1A-R5-F1-R9: red_finish_time_swa_lineage_unobservable / accepted_capacity_not_invalidated
 P8.2-K1A-R5-F1-R17: green_restore_h2d_mechanism_closed / k1a_f1_closed
-P8.2-K2-R0: developer_ready_ucm_dram_external_prefix_path / one_lifecycle_authorized
+P8.2-K2-R0: run03_dependency_and_capacity_ready / fawa_constructor_inner_exception_attribution_current / no_new_lifecycle_authorized
 P8.3-I0: green_p8_3_i0_checkpoint_inventory_budget_incomplete
 P8.3-I0-R1: green_p8_3_i0_r1_unclassified_taxonomy
 P6.3C: blocked_p6_3c_not_strict_single_variable for the original 135168/4096/1 reference only
@@ -102,7 +102,7 @@ target-lost red 均保留。当前 F1-R2 只读取 calibration/L2 原始轨迹�
 context 改动、sweep 或 eager fallback。
 
 server-local Git 管理最终验收已完成。P6 五份汇总交付物已物化，历史 no-MTP P8 baseline 保留；
-`通信模块/docs/developer-to-server.md` 已清空旧任务并写入唯一 P6.3C-R1 handoff；服务器只需同步 `main` 后运行 R1 server-task driver，不得补代码、调整冻结参数、改变请求体、sweep、retry 或混跑 K2-R0。结果包外发仍需按完整清单选择单一渠道。原 P6.3C frozen-source 审计确认
+`通信模块/docs/developer-to-server.md` 已清空旧任务并写入唯一 K2-R0 run03 FAWA startup attribution handoff；服务器只需同步 `main` 后运行零 NPU 只读 server-task driver，不得补代码、改 source/env/capacity、重跑 run03、创建 run04 或混跑 P6.3C-R1。结果包外发仍需按完整清单选择单一渠道。原 P6.3C frozen-source 审计确认
 `max_num_batched_tokens=4096 < max_model_len=135168` 时 Off 侧会于 resolved config 前被拒绝；该结论仅关闭“直接接在 P6.1 后的 131K+c1 严格单变量 A/B”。独立 R1 在两侧共同冻结 `69632 / 69632 / 2`、Prefix Cache=false，使用三组双请求形成调度压力，分别采集只读 scheduler 机制证据与无 observer/profiler 的顺序平衡性能证据。
 
 mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context、P6.1 unprofiled 性能门与 P6.2 profiled evidence 门均已关闭。P6.3 结果继续独立于 P8.1；外部开发机不运行 NPU。
@@ -458,12 +458,13 @@ simulator_validation_report.md
 3. P6.1C-R1 已完成并验收为 official green，不重跑。
 4. P6.1 unprofiled 已完成并验收为 `green_mtp_unprofiled_baseline`，不重跑。
 5. P6.2 profiled evidence、P6.3A matched MTP A/B、P6.3B-R2 repair 与 P6.3B-R4-R1 explicit control 已验收；原 P6.3B yellow、R1 red、R3 on-vs-on yellow 与 R4 root-squash blocked 均保留，P6.3C 严格单变量门已 blocked。P8.1-R1 与 P8.2-K0 已 green，旧 K1 路径已由服务器确认 blocked。
-6. K1A-F1 已由 R17 full-trace replay 闭合 warm-tier restore/H2D；当前 KV/Prefix 线只执行 K2-R0 run03：复验 NFS `0:3000`、构建 pinned UCM、固定 16 GiB/rank，运行唯一 4K warmup + exact 32K prime/follower lifecycle；零 retry、零 sweep，K2-R1 不授权。
+6. K1A-F1 已由 R17 full-trace replay 闭合 warm-tier restore/H2D；K2-R0 run03 已通过 NFS、依赖、16 GiB/rank 和主机容量门，但在 `UCMFAWAConnector` 初始化期间未 ready，0/3 请求。当前 KV/Prefix 线只执行零 NPU run03 startup attribution：只读父 raw log 与 pinned source，恢复 inner exception 和 FA/WA per-store geometry；run04、K2-R1 与 sweep 均不授权。
 7. P8.3-I0 inventory 与 I0-R1 taxonomy 已在窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 不授权。
 8. P7 工具链预研可继续，但不得外推 full-model runtime。
 9. P9 最后消费统一 trace、inventory、simulation 与 TP4 closure 证据，输出硬件优先级。
 
-当前唯一服务器任务是 `p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run03`。
-它只允许在已修复 `no_root_squash` 的 NFS 上复验 `0:3000`、构建 pinned UCM、
-固定 16 GiB/rank 并运行一个 4K warmup + 32K exact prime/follower lifecycle，零
-retry。P6.3C-R1 已开发并排队，不与本轮混跑。
+当前唯一服务器任务是
+`p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01`。它只允许零 NPU
+读取 run03 parent manifest/payload/raw startup log 与 pinned UCM source，恢复 exact
+exception/traceback、FA/WA × scheduler/worker 配置和 constructor lineage；keep-alive
+留运行，formal lifecycle/request 均为 0。P6.3C-R1 已开发并排队，不与本轮混跑。

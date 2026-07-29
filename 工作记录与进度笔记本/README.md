@@ -28,9 +28,8 @@ P6.3B green 限于 primary 9/9 positive-hit 机制证据；15 条 boundary 仍�
 6/6 transport 成功、D2H store 闭合、CPU hit/load/H2D 为零。原 red 保留，开发机只接受 store-only yellow。
 R4-R1 offline store-only closeout 已 green，R5-F0 ready，R5-L1/R1 red 保留。F1-R1 calibration
 得到 36800 candidate，但 fixed L2 3/3 请求和 D2H 8/8 后 endpoint 为 `CPU=54/GPU=0`，保留
-target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 64，保留为无效运行合同证据，不否定 accepted capacity。K1A-F1 已由 R17 闭合。K2-R0 run02 已完成 UCM dependency/import，但 8 GiB buffer 的 1296 shards 低于源码门 2048，零请求；四节点 NFS `no_root_squash` 已由用户修复。当前唯一 driver 为
-`run_deepseek_p8_2_k2_r0_server_task.sh`，负责 live NFS `0:3000` probe、CMake Python 绑定、16 GiB/rank 容量门、一个三请求 lifecycle、八卡同卡恢复、recovery/finalize
-和有界结果包；不调参数/body、不 retry/sweep。P6.3C-R1、K2-R1、P8.3-I1 和 P9 不自动进入。
+target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 64，保留为无效运行合同证据，不否定 accepted capacity。K1A-F1 已由 R17 闭合。K2-R0 run02 已完成 UCM dependency/import，但 8 GiB buffer 的 1296 shards 低于源码门 2048，零请求；四节点 NFS `no_root_squash` 已由用户修复。run03 随后通过 NFS、CMake Python、16 GiB/rank（2592>=2048）与主机容量门，但在 `UCMFAWAConnector` 初始化期间未 ready，0/3 请求；有界包只有外层 `ucm_connector.py:2669`，缺精确内层异常和 FA/WA store geometry。当前唯一 driver 为
+`run_deepseek_p8_2_k2_r0_run03_fawa_startup_attribution_server_task.sh`，零 NPU 只读父 raw log 与 pinned source，自动恢复 exception/traceback、FA/WA × scheduler/worker 配置和构造链，keep-alive 全程保持；run04 未授权。P6.3C-R1、K2-R1、P8.3-I1 和 P9 不自动进入。
 
 ## 当前范围
 

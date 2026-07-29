@@ -1,0 +1,63 @@
+schema_version: 1
+task_id: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729
+run_id: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01
+stage: P8.2-K2-R0
+
+developer_decision:
+  run03_dependency_and_capacity_preflight_closed: true
+  run03_external_prefix_mechanism_closed: false
+  blind_capacity_increase_or_run04_rejected: true
+  reason: bounded_run03_package_omits_the_inner_UCMFAWAConnector_exception_and_per_store_geometry
+  current_action: recover_exact_parent_startup_failure_before_targeted_runtime_fix
+
+frozen_inputs:
+  parent_result_dir: /data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run03
+  parent_manifest_bytes: 3434
+  parent_manifest_sha256: a278c44dbf879c42fe2119ca8a7708b7bc0aea8103e4387af1ff3c73b974cbe4
+  parent_grade: blocked_p8_2_k2_r0_lifecycle_startup
+  parent_lifecycle_count: 1
+  parent_request_count: 0
+  ucm_source_root: /data/node0_disk1/liguowei/AK-Infer-Lab/server_local/third_party/unified-cache-management-01cbf9b
+  ucm_commit: 01cbf9b71892c88319862fa57f195b0bef93fa6f
+
+implementation:
+  workload: benchmarks/deepseek_v4_flash/workloads/p8_2_k2_r0_run03_fawa_startup_attribution.yaml
+  analyzer: tools/inference_contracts/run_deepseek_p8_2_k2_r0_run03_fawa_startup_attribution.py
+  server_task_driver: tools/inference_contracts/run_deepseek_p8_2_k2_r0_run03_fawa_startup_attribution_server_task.sh
+  parent_validation_automated: true
+  source_validation_automated: true
+  raw_log_exception_parsing_automated: true
+  fawa_store_geometry_parsing_automated: true
+  bounded_excerpt_redaction_automated: true
+  runtime_state_observation_automated: true
+  result_finalization_and_manifest_automated: true
+  server_ai_code_changes_required: false
+
+acceptance:
+  parent_manifest_and_all_payloads_match: true
+  parent_raw_log_size_and_mtime_unchanged: true
+  pinned_ucm_head_and_tracked_clean: true
+  exact_exception_type_recovered: true
+  exact_exception_message_recovered: true
+  ucm_inner_frame_recovered: true
+  failure_stage_reported: true
+  fawa_store_configs_reported_when_present: true
+  no_npu_or_vllm_or_model_request: true
+  keep_alive_left_running: true
+  grade: attributed_p8_2_k2_r0_run03_fawa_startup_failure
+
+authorization:
+  server_execution_authorized: true
+  npu_execution_authorized: false
+  npu_stop_authorized: false
+  formal_model_lifecycle_count_exact: 0
+  model_request_count_exact: 0
+  request_retry_count_exact: 0
+  parent_and_source_mutation_authorized: false
+  server_side_code_edit_authorized: false
+  dependency_install_authorized: false
+  run04_authorized: false
+  parameter_sweep_authorized: false
+  next_task_authorized: false
+  result_transfer_authorized: true
+  automatic_transfer_allowed: false

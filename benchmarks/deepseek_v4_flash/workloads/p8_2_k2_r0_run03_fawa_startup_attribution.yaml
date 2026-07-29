@@ -1,0 +1,100 @@
+schema_version: 1
+workload_id: p8_2_k2_r0_run03_fawa_startup_attribution
+date: "2026-07-29"
+task_id: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729
+run_id: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01
+
+stage_contract:
+  stage: P8.2-K2-R0
+  mode: zero_npu_read_only_parent_runtime_and_pinned_source_attribution
+  purpose: recover_exact_inner_fawa_startup_exception_and_per_store_geometry_before_any_new_lifecycle
+  mechanism_target_unchanged: UCM_external_prefix_save_lookup_hit_and_h2d_load
+  performance_benefit_required: false
+  unique_root_cause_required: false
+
+parent_run03:
+  task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
+  result_basename: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run03
+  manifest_bytes: 3434
+  manifest_sha256: a278c44dbf879c42fe2119ca8a7708b7bc0aea8103e4387af1ff3c73b974cbe4
+  grade: blocked_p8_2_k2_r0_lifecycle_startup
+  dependency_status: ready
+  startup_capacity_status: ready
+  startup_capacity_configured_buffer_number: 2592
+  startup_capacity_required_buffer_number: 2048
+  formal_model_lifecycle_count: 1
+  request_count: 0
+  cleanup_status: clean
+  keep_alive_same_card_restore_exact: true
+  known_outer_frame: ucm.integration.vllm.ucm_connector.py:2669
+  missing_bounded_evidence:
+    - exact_inner_exception_type
+    - exact_inner_exception_message
+    - nested_traceback
+    - failed_constructor_method
+    - separate_fa_wa_store_configs_and_geometry
+
+pinned_ucm:
+  source_url: https://github.com/ModelEngine-Group/unified-cache-management.git
+  source_commit: 01cbf9b71892c88319862fa57f195b0bef93fa6f
+  source_mutation: false
+  required_files:
+    - ucm/integration/vllm/ucm_connector.py
+    - ucm/integration/vllm/hma_connector.py
+    - ucm/store/cache/cc/cache_store.cc
+  constructor_facts_to_verify:
+    - outer_dispatch_selects_UCMFAWAConnector
+    - scheduler_constructs_FA_then_WA
+    - explicit_connector_config_is_deep_copied_per_store
+    - explicit_cache_capacity_bypasses_default_split
+    - store_config_is_logged_before_factory_create
+    - worker_sets_shard_and_block_from_padded_tensor_sum
+    - scheduler_device_minus_one_bypasses_cache_size_gate
+
+analysis:
+  raw_log_read_only: true
+  raw_log_hash_retained: false
+  parent_payloads_verified_against_manifest: true
+  parent_raw_log_immutability_checked_by_size_and_mtime: true
+  recover:
+    - exact_exception_type_and_message
+    - bounded_nested_traceback_frames
+    - fawa_failure_stage
+    - logged_FA_and_WA_store_configs
+    - scheduler_or_worker_role
+    - block_size
+    - shard_size
+    - cache_buffer_capacity_gb
+    - buffer_number_and_required_buffer_number_when_computable
+    - constructor_source_lineage
+  bounded_excerpt_max_bytes: 18000
+  result_interpretation: attribution_precedes_targeted_fix_and_new_lifecycle
+
+authorization:
+  server_execution_authorized: true
+  npu_execution_authorized: false
+  formal_model_lifecycle_count: 0
+  model_request_count: 0
+  request_retry_count: 0
+  keep_alive_action: leave_running
+  npu_stop_authorized: false
+  npu_restore_required: false
+  parent_and_source_mutation_authorized: false
+  server_side_code_edit_authorized: false
+  dependency_install_authorized: false
+  run04_authorized: false
+  parameter_sweep_authorized: false
+  next_task_authorized: false
+  result_transfer_authorized: true
+  automatic_transfer_allowed: false
+
+result_package:
+  max_total_bytes: 71680
+  sensitivity: bounded_operational_metadata_no_content_or_token_ids
+  raw_startup_log_remains_server_local: true
+  generated_content_retained: false
+  request_ids_retained: false
+  token_ids_retained: false
+  raw_log_hash_retained: false
+  available_methods: [email, upload-api, server-local]
+  selection_required_before_transfer: true

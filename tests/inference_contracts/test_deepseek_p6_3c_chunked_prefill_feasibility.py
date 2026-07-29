@@ -175,17 +175,17 @@ def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k2_r0_ucm_dram_external_prefix_path.yaml"
+        "p8_2_k2_r0_run03_fawa_startup_attribution.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K2-R0_run03_UCM_DRAM_external_prefix_path"
+        "P8.2-K2-R0_run03_FA_WA_startup_attribution"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
     )
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_r1_grade"] == (
-        "developed_queued_while_k2_r0_run03_is_current"
+        "developed_queued_while_k2_r0_run03_attribution_is_current"
     )
     assert readiness["acceptance"]["p6_3c_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_r1_formal_model_lifecycle_count_exact"] == 6
@@ -216,16 +216,16 @@ def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-        "task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728"
+        "task_id: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729"
         in handoff
     )
     assert (
-        "run_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run03"
+        "run_id: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01"
         in handoff
     )
-    assert "npu_execution_authorized: true" in handoff
+    assert "npu_execution_authorized: false" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "model_request_count_exact: 3" in handoff
+    assert "model_request_count_exact: 0" in handoff
     assert "已开发但排队的 P6.3C-R1" in handoff
 
     truth_paths = (

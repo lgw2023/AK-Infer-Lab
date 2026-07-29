@@ -101,10 +101,10 @@ def test_contract_targets_real_ucm_path_without_performance_precondition() -> No
         "01cbf9b71892c88319862fa57f195b0bef93fa6f"
     )
     assert readiness["artifacts"]["current_server_handoff_task"] == (
-        f"{TASK_ID}_run03"
+        "p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k2_r0_ucm_dram_external_prefix_path.yaml"
+        "p8_2_k2_r0_run03_fawa_startup_attribution.yaml"
     )
     assert readiness["acceptance"]["p8_2_k1a_r5_f1_r17_grade"] == (
         "green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed"
@@ -325,13 +325,15 @@ def test_handoff_is_current_only_and_operationally_complete() -> None:
     assert text.count("## 当前唯一服务器动作：") == 1
     assert TASK_ID in text
     assert "01cbf9b71892c88319862fa57f195b0bef93fa6f" in text
-    assert "run_deepseek_p8_2_k2_r0_server_task.sh" in text
+    assert (
+        "run_deepseek_p8_2_k2_r0_run03_fawa_"
+        "startup_attribution_server_task.sh"
+    ) in text
+    assert "本轮**禁止执行**" in text
     assert "npu_stop.sh 0 1 2 3 4 5 6 7" in text
     assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in text
-    assert "性能收益不是本轮实现通过的前置条件" in text
-    assert "run03_authorized: true" in text
-    assert "cache_buffer_capacity_gb: 16" in text
-    assert "no_root_squash" in text
-    assert "不得执行 `git config --global --add safe.directory`" in text
-    assert "quarantine" in text
+    assert "不评价 external KV 方案性能" in text
+    assert "npu_execution_authorized: false" in text
+    assert "run04_authorized: false" in text
+    assert "parent_and_source_mutation_authorized: false" in text
     assert "transfer_method_selected: false" in text

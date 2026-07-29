@@ -2354,7 +2354,7 @@
     <div class="page">
       <header class="topbar">
         <div class="data-stamp">
-          数据截点：<strong>2026-07-28 / R17 已验收，K2-R0 已开发并排队</strong> · 页面不读取网络资源
+          数据截点：<strong>2026-07-29 / R17 已验收，K2-R0 run03 启动归因待执行</strong> · 页面不读取网络资源
         </div>
         <div class="toolbar-actions">
           <div class="filter-group" aria-label="结果筛选">
@@ -3977,11 +3977,11 @@
 
           <div class="next-grid">
             <article class="next-card" data-order="1">
-              <small>P8 QUEUED · NOT CURRENT HANDOFF</small>
-              <strong>K2-R0 UCM DRAM-first 路径保持待实机</strong>
-              <p>固定 pinned UCM、一个 TP8+EP+MTP lifecycle 和 exact 32K
-                prime/follower，验证 save → external DRAM hit → Cache load/H2D →
-                completion；延迟只作描述，不作为路径实现门。</p>
+              <small>P8 CURRENT · ZERO NPU ATTRIBUTION</small>
+              <strong>K2-R0 先关闭 run03 FAWA 启动证据缺口</strong>
+              <p>run03 已通过 NFS、依赖、16 GiB/rank 和主机容量门，但在
+                UCMFAWAConnector 初始化期间未 ready、0/3 请求。当前只读完整启动日志，
+                恢复 inner exception 与 FA/WA per-store geometry；定向修复后才授权新 lifecycle。</p>
             </article>
             <article class="next-card" data-order="2">
               <small>LOCAL CLOSEOUT</small>
@@ -4132,10 +4132,10 @@
 
         <footer class="page-footer">
           <strong>AK-Infer-Lab · P8 Layered Engineering Prototype Evidence Dashboard</strong><br>
-          数据截点：2026-07-28。当前最高结论等级：KV warm-tier
+          数据截点：2026-07-29。当前最高结论等级：KV warm-tier
           <code>instrumented_path / restore_h2d_mechanism_closed</code>；不是
           controlled performance A/B、hardware recommendation 或 production readiness。
-          K2-R0 仅为开发完成、排队待服务器实机，不在本页冒充已验证结果；当前仓库唯一交接已切换到独立 P6.3C-R1 scheduler-pressure matched A/B。
+          K2-R0 run03 已关闭 dependency/capacity 门，但尚未进入请求路径；当前仓库唯一交接是零 NPU 的 FAWA startup attribution，P6.3C-R1 继续排队。
         </footer>
       </main>
     </div>
