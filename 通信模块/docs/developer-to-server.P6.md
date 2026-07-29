@@ -11,9 +11,11 @@
 
 ```yaml
 handoff_file: 通信模块/docs/developer-to-server.P6.md
+dispatch_revision: p6_3c_r1_sha_gate_reissue_2026_0729_r1
+redispatch_content_commit_floor: 684c6a7f836644185dbee1cfb5f391c8a29960e4
 task_id: p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01
 stage: P6.3C-R1
-status: developed_awaiting_server_run01
+status: redispatched_after_pre_npu_sha_gate_stop_awaiting_server_run01
 activation_rule: explicit_instruction_naming_this_file
 execution_mode: authorized_six_fresh_lifecycle_mechanism_and_balanced_performance_tracks
 server_execution_authorized: true
@@ -27,11 +29,47 @@ profiler_authorized: false
 runtime_or_dependency_mutation_authorized: false
 server_side_code_edit_authorized: false
 concurrent_task_authorized: false
+server_task_queue_exclusive: true
 result_transfer_authorized: true
 transfer_method_selected: false
 automatic_transfer_allowed: false
 next_task_authorized: false
 ```
+
+## 0. 本次重派发说明
+
+上一轮服务器尝试在九项仓库 SHA 门的第 9 项停止，未运行 audit-only、正式 driver 或
+NPU 实验。服务器回报的实际文件 SHA 为：
+
+```text
+75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1
+```
+
+这个值是正确值。开发机随后对工作树、提交
+`b064e0b0aeabd0859e63b3766cc61648a8ef1d6d` 的 Git blob 和实时远程 `main` 三处
+交叉核对，三者的本交接第 9 项实际都已经是 `...f261a3...`，无法从该提交复现服务器
+看到的 `...f262a3...`。因此本次不修改正确的 patch 文件，也不允许服务器临场改 hash；
+安全处置是发布一个新的交接修订，并废止此前聊天中粘贴、缓存或另存的 P6 执行文本。
+
+本修订内容首次进入本地 `main` 的提交为：
+
+```text
+684c6a7f836644185dbee1cfb5f391c8a29960e4
+```
+
+服务器同步后的 HEAD 必须包含该提交；提交主题属于同一共享主线上的 K2 修复，不改变
+本文件仍是唯一 P6 执行真值，也不授权执行通用 handoff。后续独立 docs 提交只负责固化
+这条 P6 重派发边界，不改实验代码或 K2 任务。
+
+本次仍使用 `run01`，因为上一轮没有创建正式结果目录、没有通过 audit-only、没有进入
+driver，也没有触发 NPU。服务器必须只以重新同步后的 Git tracked 文件
+`通信模块/docs/developer-to-server.P6.md` 为执行真值，不能从旧消息复制命令或 SHA。
+
+本任务是服务器全局串行任务，不是与通用 handoff 并行的第二任务。只有在任务协调通道
+明确确认其他服务器任务已经完成、停止或尚未开始，且没有其他 NPU/vLLM 作业时，才能
+进入本交接。若通用 `developer-to-server.md` 所指任务或任何其他会话已在执行，本 P6
+任务保持排队，不能抢占、停止或并跑。P6 driver 一旦开始，到 0–7 keep-alive 完整恢复
+并贴回报告前，也不得启动任何其他服务器任务。
 
 ## 1. 任务目标与结论边界
 
@@ -183,7 +221,31 @@ faacb936de6079278d0097e78f4d7288908b0e2e
 服务器必须同步最新远程 `main`，并确认上述提交仍是当前 HEAD 的祖先。不要退回旧提交，
 也不要把服务器仓库 reset 到该提交。
 
-同步后核对以下仓库输入：
+同步后先确认本次重派发文件来自当前 Git HEAD，而不是旧聊天文本、缓存或手工副本：
+
+```bash
+cd /data/node0_disk1/liguowei/AK-Infer-Lab
+
+P6_HANDOFF='通信模块/docs/developer-to-server.P6.md'
+CORRECT_SHA_LINE='75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1  benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch'
+STALE_SHA='75156e56ce06554cfca79aef92167ec78521a28902f90389f8f26''2a3d509ebc1'
+
+git diff --exit-code HEAD -- "${P6_HANDOFF}"
+git merge-base --is-ancestor \
+  684c6a7f836644185dbee1cfb5f391c8a29960e4 HEAD
+test "$(git show "HEAD:${P6_HANDOFF}" | grep -Fxc "${CORRECT_SHA_LINE}")" = 1
+test "$(grep -Fxc "${CORRECT_SHA_LINE}" "${P6_HANDOFF}")" = 1
+! grep -Fq "${STALE_SHA}" "${P6_HANDOFF}"
+grep -F 'dispatch_revision: p6_3c_r1_sha_gate_reissue_2026_0729_r1' \
+  "${P6_HANDOFF}"
+```
+
+任一检查失败都按
+`blocked_p6_3c_r1_source_or_resource_gate(handoff_revision_or_sha_text_mismatch)`
+停止，不运行 audit-only，不触 NPU。不要手工修复服务器文件；回报 HEAD、本文件
+`git hash-object`、正确行计数、陈旧 SHA 行计数和 tracked 状态。
+
+以上通过后，再核对以下仓库输入：
 
 ```bash
 cd /data/node0_disk1/liguowei/AK-Infer-Lab
@@ -233,7 +295,23 @@ sha256=41ff2e524c90d9aa72b72cd77492eb62ee2a729a773bd8233e970f39abbb5983
 ## 5. NPU keep-alive 与资源互斥
 
 本任务使用全部八张卡。开始前必须确认没有其他服务器任务占用端口 7000、DeepSeek
-vLLM 或卡 `0–7`。不得杀死不属于本任务的进程；发现冲突就停止并回报。
+vLLM 或卡 `0–7`，并在任务协调通道确认没有其他会话处于“即将执行/已授权执行但尚未
+收口”的重叠窗口。不得只凭端口 7000 空闲推断全局无任务。不得杀死不属于本任务的
+进程；发现冲突就停止并回报。
+
+在 audit-only 前和正式 driver 前各检查一次：
+
+```bash
+if pgrep -af \
+  '[r]un_deepseek_.*server_task|[r]un_.*server_task|[v]llm.*serve' \
+  > /tmp/p6_3c_r1_conflicting_tasks.txt; then
+  cat /tmp/p6_3c_r1_conflicting_tasks.txt
+  exit 2
+fi
+```
+
+该进程检查只是机器侧辅助门；任务协调通道中的显式无冲突确认仍是必要条件。发现其他
+会话的任务处于运行、清理或结果收口阶段时，不执行 P6，也不调用 `npu_stop.sh`。
 
 正式 server-task driver 会在实验前只对卡 `0 1 2 3 4 5 6 7` 执行：
 
@@ -294,6 +372,9 @@ tracked-clean=true
 不是 main、不能 fast-forward 或同步后不一致，停止并回报精确状态；不要修复工作区。
 
 拉取完成后重新打开本文件，后续不要执行通用 `developer-to-server.md` 中的其他任务。
+记录同步后的 HEAD。若 audit-only 结束后远程 `main` 又推进，正式 driver 前必须停止，
+重新 fast-forward、重新打开本文件并从第 4 节开始重做全部门；不能拿旧 audit 结果搭配
+新 HEAD。
 
 ## 7. 零 NPU audit-only
 
@@ -341,6 +422,11 @@ audit-only、仓库输入、环境和资源互斥全部通过后，只执行下�
 
 ```bash
 cd /data/node0_disk1/liguowei/AK-Infer-Lab
+
+# 防止 audit-only 之后其他会话又推进远程 main。
+git fetch origin main
+test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+test -z "$(git status --porcelain --untracked-files=no)"
 
 bash tools/inference_contracts/run_deepseek_p6_3c_r1_server_task.sh \
   /data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01
@@ -490,11 +576,11 @@ next_task_authorized: false
 
 1. 确认没有其他服务器/NPU 任务在运行；
 2. fast-forward 同步最新远程 `main`；
-3. 重新打开本文件，不执行通用 handoff；
-4. 验证 P6 发布提交祖先关系和九项 SHA；
+3. 只打开本次 Git tracked 文件，验证 dispatch revision、正确 SHA 行和无陈旧 SHA；
+4. 不执行通用 handoff，验证 P6 发布提交祖先关系和九项 SHA；
 5. 确认固定 result dir 不存在；
-6. 运行一次 audit-only；
-7. audit 全过后运行一次唯一 server-task driver；
+6. 再次确认任务队列与机器进程都无冲突，运行一次 audit-only；
+7. audit 后确认远程 HEAD 未推进、仍无其他任务，再运行一次唯一 server-task driver；
 8. 无论任何退出路径都确认 0–7 keep-alive 同卡恢复；
 9. 原样回报完整 server report 和 bounded manifest；
 10. 大文件留服务器，等待用户选择唯一传输渠道，不进入下一任务。
