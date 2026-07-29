@@ -235,10 +235,10 @@ artifacts:
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p8_2_k2_r0_run03_fawa_startup_attribution.yaml
-  next_stage_candidate: P8.2-K2-R0_run03_FA_WA_startup_attribution
-  current_server_handoff_task: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01
-  current_server_handoff_execution_mode: zero_npu_read_only_parent_runtime_and_pinned_source_attribution
+  next_workload: workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
+  next_stage_candidate: P8.2-K2-R0_run04_FA_WA_POSIX_GC_geometry_repair
+  current_server_handoff_task: p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01
+  current_server_handoff_execution_mode: authorized_single_lifecycle_fawa_split_aware_posix_gc_geometry_repair_and_external_prefix_path
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -738,11 +738,11 @@ acceptance:
   p8_2_k1a_r5_f1_r15_next_task_authorized: false
   p8_2_k1a_r5_f1_r16_next_task_authorized: false
   p8_2_k1a_r5_f1_r17_next_task_authorized: false
-  p8_2_k2_r0_grade: blocked_run03_dependency_and_capacity_ready_fawa_constructor_inner_error_not_yet_attributed
+  p8_2_k2_r0_grade: attributed_run03_fawa_posix_gc_zero_recycle_run04_repair_ready
   p8_2_k2_r0_execution_authorized: true
-  p8_2_k2_r0_npu_execution_authorized: false
-  p8_2_k2_r0_formal_model_lifecycle_count_exact: 0
-  p8_2_k2_r0_model_request_count_exact: 0
+  p8_2_k2_r0_npu_execution_authorized: true
+  p8_2_k2_r0_formal_model_lifecycle_count_exact: 1
+  p8_2_k2_r0_model_request_count_exact: 3
   p8_2_k2_r0_request_retry_count_exact: 0
   p8_2_k2_r0_internal_prefix_cache_enabled: false
   p8_2_k2_r0_ucm_source_commit: 01cbf9b71892c88319862fa57f195b0bef93fa6f
@@ -764,10 +764,20 @@ acceptance:
   p8_2_k2_r0_run03_model_request_count: 0
   p8_2_k2_r0_run03_grade: blocked_p8_2_k2_r0_lifecycle_startup
   p8_2_k2_r0_run03_known_outer_frame: ucm_connector_py_line_2669_UCMFAWAConnector
-  p8_2_k2_r0_run03_inner_exception_attribution_required: true
+  p8_2_k2_r0_run03_inner_exception_attribution_required: false
+  p8_2_k2_r0_run03_attribution_grade: attributed_p8_2_k2_r0_run03_fawa_startup_failure
+  p8_2_k2_r0_run03_attribution_exception: posix_capacity_16gib_default_4096_shards_zero_recycle
+  p8_2_k2_r0_run03_attribution_fa_block_size_bytes: 3186688
+  p8_2_k2_r0_run03_attribution_wa_block_size_bytes: 6627328
   p8_2_k2_r0_run03_attribution_npu_execution_authorized: false
   p8_2_k2_r0_run03_attribution_keep_alive_action: leave_running
-  p8_2_k2_r0_run04_authorized: false
+  p8_2_k2_r0_run04_authorized: true
+  p8_2_k2_r0_run04_posix_capacity_gib_before_fawa_split: 64
+  p8_2_k2_r0_run04_posix_capacity_gib_per_store_after_split: 32
+  p8_2_k2_r0_run04_data_dir_shard_bytes: 2
+  p8_2_k2_r0_run04_directory_shard_count: 256
+  p8_2_k2_r0_run04_fa_minimum_capacity_gib: 12
+  p8_2_k2_r0_run04_wa_minimum_capacity_gib: 24
   p8_2_k2_r0_nfs_no_root_squash_operator_verified: true
   p8_2_k2_r0_nfs_expected_new_object_uid_gid: "0:3000"
   p8_2_k2_r0_run03_authorized: false
@@ -775,7 +785,7 @@ acceptance:
   p8_2_k2_r0_run03_configured_buffer_number: 2592
   p8_2_k2_r0_run03_required_buffer_number: 2048
   p8_2_k2_r0_next_task_authorized: false
-  current_task_scoped_authorization: P8.2-K2-R0_run03_zero_npu_FA_WA_startup_attribution
+  current_task_scoped_authorization: P8.2-K2-R0_run04_single_lifecycle_three_request_FA_WA_POSIX_GC_geometry_repair
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory
@@ -807,7 +817,7 @@ acceptance:
   p6_3b_mechanism_baseline: true
   p6_3c_feasibility_grade: blocked_p6_3c_not_strict_single_variable
   p6_3c_execution_authorized: false
-  p6_3c_r1_grade: developed_queued_while_k2_r0_run03_attribution_is_current
+  p6_3c_r1_grade: developed_queued_while_k2_r0_run04_is_current
   p6_3c_r1_execution_authorized: false
   p6_3c_r1_npu_execution_authorized: false
   p6_3c_r1_formal_model_lifecycle_count_exact: 6

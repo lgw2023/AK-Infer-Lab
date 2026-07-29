@@ -318,18 +318,19 @@ boundaries:
 ## 10. 当前下一步
 
 截至 2026-07-29，当前唯一服务器任务是
-`p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01`。run02 已关闭 pinned
-UCM build/import 门并把启动阻塞收敛为 8 GiB 的 1296 shards 低于要求的 2048；
-run03 已通过四节点 NFS `0:3000`、CMake Python 3.11、16 GiB/rank 和主机容量门，
-但一个 lifecycle 在 `UCMFAWAConnector` 初始化期间未 ready，0/3 请求。当前任务
-零 NPU 只读父 raw log 与 pinned source，恢复 exact inner exception、FA/WA
-per-store geometry 和 constructor lineage；run04 未授权。P6.3C-R1 已开发并排队。
+`p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01`。run03 attribution 已确认
+`UCMFAWAConnector` 把总 32 GiB POSIX 配置分为 FA/WA 16/16 GiB，默认 4096
+目录分片使 scheduler FA 的 GC 回收数经整数截断为 0；FA/WA worker block 实测为
+`3186688/6627328 bytes`。当前任务固定总 POSIX=64 GiB、
+`data_dir_shard_bytes=2`，分流后 32/32 GiB、256 分片；停卡前自动核验父包、
+两套 Cache/GC 几何与主机/存储余量，通过后只执行一个 lifecycle 和三请求。P6.3C-R1
+已开发并排队。
 以下较早描述仅保留阶段 lineage，若与本段冲突以本段和
 `通信模块/docs/developer-to-server.md` 为准。
 
 完整 K1A-R3 lineage 作为 provenance 保留，不因 R4 离线收口改写。
 
 1. P6.1C-R1 official、P6.1 unprofiled performance、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache control 已完成并验收。
-2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A/K2 lineage 与 P8.3-I0-R1 taxonomy 均按各自边界保留。当前 handoff 只授权 K2-R0 run03 的零 NPU startup attribution，formal lifecycle/request 均为 0；外发前仍须报告完整清单并由用户选择单一渠道。
-3. 原 P6.3C Chunked Prefill on/off 冻结源码审计继续为 `blocked_p6_3c_not_strict_single_variable`；独立 R1 当前为 `developed_queued_while_k2_r0_run03_attribution_is_current`，不得提前列为正向成果。
+2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A/K2 lineage 与 P8.3-I0-R1 taxonomy 均按各自边界保留。当前 handoff 只授权 K2-R0 run04 的一个 TP8 lifecycle、三请求、零 retry；外发前仍须报告完整清单并由用户选择单一渠道。
+3. 原 P6.3C Chunked Prefill on/off 冻结源码审计继续为 `blocked_p6_3c_not_strict_single_variable`；独立 R1 当前为 `developed_queued_while_k2_r0_run04_is_current`，不得提前列为正向成果。
 4. P8.3-I0/I0-R1 已完成 inventory/taxonomy 窄边界；P8.3-I1 hotness/runtime trace、P7 与 P9 均需新授权。

@@ -3,9 +3,9 @@
 日期：2026-07-10；最后更新：2026-07-29
 
 当前执行覆盖：
-`local_artifact_state=k2_r0_run03_fawa_startup_attribution_prepared`；
-`server_execution_state=zero_npu_attribution_current_handoff`；
-`current_task_id=p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01`。
+`local_artifact_state=k2_r0_run04_fawa_posix_gc_geometry_repair_prepared`；
+`server_execution_state=single_lifecycle_three_request_current_handoff`；
+`current_task_id=p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01`。
 
 R17 已以
 `green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed` 接受 K1A-F1 的
@@ -20,14 +20,18 @@ K2 的首个可运行切片已经开发：固定 UCM
 1296 shards 低于 pinned source 要求的 2048；run03 使用
 `UCMConnector + Cache|Posix` 的 16 GiB/rank DRAM-first pipeline，已通过 NFS、
 dependency、CMake Python 与 capacity 门，但一个 TP8+EP+MTP lifecycle 在
-`UCMFAWAConnector` 初始化期间未 ready，32K prime/follower 前停止。实现门仍是
+`UCMFAWAConnector` 初始化期间未 ready，32K prime/follower 前停止。零 NPU
+attribution 已精确恢复 scheduler FA Posix GC 的分片整数门：32 GiB 总配置被
+FA/WA 对半为 16/16 GiB，默认 4096 目录分片使回收数为 0；run03 实测 FA/WA worker
+block 为 `3186688/6627328 bytes`。run04 已固定总 POSIX 64 GiB 与
+`data_dir_shard_bytes=2`，分流后 32/32 GiB、256 分片，FA/WA 最低容量为
+12/24 GiB，并在停卡前自动验证父证据、两套 GC/Cache 几何及主机/存储余量。实现门仍是
 `UCM save → DRAM external hit → Cache load → H2D load → follower complete`；
 延迟如实记录，但其差值正负不是路径实现门，pairing repair 的唯一/普遍根因也不是
-K2 前置条件。当前唯一任务以零 NPU 只读 run03 raw log 和 pinned source，恢复
-exact inner exception 与 FA/WA per-store geometry，再由开发机做定向修复；不与已开发并排队的 P6.3C-R1 混跑；
-K2-R1、K3、P8.3-I1 与下一轮仍未授权。
+K2 前置条件。当前唯一任务只运行一个 TP8 lifecycle 和固定三请求，不与已开发并排队
+的 P6.3C-R1 混跑；K2-R1、K3、P8.3-I1 与下一轮仍未授权。
 
-状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_f1_r17_restore_h2d_mechanism_closed / p8_2_k2_r0_run03_fawa_constructor_attribution_pending / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
+状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_f1_r17_restore_h2d_mechanism_closed / p8_2_k2_r0_run03_fawa_posix_gc_attributed / p8_2_k2_r0_run04_geometry_repair_ready / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 
 P8.1 parent grade 保留为 `yellow_p8_1_matrix_trace_invalid`。
 

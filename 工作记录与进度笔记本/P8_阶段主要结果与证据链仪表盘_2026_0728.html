@@ -2345,7 +2345,7 @@
         <div class="legend-item"><span class="legend-dot open"></span><span>开放门：尚未授权或证据不足</span></div>
       </div>
       <div class="rail-foot">
-        DATA CUT · 2026-07-28<br>
+        DATA CUT · 2026-07-29<br>
         CURRENT MECHANISM TERMINAL · R17<br>
         CLAIM CEILING · INSTRUMENTED PATH
       </div>
@@ -2354,7 +2354,7 @@
     <div class="page">
       <header class="topbar">
         <div class="data-stamp">
-          数据截点：<strong>2026-07-29 / R17 已验收，K2-R0 run03 启动归因待执行</strong> · 页面不读取网络资源
+          数据截点：<strong>2026-07-29 / R17 已验收，K2-R0 run03 已归因、run04 待执行</strong> · 页面不读取网络资源
         </div>
         <div class="toolbar-actions">
           <div class="filter-group" aria-label="结果筛选">
@@ -3977,11 +3977,11 @@
 
           <div class="next-grid">
             <article class="next-card" data-order="1">
-              <small>P8 CURRENT · ZERO NPU ATTRIBUTION</small>
-              <strong>K2-R0 先关闭 run03 FAWA 启动证据缺口</strong>
-              <p>run03 已通过 NFS、依赖、16 GiB/rank 和主机容量门，但在
-                UCMFAWAConnector 初始化期间未 ready、0/3 请求。当前只读完整启动日志，
-                恢复 inner exception 与 FA/WA per-store geometry；定向修复后才授权新 lifecycle。</p>
+              <small>P8 CURRENT · RUN04 GEOMETRY REPAIR</small>
+              <strong>K2-R0 进入 FAWA POSIX GC 定向修复</strong>
+              <p>run03 attribution 已确认总 POSIX 32 GiB 被 FA/WA 分为 16/16 GiB，
+                默认 4096 目录分片使 scheduler FA 的 GC 回收数为 0。run04 固定总容量
+                64 GiB 与 256 分片，停卡前验证 FA/WA 几何后执行唯一三请求 lifecycle。</p>
             </article>
             <article class="next-card" data-order="2">
               <small>LOCAL CLOSEOUT</small>
@@ -4135,7 +4135,7 @@
           数据截点：2026-07-29。当前最高结论等级：KV warm-tier
           <code>instrumented_path / restore_h2d_mechanism_closed</code>；不是
           controlled performance A/B、hardware recommendation 或 production readiness。
-          K2-R0 run03 已关闭 dependency/capacity 门，但尚未进入请求路径；当前仓库唯一交接是零 NPU 的 FAWA startup attribution，P6.3C-R1 继续排队。
+          K2-R0 run03 已关闭 dependency/capacity 与 FAWA POSIX GC 归因门，但仍未进入请求路径；当前仓库唯一交接是 run04 定向几何修复与三请求 lifecycle，P6.3C-R1 继续排队。
         </footer>
       </main>
     </div>

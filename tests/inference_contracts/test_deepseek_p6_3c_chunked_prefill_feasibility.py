@@ -7,8 +7,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 AUDIT_PATH = (
-    REPO_ROOT
-    / "benchmarks/deepseek_v4_flash/"
+    REPO_ROOT / "benchmarks/deepseek_v4_flash/"
     "p6_3c_chunked_prefill_feasibility_audit.yaml"
 )
 
@@ -73,7 +72,10 @@ def test_audit_proves_explicit_cli_boolean_but_off_cannot_resolve():
     assert sources["vllm_ascend_scheduler_patch"]["sha256"] == (
         "3c7a4cae783f6a083fd0a3715c3c70ba9243ae2f3ae8668962378edee6d6ed3e"
     )
-    assert sources["vllm_ascend_scheduler_patch"]["changes_scheduler_config_validation"] is False
+    assert (
+        sources["vllm_ascend_scheduler_patch"]["changes_scheduler_config_validation"]
+        is False
+    )
 
     assert audit["resolved_config_gate"] == {
         "chunked_prefill_on": True,
@@ -133,12 +135,14 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
         "chunked_prefill_on_matches_current_reference": True,
         "hashes_are_a_local_normalization_audit_not_execution_evidence": True,
     }
-    assert bash_server_command_sha256(off_argv) == audit[
-        "candidate_server_command_sha256"
-    ]["chunked_prefill_off"]
-    assert bash_server_command_sha256(on_argv) == audit[
-        "candidate_server_command_sha256"
-    ]["chunked_prefill_on"]
+    assert (
+        bash_server_command_sha256(off_argv)
+        == audit["candidate_server_command_sha256"]["chunked_prefill_off"]
+    )
+    assert (
+        bash_server_command_sha256(on_argv)
+        == audit["candidate_server_command_sha256"]["chunked_prefill_on"]
+    )
 
     for artifact in audit["reference_artifacts"].values():
         path = REPO_ROOT / artifact["path"]
@@ -164,9 +168,9 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
 
 def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
     readiness = yaml.safe_load(
-        (
-            REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
-        ).read_text(encoding="utf-8")
+        (REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml").read_text(
+            encoding="utf-8"
+        )
     )
     assert readiness["artifacts"]["p6_3c_feasibility_audit"].endswith(
         "p6_3c_chunked_prefill_feasibility_audit.yaml"
@@ -175,17 +179,17 @@ def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k2_r0_run03_fawa_startup_attribution.yaml"
+        "p8_2_k2_r0_ucm_dram_external_prefix_path.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P8.2-K2-R0_run03_FA_WA_startup_attribution"
+        "P8.2-K2-R0_run04_FA_WA_POSIX_GC_geometry_repair"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
     )
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_r1_grade"] == (
-        "developed_queued_while_k2_r0_run03_attribution_is_current"
+        "developed_queued_while_k2_r0_run04_is_current"
     )
     assert readiness["acceptance"]["p6_3c_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_r1_formal_model_lifecycle_count_exact"] == 6
@@ -205,8 +209,13 @@ def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
     assert readiness["acceptance"]["p8_2_k1a_r3_r2_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_2_k1a_r3_r2_r2_execution_authorized"] is False
     assert readiness["acceptance"]["p8_2_k1a_r3_r2_r2_r1_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_2_k1a_r3_r2_r2_r1_r1_execution_authorized"] is False
-    assert readiness["acceptance"]["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"] is False
+    assert (
+        readiness["acceptance"]["p8_2_k1a_r3_r2_r2_r1_r1_execution_authorized"] is False
+    )
+    assert (
+        readiness["acceptance"]["p8_2_k1a_r3_r2_r2_r1_r1_r1_execution_authorized"]
+        is False
+    )
     assert readiness["acceptance"]["p8_2_k1a_r4_offline_closeout_authorized"] is True
     assert readiness["acceptance"]["p8_2_k1a_r4_npu_execution_authorized"] is False
     assert readiness["acceptance"]["next_task_authorized"] is False
@@ -215,18 +224,12 @@ def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
         encoding="utf-8"
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
-    assert (
-        "task_id: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729"
-        in handoff
-    )
-    assert (
-        "run_id: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01"
-        in handoff
-    )
-    assert "npu_execution_authorized: false" in handoff
+    assert "task_id: p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729" in handoff
+    assert "run_id: p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01" in handoff
+    assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "model_request_count_exact: 0" in handoff
-    assert "已开发但排队的 P6.3C-R1" in handoff
+    assert "model_request_count_exact: 3" in handoff
+    assert "P6.3C-R1" in handoff and "不混跑" in handoff
 
     truth_paths = (
         REPO_ROOT / "docs/EXPERIMENT_PLAN.md",
