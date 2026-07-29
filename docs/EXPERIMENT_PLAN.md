@@ -93,7 +93,8 @@ P8.2-K2-R0: run03_dependency_and_capacity_ready / fawa_constructor_inner_excepti
 P8.3-I0: green_p8_3_i0_checkpoint_inventory_budget_incomplete
 P8.3-I0-R1: green_p8_3_i0_r1_unclassified_taxonomy
 P6.3C: blocked_p6_3c_not_strict_single_variable for the original 135168/4096/1 reference only
-P6.3C-R1: developed_awaiting_server_run01, independent 69632/69632/2 two-request scheduler-pressure matched A/B
+P6.3C-R1: red_p6_3c_r1_scheduler_pressure_no_success, 69632/69632/2 common environment failed KV-cache startup before scheduler
+P6.3C-R2: developed_awaiting_server_run01, independent 12288/12288/2 capacity-calibrated two-request scheduler-pressure matched A/B
 ```
 
 K1A 原 `1 lifecycle / 6 requests` 契约已消费并以 pinned allocator 首错收口；K1A-R1 probe-invalid、R2
@@ -104,8 +105,15 @@ target-lost red 均保留。当前 F1-R2 只读取 calibration/L2 原始轨迹�
 context 改动、sweep 或 eager fallback。
 
 server-local Git 管理最终验收已完成。P6 五份汇总交付物已物化，历史 no-MTP P8 baseline 保留；
-`通信模块/docs/developer-to-server.md` 已清空旧任务并写入唯一 K2-R0 run03 FAWA startup attribution handoff；服务器只需同步 `main` 后运行零 NPU 只读 server-task driver，不得补代码、改 source/env/capacity、重跑 run03、创建 run04 或混跑 P6.3C-R1。结果包外发仍需按完整清单选择单一渠道。原 P6.3C frozen-source 审计确认
-`max_num_batched_tokens=4096 < max_model_len=135168` 时 Off 侧会于 resolved config 前被拒绝；该结论仅关闭“直接接在 P6.1 后的 131K+c1 严格单变量 A/B”。独立 R1 在两侧共同冻结 `69632 / 69632 / 2`、Prefix Cache=false，使用三组双请求形成调度压力，分别采集只读 scheduler 机制证据与无 observer/profiler 的顺序平衡性能证据。
+通用 `通信模块/docs/developer-to-server.md` 继续管理 K2-R0 run04；P6 使用独立
+`通信模块/docs/developer-to-server.P6.md`，只有服务器协调确认无 K2 或其他 NPU 作业时才可执行，
+不得混跑。结果包外发仍需按完整清单选择单一渠道。原 P6.3C frozen-source 审计确认
+`max_num_batched_tokens=4096 < max_model_len=135168` 时 Off 侧会于 resolved config 前被拒绝；
+该结论仅关闭“直接接在 P6.1 后的 131K+c1 严格单变量 A/B”。独立 R1 的 `69632/69632/2`
+共同环境已因 KV cache 8.27 GiB 可用、小于 36.66 GiB 所需而在 scheduler 前 RED。独立 R2
+共同冻结 `12288/12288/2`、Prefix=false 和同一 validated deferred hybrid-KV repair，使用
+4K+4K、10K+6K、8K+8K 双请求形成调度压力，继续分离只读机制轨道与无 observer/profiler
+的顺序平衡性能轨道。
 
 mixed checkpoint 的最终四卡诊断已在当前 SoC 能力门收口，项目不再实现 adapter 或继续 mixed runtime probe。W8A8-MTP 的 task-local overlay 已先后通过 P6.1R、P6.1L-R1 和 P6.1C-R1；official 131072 context、P6.1 unprofiled 性能门与 P6.2 profiled evidence 门均已关闭。P6.3 结果继续独立于 P8.1；外部开发机不运行 NPU。
 
@@ -313,7 +321,7 @@ request-device aggregate exit=0 且未使用 skip-heavy-joins fallback；phase-m
 
 1. P6.3A matched MTP on/off。
 2. P6.3B purpose-built repeated-prefix Prefix Cache on/off。
-3. 原 P6.3C Chunked Prefill on/off 因 `4096 < 135168` 的 frozen validation 约束记录为 `blocked_p6_3c_not_strict_single_variable`，仅关闭原参考配置的伪 A/B；独立 P6.3C-R1 采用共同冻结的 `69632 / 69632 / 2` 多请求调度压力环境。
+3. 原 P6.3C Chunked Prefill on/off 因 `4096 < 135168` 的 frozen validation 约束记录为 `blocked_p6_3c_not_strict_single_variable`，仅关闭原参考配置的伪 A/B；独立 P6.3C-R1 的 `69632 / 69632 / 2` 共同环境已在 KV-cache 初始化阶段 RED，独立 P6.3C-R2 改用共同冻结的 `12288 / 12288 / 2` 容量校准多请求压力环境。
 4. P6.3D 可选 `max_num_seqs` scheduler/capacity sweep。
 
 `max_model_len` 移入 P7 capacity boundary，不再是 P6.3 必做性能 A/B。每组必须使用相同请求集、
@@ -468,5 +476,5 @@ simulator_validation_report.md
 当前唯一服务器任务是
 `p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01`。它只允许一个 TP8
 lifecycle、warmup→prime→follower 三请求、零 retry/sweep；开始前验证 attribution
-manifest/all-payload 和 FA/WA 几何，结束后恢复 0–7 keep-alive。P6.3C-R1 已开发
-并排队，不与本轮混跑。
+manifest/all-payload 和 FA/WA 几何，结束后恢复 0–7 keep-alive。P6.3C-R1 已启动 RED；
+P6.3C-R2 已开发并由独立 P6 handoff 管理，不与本轮混跑。

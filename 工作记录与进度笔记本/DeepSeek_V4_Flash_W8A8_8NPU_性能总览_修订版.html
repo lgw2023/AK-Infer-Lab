@@ -440,7 +440,7 @@
         <div class="eyebrow">AK-INFER-LAB · P6 DEEPSEEK-V4-FLASH · VERIFIED 2026-07-28</div>
         <h1>P6 阶段研究结论：131K 上下文稳定运行，并识别出 MTP 与 Prefix Cache 的受限机制效应</h1>
       </div>
-      <p class="head-note">本阶段在 Atlas 800T A2（8 × Ascend 910B1）上评估 DeepSeek-V4-Flash W8A8-MTP 的长上下文稳定性、未剖析用户性能以及两类已完成推理机制。原 P6.3C 仅证明 135168/4096/1 参考配置不能直接形成 Chunked Prefill Off/On；独立 P6.3C-R1 多请求调度压力实验已开发，尚待服务器实测。</p>
+      <p class="head-note">本阶段在 Atlas 800T A2（8 × Ascend 910B1）上评估 DeepSeek-V4-Flash W8A8-MTP 的长上下文稳定性、未剖析用户性能以及两类已完成推理机制。原 P6.3C 仅证明 135168/4096/1 参考配置不能直接形成 Chunked Prefill Off/On；独立 R1 在 KV-cache 初始化阶段 RED，容量校准后的 R2 已开发待实机。</p>
     </header>
     <section class="page-body executive">
       <div class="hero-metrics" aria-label="阶段核心数据">
@@ -739,9 +739,9 @@
     <header class="page-head">
       <div>
         <div class="eyebrow">P6.2 PROFILED EVIDENCE + P6.3C FEASIBILITY + REPOSITORY CLOSEOUT</div>
-        <h2>证据综合：原参考配置不能直接对照，Chunked Prefill 多请求压力 R1 已独立就绪</h2>
+        <h2>证据综合：原参考不能直接对照，R1 启动 RED，容量校准 R2 已独立就绪</h2>
       </div>
-      <p class="head-note">P6.2 证明诊断证据链可用。原 P6.3C 审计只表明原 135168/4096/1 配置仅切 Chunked Prefill 布尔值时 Off 侧不能启动。P6.3C-R1 保留旧审计并重新冻结 69632/69632/2、Prefix Cache=false，以双请求总 Prefill 超预算建立机制与性能两条证据轨道。</p>
+      <p class="head-note">P6.2 证明诊断证据链可用。原 P6.3C 审计只表明原 135168/4096/1 配置仅切 Chunked Prefill 布尔值时 Off 侧不能启动。P6.3C-R1 的 69632/69632/2 共同环境在 KV-cache 初始化阶段停止；R2 重新冻结 12288/12288/2、Prefix Cache=false 和同一 deferred hybrid-KV repair，以双请求总 Prefill 超预算保留机制与性能两条证据轨道。</p>
     </header>
     <section class="page-body evidence-layout">
       <article class="profile-panel">
@@ -762,15 +762,15 @@
         </table>
       </article>
       <article class="closure-panel">
-        <div class="panel-title"><span>P6.3C audit + P6.3C-R1</span><small>OLD AUDIT PRESERVED · R1 AWAITING SERVER</small></div>
+        <div class="panel-title"><span>P6.3C audit + R1 RED + R2</span><small>OLD AUDIT PRESERVED · R1 STARTUP RED · R2 AWAITING SERVER</small></div>
         <div class="closure-body">
-          <div class="block-card"><span class="pill amber">blocked_p6_3c_not_strict_single_variable</span><strong>原 131K+c1 参考不能直接 A/B；不是研究终点</strong><p>原配置中 Off 于请求前被拒绝。R1 两侧共同固定 69,632-token context/budget、max_num_seqs=2、Prefix=false，只切 Chunked Prefill；单请求提高预算因 B≥P、可能不分块而被排除。</p></div>
+          <div class="block-card"><span class="pill amber">blocked parent · startup RED R1 · open R2</span><strong>原 131K+c1 参考不能直接 A/B；R1 共同环境未通过启动门</strong><p>原配置中 Off 于请求前被拒绝。R1 的 69,632-token context/budget 需要 36.66 GiB KV、实际仅 8.27 GiB 可用，0 request、0 scheduler step。R2 两侧共同改为 12,288-token context/budget、max_num_seqs=2、Prefix=false 和同一 repair，只切 Chunked Prefill。</p></div>
           <div class="equation">max_num_batched_tokens 4,096 &lt; max_model_len 135,168</div>
           <div class="no-run">
             <div><strong>0</strong><span>原审计 NPU 请求</span></div>
-            <div><strong>32K+32K</strong><span>低于预算</span></div>
-            <div><strong>64K+32K</strong><span>非对称压力</span></div>
-            <div><strong>48K+48K</strong><span>对称压力</span></div>
+            <div><strong>4K+4K</strong><span>低于 R2 预算</span></div>
+            <div><strong>10K+6K</strong><span>非对称压力</span></div>
+            <div><strong>8K+8K</strong><span>对称压力</span></div>
           </div>
         </div>
       </article>
@@ -785,6 +785,7 @@
             <tr><td>P6.3A</td><td>Matched MTP Off / On</td><td>7 / 42,877</td><td>f853a86a7c7c…</td><td>green_p6_3a_mtp_matched_ab</td></tr>
             <tr><td>P6.3B-R4-R1</td><td>Explicit Prefix Cache control</td><td>10 / 44,550</td><td>a1b966194eb2…</td><td>green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab</td></tr>
             <tr><td>P6.3C</td><td>Frozen-source feasibility audit</td><td>1 / 7,489</td><td>aeb91adc8b0b…</td><td>blocked_p6_3c_not_strict_single_variable</td></tr>
+            <tr><td>P6.3C-R1</td><td>Scheduler-pressure startup evidence</td><td>12 / 17,941</td><td>per-file SHA verified</td><td>red_p6_3c_r1_scheduler_pressure_no_success</td></tr>
           </tbody>
         </table>
       </article>
@@ -793,12 +794,12 @@
         <div class="boundary-grid">
           <div class="boundary-card"><h3>功能与稳定性</h3><p>131072+64 请求在首次执行中完成，健康状态、队列、MTP 计数器和清理证据均完整；该观察不等于已量化剩余 KV 缓存余量。</p></div>
           <div class="boundary-card"><h3>用户侧性能</h3><p>性能参考仅采用 P6.1 的未剖析流式测量。P6.2 包含 profiler 额外开销，其时延仅用于诊断，不回填性能基线。</p></div>
-          <div class="boundary-card"><h3>机制效应</h3><p>MTP 与 Prefix Cache 结论均有样本边界；Chunked Prefill R1 尚待 observer 证明实际分块，当前没有机制或收益结论。</p></div>
+          <div class="boundary-card"><h3>机制效应</h3><p>MTP 与 Prefix Cache 结论均有样本边界；Chunked Prefill R1 未进入 scheduler，R2 尚待 observer 证明实际分块，当前没有机制或收益结论。</p></div>
           <div class="boundary-card"><h3>硬件归因</h3><p>八卡整机 HBM 读数不能替代 KV 对象字节数或 HBM 流量。P6 因此不提出硬件瓶颈或硬件优化优先级。</p></div>
         </div>
       </article>
     </section>
-    <footer class="page-foot"><span><b>P6 边界：</b>既有主线与交付物已关闭；原 P6.3C blocked 保留，P6.3C-R1 作为独立开放结果链待服务器 run01，不覆盖旧审计。</span><span>P6 artifact manifest date 2026-07-16 · Page 8 / 8</span></footer>
+    <footer class="page-foot"><span><b>P6 边界：</b>既有主线与交付物已关闭；原 P6.3C blocked 和 R1 启动 RED 保留，P6.3C-R2 作为独立开放结果链待服务器 run01。</span><span>P6 artifact manifest date 2026-07-16 · Page 8 / 8</span></footer>
   </main>
 </div>
 <script>

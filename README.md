@@ -72,7 +72,7 @@ AK-Infer-Lab/
 
 ## 当前状态摘要
 
-P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell、P6.3A matched MTP on/off 和 P6.3B-R4-R1 explicit Prefix Cache control。P8.1-R1 已由开发机接受 `green_p8_1_r1_official_mtp_observe_only_matrix`。P8.2-K0-R1 使用不变的 29-file raw evidence 离线修正 finalizer 后，15 项逐请求 predicate 均为 20/20，开发机已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`；该结果仍不是 performance reference 或 offload evidence。K1 `OffloadingConnector + NPUOffloadingSpec` 冻结源路径保持 `blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A 的 source/import/registration 门已过，但冻结 32 GiB/rank 在服务就绪前以 `aclrtMallocHostWithCfg / 207001` 失败，0/6 请求，开发机只接受为该容量点的 `red_p8_2_k1a_simple_cpu_offload_no_success`，不宣判普通 DRAM 不足、唯一 pinned-pool 根因或整个 connector 不支持。原 P6.3C 审计继续保持 blocked；新的 P6.3C-R1 多请求调度压力实验包已开发，尚无 NPU 结果，不得写成 Chunked Prefill 正向成果。
+P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell、P6.3A matched MTP on/off 和 P6.3B-R4-R1 explicit Prefix Cache control。P8.1-R1 已由开发机接受 `green_p8_1_r1_official_mtp_observe_only_matrix`。P8.2-K0-R1 使用不变的 29-file raw evidence 离线修正 finalizer 后，15 项逐请求 predicate 均为 20/20，开发机已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`；该结果仍不是 performance reference 或 offload evidence。K1 `OffloadingConnector + NPUOffloadingSpec` 冻结源路径保持 `blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A 的 source/import/registration 门已过，但冻结 32 GiB/rank 在服务就绪前以 `aclrtMallocHostWithCfg / 207001` 失败，0/6 请求，开发机只接受为该容量点的 `red_p8_2_k1a_simple_cpu_offload_no_success`，不宣判普通 DRAM 不足、唯一 pinned-pool 根因或整个 connector 不支持。原 P6.3C 审计继续保持 blocked；独立 P6.3C-R1 已在 `69632/69632/2` 共同环境的 KV-cache 初始化阶段 RED，0 request、0 scheduler step。容量校准后的 P6.3C-R2 已共同冻结 `12288/12288/2`、同一 deferred hybrid-KV repair 与三组双请求，等待全局互斥确认后实机；当前仍不得把 Chunked Prefill 写成正向成果。
 
 P8 现显式分成两条并行依赖。P8.3-I0-R1 已在 bounded taxonomy 边界接受为
 `green_p8_3_i0_r1_unclassified_taxonomy`，但 `1135` tensor / `12319364956 bytes` 的分类结果不能自动
@@ -101,8 +101,9 @@ controller-red 与 R5-L1-R1 target-lost red 均保留。F1-R1 随后执行一次
 继续保留。K2-R0 run01 在 NFS ownership 处停止，run02 已完成 UCM 构建/import 并进入
 CacheStore，但 8 GiB 只能容纳 1296 个当前 shard，低于 pinned source 要求的 2048。
 用户已在四节点 NFS export 启用 `no_root_squash` 并验证新对象为 `root:shareddata (0:3000)`；
-当前唯一服务器任务是 K2-R0 run03：自动复验 NFS 身份、绑定 CMake Python 3.11、使用
-16 GiB/rank（2592 shards）并执行一个三请求 lifecycle。P6.3C-R1 已开发但排队，不与 K2 混跑。
+通用 handoff 当前管理 K2-R0 run04：复用 run01–run03 已关闭的 NFS、依赖和容量门，
+修复 FAWA split-aware POSIX GC 几何后只执行一个三请求 external-prefix lifecycle。P6.3C-R1
+启动 RED 已保留；P6.3C-R2 已开发但必须等待 K2 完全收口，不与其混跑。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 
@@ -122,7 +123,7 @@ CacheStore，但 8 GiB 只能容纳 1296 个当前 shard，低于 pinned source 
 
 ## 最小开工路径
 
-1. P5/P6 runtime、official context、unprofiled/profiled reference 与既有 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C blocked 审计保留，独立 P6.3C-R1 已开发并排队。
+1. P5/P6 runtime、official context、unprofiled/profiled reference 与既有 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C blocked 审计与独立 P6.3C-R1 启动 RED 均保留，容量校准后的 P6.3C-R2 已开发并等待全局互斥确认。
 2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-F1 已由 R17 闭合 warm-tier restore/H2D。当前只执行 K2-R0 run03 的 UCM `save → DRAM external hit → Cache load/H2D → follower completion` 单 lifecycle；K2-R1/K3 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。

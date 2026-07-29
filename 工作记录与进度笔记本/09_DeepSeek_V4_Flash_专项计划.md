@@ -21,7 +21,7 @@ request=`0/64`，不形成机制证据。P6.3B-R4-R1 随后完成并由开发机
 `--no-enable-prefix-caching` / `--enable-prefix-caching`、live config 与 token-LCP 门全部通过；64/64 request
 成功，off hit=0，on primary 9/9 正命中且逐请求符合 16K LCM floor。其余 15 条 boundary 仍为零命中，
 故不声明普遍命中或性能收益。原 P6.3C 已收口为
-`blocked_p6_3c_not_strict_single_variable`，其范围仅限原 `135168 / 4096 / 1` 参考配置不能直接形成 Off/On；独立 P6.3C-R1 已重新冻结 `69632 / 69632 / 2` 并开发三组双请求 scheduler-pressure matched A/B，当前排队待实测。P8.1-R1 与 P8.2-K0 已 green，K1 冻结源路径 blocked；K1A-F1 已由 R17 闭合。K2-R0 run03 attribution 已关闭 FAWA constructor 的精确归因门；当前执行 run04 FAWA split-aware POSIX GC 几何修复与三请求 external-prefix lifecycle。
+`blocked_p6_3c_not_strict_single_variable`，其范围仅限原 `135168 / 4096 / 1` 参考配置不能直接形成 Off/On；独立 P6.3C-R1 的 `69632 / 69632 / 2` 共同环境已在 KV-cache 初始化阶段 RED，0 request、0 scheduler step。P6.3C-R2 已共同冻结 `12288 / 12288 / 2`、同一 deferred hybrid-KV repair 和 4K+4K/10K+6K/8K+8K 三组双请求，当前等待全局任务互斥确认后实测。P8.1-R1 与 P8.2-K0 已 green，K1 冻结源路径 blocked；K1A-F1 已由 R17 闭合。K2-R0 run03 attribution 已关闭 FAWA constructor 的精确归因门；通用 handoff 当前执行 run04 FAWA split-aware POSIX GC 几何修复与三请求 external-prefix lifecycle。
 K1A 32 GiB/rank 容量点 red，K1A-R1 probe-invalid red；K1A-R2 的 8-rank geometry、
 128-block pinned capacity 与离线重放已接受为 `ready_p8_2_k1a_r2_allocator_capacity`。
 P8.3-I0-R1 taxonomy 已接受 green，但 TP4 budget incomplete。K1A-R3-R1 已关闭 R3 双文件 provenance，
@@ -39,7 +39,7 @@ provenance；R3-R2-R2-R1-R1 已关闭 ImportFrom/source binding 假阴性，但 
 `p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01`：总 POSIX=64 GiB、
 `data_dir_shard_bytes=2`，分流后 32/32 GiB、256 分片；停卡前验证父包、FA/WA
 Cache/GC 几何与主机/存储余量，通过后执行一个 TP8 lifecycle 和固定三请求。不得自动进入
-P6.3C-R1/K2-R1/P8.3-I1/P8.4/P8.5/P9。
+P6.3C-R2/K2-R1/P8.3-I1/P8.4/P8.5/P9。
 `0.22.1/0.22.1rc1` mixed-checkpoint 四卡诊断已在当前 SoC 的 `customize_dtype`
 能力门收口，W8A8-MTP 保持唯一主对象：
 
@@ -175,5 +175,5 @@ EPLB/static map 是 placement 支点，不是 offload。没有 expert identity�
 2. P6.1 unprofiled 已验收为 `green_mtp_unprofiled_baseline`，不重跑。
 3. P6.2 已验收为 `green_mtp_profiled_evidence`，不把 profiled latency 当性能基线。
 4. P6.3A 已验收为 `green_p6_3a_mtp_matched_ab`；原 P6.3B yellow、R1 red、R3 on-vs-on yellow 与 R4 root-squash blocked 保留，R2 已验收为 `green_p6_3b_r2_hybrid_kv_repair`，R4-R1 已验收为 `green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab`。
-5. 当前 handoff 只授权 K2-R0 run03 startup attribution：零 NPU 只读父 raw log 与 pinned UCM source，恢复 exact inner exception、FA/WA × scheduler/worker 配置和 constructor lineage；formal lifecycle/request 均为 0，keep-alive 留运行，run04 不授权。P6.3C-R1 保持排队，不得与本轮混跑。任何新产物仍需先列出精确路径、完整清单、bytes、SHA-256、敏感性、可用方法和推荐理由，
+5. 通用 handoff 管理 K2-R0 run04；P6 专用 handoff 管理 P6.3C-R2。两者共享八卡，必须由服务器全局任务协调与进程/端口门共同确认互斥，任何一方运行、清理或结果收口时另一方不得停卡。任何新产物仍需先列出精确路径、完整清单、bytes、SHA-256、敏感性、可用方法和推荐理由，
    再等待用户为完整范围选择 `email`、`upload-api` 或 `server-local`。

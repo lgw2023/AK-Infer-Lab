@@ -1295,6 +1295,23 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         else {}
     )
     keep_alive_restore_exact = recovery.get("keep_alive_restored_exact") is True
+    global_cleanup_path = artifact_dir / "cleanup_status.txt"
+    global_cleanup_status = (
+        global_cleanup_path.read_text(encoding="utf-8").strip()
+        if global_cleanup_path.is_file()
+        else "missing"
+    )
+    cleanup_failure = (
+        any(
+            row.get("cleanup_status") not in {"", "clean"}
+            for row in lifecycle_rows
+        )
+        or global_cleanup_status == "incomplete"
+        or (
+            bool(recovery)
+            and recovery.get("keep_alive_restored_exact") is not True
+        )
+    )
     complete = (
         schedule_exact
         and argv["all_single_variable_exact"]
@@ -1313,7 +1330,9 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         and keep_alive_restore_exact
     )
     any_success = request_success > 0
-    if complete:
+    if cleanup_failure:
+        grade = "red_cleanup_incomplete"
+    elif complete:
         grade = (
             "candidate_green_p6_3c_r1_chunked_prefill_"
             "scheduler_pressure_matched_ab"
@@ -1403,6 +1422,8 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         "successful_batch_count": batch_success,
         "all_lifecycles_success": all_lifecycles_success,
         "cleanup_all_lifecycles_clean": cleanup_all,
+        "cleanup_failure": cleanup_failure,
+        "global_cleanup_status": global_cleanup_status,
         "keep_alive_restore_exact": keep_alive_restore_exact,
         "performance_is_descriptive_only": True,
         "universal_benefit_claimed": False,

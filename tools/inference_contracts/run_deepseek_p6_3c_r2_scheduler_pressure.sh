@@ -13,11 +13,12 @@ ENV_PREFIX=${ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1
 PYTHON_BIN=${PYTHON_BIN:-${ENV_PREFIX}/bin/python}
 SOURCE_PAYLOAD=${SOURCE_PAYLOAD:-${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json}
 MODEL_NAME=${MODEL_NAME:-deepseek-v4-flash-w8a8-mtp}
-REQUEST_RUNNER=${REQUEST_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r1_scheduler_pressure.py}
-MODE_RUNNER=${MODE_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r1_mode.sh}
+REQUEST_RUNNER=${REQUEST_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r2_scheduler_pressure.py}
+MODE_RUNNER=${MODE_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r2_mode.sh}
 
 audit_contract() {
-  printf 'task_id=p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01\n'
+  printf 'task_id=p6_3c_r2_chunked_prefill_capacity_calibrated_2026_0729_run01\n'
+  printf 'parent_r1_grade=red_p6_3c_r1_scheduler_pressure_no_success\n'
   printf 'model_lifecycle_count_exact=6\n'
   printf 'engine_request_count_exact=90\n'
   printf 'batched_http_call_count_exact=48\n'
@@ -25,13 +26,16 @@ audit_contract() {
   printf 'mechanism_observer=read_only\n'
   printf 'performance_observer=disabled\n'
   printf 'profiler=disabled_all_tracks\n'
+  printf 'shared_hybrid_kv_repair=enabled_both_modes_all_lifecycles\n'
+  printf 'capacity_contract=max_model_len_12288,max_num_batched_tokens_12288,max_num_seqs_2\n'
+  printf 'cells=no_pressure_4k_4k,asymmetric_pressure_10k_6k,symmetric_pressure_8k_8k\n'
   printf 'performance_order=chunked_prefill_off,chunked_prefill_on,chunked_prefill_on,chunked_prefill_off\n'
   while IFS=$'\t' read -r track lifecycle_id pair_id pair_position mode; do
     printf '%s\t%s\t%s\t%s\t%s\n' \
       "${track}" "${lifecycle_id}" "${pair_id}" "${pair_position}" "${mode}"
-    P6_3C_R1_MODE_AUDIT_ONLY=1 \
+    P6_3C_MODE_AUDIT_ONLY=1 \
       bash "${MODE_RUNNER}" \
-      /audit/p6_3c_r1 "${lifecycle_id}" "${track}" "${mode}"
+      /audit/p6_3c_r2 "${lifecycle_id}" "${track}" "${mode}"
   done <<'EOF'
 mechanism	mechanism_01	mechanism_pair	first	chunked_prefill_off
 mechanism	mechanism_02	mechanism_pair	second	chunked_prefill_on
@@ -42,7 +46,7 @@ performance	performance_04	pair_02	second	chunked_prefill_off
 EOF
 }
 
-if test "${P6_3C_AUDIT_ONLY:-${P6_3C_R1_AUDIT_ONLY:-0}}" = 1; then
+if test "${P6_3C_AUDIT_ONLY:-0}" = 1; then
   audit_contract
   exit 0
 fi

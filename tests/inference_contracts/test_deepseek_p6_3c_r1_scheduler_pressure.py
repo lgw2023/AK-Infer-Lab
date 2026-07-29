@@ -499,6 +499,13 @@ def test_synthetic_complete_result_closes_mechanism_and_package_gates(
     assert manifest["candidate_total_within_limit"] is True
     assert manifest["selection_required_before_any_transfer"] is True
 
+    (artifact / "cleanup_status.txt").write_text(
+        "incomplete\n", encoding="utf-8"
+    )
+    cleanup_red = runner.finalize_artifacts(artifact)
+    assert cleanup_red["server_grade"] == "red_cleanup_incomplete"
+    assert cleanup_red["cleanup_failure"] is True
+
 
 def test_server_wrapper_contains_keep_alive_and_no_transfer_action() -> None:
     text = SERVER_TASK.read_text(encoding="utf-8")

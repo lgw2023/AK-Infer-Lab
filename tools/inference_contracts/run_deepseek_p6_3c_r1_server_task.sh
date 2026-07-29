@@ -9,13 +9,14 @@ fi
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=${REPO_ROOT:-$(cd -- "${SCRIPT_DIR}/../.." && pwd)}
 RESULT_DIR=$1
-TASK_ID=p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01
+TASK_ID=${P6_3C_TASK_ID:-p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01}
+REPORT_PREFIX=${P6_3C_REPORT_PREFIX:-P6_3C_R1}
 EXPECTED_RUN_LABEL=${TASK_ID}
 RUN_LABEL=$(basename -- "${RESULT_DIR}")
 ENV_PREFIX=${ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1}
 BASE_PYTHON=${BASE_PYTHON:-${ENV_PREFIX}/bin/python}
-RUNNER=${SCRIPT_DIR}/run_deepseek_p6_3c_r1_scheduler_pressure.py
-EXPERIMENT=${SCRIPT_DIR}/run_deepseek_p6_3c_r1_scheduler_pressure.sh
+RUNNER=${P6_3C_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r1_scheduler_pressure.py}
+EXPERIMENT=${P6_3C_EXPERIMENT:-${SCRIPT_DIR}/run_deepseek_p6_3c_r1_scheduler_pressure.sh}
 SOURCE_PAYLOAD=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
 CARD_IDS=(0 1 2 3 4 5 6 7)
 CARD_IDS_CSV=0,1,2,3,4,5,6,7
@@ -34,10 +35,11 @@ audit_contract() {
   printf 'automatic_transfer_allowed=false\n'
   printf 'transfer_method_selected=false\n'
   printf 'next_task_authorized=false\n'
-  P6_3C_R1_AUDIT_ONLY=1 bash "${EXPERIMENT}" "${RESULT_DIR}"
+  PYTHON_BIN=${PYTHON_BIN:-${BASE_PYTHON}} \
+    P6_3C_AUDIT_ONLY=1 bash "${EXPERIMENT}" "${RESULT_DIR}"
 }
 
-if test "${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}" = 1; then
+if test "${P6_3C_SERVER_TASK_AUDIT_ONLY:-${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}}" = 1; then
   audit_contract
   exit 0
 fi
@@ -199,7 +201,7 @@ PY
   "${BASE_PYTHON}" "${RUNNER}" package --artifact-dir "${RESULT_DIR}"
   package_exit=$?
 
-  printf '%s\n' 'P6_3C_R1_SERVER_REPORT_BEGIN'
+  printf '%s_SERVER_REPORT_BEGIN\n' "${REPORT_PREFIX}"
   printf 'task_id=%s\n' "${TASK_ID}"
   printf 'head=%s\n' "$(git -C "${REPO_ROOT}" rev-parse HEAD)"
   printf 'origin_main=%s\n' "$(git -C "${REPO_ROOT}" rev-parse origin/main)"
@@ -213,6 +215,12 @@ PY
   printf 'keep_alive_restored_exact=%s\n' "${keep_alive_restored_exact}"
   printf '%s\n' 'grading_inputs:'
   cat "${RESULT_DIR}/grading_inputs.json"
+  printf '%s\n' 'lifecycle_summary:'
+  cat "${RESULT_DIR}/lifecycle_summary.tsv"
+  if test -f "${RESULT_DIR}/startup_resource_summary.tsv"; then
+    printf '%s\n' 'startup_resource_summary:'
+    cat "${RESULT_DIR}/startup_resource_summary.tsv"
+  fi
   printf '%s\n' 'mechanism_scheduler_summary:'
   cat "${RESULT_DIR}/mechanism_scheduler_summary.json"
   printf '%s\n' 'performance_mode_cell_summary:'
@@ -229,7 +237,7 @@ PY
     "$(wc -c < "${RESULT_DIR}/candidate_manifest.server_local.json" | tr -d ' ')"
   printf 'candidate_manifest_sha256=%s\n' \
     "$(sha256sum "${RESULT_DIR}/candidate_manifest.server_local.json" | awk '{print $1}')"
-  printf '%s\n' 'P6_3C_R1_SERVER_REPORT_END'
+  printf '%s_SERVER_REPORT_END\n' "${REPORT_PREFIX}"
 
   if test "${restart_exit}" -ne 0 || test "${package_exit}" -ne 0; then
     exit 5

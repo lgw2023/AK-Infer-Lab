@@ -28,8 +28,9 @@ block 为 `3186688/6627328 bytes`。run04 已固定总 POSIX 64 GiB 与
 12/24 GiB，并在停卡前自动验证父证据、两套 GC/Cache 几何及主机/存储余量。实现门仍是
 `UCM save → DRAM external hit → Cache load → H2D load → follower complete`；
 延迟如实记录，但其差值正负不是路径实现门，pairing repair 的唯一/普遍根因也不是
-K2 前置条件。当前唯一任务只运行一个 TP8 lifecycle 和固定三请求，不与已开发并排队
-的 P6.3C-R1 混跑；K2-R1、K3、P8.3-I1 与下一轮仍未授权。
+K2 前置条件。当前唯一任务只运行一个 TP8 lifecycle 和固定三请求，不与独立 P6
+handoff 中已开发并互斥排队的 P6.3C-R2 混跑；P6.3C-R1 已启动 RED，K2-R1、K3、
+P8.3-I1 与下一轮仍未授权。
 
 状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_f1_r17_restore_h2d_mechanism_closed / p8_2_k2_r0_run03_fawa_posix_gc_attributed / p8_2_k2_r0_run04_geometry_repair_ready / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 

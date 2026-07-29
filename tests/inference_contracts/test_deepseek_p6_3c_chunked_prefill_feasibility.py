@@ -162,7 +162,8 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
         (REPO_ROOT / "benchmarks/deepseek_v4_flash/workloads").glob("p6_3c*.yaml")
     )
     assert [path.name for path in r1_workloads] == [
-        "p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml"
+        "p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml",
+        "p6_3c_r2_chunked_prefill_capacity_calibrated_matched_ab.yaml",
     ]
 
 
@@ -189,10 +190,15 @@ def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
     )
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_r1_grade"] == (
-        "developed_queued_while_k2_r0_run04_is_current"
+        "red_p6_3c_r1_scheduler_pressure_no_success"
     )
     assert readiness["acceptance"]["p6_3c_r1_execution_authorized"] is False
-    assert readiness["acceptance"]["p6_3c_r1_formal_model_lifecycle_count_exact"] == 6
+    assert readiness["acceptance"]["p6_3c_r1_formal_model_lifecycle_count_actual"] == 1
+    assert readiness["acceptance"]["p6_3c_r1_engine_request_count_actual"] == 0
+    assert readiness["acceptance"]["p6_3c_r2_grade"] == (
+        "developed_awaiting_server_run01_after_global_task_coordination"
+    )
+    assert readiness["acceptance"]["p6_3c_r2_formal_model_lifecycle_count_exact"] == 6
     assert readiness["acceptance"]["p8_1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_2_k0_execution_authorized"] is False

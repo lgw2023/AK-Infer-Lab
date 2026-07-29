@@ -184,7 +184,8 @@ artifacts:
   completed_p6_3b_r4_workload: workloads/p6_3b_r4_explicit_prefix_cache_matched_ab.yaml
   completed_p6_3b_r4_r1_workload: workloads/p6_3b_r4_r1_explicit_prefix_cache_matched_ab.yaml
   p6_3c_feasibility_audit: p6_3c_chunked_prefill_feasibility_audit.yaml
-  current_p6_3c_r1_workload: workloads/p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml
+  completed_p6_3c_r1_workload: workloads/p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml
+  current_p6_3c_r2_workload: workloads/p6_3c_r2_chunked_prefill_capacity_calibrated_matched_ab.yaml
   p6_baseline_contract: p6/p6_baseline_contract.yaml
   p6_unprofiled_baseline_report: p6/p6_unprofiled_baseline_report.md
   p6_profiled_evidence_report: p6/p6_profiled_evidence_report.md
@@ -354,7 +355,8 @@ boundaries:
   - The fifteen boundary followers still produced zero hits, so R4-R1 proves an explicit Prefix Cache mechanism effect for the primary groups but does not establish universal repeated-prefix hits or a general performance benefit.
   - P6.3C frozen-source feasibility remains blocked_p6_3c_not_strict_single_variable: it proves only that the original 135168/4096/1 P6 reference cannot directly form an Off/On comparison because Off is rejected before resolved runtime config.
   - The original P6.3C has no executable workload or NPU result and remains immutable audit provenance; it does not exclude a separately frozen scheduler-pressure environment.
-  - P6.3C-R1 is developed_awaiting_server_run01 with both sides frozen at 69632/69632/2, Prefix Cache explicitly disabled, three two-request cells, a read-only scheduler-observer mechanism track and an observer/profiler-free Off-On-On-Off performance track.
+  - P6.3C-R1 completed red_p6_3c_r1_scheduler_pressure_no_success: mechanism_01 stopped during EngineCore KV-cache initialization with 8.27 GiB available versus 36.66 GiB required, so 0/90 requests and 0 scheduler steps form startup evidence only, not a Chunked Prefill mechanism or performance result.
+  - P6.3C-R2 is developed_awaiting_server_run01_after_global_task_coordination: both sides use the same conservative 12288/12288/2 capacity envelope, explicit Prefix Cache off and the same server-validated deferred hybrid-KV repair; 4K+4K is below the batch budget while 10K+6K and 8K+8K exceed it. R2 still changes only the explicit Chunked Prefill boolean within each track.
   - The P6 evidence chain and all five planned consolidated deliverables are complete; this materialization reused accepted repository evidence and did not run a new NPU task.
   - The historical no-MTP baseline and the published official-MTP single-request tracer remain preserved; the latter was superseded before execution by the bounded P8.1 matrix.
   - P8.1 completed as yellow_p8_1_matrix_trace_invalid: all six requests and MTP/health/queue/trace/replay/join gates passed, but the 65536 follower produced Prefix hit 0 instead of the expected 49152.
@@ -817,13 +819,23 @@ acceptance:
   p6_3b_mechanism_baseline: true
   p6_3c_feasibility_grade: blocked_p6_3c_not_strict_single_variable
   p6_3c_execution_authorized: false
-  p6_3c_r1_grade: developed_queued_while_k2_r0_run04_is_current
+  p6_3c_r1_grade: red_p6_3c_r1_scheduler_pressure_no_success
   p6_3c_r1_execution_authorized: false
   p6_3c_r1_npu_execution_authorized: false
-  p6_3c_r1_formal_model_lifecycle_count_exact: 6
-  p6_3c_r1_engine_request_count_exact: 90
-  p6_3c_r1_batched_http_call_count_exact: 48
+  p6_3c_r1_formal_model_lifecycle_count_actual: 1
+  p6_3c_r1_engine_request_count_actual: 0
+  p6_3c_r1_batched_http_call_count_actual: 0
   p6_3c_r1_request_retry_count_exact: 0
+  p6_3c_r1_scheduler_steps_actual: 0
+  p6_3c_r1_failure_stage: engine_core_kv_cache_initialization
+  p6_3c_r1_mechanism_or_performance_conclusion_allowed: false
+  p6_3c_r2_grade: developed_awaiting_server_run01_after_global_task_coordination
+  p6_3c_r2_execution_authorized: conditional_after_no_conflict_confirmation
+  p6_3c_r2_npu_execution_authorized: conditional_after_no_conflict_confirmation
+  p6_3c_r2_formal_model_lifecycle_count_exact: 6
+  p6_3c_r2_engine_request_count_exact: 90
+  p6_3c_r2_batched_http_call_count_exact: 48
+  p6_3c_r2_request_retry_count_exact: 0
   server_sync_review_authorized: true
   standing_npu_and_vllm_consumption_authorization: true
   next_task_authorized: false

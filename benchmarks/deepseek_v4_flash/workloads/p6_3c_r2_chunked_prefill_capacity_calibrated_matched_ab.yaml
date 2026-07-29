@@ -1,0 +1,256 @@
+schema_version: 1
+workload_id: p6_3c_r2_deepseek_v4_flash_chunked_prefill_capacity_calibrated_matched_ab
+task_id: p6_3c_r2_chunked_prefill_capacity_calibrated_2026_0729_run01
+date: "2026-07-29"
+stage: P6.3C-R2
+title: Chunked Prefill capacity-calibrated scheduler-pressure matched A/B
+purpose: execute_a_mechanism_identifying_chunked_prefill_ab_inside_a_conservative_bootable_common_capacity_envelope
+
+relation_to_prior_evidence:
+  parent_p6_3c_audit:
+    path: benchmarks/deepseek_v4_flash/p6_3c_chunked_prefill_feasibility_audit.yaml
+    grade: blocked_p6_3c_not_strict_single_variable
+    result_preserved: true
+    scope: original_p6_reference_135168_4096_1_only
+  p6_3c_r1:
+    path: benchmarks/deepseek_v4_flash/workloads/p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml
+    grade: red_p6_3c_r1_scheduler_pressure_no_success
+    result_preserved: true
+    first_failed_lifecycle: mechanism_01
+    lifecycle_count_actual: 1
+    engine_requests_actual: 0
+    batched_http_calls_actual: 0
+    scheduler_steps_actual: 0
+    failure_stage: engine_core_kv_cache_initialization
+    available_kv_cache_gib: 8.27
+    required_kv_cache_gib: 36.66
+    estimated_max_model_len: 15672
+    failure_does_not_test_chunked_prefill_mechanism_or_performance: true
+  this_workload_is_a_new_result_chain: true
+  r1_is_not_overwritten_or_retried: true
+
+capacity_calibration:
+  principle:
+    - chunked_prefill_off_requires_max_num_batched_tokens_greater_than_or_equal_to_max_model_len
+    - each_individual_prompt_must_be_less_than_or_equal_to_max_model_len
+    - pressure_cells_require_total_simultaneous_prefill_tokens_greater_than_max_num_batched_tokens
+  selected_max_model_len: 12288
+  selected_max_num_batched_tokens: 12288
+  selected_max_num_seqs: 2
+  selection_basis:
+    r1_server_estimated_max_model_len: 15672
+    conservative_ratio_to_r1_estimate: 0.7841
+    approximate_required_kv_gib_from_r1_linear_diagnostic: 6.469
+    approximate_headroom_gib_against_r1_available: 1.801
+    diagnostic_extrapolation_is_not_server_validation: true
+  rejected_near_limit_candidates:
+    - {max_model_len: 15360, reason: only_approximately_0_183_gib_linear_headroom}
+    - {max_model_len: 14336, reason: only_approximately_0_722_gib_linear_headroom}
+  capacity_change_is_shared_by_both_ab_sides: true
+  this_is_not_a_strict_comparison_against_r1: true
+
+shared_runtime_freeze:
+  model_object_id: deepseek_v4_flash_w8a8_mtp_modelscope
+  model_path: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  runtime: vllm_0_22_1_empty_and_vllm_ascend_0_22_1rc1
+  vllm_commit: 0decac0d96c42b49572498019f0a0e3600f50398
+  vllm_ascend_commit: 5f6faa0cb8830f667266f3b8121cd1383606f2a1
+  tensor_parallel_size: 8
+  data_parallel_size: 1
+  enable_expert_parallel: true
+  quantization: ascend
+  block_size: 128
+  max_model_len: 12288
+  max_num_batched_tokens: 12288
+  max_num_seqs: 2
+  gpu_memory_utilization: 0.92
+  prefix_cache_flag_both_modes: --no-enable-prefix-caching
+  prefix_cache_retention_interval: explicitly_unset
+  speculative_config: {method: mtp, num_speculative_tokens: 1}
+  cudagraph_mode: FULL_DECODE_ONLY
+  async_scheduling: true
+  profiler_enabled: false
+  hbm_sampler_enabled: false
+  request_retry_count: 0
+
+shared_hybrid_kv_repair:
+  enabled_both_modes_all_lifecycles: true
+  basis: p6_3b_r4_r1_server_validated_deferred_hybrid_kv_repair
+  purpose_in_r2: use_the_last_server_validated_hybrid_kv_mtp_bootstrap_instead_of_reintroducing_a_known_compatibility_gap
+  causal_claim_about_r1_startup_failure_allowed: false
+  base_environment_or_site_packages_mutation: false
+  task_local_overlay_only: true
+  runtime_implementation: tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py
+  deferred_loader: tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py
+  manager_overlay: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch
+  deferred_install_overlay: benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch
+  same_repair_identity_required_across_six_lifecycles: true
+
+single_variable:
+  name: enable_chunked_prefill
+  off_flag: --no-enable-chunked-prefill
+  on_flag: --enable-chunked-prefill
+  normalized_server_argv_delta_count_within_each_track: 1
+  all_other_argv_equal_within_each_track: true
+  resolved_value_required_before_requests: true
+  off_resolved_value: false
+  on_resolved_value: true
+
+cells:
+  - cell_id: no_pressure_4k_4k
+    simultaneous_prompt_tokens: [4096, 4096]
+    request_roles: [peer_a, peer_b]
+    total_prefill_tokens: 8192
+    relation_to_batch_budget: below_12288
+    mechanism_role: confirm_modes_are_close_without_chunking_pressure
+  - cell_id: asymmetric_pressure_10k_6k
+    simultaneous_prompt_tokens: [10240, 6144]
+    request_roles: [long, short]
+    total_prefill_tokens: 16384
+    relation_to_batch_budget: above_12288
+    mechanism_role: observe_long_prefill_chunking_and_short_request_ttft
+  - cell_id: symmetric_pressure_8k_8k
+    simultaneous_prompt_tokens: [8192, 8192]
+    request_roles: [peer_a, peer_b]
+    total_prefill_tokens: 16384
+    relation_to_batch_budget: above_12288
+    mechanism_role: observe_scheduler_fairness_and_batch_throughput
+
+request_protocol:
+  endpoint: /v1/completions
+  one_batched_http_call_contains_both_simultaneous_prompts: true
+  output_tokens_per_request: 64
+  temperature: 0.0
+  ignore_eos: true
+  min_tokens_equals_max_tokens: true
+  streaming: true
+  stream_include_usage: true
+  return_token_ids: true
+  generated_text_retained: false
+  generated_token_ids_retained: false
+
+evidence_tracks:
+  mechanism:
+    lifecycle_count: 2
+    order: [chunked_prefill_off, chunked_prefill_on]
+    observer: read_only_scheduler_wrapper
+    profiler: disabled
+    warmup_batches_per_lifecycle: 1
+    measured_batches_per_lifecycle: 3
+    measured_requests_per_lifecycle: 6
+    required_observations:
+      - scheduled_tokens_by_request_and_scheduler_step
+      - prefill_round_and_partial_prefill_count
+      - waiting_and_running_request_order
+      - off_has_no_partial_prefill_in_all_three_cells
+      - on_has_partial_prefill_in_both_pressure_cells
+      - both_modes_have_no_partial_prefill_in_no_pressure_cell
+  performance:
+    lifecycle_count: 4
+    order:
+      - chunked_prefill_off
+      - chunked_prefill_on
+      - chunked_prefill_on
+      - chunked_prefill_off
+    observer: disabled
+    profiler: disabled
+    warmup_batches_per_lifecycle: 1
+    repeats_per_cell_per_lifecycle: 3
+    measured_batches_per_lifecycle: 9
+    measured_requests_per_lifecycle: 18
+    metrics: [TTFT, E2EL, TPOT, ITL, batch_output_throughput, two_request_completion_gap]
+    interpretation: descriptive_within_the_frozen_sample_only
+
+exact_totals:
+  fresh_model_lifecycles: 6
+  warmup_engine_requests: 6
+  mechanism_engine_requests: 12
+  performance_engine_requests: 72
+  engine_requests: 90
+  batched_http_calls: 48
+  retries: 0
+  canonical_request_body_files: 14
+
+startup_resource_evidence:
+  captured_for_every_started_lifecycle: true
+  fields:
+    - server_ready
+    - available_kv_cache_gib
+    - required_kv_cache_gib
+    - estimated_max_model_len
+    - gpu_kv_cache_tokens
+    - model_weight_gb_max_observed
+    - maximum_concurrency
+    - startup_failure_class
+  bounded_failure_excerpt_returned: true
+  raw_vllm_log_remains_server_local: true
+
+acceptance:
+  blocked_preflight_grade: blocked_p6_3c_r2_source_or_resource_gate
+  startup_kv_capacity_grade: red_p6_3c_r2_startup_kv_capacity_no_success
+  no_success_grade: red_p6_3c_r2_scheduler_pressure_no_success
+  partial_grade: yellow_p6_3c_r2_scheduler_pressure_partial
+  evidence_incomplete_grade: red_p6_3c_r2_scheduler_pressure_evidence_incomplete
+  cleanup_failure_grade: red_cleanup_incomplete
+  server_candidate_green_grade: candidate_green_p6_3c_r2_chunked_prefill_capacity_calibrated_matched_ab
+  developer_review_required: true
+  green_requires:
+    - six_of_six_fresh_lifecycles
+    - startup_resource_summary_six_of_six
+    - shared_hybrid_kv_repair_identity_six_of_six
+    - ninety_of_ninety_engine_requests
+    - forty_eight_of_forty_eight_batched_http_calls
+    - canonical_body_pairing
+    - one_flag_argv_difference
+    - resolved_prefix_false_and_chunked_boolean_exact
+    - mechanism_gate_complete
+    - observer_absent_in_performance
+    - health_queue_mtp_complete
+    - zero_retry
+    - cleanup_and_keep_alive_restore_exact
+  green_does_not_prove:
+    - universal_chunked_prefill_benefit
+    - statistical_significance
+    - production_throughput
+    - r1_root_cause_is_the_absence_of_hybrid_kv_repair
+
+stop_policy:
+  first_failure_stops_later_lifecycles: true
+  retry_allowed: false
+  parameter_or_cell_sweep_allowed: false
+  server_side_code_edit_allowed: false
+  base_environment_or_site_packages_mutation_allowed: false
+  same_mode_restart_allowed: false
+  profiler_or_hbm_sampler_allowed: false
+  automatic_result_transfer_allowed: false
+  p6_3c_r1_rerun_allowed: false
+  k2_k3_p8_3_p8_4_p8_5_p9_execution_allowed: false
+
+result_package_policy:
+  max_total_bytes: 71680
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  automatic_transfer_allowed: false
+  available_methods: [email, upload-api, server-local]
+  explicit_user_choice_required: true
+  raw_logs_scheduler_traces_request_bodies_and_generated_content_remain_server_local: true
+  bounded_candidates:
+    - result_summary.md
+    - environment_and_hashes.json
+    - request_body_manifest.json
+    - lifecycle_summary.tsv
+    - startup_resource_summary.tsv
+    - mechanism_scheduler_summary.json
+    - mechanism_request_chunk_summary.tsv
+    - performance_mode_cell_summary.tsv
+    - performance_order_balanced_pairs.tsv
+    - grading_inputs.json
+    - resource_recovery_summary.json
+    - cleanup_status.txt
+    - first_failure_excerpt.txt
+
+execution_state:
+  status: developed_awaiting_server_run01_after_global_task_coordination
+  npu_execution_authorized_by_this_contract: true
+  concurrent_with_other_server_task_allowed: false
+  next_task_authorized: false

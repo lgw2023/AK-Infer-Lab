@@ -207,10 +207,45 @@ stop_policy:
   next_task_authorized: false
 
 execution_state:
-  status: developed_awaiting_server_run01
-  server_execution_authorized: true
-  npu_execution_authorized: true
+  status: completed_developer_reviewed_red
+  server_execution_authorized: false
+  npu_execution_authorized: false
   npu_card_ids: [0,1,2,3,4,5,6,7]
   result_transfer_authorized: true
   transfer_method_selected: false
   next_task_authorized: false
+
+execution_result:
+  server_grade: red_p6_3c_r1_scheduler_pressure_no_success
+  developer_reviewed: true
+  developer_disposition: accepted_startup_failure_evidence_only
+  server_head: 64dcb1c0313e4aa3308e368293e827a75cf2546f
+  head_equals_origin_main: true
+  tracked_clean: true
+  attempted_lifecycles: 1
+  completed_lifecycles: 0
+  engine_requests: 0_of_90
+  batched_http_calls: 0_of_48
+  scheduler_steps: 0
+  first_failed_lifecycle: mechanism_01
+  first_failure_stage: engine_core_kv_cache_initialization
+  available_kv_cache_gib: 8.27
+  required_kv_cache_gib: 36.66
+  estimated_max_model_len: 15672
+  mechanism_or_performance_conclusion_allowed: false
+  parent_p6_3c_grade_preserved: blocked_p6_3c_not_strict_single_variable
+  stopped_card_ids: [0,1,2,3,4,5,6,7]
+  restored_card_ids: [0,1,2,3,4,5,6,7]
+  keep_alive_restored_exact: true
+  port_7000_listener_count_after_cleanup: 0
+  vllm_residual_process_count_after_cleanup: 0
+  global_resource_recovery: clean
+  lifecycle_matrix_cleanup: incomplete_due_to_first_failure_stop
+  result_package:
+    developer_received_path: /Volumes/SSD1/Inbox/2026-07-29/p6_3c_r1_2026_0729_run01
+    files: 12
+    bytes: 17941
+    all_individual_file_bytes_and_sha256_verified: true
+  raw_vllm_log_path_server_local: server_results/p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01/lifecycles/mechanism_01/runtime/vllm_server.log
+  bounded_package_contains_detailed_kv_traceback: false
+  detailed_kv_failure_attribution_source: server_console_report_and_server_local_raw_log

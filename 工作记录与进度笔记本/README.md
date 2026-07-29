@@ -22,14 +22,16 @@ P6.3B green 限于 primary 9/9 positive-hit 机制证据；15 条 boundary 仍�
 当前性能总览以 P6.3A/P6.3B 并列双主表呈现，P6.3B 八组 matched hit/TTFT 数据不再压缩为摘要卡。
 原 P6.3C 已因 `4096 < 135168` 的 frozen validation 约束收口为
 `blocked_p6_3c_not_strict_single_variable`，未创建原配置 executable workload；该范围只关闭原
-135168/4096/1 参考的直接 A/B。独立 P6.3C-R1 已共同冻结 69632/69632/2、Prefix=false 和三组双请求，
-已开发并排队；在 run01 验收前不形成 Chunked Prefill 机制或性能结论。P8.1-R1 与 P8.2-K0
+135168/4096/1 参考的直接 A/B。独立 P6.3C-R1 的 69632/69632/2 共同环境已在首个 lifecycle 的
+KV-cache 初始化阶段失败，0 request、0 scheduler step，只形成启动 RED，不形成 Chunked Prefill
+机制或性能结论。P6.3C-R2 已把两侧共同容量校准到 12288/12288/2，加载同一 validated deferred
+hybrid-KV repair，并用 4K+4K、10K+6K、8K+8K 保留双请求调度压力；当前待服务器实测。P8.1-R1 与 P8.2-K0
 已 green，K1A-R2 accepted capacity 已 ready。R3-R2-R2-R1-R1-R1 已完成同容量唯一 lifecycle：
 6/6 transport 成功、D2H store 闭合、CPU hit/load/H2D 为零。原 red 保留，开发机只接受 store-only yellow。
 R4-R1 offline store-only closeout 已 green，R5-F0 ready，R5-L1/R1 red 保留。F1-R1 calibration
 得到 36800 candidate，但 fixed L2 3/3 请求和 D2H 8/8 后 endpoint 为 `CPU=54/GPU=0`，保留
 target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 64，保留为无效运行合同证据，不否定 accepted capacity。K1A-F1 已由 R17 闭合。K2-R0 run02 已完成 UCM dependency/import，但 8 GiB buffer 的 1296 shards 低于源码门 2048，零请求；四节点 NFS `no_root_squash` 已由用户修复。run03 随后通过 NFS、CMake Python、16 GiB CacheStore 与主机容量门，但在 `UCMFAWAConnector` 初始化期间因默认 4096 目录分片下 FA Posix GC 回收数被整数截断为 0 而停止，0/3 请求。零 NPU attribution 已恢复精确异常和 FA/WA worker block=`3186688/6627328`。当前唯一 driver 为
-`run_deepseek_p8_2_k2_r0_server_task.sh`：停卡前验证 attribution/all-payload、FA/WA Cache 与 Posix GC 几何和主机/存储容量；固定总 POSIX 64 GiB、`data_dir_shard_bytes=2`，分流后 32/32 GiB；随后只执行一个 TP8 lifecycle 和 warmup→prime→follower 三请求，退出时恢复 0–7 keep-alive。P6.3C-R1、K2-R1、P8.3-I1 和 P9 不自动进入。
+`run_deepseek_p8_2_k2_r0_server_task.sh`：停卡前验证 attribution/all-payload、FA/WA Cache 与 Posix GC 几何和主机/存储容量；固定总 POSIX 64 GiB、`data_dir_shard_bytes=2`，分流后 32/32 GiB；随后只执行一个 TP8 lifecycle 和 warmup→prime→follower 三请求，退出时恢复 0–7 keep-alive。P6.3C-R2 使用独立 P6 交接，必须等 K2 或其他 NPU 任务完全收口并通过互斥门后才运行；K2-R1、P8.3-I1 和 P9 不自动进入。
 
 ## 当前范围
 

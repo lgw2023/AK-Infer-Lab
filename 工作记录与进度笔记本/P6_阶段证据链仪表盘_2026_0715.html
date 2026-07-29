@@ -1412,13 +1412,14 @@
               <tr><th>层级</th><th>当前判断</th></tr>
               <tr><td>P6 主线</td><td><span class="tag ok">CLOSED</span> reference 与核心机制输入可供后续阶段消费</td></tr>
               <tr><td>原 P6.3C</td><td><span class="tag warn">VALID BLOCKED</span> 仅关闭原 P6.1 参考配置的直接对照</td></tr>
-              <tr><td>P6.3C-R1</td><td><span class="tag plan">DEVELOPED</span> 新冻结的多请求调度压力 A/B 待实机</td></tr>
+              <tr><td>P6.3C-R1</td><td><span class="tag risk">STARTUP RED</span> 69632/69632/2 在 KV-cache 初始化阶段停止，0 request</td></tr>
+              <tr><td>P6.3C-R2</td><td><span class="tag plan">DEVELOPED</span> 12288/12288/2 容量校准双请求 A/B 待实机</td></tr>
               <tr><td>P6.3D / P6.4</td><td><span class="tag plan">OPTIONAL</span> max_num_seqs / MindIE 受条件与可用性门约束</td></tr>
               <tr><td>P7</td><td><span class="tag risk">SEPARATE</span> capacity / scheduler / hardware boundary 仍需独立关闭</td></tr>
               <tr><td>P8</td><td><span class="tag ok">CONSUMER</span> 可使用 P6 Prefix、MTP 与 trace reference</td></tr>
               <tr><td>P9</td><td><span class="tag risk">NOT UNLOCKED</span> P6 单独不能支持 bottleneck attribution</td></tr>
             </table>
-            <div class="source-line">阶段关闭指既有五项证据任务已有可复核结果，并不表示所有候选实验均获得正向结果。原 P6.3C blocked 与 P6.3B 中间失败继续作为研究记录；P6.3C-R1 是新的开放结果链，不覆盖旧审计。</div>
+            <div class="source-line">阶段关闭指既有五项证据任务已有可复核结果，并不表示所有候选实验均获得正向结果。原 P6.3C blocked、P6.3B 中间失败与 P6.3C-R1 启动 RED 继续作为研究记录；P6.3C-R2 是新的开放结果链，不覆盖旧审计或 R1。</div>
           </div>
         </div>
       </div>
@@ -1455,7 +1456,8 @@
               <tr><td>P6.3A</td><td class="blue-text">MTP Off → On</td><td>模型、graph、context、请求、Prefix、顺序</td></tr>
               <tr><td>P6.3B-R4-R1</td><td class="blue-text">Prefix false → true</td><td>same R2 repair、MTP、bodies、顺序</td></tr>
               <tr><td>原 P6.3C</td><td class="warn-text">Chunked false → true</td><td>135168/4096/1 下 Off 无法启动</td></tr>
-              <tr><td>P6.3C-R1</td><td class="blue-text">Chunked false → true</td><td>两侧共同冻结 69632/69632/2、Prefix=false、双请求</td></tr>
+              <tr><td>P6.3C-R1</td><td class="warn-text">共同环境启动 RED</td><td>69632/69632/2 · KV 8.27 GiB 可用 / 36.66 GiB 所需</td></tr>
+              <tr><td>P6.3C-R2</td><td class="blue-text">Chunked false → true</td><td>两侧共同冻结 12288/12288/2、Prefix=false、同一 repair</td></tr>
             </table>
             <div class="callout green" style="margin-top:8px"><strong>请求级有效性标准</strong><br>每个成功样本均要求 HTTP 200、输入与输出 token 数准确、完成原因正确、SSE 结束标记存在，并同时满足健康状态、队列、MTP 计数连续性和清理要求。</div>
             <div class="callout warn" style="margin-top:8px"><strong>测量性质</strong><br>P6.1 提供未剖析的用户侧性能基线；P6.2 时延仅用于 profiler 诊断。P6.3A/B 采用固定执行顺序，未随机化且未进行显著性检验，因此只能作描述性配对解释。</div>
@@ -1783,7 +1785,7 @@
         </div>
 
         <div class="module">
-          <div class="module-title red">原 P6.3C 审计 + P6.3C-R1：保留 blocked，并新建有机制辨识力的压力对照</div>
+          <div class="module-title red">P6.3C 系列：保留原 blocked 与 R1 启动 RED，R2 继续机制压力对照</div>
           <div class="module-body">
             <table class="tight">
               <tr><th>审计项</th><th>冻结版本结论</th></tr>
@@ -1799,11 +1801,11 @@
               <div class="chunk-path off"><strong>OFF · 配置校验拒绝</strong><span>不允许分块时，冻结调度器要求 token 预算足以覆盖最大模型长度；4,096 无法覆盖 135,168，故在启动请求前失败。</span></div>
             </div>
             <div class="equation">4,096 &lt; 135,168</div>
-            <div class="callout warn"><strong>为何不能只把单请求预算提高到 135,168？</strong><br>Off 可启动要求 B≥L，单请求又有 P≤L，因此必有 B≥P；输入可完整装入一个调度批次，即使 On 也未必真实分块。这样的参数合法，却缺少机制辨识力。R1 改用两侧共同冻结的新环境和总 Prefill 超预算的双请求。</div>
+            <div class="callout warn"><strong>R1 实机首错与 R2 修复方向</strong><br>R1 的 69632/69632/2 共同环境需要 36.66 GiB KV cache，但只有 8.27 GiB 可用，首个 lifecycle 在 scheduler 前停止。R2 不重跑 R1，改为两侧共同冻结 12288/12288/2 和同一 validated deferred hybrid-KV repair，同时让压力组总 Prefill 继续超过批预算。</div>
             <div class="zero-grid" style="margin-top:8px">
-              <div class="zero"><strong>32K+32K</strong><span>65,536 · 无压力对照</span></div>
-              <div class="zero"><strong>64K+32K</strong><span>98,304 · 非对称压力</span></div>
-              <div class="zero"><strong>48K+48K</strong><span>98,304 · 对称压力</span></div>
+              <div class="zero"><strong>4K+4K</strong><span>8,192 · 无压力对照</span></div>
+              <div class="zero"><strong>10K+6K</strong><span>16,384 · 非对称压力</span></div>
+              <div class="zero"><strong>8K+8K</strong><span>16,384 · 对称压力</span></div>
               <div class="zero"><strong>2 TRACKS</strong><span>observer 机制 · 无 observer 性能</span></div>
             </div>
           </div>
@@ -1811,7 +1813,7 @@
       </div>
       <div class="summary">
         <div class="summary-label">讨论</div>
-        <p>P6.2 只证明诊断链路可观测，不形成硬件瓶颈归因。原 P6.3C 的有效结论严格限于 <code>135168/4096/1</code>：Off 侧不能启动，故没有 131K+c1 严格单变量对照。P6.3C-R1 两侧共同冻结 <code>69632/69632/2</code> 与 Prefix=false；机制轨道直接记录每轮 scheduled token、chunk、队列和次序，性能轨道按 Off→On→On→Off 测 TTFT、E2EL、TPOT、ITL、批吞吐与完成差。当前仅为已开发、待服务器实测。</p>
+        <p>P6.2 只证明诊断链路可观测，不形成硬件瓶颈归因。原 P6.3C 的有效结论严格限于 <code>135168/4096/1</code>。P6.3C-R1 的 <code>69632/69632/2</code> 共同环境已在 KV-cache 初始化阶段 RED，0 request、0 scheduler step，不形成 Chunked Prefill 结论。P6.3C-R2 改用 <code>12288/12288/2</code> 与同一 deferred hybrid-KV repair；机制轨道仍记录 scheduled token/chunk/队列，性能轨道仍按 Off→On→On→Off 测量。R2 当前仅为已开发、待实机。</p>
       </div>
       <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Profiled Evidence + Strict Feasibility</span><span class="slide-index">Page 9 / 12</span></div>
     </section>
@@ -1877,9 +1879,9 @@
       <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3B Repair &amp; Provenance Chain</span><span class="slide-index">Page 10 / 12</span></div>
     </section>
 
-    <section class="slide" id="s11" aria-label="P6 已完成成果图解，不含待执行 P6.3C-R1">
+    <section class="slide" id="s11" aria-label="P6 已完成成果图解，不把 P6.3C-R1 RED 或待执行 R2 写成正向成果">
       <div class="page-watermark">11</div>
-      <h1>P6 已完成成果：131K 基线、MTP 与 Prefix Cache 证据；P6.3C-R1 尚未计入</h1>
+      <h1>P6 已完成成果：131K 基线、MTP 与 Prefix Cache；Chunked Prefill 尚无正向结果</h1>
       <div class="content plain-summary-content">
         <div class="module">
           <div class="module-title blue">实验流程架构：在同一冻结平台上依次建立“可运行、可测量、可解释、可复现”的证据链</div>
@@ -1953,7 +1955,7 @@
             </section>
             <section class="paper-abstract-section">
               <strong>结果</strong>
-              <p>冻结系统完成了 131,072-token 输入并形成 90 个请求的性能基线。配对实验显示，MTP 的主要作用体现在解码阶段，平均 TPOT 降低 47.0%；Prefix Cache 在三组 90% 长前缀中产生与 16K 对齐规则一致的精确复用。三类 profiler 请求进一步证实，请求级观测能够贯通至八卡设备记录。P6.3C-R1 尚无服务器结果，因此本页不把 Chunked Prefill 列为已完成正向成果。</p>
+              <p>冻结系统完成了 131,072-token 输入并形成 90 个请求的性能基线。配对实验显示，MTP 的主要作用体现在解码阶段，平均 TPOT 降低 47.0%；Prefix Cache 在三组 90% 长前缀中产生与 16K 对齐规则一致的精确复用。三类 profiler 请求进一步证实，请求级观测能够贯通至八卡设备记录。P6.3C-R1 只有启动 RED，R2 尚待实机，因此本页仍不把 Chunked Prefill 列为已完成正向成果。</p>
             </section>
           </article>
         </div>
@@ -1967,7 +1969,7 @@
 
     <section class="slide" id="s12" aria-label="P6 接受资产与后续边界">
       <div class="page-watermark">12</div>
-      <h1>证据综合与结论：六份终态材料保留，P6.3C-R1 另起开放结果链</h1>
+      <h1>证据综合与结论：六份主线材料保留，P6.3C-R1 RED 与 R2 开放链独立记录</h1>
       <div class="content rows-2">
         <div class="module">
           <div class="module-title">数据与证据可用性：结果包覆盖范围、聚合哈希与最终分级</div>
@@ -1981,17 +1983,18 @@
                 <tr><td>P6.3A</td><td>Matched MTP Off / On</td><td>48 batches · 108 requests</td><td class="num">7 / 42,877</td><td><code>f853a86a7c7cbca5…</code></td><td class="green-text">green_p6_3a_mtp_matched_ab</td></tr>
                 <tr><td>P6.3B-R4-R1</td><td>Explicit Prefix Cache Off / On</td><td>64 requests · 9/9 primary</td><td class="num">10 / 44,550</td><td><code>a1b966194eb2b0d0…</code></td><td class="green-text">green_p6_3b_r4_r1_explicit_prefix_cache_matched_ab</td></tr>
                 <tr><td>P6.3C</td><td>Frozen-source feasibility</td><td>no executable workload</td><td class="num">1 / 7,489</td><td><code>aeb91adc8b0b4327…</code></td><td class="warn-text">blocked_p6_3c_not_strict_single_variable</td></tr>
-                <tr><td>P6.3C-R1</td><td>Scheduler-pressure matched A/B</td><td>3 cells · 2 tracks</td><td class="num">待 run01</td><td><code>not yet produced</code></td><td class="blue-text">developed_awaiting_server_run01</td></tr>
+                <tr><td>P6.3C-R1</td><td>Scheduler-pressure startup evidence</td><td>0 request · 0 scheduler step</td><td class="num">12 / 17,941</td><td><code>per-file SHA verified</code></td><td class="red-text">red_p6_3c_r1_scheduler_pressure_no_success</td></tr>
+                <tr><td>P6.3C-R2</td><td>Capacity-calibrated matched A/B</td><td>3 cells · 2 tracks</td><td class="num">待 run01</td><td><code>not yet produced</code></td><td class="blue-text">developed_awaiting_server_run01</td></tr>
               </tbody>
             </table>
-            <div class="source-line">原六份终态材料不变。P6.3C 是冻结源码/配置审计，无 NPU 请求；P6.3C-R1 是独立开放实验，服务器结果包与哈希尚未产生，不计入 accepted package。</div>
-            <p class="research-note"><strong>证据可用性。</strong>既有材料覆盖稳定性、用户性能、诊断可观测性、MTP、Prefix Cache 和原参考配置可行性边界。R1 将另外回答 Chunked Prefill 是否真实改变多请求调度、是否减轻短请求阻塞，以及对吞吐与请求时延的描述性影响；在 run01 验收前不形成机制或性能结论。</p>
+            <div class="source-line">原六份主线材料不变。P6.3C 是冻结源码/配置审计；P6.3C-R1 结果包只证明共同环境启动失败；P6.3C-R2 尚未产生服务器结果包。</div>
+            <p class="research-note"><strong>证据可用性。</strong>既有材料覆盖稳定性、用户性能、诊断可观测性、MTP、Prefix Cache 和原参考配置可行性边界。R2 将回答 Chunked Prefill 是否真实改变多请求调度、是否减轻短请求阻塞，以及对吞吐与请求时延的描述性影响；在 R2 run01 验收前不形成机制或性能结论。</p>
           </div>
         </div>
 
         <div class="content grid-4">
           <div class="route-card closed"><h3>P6 MAINLINE · CLOSED</h3><p>P6 已提供可复核的稳定性、用户性能和机制参考，后续阶段可以在其限定范围内复用；这不表示所有候选实验均为正向结果。</p></div>
-          <div class="route-card"><h3>P6.3C-R1 · OPEN</h3><p>69632/69632/2 双请求压力 A/B 已开发待实机；可并入 P7 scheduler calibration，但必须保持独立结果链。</p></div>
+          <div class="route-card"><h3>P6.3C-R1 RED → R2 OPEN</h3><p>R1 启动证据保留；R2 的 12288/12288/2 双请求压力 A/B 已开发待实机，继续保持独立结果链。</p></div>
           <div class="route-card closed"><h3>P8 · MAY CONSUME P6</h3><p>P8 可将 Prefix Cache 基线、官方 MTP 参考和 trace 管道作为垂直原型的先验条件，但仍须完成自身的机制验证。</p></div>
           <div class="route-card"><h3>P9 · NOT UNLOCKED BY P6 ALONE</h3><p>在缺少 P7 容量校准和 P8 机制闭环时，P6 数据不足以支持系统瓶颈归因或硬件优化优先级。</p></div>
         </div>
