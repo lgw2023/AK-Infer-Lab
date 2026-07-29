@@ -21,7 +21,7 @@ request=`0/64`，不形成机制证据。P6.3B-R4-R1 随后完成并由开发机
 `--no-enable-prefix-caching` / `--enable-prefix-caching`、live config 与 token-LCP 门全部通过；64/64 request
 成功，off hit=0，on primary 9/9 正命中且逐请求符合 16K LCM floor。其余 15 条 boundary 仍为零命中，
 故不声明普遍命中或性能收益。原 P6.3C 已收口为
-`blocked_p6_3c_not_strict_single_variable`，其范围仅限原 `135168 / 4096 / 1` 参考配置不能直接形成 Off/On；独立 P6.3C-R1 的 `69632 / 69632 / 2` 共同环境已在 KV-cache 初始化阶段 RED，0 request、0 scheduler step。P6.3C-R2 已共同冻结 `12288 / 12288 / 2`、同一 deferred hybrid-KV repair 和 4K+4K/10K+6K/8K+8K 三组双请求，当前等待全局任务互斥确认后实测。P8.1-R1 与 P8.2-K0 已 green，K1 冻结源路径 blocked；K1A-F1 已由 R17 闭合。K2-R0 run03 attribution 已关闭 FAWA constructor 的精确归因门；通用 handoff 当前执行 run04 FAWA split-aware POSIX GC 几何修复与三请求 external-prefix lifecycle。
+`blocked_p6_3c_not_strict_single_variable`，其范围仅限原 `135168 / 4096 / 1` 参考配置不能直接形成 Off/On；独立 P6.3C-R1 的 `69632 / 69632 / 2` 共同环境已在 KV-cache 初始化阶段 RED，0 request、0 scheduler step。P6.3C-R2 run01 在 vLLM 启动前的 overlay 准备阶段停止，0 request、0 scheduler step、资源恢复 clean；R2-F1 保持 `12288 / 12288 / 2`、同一 deferred hybrid-KV repair 和 4K+4K/10K+6K/8K+8K 三组双请求不变，只修复真实安装路径与物化 overlay，当前等待全局任务互斥确认后实测。P8.1-R1 与 P8.2-K0 已 green，K1 冻结源路径 blocked；K1A-F1 已由 R17 闭合。K2-R0 run03 attribution 已关闭 FAWA constructor 的精确归因门；通用 handoff 当前执行 run04 FAWA split-aware POSIX GC 几何修复与三请求 external-prefix lifecycle。
 K1A 32 GiB/rank 容量点 red，K1A-R1 probe-invalid red；K1A-R2 的 8-rank geometry、
 128-block pinned capacity 与离线重放已接受为 `ready_p8_2_k1a_r2_allocator_capacity`。
 P8.3-I0-R1 taxonomy 已接受 green，但 TP4 budget incomplete。K1A-R3-R1 已关闭 R3 双文件 provenance，

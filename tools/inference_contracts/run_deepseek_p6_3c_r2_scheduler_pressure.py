@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 from contextlib import contextmanager
 import json
+import os
 from pathlib import Path
 import sys
 from typing import Any
@@ -16,7 +17,10 @@ from tools.inference_contracts import (
 )
 
 
-TASK_ID = "p6_3c_r2_chunked_prefill_capacity_calibrated_2026_0729_run01"
+DEFAULT_TASK_ID = (
+    "p6_3c_r2_chunked_prefill_capacity_calibrated_2026_0729_run01"
+)
+TASK_ID = os.environ.get("P6_3C_TASK_ID", DEFAULT_TASK_ID)
 MAX_MODEL_LEN = 12288
 MAX_NUM_BATCHED_TOKENS = 12288
 MAX_NUM_SEQS = 2
@@ -43,9 +47,12 @@ CELLS = (
         "pressure": True,
     },
 )
-WORKLOAD_RELATIVE_PATH = (
-    "benchmarks/deepseek_v4_flash/workloads/"
-    "p6_3c_r2_chunked_prefill_capacity_calibrated_matched_ab.yaml"
+WORKLOAD_RELATIVE_PATH = os.environ.get(
+    "P6_3C_WORKLOAD_RELATIVE_PATH",
+    (
+        "benchmarks/deepseek_v4_flash/workloads/"
+        "p6_3c_r2_chunked_prefill_capacity_calibrated_matched_ab.yaml"
+    ),
 )
 STARTUP_FIELDS = (
     "lifecycle_id",
@@ -132,6 +139,10 @@ def _mechanism_evidence(
             ]
             summary = base.summarize_scheduler_rows(selected_steps)
             partial_count = int(summary["partial_prefill_request_count"])
+            scheduler_evidence_observed = (
+                int(summary["scheduler_step_count"]) > 0
+                and int(summary["prefill_request_count"]) > 0
+            )
             waiting_observed = any(
                 any(
                     request_marker in request_id
@@ -152,6 +163,9 @@ def _mechanism_evidence(
                     "scheduler_step_count": summary["scheduler_step_count"],
                     "prefill_request_count": summary["prefill_request_count"],
                     "partial_prefill_request_count": partial_count,
+                    "scheduler_evidence_observed": (
+                        scheduler_evidence_observed
+                    ),
                     "waiting_observed": waiting_observed,
                     "chunking_observed": partial_count > 0,
                 }
@@ -171,26 +185,57 @@ def _mechanism_evidence(
     low_pressure_cell = next(
         cell["cell_id"] for cell in CELLS if not cell["pressure"]
     )
-    off_no_partial = len(off_rows) == len(CELLS) and all(
-        row["partial_prefill_request_count"] == 0 for row in off_rows
+    off_evidence_complete = len(off_rows) == len(CELLS) and all(
+        row["scheduler_evidence_observed"] for row in off_rows
     )
-    on_pressure_chunked = all(
+    off_no_partial = (
+        all(row["partial_prefill_request_count"] == 0 for row in off_rows)
+        if off_evidence_complete
+        else None
+    )
+    on_pressure_evidence_complete = all(
         any(
             row["cell_id"] == cell["cell_id"]
-            and row["partial_prefill_request_count"] > 0
+            and row["scheduler_evidence_observed"]
             for row in on_rows
         )
         for cell in CELLS
         if cell["pressure"]
     )
-    low_pressure_no_partial = all(
+    on_pressure_chunked = (
+        all(
+            any(
+                row["cell_id"] == cell["cell_id"]
+                and row["partial_prefill_request_count"] > 0
+                for row in on_rows
+            )
+            for cell in CELLS
+            if cell["pressure"]
+        )
+        if on_pressure_evidence_complete
+        else None
+    )
+    low_pressure_evidence_complete = all(
         any(
             row["cell_id"] == low_pressure_cell
             and row["mode"] == mode
-            and row["partial_prefill_request_count"] == 0
+            and row["scheduler_evidence_observed"]
             for row in summaries
         )
         for mode in base.MODES
+    )
+    low_pressure_no_partial = (
+        all(
+            any(
+                row["cell_id"] == low_pressure_cell
+                and row["mode"] == mode
+                and row["partial_prefill_request_count"] == 0
+                for row in summaries
+            )
+            for mode in base.MODES
+        )
+        if low_pressure_evidence_complete
+        else None
     )
     observer_exact = len(summaries) == len(CELLS) * 2 and all(
         row["observer_installed"] for row in summaries
@@ -200,14 +245,19 @@ def _mechanism_evidence(
             "track": "mechanism",
             "cell_summaries": summaries,
             "observer_installed_both_modes": observer_exact,
+            "scheduler_evidence_complete": (
+                off_evidence_complete
+                and on_pressure_evidence_complete
+                and low_pressure_evidence_complete
+            ),
             "off_prefill_partial_absent_all_cells": off_no_partial,
             "on_prefill_partial_present_both_pressure_cells": on_pressure_chunked,
             "low_pressure_partial_absent_both_modes": low_pressure_no_partial,
             "mechanism_gate_complete": (
                 observer_exact
-                and off_no_partial
-                and on_pressure_chunked
-                and low_pressure_no_partial
+                and off_no_partial is True
+                and on_pressure_chunked is True
+                and low_pressure_no_partial is True
             ),
             "claim_boundary": (
                 "direct_scheduler_mechanism_evidence_in_three_"
@@ -219,7 +269,7 @@ def _mechanism_evidence(
 
 
 def _mapped_grade(grade: str) -> str:
-    return {
+    r2_grade = {
         (
             "candidate_green_p6_3c_r1_chunked_prefill_"
             "scheduler_pressure_matched_ab"
@@ -237,6 +287,29 @@ def _mapped_grade(grade: str) -> str:
             "red_p6_3c_r2_scheduler_pressure_evidence_incomplete"
         ),
     }.get(grade, grade)
+    if "_r2_f1_" not in TASK_ID:
+        return r2_grade
+    return {
+        (
+            "candidate_green_p6_3c_r2_chunked_prefill_"
+            "capacity_calibrated_matched_ab"
+        ): (
+            "candidate_green_p6_3c_r2_f1_chunked_prefill_"
+            "runtime_layout_portable_matched_ab"
+        ),
+        "red_p6_3c_r2_startup_kv_capacity_no_success": (
+            "red_p6_3c_r2_f1_startup_kv_capacity_no_success"
+        ),
+        "red_p6_3c_r2_scheduler_pressure_no_success": (
+            "red_p6_3c_r2_f1_scheduler_pressure_no_success"
+        ),
+        "yellow_p6_3c_r2_scheduler_pressure_partial": (
+            "yellow_p6_3c_r2_f1_scheduler_pressure_partial"
+        ),
+        "red_p6_3c_r2_scheduler_pressure_evidence_incomplete": (
+            "red_p6_3c_r2_f1_scheduler_pressure_evidence_incomplete"
+        ),
+    }.get(r2_grade, r2_grade)
 
 
 def _startup_rows(artifact_dir: Path) -> list[dict[str, Any]]:
@@ -285,6 +358,86 @@ def _repair_identity_exact(artifact_dir: Path) -> bool:
     )
 
 
+def _runtime_layout_evidence(artifact_dir: Path) -> dict[str, Any]:
+    layout_path = artifact_dir / "runtime_layout.json"
+    preflight_path = (
+        artifact_dir / "runtime_overlay_preflight_manifest.json"
+    )
+    layout = (
+        json.loads(layout_path.read_text(encoding="utf-8"))
+        if layout_path.is_file()
+        else {}
+    )
+    preflight = (
+        json.loads(preflight_path.read_text(encoding="utf-8"))
+        if preflight_path.is_file()
+        else {}
+    )
+    lifecycle_manifests = []
+    for lifecycle in base.LIFECYCLE_SCHEDULE:
+        path = (
+            artifact_dir
+            / "lifecycles"
+            / lifecycle["lifecycle_id"]
+            / "runtime"
+            / "runtime_overlay_manifest.json"
+        )
+        if path.is_file():
+            lifecycle_manifests.append(
+                {
+                    "track": lifecycle["track"],
+                    "manifest": json.loads(path.read_text(encoding="utf-8")),
+                }
+            )
+    layout_resolved = (
+        layout.get("resolution_method")
+        == "target_environment_importlib_find_spec_then_realpath"
+        and bool(layout.get("base_vllm_root"))
+        and bool(layout.get("base_plugin_root"))
+        and layout.get("source_files_mutated") is False
+    )
+    preflight_complete = (
+        preflight.get("copy_semantics")
+        == "materialized_copy_dereference_symlinks_no_ownership"
+        and preflight.get("symlink_count") == 0
+        and preflight.get("realpath_escape_count") == 0
+        and preflight.get("shared_hybrid_kv_repair") is True
+        and preflight.get("observer") is True
+        and preflight.get("base_environment_mutated") is False
+        and preflight.get("site_packages_mutated") is False
+    )
+    lifecycle_overlays_exact = (
+        len(lifecycle_manifests) == len(base.LIFECYCLE_SCHEDULE)
+        and all(
+            item["manifest"].get("symlink_count") == 0
+            and item["manifest"].get("realpath_escape_count") == 0
+            and item["manifest"].get("shared_hybrid_kv_repair") is True
+            and item["manifest"].get("observer")
+            == (item["track"] == "mechanism")
+            and item["manifest"].get("base_environment_mutated") is False
+            and item["manifest"].get("site_packages_mutated") is False
+            for item in lifecycle_manifests
+        )
+    )
+    return {
+        "runtime_layout_resolved": layout_resolved,
+        "runtime_overlay_preflight_complete": preflight_complete,
+        "runtime_overlay_lifecycle_manifest_count": len(
+            lifecycle_manifests
+        ),
+        "runtime_overlay_lifecycles_exact": lifecycle_overlays_exact,
+        "runtime_layout_gate_complete": (
+            layout_resolved
+            and preflight_complete
+            and lifecycle_overlays_exact
+        ),
+    }
+
+
+def _display_observation(value: Any) -> str:
+    return "not_observed" if value is None else str(value)
+
+
 def _write_result_summary(
     artifact_dir: Path,
     grade: str,
@@ -299,11 +452,20 @@ def _write_result_summary(
     ]
     startup_rows = _startup_rows(artifact_dir)
     first_startup = startup_rows[0] if startup_rows else {}
+    lineage_line = (
+        "- P6.3C-R2 run01 的启动前 overlay 失败保持不变；"
+        "本任务是科学合同不变的 R2-F1 运行器修复结果链。"
+        if "_r2_f1_" in TASK_ID
+        else (
+            "- 原 P6.3C blocked 与 P6.3C-R1 RED 均保持不变，"
+            "本任务是独立 R2 结果链。"
+        )
+    )
     lines = [
         f"# {TASK_ID} 结果摘要",
         "",
         f"- server grade: `{_mapped_grade(grade)}`",
-        "- 原 P6.3C blocked 与 P6.3C-R1 RED 均保持不变，本任务是独立 R2 结果链。",
+        lineage_line,
         (
             "- 共同冻结环境：`max_model_len=12288`、"
             "`max_num_batched_tokens=12288`、`max_num_seqs=2`、"
@@ -326,15 +488,15 @@ def _write_result_summary(
         "",
         (
             "- Off 三个 cell 均无 partial prefill："
-            f"`{mechanism['off_prefill_partial_absent_all_cells']}`。"
+            f"`{_display_observation(mechanism['off_prefill_partial_absent_all_cells'])}`。"
         ),
         (
             "- On 两个压力 cell 均观测到 partial prefill："
-            f"`{mechanism['on_prefill_partial_present_both_pressure_cells']}`。"
+            f"`{_display_observation(mechanism['on_prefill_partial_present_both_pressure_cells'])}`。"
         ),
         (
             "- 4K+4K 两侧均无 partial prefill："
-            f"`{mechanism['low_pressure_partial_absent_both_modes']}`。"
+            f"`{_display_observation(mechanism['low_pressure_partial_absent_both_modes'])}`。"
         ),
         "",
         "## 性能轨道",
@@ -373,20 +535,43 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
     )
     grading = base.finalize_artifacts(artifact_dir)
     repair_exact = _repair_identity_exact(artifact_dir)
+    runtime_layout = _runtime_layout_evidence(artifact_dir)
     startup_complete = (
         len(startup_rows) == len(base.LIFECYCLE_SCHEDULE)
         and all(row.get("server_ready") is True for row in startup_rows)
     )
     grade = _mapped_grade(str(grading["server_grade"]))
-    if grade != "red_cleanup_incomplete" and any(
+    first_failure_path = artifact_dir / "first_failure_excerpt.txt"
+    first_failure = (
+        first_failure_path.read_text(encoding="utf-8", errors="replace")
+        if first_failure_path.is_file()
+        else ""
+    )
+    if (
+        grade != "red_cleanup_incomplete"
+        and int(grading.get("successful_request_count") or 0) == 0
+        and "runtime_overlay_preparation_failed" in first_failure
+    ):
+        grade = (
+            "red_p6_3c_r2_f1_runtime_overlay_preparation_no_success"
+            if "_r2_f1_" in TASK_ID
+            else "red_p6_3c_r2_runtime_overlay_preparation_no_success"
+        )
+    elif grade != "red_cleanup_incomplete" and any(
         row.get("startup_failure_class") == "insufficient_kv_cache_capacity"
         for row in startup_rows
     ) and int(grading.get("successful_request_count") or 0) == 0:
-        grade = "red_p6_3c_r2_startup_kv_capacity_no_success"
+        grade = _mapped_grade(
+            "red_p6_3c_r2_startup_kv_capacity_no_success"
+        )
     elif grade.startswith("candidate_green") and not (
-        startup_complete and repair_exact
+        startup_complete
+        and repair_exact
+        and runtime_layout["runtime_layout_gate_complete"]
     ):
-        grade = "red_p6_3c_r2_scheduler_pressure_evidence_incomplete"
+        grade = _mapped_grade(
+            "red_p6_3c_r2_scheduler_pressure_evidence_incomplete"
+        )
 
     grading.update(
         {
@@ -398,6 +583,7 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
             "startup_resource_summary_count": len(startup_rows),
             "startup_resource_gate_complete": startup_complete,
             "shared_hybrid_kv_repair_exact_all_lifecycles": repair_exact,
+            **runtime_layout,
         }
     )
     (artifact_dir / "grading_inputs.json").write_text(
@@ -419,6 +605,22 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
             "max_num_batched_tokens": MAX_NUM_BATCHED_TOKENS,
             "max_num_seqs": MAX_NUM_SEQS,
             "shared_hybrid_kv_repair_enabled": True,
+            "runtime_layout_sha256": (
+                base._sha256_path(artifact_dir / "runtime_layout.json")
+                if (artifact_dir / "runtime_layout.json").is_file()
+                else None
+            ),
+            "runtime_overlay_preflight_manifest_sha256": (
+                base._sha256_path(
+                    artifact_dir
+                    / "runtime_overlay_preflight_manifest.json"
+                )
+                if (
+                    artifact_dir
+                    / "runtime_overlay_preflight_manifest.json"
+                ).is_file()
+                else None
+            ),
         }
     )
     environment_path.write_text(
@@ -446,6 +648,8 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
 R2_BOUNDED_CANDIDATES = (
     *base.BOUNDED_CANDIDATES[:-2],
     "startup_resource_summary.tsv",
+    "runtime_layout.json",
+    "runtime_overlay_preflight_manifest.json",
     *base.BOUNDED_CANDIDATES[-2:],
 )
 

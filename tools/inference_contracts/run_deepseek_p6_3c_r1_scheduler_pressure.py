@@ -1124,6 +1124,8 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
     lifecycle_rows: list[dict[str, Any]] = []
     for expected in LIFECYCLE_SCHEDULE:
         lifecycle_dir = artifact_dir / "lifecycles" / expected["lifecycle_id"]
+        attempted_path = lifecycle_dir / "lifecycle_attempted.txt"
+        attempted = attempted_path.is_file()
         requests = _read_jsonl(lifecycle_dir / "raw_request_results.jsonl")
         batches = _read_jsonl(lifecycle_dir / "raw_batch_results.jsonl")
         for row in requests + batches:
@@ -1152,10 +1154,11 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
                 "successful_batch_count": sum(
                     row.get("status") == "success" for row in batches
                 ),
+                "lifecycle_attempted": attempted,
                 "cleanup_status": (
                     cleanup_path.read_text(encoding="utf-8").strip()
                     if cleanup_path.is_file()
-                    else "missing"
+                    else ("missing" if attempted else "not_run")
                 ),
                 "resolved_enable_chunked_prefill": resolved.get(
                     "resolved_enable_chunked_prefill"
@@ -1169,7 +1172,7 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
                     .read_text(encoding="utf-8")
                     .strip()
                     if (lifecycle_dir / "lifecycle_exit_code.txt").is_file()
-                    else "missing"
+                    else ("missing" if attempted else "not_run")
                 ),
             }
         )
@@ -1217,10 +1220,16 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         == str(record["request_body_sha256"])
         for record in manifest_records
     )
-    body_pairing_exact = manifest_files_exact and all(
-        row.get("request_body_sha256")
-        == expected_hash_by_batch.get(str(row.get("batch_id")))
-        for row in all_request_rows
+    body_pairing_observed = bool(all_request_rows)
+    body_pairing_exact = (
+        manifest_files_exact
+        and all(
+            row.get("request_body_sha256")
+            == expected_hash_by_batch.get(str(row.get("batch_id")))
+            for row in all_request_rows
+        )
+        if body_pairing_observed
+        else None
     )
     expected_request_keys = {
         (
@@ -1259,6 +1268,12 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
     )
     cleanup_all = len(lifecycle_rows) == 6 and all(
         row["cleanup_status"] == "clean" for row in lifecycle_rows
+    )
+    attempted_lifecycle_rows = [
+        row for row in lifecycle_rows if row["lifecycle_attempted"]
+    ]
+    attempted_cleanup_all = bool(attempted_lifecycle_rows) and all(
+        row["cleanup_status"] == "clean" for row in attempted_lifecycle_rows
     )
     resolved_exact = len(lifecycle_rows) == 6 and all(
         row["resolved_enable_chunked_prefill"]
@@ -1304,7 +1319,7 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
     cleanup_failure = (
         any(
             row.get("cleanup_status") not in {"", "clean"}
-            for row in lifecycle_rows
+            for row in attempted_lifecycle_rows
         )
         or global_cleanup_status == "incomplete"
         or (
@@ -1317,7 +1332,7 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         and argv["all_single_variable_exact"]
         and mechanism["mechanism_gate_complete"]
         and observer_absent_performance
-        and body_pairing_exact
+        and body_pairing_exact is True
         and request_matrix_exact
         and batch_matrix_exact
         and cleanup_all
@@ -1365,6 +1380,7 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
             "resolved_enable_chunked_prefill",
             "resolved_enable_prefix_caching",
             "observer_enabled",
+            "lifecycle_attempted",
             "cleanup_status",
             "lifecycle_exit_code",
         ],
@@ -1413,6 +1429,7 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         and mechanism["observer_installed_both_modes"],
         "mechanism_gate_complete": mechanism["mechanism_gate_complete"],
         "manifest_files_exact": manifest_files_exact,
+        "body_pairing_observed": body_pairing_observed,
         "body_pairing_exact": body_pairing_exact,
         "request_matrix_exact": request_matrix_exact,
         "batch_matrix_exact": batch_matrix_exact,
@@ -1422,6 +1439,7 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         "successful_batch_count": batch_success,
         "all_lifecycles_success": all_lifecycles_success,
         "cleanup_all_lifecycles_clean": cleanup_all,
+        "attempted_lifecycle_cleanup_all_clean": attempted_cleanup_all,
         "cleanup_failure": cleanup_failure,
         "global_cleanup_status": global_cleanup_status,
         "keep_alive_restore_exact": keep_alive_restore_exact,
@@ -1480,14 +1498,6 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
             f"keep_alive_restore_exact={keep_alive_restore_exact}\n",
             encoding="utf-8",
         )
-    cleanup_status = (
-        "clean"
-        if cleanup_all and keep_alive_restore_exact
-        else "incomplete"
-    )
-    (artifact_dir / "cleanup_status.txt").write_text(
-        cleanup_status + "\n", encoding="utf-8"
-    )
     return grading
 
 

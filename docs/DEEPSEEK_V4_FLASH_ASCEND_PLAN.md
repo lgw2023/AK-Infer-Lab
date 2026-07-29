@@ -130,7 +130,7 @@ context=4096/65536/131072; output=64/256; concurrency=1/4/8
 zero retry; no HBM sampler; no profiler
 ```
 
-P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性能 reference；P6.2 已建立 profiled evidence reference；P6.3A 已关闭 matched MTP mechanism gate；P6.3B-R4-R1 已关闭 primary scope 的 explicit Prefix Cache mechanism gate。原 P6.3C 因 frozen `4096 < 135168` 配置在 off 侧触发 vLLM validation，保留为 `blocked_p6_3c_not_strict_single_variable`；其范围仅限原 135168/4096/1 参考不能直接 A/B。独立 P6.3C-R1 的 69632/69632/2 共同环境已在 KV-cache 初始化阶段 RED，0 request、0 scheduler step；P6.3C-R2 已共同冻结 12288/12288/2、Prefix=false、同一 deferred hybrid-KV repair 和 4K+4K/10K+6K/8K+8K 三组双请求，待服务器实测。
+P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性能 reference；P6.2 已建立 profiled evidence reference；P6.3A 已关闭 matched MTP mechanism gate；P6.3B-R4-R1 已关闭 primary scope 的 explicit Prefix Cache mechanism gate。原 P6.3C 因 frozen `4096 < 135168` 配置在 off 侧触发 vLLM validation，保留为 `blocked_p6_3c_not_strict_single_variable`；其范围仅限原 135168/4096/1 参考不能直接 A/B。独立 P6.3C-R1 的 69632/69632/2 共同环境已在 KV-cache 初始化阶段 RED，0 request、0 scheduler step；P6.3C-R2 run01 在 vLLM 启动前的 overlay 准备阶段失败，0 request、0 scheduler step、资源恢复 clean。R2-F1 不改 12288/12288/2、Prefix=false、同一 deferred hybrid-KV repair 和 4K+4K/10K+6K/8K+8K 三组双请求，只修 mixed editable/site-packages 布局与隔离 overlay，待服务器实测。
 
 状态门：
 
@@ -140,7 +140,7 @@ P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性�
 
 ## 5. P6：八卡 Reference Baseline
 
-八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point。P6.1 unprofiled、P6.2 profiled evidence、P6.3A 与 P6.3B-R4-R1 已完成；原 P6.3C blocked 审计不变，P6.3C-R1 保留启动 RED，容量校准后的 P6.3C-R2 多请求 scheduler-pressure workload 已独立创建但尚无 NPU 结果。
+八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point。P6.1 unprofiled、P6.2 profiled evidence、P6.3A 与 P6.3B-R4-R1 已完成；原 P6.3C blocked 审计、P6.3C-R1 启动 RED 与 P6.3C-R2 run01 启动前 overlay 失败均保留，容量校准科学合同不变的 R2-F1 多请求 scheduler-pressure workload 尚无 NPU 结果。
 
 ### 5.1 Baseline freeze
 
@@ -324,7 +324,7 @@ boundaries:
 `3186688/6627328 bytes`。当前任务固定总 POSIX=64 GiB、
 `data_dir_shard_bytes=2`，分流后 32/32 GiB、256 分片；停卡前自动核验父包、
 两套 Cache/GC 几何与主机/存储余量，通过后只执行一个 lifecycle 和三请求。P6.3C-R1
-已启动 RED；P6.3C-R2 已开发并由独立 P6 handoff 排队。
+已启动 RED；P6.3C-R2 run01 启动前 overlay 失败已保留，R2-F1 已开发并由独立 P6 handoff 排队。
 以下较早描述仅保留阶段 lineage，若与本段冲突以本段和
 `通信模块/docs/developer-to-server.md` 为准。
 
@@ -332,5 +332,5 @@ boundaries:
 
 1. P6.1C-R1 official、P6.1 unprofiled performance、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache control 已完成并验收。
 2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A/K2 lineage 与 P8.3-I0-R1 taxonomy 均按各自边界保留。当前 handoff 只授权 K2-R0 run04 的一个 TP8 lifecycle、三请求、零 retry；外发前仍须报告完整清单并由用户选择单一渠道。
-3. 原 P6.3C Chunked Prefill on/off 冻结源码审计继续为 `blocked_p6_3c_not_strict_single_variable`；独立 R1 为 `red_p6_3c_r1_scheduler_pressure_no_success`，独立 R2 为 `developed_awaiting_server_run01_after_global_task_coordination`，均不得列为正向成果。
+3. 原 P6.3C Chunked Prefill on/off 冻结源码审计继续为 `blocked_p6_3c_not_strict_single_variable`；独立 R1 为 `red_p6_3c_r1_scheduler_pressure_no_success`，R2 run01 为 `runtime_overlay_preparation_failed_before_vllm_startup`，R2-F1 为 `developed_awaiting_server_run01_after_global_task_coordination`，均不得列为正向成果。
 4. P8.3-I0/I0-R1 已完成 inventory/taxonomy 窄边界；P8.3-I1 hotness/runtime trace、P7 与 P9 均需新授权。

@@ -15,9 +15,10 @@ SOURCE_PAYLOAD=${SOURCE_PAYLOAD:-${REPO_ROOT}/工作记录与进度笔记本/run
 MODEL_NAME=${MODEL_NAME:-deepseek-v4-flash-w8a8-mtp}
 REQUEST_RUNNER=${REQUEST_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r2_scheduler_pressure.py}
 MODE_RUNNER=${MODE_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r2_mode.sh}
+TASK_ID=${P6_3C_TASK_ID:-p6_3c_r2_chunked_prefill_capacity_calibrated_2026_0729_run01}
 
 audit_contract() {
-  printf 'task_id=p6_3c_r2_chunked_prefill_capacity_calibrated_2026_0729_run01\n'
+  printf 'task_id=%s\n' "${TASK_ID}"
   printf 'parent_r1_grade=red_p6_3c_r1_scheduler_pressure_no_success\n'
   printf 'model_lifecycle_count_exact=6\n'
   printf 'engine_request_count_exact=90\n'
@@ -64,6 +65,12 @@ test -f "${MODE_RUNNER}"
   --source-payload "${SOURCE_PAYLOAD}" \
   --artifact-dir "${RESULT_DIR}" \
   --model-name "${MODEL_NAME}"
+
+test -f "${P6_3C_RUNTIME_LAYOUT_JSON:?runtime layout evidence is required}"
+test -f "${P6_3C_RUNTIME_OVERLAY_PREFLIGHT_MANIFEST:?overlay preflight evidence is required}"
+cp "${P6_3C_RUNTIME_LAYOUT_JSON}" "${RESULT_DIR}/runtime_layout.json"
+cp "${P6_3C_RUNTIME_OVERLAY_PREFLIGHT_MANIFEST}" \
+  "${RESULT_DIR}/runtime_overlay_preflight_manifest.json"
 
 printf 'track\tlifecycle_id\tpair_id\tpair_position\tmode\n' \
   > "${RESULT_DIR}/executed_lifecycle_schedule.tsv"

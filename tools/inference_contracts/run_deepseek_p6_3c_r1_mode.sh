@@ -26,8 +26,8 @@ BASE_VLLM_ROOT=${BASE_VLLM_ROOT:-/data/node0_disk1/vllm-0.22.1/vllm}
 BASE_PROPOSER=${BASE_PLUGIN_ROOT}/spec_decode/llm_base_proposer.py
 BASE_CONNECTOR_INIT=${BASE_PLUGIN_ROOT}/distributed/kv_transfer/__init__.py
 BASE_SCHEDULER=${BASE_VLLM_ROOT}/v1/core/sched/scheduler.py
-BASE_VLLM_SINGLE=${ENV_PREFIX}/lib/python3.11/site-packages/vllm/v1/core/single_type_kv_cache_manager.py
-BASE_VLLM_COORDINATOR=${ENV_PREFIX}/lib/python3.11/site-packages/vllm/v1/core/kv_cache_coordinator.py
+BASE_VLLM_SINGLE=${BASE_VLLM_ROOT}/v1/core/single_type_kv_cache_manager.py
+BASE_VLLM_COORDINATOR=${BASE_VLLM_ROOT}/v1/core/kv_cache_coordinator.py
 BASE_ASCEND_COORDINATOR=${BASE_PLUGIN_ROOT}/patch/platform/patch_kv_cache_coordinator.py
 BASE_ASCEND_INTERFACE=${BASE_PLUGIN_ROOT}/patch/platform/patch_kv_cache_interface.py
 MODEL_PATH=${MODEL_PATH:-/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp}
@@ -44,6 +44,7 @@ RUNTIME_IMPL=${RUNTIME_IMPL:-${SCRIPT_DIR}/p6_3b_r1_hybrid_kv_runtime_patch.py}
 RUNTIME_LOADER=${RUNTIME_LOADER:-${SCRIPT_DIR}/p6_3b_r2_hybrid_kv_runtime_patch.py}
 HYBRID_PATCH=${HYBRID_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch}
 DEFERRED_PATCH=${DEFERRED_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch}
+OVERLAY_BUILDER=${P6_3C_RUNTIME_OVERLAY_BUILDER:-${SCRIPT_DIR}/prepare_p6_3c_runtime_overlay.py}
 EXPERIMENT_LABEL=${P6_3C_EXPERIMENT_LABEL:-P6_3C_R1}
 MAX_MODEL_LEN=${P6_3C_MAX_MODEL_LEN:-69632}
 MAX_NUM_BATCHED_TOKENS=${P6_3C_MAX_NUM_BATCHED_TOKENS:-69632}
@@ -121,6 +122,7 @@ test -f "${MTP_PATCH}"
 test -f "${OBSERVER}"
 test -f "${OBSERVER_PATCH}"
 test -f "${STARTUP_SUMMARY_RUNNER}"
+test -f "${OVERLAY_BUILDER}"
 test -f "${BASE_PROPOSER}"
 test -f "${BASE_CONNECTOR_INIT}"
 test -f "${BASE_SCHEDULER}"
@@ -150,6 +152,7 @@ case "${SHARED_HYBRID_KV_REPAIR}" in
 esac
 
 cleanup_mode() {
+  local incoming_exit=$1
   local cleanup=clean
   trap - EXIT INT TERM
   set +e
@@ -171,49 +174,55 @@ cleanup_mode() {
     cleanup=incomplete
   fi
   printf '%s\n' "${cleanup}" > "${LIFECYCLE_DIR}/cleanup_status.txt"
+  printf '%s\n' "${incoming_exit}" > "${LIFECYCLE_DIR}/lifecycle_exit_code.txt"
+  exit "${incoming_exit}"
 }
-trap cleanup_mode EXIT INT TERM
+trap 'cleanup_mode $?' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 mkdir -p "${RUNTIME_DIR}" "${OVERLAY_ROOT}"
+printf '%s\n' attempted > "${LIFECYCLE_DIR}/lifecycle_attempted.txt"
 set +u
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
 source /usr/local/Ascend/nnal/atb/set_env.sh
 set -u
 CANN_GENERATED_PYTHONPATH=${PYTHONPATH:-}
 
-cp -a --no-preserve=ownership "${BASE_PLUGIN_ROOT}" "${OVERLAY_ROOT}/vllm_ascend"
-patch -p1 -d "${OVERLAY_ROOT}" --dry-run < "${MTP_PATCH}" \
-  > "${RUNTIME_DIR}/mtp_patch_dry_run.txt"
-patch -p1 -d "${OVERLAY_ROOT}" < "${MTP_PATCH}" \
-  > "${RUNTIME_DIR}/mtp_patch_apply.txt"
-test "$(sha256sum "${OVERLAY_ROOT}/vllm_ascend/spec_decode/llm_base_proposer.py" | awk '{print $1}')" = \
-  7b57fd392af62901bddbf83f6e1e9c38c936fded5ac32d17bbd715f4ed3cff02
+overlay_builder_args=(
+  "${PYTHON_BIN}" "${OVERLAY_BUILDER}"
+  --base-plugin-root "${BASE_PLUGIN_ROOT}"
+  --runtime-dir "${RUNTIME_DIR}"
+  --mtp-patch "${MTP_PATCH}"
+  --output "${RUNTIME_DIR}/runtime_overlay_manifest.json"
+  --failure-excerpt "${RUNTIME_DIR}/runtime_overlay_failure.txt"
+)
 
 if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
-  cp "${RUNTIME_IMPL}" "${OVERLAY_ROOT}/p6_3b_hybrid_kv_runtime_impl.py"
-  cp "${RUNTIME_LOADER}" "${OVERLAY_ROOT}/p6_3b_r2_hybrid_kv_runtime_patch.py"
-  patch -p1 -d "${OVERLAY_ROOT}" --dry-run < "${HYBRID_PATCH}" \
-    > "${RUNTIME_DIR}/hybrid_patch_dry_run.txt"
-  patch -p1 -d "${OVERLAY_ROOT}" < "${HYBRID_PATCH}" \
-    > "${RUNTIME_DIR}/hybrid_patch_apply.txt"
-  if patch -l -p1 -d "${OVERLAY_ROOT}" --dry-run < "${DEFERRED_PATCH}" \
-    > "${RUNTIME_DIR}/deferred_patch_dry_run.txt" 2>&1; then
-    patch -l -p1 -d "${OVERLAY_ROOT}" < "${DEFERRED_PATCH}" \
-      > "${RUNTIME_DIR}/deferred_patch_apply.txt"
-    printf '%s\n' patch_l > "${RUNTIME_DIR}/deferred_patch_method.txt"
-  else
-    (
-      cd "${OVERLAY_ROOT}"
-      GIT_DIR=/dev/null git apply --check --ignore-whitespace "${DEFERRED_PATCH}"
-      GIT_DIR=/dev/null git apply --ignore-whitespace "${DEFERRED_PATCH}"
-    ) > "${RUNTIME_DIR}/deferred_patch_apply.txt" 2>&1
-    printf '%s\n' git_apply_ignore_whitespace \
-      > "${RUNTIME_DIR}/deferred_patch_method.txt"
-  fi
-  test "$(sha256sum "${OVERLAY_ROOT}/vllm_ascend/patch/platform/patch_kv_cache_coordinator.py" | awk '{print $1}')" = \
-    a1ed9c82e308608cd20965a49baa29a3e95d723248fff699fd83dfb3caf10250
-  test "$(sha256sum "${OVERLAY_ROOT}/vllm_ascend/patch/platform/patch_kv_cache_interface.py" | awk '{print $1}')" = \
-    524c933ef17806ecba0634804bc562de1f69dc095fe1346e2edd0103845bfa75
+  overlay_builder_args+=(
+    --runtime-impl "${RUNTIME_IMPL}"
+    --runtime-loader "${RUNTIME_LOADER}"
+    --hybrid-patch "${HYBRID_PATCH}"
+    --deferred-patch "${DEFERRED_PATCH}"
+    --shared-hybrid-kv-repair
+  )
+fi
+if test "${TRACK}" = mechanism; then
+  overlay_builder_args+=(
+    --observer "${OBSERVER}"
+    --observer-patch "${OBSERVER_PATCH}"
+    --enable-observer
+  )
+fi
+if ! "${overlay_builder_args[@]}"; then
+  {
+    printf '%s\n' "${LIFECYCLE_ID}:runtime_overlay_preparation_failed"
+    tail -c 6144 "${RUNTIME_DIR}/runtime_overlay_failure.txt"
+  } > "${ARTIFACT_DIR}/first_failure_excerpt.txt"
+  exit 2
+fi
+
+if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
   {
     printf 'runtime_impl\t%s\n' "$(sha256sum "${RUNTIME_IMPL}" | awk '{print $1}')"
     printf 'deferred_loader\t%s\n' "$(sha256sum "${RUNTIME_LOADER}" | awk '{print $1}')"
@@ -230,11 +239,6 @@ else
 fi
 
 if test "${TRACK}" = mechanism; then
-  cp "${OBSERVER}" "${OVERLAY_ROOT}/p6_3c_r1_scheduler_observer.py"
-  patch -p1 -d "${OVERLAY_ROOT}" --dry-run < "${OBSERVER_PATCH}" \
-    > "${RUNTIME_DIR}/observer_patch_dry_run.txt"
-  patch -p1 -d "${OVERLAY_ROOT}" < "${OBSERVER_PATCH}" \
-    > "${RUNTIME_DIR}/observer_patch_apply.txt"
   mkdir -p "${TRACE_DIR}"
 else
   test ! -e "${OVERLAY_ROOT}/p6_3c_r1_scheduler_observer.py"
@@ -443,5 +447,4 @@ set +e
   --mode "${MODE}"
 run_exit=$?
 set -e
-printf '%s\n' "${run_exit}" > "${LIFECYCLE_DIR}/lifecycle_exit_code.txt"
 exit "${run_exit}"

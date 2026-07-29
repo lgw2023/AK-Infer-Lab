@@ -250,7 +250,25 @@ result_package_policy:
     - first_failure_excerpt.txt
 
 execution_state:
-  status: developed_awaiting_server_run01_after_global_task_coordination
+  status: run01_stopped_before_vllm_startup_runtime_overlay_layout_failure
   npu_execution_authorized_by_this_contract: true
   concurrent_with_other_server_task_allowed: false
   next_task_authorized: false
+  run01_result:
+    reported_grade: red_cleanup_incomplete
+    accepted_project_classification: runtime_overlay_preparation_failed_before_vllm_startup
+    formal_experiment_started: true
+    keep_alive_stopped_and_restored_cards: [0, 1, 2, 3, 4, 5, 6, 7]
+    global_resource_recovery_clean: true
+    lifecycle_attempted: mechanism_01
+    vllm_ready_count: 0
+    startup_resource_summary_count: 0
+    engine_requests_actual: 0
+    batched_http_calls_actual: 0
+    scheduler_steps_actual: 0
+    chunked_prefill_mechanism_or_performance_conclusion_allowed: false
+    failure_stage: task_local_runtime_overlay_mtp_patch_preparation
+    failure_reason: base_plugin_root_layout_was_not_materialized_into_overlay
+    result_chain_preserved: true
+    rerun_same_task_or_create_run02: false
+  successor_contract: benchmarks/deepseek_v4_flash/workloads/p6_3c_r2_f1_runtime_layout_portable_matched_ab.yaml
