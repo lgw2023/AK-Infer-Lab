@@ -75,6 +75,8 @@ PAYLOAD_NAMES = (
     "request_summary.tsv",
     "resource_recovery_summary.json",
     "result_summary.md",
+    "startup_capacity_summary.json",
+    "startup_failure_summary.json",
     "task_grade.txt",
     "ucm_metric_deltas.tsv",
     "ucm_path_summary.json",
@@ -376,6 +378,62 @@ def _safe_json(path: Path) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def _read_int(path: Path) -> int | None:
+    try:
+        return int(path.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return None
+
+
+def _classify_startup(artifact_dir: Path) -> dict[str, Any]:
+    runtime = artifact_dir / "runtime"
+    server_log = runtime / "vllm_server.log"
+    server_pid_present = (runtime / "server_pid.txt").is_file()
+    ready_exit_code = _read_int(runtime / "server_ready_exit_code.txt")
+    text = (
+        server_log.read_text(encoding="utf-8", errors="replace")
+        if server_log.is_file()
+        else ""
+    )
+    matches = re.findall(
+        r"too small buffer\((\d+)\) on shard\((\d+)\)",
+        text,
+    )
+    buffer_bytes = int(matches[-1][0]) if matches else None
+    shard_bytes = int(matches[-1][1]) if matches else None
+    observed_buffer_number = (
+        buffer_bytes // shard_bytes
+        if buffer_bytes is not None and shard_bytes
+        else None
+    )
+    if not server_pid_present:
+        failure_class = "not_started"
+    elif ready_exit_code == 0:
+        failure_class = "server_ready"
+    elif matches:
+        failure_class = "ucm_cache_buffer_too_small"
+    else:
+        failure_class = "lifecycle_startup_failed_other"
+    return {
+        "startup_class": failure_class,
+        "server_pid_present": server_pid_present,
+        "server_ready_exit_code": ready_exit_code,
+        "server_ready": ready_exit_code == 0,
+        "ucm_too_small_buffer_observed": bool(matches),
+        "reported_buffer_bytes": buffer_bytes,
+        "reported_shard_size_bytes": shard_bytes,
+        "reported_buffer_number": observed_buffer_number,
+        "required_buffer_number_from_pinned_source": 2048,
+        "reported_geometry_gate_passed": (
+            observed_buffer_number >= 2048
+            if observed_buffer_number is not None
+            else None
+        ),
+        "raw_startup_log_server_path": str(server_log),
+        "raw_startup_log_retained_server_local": True,
+    }
+
+
 def _role_row(rows: list[dict[str, Any]], role: str) -> dict[str, Any]:
     return next(
         (row for row in rows if row.get("request_role") == role), {}
@@ -437,6 +495,12 @@ def finalize(artifact_dir: Path) -> str:
     recovery = _safe_json(artifact_dir / "resource_recovery_summary.json")
     dependency = _safe_json(
         artifact_dir / "dependency_and_environment_summary.json"
+    )
+    capacity = _safe_json(artifact_dir / "startup_capacity_summary.json")
+    startup = _classify_startup(artifact_dir)
+    (artifact_dir / "startup_failure_summary.json").write_text(
+        json.dumps(startup, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
     )
     cleanup = (
         (artifact_dir / "cleanup_status.txt")
@@ -509,11 +573,19 @@ def finalize(artifact_dir: Path) -> str:
     if lifecycle_recovery_exact:
         resource_state = "npu_lifecycle_cleanup_and_same_card_restore_exact"
     elif preflight_no_touch_exact:
-        resource_state = "dependency_preflight_failed_before_npu_touch"
+        if int(recovery.get("dependency_exit_code", 1)) != 0:
+            resource_state = "dependency_preflight_failed_before_npu_touch"
+        elif int(recovery.get("startup_capacity_exit_code", 1)) != 0:
+            resource_state = "startup_capacity_preflight_failed_before_npu_touch"
+        else:
+            resource_state = "preflight_failed_before_npu_touch"
     else:
         resource_state = "resource_recovery_or_no_touch_evidence_incomplete"
     mechanism_implemented = all(
         (
+            dependency.get("dependency_status") == "ready",
+            capacity.get("status") == "ready",
+            startup.get("server_ready") is True,
             request_success_exact,
             prime_store_observed,
             external_hit_observed,
@@ -533,9 +605,15 @@ def finalize(artifact_dir: Path) -> str:
     elif external_hit_observed and h2d_load_observed:
         grade = "partial_p8_2_k2_r0_ucm_external_hit_non_dram_or_incomplete_recovery"
         path_class = "ucm_external_hit_with_non_dram_or_incomplete_evidence"
-    elif not rows:
-        grade = "blocked_p8_2_k2_r0_dependency_or_startup_preflight"
-        path_class = "not_executed"
+    elif dependency.get("dependency_status") != "ready":
+        grade = "blocked_p8_2_k2_r0_dependency_preflight"
+        path_class = "not_executed_dependency_preflight"
+    elif capacity.get("status") != "ready":
+        grade = "blocked_p8_2_k2_r0_startup_capacity_preflight"
+        path_class = "not_executed_startup_capacity_preflight"
+    elif not rows and startup.get("server_ready") is not True:
+        grade = "blocked_p8_2_k2_r0_lifecycle_startup"
+        path_class = "lifecycle_startup_failed_before_requests"
     else:
         grade = "incomplete_p8_2_k2_r0_ucm_external_prefix_path"
         path_class = "request_or_mechanism_incomplete"
@@ -545,6 +623,14 @@ def finalize(artifact_dir: Path) -> str:
         "path_class": path_class,
         "internal_prefix_cache_enabled": False,
         "ucm_connector_enabled": True,
+        "dependency_status": dependency.get("dependency_status", "unknown"),
+        "startup_capacity_status": capacity.get("status", "unknown"),
+        "startup_class": startup.get("startup_class"),
+        "configured_cache_buffer_gib_per_rank": capacity.get(
+            "configured_cache_buffer_gib_per_rank"
+        ),
+        "configured_buffer_number": capacity.get("configured_buffer_number"),
+        "required_buffer_number": capacity.get("required_buffer_number"),
         "request_success_exact": request_success_exact,
         "prime_store_observed": prime_store_observed,
         "external_hit_observed": external_hit_observed,
@@ -651,6 +737,15 @@ def finalize(artifact_dir: Path) -> str:
         "resource_state": resource_state,
         "dependency_status": dependency.get("dependency_status", "unknown"),
         "dependency_attempt": dependency.get("dependency_attempt"),
+        "startup_capacity_status": capacity.get("status", "unknown"),
+        "startup_capacity_gate_passed": capacity.get(
+            "pre_npu_capacity_gate_passed"
+        ),
+        "startup_class": startup.get("startup_class"),
+        "server_ready": startup.get("server_ready"),
+        "reported_buffer_bytes": startup.get("reported_buffer_bytes"),
+        "reported_shard_size_bytes": startup.get("reported_shard_size_bytes"),
+        "reported_buffer_number": startup.get("reported_buffer_number"),
         "ucm_source_validation_complete": dependency.get(
             "ucm_source_validation_complete"
         ),
@@ -680,6 +775,13 @@ def finalize(artifact_dir: Path) -> str:
         f"- dependency: "
         f"`{dependency.get('dependency_status', 'unknown')}`; "
         f"attempt: `{dependency.get('dependency_attempt')}`\n"
+        f"- startup capacity: `{capacity.get('status', 'unknown')}`; "
+        f"buffer/rank: "
+        f"`{capacity.get('configured_cache_buffer_gib_per_rank')}` GiB; "
+        f"buffer slots: `{capacity.get('configured_buffer_number')}` / "
+        f"required `{capacity.get('required_buffer_number')}`\n"
+        f"- startup class: `{startup.get('startup_class')}`; "
+        f"server ready: `{startup.get('server_ready')}`\n"
         f"- resource state: `{resource_state}`\n"
         f"- requests: `{len(rows)}`; successful: "
         f"`{sum(row.get('status') == 'success' for row in rows)}`\n"

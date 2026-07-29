@@ -23,14 +23,14 @@ P6.3B green 限于 primary 9/9 positive-hit 机制证据；15 条 boundary 仍�
 原 P6.3C 已因 `4096 < 135168` 的 frozen validation 约束收口为
 `blocked_p6_3c_not_strict_single_variable`，未创建原配置 executable workload；该范围只关闭原
 135168/4096/1 参考的直接 A/B。独立 P6.3C-R1 已共同冻结 69632/69632/2、Prefix=false 和三组双请求，
-成为当前唯一服务器任务；在 run01 验收前不形成 Chunked Prefill 机制或性能结论。P8.1-R1 与 P8.2-K0
+已开发并排队；在 run01 验收前不形成 Chunked Prefill 机制或性能结论。P8.1-R1 与 P8.2-K0
 已 green，K1A-R2 accepted capacity 已 ready。R3-R2-R2-R1-R1-R1 已完成同容量唯一 lifecycle：
 6/6 transport 成功、D2H store 闭合、CPU hit/load/H2D 为零。原 red 保留，开发机只接受 store-only yellow。
 R4-R1 offline store-only closeout 已 green，R5-F0 ready，R5-L1/R1 red 保留。F1-R1 calibration
 得到 36800 candidate，但 fixed L2 3/3 请求和 D2H 8/8 后 endpoint 为 `CPU=54/GPU=0`，保留
-target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 64，保留为无效运行合同证据，不否定 accepted capacity。P8 K2-R0 已开发但排队，不是当前 handoff。当前唯一 driver 为
-`run_deepseek_p6_3c_r1_server_task.sh`，负责六个 fresh lifecycle、首错停止、八卡同卡恢复、recovery/finalize
-和有界结果包；不调参数/body、不 retry/sweep。K2、P8.3-I1 和 P9 不自动进入。
+target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 64，保留为无效运行合同证据，不否定 accepted capacity。K1A-F1 已由 R17 闭合。K2-R0 run02 已完成 UCM dependency/import，但 8 GiB buffer 的 1296 shards 低于源码门 2048，零请求；四节点 NFS `no_root_squash` 已由用户修复。当前唯一 driver 为
+`run_deepseek_p8_2_k2_r0_server_task.sh`，负责 live NFS `0:3000` probe、CMake Python 绑定、16 GiB/rank 容量门、一个三请求 lifecycle、八卡同卡恢复、recovery/finalize
+和有界结果包；不调参数/body、不 retry/sweep。P6.3C-R1、K2-R1、P8.3-I1 和 P9 不自动进入。
 
 ## 当前范围
 

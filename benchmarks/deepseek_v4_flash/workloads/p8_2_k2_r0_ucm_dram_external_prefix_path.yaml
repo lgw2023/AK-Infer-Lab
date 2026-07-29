@@ -1,16 +1,16 @@
 schema_version: 1
 workload_id: p8_2_k2_r0_ucm_dram_external_prefix_path
-date: "2026-07-28"
+date: "2026-07-29"
 task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
 
 stage_contract:
   stage: P8.2-K2-R0
-  mode: pinned_ucm_dependency_plus_single_lifecycle_dram_external_prefix_path
+  mode: nfs_recovered_pinned_ucm_plus_single_lifecycle_dram_external_prefix_path
   purpose: implement_and_run_external_prefix_store_lookup_hit_and_h2d_load_with_dram_cache_first
   claim_boundary: single_lifecycle_ucm_external_prefix_store_lookup_load_and_dram_first_path_observation
   performance_benefit_required: false
   unique_root_cause_required: false
-  execution_attempt: run02_explicit_dependency_repair
+  execution_attempt: run03_nfs_identity_cmake_python_and_capacity
 
 dependency_recovery:
   parent_run01_grade: blocked_p8_2_k2_r0_dependency_or_startup_preflight
@@ -22,6 +22,15 @@ dependency_recovery:
   source_and_venv_atomic_promotion_required: true
   install_marker_after_import_probe_required: true
   preflight_failure_must_leave_keep_alive_running: true
+  parent_run02_dependency_status: ready
+  parent_run02_lifecycle_count: 1
+  parent_run02_request_count: 0
+  parent_run02_failure: ucm_cache_buffer_8gib_has_1296_shards_below_required_2048
+  nfs_no_root_squash_operator_verified_on_four_nodes: true
+  nfs_new_object_identity: root_shareddata_uid0_gid3000
+  run03_live_nfs_creation_identity_probe_required: true
+  run03_default_source_and_venv_root: repo_server_local_nfs
+  cmake_python_binding: tracked_wrapper_rewrites_PYTHON_EXECUTABLE_to_Python_EXECUTABLE
 
 parents:
   p8_2_k0: green_p8_2_k0_order_balanced_prefix_cache_baseline
@@ -59,7 +68,7 @@ ucm_dependency:
 
 ucm_store:
   pipeline: Cache|Posix
-  dram_cache_buffer_capacity_gb: 8
+  dram_cache_buffer_capacity_gb: 16
   local_posix_capacity_gb: 32
   use_layerwise: true
   event_sync: true
@@ -70,6 +79,15 @@ ucm_store:
   persist_token_threshold: 0
   load_tokens_threshold: 2048
   storage_scope: task_local_server_local
+  startup_geometry:
+    run02_observed_shard_size_bytes: 6627328
+    load_exclusive_buffer_number: 1024
+    required_buffer_number: 2048
+    run02_8gib_buffer_number: 1296
+    run03_16gib_buffer_number: 2592
+    pre_npu_dev_shm_and_memavailable_gate: true
+    conservative_tp8_buffer_reservation_gib: 128
+    additional_headroom_gib: 16
   dram_first_proof:
     - follower_ucm_hit_tokens_delta_positive
     - follower_cache_lookup_hit_blocks_delta_positive
@@ -120,7 +138,8 @@ authorization:
   request_retry_count_exact: 0
   profiler_authorized: false
   parameter_sweep_authorized: false
-  run02_authorized: true
+  run02_authorized: false
+  run03_authorized: true
   k3_authorized: false
   p8_3_i1_authorized: false
   next_task_authorized: false

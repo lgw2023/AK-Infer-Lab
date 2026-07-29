@@ -458,9 +458,12 @@ simulator_validation_report.md
 3. P6.1C-R1 已完成并验收为 official green，不重跑。
 4. P6.1 unprofiled 已完成并验收为 `green_mtp_unprofiled_baseline`，不重跑。
 5. P6.2 profiled evidence、P6.3A matched MTP A/B、P6.3B-R2 repair 与 P6.3B-R4-R1 explicit control 已验收；原 P6.3B yellow、R1 red、R3 on-vs-on yellow 与 R4 root-squash blocked 均保留，P6.3C 严格单变量门已 blocked。P8.1-R1 与 P8.2-K0 已 green，旧 K1 路径已由服务器确认 blocked。
-6. K1A-R5-F1-R9 已消费并以 finish-time SWA lineage red 验收；当前 KV/Prefix 线只执行 K1A-R5-F1-R10：保持 accepted 128 blocks/rank、fixed 36800 与 logical 16384-token/128-hash-block 目标，在 runtime cache stamp 时捕获 sparse per-group keys，执行唯一 pressure，并按适用组 CPU-only 窗口决定 abort/条件 restore；零 retry、零 sweep，K2 不授权。
+6. K1A-F1 已由 R17 full-trace replay 闭合 warm-tier restore/H2D；当前 KV/Prefix 线只执行 K2-R0 run03：复验 NFS `0:3000`、构建 pinned UCM、固定 16 GiB/rank，运行唯一 4K warmup + exact 32K prime/follower lifecycle；零 retry、零 sweep，K2-R1 不授权。
 7. P8.3-I0 inventory 与 I0-R1 taxonomy 已在窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 不授权。
 8. P7 工具链预研可继续，但不得外推 full-model runtime。
 9. P9 最后消费统一 trace、inventory、simulation 与 TP4 closure 证据，输出硬件优先级。
 
-当前唯一服务器任务是 `p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01`。原 P6.3C blocked 审计不重跑、不覆盖；R1 只允许既定六个 fresh lifecycle、三组双请求、零 retry，K2-R0 保持排队，不与本轮混跑。
+当前唯一服务器任务是 `p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run03`。
+它只允许在已修复 `no_root_squash` 的 NFS 上复验 `0:3000`、构建 pinned UCM、
+固定 16 GiB/rank 并运行一个 4K warmup + 32K exact prime/follower lifecycle，零
+retry。P6.3C-R1 已开发并排队，不与本轮混跑。

@@ -317,16 +317,17 @@ boundaries:
 
 ## 10. 当前下一步
 
-截至 2026-07-28，当前唯一服务器任务是
-`p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01`。它只授权共同冻结
-69632/69632/2、Prefix=false 的三组双请求，以 mechanism Off→On 和 performance
-Off→On→On→Off 六个 fresh lifecycle 执行，零 retry。P8 K2-R0 已开发但排队。
+截至 2026-07-29，当前唯一服务器任务是
+`p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run03`。run02 已关闭 pinned
+UCM build/import 门并把启动阻塞收敛为 8 GiB 的 1296 shards 低于要求的 2048；
+run03 复验已修复的四节点 NFS `0:3000` 身份、绑定 CMake Python 3.11、固定
+16 GiB/rank 并执行一个三请求 lifecycle，零 retry。P6.3C-R1 已开发并排队。
 以下较早描述仅保留阶段 lineage，若与本段冲突以本段和
 `通信模块/docs/developer-to-server.md` 为准。
 
 完整 K1A-R3 lineage 作为 provenance 保留，不因 R4 离线收口改写。
 
 1. P6.1C-R1 official、P6.1 unprofiled performance、P6.2 profiled evidence、P6.3A matched MTP 与 P6.3B-R4-R1 explicit Prefix Cache control 已完成并验收。
-2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A/K2 lineage 与 P8.3-I0-R1 taxonomy 均按各自边界保留。当前 handoff 只授权 P6.3C-R1 的六个 fresh lifecycle、90 个 engine request、48 个 batched HTTP call 和零 retry；外发前仍须报告完整清单并由用户选择单一渠道。
-3. 原 P6.3C Chunked Prefill on/off 冻结源码审计继续为 `blocked_p6_3c_not_strict_single_variable`；独立 R1 当前为 `developed_awaiting_server_run01`，不得提前列为正向成果。
+2. P6 五份汇总交付物、P8.1-R1、P8.2-K0、K1A/K2 lineage 与 P8.3-I0-R1 taxonomy 均按各自边界保留。当前 handoff 只授权 K2-R0 run03 的一个 fresh lifecycle、3 个 request 和零 retry；外发前仍须报告完整清单并由用户选择单一渠道。
+3. 原 P6.3C Chunked Prefill on/off 冻结源码审计继续为 `blocked_p6_3c_not_strict_single_variable`；独立 R1 当前为 `developed_queued_while_k2_r0_run03_is_current`，不得提前列为正向成果。
 4. P8.3-I0/I0-R1 已完成 inventory/taxonomy 窄边界；P8.3-I1 hotness/runtime trace、P7 与 P9 均需新授权。

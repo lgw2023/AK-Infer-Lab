@@ -12,6 +12,7 @@ RESULT_DIR=$1
 TASK_ID=p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
 RUNNER=${SCRIPT_DIR}/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
 LIFECYCLE=${SCRIPT_DIR}/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh
+CMAKE_PYTHON_WRAPPER=${SCRIPT_DIR}/run_ucm_cmake_python_wrapper.sh
 BASE_ENV_PREFIX=${BASE_ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1}
 BASE_PYTHON=${BASE_ENV_PREFIX}/bin/python
 UCM_GIT_URL=https://github.com/ModelEngine-Group/unified-cache-management.git
@@ -20,10 +21,18 @@ UCM_SHORT_COMMIT=01cbf9b
 UCM_SOURCE_ROOT=${UCM_SOURCE_ROOT:-${REPO_ROOT}/server_local/third_party/unified-cache-management-${UCM_SHORT_COMMIT}}
 UCM_ENV_PREFIX=${UCM_ENV_PREFIX:-${REPO_ROOT}/server_local/python_envs/ucm-vllm-ascend0221-${UCM_SHORT_COMMIT}}
 RUN_LABEL=$(basename -- "${RESULT_DIR}")
-EXPECTED_RUN_LABEL=${TASK_ID}_run02
+EXPECTED_RUN_LABEL=${TASK_ID}_run03
 DEPENDENCY_LOG=${REPO_ROOT}/server_local/ucm_dependency_build_${RUN_LABEL}.log
 PROVISION_EVENT_LOG=${RESULT_DIR}/runtime/dependency_provision_events.jsonl
+CMAKE_WRAPPER_LOG=${RESULT_DIR}/runtime/ucm_cmake_python_wrapper.log
+CMAKE_WRAPPER_DIR=${RESULT_DIR}/runtime/dependency_tools
 INSTALL_MARKER=.ak_ucm_${UCM_SHORT_COMMIT}_installed
+EXPECTED_SHARED_GID=${EXPECTED_SHARED_GID:-3000}
+UCM_CACHE_BUFFER_GIB=16
+UCM_OBSERVED_SHARD_SIZE_BYTES=6627328
+UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER=1024
+UCM_TP_SIZE=8
+UCM_CAPACITY_HEADROOM_GIB=16
 CARD_IDS=(0 1 2 3 4 5 6 7)
 CARD_IDS_CSV=0,1,2,3,4,5,6,7
 EXPECTED_KEEP_ALIVE_MARKER_COUNT=16
@@ -36,12 +45,25 @@ audit_contract() {
   printf 'dependency_install_scope=isolated_server_local_venv_only\n'
   printf 'base_conda_environment_mutation=false\n'
   printf 'server_side_code_edit_authorized=false\n'
-  printf 'dependency_repair_attempt=run02_explicit\n'
+  printf 'dependency_repair_attempt=run03_nfs_identity_cmake_python_and_capacity\n'
   printf 'expected_result_basename=%s\n' "${EXPECTED_RUN_LABEL}"
+  printf 'nfs_no_root_squash_operator_verified=true\n'
+  printf 'nfs_expected_new_object_uid=0\n'
+  printf 'nfs_expected_new_object_gid=%s\n' "${EXPECTED_SHARED_GID}"
+  printf 'dependency_default_root=repo_server_local_nfs\n'
   printf 'global_git_safe_directory_mutation=false\n'
   printf 'invalid_dependency_state_action=quarantine_then_atomic_rebuild\n'
   printf 'dependency_log_attempt_local_and_truncated=true\n'
   printf 'install_marker_written_after_import_probe_only=true\n'
+  printf 'ucm_cmake_python_binding=tracked_wrapper_rewrites_to_Python_EXECUTABLE\n'
+  printf 'ucm_cache_buffer_capacity_gib_per_rank=%s\n' "${UCM_CACHE_BUFFER_GIB}"
+  printf 'run02_observed_shard_size_bytes=%s\n' "${UCM_OBSERVED_SHARD_SIZE_BYTES}"
+  printf 'ucm_load_exclusive_buffer_number=%s\n' "${UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER}"
+  printf 'ucm_required_buffer_number=2048\n'
+  printf 'ucm_configured_buffer_number=2592\n'
+  printf 'conservative_total_buffer_gib=%s\n' \
+    "$((UCM_CACHE_BUFFER_GIB * UCM_TP_SIZE))"
+  printf 'pre_npu_shm_and_memavailable_gate=true\n'
   printf 'preflight_failure_npu_touch=false\n'
   printf 'npu_card_ids=%s\n' "${CARD_IDS_CSV}"
   printf 'keep_alive_stop_then_same_set_restore=true\n'
@@ -66,6 +88,8 @@ test "${RUN_LABEL}" = "${EXPECTED_RUN_LABEL}"
 test -x "${BASE_PYTHON}"
 test -f "${RUNNER}"
 test -f "${LIFECYCLE}"
+test -x "${CMAKE_PYTHON_WRAPPER}"
+test "$(id -u)" -eq 0
 test -x /data/node0_disk1/Public/npu_stop.sh
 test -x /data/node0_disk1/Public/npu_keep_alive.sh
 test "$(git -C "${REPO_ROOT}" branch --show-current)" = main
@@ -74,9 +98,10 @@ test "$(git -C "${REPO_ROOT}" rev-parse HEAD)" = \
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
 mkdir -p "${RESULT_DIR}" "$(dirname "${UCM_SOURCE_ROOT}")" \
   "$(dirname "${UCM_ENV_PREFIX}")" "$(dirname "${DEPENDENCY_LOG}")" \
-  "$(dirname "${PROVISION_EVENT_LOG}")"
+  "$(dirname "${PROVISION_EVENT_LOG}")" "${CMAKE_WRAPPER_DIR}"
 : > "${DEPENDENCY_LOG}"
 : > "${PROVISION_EVENT_LOG}"
+: > "${CMAKE_WRAPPER_LOG}"
 
 keep_alive_stopped=false
 lifecycle_pid=
@@ -86,6 +111,7 @@ stop_exit=0
 restart_exit=0
 experiment_exit=0
 dependency_exit=1
+capacity_exit=1
 finalize_exit=1
 
 append_provision_event() {
@@ -118,26 +144,53 @@ with open(sys.argv[1], "a", encoding="utf-8") as handle:
 PY
 }
 
-tree_owned_by_current_user() {
+validate_nfs_creation_identity() {
+  local parent
+  local probe
+  local uid
+  local gid
+  local detail
+  for parent in "$(dirname -- "${UCM_SOURCE_ROOT}")" \
+    "$(dirname -- "${UCM_ENV_PREFIX}")"; do
+    probe=$(mktemp "${parent}/.ak_nfs_identity_${RUN_LABEL}.XXXXXX")
+    uid=$(stat -c '%u' "${probe}")
+    gid=$(stat -c '%g' "${probe}")
+    detail=uid=${uid}_gid=${gid}_expected_uid_0_gid_${EXPECTED_SHARED_GID}
+    rm -- "${probe}"
+    if test "${uid}" -ne 0 || test "${gid}" -ne "${EXPECTED_SHARED_GID}"; then
+      append_provision_event identity_failed nfs_creation_probe \
+        "${parent}" "${parent}" "${detail}"
+      return 1
+    fi
+    append_provision_event identity_passed nfs_creation_probe \
+      "${parent}" "${parent}" "${detail}"
+  done
+}
+
+tree_owned_by_current_user_and_group() {
+  EXPECTED_SHARED_GID="${EXPECTED_SHARED_GID}" \
   "${BASE_PYTHON}" - "$1" <<'PY'
 import os
 import sys
 from pathlib import Path
 
 root = Path(sys.argv[1])
-expected = os.geteuid()
+expected_uid = os.geteuid()
+expected_gid = int(os.environ["EXPECTED_SHARED_GID"])
 paths = [root]
 if root.is_dir():
     paths.extend(root.rglob("*"))
 for path in paths:
     try:
-        owner = path.lstat().st_uid
+        stat = path.lstat()
     except FileNotFoundError:
         print(f"ownership probe raced with removal: {path}", file=sys.stderr)
         raise SystemExit(1)
-    if owner != expected:
+    if stat.st_uid != expected_uid or stat.st_gid != expected_gid:
         print(
-            f"owner mismatch: path={path} expected_uid={expected} actual_uid={owner}",
+            "identity mismatch: "
+            f"path={path} expected_uid={expected_uid} actual_uid={stat.st_uid} "
+            f"expected_gid={expected_gid} actual_gid={stat.st_gid}",
             file=sys.stderr,
         )
         raise SystemExit(1)
@@ -147,7 +200,7 @@ PY
 validate_ucm_source() {
   local source_root=$1
   test -d "${source_root}/.git" || return 1
-  tree_owned_by_current_user "${source_root}" || return 1
+  tree_owned_by_current_user_and_group "${source_root}" || return 1
   test "$(git -C "${source_root}" remote get-url origin)" = \
     "${UCM_GIT_URL}" || return 1
   test "$(git -C "${source_root}" rev-parse HEAD)" = \
@@ -257,7 +310,7 @@ validate_ucm_env() {
   local env_root=$1
   local marker=${env_root}/${INSTALL_MARKER}
   test -x "${env_root}/bin/python" || return 1
-  tree_owned_by_current_user "${env_root}" || return 1
+  tree_owned_by_current_user_and_group "${env_root}" || return 1
   test -f "${marker}" || return 1
   test "$(cat "${marker}")" = "${UCM_COMMIT}" || return 1
   ucm_import_probe "${env_root}/bin/python" || return 1
@@ -267,6 +320,7 @@ build_and_promote_ucm_env() {
   local parent
   local env_stage
   local marker_tmp
+  local real_cmake
   parent=$(dirname -- "${UCM_ENV_PREFIX}")
   env_stage=$(mktemp -d \
     "${parent}/.$(basename -- "${UCM_ENV_PREFIX}").staging.XXXXXX")
@@ -286,10 +340,19 @@ build_and_promote_ucm_env() {
         --disable-pip-version-check --no-input \
         'wrapt==1.17.2' || exit 1
     fi
+    real_cmake=$(command -v cmake) || exit 1
+    test -x "${real_cmake}" || exit 1
+    test ! -e "${CMAKE_WRAPPER_DIR}/cmake" || exit 1
+    ln -s "${CMAKE_PYTHON_WRAPPER}" "${CMAKE_WRAPPER_DIR}/cmake" || exit 1
+    PATH="${CMAKE_WRAPPER_DIR}:${PATH}" \
+    UCM_REAL_CMAKE="${real_cmake}" \
+    UCM_BUILD_PYTHON="${env_stage}/bin/python" \
+    UCM_CMAKE_WRAPPER_LOG="${CMAKE_WRAPPER_LOG}" \
     PLATFORM=ascend ENABLE_SPARSE=false \
       "${env_stage}/bin/python" -m pip install \
       --disable-pip-version-check --no-input \
       --no-build-isolation --no-deps "${UCM_SOURCE_ROOT}" || exit 1
+    grep -F 'is_configure=1' "${CMAKE_WRAPPER_LOG}" >/dev/null || exit 1
     ucm_import_probe "${env_stage}/bin/python" || exit 1
     marker_tmp=$(mktemp \
       "${env_stage}/.${INSTALL_MARKER}.tmp.XXXXXX") || exit 1
@@ -336,6 +399,9 @@ write_dependency_summary() {
   UCM_INSTALL_MARKER="${INSTALL_MARKER}" \
   DEPENDENCY_LOG="${DEPENDENCY_LOG}" \
   PROVISION_EVENT_LOG="${PROVISION_EVENT_LOG}" \
+  CMAKE_WRAPPER_LOG="${CMAKE_WRAPPER_LOG}" \
+  CMAKE_PYTHON_WRAPPER="${CMAKE_PYTHON_WRAPPER}" \
+  EXPECTED_SHARED_GID="${EXPECTED_SHARED_GID}" \
   DEPENDENCY_STATUS="${status}" \
   "${BASE_PYTHON}" - "${RESULT_DIR}/dependency_and_environment_summary.json" <<'PY'
 import hashlib
@@ -351,14 +417,18 @@ python = venv / "bin/python"
 marker = venv / os.environ["UCM_INSTALL_MARKER"]
 event_log = Path(os.environ["PROVISION_EVENT_LOG"])
 dependency_log = Path(os.environ["DEPENDENCY_LOG"])
+cmake_wrapper_log = Path(os.environ["CMAKE_WRAPPER_LOG"])
+cmake_python_wrapper = Path(os.environ["CMAKE_PYTHON_WRAPPER"])
 expected_uid = os.geteuid()
+expected_gid = int(os.environ["EXPECTED_SHARED_GID"])
 
-def tree_owned(path):
+def tree_identity(path):
     if not path.exists():
         return False
     try:
         return all(
             candidate.lstat().st_uid == expected_uid
+            and candidate.lstat().st_gid == expected_gid
             for candidate in (path, *path.rglob("*"))
         )
     except OSError:
@@ -381,8 +451,8 @@ if event_log.is_file():
             continue
         if isinstance(value, dict):
             events.append(value)
-source_owned = tree_owned(source)
-venv_owned = tree_owned(venv)
+source_owned = tree_identity(source)
+venv_owned = tree_identity(venv)
 source_head = output(
     ["git", "-C", str(source), "rev-parse", "HEAD"],
     source_owned and source.is_dir(),
@@ -427,9 +497,14 @@ import_probe = (
     if python.is_file()
     else None
 )
+cmake_wrapper_lines = (
+    cmake_wrapper_log.read_text(encoding="utf-8", errors="replace").splitlines()
+    if cmake_wrapper_log.is_file()
+    else []
+)
 summary = {
     "dependency_status": os.environ["DEPENDENCY_STATUS"],
-    "dependency_attempt": "run02_explicit_repair",
+    "dependency_attempt": "run03_nfs_identity_cmake_python_and_capacity",
     "dependency_log_server_path": str(dependency_log),
     "dependency_log_bytes": dependency_log.stat().st_size if dependency_log.is_file() else 0,
     "dependency_log_truncated_before_attempt": True,
@@ -438,8 +513,11 @@ summary = {
     "ucm_expected_commit": os.environ["UCM_COMMIT"],
     "ucm_source_root": str(source),
     "ucm_source_owner_uid": source.stat().st_uid if source.exists() else None,
+    "ucm_source_owner_gid": source.stat().st_gid if source.exists() else None,
     "expected_current_user_uid": expected_uid,
+    "expected_shared_group_gid": expected_gid,
     "ucm_source_tree_owned_by_current_user": source_owned,
+    "ucm_source_tree_has_expected_uid_gid": source_owned,
     "ucm_source_head": source_head,
     "ucm_source_remote_url": source_remote,
     "ucm_source_tracked_clean": source_status == "",
@@ -453,12 +531,47 @@ summary = {
     )),
     "ucm_isolated_env": str(venv),
     "ucm_env_tree_owned_by_current_user": venv_owned,
+    "ucm_env_tree_has_expected_uid_gid": venv_owned,
     "ucm_install_marker_path": str(marker),
     "ucm_install_marker_value": marker_value,
     "ucm_install_marker_valid": marker_value == os.environ["UCM_COMMIT"],
     "base_conda_environment_mutated": False,
     "critical_source_sha256": critical,
     "python_import_probe": import_probe,
+    "nfs_no_root_squash_operator_verified": True,
+    "nfs_creation_identity_probe_count": sum(
+        event.get("kind") == "nfs_creation_probe" for event in events
+    ),
+    "nfs_creation_identity_passed": (
+        sum(
+            event.get("event") == "identity_passed"
+            and event.get("kind") == "nfs_creation_probe"
+            for event in events
+        )
+        == 2
+    ),
+    "cmake_python_wrapper_path": str(cmake_python_wrapper),
+    "cmake_python_wrapper_sha256": (
+        hashlib.sha256(cmake_python_wrapper.read_bytes()).hexdigest()
+        if cmake_python_wrapper.is_file()
+        else None
+    ),
+    "cmake_wrapper_invocation_count": len(cmake_wrapper_lines),
+    "cmake_wrapper_configure_invocation_count": sum(
+        "is_configure=1" in line for line in cmake_wrapper_lines
+    ),
+    "cmake_wrapper_uppercase_rewrite_count": sum(
+        "rewrote_uppercase=1" in line for line in cmake_wrapper_lines
+    ),
+    "cmake_python_binding_status": (
+        "tracked_wrapper_exercised"
+        if cmake_wrapper_lines
+        else (
+            "clean_validated_venv_reused_no_rebuild_needed"
+            if os.environ["DEPENDENCY_STATUS"] == "ready"
+            else "not_exercised_dependency_failed"
+        )
+    ),
     "provision_event_count": len(events),
     "provision_events": events,
     "quarantine_paths": [
@@ -485,8 +598,96 @@ PY
 }
 
 provision_ucm() {
+  validate_nfs_creation_identity || return 1
   ensure_ucm_source || return 1
   ensure_ucm_env || return 1
+}
+
+write_startup_capacity_summary() {
+  local dependency_status=$1
+  free -b > "${RESULT_DIR}/runtime/host_memory_before_npu.txt"
+  df -B1 /dev/shm > "${RESULT_DIR}/runtime/shm_before_npu.txt"
+  UCM_CACHE_BUFFER_GIB="${UCM_CACHE_BUFFER_GIB}" \
+  UCM_OBSERVED_SHARD_SIZE_BYTES="${UCM_OBSERVED_SHARD_SIZE_BYTES}" \
+  UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER="${UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER}" \
+  UCM_TP_SIZE="${UCM_TP_SIZE}" \
+  UCM_CAPACITY_HEADROOM_GIB="${UCM_CAPACITY_HEADROOM_GIB}" \
+  DEPENDENCY_STATUS="${dependency_status}" \
+  "${BASE_PYTHON}" - \
+    "${RESULT_DIR}/startup_capacity_summary.json" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+gib = 1 << 30
+buffer_gib = int(os.environ["UCM_CACHE_BUFFER_GIB"])
+buffer_bytes = buffer_gib * gib
+shard_bytes = int(os.environ["UCM_OBSERVED_SHARD_SIZE_BYTES"])
+load_exclusive = int(os.environ["UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER"])
+tp_size = int(os.environ["UCM_TP_SIZE"])
+headroom_gib = int(os.environ["UCM_CAPACITY_HEADROOM_GIB"])
+required_buffer_number = max(1024, load_exclusive * 2)
+configured_buffer_number = buffer_bytes // shard_bytes
+run02_buffer_bytes = 8 * gib
+run02_buffer_number = run02_buffer_bytes // shard_bytes
+conservative_total_bytes = buffer_bytes * tp_size
+required_free_bytes = conservative_total_bytes + headroom_gib * gib
+shm = os.statvfs("/dev/shm")
+shm_available_bytes = shm.f_bavail * shm.f_frsize
+meminfo = {}
+for line in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines():
+    key, value = line.split(":", 1)
+    meminfo[key] = int(value.strip().split()[0]) * 1024
+mem_available_bytes = meminfo.get("MemAvailable", 0)
+geometry_gate = configured_buffer_number >= required_buffer_number
+shm_gate = shm_available_bytes >= required_free_bytes
+host_memory_gate = mem_available_bytes >= required_free_bytes
+dependency_ready = os.environ["DEPENDENCY_STATUS"] == "ready"
+gate = dependency_ready and geometry_gate and shm_gate and host_memory_gate
+if not dependency_ready:
+    status = "not_evaluated_dependency_failed"
+elif gate:
+    status = "ready"
+else:
+    status = "insufficient"
+summary = {
+    "status": status,
+    "dependency_ready": dependency_ready,
+    "configured_cache_buffer_gib_per_rank": buffer_gib,
+    "configured_cache_buffer_bytes_per_rank": buffer_bytes,
+    "tensor_parallel_size": tp_size,
+    "conservative_total_cache_buffer_bytes": conservative_total_bytes,
+    "capacity_headroom_gib": headroom_gib,
+    "required_free_bytes_with_headroom": required_free_bytes,
+    "run02_observed_shard_size_bytes": shard_bytes,
+    "geometry_source": (
+        "run02_runtime_error_plus_pinned_ucm_cache_store_formula;"
+        "predictive_for_run03_until_current_runtime_reports_geometry"
+    ),
+    "load_exclusive_buffer_number": load_exclusive,
+    "required_buffer_number": required_buffer_number,
+    "run02_cache_buffer_gib_per_rank": 8,
+    "run02_buffer_number": run02_buffer_number,
+    "run02_geometry_gate_passed": run02_buffer_number >= required_buffer_number,
+    "configured_buffer_number": configured_buffer_number,
+    "configured_geometry_gate_passed": geometry_gate,
+    "dev_shm_available_bytes": shm_available_bytes,
+    "dev_shm_gate_passed": shm_gate,
+    "host_mem_available_bytes": mem_available_bytes,
+    "host_memory_gate_passed": host_memory_gate,
+    "pre_npu_capacity_gate_passed": gate,
+    "claim_boundary": (
+        "conservative_host_capacity_preflight_not_runtime_allocation_or_"
+        "mechanism_completion_proof"
+    ),
+}
+Path(sys.argv[1]).write_text(
+    json.dumps(summary, indent=2, sort_keys=True) + "\n",
+    encoding="utf-8",
+)
+raise SystemExit(0 if gate else 1)
+PY
 }
 
 finish() {
@@ -574,6 +775,7 @@ finish() {
   LIFECYCLE_STARTED="${lifecycle_started}" \
   EXPERIMENT_EXIT="${experiment_exit}" \
   DEPENDENCY_EXIT="${dependency_exit}" \
+  CAPACITY_EXIT="${capacity_exit}" \
   "${BASE_PYTHON}" - "${RESULT_DIR}/resource_recovery_summary.json" <<'PY'
 import json
 import os
@@ -595,12 +797,16 @@ summary = {
     "npu_stop_attempted": os.environ["STOP_ATTEMPTED"] == "true",
     "formal_model_lifecycle_started": os.environ["LIFECYCLE_STARTED"] == "true",
     "preflight_failed_before_npu_touch": (
-        int(os.environ["DEPENDENCY_EXIT"]) != 0
+        (
+            int(os.environ["DEPENDENCY_EXIT"]) != 0
+            or int(os.environ["CAPACITY_EXIT"]) != 0
+        )
         and os.environ["STOP_ATTEMPTED"] != "true"
         and os.environ["LIFECYCLE_STARTED"] != "true"
     ),
     "experiment_exit_code": int(os.environ["EXPERIMENT_EXIT"]),
     "dependency_exit_code": int(os.environ["DEPENDENCY_EXIT"]),
+    "startup_capacity_exit_code": int(os.environ["CAPACITY_EXIT"]),
 }
 open(sys.argv[1], "w").write(json.dumps(summary, indent=2, sort_keys=True) + "\n")
 PY
@@ -626,6 +832,7 @@ PY
     "$(git -C "${REPO_ROOT}" rev-list --left-right --count HEAD...origin/main)"
   printf 'tracked_clean=%s\n' "${tracked_worktree_clean}"
   printf 'dependency_exit=%s\n' "${dependency_exit}"
+  printf 'startup_capacity_exit=%s\n' "${capacity_exit}"
   printf 'experiment_exit=%s\n' "${experiment_exit}"
   printf 'restart_exit=%s\n' "${restart_exit}"
   printf 'cleanup_status=%s\n' "${cleanup_status}"
@@ -633,6 +840,10 @@ PY
   printf 'task_grade=%s\n' "$(cat "${RESULT_DIR}/task_grade.txt")"
   printf '%s\n' 'dependency_and_environment_summary:'
   cat "${RESULT_DIR}/dependency_and_environment_summary.json"
+  printf '%s\n' 'startup_capacity_summary:'
+  cat "${RESULT_DIR}/startup_capacity_summary.json"
+  printf '%s\n' 'startup_failure_summary:'
+  cat "${RESULT_DIR}/startup_failure_summary.json"
   printf '%s\n' 'grading_summary:'
   cat "${RESULT_DIR}/grading_summary.json"
   printf '%s\n' 'ucm_path_summary:'
@@ -672,10 +883,23 @@ dependency_exit=$?
 set -e
 if test "${dependency_exit}" -ne 0; then
   write_dependency_summary dependency_failed
+  set +e
+  write_startup_capacity_summary dependency_failed
+  capacity_exit=$?
+  set -e
   experiment_exit=1
   exit 0
 fi
 write_dependency_summary ready
+
+set +e
+write_startup_capacity_summary ready
+capacity_exit=$?
+set -e
+if test "${capacity_exit}" -ne 0; then
+  experiment_exit=3
+  exit 0
+fi
 
 set +e
 stop_attempted=true

@@ -16,12 +16,14 @@ supersede。K1A-F1 不再继续迭代。
 
 K2 的首个可运行切片已经开发：固定 UCM
 `develop@01cbf9b71892c88319862fa57f195b0bef93fa6f`，在隔离 server-local venv
-安装，禁用 vLLM 内部 Prefix Cache，使用 `UCMConnector + Cache|Posix` 的 8 GiB
-DRAM-first pipeline，在一个 TP8+EP+MTP lifecycle 内执行 unrelated warmup、32K
+安装，禁用 vLLM 内部 Prefix Cache。run02 已进入 CacheStore 并证明 8 GiB 的
+1296 shards 低于 pinned source 要求的 2048；当前 run03 使用
+`UCMConnector + Cache|Posix` 的 16 GiB/rank DRAM-first pipeline，在一个 TP8+EP+MTP lifecycle 内执行 unrelated warmup、32K
 prime 和 byte-identical 32K follower。实现门是
 `UCM save → DRAM external hit → Cache load → H2D load → follower complete`；
 延迟如实记录，但其差值正负不是路径实现门，pairing repair 的唯一/普遍根因也不是
-K2 前置条件。K2-R0 当前排队，不与 P6.3C-R1 混跑；K3、P8.3-I1 与下一轮仍未授权。
+K2 前置条件。K2-R0 run03 是当前唯一任务，不与已开发并排队的 P6.3C-R1 混跑；
+K2-R1、K3、P8.3-I1 与下一轮仍未授权。
 
 状态：`implementation_in_progress / source_probe_v0221_complete / official_p6_reference_ready / p8_1_r1_green / p8_2_k0_green / p8_2_k1_frozen_stack_import_incompatible / p8_2_k1a_f1_r17_restore_h2d_mechanism_closed / p8_2_k2_r0_ucm_dram_external_prefix_path_ready / p8_3_i0_inventory_green / p8_3_i0_r1_taxonomy_green / tp4_expert_residency_goal_defined`
 

@@ -98,8 +98,11 @@ controller-red 与 R5-L1-R1 target-lost red 均保留。F1-R1 随后执行一次
 36800 fixed L2；F1-R2 raw trace 已确认 fixed L2 在 pressure 后约 2.953s 出现 69 个完整
 `CPU=64/GPU=0` snapshot，约 17.945s 后才发生首个 CPU target eviction，而旧 controller 只在请求结束后
 采到 `CPU=54/GPU=0`。因此接受 observation-point mismatch，不接受唯一根因或 H2D。该 P8 lineage
-继续保留；K2-R0 已开发但排队。当前唯一服务器任务已切换为 P6.3C-R1 的六个 fresh lifecycle：
-mechanism Off→On 与 performance Off→On→On→Off，固定三组双请求、零 retry；不得与 P8、P9 混跑。
+继续保留。K2-R0 run01 在 NFS ownership 处停止，run02 已完成 UCM 构建/import 并进入
+CacheStore，但 8 GiB 只能容纳 1296 个当前 shard，低于 pinned source 要求的 2048。
+用户已在四节点 NFS export 启用 `no_root_squash` 并验证新对象为 `root:shareddata (0:3000)`；
+当前唯一服务器任务是 K2-R0 run03：自动复验 NFS 身份、绑定 CMake Python 3.11、使用
+16 GiB/rank（2592 shards）并执行一个三请求 lifecycle。P6.3C-R1 已开发但排队，不与 K2 混跑。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 
@@ -119,8 +122,8 @@ mechanism Off→On 与 performance Off→On→On→Off，固定三组双请求�
 
 ## 最小开工路径
 
-1. P5/P6 runtime、official context、unprofiled/profiled reference 与既有 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C 保留为“原参考配置不能直接 A/B”的 blocked 审计，当前服务器任务是独立 P6.3C-R1 scheduler-pressure matched A/B。
-2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-R2 capacity ready，完整 R3 lineage 保留；R4-R1 offline store-only closeout green，R5-F0 ready，R5-L1/R1 red。F1-R2 已证明 fixed 36800 的中途 CPU-only 窗口与 post-request gate 错位；当前只执行一次 F1-R3 in-flight trigger→abort→idle→restore lifecycle，K2 不授权。
+1. P5/P6 runtime、official context、unprofiled/profiled reference 与既有 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C blocked 审计保留，独立 P6.3C-R1 已开发并排队。
+2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-F1 已由 R17 闭合 warm-tier restore/H2D。当前只执行 K2-R0 run03 的 UCM `save → DRAM external hit → Cache load/H2D → follower completion` 单 lifecycle；K2-R1/K3 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。
 5. P9：待 P7/P8 的真实 trace、inventory、simulation 与 TP4 closure 证据齐备后，合并 P0/P3 microbench，输出带置信度和软件前提的下一代硬件优先级。

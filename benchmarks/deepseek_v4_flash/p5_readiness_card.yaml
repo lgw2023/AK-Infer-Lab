@@ -234,10 +234,10 @@ artifacts:
   current_p8_2_k1a_r3_workload: workloads/p8_2_k1a_r3_simple_cpu_offload_store_restore.yaml
   p8_3_i0_checkpoint_inventory_contract: p8_3_i0_checkpoint_inventory_contract.yaml
   p8_3_i0_r1_taxonomy_audit: p8_3_i0_r1_inventory_taxonomy_audit.yaml
-  next_workload: workloads/p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml
-  next_stage_candidate: P6.3C-R1_chunked_prefill_scheduler_pressure_matched_ab
-  current_server_handoff_task: p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01
-  current_server_handoff_execution_mode: authorized_six_fresh_lifecycle_mechanism_and_balanced_performance_tracks
+  next_workload: workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
+  next_stage_candidate: P8.2-K2-R0_run03_UCM_DRAM_external_prefix_path
+  current_server_handoff_task: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run03
+  current_server_handoff_execution_mode: authorized_run03_nfs_identity_cmake_python_capacity_and_single_lifecycle
   completed_p8_1_r1_preparer: ../../tools/inference_contracts/prepare_deepseek_p8_1_r1_observe_matrix.py
   completed_p8_1_r1_runner: ../../tools/inference_contracts/run_deepseek_p8_1_r1_observe_only_matrix.sh
   completed_p8_1_r1_finalizer: ../../tools/inference_contracts/finalize_deepseek_p8_1_r1_observe_only_matrix.py
@@ -737,9 +737,9 @@ acceptance:
   p8_2_k1a_r5_f1_r15_next_task_authorized: false
   p8_2_k1a_r5_f1_r16_next_task_authorized: false
   p8_2_k1a_r5_f1_r17_next_task_authorized: false
-  p8_2_k2_r0_grade: blocked_run01_dependency_preflight_run02_repair_authorized
-  p8_2_k2_r0_execution_authorized: false
-  p8_2_k2_r0_npu_execution_authorized: false
+  p8_2_k2_r0_grade: blocked_run02_dependency_ready_lifecycle_startup_buffer_8gib_too_small_run03_authorized
+  p8_2_k2_r0_execution_authorized: true
+  p8_2_k2_r0_npu_execution_authorized: true
   p8_2_k2_r0_formal_model_lifecycle_count_exact: 1
   p8_2_k2_r0_model_request_count_exact: 3
   p8_2_k2_r0_request_retry_count_exact: 0
@@ -753,8 +753,18 @@ acceptance:
   p8_2_k2_r0_run01_failure: git_dubious_ownership_on_incomplete_nobody_owned_source
   p8_2_k2_r0_run02_authorized: false
   p8_2_k2_r0_run02_dependency_recovery_automated: true
+  p8_2_k2_r0_run02_dependency_status: ready
+  p8_2_k2_r0_run02_formal_model_lifecycle_count: 1
+  p8_2_k2_r0_run02_model_request_count: 0
+  p8_2_k2_r0_run02_failure: ucm_cache_buffer_8gib_1296_shards_below_required_2048
+  p8_2_k2_r0_nfs_no_root_squash_operator_verified: true
+  p8_2_k2_r0_nfs_expected_new_object_uid_gid: "0:3000"
+  p8_2_k2_r0_run03_authorized: true
+  p8_2_k2_r0_run03_ucm_cache_buffer_gib_per_rank: 16
+  p8_2_k2_r0_run03_configured_buffer_number: 2592
+  p8_2_k2_r0_run03_required_buffer_number: 2048
   p8_2_k2_r0_next_task_authorized: false
-  current_task_scoped_authorization: P6.3C-R1_chunked_prefill_scheduler_pressure_matched_ab
+  current_task_scoped_authorization: P8.2-K2-R0_run03_UCM_DRAM_external_prefix_path
   p8_3_technical_dependency_on_k1a: false
   p8_3_i0_local_planning_ready: true
   p8_3_i0_grade: green_p8_3_i0_checkpoint_inventory
@@ -786,9 +796,9 @@ acceptance:
   p6_3b_mechanism_baseline: true
   p6_3c_feasibility_grade: blocked_p6_3c_not_strict_single_variable
   p6_3c_execution_authorized: false
-  p6_3c_r1_grade: developed_awaiting_server_run01
-  p6_3c_r1_execution_authorized: true
-  p6_3c_r1_npu_execution_authorized: true
+  p6_3c_r1_grade: developed_queued_while_k2_r0_run03_is_current
+  p6_3c_r1_execution_authorized: false
+  p6_3c_r1_npu_execution_authorized: false
   p6_3c_r1_formal_model_lifecycle_count_exact: 6
   p6_3c_r1_engine_request_count_exact: 90
   p6_3c_r1_batched_http_call_count_exact: 48

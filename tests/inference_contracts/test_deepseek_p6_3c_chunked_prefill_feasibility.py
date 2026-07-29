@@ -162,7 +162,7 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
     ]
 
 
-def test_current_truth_surfaces_preserve_p6_3c_and_authorize_separate_r1():
+def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
     readiness = yaml.safe_load(
         (
             REPO_ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
@@ -175,19 +175,19 @@ def test_current_truth_surfaces_preserve_p6_3c_and_authorize_separate_r1():
         "p8_2_k0_order_balanced_prefix_cache_baseline.yaml"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml"
+        "p8_2_k2_r0_ucm_dram_external_prefix_path.yaml"
     )
     assert readiness["artifacts"]["next_stage_candidate"] == (
-        "P6.3C-R1_chunked_prefill_scheduler_pressure_matched_ab"
+        "P8.2-K2-R0_run03_UCM_DRAM_external_prefix_path"
     )
     assert readiness["acceptance"]["p6_3c_feasibility_grade"] == (
         "blocked_p6_3c_not_strict_single_variable"
     )
     assert readiness["acceptance"]["p6_3c_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_r1_grade"] == (
-        "developed_awaiting_server_run01"
+        "developed_queued_while_k2_r0_run03_is_current"
     )
-    assert readiness["acceptance"]["p6_3c_r1_execution_authorized"] is True
+    assert readiness["acceptance"]["p6_3c_r1_execution_authorized"] is False
     assert readiness["acceptance"]["p6_3c_r1_formal_model_lifecycle_count_exact"] == 6
     assert readiness["acceptance"]["p8_1_execution_authorized"] is False
     assert readiness["acceptance"]["p8_1_r1_execution_authorized"] is False
@@ -216,17 +216,17 @@ def test_current_truth_surfaces_preserve_p6_3c_and_authorize_separate_r1():
     )
     assert handoff.count("## 当前唯一服务器动作：") == 1
     assert (
-        "task_id: p6_3c_r1_chunked_prefill_scheduler_pressure_2026_0728_run01"
+        "task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728"
         in handoff
     )
     assert (
-        "execution_mode: authorized_six_fresh_lifecycle_mechanism_and_balanced_performance_tracks"
+        "run_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728_run03"
         in handoff
     )
     assert "npu_execution_authorized: true" in handoff
     assert "next_task_authorized: false" in handoff
-    assert "runtime_or_dependency_mutation_authorized: false" in handoff
-    assert "engine_request_count_exact: 90" in handoff
+    assert "model_request_count_exact: 3" in handoff
+    assert "已开发但排队的 P6.3C-R1" in handoff
 
     truth_paths = (
         REPO_ROOT / "docs/EXPERIMENT_PLAN.md",

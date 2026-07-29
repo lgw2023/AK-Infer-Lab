@@ -3,7 +3,7 @@ task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
 stage: P8.2-K2-R0
 
 repair_round:
-  attempt: run02
+  attempt: run03
   explicitly_authorized: true
   parent_run01_grade: blocked_p8_2_k2_r0_dependency_or_startup_preflight
   parent_run01_path_class: not_executed
@@ -14,6 +14,14 @@ repair_round:
     - source_directory_contained_only_partial_git_state
     - package_metadata_absent
     - ucm_install_and_import_probe_failed
+  parent_run02_grade: blocked_p8_2_k2_r0_dependency_or_startup_preflight
+  parent_run02_dependency_status: ready
+  parent_run02_formal_model_lifecycle_count: 1
+  parent_run02_request_count: 0
+  parent_run02_startup_error_code: -50000
+  parent_run02_startup_error: too_small_buffer_8589934592_on_shard_6627328
+  parent_run02_buffer_number: 1296
+  pinned_source_required_buffer_number: 2048
   repair_contract:
     global_git_safe_directory_mutation: false
     invalid_source_action: quarantine_without_deletion
@@ -25,6 +33,24 @@ repair_round:
     promotion: atomic_rename_within_same_parent
     dependency_log: attempt_local_truncated_before_run
     dependency_failure_npu_touch: false
+    four_node_nfs_export_no_root_squash_operator_verified: true
+    expected_new_nfs_object_identity: root_shareddata_uid0_gid3000
+    live_creation_probe_before_dependency_reuse_or_rebuild: true
+    default_dependency_location: repo_server_local_nfs
+    manual_data_disk_override_required: false
+    cmake_python_binding:
+      upstream_argument: PYTHON_EXECUTABLE
+      required_cmake_argument: Python_EXECUTABLE
+      repair: tracked_command_wrapper_argument_translation
+      upstream_source_edit: false
+    startup_capacity:
+      cache_buffer_gib_per_rank: 16
+      observed_run02_shard_size_bytes: 6627328
+      configured_buffer_number: 2592
+      required_buffer_number: 2048
+      conservative_tp8_total_gib: 128
+      additional_headroom_gib: 16
+      gate_before_keep_alive_stop: true
 
 developer_decision:
   k1a_f1_closed_by_r17: true
@@ -61,6 +87,9 @@ implementation:
   lifecycle_and_cleanup_automated: true
   result_finalization_and_manifest_automated: true
   poisoned_dependency_state_recovery_automated: true
+  nfs_identity_revalidation_automated: true
+  cmake_python_binding_automated: true
+  startup_capacity_preflight_automated: true
 
 evidence:
   path_events:

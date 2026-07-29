@@ -39,7 +39,10 @@ audit_contract() {
   printf 'internal_prefix_cache_enabled=false\n'
   printf 'ucm_connector=UCMConnector\n'
   printf 'ucm_store_pipeline=Cache|Posix\n'
-  printf 'ucm_cache_buffer_capacity_gb=8\n'
+  printf 'ucm_cache_buffer_capacity_gb=16\n'
+  printf 'run02_observed_shard_size_bytes=6627328\n'
+  printf 'configured_buffer_number=2592\n'
+  printf 'required_buffer_number=2048\n'
   printf 'ucm_use_layerwise=true\n'
   printf 'ucm_enable_event_sync=true\n'
   printf 'ucm_enable_metrics=true\n'
@@ -98,7 +101,7 @@ ucm_connectors:
     ucm_connector_config:
       store_pipeline: "Cache|Posix"
       storage_backends: "${UCM_STORAGE_ROOT}"
-      cache_buffer_capacity_gb: 8
+      cache_buffer_capacity_gb: 16
       posix_capacity_gb: 32
       io_direct: false
       posix_io_engine: "psync"
