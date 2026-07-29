@@ -1,16 +1,17 @@
 schema_version: 1
-workload_id: p8_2_k2_r0_ucm_dram_external_prefix_path
+workload_id: p8_2_k2_r0_run04_fawa_posix_gc_geometry
 date: "2026-07-29"
-task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
+task_id: p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729
+run_id: p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01
 
 stage_contract:
   stage: P8.2-K2-R0
-  mode: nfs_recovered_pinned_ucm_plus_single_lifecycle_dram_external_prefix_path
+  mode: fawa_split_aware_posix_gc_geometry_repair_plus_single_lifecycle_external_prefix_path
   purpose: implement_and_run_external_prefix_store_lookup_hit_and_h2d_load_with_dram_cache_first
   claim_boundary: single_lifecycle_ucm_external_prefix_store_lookup_load_and_dram_first_path_observation
   performance_benefit_required: false
   unique_root_cause_required: false
-  execution_attempt: run03_nfs_identity_cmake_python_and_capacity
+  execution_attempt: run04_fawa_posix_gc_geometry_repair
 
 dependency_recovery:
   parent_run01_grade: blocked_p8_2_k2_r0_dependency_or_startup_preflight
@@ -31,6 +32,15 @@ dependency_recovery:
   run03_live_nfs_creation_identity_probe_required: true
   run03_default_source_and_venv_root: repo_server_local_nfs
   cmake_python_binding: tracked_wrapper_rewrites_PYTHON_EXECUTABLE_to_Python_EXECUTABLE
+  run03_attribution:
+    task_id: p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729
+    grade: attributed_p8_2_k2_r0_run03_fawa_startup_failure
+    manifest_bytes: 3104
+    manifest_sha256: 7bb522ad5353d8d0b3ab3b9339a4e0bf92ce3f5a75f77a143c0d52ca664e1d71
+    failure_stage: fawa_fa_store_factory_creation
+    exception: posix_gc_zero_recycle_files_per_default_directory_shard
+    fa_worker_block_size_bytes: 3186688
+    wa_worker_block_size_bytes: 6627328
 
 parents:
   p8_2_k0: green_p8_2_k0_order_balanced_prefix_cache_baseline
@@ -69,7 +79,10 @@ ucm_dependency:
 ucm_store:
   pipeline: Cache|Posix
   dram_cache_buffer_capacity_gb: 16
-  local_posix_capacity_gb: 32
+  configured_posix_capacity_gb_before_fawa_split: 64
+  posix_capacity_gb_per_fawa_store_after_split: 32
+  data_dir_shard_bytes: 2
+  directory_shard_count: 256
   use_layerwise: true
   event_sync: true
   metrics: true
@@ -80,14 +93,25 @@ ucm_store:
   load_tokens_threshold: 2048
   storage_scope: task_local_server_local
   startup_geometry:
-    run02_observed_shard_size_bytes: 6627328
+    run03_fa_worker_block_size_bytes: 3186688
+    run03_wa_worker_block_size_bytes: 6627328
     load_exclusive_buffer_number: 1024
     required_buffer_number: 2048
-    run02_8gib_buffer_number: 1296
-    run03_16gib_buffer_number: 2592
+    fa_16gib_buffer_number: 5391
+    wa_16gib_buffer_number: 2592
+    posix_gc_trigger_threshold_ratio: 0.7
+    posix_gc_recycle_percent: 0.1
+    minimum_files_per_directory_shard: 15
+    fa_minimum_posix_capacity_gib_ceil: 12
+    wa_minimum_posix_capacity_gib_ceil: 24
+    fa_recycle_files_per_directory_shard: 2
+    wa_recycle_files_per_directory_shard: 1
+    parent_geometry_exact_gate: true
     pre_npu_dev_shm_and_memavailable_gate: true
-    conservative_tp8_buffer_reservation_gib: 128
-    additional_headroom_gib: 16
+    pre_npu_storage_free_space_gate: true
+    conservative_two_store_tp8_buffer_reservation_gib: 256
+    cache_additional_headroom_gib: 16
+    storage_additional_headroom_gib: 16
   dram_first_proof:
     - follower_ucm_hit_tokens_delta_positive
     - follower_cache_lookup_hit_blocks_delta_positive
@@ -139,7 +163,8 @@ authorization:
   profiler_authorized: false
   parameter_sweep_authorized: false
   run02_authorized: false
-  run03_authorized: true
+  run03_authorized: false
+  run04_authorized: true
   k3_authorized: false
   p8_3_i1_authorized: false
   next_task_authorized: false

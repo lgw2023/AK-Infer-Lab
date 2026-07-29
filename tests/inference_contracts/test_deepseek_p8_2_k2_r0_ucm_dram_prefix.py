@@ -5,6 +5,10 @@ from pathlib import Path
 
 import yaml
 
+from tools.inference_contracts.p8_2_k2_r0_fawa_posix_gc_geometry import (
+    calculate_store_geometry,
+    extract_parent_worker_block_sizes,
+)
 from tools.inference_contracts.run_deepseek_p8_2_k2_r0_ucm_dram_prefix import (
     TASK_ID,
     finalize,
@@ -24,19 +28,11 @@ AUDIT = (
     / "p8_2_k2_r0_ucm_dram_external_prefix_path_audit.yaml"
 )
 SERVER_DRIVER = (
-    ROOT
-    / "tools/inference_contracts/"
-    / "run_deepseek_p8_2_k2_r0_server_task.sh"
+    ROOT / "tools/inference_contracts/" / "run_deepseek_p8_2_k2_r0_server_task.sh"
 )
-CMAKE_WRAPPER = (
-    ROOT
-    / "tools/inference_contracts/"
-    / "run_ucm_cmake_python_wrapper.sh"
-)
+CMAKE_WRAPPER = ROOT / "tools/inference_contracts/" / "run_ucm_cmake_python_wrapper.sh"
 HANDOFF = ROOT / "通信模块/docs/developer-to-server.md"
-READINESS = (
-    ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
-)
+READINESS = ROOT / "benchmarks/deepseek_v4_flash/p5_readiness_card.yaml"
 
 
 def _request(role: str, delta: dict[str, float]) -> dict:
@@ -84,27 +80,29 @@ def test_contract_targets_real_ucm_path_without_performance_precondition() -> No
     assert workload["task_id"] == TASK_ID
     assert workload["ucm_store"]["pipeline"] == "Cache|Posix"
     assert workload["ucm_store"]["dram_cache_buffer_capacity_gb"] == 16
-    assert workload["ucm_store"]["startup_geometry"][
-        "run03_16gib_buffer_number"
-    ] == 2592
-    assert workload["ucm_store"]["startup_geometry"][
-        "required_buffer_number"
-    ] == 2048
+    assert workload["ucm_store"]["configured_posix_capacity_gb_before_fawa_split"] == 64
+    assert workload["ucm_store"]["posix_capacity_gb_per_fawa_store_after_split"] == 32
+    assert workload["ucm_store"]["data_dir_shard_bytes"] == 2
+    assert workload["ucm_store"]["startup_geometry"]["wa_16gib_buffer_number"] == 2592
+    assert workload["ucm_store"]["startup_geometry"]["required_buffer_number"] == 2048
     assert workload["ucm_store"]["use_layerwise"] is True
-    assert workload["implementation_acceptance"][
-        "latency_sign_is_not_a_path_gate"
-    ] is True
-    assert audit["developer_decision"][
-        "performance_benefit_is_not_an_implementation_prerequisite"
-    ] is True
+    assert (
+        workload["implementation_acceptance"]["latency_sign_is_not_a_path_gate"] is True
+    )
+    assert (
+        audit["developer_decision"][
+            "performance_benefit_is_not_an_implementation_prerequisite"
+        ]
+        is True
+    )
     assert audit["pinned_ucm_source"]["commit"] == (
         "01cbf9b71892c88319862fa57f195b0bef93fa6f"
     )
     assert readiness["artifacts"]["current_server_handoff_task"] == (
-        "p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01"
+        "p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01"
     )
     assert readiness["artifacts"]["next_workload"].endswith(
-        "p8_2_k2_r0_run03_fawa_startup_attribution.yaml"
+        "p8_2_k2_r0_ucm_dram_external_prefix_path.yaml"
     )
     assert readiness["acceptance"]["p8_2_k1a_r5_f1_r17_grade"] == (
         "green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed"
@@ -188,15 +186,14 @@ def test_finalize_accepts_dram_hit_and_h2d_load_independent_of_latency(
     assert summary["performance_benefit_required_for_mechanism_acceptance"] is False
     package(artifact)
     manifest = json.loads(
-        (artifact / "candidate_manifest.server_local.json").read_text(
-            encoding="utf-8"
-        )
+        (artifact / "candidate_manifest.server_local.json").read_text(encoding="utf-8")
     )
     assert manifest["payload_file_count"] == 11
     assert manifest["transfer_file_count"] == 12
-    assert manifest["manifest_bytes"] == (
-        artifact / "candidate_manifest.server_local.json"
-    ).stat().st_size
+    assert (
+        manifest["manifest_bytes"]
+        == (artifact / "candidate_manifest.server_local.json").stat().st_size
+    )
     assert manifest["transfer_total_bytes"] <= 71680
 
 
@@ -217,14 +214,12 @@ def test_finalize_records_exact_preflight_failure_before_npu_touch(
         (artifact / "grading_summary.json").read_text(encoding="utf-8")
     )
     assert grading["resource_recovery_exact"] is True
-    assert grading["resource_state"] == (
-        "dependency_preflight_failed_before_npu_touch"
-    )
+    assert grading["resource_state"] == ("dependency_preflight_failed_before_npu_touch")
 
 
 def test_server_driver_repairs_poisoned_dependency_state_atomically() -> None:
     text = SERVER_DRIVER.read_text(encoding="utf-8")
-    assert "EXPECTED_RUN_LABEL=${TASK_ID}_run03" in text
+    assert "EXPECTED_RUN_LABEL=${TASK_ID}_run01" in text
     assert "quarantine_path" in text
     assert "validate_nfs_creation_identity" in text
     assert "tree_owned_by_current_user_and_group" in text
@@ -236,7 +231,10 @@ def test_server_driver_repairs_poisoned_dependency_state_atomically() -> None:
     import_probe = text.index('ucm_import_probe "${env_stage}/bin/python"')
     assert import_probe < marker_write
     assert "UCM_CACHE_BUFFER_GIB=16" in text
-    assert "UCM_OBSERVED_SHARD_SIZE_BYTES=6627328" in text
+    assert "UCM_RUN03_FA_BLOCK_SIZE_BYTES=3186688" in text
+    assert "UCM_RUN03_WA_BLOCK_SIZE_BYTES=6627328" in text
+    assert "UCM_POSIX_TOTAL_CAPACITY_GIB=64" in text
+    assert "UCM_POSIX_DATA_DIR_SHARD_BYTES=2" in text
     assert "UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER=1024" in text
     assert "write_startup_capacity_summary" in text
     wrapper = CMAKE_WRAPPER.read_text(encoding="utf-8")
@@ -320,20 +318,114 @@ def test_finalize_classifies_lifecycle_startup_buffer_failure(
     assert startup["reported_buffer_number"] == 1296
 
 
+def test_finalize_classifies_fawa_posix_gc_geometry_failure(
+    tmp_path: Path,
+) -> None:
+    artifact = tmp_path / "result"
+    runtime = artifact / "runtime"
+    runtime.mkdir(parents=True)
+    (artifact / "cleanup_status.txt").write_text("clean\n", encoding="utf-8")
+    (artifact / "dependency_and_environment_summary.json").write_text(
+        '{"dependency_status":"ready"}\n',
+        encoding="utf-8",
+    )
+    (artifact / "startup_capacity_summary.json").write_text(
+        '{"status":"ready","pre_npu_capacity_gate_passed":true}\n',
+        encoding="utf-8",
+    )
+    (runtime / "server_pid.txt").write_text("123\n", encoding="utf-8")
+    (runtime / "server_ready_exit_code.txt").write_text("1\n", encoding="utf-8")
+    (runtime / "vllm_server.log").write_text(
+        "RuntimeError: -50000, posix_capacity_gb(16) is too small, "
+        "GC cannot recycle any files. Minimum recommended: 183GB\n",
+        encoding="utf-8",
+    )
+    (artifact / "resource_recovery_summary.json").write_text(
+        json.dumps(
+            {
+                "stopped_card_ids": list(range(8)),
+                "restored_card_ids": list(range(8)),
+                "keep_alive_restored_exact": True,
+                "port_7000_listener_count": 0,
+                "vllm_residual_process_count": 0,
+                "tracked_worktree_clean": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    finalize(artifact)
+    startup = json.loads(
+        (artifact / "startup_failure_summary.json").read_text(encoding="utf-8")
+    )
+    assert startup["startup_class"] == ("ucm_fawa_posix_gc_geometry_too_small")
+    assert startup["reported_posix_capacity_gib_after_fawa_split"] == 16
+    assert startup["reported_posix_minimum_recommended_gib"] == 183
+
+
 def test_handoff_is_current_only_and_operationally_complete() -> None:
     text = HANDOFF.read_text(encoding="utf-8")
     assert text.count("## 当前唯一服务器动作：") == 1
     assert TASK_ID in text
     assert "01cbf9b71892c88319862fa57f195b0bef93fa6f" in text
-    assert (
-        "run_deepseek_p8_2_k2_r0_run03_fawa_"
-        "startup_attribution_server_task.sh"
-    ) in text
-    assert "本轮**禁止执行**" in text
+    assert ("run_deepseek_p8_2_k2_r0_server_task.sh") in text
     assert "npu_stop.sh 0 1 2 3 4 5 6 7" in text
     assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in text
-    assert "不评价 external KV 方案性能" in text
-    assert "npu_execution_authorized: false" in text
-    assert "run04_authorized: false" in text
-    assert "parent_and_source_mutation_authorized: false" in text
+    assert "npu_execution_authorized: true" in text
+    assert "formal_model_lifecycle_count_exact: 1" in text
+    assert "model_request_count_exact: 3" in text
+    assert "data_dir_shard_bytes" in text
+    assert "FA" in text and "WA" in text
     assert "transfer_method_selected: false" in text
+
+
+def test_fawa_posix_gc_geometry_matches_pinned_integer_order() -> None:
+    fa = calculate_store_geometry(
+        label="FA",
+        block_size_bytes=3186688,
+        split_capacity_gib=32,
+        data_dir_shard_bytes=2,
+    )
+    wa = calculate_store_geometry(
+        label="WA",
+        block_size_bytes=6627328,
+        split_capacity_gib=32,
+        data_dir_shard_bytes=2,
+    )
+    assert fa["directory_shard_count"] == 256
+    assert fa["minimum_capacity_gib_ceil"] == 12
+    assert fa["recycle_files_per_directory_shard"] == 2
+    assert wa["minimum_capacity_gib_ceil"] == 24
+    assert wa["recycle_files_per_directory_shard"] == 1
+    assert fa["gc_recycle_nonzero"] is True
+    assert wa["gc_recycle_nonzero"] is True
+
+
+def test_parent_worker_geometry_requires_one_exact_size_per_label(
+    tmp_path: Path,
+) -> None:
+    parent = tmp_path / "fawa_store_geometry.json"
+    parent.write_text(
+        json.dumps(
+            {
+                "observations": [
+                    {
+                        "label": label,
+                        "role": "worker",
+                        "parsed": True,
+                        "config": {"block_size": block_size},
+                    }
+                    for label, block_size in (
+                        ("FA", 3186688),
+                        ("FA", 3186688),
+                        ("WA", 6627328),
+                        ("WA", 6627328),
+                    )
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert extract_parent_worker_block_sizes(parent) == {
+        "FA": 3186688,
+        "WA": 6627328,
+    }

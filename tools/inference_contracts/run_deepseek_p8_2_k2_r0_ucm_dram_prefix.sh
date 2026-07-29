@@ -9,7 +9,7 @@ fi
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=${REPO_ROOT:-$(cd -- "${SCRIPT_DIR}/../.." && pwd)}
 RESULT_DIR=$1
-TASK_ID=p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
+TASK_ID=p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729
 RUNNER=${SCRIPT_DIR}/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
 BASE_ENV_PREFIX=${BASE_ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1}
 UCM_ENV_PREFIX=${UCM_ENV_PREFIX:?UCM_ENV_PREFIX is required}
@@ -27,11 +27,14 @@ UCM_STORAGE_ROOT=${RUNTIME_DIR}/ucm_posix_backend
 UCM_CONFIG_FILE=${RUNTIME_DIR}/ucm_dram_first_config.yaml
 SERVER_LOG=${RUNTIME_DIR}/vllm_server.log
 MTP_PATCH=${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch
+UCM_CACHE_BUFFER_GIB_PER_STORE=16
+UCM_POSIX_TOTAL_CAPACITY_GIB=64
+UCM_POSIX_DATA_DIR_SHARD_BYTES=2
 server_pid=
 
 audit_contract() {
   printf 'task_id=%s\n' "${TASK_ID}"
-  printf 'execution_mode=authorized_single_lifecycle_ucm_dram_external_prefix_path\n'
+  printf 'execution_mode=authorized_single_lifecycle_fawa_posix_gc_geometry_repair_and_ucm_external_prefix_path\n'
   printf 'formal_model_lifecycle_count_exact=1\n'
   printf 'request_order=warmup_4k,prime_32k,follower_exact_32k\n'
   printf 'model_request_count_exact=3\n'
@@ -39,9 +42,19 @@ audit_contract() {
   printf 'internal_prefix_cache_enabled=false\n'
   printf 'ucm_connector=UCMConnector\n'
   printf 'ucm_store_pipeline=Cache|Posix\n'
-  printf 'ucm_cache_buffer_capacity_gb=16\n'
-  printf 'run02_observed_shard_size_bytes=6627328\n'
-  printf 'configured_buffer_number=2592\n'
+  printf 'ucm_cache_buffer_capacity_gb_per_fawa_store=%s\n' \
+    "${UCM_CACHE_BUFFER_GIB_PER_STORE}"
+  printf 'ucm_posix_capacity_gb_before_fawa_split=%s\n' \
+    "${UCM_POSIX_TOTAL_CAPACITY_GIB}"
+  printf 'ucm_posix_capacity_gb_per_fawa_store_after_split=32\n'
+  printf 'ucm_posix_data_dir_shard_bytes=%s\n' \
+    "${UCM_POSIX_DATA_DIR_SHARD_BYTES}"
+  printf 'ucm_posix_directory_shard_count=256\n'
+  printf 'ucm_posix_gc_trigger_threshold_ratio=0.7\n'
+  printf 'ucm_posix_gc_recycle_percent=0.1\n'
+  printf 'run03_fa_block_size_bytes=3186688\n'
+  printf 'run03_wa_block_size_bytes=6627328\n'
+  printf 'configured_wa_cache_buffer_number=2592\n'
   printf 'required_buffer_number=2048\n'
   printf 'ucm_use_layerwise=true\n'
   printf 'ucm_enable_event_sync=true\n'
@@ -101,8 +114,11 @@ ucm_connectors:
     ucm_connector_config:
       store_pipeline: "Cache|Posix"
       storage_backends: "${UCM_STORAGE_ROOT}"
-      cache_buffer_capacity_gb: 16
-      posix_capacity_gb: 32
+      cache_buffer_capacity_gb: ${UCM_CACHE_BUFFER_GIB_PER_STORE}
+      posix_capacity_gb: ${UCM_POSIX_TOTAL_CAPACITY_GIB}
+      data_dir_shard_bytes: ${UCM_POSIX_DATA_DIR_SHARD_BYTES}
+      posix_gc_trigger_threshold_ratio: 0.7
+      posix_gc_recycle_percent: 0.1
       io_direct: false
       posix_io_engine: "psync"
       use_gdr: false

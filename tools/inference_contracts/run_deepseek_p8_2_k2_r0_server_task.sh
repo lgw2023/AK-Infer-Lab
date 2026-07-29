@@ -9,9 +9,10 @@ fi
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=${REPO_ROOT:-$(cd -- "${SCRIPT_DIR}/../.." && pwd)}
 RESULT_DIR=$1
-TASK_ID=p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
+TASK_ID=p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729
 RUNNER=${SCRIPT_DIR}/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
 LIFECYCLE=${SCRIPT_DIR}/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh
+FAWA_GEOMETRY=${SCRIPT_DIR}/p8_2_k2_r0_fawa_posix_gc_geometry.py
 CMAKE_PYTHON_WRAPPER=${SCRIPT_DIR}/run_ucm_cmake_python_wrapper.sh
 BASE_ENV_PREFIX=${BASE_ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1}
 BASE_PYTHON=${BASE_ENV_PREFIX}/bin/python
@@ -21,7 +22,12 @@ UCM_SHORT_COMMIT=01cbf9b
 UCM_SOURCE_ROOT=${UCM_SOURCE_ROOT:-${REPO_ROOT}/server_local/third_party/unified-cache-management-${UCM_SHORT_COMMIT}}
 UCM_ENV_PREFIX=${UCM_ENV_PREFIX:-${REPO_ROOT}/server_local/python_envs/ucm-vllm-ascend0221-${UCM_SHORT_COMMIT}}
 RUN_LABEL=$(basename -- "${RESULT_DIR}")
-EXPECTED_RUN_LABEL=${TASK_ID}_run03
+EXPECTED_RUN_LABEL=${TASK_ID}_run01
+UCM_STORAGE_ROOT=${RESULT_DIR}/runtime/ucm_posix_backend
+PARENT_ATTRIBUTION_TASK_ID=p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729
+PARENT_ATTRIBUTION_ROOT=${PARENT_ATTRIBUTION_ROOT:-${REPO_ROOT}/server_local/${PARENT_ATTRIBUTION_TASK_ID}_run01}
+PARENT_ATTRIBUTION_MANIFEST_BYTES=3104
+PARENT_ATTRIBUTION_MANIFEST_SHA256=7bb522ad5353d8d0b3ab3b9339a4e0bf92ce3f5a75f77a143c0d52ca664e1d71
 DEPENDENCY_LOG=${REPO_ROOT}/server_local/ucm_dependency_build_${RUN_LABEL}.log
 PROVISION_EVENT_LOG=${RESULT_DIR}/runtime/dependency_provision_events.jsonl
 CMAKE_WRAPPER_LOG=${RESULT_DIR}/runtime/ucm_cmake_python_wrapper.log
@@ -29,23 +35,29 @@ CMAKE_WRAPPER_DIR=${RESULT_DIR}/runtime/dependency_tools
 INSTALL_MARKER=.ak_ucm_${UCM_SHORT_COMMIT}_installed
 EXPECTED_SHARED_GID=${EXPECTED_SHARED_GID:-3000}
 UCM_CACHE_BUFFER_GIB=16
-UCM_OBSERVED_SHARD_SIZE_BYTES=6627328
+UCM_CACHE_STORE_COUNT=2
+UCM_RUN03_FA_BLOCK_SIZE_BYTES=3186688
+UCM_RUN03_WA_BLOCK_SIZE_BYTES=6627328
 UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER=1024
 UCM_TP_SIZE=8
 UCM_CAPACITY_HEADROOM_GIB=16
+UCM_POSIX_TOTAL_CAPACITY_GIB=64
+UCM_POSIX_SPLIT_COUNT=2
+UCM_POSIX_DATA_DIR_SHARD_BYTES=2
+UCM_POSIX_HEADROOM_GIB=16
 CARD_IDS=(0 1 2 3 4 5 6 7)
 CARD_IDS_CSV=0,1,2,3,4,5,6,7
 EXPECTED_KEEP_ALIVE_MARKER_COUNT=16
 
 audit_contract() {
   printf 'task_id=%s\n' "${TASK_ID}"
-  printf 'execution_mode=authorized_pinned_ucm_dependency_and_single_lifecycle_dram_external_prefix_path\n'
+  printf 'execution_mode=authorized_single_lifecycle_fawa_split_aware_posix_gc_geometry_repair_and_external_prefix_path\n'
   printf 'ucm_git_url=%s\n' "${UCM_GIT_URL}"
   printf 'ucm_commit=%s\n' "${UCM_COMMIT}"
   printf 'dependency_install_scope=isolated_server_local_venv_only\n'
   printf 'base_conda_environment_mutation=false\n'
   printf 'server_side_code_edit_authorized=false\n'
-  printf 'dependency_repair_attempt=run03_nfs_identity_cmake_python_and_capacity\n'
+  printf 'dependency_repair_attempt=run04_reuse_validated_dependency\n'
   printf 'expected_result_basename=%s\n' "${EXPECTED_RUN_LABEL}"
   printf 'nfs_no_root_squash_operator_verified=true\n'
   printf 'nfs_expected_new_object_uid=0\n'
@@ -56,14 +68,37 @@ audit_contract() {
   printf 'dependency_log_attempt_local_and_truncated=true\n'
   printf 'install_marker_written_after_import_probe_only=true\n'
   printf 'ucm_cmake_python_binding=tracked_wrapper_rewrites_to_Python_EXECUTABLE\n'
-  printf 'ucm_cache_buffer_capacity_gib_per_rank=%s\n' "${UCM_CACHE_BUFFER_GIB}"
-  printf 'run02_observed_shard_size_bytes=%s\n' "${UCM_OBSERVED_SHARD_SIZE_BYTES}"
+  printf 'parent_attribution_task_id=%s\n' "${PARENT_ATTRIBUTION_TASK_ID}"
+  printf 'parent_attribution_manifest_bytes=%s\n' \
+    "${PARENT_ATTRIBUTION_MANIFEST_BYTES}"
+  printf 'parent_attribution_manifest_sha256=%s\n' \
+    "${PARENT_ATTRIBUTION_MANIFEST_SHA256}"
+  printf 'parent_run03_fa_block_size_bytes=%s\n' \
+    "${UCM_RUN03_FA_BLOCK_SIZE_BYTES}"
+  printf 'parent_run03_wa_block_size_bytes=%s\n' \
+    "${UCM_RUN03_WA_BLOCK_SIZE_BYTES}"
+  printf 'ucm_cache_buffer_capacity_gib_per_fawa_store=%s\n' \
+    "${UCM_CACHE_BUFFER_GIB}"
+  printf 'ucm_cache_fawa_store_count=%s\n' "${UCM_CACHE_STORE_COUNT}"
   printf 'ucm_load_exclusive_buffer_number=%s\n' "${UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER}"
   printf 'ucm_required_buffer_number=2048\n'
-  printf 'ucm_configured_buffer_number=2592\n'
+  printf 'ucm_configured_fa_buffer_number=5391\n'
+  printf 'ucm_configured_wa_buffer_number=2592\n'
+  printf 'ucm_posix_total_capacity_gib_before_fawa_split=%s\n' \
+    "${UCM_POSIX_TOTAL_CAPACITY_GIB}"
+  printf 'ucm_posix_capacity_gib_per_store_after_fawa_split=32\n'
+  printf 'ucm_posix_data_dir_shard_bytes=%s\n' \
+    "${UCM_POSIX_DATA_DIR_SHARD_BYTES}"
+  printf 'ucm_posix_directory_shard_count=256\n'
+  printf 'ucm_posix_gc_trigger_threshold_ratio=0.7\n'
+  printf 'ucm_posix_gc_recycle_percent=0.1\n'
+  printf 'ucm_posix_fa_minimum_capacity_gib=12\n'
+  printf 'ucm_posix_wa_minimum_capacity_gib=24\n'
+  printf 'ucm_posix_fa_recycle_files_per_shard=2\n'
+  printf 'ucm_posix_wa_recycle_files_per_shard=1\n'
   printf 'conservative_total_buffer_gib=%s\n' \
-    "$((UCM_CACHE_BUFFER_GIB * UCM_TP_SIZE))"
-  printf 'pre_npu_shm_and_memavailable_gate=true\n'
+    "$((UCM_CACHE_BUFFER_GIB * UCM_CACHE_STORE_COUNT * UCM_TP_SIZE))"
+  printf 'pre_npu_parent_geometry_shm_memavailable_and_storage_gate=true\n'
   printf 'preflight_failure_npu_touch=false\n'
   printf 'npu_card_ids=%s\n' "${CARD_IDS_CSV}"
   printf 'keep_alive_stop_then_same_set_restore=true\n'
@@ -88,6 +123,7 @@ test "${RUN_LABEL}" = "${EXPECTED_RUN_LABEL}"
 test -x "${BASE_PYTHON}"
 test -f "${RUNNER}"
 test -f "${LIFECYCLE}"
+test -f "${FAWA_GEOMETRY}"
 test -x "${CMAKE_PYTHON_WRAPPER}"
 test "$(id -u)" -eq 0
 test -x /data/node0_disk1/Public/npu_stop.sh
@@ -96,9 +132,41 @@ test "$(git -C "${REPO_ROOT}" branch --show-current)" = main
 test "$(git -C "${REPO_ROOT}" rev-parse HEAD)" = \
   "$(git -C "${REPO_ROOT}" rev-parse origin/main)"
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"
+test -d "${PARENT_ATTRIBUTION_ROOT}"
+test -f "${PARENT_ATTRIBUTION_ROOT}/candidate_manifest.server_local.json"
+test -f "${PARENT_ATTRIBUTION_ROOT}/fawa_store_geometry.json"
+test -f "${PARENT_ATTRIBUTION_ROOT}/task_grade.txt"
+test "$(wc -c < "${PARENT_ATTRIBUTION_ROOT}/candidate_manifest.server_local.json" | tr -d ' ')" = \
+  "${PARENT_ATTRIBUTION_MANIFEST_BYTES}"
+test "$(sha256sum "${PARENT_ATTRIBUTION_ROOT}/candidate_manifest.server_local.json" | awk '{print $1}')" = \
+  "${PARENT_ATTRIBUTION_MANIFEST_SHA256}"
+test "$(cat "${PARENT_ATTRIBUTION_ROOT}/task_grade.txt")" = \
+  attributed_p8_2_k2_r0_run03_fawa_startup_failure
+"${BASE_PYTHON}" - "${PARENT_ATTRIBUTION_ROOT}" <<'PY'
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+manifest = json.loads(
+    (root / "candidate_manifest.server_local.json").read_text(
+        encoding="utf-8"
+    )
+)
+for entry in manifest["files"]:
+    path = root / entry["relative_path"]
+    if not path.is_file():
+        raise SystemExit(f"missing parent payload: {path}")
+    if path.stat().st_size != entry["bytes"]:
+        raise SystemExit(f"parent payload byte mismatch: {path}")
+    if hashlib.sha256(path.read_bytes()).hexdigest() != entry["sha256"]:
+        raise SystemExit(f"parent payload SHA-256 mismatch: {path}")
+PY
 mkdir -p "${RESULT_DIR}" "$(dirname "${UCM_SOURCE_ROOT}")" \
   "$(dirname "${UCM_ENV_PREFIX}")" "$(dirname "${DEPENDENCY_LOG}")" \
-  "$(dirname "${PROVISION_EVENT_LOG}")" "${CMAKE_WRAPPER_DIR}"
+  "$(dirname "${PROVISION_EVENT_LOG}")" "${CMAKE_WRAPPER_DIR}" \
+  "${UCM_STORAGE_ROOT}"
 : > "${DEPENDENCY_LOG}"
 : > "${PROVISION_EVENT_LOG}"
 : > "${CMAKE_WRAPPER_LOG}"
@@ -211,6 +279,8 @@ validate_ucm_source() {
   test -f "${source_root}/pyproject.toml" || return 1
   test -f "${source_root}/setup.py" || return 1
   test -f "${source_root}/ucm/integration/vllm/ucm_connector.py" || return 1
+  test -f "${source_root}/ucm/integration/vllm/hma_connector.py" || return 1
+  test -f "${source_root}/ucm/store/posix/cc/shard_gc.cc" || return 1
   test -f \
     "${source_root}/ucm/integration/vllm/patch/apply_patch.py" || return 1
   test -f \
@@ -469,6 +539,8 @@ required_files = (
     "pyproject.toml",
     "setup.py",
     "ucm/integration/vllm/ucm_connector.py",
+    "ucm/integration/vllm/hma_connector.py",
+    "ucm/store/posix/cc/shard_gc.cc",
     "ucm/integration/vllm/patch/apply_patch.py",
     "ucm/integration/vllm/patch/v0221/vllm_ascend/ascend_hybrid_cache_patch.py",
     "ucm/integration/vllm/rank_consistency.py",
@@ -504,7 +576,7 @@ cmake_wrapper_lines = (
 )
 summary = {
     "dependency_status": os.environ["DEPENDENCY_STATUS"],
-    "dependency_attempt": "run03_nfs_identity_cmake_python_and_capacity",
+    "dependency_attempt": "run04_reuse_validated_dependency",
     "dependency_log_server_path": str(dependency_log),
     "dependency_log_bytes": dependency_log.stat().st_size if dependency_log.is_file() else 0,
     "dependency_log_truncated_before_attempt": True,
@@ -607,87 +679,26 @@ write_startup_capacity_summary() {
   local dependency_status=$1
   free -b > "${RESULT_DIR}/runtime/host_memory_before_npu.txt"
   df -B1 /dev/shm > "${RESULT_DIR}/runtime/shm_before_npu.txt"
-  UCM_CACHE_BUFFER_GIB="${UCM_CACHE_BUFFER_GIB}" \
-  UCM_OBSERVED_SHARD_SIZE_BYTES="${UCM_OBSERVED_SHARD_SIZE_BYTES}" \
-  UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER="${UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER}" \
-  UCM_TP_SIZE="${UCM_TP_SIZE}" \
-  UCM_CAPACITY_HEADROOM_GIB="${UCM_CAPACITY_HEADROOM_GIB}" \
-  DEPENDENCY_STATUS="${dependency_status}" \
-  "${BASE_PYTHON}" - \
-    "${RESULT_DIR}/startup_capacity_summary.json" <<'PY'
-import json
-import os
-import sys
-from pathlib import Path
-
-gib = 1 << 30
-buffer_gib = int(os.environ["UCM_CACHE_BUFFER_GIB"])
-buffer_bytes = buffer_gib * gib
-shard_bytes = int(os.environ["UCM_OBSERVED_SHARD_SIZE_BYTES"])
-load_exclusive = int(os.environ["UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER"])
-tp_size = int(os.environ["UCM_TP_SIZE"])
-headroom_gib = int(os.environ["UCM_CAPACITY_HEADROOM_GIB"])
-required_buffer_number = max(1024, load_exclusive * 2)
-configured_buffer_number = buffer_bytes // shard_bytes
-run02_buffer_bytes = 8 * gib
-run02_buffer_number = run02_buffer_bytes // shard_bytes
-conservative_total_bytes = buffer_bytes * tp_size
-required_free_bytes = conservative_total_bytes + headroom_gib * gib
-shm = os.statvfs("/dev/shm")
-shm_available_bytes = shm.f_bavail * shm.f_frsize
-meminfo = {}
-for line in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines():
-    key, value = line.split(":", 1)
-    meminfo[key] = int(value.strip().split()[0]) * 1024
-mem_available_bytes = meminfo.get("MemAvailable", 0)
-geometry_gate = configured_buffer_number >= required_buffer_number
-shm_gate = shm_available_bytes >= required_free_bytes
-host_memory_gate = mem_available_bytes >= required_free_bytes
-dependency_ready = os.environ["DEPENDENCY_STATUS"] == "ready"
-gate = dependency_ready and geometry_gate and shm_gate and host_memory_gate
-if not dependency_ready:
-    status = "not_evaluated_dependency_failed"
-elif gate:
-    status = "ready"
-else:
-    status = "insufficient"
-summary = {
-    "status": status,
-    "dependency_ready": dependency_ready,
-    "configured_cache_buffer_gib_per_rank": buffer_gib,
-    "configured_cache_buffer_bytes_per_rank": buffer_bytes,
-    "tensor_parallel_size": tp_size,
-    "conservative_total_cache_buffer_bytes": conservative_total_bytes,
-    "capacity_headroom_gib": headroom_gib,
-    "required_free_bytes_with_headroom": required_free_bytes,
-    "run02_observed_shard_size_bytes": shard_bytes,
-    "geometry_source": (
-        "run02_runtime_error_plus_pinned_ucm_cache_store_formula;"
-        "predictive_for_run03_until_current_runtime_reports_geometry"
-    ),
-    "load_exclusive_buffer_number": load_exclusive,
-    "required_buffer_number": required_buffer_number,
-    "run02_cache_buffer_gib_per_rank": 8,
-    "run02_buffer_number": run02_buffer_number,
-    "run02_geometry_gate_passed": run02_buffer_number >= required_buffer_number,
-    "configured_buffer_number": configured_buffer_number,
-    "configured_geometry_gate_passed": geometry_gate,
-    "dev_shm_available_bytes": shm_available_bytes,
-    "dev_shm_gate_passed": shm_gate,
-    "host_mem_available_bytes": mem_available_bytes,
-    "host_memory_gate_passed": host_memory_gate,
-    "pre_npu_capacity_gate_passed": gate,
-    "claim_boundary": (
-        "conservative_host_capacity_preflight_not_runtime_allocation_or_"
-        "mechanism_completion_proof"
-    ),
-}
-Path(sys.argv[1]).write_text(
-    json.dumps(summary, indent=2, sort_keys=True) + "\n",
-    encoding="utf-8",
-)
-raise SystemExit(0 if gate else 1)
-PY
+  df -B1 "${UCM_STORAGE_ROOT}" \
+    > "${RESULT_DIR}/runtime/ucm_storage_before_npu.txt"
+  "${BASE_PYTHON}" "${FAWA_GEOMETRY}" \
+    --output "${RESULT_DIR}/startup_capacity_summary.json" \
+    --dependency-status "${dependency_status}" \
+    --parent-geometry \
+      "${PARENT_ATTRIBUTION_ROOT}/fawa_store_geometry.json" \
+    --storage-root "${UCM_STORAGE_ROOT}" \
+    --cache-buffer-gib-per-store "${UCM_CACHE_BUFFER_GIB}" \
+    --cache-store-count "${UCM_CACHE_STORE_COUNT}" \
+    --tensor-parallel-size "${UCM_TP_SIZE}" \
+    --cache-headroom-gib "${UCM_CAPACITY_HEADROOM_GIB}" \
+    --total-posix-capacity-gib "${UCM_POSIX_TOTAL_CAPACITY_GIB}" \
+    --fawa-split-count "${UCM_POSIX_SPLIT_COUNT}" \
+    --posix-headroom-gib "${UCM_POSIX_HEADROOM_GIB}" \
+    --data-dir-shard-bytes "${UCM_POSIX_DATA_DIR_SHARD_BYTES}" \
+    --expected-fa-block-size-bytes "${UCM_RUN03_FA_BLOCK_SIZE_BYTES}" \
+    --expected-wa-block-size-bytes "${UCM_RUN03_WA_BLOCK_SIZE_BYTES}" \
+    --cache-load-exclusive-buffer-number \
+      "${UCM_LOAD_EXCLUSIVE_BUFFER_NUMBER}"
 }
 
 finish() {

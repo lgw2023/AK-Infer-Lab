@@ -1,9 +1,10 @@
 schema_version: 1
-task_id: p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
+task_id: p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729
+run_id: p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01
 stage: P8.2-K2-R0
 
 repair_round:
-  attempt: run03
+  attempt: run04
   explicitly_authorized: true
   parent_run01_grade: blocked_p8_2_k2_r0_dependency_or_startup_preflight
   parent_run01_path_class: not_executed
@@ -44,13 +45,36 @@ repair_round:
       repair: tracked_command_wrapper_argument_translation
       upstream_source_edit: false
     startup_capacity:
-      cache_buffer_gib_per_rank: 16
-      observed_run02_shard_size_bytes: 6627328
-      configured_buffer_number: 2592
+      cache_buffer_gib_per_fawa_store: 16
+      observed_run03_fa_worker_block_size_bytes: 3186688
+      observed_run03_wa_worker_block_size_bytes: 6627328
+      configured_fa_buffer_number: 5391
+      configured_wa_buffer_number: 2592
       required_buffer_number: 2048
-      conservative_tp8_total_gib: 128
+      conservative_two_store_tp8_total_gib: 256
       additional_headroom_gib: 16
       gate_before_keep_alive_stop: true
+    parent_run03_attribution:
+      grade: attributed_p8_2_k2_r0_run03_fawa_startup_failure
+      manifest_bytes: 3104
+      manifest_sha256: 7bb522ad5353d8d0b3ab3b9339a4e0bf92ce3f5a75f77a143c0d52ca664e1d71
+      exception: posix_capacity_16gib_default_4096_shards_zero_recycle
+      all_payloads_must_match_manifest_before_npu_touch: true
+    fawa_posix_gc_repair:
+      configured_total_capacity_gib_before_split: 64
+      split_count: 2
+      configured_capacity_gib_per_store_after_split: 32
+      data_dir_shard_bytes: 2
+      directory_shard_count: 256
+      trigger_threshold_ratio: 0.7
+      recycle_percent: 0.1
+      minimum_files_per_directory_shard: 15
+      fa_minimum_capacity_gib_ceil: 12
+      wa_minimum_capacity_gib_ceil: 24
+      fa_recycle_files_per_shard: 2
+      wa_recycle_files_per_shard: 1
+      filesystem_free_space_headroom_gib: 16
+      exact_integer_geometry_preflight_before_npu_touch: true
 
 developer_decision:
   k1a_f1_closed_by_r17: true
@@ -79,6 +103,7 @@ pinned_ucm_source:
 
 implementation:
   workload: benchmarks/deepseek_v4_flash/workloads/p8_2_k2_r0_ucm_dram_external_prefix_path.yaml
+  fawa_geometry_preflight: tools/inference_contracts/p8_2_k2_r0_fawa_posix_gc_geometry.py
   request_runner: tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.py
   lifecycle_runner: tools/inference_contracts/run_deepseek_p8_2_k2_r0_ucm_dram_prefix.sh
   server_task_driver: tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh
@@ -90,6 +115,8 @@ implementation:
   nfs_identity_revalidation_automated: true
   cmake_python_binding_automated: true
   startup_capacity_preflight_automated: true
+  fawa_split_aware_posix_gc_preflight_automated: true
+  run03_attribution_parent_validation_automated: true
 
 evidence:
   path_events:

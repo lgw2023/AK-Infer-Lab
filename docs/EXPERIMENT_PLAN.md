@@ -1,20 +1,22 @@
 # P5-P9 实验计划
 
-日期：2026-07-17；当前执行状态更新：2026-07-28
+日期：2026-07-17；当前执行状态更新：2026-07-29
 
 本文档是 P5-P9 的稳定阶段契约。P8 的工程细节见 `docs/P8_LAYERED_ENGINEERING_PROTOTYPE_PLAN.md`；每轮实时状态、服务器回传和下一动作写入 `工作记录与进度笔记本/`。
 
-## 0. 2026-07-28 当前执行真值
+## 0. 2026-07-29 当前执行真值
 
 R17 已正式接受
 `green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed`：完整 1369-event
 重放证明 accepted-capacity K1A-F1 的 D2H/H2D 8-worker completion，K1A-F1 到此
 关闭。R16 formal RED 保留为历史包，其不完整 selector 结论已被 R17 supersede。
 
-当前唯一任务为
-`p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728`。开发机已实现 pinned UCM
-依赖安装、`Cache|Posix` DRAM-first 外部前缀对象、禁用内部 Prefix Cache 的 exact
-32K prime/follower、UCM metrics 路径归因、cleanup 和有界打包。服务器只运行
+run03 attribution 已把启动失败精确定位到 FAWA 分流后的 POSIX GC 整数几何：
+总 32 GiB 被分为 FA/WA 16/16 GiB，默认 4096 目录分片使 scheduler FA 每分片回收
+数为 0；FA/WA worker block 实测为 `3186688/6627328 bytes`。当前唯一任务为
+`p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01`。开发机已把总 POSIX
+容量固定为 64 GiB、`data_dir_shard_bytes=2`，使分流后 FA/WA 各 32 GiB、256
+分片，并把父包、两套 Cache/GC 几何和主机/存储余量检查下沉到 NPU 前。服务器只运行
 `tools/inference_contracts/run_deepseek_p8_2_k2_r0_server_task.sh`。
 
 本轮目标是忠实跑通
@@ -55,7 +57,7 @@ Prefix Cache off hit=`0`，on 侧三个 primary group 9/9 正命中且逐请求�
 ```text
 last_task_id:p8_2_k1a_r5_f1_r17_full_trace_source_replay_2026_0727
 last_task_grade:green_p8_2_k1a_r5_f1_r17_restore_h2d_mechanism_closed
-current_task_id:p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728
+current_task_id:p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01
 server_execution_authorized:true / next_task_authorized:false
 formal_model_lifecycle_count_exact:1 / model_request_count_exact:3 / request_retry_count_exact:0
 ucm_source_commit:01cbf9b71892c88319862fa57f195b0bef93fa6f
@@ -458,13 +460,13 @@ simulator_validation_report.md
 3. P6.1C-R1 已完成并验收为 official green，不重跑。
 4. P6.1 unprofiled 已完成并验收为 `green_mtp_unprofiled_baseline`，不重跑。
 5. P6.2 profiled evidence、P6.3A matched MTP A/B、P6.3B-R2 repair 与 P6.3B-R4-R1 explicit control 已验收；原 P6.3B yellow、R1 red、R3 on-vs-on yellow 与 R4 root-squash blocked 均保留，P6.3C 严格单变量门已 blocked。P8.1-R1 与 P8.2-K0 已 green，旧 K1 路径已由服务器确认 blocked。
-6. K1A-F1 已由 R17 full-trace replay 闭合 warm-tier restore/H2D；K2-R0 run03 已通过 NFS、依赖、16 GiB/rank 和主机容量门，但在 `UCMFAWAConnector` 初始化期间未 ready，0/3 请求。当前 KV/Prefix 线只执行零 NPU run03 startup attribution：只读父 raw log 与 pinned source，恢复 inner exception 和 FA/WA per-store geometry；run04、K2-R1 与 sweep 均不授权。
+6. K1A-F1 已由 R17 full-trace replay 闭合 warm-tier restore/H2D；K2-R0 run03 attribution 已把启动阻塞精确定位为 FAWA 分流后的 POSIX GC 整数几何。当前 KV/Prefix 线只执行 run04：总 POSIX=64 GiB、`data_dir_shard_bytes=2`，停卡前验证父包、两套 Cache/GC 几何和资源余量，通过后运行一个 TP8 lifecycle 与三请求；第二 attempt、K2-R1 与 sweep 均不授权。
 7. P8.3-I0 inventory 与 I0-R1 taxonomy 已在窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 不授权。
 8. P7 工具链预研可继续，但不得外推 full-model runtime。
 9. P9 最后消费统一 trace、inventory、simulation 与 TP4 closure 证据，输出硬件优先级。
 
 当前唯一服务器任务是
-`p8_2_k2_r0_run03_fawa_startup_attribution_2026_0729_run01`。它只允许零 NPU
-读取 run03 parent manifest/payload/raw startup log 与 pinned UCM source，恢复 exact
-exception/traceback、FA/WA × scheduler/worker 配置和 constructor lineage；keep-alive
-留运行，formal lifecycle/request 均为 0。P6.3C-R1 已开发并排队，不与本轮混跑。
+`p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729_run01`。它只允许一个 TP8
+lifecycle、warmup→prime→follower 三请求、零 retry/sweep；开始前验证 attribution
+manifest/all-payload 和 FA/WA 几何，结束后恢复 0–7 keep-alive。P6.3C-R1 已开发
+并排队，不与本轮混跑。

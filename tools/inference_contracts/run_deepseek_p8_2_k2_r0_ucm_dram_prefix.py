@@ -24,7 +24,7 @@ from tools.inference_contracts.run_deepseek_p6_3b_prefix_cache_ab import (
 )
 
 
-TASK_ID = "p8_2_k2_r0_ucm_dram_external_prefix_path_2026_0728"
+TASK_ID = "p8_2_k2_r0_run04_fawa_posix_gc_geometry_2026_0729"
 CONTEXT_TOKENS = 32768
 OUTPUT_TOKENS = 64
 SENSITIVITY = "bounded_operational_metadata_no_content_or_token_ids"
@@ -64,9 +64,7 @@ VLLM_COUNTERS = (
     "vllm:spec_decode_num_accepted_tokens_total",
 )
 ERROR_COUNTERS = tuple(
-    name
-    for name in UCM_COUNTERS
-    if "error" in name or "invalid" in name
+    name for name in UCM_COUNTERS if "error" in name or "invalid" in name
 )
 PAYLOAD_NAMES = (
     "cleanup_status.txt",
@@ -124,13 +122,9 @@ def prepare(source_payload: Path, artifact_dir: Path, model_name: str) -> None:
         artifact_dir,
         model_name,
         plan=_plan(),
-        authorized_identical_body_request_ids=frozenset(
-            {"k2_prime", "k2_follower"}
-        ),
+        authorized_identical_body_request_ids=frozenset({"k2_prime", "k2_follower"}),
     )
-    records = {
-        str(row["request_id"]): row for row in manifest["records"]
-    }
+    records = {str(row["request_id"]): row for row in manifest["records"]}
     prime = records["k2_prime"]
     follower = records["k2_follower"]
     if prime["request_body_sha256"] != follower["request_body_sha256"]:
@@ -190,13 +184,9 @@ def _parse_prometheus(raw: bytes) -> dict[str, float | bool]:
         )
     )
     values["spec_metrics_present"] = all(
-        found[name]
-        for name in VLLM_COUNTERS
-        if "spec_decode" in name
+        found[name] for name in VLLM_COUNTERS if "spec_decode" in name
     )
-    values["ucm_metrics_present"] = any(
-        found[f"ucm:{name}"] for name in UCM_COUNTERS
-    )
+    values["ucm_metrics_present"] = any(found[f"ucm:{name}"] for name in UCM_COUNTERS)
     return values
 
 
@@ -233,9 +223,7 @@ def _wait_for_idle(
     return last
 
 
-def _delta(
-    before: dict[str, Any], after: dict[str, Any]
-) -> dict[str, float]:
+def _delta(before: dict[str, Any], after: dict[str, Any]) -> dict[str, float]:
     names = [f"ucm:{name}" for name in UCM_COUNTERS] + list(VLLM_COUNTERS)
     return {
         name: float(after.get(name) or 0) - float(before.get(name) or 0)
@@ -243,9 +231,7 @@ def _delta(
     }
 
 
-def _metric_progress(
-    role: str, delta: dict[str, float]
-) -> bool:
+def _metric_progress(role: str, delta: dict[str, float]) -> bool:
     if role == "prime":
         return (
             delta["ucm:save_bytes_total"] > 0
@@ -266,16 +252,12 @@ def run(
     server_pid: int,
     server_log: Path,
 ) -> int:
-    plan = json.loads(
-        (artifact_dir / "run_plan.json").read_text(encoding="utf-8")
-    )
+    plan = json.loads((artifact_dir / "run_plan.json").read_text(encoding="utf-8"))
     rows: list[dict[str, Any]] = []
     metrics_dir = artifact_dir / "runtime" / "raw_metrics"
     for item in plan:
         request_id = str(item["request_id"])
-        before = _wait_for_idle(
-            base_url, metrics_dir / f"{request_id}_before.prom"
-        )
+        before = _wait_for_idle(base_url, metrics_dir / f"{request_id}_before.prom")
         log_start = server_log.stat().st_size if server_log.exists() else 0
         batch = {
             "batch_id": request_id,
@@ -297,9 +279,7 @@ def run(
             request_item=batch["requests"][0],
             start_barrier=threading.Barrier(1),
         )
-        after = _wait_for_idle(
-            base_url, metrics_dir / f"{request_id}_after.prom"
-        )
+        after = _wait_for_idle(base_url, metrics_dir / f"{request_id}_after.prom")
         delta = _delta(before, after)
         deadline = time.monotonic() + 60
         while (
@@ -308,9 +288,7 @@ def run(
             and time.monotonic() < deadline
         ):
             time.sleep(1)
-            after = _snapshot(
-                base_url, metrics_dir / f"{request_id}_after.prom"
-            )
+            after = _snapshot(base_url, metrics_dir / f"{request_id}_after.prom")
             delta = _delta(before, after)
         log_end = server_log.stat().st_size if server_log.exists() else log_start
         checks = {
@@ -321,9 +299,7 @@ def run(
                 before.get("ucm_metrics_present") is True
                 or after.get("ucm_metrics_present") is True
             ),
-            "role_metric_progress": _metric_progress(
-                str(item["request_role"]), delta
-            ),
+            "role_metric_progress": _metric_progress(str(item["request_role"]), delta),
         }
         if str(item["request_role"]) == "warmup":
             checks["role_metric_progress"] = True
@@ -345,17 +321,16 @@ def run(
         raw_path = artifact_dir / "runtime" / "request_results.jsonl"
         raw_path.write_text(
             "".join(
-                json.dumps(value, separators=(",", ":"), sort_keys=True)
-                + "\n"
+                json.dumps(value, separators=(",", ":"), sort_keys=True) + "\n"
                 for value in rows
             ),
             encoding="utf-8",
         )
         if row["status"] != "success":
             break
-    return 0 if len(rows) == 3 and all(
-        row["status"] == "success" for row in rows
-    ) else 2
+    return (
+        0 if len(rows) == 3 and all(row["status"] == "success" for row in rows) else 2
+    )
 
 
 def _read_rows(path: Path) -> list[dict[str, Any]]:
@@ -399,6 +374,11 @@ def _classify_startup(artifact_dir: Path) -> dict[str, Any]:
         r"too small buffer\((\d+)\) on shard\((\d+)\)",
         text,
     )
+    posix_gc_matches = re.findall(
+        r"posix_capacity_gb\((\d+)\) is too small, "
+        r"GC cannot recycle any files\. Minimum recommended: (\d+)GB",
+        text,
+    )
     buffer_bytes = int(matches[-1][0]) if matches else None
     shard_bytes = int(matches[-1][1]) if matches else None
     observed_buffer_number = (
@@ -410,6 +390,8 @@ def _classify_startup(artifact_dir: Path) -> dict[str, Any]:
         failure_class = "not_started"
     elif ready_exit_code == 0:
         failure_class = "server_ready"
+    elif posix_gc_matches:
+        failure_class = "ucm_fawa_posix_gc_geometry_too_small"
     elif matches:
         failure_class = "ucm_cache_buffer_too_small"
     else:
@@ -420,6 +402,13 @@ def _classify_startup(artifact_dir: Path) -> dict[str, Any]:
         "server_ready_exit_code": ready_exit_code,
         "server_ready": ready_exit_code == 0,
         "ucm_too_small_buffer_observed": bool(matches),
+        "ucm_fawa_posix_gc_too_small_observed": bool(posix_gc_matches),
+        "reported_posix_capacity_gib_after_fawa_split": (
+            int(posix_gc_matches[-1][0]) if posix_gc_matches else None
+        ),
+        "reported_posix_minimum_recommended_gib": (
+            int(posix_gc_matches[-1][1]) if posix_gc_matches else None
+        ),
         "reported_buffer_bytes": buffer_bytes,
         "reported_shard_size_bytes": shard_bytes,
         "reported_buffer_number": observed_buffer_number,
@@ -435,9 +424,7 @@ def _classify_startup(artifact_dir: Path) -> dict[str, Any]:
 
 
 def _role_row(rows: list[dict[str, Any]], role: str) -> dict[str, Any]:
-    return next(
-        (row for row in rows if row.get("request_role") == role), {}
-    )
+    return next((row for row in rows if row.get("request_role") == role), {})
 
 
 def _log_summary(path: Path) -> dict[str, Any]:
@@ -448,9 +435,7 @@ def _log_summary(path: Path) -> dict[str, Any]:
             "max_logged_hbm_hit_blocks": 0,
             "max_logged_external_hit_blocks": 0,
         }
-    pattern = re.compile(
-        r"hit hbm:\s*(\d+).*?hit external:\s*(\d+)"
-    )
+    pattern = re.compile(r"hit hbm:\s*(\d+).*?hit external:\s*(\d+)")
     pairs = [
         (int(left), int(right))
         for left, right in pattern.findall(
@@ -462,9 +447,7 @@ def _log_summary(path: Path) -> dict[str, Any]:
         "positive_external_lookup_line_count": sum(
             external > 0 for _, external in pairs
         ),
-        "max_logged_hbm_hit_blocks": max(
-            (hbm for hbm, _ in pairs), default=0
-        ),
+        "max_logged_hbm_hit_blocks": max((hbm for hbm, _ in pairs), default=0),
         "max_logged_external_hit_blocks": max(
             (external for _, external in pairs), default=0
         ),
@@ -493,9 +476,7 @@ def finalize(artifact_dir: Path) -> str:
     prime_delta = prime.get("counter_delta") or {}
     follower_delta = follower.get("counter_delta") or {}
     recovery = _safe_json(artifact_dir / "resource_recovery_summary.json")
-    dependency = _safe_json(
-        artifact_dir / "dependency_and_environment_summary.json"
-    )
+    dependency = _safe_json(artifact_dir / "dependency_and_environment_summary.json")
     capacity = _safe_json(artifact_dir / "startup_capacity_summary.json")
     startup = _classify_startup(artifact_dir)
     (artifact_dir / "startup_failure_summary.json").write_text(
@@ -503,9 +484,7 @@ def finalize(artifact_dir: Path) -> str:
         encoding="utf-8",
     )
     cleanup = (
-        (artifact_dir / "cleanup_status.txt")
-        .read_text(encoding="utf-8")
-        .strip()
+        (artifact_dir / "cleanup_status.txt").read_text(encoding="utf-8").strip()
         if (artifact_dir / "cleanup_status.txt").exists()
         else "unknown"
     )
@@ -514,8 +493,8 @@ def finalize(artifact_dir: Path) -> str:
         + max(0.0, float(prime_delta.get(f"ucm:{name}") or 0.0))
         for name in ERROR_COUNTERS
     )
-    request_success_exact = (
-        len(rows) == 3 and all(row.get("status") == "success" for row in rows)
+    request_success_exact = len(rows) == 3 and all(
+        row.get("status") == "success" for row in rows
     )
     prime_store_observed = (
         float(prime_delta.get("ucm:save_bytes_total") or 0) > 0
@@ -528,10 +507,7 @@ def finalize(artifact_dir: Path) -> str:
         float(follower_delta.get("ucm:gpu_hbm_hit_tokens_total") or 0) == 0
     )
     cache_stage_hit_observed = (
-        float(
-            follower_delta.get("ucm:cache_lookup_hit_blocks_total") or 0
-        )
-        > 0
+        float(follower_delta.get("ucm:cache_lookup_hit_blocks_total") or 0) > 0
     )
     h2d_load_observed = (
         float(follower_delta.get("ucm:load_bytes_total") or 0) > 0
@@ -540,12 +516,8 @@ def finalize(artifact_dir: Path) -> str:
     posix_read_absent_on_follower = (
         float(follower_delta.get("ucm:posix_s2h_bytes_total") or 0) == 0
     )
-    log_summary = _log_summary(
-        artifact_dir / "runtime" / "vllm_server.log"
-    )
-    external_log_corroborated = (
-        log_summary["positive_external_lookup_line_count"] > 0
-    )
+    log_summary = _log_summary(artifact_dir / "runtime" / "vllm_server.log")
+    external_log_corroborated = log_summary["positive_external_lookup_line_count"] > 0
     lifecycle_recovery_exact = all(
         (
             recovery.get("stopped_card_ids") == list(range(8)),
@@ -626,11 +598,9 @@ def finalize(artifact_dir: Path) -> str:
         "dependency_status": dependency.get("dependency_status", "unknown"),
         "startup_capacity_status": capacity.get("status", "unknown"),
         "startup_class": startup.get("startup_class"),
-        "configured_cache_buffer_gib_per_rank": capacity.get(
-            "configured_cache_buffer_gib_per_rank"
-        ),
-        "configured_buffer_number": capacity.get("configured_buffer_number"),
-        "required_buffer_number": capacity.get("required_buffer_number"),
+        "fawa_posix_gc_preflight": capacity.get("fawa_posix_gc"),
+        "cache_store_preflight": capacity.get("cache_store"),
+        "parent_worker_geometry_exact": capacity.get("parent_worker_geometry_exact"),
         "request_success_exact": request_success_exact,
         "prime_store_observed": prime_store_observed,
         "external_hit_observed": external_hit_observed,
@@ -652,9 +622,7 @@ def finalize(artifact_dir: Path) -> str:
         "follower_cache_lookup_hit_blocks_delta": follower_delta.get(
             "ucm:cache_lookup_hit_blocks_total", 0
         ),
-        "follower_load_bytes_delta": follower_delta.get(
-            "ucm:load_bytes_total", 0
-        ),
+        "follower_load_bytes_delta": follower_delta.get("ucm:load_bytes_total", 0),
         "follower_cache_load_bytes_delta": follower_delta.get(
             "ucm:cache_load_bytes_total", 0
         ),
@@ -706,8 +674,7 @@ def finalize(artifact_dir: Path) -> str:
     _write_tsv(artifact_dir / "ucm_metric_deltas.tsv", metric_rows)
     latencies = {
         role: {
-            key: row.get(key)
-            for key in ("ttft_ms", "tpot_ms", "itl_p95_ms", "e2el_ms")
+            key: row.get(key) for key in ("ttft_ms", "tpot_ms", "itl_p95_ms", "e2el_ms")
         }
         for role, row in (("prime", prime), ("follower", follower))
         if row
@@ -718,14 +685,10 @@ def finalize(artifact_dir: Path) -> str:
         "mechanism_implemented": mechanism_implemented,
         "path_class": path_class,
         "request_count": len(rows),
-        "successful_request_count": sum(
-            row.get("status") == "success" for row in rows
-        ),
+        "successful_request_count": sum(row.get("status") == "success" for row in rows),
         "request_retry_count": 0,
         "formal_model_lifecycle_count": (
-            1
-            if (artifact_dir / "runtime" / "server_pid.txt").is_file()
-            else 0
+            1 if (artifact_dir / "runtime" / "server_pid.txt").is_file() else 0
         ),
         "latencies_descriptive_only": latencies,
         "performance_benefit_required": False,
@@ -738,8 +701,15 @@ def finalize(artifact_dir: Path) -> str:
         "dependency_status": dependency.get("dependency_status", "unknown"),
         "dependency_attempt": dependency.get("dependency_attempt"),
         "startup_capacity_status": capacity.get("status", "unknown"),
-        "startup_capacity_gate_passed": capacity.get(
-            "pre_npu_capacity_gate_passed"
+        "startup_capacity_gate_passed": capacity.get("pre_npu_capacity_gate_passed"),
+        "parent_worker_geometry_exact": capacity.get("parent_worker_geometry_exact"),
+        "fawa_posix_gc_geometry_gate_passed": (
+            (capacity.get("fawa_posix_gc") or {}).get(
+                "all_store_gc_recycle_gates_passed"
+            )
+        ),
+        "fawa_posix_filesystem_gate_passed": (
+            (capacity.get("fawa_posix_gc") or {}).get("filesystem_gate_passed")
         ),
         "startup_class": startup.get("startup_class"),
         "server_ready": startup.get("server_ready"),
@@ -749,12 +719,8 @@ def finalize(artifact_dir: Path) -> str:
         "ucm_source_validation_complete": dependency.get(
             "ucm_source_validation_complete"
         ),
-        "ucm_install_marker_valid": dependency.get(
-            "ucm_install_marker_valid"
-        ),
-        "quarantine_path_count": len(
-            dependency.get("quarantine_paths") or []
-        ),
+        "ucm_install_marker_valid": dependency.get("ucm_install_marker_valid"),
+        "quarantine_path_count": len(dependency.get("quarantine_paths") or []),
         "next_task_authorized": False,
         "k3_authorized": False,
         "p8_3_i1_authorized": False,
@@ -763,9 +729,7 @@ def finalize(artifact_dir: Path) -> str:
         json.dumps(grading, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    (artifact_dir / "task_grade.txt").write_text(
-        grade + "\n", encoding="utf-8"
-    )
+    (artifact_dir / "task_grade.txt").write_text(grade + "\n", encoding="utf-8")
     follower_ttft = follower.get("ttft_ms") if follower else None
     prime_ttft = prime.get("ttft_ms") if prime else None
     summary = (
@@ -776,10 +740,11 @@ def finalize(artifact_dir: Path) -> str:
         f"`{dependency.get('dependency_status', 'unknown')}`; "
         f"attempt: `{dependency.get('dependency_attempt')}`\n"
         f"- startup capacity: `{capacity.get('status', 'unknown')}`; "
-        f"buffer/rank: "
-        f"`{capacity.get('configured_cache_buffer_gib_per_rank')}` GiB; "
-        f"buffer slots: `{capacity.get('configured_buffer_number')}` / "
-        f"required `{capacity.get('required_buffer_number')}`\n"
+        f"FA/WA POSIX split: "
+        f"`{(capacity.get('fawa_posix_gc') or {}).get('configured_posix_capacity_gib_per_store_after_split')}` "
+        "GiB/store; "
+        f"directory shards: "
+        f"`{(capacity.get('fawa_posix_gc') or {}).get('directory_shard_count')}`\n"
         f"- startup class: `{startup.get('startup_class')}`; "
         f"server ready: `{startup.get('server_ready')}`\n"
         f"- resource state: `{resource_state}`\n"
@@ -800,9 +765,7 @@ def finalize(artifact_dir: Path) -> str:
         "- raw logs, metrics, request bodies, request IDs, token IDs and"
         " generated content remain server-local.\n"
     )
-    (artifact_dir / "result_summary.md").write_text(
-        summary, encoding="utf-8"
-    )
+    (artifact_dir / "result_summary.md").write_text(summary, encoding="utf-8")
     return grade
 
 
