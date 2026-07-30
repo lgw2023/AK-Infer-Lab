@@ -35,6 +35,11 @@ F2_SERVER_TASK = (
     / "tools/inference_contracts/"
     "run_deepseek_p6_3c_r2_f2_server_task.sh"
 )
+F3_SERVER_TASK = (
+    REPO_ROOT
+    / "tools/inference_contracts/"
+    "run_deepseek_p6_3c_r2_f3_server_task.sh"
+)
 F1_WORKLOAD = (
     REPO_ROOT
     / "benchmarks/deepseek_v4_flash/workloads/"
@@ -44,6 +49,11 @@ F2_WORKLOAD = (
     REPO_ROOT
     / "benchmarks/deepseek_v4_flash/workloads/"
     "p6_3c_r2_f2_loopback_proxy_safe_matched_ab.yaml"
+)
+F3_WORKLOAD = (
+    REPO_ROOT
+    / "benchmarks/deepseek_v4_flash/workloads/"
+    "p6_3c_r2_f3_atomic_pair_admission_matched_ab.yaml"
 )
 P6_HANDOFF = REPO_ROOT / "通信模块/docs/developer-to-server.P6.md"
 
@@ -409,6 +419,197 @@ def test_r2_f2_audit_freezes_proxy_safe_transport_and_science_contract():
     ) == 3
 
 
+def test_r2_f3_contract_adds_common_atomic_admission_without_changing_ab():
+    workload = yaml.safe_load(F3_WORKLOAD.read_text(encoding="utf-8"))
+    frozen = workload["scientific_contract"]["jointly_frozen_both_modes"]
+    assert workload["stage"] == "P6.3C-R2-F3"
+    assert frozen["max_model_len"] == 12288
+    assert frozen["max_num_batched_tokens"] == 12288
+    assert frozen["max_num_seqs"] == 2
+    assert frozen["atomic_pair_admission"] is True
+    assert workload["scientific_contract"]["only_ab_difference"] == {
+        "off": "--no-enable-chunked-prefill",
+        "on": "--enable-chunked-prefill",
+    }
+    assert workload["scientific_contract"]["exact_totals"][
+        "tagged_measured_pairs"
+    ] == 42
+    assert workload["atomic_pair_admission"]["request_scope"] == (
+        "tagged_p6_3c_r2_f3_measured_pairs_only"
+    )
+    assert workload["atomic_pair_admission"]["scheduler_semantics_mutated"] is False
+
+
+def test_r2_f3_prepare_tags_only_measured_pairs(tmp_path: Path):
+    import tools.inference_contracts.run_deepseek_p6_3c_r2_f3_atomic_pair_admission as f3
+
+    source = tmp_path / "source.json"
+    source.write_text(json.dumps({"prompt": list(range(4096))}), encoding="utf-8")
+    result = tmp_path / "result"
+    manifest = f3.prepare_artifacts(source, result, "model")
+    plan = json.loads((result / "run_plan.json").read_text(encoding="utf-8"))
+
+    assert manifest["task_id"] == f3.TASK_ID
+    assert plan["mechanism"][0]["batch_id"] == (
+        "p6_3c_r2_f3_mechanism_warmup"
+    )
+    assert plan["mechanism"][1]["batch_id"].startswith(
+        "p6_3c_r2_f3_mechanism_"
+    )
+    assert plan["performance"][1]["batch_id"].startswith(
+        "p6_3c_r2_f3_performance_"
+    )
+
+
+def test_r2_f3_audit_freezes_atomic_pair_and_existing_server_argv():
+    result_dir = (
+        "/audit/"
+        "p6_3c_r2_f3_chunked_prefill_atomic_pair_admission_"
+        "2026_0730_run01"
+    )
+    completed = subprocess.run(
+        ["bash", str(F3_SERVER_TASK), result_dir],
+        cwd=REPO_ROOT,
+        env={
+            **os.environ,
+            "PYTHON_BIN": "python",
+            "P6_3C_SERVER_TASK_AUDIT_ONLY": "1",
+        },
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    output = completed.stdout
+    assert "atomic_pair_admission=1" in output
+    assert "tagged_measured_pair_count_exact=42" in output
+    assert output.count("atomic_pair_request_prefix=p6_3c_r2_f3") == 7
+    assert output.count("atomic_pair_timeout_seconds=30") == 7
+    assert output.count(
+        "server_argv_sha256="
+        "568b32b1b105c0113a28cd71efe1b905dc5afd86690158e63c5bcbe9da55bb10"
+    ) == 3
+    assert output.count(
+        "server_argv_sha256="
+        "cb6687044ed1ad4d6661f90ff16b7c9686e8c3ef15e1300b67e40ad00383b017"
+    ) == 3
+
+
+def test_r2_f3_requires_exact_release_and_same_first_scheduler_step(
+    tmp_path: Path,
+):
+    import tools.inference_contracts.run_deepseek_p6_3c_r2_f3_atomic_pair_admission as f3
+
+    source = tmp_path / "source.json"
+    source.write_text(json.dumps({"prompt": list(range(4096))}), encoding="utf-8")
+    artifact = tmp_path / "result"
+    f3.prepare_artifacts(source, artifact, "model")
+    plan = json.loads((artifact / "run_plan.json").read_text(encoding="utf-8"))
+
+    for lifecycle in f3.r2.base.LIFECYCLE_SCHEDULE:
+        runtime = artifact / "lifecycles" / lifecycle["lifecycle_id"] / "runtime"
+        atomic_dir = runtime / "atomic_pair_trace"
+        atomic_dir.mkdir(parents=True)
+        measured = [
+            batch
+            for batch in plan[lifecycle["track"]]
+            if batch["phase"] == "measured"
+        ]
+        atomic_rows = [{"event": "atomic_pair_admission_installed"}]
+        for batch in measured:
+            atomic_rows.append(
+                {
+                    "event": "pair_complete_released",
+                    "request_ids": [
+                        f"cmpl-{batch['request_id']}-0",
+                        f"cmpl-{batch['request_id']}-1",
+                    ],
+                    "pair_indices": [0, 1],
+                    "prompt_tokens": batch["prompt_tokens"],
+                    "member_buffer_wait_ns": [1_000_000, 100_000],
+                    "release_order": (
+                        "pair_index_ascending_before_next_scheduler_step"
+                    ),
+                }
+            )
+        atomic_rows.append(
+            {
+                "event": "atomic_pair_admission_shutdown_state",
+                "pending_pair_count": 0,
+                "failed_pair_count": 0,
+                "completed_pair_count": len(measured),
+            }
+        )
+        (atomic_dir / "trace.1.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in atomic_rows),
+            encoding="utf-8",
+        )
+
+        if lifecycle["track"] != "mechanism":
+            continue
+        scheduler_dir = runtime / "scheduler_trace"
+        scheduler_dir.mkdir()
+        scheduler_rows = []
+        for index, batch in enumerate(measured, start=1):
+            ids = [
+                f"cmpl-{batch['request_id']}-0",
+                f"cmpl-{batch['request_id']}-1",
+            ]
+            prompt_0, prompt_1 = batch["prompt_tokens"]
+            if not batch["pressure"]:
+                amounts = [prompt_0, prompt_1]
+            elif lifecycle["mode"] == "chunked_prefill_off":
+                amounts = [prompt_0, 0]
+            else:
+                amounts = [prompt_0, 12288 - prompt_0]
+            scheduler_rows.append(
+                {
+                    "event": "scheduler_step",
+                    "step_index": index,
+                    "waiting_order_before": ids,
+                    "total_num_scheduled_tokens": sum(amounts),
+                    "scheduled_requests": [
+                        {
+                            "request_id": request_id,
+                            "scheduled_tokens": amount,
+                        }
+                        for request_id, amount in zip(ids, amounts, strict=True)
+                        if amount
+                    ],
+                }
+            )
+        (scheduler_dir / "trace.1.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in scheduler_rows),
+            encoding="utf-8",
+        )
+
+    releases, _ = f3._release_table_and_gate(artifact, plan)
+    first_steps, rows = f3._first_step_table_and_gate(artifact, plan)
+
+    assert releases["expected_pair_release_count"] == 42
+    assert releases["exact_pair_release_count"] == 42
+    assert releases["atomic_pair_release_gate_complete"] is True
+    assert first_steps["mechanism_cell_count"] == 6
+    assert first_steps["mechanism_atomic_coarrival_gate_complete"] is True
+
+    trace_path = (
+        artifact
+        / "lifecycles/mechanism_01/runtime/scheduler_trace/trace.1.jsonl"
+    )
+    corrupted = [
+        json.loads(line)
+        for line in trace_path.read_text(encoding="utf-8").splitlines()
+    ]
+    corrupted[0]["waiting_order_before"] = corrupted[0][
+        "waiting_order_before"
+    ][:1]
+    trace_path.write_text(
+        "".join(json.dumps(row) + "\n" for row in corrupted),
+        encoding="utf-8",
+    )
+    failed_gate, _ = f3._first_step_table_and_gate(artifact, plan)
+    assert failed_gate["mechanism_atomic_coarrival_gate_complete"] is False
+
+
 def test_p6_handoff_asset_gate_matches_current_bytes():
     text = P6_HANDOFF.read_text(encoding="utf-8")
     rows = re.findall(
@@ -416,7 +617,7 @@ def test_p6_handoff_asset_gate_matches_current_bytes():
         text,
         re.MULTILINE,
     )
-    assert len(rows) == 23
+    assert len(rows) == 27
     for _, relative_path, expected_bytes, expected_sha256 in rows:
         payload = (REPO_ROOT / relative_path).read_bytes()
         assert len(payload) == int(expected_bytes)
@@ -425,9 +626,9 @@ def test_p6_handoff_asset_gate_matches_current_bytes():
     assert "75156e56ce06554cfca79aef92167ec78521a28902f90389f8f262a3d509ebc1" not in text
     assert "若有 K2、K3、P8.3、P9、其他 P6" in text
     assert (
-        "p6_3c_r2_f2_chunked_prefill_loopback_proxy_safe_"
+        "p6_3c_r2_f3_chunked_prefill_atomic_pair_admission_"
         "2026_0730_run01"
     ) in text
     assert "server_side_path_wrapper_authorized: false" in text
-    assert "shell_local_http_proxy=explicitly_disabled" in text
-    assert "python_local_http_proxy_handler=empty" in text
+    assert "tagged_measured_pair_count_exact=42" in text
+    assert "coarrival_gate_complete=true" in text

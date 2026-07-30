@@ -28,6 +28,14 @@ audit_contract() {
   printf 'performance_observer=disabled\n'
   printf 'profiler=disabled_all_tracks\n'
   printf 'shared_hybrid_kv_repair=enabled_both_modes_all_lifecycles\n'
+  printf 'atomic_pair_admission=%s\n' "${P6_3C_ATOMIC_PAIR_ADMISSION:-0}"
+  if test "${P6_3C_ATOMIC_PAIR_ADMISSION:-0}" = 1; then
+    printf 'atomic_pair_request_prefix=%s\n' \
+      "${P6_3C_ATOMIC_PAIR_REQUEST_PREFIX:?}"
+    printf 'atomic_pair_timeout_seconds=%s\n' \
+      "${P6_3C_ATOMIC_PAIR_TIMEOUT_SECONDS:?}"
+    printf 'tagged_measured_pair_count_exact=42\n'
+  fi
   printf 'capacity_contract=max_model_len_12288,max_num_batched_tokens_12288,max_num_seqs_2\n'
   printf 'cells=no_pressure_4k_4k,asymmetric_pressure_10k_6k,symmetric_pressure_8k_8k\n'
   printf 'performance_order=chunked_prefill_off,chunked_prefill_on,chunked_prefill_on,chunked_prefill_off\n'

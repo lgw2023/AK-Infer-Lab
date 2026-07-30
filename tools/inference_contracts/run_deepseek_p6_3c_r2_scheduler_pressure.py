@@ -21,6 +21,7 @@ DEFAULT_TASK_ID = (
     "p6_3c_r2_chunked_prefill_capacity_calibrated_2026_0729_run01"
 )
 TASK_ID = os.environ.get("P6_3C_TASK_ID", DEFAULT_TASK_ID)
+REQUEST_ID_PREFIX = os.environ.get("P6_3C_REQUEST_ID_PREFIX", "p6_3c_r2")
 MAX_MODEL_LEN = 12288
 MAX_NUM_BATCHED_TOKENS = 12288
 MAX_NUM_SEQS = 2
@@ -91,7 +92,7 @@ def build_run_plan() -> dict[str, list[dict[str, Any]]]:
     plan: dict[str, list[dict[str, Any]]] = {}
     for track in base.TRACKS:
         repeats = 1 if track == "mechanism" else 3
-        warmup_id = f"p6_3c_r2_{track}_warmup"
+        warmup_id = f"{REQUEST_ID_PREFIX}_{track}_warmup"
         batches: list[dict[str, Any]] = [
             {
                 "track": track,
@@ -110,7 +111,8 @@ def build_run_plan() -> dict[str, list[dict[str, Any]]]:
         for cell in CELLS:
             for repeat_index in range(1, repeats + 1):
                 batch_id = (
-                    f"p6_3c_r2_{track}_{cell['cell_id']}_r{repeat_index:02d}"
+                    f"{REQUEST_ID_PREFIX}_{track}_"
+                    f"{cell['cell_id']}_r{repeat_index:02d}"
                 )
                 batches.append(
                     {
@@ -302,6 +304,28 @@ def _mapped_grade(grade: str) -> str:
             "red_p6_3c_r2_scheduler_pressure_evidence_incomplete"
         ),
     }.get(grade, grade)
+    if "_r2_f3_" in TASK_ID:
+        return {
+            (
+                "candidate_green_p6_3c_r2_chunked_prefill_"
+                "capacity_calibrated_matched_ab"
+            ): (
+                "candidate_green_p6_3c_r2_f3_chunked_prefill_"
+                "atomic_pair_admission_matched_ab"
+            ),
+            "red_p6_3c_r2_startup_kv_capacity_no_success": (
+                "red_p6_3c_r2_f3_startup_kv_capacity_no_success"
+            ),
+            "red_p6_3c_r2_scheduler_pressure_no_success": (
+                "red_p6_3c_r2_f3_scheduler_pressure_no_success"
+            ),
+            "yellow_p6_3c_r2_scheduler_pressure_partial": (
+                "yellow_p6_3c_r2_f3_scheduler_pressure_partial"
+            ),
+            "red_p6_3c_r2_scheduler_pressure_evidence_incomplete": (
+                "red_p6_3c_r2_f3_scheduler_pressure_evidence_incomplete"
+            ),
+        }.get(r2_grade, r2_grade)
     if "_r2_f2_" in TASK_ID:
         return {
             (
@@ -440,6 +464,7 @@ def _repair_identity_exact(artifact_dir: Path) -> bool:
 
 
 def _runtime_layout_evidence(artifact_dir: Path) -> dict[str, Any]:
+    atomic_pair_expected = "_r2_f3_" in TASK_ID
     layout_path = artifact_dir / "runtime_layout.json"
     preflight_path = (
         artifact_dir / "runtime_overlay_preflight_manifest.json"
@@ -483,6 +508,8 @@ def _runtime_layout_evidence(artifact_dir: Path) -> dict[str, Any]:
         and preflight.get("symlink_count") == 0
         and preflight.get("realpath_escape_count") == 0
         and preflight.get("shared_hybrid_kv_repair") is True
+        and preflight.get("atomic_pair_admission", False)
+        is atomic_pair_expected
         and preflight.get("observer") is True
         and preflight.get("base_environment_mutated") is False
         and preflight.get("site_packages_mutated") is False
@@ -493,6 +520,8 @@ def _runtime_layout_evidence(artifact_dir: Path) -> dict[str, Any]:
             item["manifest"].get("symlink_count") == 0
             and item["manifest"].get("realpath_escape_count") == 0
             and item["manifest"].get("shared_hybrid_kv_repair") is True
+            and item["manifest"].get("atomic_pair_admission", False)
+            is atomic_pair_expected
             and item["manifest"].get("observer")
             == (item["track"] == "mechanism")
             and item["manifest"].get("base_environment_mutated") is False
@@ -507,6 +536,7 @@ def _runtime_layout_evidence(artifact_dir: Path) -> dict[str, Any]:
             lifecycle_manifests
         ),
         "runtime_overlay_lifecycles_exact": lifecycle_overlays_exact,
+        "atomic_pair_admission_overlay_expected": atomic_pair_expected,
         "runtime_layout_gate_complete": (
             layout_resolved
             and preflight_complete
@@ -536,16 +566,21 @@ def _write_result_summary(
     transport_rows = _loopback_transport_rows(artifact_dir)
     transport_complete = _loopback_transport_complete(transport_rows)
     lineage_line = (
-        "- P6.3C-R2-F1 的本地代理误路由保持为独立审计；"
-        "本任务是科学合同不变的 R2-F2 本地传输修复结果链。"
-        if "_r2_f2_" in TASK_ID
+        "- P6.3C-R2-F2 的非原子 scheduler 到达 RED 保持为独立审计；"
+        "本任务是共同增加受控成对准入层的 R2-F3 结果链。"
+        if "_r2_f3_" in TASK_ID
         else (
-            "- P6.3C-R2 run01 的启动前 overlay 失败保持不变；"
-            "本任务是科学合同不变的 R2-F1 运行器修复结果链。"
-            if "_r2_f1_" in TASK_ID
+            "- P6.3C-R2-F1 的本地代理误路由保持为独立审计；"
+            "本任务是科学合同不变的 R2-F2 本地传输修复结果链。"
+            if "_r2_f2_" in TASK_ID
             else (
-                "- 原 P6.3C blocked 与 P6.3C-R1 RED 均保持不变，"
-                "本任务是独立 R2 结果链。"
+                "- P6.3C-R2 run01 的启动前 overlay 失败保持不变；"
+                "本任务是科学合同不变的 R2-F1 运行器修复结果链。"
+                if "_r2_f1_" in TASK_ID
+                else (
+                    "- 原 P6.3C blocked 与 P6.3C-R1 RED 均保持不变，"
+                    "本任务是独立 R2 结果链。"
+                )
             )
         )
     )
@@ -684,7 +719,10 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
         startup_complete
         and repair_exact
         and runtime_layout["runtime_layout_gate_complete"]
-        and ("_r2_f2_" not in TASK_ID or transport_complete)
+        and (
+            not any(tag in TASK_ID for tag in ("_r2_f2_", "_r2_f3_"))
+            or transport_complete
+        )
     ):
         grade = _mapped_grade(
             "red_p6_3c_r2_scheduler_pressure_evidence_incomplete"
@@ -704,7 +742,12 @@ def _finalize_artifacts_configured(artifact_dir: Path) -> dict[str, Any]:
             "loopback_transport_gate_complete": transport_complete,
             "parent_p6_3c_r2_f1_grade_preserved": (
                 "runner_local_loopback_proxy_failure_after_vllm_startup"
-                if "_r2_f2_" in TASK_ID
+                if "_r2_f2_" in TASK_ID or "_r2_f3_" in TASK_ID
+                else None
+            ),
+            "parent_p6_3c_r2_f2_grade_preserved": (
+                "red_p6_3c_r2_f2_scheduler_pressure_evidence_incomplete"
+                if "_r2_f3_" in TASK_ID
                 else None
             ),
             **runtime_layout,

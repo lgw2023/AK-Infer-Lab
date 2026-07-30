@@ -232,6 +232,19 @@ def prepare_overlay(args: argparse.Namespace) -> dict[str, Any]:
         if _sha256(interface) != HYBRID_INTERFACE_OUTPUT_SHA256:
             raise RuntimeError("hybrid_interface_output_sha256_mismatch")
 
+    if args.enable_atomic_pair_admission:
+        shutil.copy2(
+            args.admission_controller,
+            overlay_root / "p6_3c_r2_f3_atomic_pair_admission.py",
+        )
+        _apply_standard_patch(
+            args.admission_patch,
+            overlay_root,
+            runtime_dir,
+            "atomic_pair_admission_patch",
+        )
+        patch_methods["atomic_pair_admission"] = "patch_p1"
+
     if args.enable_observer:
         shutil.copy2(
             args.observer,
@@ -270,6 +283,7 @@ def prepare_overlay(args: argparse.Namespace) -> dict[str, Any]:
         "overlay_package_root": str(overlay_package.resolve(strict=True)),
         "copy_semantics": "materialized_copy_dereference_symlinks_no_ownership",
         "shared_hybrid_kv_repair": args.shared_hybrid_kv_repair,
+        "atomic_pair_admission": args.enable_atomic_pair_admission,
         "observer": args.enable_observer,
         "patch_methods": patch_methods,
         "patch_source_sha256": {
@@ -278,6 +292,7 @@ def prepare_overlay(args: argparse.Namespace) -> dict[str, Any]:
                 args.mtp_patch,
                 args.hybrid_patch,
                 args.deferred_patch,
+                args.admission_patch,
                 args.observer_patch,
             )
             if path is not None and path.is_file()
@@ -311,9 +326,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--runtime-loader", type=Path)
     parser.add_argument("--hybrid-patch", type=Path)
     parser.add_argument("--deferred-patch", type=Path)
+    parser.add_argument("--admission-controller", type=Path)
+    parser.add_argument("--admission-patch", type=Path)
     parser.add_argument("--observer", type=Path)
     parser.add_argument("--observer-patch", type=Path)
     parser.add_argument("--shared-hybrid-kv-repair", action="store_true")
+    parser.add_argument("--enable-atomic-pair-admission", action="store_true")
     parser.add_argument("--enable-observer", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--failure-excerpt", type=Path, required=True)
@@ -331,6 +349,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         args.observer is None or args.observer_patch is None
     ):
         parser.error("--observer and --observer-patch are required")
+    if args.enable_atomic_pair_admission and (
+        args.admission_controller is None or args.admission_patch is None
+    ):
+        parser.error(
+            "--admission-controller and --admission-patch are required"
+        )
     return args
 
 

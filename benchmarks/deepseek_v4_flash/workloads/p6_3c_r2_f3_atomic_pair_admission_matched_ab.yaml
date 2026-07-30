@@ -1,0 +1,177 @@
+schema_version: 1
+workload_id: p6_3c_r2_f3_atomic_pair_admission_matched_ab
+task_id: p6_3c_r2_f3_chunked_prefill_atomic_pair_admission_2026_0730_run01
+date: "2026-07-30"
+stage: P6.3C-R2-F3
+title: Chunked Prefill atomic-pair-admission scheduler-pressure matched A/B
+
+research_question:
+  - Does Chunked Prefill change scheduler behavior when two requests are
+    deterministically visible to the same first Scheduler.schedule call and
+    their total prefill exceeds the jointly frozen token budget?
+  - Under that controlled co-arrival environment, what descriptive changes
+    appear in short-request TTFT, per-request latency, completion balance, and
+    batch throughput?
+
+parent_run:
+  task_id: p6_3c_r2_f2_chunked_prefill_loopback_proxy_safe_2026_0730_run01
+  reported_grade: red_p6_3c_r2_f2_scheduler_pressure_evidence_incomplete
+  completed_lifecycles: 6
+  successful_engine_requests: 90
+  successful_batched_http_calls: 48
+  startup_and_loopback_gates_complete: true
+  off_partial_prefill_absent_all_cells: true
+  on_partial_prefill_present_both_pressure_cells: false
+  accepted_root_cause: >-
+    one OpenAI multi-prompt request was split into two EngineCore messages;
+    EngineCore scheduled the first before the second entered Scheduler.waiting,
+    so no same-round token-budget competition occurred
+  mechanism_or_performance_negative_conclusion_allowed: false
+  result_preserved: true
+  retry_or_run02: false
+
+scientific_contract:
+  jointly_frozen_both_modes:
+    max_model_len: 12288
+    max_num_batched_tokens: 12288
+    max_num_seqs: 2
+    prefix_cache_enabled: false
+    shared_hybrid_kv_repair: true
+    atomic_pair_admission: true
+    atomic_pair_request_prefix: p6_3c_r2_f3
+    atomic_pair_timeout_seconds: 30
+    model: DeepSeek-V4-Flash-w8a8-mtp
+    quantization: ascend_w8a8
+    tensor_parallel_size: 8
+    expert_parallel: true
+    mtp_num_speculative_tokens: 1
+    block_size: 128
+    graph_mode: FULL_DECODE_ONLY
+    async_scheduling: true
+  only_ab_difference:
+    "off": --no-enable-chunked-prefill
+    "on": --enable-chunked-prefill
+  cells:
+    - cell_id: no_pressure_4k_4k
+      simultaneous_prompt_tokens: [4096, 4096]
+      total_prefill_tokens: 8192
+      first_step_expected:
+        "off": [4096, 4096]
+        "on": [4096, 4096]
+    - cell_id: asymmetric_pressure_10k_6k
+      simultaneous_prompt_tokens: [10240, 6144]
+      total_prefill_tokens: 16384
+      first_step_expected:
+        "off": [10240, 0]
+        "on": [10240, 2048]
+    - cell_id: symmetric_pressure_8k_8k
+      simultaneous_prompt_tokens: [8192, 8192]
+      total_prefill_tokens: 16384
+      first_step_expected:
+        "off": [8192, 0]
+        "on": [8192, 4096]
+  lifecycle_order:
+    - mechanism_off
+    - mechanism_on
+    - performance_off
+    - performance_on
+    - performance_on
+    - performance_off
+  exact_totals:
+    fresh_model_lifecycles: 6
+    engine_requests: 90
+    batched_http_calls: 48
+    canonical_request_bodies: 14
+    tagged_measured_pairs: 42
+    retries: 0
+
+atomic_pair_admission:
+  implementation_layer: vllm.v1.engine.core.EngineCore.add_request
+  request_scope: tagged_p6_3c_r2_f3_measured_pairs_only
+  warmup_behavior: original_add_request_unchanged
+  ordinary_request_behavior: original_add_request_unchanged
+  first_member:
+    retained_before_scheduler_add_request: true
+    scheduler_has_work_created: false
+  second_member:
+    release_both_before_return: true
+    release_order: pair_index_ascending
+  scheduler_semantics_mutated: false
+  chunked_prefill_logic_mutated: false
+  timeout:
+    seconds: 30
+    core_thread_wakeup: true
+    buffered_members_admitted_then_aborted_for_cleanup: true
+    later_peer_rejected_without_new_wait: true
+  abort:
+    buffered_pair_drained_and_aborted: true
+    later_peer_rejected_without_new_wait: true
+  lifecycle_end:
+    pending_pair_count_required: 0
+    failed_pair_count_required: 0
+  claim_boundary: >-
+    this is a controlled scheduler-visibility environment and does not represent
+    natural production OpenAI API request arrival behavior
+
+evidence_tracks:
+  mechanism:
+    scheduler_observer: read_only
+    profiler: disabled
+    required:
+      - atomic_pair_admission_installed_each_lifecycle
+      - exactly_three_pair_complete_released_events_each_lifecycle
+      - no_timeout_abort_duplicate_or_release_failure_event
+      - shutdown_pending_pair_count_zero
+      - first_relevant_waiting_order_before_contains_exact_pair
+      - first_step_scheduled_tokens_match_cell_and_mode_contract
+      - off_partial_prefill_absent_all_cells
+      - on_partial_prefill_present_both_pressure_cells
+      - no_pressure_partial_prefill_absent_both_modes
+  performance:
+    scheduler_observer: disabled
+    profiler: disabled
+    lifecycle_order: off_on_on_off
+    atomic_pair_audit_trace: enabled_common_both_modes
+    measured:
+      - TTFT
+      - E2EL
+      - TPOT
+      - ITL
+      - batch_output_tokens_per_second
+      - two_request_completion_gap_ms
+      - atomic_pair_member_buffer_wait_ms
+    interpretation: descriptive_in_controlled_coarrival_environment_only
+
+grade_semantics:
+  candidate_green: >-
+    all runtime, request, cleanup, atomic-pair release, first-step co-arrival,
+    and Chunked Prefill mechanism gates complete
+  coarrival_red: >-
+    all requests may succeed, but exact pair release or first Scheduler.schedule
+    visibility is incomplete
+  mechanism_red: >-
+    atomic co-arrival is proven but the frozen Off/On scheduling pattern is not
+    fully observed
+  partial: any lifecycle, request, or batch matrix incomplete with clean recovery
+  cleanup_red: any resource or keep-alive recovery incomplete
+  developer_review_required: true
+  universal_benefit_claimed: false
+  natural_api_arrival_benefit_claimed: false
+
+stop_policy:
+  first_failure_stops_later_lifecycles: true
+  retry_allowed: false
+  run02_allowed: false
+  parameter_or_cell_sweep_allowed: false
+  server_side_code_edit_allowed: false
+  server_side_environment_edit_allowed: false
+  server_side_path_wrapper_allowed: false
+  concurrent_npu_task_allowed: false
+  automatic_result_transfer_allowed: false
+  next_task_authorized: false
+
+execution_state:
+  status: developed_awaiting_server_run01_after_global_task_coordination
+  result_transfer_authorized: true
+  transfer_method_selected: false
+  developer_review_required: true

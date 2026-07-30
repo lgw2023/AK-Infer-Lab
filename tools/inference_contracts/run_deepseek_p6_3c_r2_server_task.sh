@@ -10,6 +10,9 @@ OVERLAY_BUILDER=${P6_3C_RUNTIME_OVERLAY_BUILDER:-${SCRIPT_DIR}/prepare_p6_3c_run
 MTP_PATCH=${MTP_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch}
 OBSERVER=${OBSERVER:-${SCRIPT_DIR}/p6_3c_r1_scheduler_observer.py}
 OBSERVER_PATCH=${OBSERVER_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_p6_3c_r1_scheduler_observer_overlay.patch}
+ATOMIC_PAIR_ADMISSION=${P6_3C_ATOMIC_PAIR_ADMISSION_CONTROLLER:-${SCRIPT_DIR}/p6_3c_r2_f3_atomic_pair_admission.py}
+ATOMIC_PAIR_ADMISSION_PATCH=${P6_3C_ATOMIC_PAIR_ADMISSION_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_p6_3c_r2_f3_atomic_pair_admission_overlay.patch}
+ATOMIC_PAIR_ADMISSION_ENABLED=${P6_3C_ATOMIC_PAIR_ADMISSION:-0}
 RUNTIME_IMPL=${RUNTIME_IMPL:-${SCRIPT_DIR}/p6_3b_r1_hybrid_kv_runtime_patch.py}
 RUNTIME_LOADER=${RUNTIME_LOADER:-${SCRIPT_DIR}/p6_3b_r2_hybrid_kv_runtime_patch.py}
 HYBRID_PATCH=${HYBRID_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch}
@@ -56,6 +59,11 @@ if test "${P6_3C_SERVER_TASK_AUDIT_ONLY:-${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}}"
     "${BASE_PLUGIN_ROOT}/distributed/kv_transfer/__init__.py:dc693fd52eb44921e731b69021388ecc186f4e5fa5eca3b28fc1963661e355d1"
     "${BASE_VLLM_ROOT}/v1/core/sched/scheduler.py:41ff2e524c90d9aa72b72cd77492eb62ee2a729a773bd8233e970f39abbb5983"
   )
+  if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
+    source_gate+=(
+      "${BASE_VLLM_ROOT}/v1/engine/core.py:282e53b0f25d1ca05d977643d5b681316779b55ebfc360976ea2e95b464f4ea1"
+    )
+  fi
   for entry in "${source_gate[@]}"; do
     source_path=${entry%:*}
     expected_sha256=${entry##*:}
@@ -66,7 +74,8 @@ if test "${P6_3C_SERVER_TASK_AUDIT_ONLY:-${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}}"
 
   overlay_preflight_runtime=${preflight_root}/overlay_preflight
   overlay_preflight_manifest=${preflight_root}/runtime_overlay_preflight_manifest.json
-  if ! "${PYTHON_BIN}" "${OVERLAY_BUILDER}" \
+  overlay_preflight_args=(
+    "${PYTHON_BIN}" "${OVERLAY_BUILDER}"
     --base-plugin-root "${BASE_PLUGIN_ROOT}" \
     --runtime-dir "${overlay_preflight_runtime}" \
     --mtp-patch "${MTP_PATCH}" \
@@ -80,7 +89,15 @@ if test "${P6_3C_SERVER_TASK_AUDIT_ONLY:-${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}}"
     --enable-observer \
     --output "${overlay_preflight_manifest}" \
     --failure-excerpt "${preflight_root}/runtime_overlay_preflight_failure.txt"
-  then
+  )
+  if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
+    overlay_preflight_args+=(
+      --admission-controller "${ATOMIC_PAIR_ADMISSION}"
+      --admission-patch "${ATOMIC_PAIR_ADMISSION_PATCH}"
+      --enable-atomic-pair-admission
+    )
+  fi
+  if ! "${overlay_preflight_args[@]}"; then
     printf '%s\n' 'P6_3C_RUNTIME_OVERLAY_PREFLIGHT_BLOCKED'
     cat "${preflight_root}/runtime_overlay_preflight_failure.txt"
     exit 2
@@ -90,8 +107,8 @@ fi
 
 export P6_3C_TASK_ID=${P6_3C_TASK_ID:-p6_3c_r2_chunked_prefill_capacity_calibrated_2026_0729_run01}
 export P6_3C_REPORT_PREFIX=${P6_3C_REPORT_PREFIX:-P6_3C_R2}
-export P6_3C_RUNNER=${SCRIPT_DIR}/run_deepseek_p6_3c_r2_scheduler_pressure.py
-export P6_3C_EXPERIMENT=${SCRIPT_DIR}/run_deepseek_p6_3c_r2_scheduler_pressure.sh
+export P6_3C_RUNNER=${P6_3C_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r2_scheduler_pressure.py}
+export P6_3C_EXPERIMENT=${P6_3C_EXPERIMENT:-${SCRIPT_DIR}/run_deepseek_p6_3c_r2_scheduler_pressure.sh}
 
 if test "${P6_3C_SERVER_TASK_AUDIT_ONLY:-${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}}" = 1; then
   exec bash "${BASE_SERVER_TASK}" "$@"

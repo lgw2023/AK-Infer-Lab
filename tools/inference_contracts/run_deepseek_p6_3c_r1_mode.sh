@@ -26,6 +26,7 @@ BASE_VLLM_ROOT=${BASE_VLLM_ROOT:-/data/node0_disk1/vllm-0.22.1/vllm}
 BASE_PROPOSER=${BASE_PLUGIN_ROOT}/spec_decode/llm_base_proposer.py
 BASE_CONNECTOR_INIT=${BASE_PLUGIN_ROOT}/distributed/kv_transfer/__init__.py
 BASE_SCHEDULER=${BASE_VLLM_ROOT}/v1/core/sched/scheduler.py
+BASE_ENGINE_CORE=${BASE_VLLM_ROOT}/v1/engine/core.py
 BASE_VLLM_SINGLE=${BASE_VLLM_ROOT}/v1/core/single_type_kv_cache_manager.py
 BASE_VLLM_COORDINATOR=${BASE_VLLM_ROOT}/v1/core/kv_cache_coordinator.py
 BASE_ASCEND_COORDINATOR=${BASE_PLUGIN_ROOT}/patch/platform/patch_kv_cache_coordinator.py
@@ -40,6 +41,8 @@ ARGV_IDENTITY=${ARGV_IDENTITY:-${SCRIPT_DIR}/canonicalize_server_argv.py}
 MTP_PATCH=${MTP_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch}
 OBSERVER=${OBSERVER:-${SCRIPT_DIR}/p6_3c_r1_scheduler_observer.py}
 OBSERVER_PATCH=${OBSERVER_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_p6_3c_r1_scheduler_observer_overlay.patch}
+ATOMIC_PAIR_ADMISSION=${P6_3C_ATOMIC_PAIR_ADMISSION_CONTROLLER:-${SCRIPT_DIR}/p6_3c_r2_f3_atomic_pair_admission.py}
+ATOMIC_PAIR_ADMISSION_PATCH=${P6_3C_ATOMIC_PAIR_ADMISSION_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_p6_3c_r2_f3_atomic_pair_admission_overlay.patch}
 STARTUP_SUMMARY_RUNNER=${STARTUP_SUMMARY_RUNNER:-${SCRIPT_DIR}/p6_3c_startup_resource_summary.py}
 RUNTIME_IMPL=${RUNTIME_IMPL:-${SCRIPT_DIR}/p6_3b_r1_hybrid_kv_runtime_patch.py}
 RUNTIME_LOADER=${RUNTIME_LOADER:-${SCRIPT_DIR}/p6_3b_r2_hybrid_kv_runtime_patch.py}
@@ -51,10 +54,14 @@ MAX_MODEL_LEN=${P6_3C_MAX_MODEL_LEN:-69632}
 MAX_NUM_BATCHED_TOKENS=${P6_3C_MAX_NUM_BATCHED_TOKENS:-69632}
 MAX_NUM_SEQS=${P6_3C_MAX_NUM_SEQS:-2}
 SHARED_HYBRID_KV_REPAIR=${P6_3C_SHARED_HYBRID_KV_REPAIR:-0}
+ATOMIC_PAIR_ADMISSION_ENABLED=${P6_3C_ATOMIC_PAIR_ADMISSION:-0}
+ATOMIC_PAIR_REQUEST_PREFIX=${P6_3C_ATOMIC_PAIR_REQUEST_PREFIX:-p6_3c_r2_f3}
+ATOMIC_PAIR_TIMEOUT_SECONDS=${P6_3C_ATOMIC_PAIR_TIMEOUT_SECONDS:-30}
 LIFECYCLE_DIR=${ARTIFACT_DIR}/lifecycles/${LIFECYCLE_ID}
 RUNTIME_DIR=${LIFECYCLE_DIR}/runtime
 OVERLAY_ROOT=${RUNTIME_DIR}/overlay_root
 TRACE_DIR=${RUNTIME_DIR}/scheduler_trace
+ATOMIC_PAIR_TRACE_DIR=${RUNTIME_DIR}/atomic_pair_trace
 HYBRID_DIAGNOSTIC_PATH=${RUNTIME_DIR}/hybrid_kv_runtime_diagnostic.jsonl
 server_pid=
 
@@ -122,6 +129,9 @@ audit_contract() {
   printf 'max_num_seqs=%s\n' "${MAX_NUM_SEQS}"
   printf 'prefix_cache=false\n'
   printf 'shared_hybrid_kv_repair=%s\n' "${SHARED_HYBRID_KV_REPAIR}"
+  printf 'atomic_pair_admission=%s\n' "${ATOMIC_PAIR_ADMISSION_ENABLED}"
+  printf 'atomic_pair_request_prefix=%s\n' "${ATOMIC_PAIR_REQUEST_PREFIX}"
+  printf 'atomic_pair_timeout_seconds=%s\n' "${ATOMIC_PAIR_TIMEOUT_SECONDS}"
   printf 'observer=%s\n' "$([ "${TRACK}" = mechanism ] && printf enabled || printf disabled)"
   printf 'profiler=disabled\n'
   printf 'request_retry_count=0\n'
@@ -159,6 +169,17 @@ test "$(sha256sum "${BASE_CONNECTOR_INIT}" | awk '{print $1}')" = \
   dc693fd52eb44921e731b69021388ecc186f4e5fa5eca3b28fc1963661e355d1
 test "$(sha256sum "${BASE_SCHEDULER}" | awk '{print $1}')" = \
   41ff2e524c90d9aa72b72cd77492eb62ee2a729a773bd8233e970f39abbb5983
+case "${ATOMIC_PAIR_ADMISSION_ENABLED}" in
+  0) ;;
+  1)
+    test -f "${ATOMIC_PAIR_ADMISSION}"
+    test -f "${ATOMIC_PAIR_ADMISSION_PATCH}"
+    test -f "${BASE_ENGINE_CORE}"
+    test "$(sha256sum "${BASE_ENGINE_CORE}" | awk '{print $1}')" = \
+      282e53b0f25d1ca05d977643d5b681316779b55ebfc360976ea2e95b464f4ea1
+    ;;
+  *) echo "unsupported atomic pair admission control" >&2; exit 64 ;;
+esac
 case "${SHARED_HYBRID_KV_REPAIR}" in
   0) ;;
   1)
@@ -235,6 +256,13 @@ if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
     --shared-hybrid-kv-repair
   )
 fi
+if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
+  overlay_builder_args+=(
+    --admission-controller "${ATOMIC_PAIR_ADMISSION}"
+    --admission-patch "${ATOMIC_PAIR_ADMISSION_PATCH}"
+    --enable-atomic-pair-admission
+  )
+fi
 if test "${TRACK}" = mechanism; then
   overlay_builder_args+=(
     --observer "${OBSERVER}"
@@ -271,6 +299,11 @@ if test "${TRACK}" = mechanism; then
 else
   test ! -e "${OVERLAY_ROOT}/p6_3c_r1_scheduler_observer.py"
 fi
+if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
+  mkdir -p "${ATOMIC_PAIR_TRACE_DIR}"
+else
+  test ! -e "${OVERLAY_ROOT}/p6_3c_r2_f3_atomic_pair_admission.py"
+fi
 
 export PYTHONPATH="${OVERLAY_ROOT}:${CANN_GENERATED_PYTHONPATH}"
 export PYTHONNOUSERSITE=1
@@ -280,6 +313,14 @@ export VLLM_PLUGINS=ascend,ascend_kv_connector,ascend_model_loader,ascend_servic
 export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 export P6_3C_R1_MODE="${MODE}"
 export P6_3C_R1_TRACK="${TRACK}"
+export P6_3C_R2_F3_ATOMIC_PAIR_ADMISSION="${ATOMIC_PAIR_ADMISSION_ENABLED}"
+export P6_3C_R2_F3_REQUEST_PREFIX="${ATOMIC_PAIR_REQUEST_PREFIX}"
+export P6_3C_R2_F3_PAIR_TIMEOUT_SECONDS="${ATOMIC_PAIR_TIMEOUT_SECONDS}"
+if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
+  export P6_3C_R2_F3_ATOMIC_PAIR_TRACE_DIR="${ATOMIC_PAIR_TRACE_DIR}"
+else
+  unset P6_3C_R2_F3_ATOMIC_PAIR_TRACE_DIR
+fi
 if test -v VLLM_PREFIX_CACHE_RETENTION_INTERVAL; then
   printf '%s\n' set > "${RUNTIME_DIR}/inherited_retention_interval_presence.txt"
 else
@@ -297,6 +338,24 @@ if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
     {
       printf '%s\n' "${LIFECYCLE_ID}:hybrid_kv_runtime_patch_self_test_failed"
       tail -c 4096 "${RUNTIME_DIR}/hybrid_kv_runtime_patch_self_test.txt"
+    } > "${ARTIFACT_DIR}/first_failure_excerpt.txt"
+    exit 2
+  fi
+fi
+
+if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
+  if ! "${PYTHON_BIN}" - <<'PY' > "${RUNTIME_DIR}/atomic_pair_admission_self_test.txt" 2>&1
+from vllm_ascend.distributed.kv_transfer import register_connector
+register_connector()
+from vllm.v1.engine.core import EngineCore, EngineCoreProc
+assert EngineCore._p6_3c_r2_f3_atomic_pair_installed is True
+assert EngineCoreProc._p6_3c_r2_f3_atomic_pair_timeout_handler_installed is True
+print("pass")
+PY
+  then
+    {
+      printf '%s\n' "${LIFECYCLE_ID}:atomic_pair_admission_self_test_failed"
+      tail -c 4096 "${RUNTIME_DIR}/atomic_pair_admission_self_test.txt"
     } > "${ARTIFACT_DIR}/first_failure_excerpt.txt"
     exit 2
   fi
@@ -347,6 +406,8 @@ printf '%s\n' "${server_pid}" > "${RUNTIME_DIR}/server_pid.txt"
   "${MODE}" "${TRACK}" \
   "${MAX_MODEL_LEN}" "${MAX_NUM_BATCHED_TOKENS}" "${MAX_NUM_SEQS}" \
   "${SHARED_HYBRID_KV_REPAIR}" \
+  "${ATOMIC_PAIR_ADMISSION_ENABLED}" \
+  "${ATOMIC_PAIR_REQUEST_PREFIX}" \
   "${RUNTIME_DIR}/server_command.txt" \
   "/proc/${server_pid}/cmdline" \
   "${RUNTIME_DIR}/resolved_scheduler_config.json" <<'PY'
@@ -363,6 +424,8 @@ from pathlib import Path
     expected_max_num_batched_tokens,
     expected_max_num_seqs,
     shared_hybrid_kv_repair,
+    atomic_pair_admission,
+    atomic_pair_request_prefix,
     command_path,
     process_path,
     output_path,
@@ -409,6 +472,8 @@ evidence = {
     "max_num_batched_tokens": value_after("--max-num-batched-tokens"),
     "max_num_seqs": value_after("--max-num-seqs"),
     "shared_hybrid_kv_repair_enabled": shared_hybrid_kv_repair == "1",
+    "atomic_pair_admission_enabled": atomic_pair_admission == "1",
+    "atomic_pair_request_prefix": atomic_pair_request_prefix,
     "observer_enabled": track == "mechanism",
     "profiler_enabled": False,
     "resolution_basis": "explicit_cli_flags_and_live_process_cmdline",

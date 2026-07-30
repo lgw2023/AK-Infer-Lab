@@ -96,7 +96,8 @@ P6.3C: blocked_p6_3c_not_strict_single_variable for the original 135168/4096/1 r
 P6.3C-R1: red_p6_3c_r1_scheduler_pressure_no_success, 69632/69632/2 common environment failed KV-cache startup before scheduler
 P6.3C-R2: run01_runtime_overlay_preparation_failed_before_vllm_startup, 0 request / 0 scheduler evidence / global recovery clean
 P6.3C-R2-F1: runner_local_loopback_proxy_failure_after_vllm_startup, runtime layout and vLLM startup passed but inherited proxy returned 504 for local health; 0 request / 0 scheduler evidence / recovery clean
-P6.3C-R2-F2: developed_awaiting_server_run01, unchanged 12288/12288/2 science contract with F1 layout repair plus explicit direct-loopback shell/Python health, metrics, completions and cleanup transport
+P6.3C-R2-F2: red_p6_3c_r2_f2_scheduler_pressure_evidence_incomplete, 6/6 lifecycles and 90/90 requests completed but the two internal requests entered adjacent scheduler steps, so no same-round token-budget competition or Chunked Prefill mechanism conclusion
+P6.3C-R2-F3: developed_awaiting_server_run01, unchanged 12288/12288/2 science parameters plus a common tagged EngineCore atomic-pair admission layer in both modes; first-step waiting order and scheduled-token geometry are hard evidence gates
 ```
 
 K1A 原 `1 lifecycle / 6 requests` 契约已消费并以 pinned allocator 首错收口；K1A-R1 probe-invalid、R2
