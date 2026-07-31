@@ -1,0 +1,16 @@
+diff --git a/vllm_ascend/distributed/kv_transfer/__init__.py b/vllm_ascend/distributed/kv_transfer/__init__.py
+--- a/vllm_ascend/distributed/kv_transfer/__init__.py
++++ b/vllm_ascend/distributed/kv_transfer/__init__.py
+@@ -21,4 +21,12 @@
+ def register_connector():
++    # P6.3C-R2-F4 task-local controlled co-arrival layer. It strictly
++    # normalizes the vLLM eight-hex runtime suffix before pairing tagged
++    # measured requests; warmup and ordinary requests remain unchanged.
++    from p6_3c_r2_f4_atomic_pair_admission import (
++        install_p6_3c_r2_f4_atomic_pair_admission,
++    )
++
++    install_p6_3c_r2_f4_atomic_pair_admission()
+     # override multi_connector as ascend_multi_connector
+     if "MultiConnector" in KVConnectorFactory._registry:
+         KVConnectorFactory._registry.pop("MultiConnector")

@@ -12,6 +12,7 @@ OBSERVER=${OBSERVER:-${SCRIPT_DIR}/p6_3c_r1_scheduler_observer.py}
 OBSERVER_PATCH=${OBSERVER_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_p6_3c_r1_scheduler_observer_overlay.patch}
 ATOMIC_PAIR_ADMISSION=${P6_3C_ATOMIC_PAIR_ADMISSION_CONTROLLER:-${SCRIPT_DIR}/p6_3c_r2_f3_atomic_pair_admission.py}
 ATOMIC_PAIR_ADMISSION_PATCH=${P6_3C_ATOMIC_PAIR_ADMISSION_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_p6_3c_r2_f3_atomic_pair_admission_overlay.patch}
+ATOMIC_PAIR_ADMISSION_MODULE=${P6_3C_ATOMIC_PAIR_ADMISSION_MODULE:-p6_3c_r2_f3_atomic_pair_admission}
 ATOMIC_PAIR_ADMISSION_ENABLED=${P6_3C_ATOMIC_PAIR_ADMISSION:-0}
 RUNTIME_IMPL=${RUNTIME_IMPL:-${SCRIPT_DIR}/p6_3b_r1_hybrid_kv_runtime_patch.py}
 RUNTIME_LOADER=${RUNTIME_LOADER:-${SCRIPT_DIR}/p6_3b_r2_hybrid_kv_runtime_patch.py}
@@ -94,6 +95,7 @@ if test "${P6_3C_SERVER_TASK_AUDIT_ONLY:-${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}}"
     overlay_preflight_args+=(
       --admission-controller "${ATOMIC_PAIR_ADMISSION}"
       --admission-patch "${ATOMIC_PAIR_ADMISSION_PATCH}"
+      --admission-module-name "${ATOMIC_PAIR_ADMISSION_MODULE}"
       --enable-atomic-pair-admission
     )
   fi

@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import traceback
@@ -20,6 +21,7 @@ HYBRID_COORDINATOR_OUTPUT_SHA256 = (
 HYBRID_INTERFACE_OUTPUT_SHA256 = (
     "524c933ef17806ecba0634804bc562de1f69dc095fe1346e2edd0103845bfa75"
 )
+DEFAULT_ADMISSION_MODULE_NAME = "p6_3c_r2_f3_atomic_pair_admission"
 
 
 def _sha256(path: Path) -> str:
@@ -28,6 +30,12 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def validated_python_module_name(value: str) -> str:
+    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value) is None:
+        raise ValueError(f"invalid Python module name: {value!r}")
+    return value
 
 
 def _run_patch(
@@ -233,9 +241,12 @@ def prepare_overlay(args: argparse.Namespace) -> dict[str, Any]:
             raise RuntimeError("hybrid_interface_output_sha256_mismatch")
 
     if args.enable_atomic_pair_admission:
+        admission_module_name = validated_python_module_name(
+            args.admission_module_name
+        )
         shutil.copy2(
             args.admission_controller,
-            overlay_root / "p6_3c_r2_f3_atomic_pair_admission.py",
+            overlay_root / f"{admission_module_name}.py",
         )
         _apply_standard_patch(
             args.admission_patch,
@@ -284,6 +295,11 @@ def prepare_overlay(args: argparse.Namespace) -> dict[str, Any]:
         "copy_semantics": "materialized_copy_dereference_symlinks_no_ownership",
         "shared_hybrid_kv_repair": args.shared_hybrid_kv_repair,
         "atomic_pair_admission": args.enable_atomic_pair_admission,
+        "atomic_pair_admission_module": (
+            validated_python_module_name(args.admission_module_name)
+            if args.enable_atomic_pair_admission
+            else None
+        ),
         "observer": args.enable_observer,
         "patch_methods": patch_methods,
         "patch_source_sha256": {
@@ -328,6 +344,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--deferred-patch", type=Path)
     parser.add_argument("--admission-controller", type=Path)
     parser.add_argument("--admission-patch", type=Path)
+    parser.add_argument(
+        "--admission-module-name",
+        default=DEFAULT_ADMISSION_MODULE_NAME,
+    )
     parser.add_argument("--observer", type=Path)
     parser.add_argument("--observer-patch", type=Path)
     parser.add_argument("--shared-hybrid-kv-repair", action="store_true")
@@ -355,6 +375,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error(
             "--admission-controller and --admission-patch are required"
         )
+    if args.enable_atomic_pair_admission:
+        try:
+            validated_python_module_name(args.admission_module_name)
+        except ValueError as exc:
+            parser.error(str(exc))
     return args
 
 

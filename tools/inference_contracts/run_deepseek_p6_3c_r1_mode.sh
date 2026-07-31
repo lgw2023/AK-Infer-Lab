@@ -43,6 +43,9 @@ OBSERVER=${OBSERVER:-${SCRIPT_DIR}/p6_3c_r1_scheduler_observer.py}
 OBSERVER_PATCH=${OBSERVER_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_p6_3c_r1_scheduler_observer_overlay.patch}
 ATOMIC_PAIR_ADMISSION=${P6_3C_ATOMIC_PAIR_ADMISSION_CONTROLLER:-${SCRIPT_DIR}/p6_3c_r2_f3_atomic_pair_admission.py}
 ATOMIC_PAIR_ADMISSION_PATCH=${P6_3C_ATOMIC_PAIR_ADMISSION_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_p6_3c_r2_f3_atomic_pair_admission_overlay.patch}
+ATOMIC_PAIR_ADMISSION_MODULE=${P6_3C_ATOMIC_PAIR_ADMISSION_MODULE:-p6_3c_r2_f3_atomic_pair_admission}
+ATOMIC_PAIR_ENGINE_MARKER=${P6_3C_ATOMIC_PAIR_ENGINE_MARKER:-_p6_3c_r2_f3_atomic_pair_installed}
+ATOMIC_PAIR_PROC_MARKER=${P6_3C_ATOMIC_PAIR_PROC_MARKER:-_p6_3c_r2_f3_atomic_pair_timeout_handler_installed}
 STARTUP_SUMMARY_RUNNER=${STARTUP_SUMMARY_RUNNER:-${SCRIPT_DIR}/p6_3c_startup_resource_summary.py}
 RUNTIME_IMPL=${RUNTIME_IMPL:-${SCRIPT_DIR}/p6_3b_r1_hybrid_kv_runtime_patch.py}
 RUNTIME_LOADER=${RUNTIME_LOADER:-${SCRIPT_DIR}/p6_3b_r2_hybrid_kv_runtime_patch.py}
@@ -130,6 +133,7 @@ audit_contract() {
   printf 'prefix_cache=false\n'
   printf 'shared_hybrid_kv_repair=%s\n' "${SHARED_HYBRID_KV_REPAIR}"
   printf 'atomic_pair_admission=%s\n' "${ATOMIC_PAIR_ADMISSION_ENABLED}"
+  printf 'atomic_pair_admission_module=%s\n' "${ATOMIC_PAIR_ADMISSION_MODULE}"
   printf 'atomic_pair_request_prefix=%s\n' "${ATOMIC_PAIR_REQUEST_PREFIX}"
   printf 'atomic_pair_timeout_seconds=%s\n' "${ATOMIC_PAIR_TIMEOUT_SECONDS}"
   printf 'observer=%s\n' "$([ "${TRACK}" = mechanism ] && printf enabled || printf disabled)"
@@ -260,6 +264,7 @@ if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
   overlay_builder_args+=(
     --admission-controller "${ATOMIC_PAIR_ADMISSION}"
     --admission-patch "${ATOMIC_PAIR_ADMISSION_PATCH}"
+    --admission-module-name "${ATOMIC_PAIR_ADMISSION_MODULE}"
     --enable-atomic-pair-admission
   )
 fi
@@ -302,7 +307,7 @@ fi
 if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
   mkdir -p "${ATOMIC_PAIR_TRACE_DIR}"
 else
-  test ! -e "${OVERLAY_ROOT}/p6_3c_r2_f3_atomic_pair_admission.py"
+  test ! -e "${OVERLAY_ROOT}/${ATOMIC_PAIR_ADMISSION_MODULE}.py"
 fi
 
 export PYTHONPATH="${OVERLAY_ROOT}:${CANN_GENERATED_PYTHONPATH}"
@@ -316,10 +321,18 @@ export P6_3C_R1_TRACK="${TRACK}"
 export P6_3C_R2_F3_ATOMIC_PAIR_ADMISSION="${ATOMIC_PAIR_ADMISSION_ENABLED}"
 export P6_3C_R2_F3_REQUEST_PREFIX="${ATOMIC_PAIR_REQUEST_PREFIX}"
 export P6_3C_R2_F3_PAIR_TIMEOUT_SECONDS="${ATOMIC_PAIR_TIMEOUT_SECONDS}"
+export P6_3C_ATOMIC_PAIR_ADMISSION_ENABLED="${ATOMIC_PAIR_ADMISSION_ENABLED}"
+export P6_3C_ATOMIC_PAIR_REQUEST_PREFIX="${ATOMIC_PAIR_REQUEST_PREFIX}"
+export P6_3C_ATOMIC_PAIR_TIMEOUT_SECONDS="${ATOMIC_PAIR_TIMEOUT_SECONDS}"
+export P6_3C_ATOMIC_PAIR_ADMISSION_MODULE="${ATOMIC_PAIR_ADMISSION_MODULE}"
+export P6_3C_ATOMIC_PAIR_ENGINE_MARKER="${ATOMIC_PAIR_ENGINE_MARKER}"
+export P6_3C_ATOMIC_PAIR_PROC_MARKER="${ATOMIC_PAIR_PROC_MARKER}"
 if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
   export P6_3C_R2_F3_ATOMIC_PAIR_TRACE_DIR="${ATOMIC_PAIR_TRACE_DIR}"
+  export P6_3C_ATOMIC_PAIR_TRACE_DIR="${ATOMIC_PAIR_TRACE_DIR}"
 else
   unset P6_3C_R2_F3_ATOMIC_PAIR_TRACE_DIR
+  unset P6_3C_ATOMIC_PAIR_TRACE_DIR
 fi
 if test -v VLLM_PREFIX_CACHE_RETENTION_INTERVAL; then
   printf '%s\n' set > "${RUNTIME_DIR}/inherited_retention_interval_presence.txt"
@@ -347,9 +360,10 @@ if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
   if ! "${PYTHON_BIN}" - <<'PY' > "${RUNTIME_DIR}/atomic_pair_admission_self_test.txt" 2>&1
 from vllm_ascend.distributed.kv_transfer import register_connector
 register_connector()
+import os
 from vllm.v1.engine.core import EngineCore, EngineCoreProc
-assert EngineCore._p6_3c_r2_f3_atomic_pair_installed is True
-assert EngineCoreProc._p6_3c_r2_f3_atomic_pair_timeout_handler_installed is True
+assert getattr(EngineCore, os.environ["P6_3C_ATOMIC_PAIR_ENGINE_MARKER"]) is True
+assert getattr(EngineCoreProc, os.environ["P6_3C_ATOMIC_PAIR_PROC_MARKER"]) is True
 print("pass")
 PY
   then

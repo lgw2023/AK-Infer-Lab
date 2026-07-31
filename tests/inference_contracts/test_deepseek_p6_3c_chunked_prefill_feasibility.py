@@ -165,9 +165,10 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
         "p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml",
         "p6_3c_r2_chunked_prefill_capacity_calibrated_matched_ab.yaml",
         "p6_3c_r2_f1_runtime_layout_portable_matched_ab.yaml",
-        "p6_3c_r2_f2_loopback_proxy_safe_matched_ab.yaml",
-        "p6_3c_r2_f3_atomic_pair_admission_matched_ab.yaml",
-    }
+            "p6_3c_r2_f2_loopback_proxy_safe_matched_ab.yaml",
+            "p6_3c_r2_f3_atomic_pair_admission_matched_ab.yaml",
+            "p6_3c_r2_f4_request_id_normalized_atomic_coarrival_matched_ab.yaml",
+        }
 
 
 def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():

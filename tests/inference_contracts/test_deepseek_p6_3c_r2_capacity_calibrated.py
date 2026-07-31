@@ -40,6 +40,11 @@ F3_SERVER_TASK = (
     / "tools/inference_contracts/"
     "run_deepseek_p6_3c_r2_f3_server_task.sh"
 )
+F4_SERVER_TASK = (
+    REPO_ROOT
+    / "tools/inference_contracts/"
+    "run_deepseek_p6_3c_r2_f4_server_task.sh"
+)
 F1_WORKLOAD = (
     REPO_ROOT
     / "benchmarks/deepseek_v4_flash/workloads/"
@@ -54,6 +59,11 @@ F3_WORKLOAD = (
     REPO_ROOT
     / "benchmarks/deepseek_v4_flash/workloads/"
     "p6_3c_r2_f3_atomic_pair_admission_matched_ab.yaml"
+)
+F4_WORKLOAD = (
+    REPO_ROOT
+    / "benchmarks/deepseek_v4_flash/workloads/"
+    "p6_3c_r2_f4_request_id_normalized_atomic_coarrival_matched_ab.yaml"
 )
 P6_HANDOFF = REPO_ROOT / "通信模块/docs/developer-to-server.P6.md"
 
@@ -161,6 +171,20 @@ def test_overlay_materialization_rejects_symlink_preservation(tmp_path: Path):
     assert evidence["realpath_escape_count"] == 0
     assert (overlay_package / "linked.py").is_file()
     assert not (overlay_package / "linked.py").is_symlink()
+
+
+def test_overlay_builder_validates_task_local_admission_module_name():
+    from tools.inference_contracts.prepare_p6_3c_runtime_overlay import (
+        validated_python_module_name,
+    )
+
+    assert validated_python_module_name(
+        "p6_3c_r2_f4_atomic_pair_admission"
+    ) == "p6_3c_r2_f4_atomic_pair_admission"
+    with pytest.raises(ValueError):
+        validated_python_module_name("../escape")
+    with pytest.raises(ValueError):
+        validated_python_module_name("module.py")
 
 
 def test_empty_mechanism_trace_is_not_reported_as_negative_evidence(
@@ -610,6 +634,475 @@ def test_r2_f3_requires_exact_release_and_same_first_scheduler_step(
     assert failed_gate["mechanism_atomic_coarrival_gate_complete"] is False
 
 
+def test_r2_f4_normalizes_observed_vllm_request_ids(monkeypatch):
+    from tools.inference_contracts.p6_3c_r2_f4_atomic_pair_admission import (
+        normalize_atomic_pair_request_id,
+    )
+
+    monkeypatch.setenv(
+        "P6_3C_ATOMIC_PAIR_REQUEST_PREFIX",
+        "p6_3c_r2_f4",
+    )
+    observed = normalize_atomic_pair_request_id(
+        "cmpl-p6_3c_r2_f4_mechanism_no_pressure_4k_4k_"
+        "r01-0-a19f074f"
+    )
+
+    assert observed is not None
+    assert observed.actual_request_id.endswith("-0-a19f074f")
+    assert observed.canonical_request_id.endswith("_r01-0")
+    assert observed.pair_key.endswith("_r01")
+    assert observed.pair_index == 0
+    assert observed.runtime_suffix == "a19f074f"
+    assert normalize_atomic_pair_request_id(
+        "cmpl-p6_3c_r2_f4_mechanism_no_pressure_4k_4k_r01-1-NOTHEX00"
+    ) is None
+    assert normalize_atomic_pair_request_id(
+        "cmpl-p6_3c_r2_f3_mechanism_no_pressure_4k_4k_"
+        "r01-1-94c2f491"
+    ) is None
+
+
+def test_r2_f4_contract_changes_only_common_request_id_control_plane():
+    f3_workload = yaml.safe_load(F3_WORKLOAD.read_text(encoding="utf-8"))
+    f4_workload = yaml.safe_load(F4_WORKLOAD.read_text(encoding="utf-8"))
+
+    assert f4_workload["stage"] == "P6.3C-R2-F4"
+    assert f4_workload["parent_run"]["reported_grade"] == (
+        "red_p6_3c_r2_f3_atomic_pair_admission_evidence_incomplete"
+    )
+    f3_frozen = f3_workload["scientific_contract"][
+        "jointly_frozen_both_modes"
+    ]
+    f4_frozen = f4_workload["scientific_contract"][
+        "jointly_frozen_both_modes"
+    ]
+    for key, value in f3_frozen.items():
+        if key == "atomic_pair_request_prefix":
+            assert f4_frozen[key] == "p6_3c_r2_f4"
+        else:
+            assert f4_frozen[key] == value
+    assert (
+        f4_workload["scientific_contract"]["only_ab_difference"]
+        == f3_workload["scientific_contract"]["only_ab_difference"]
+    )
+    assert (
+        f4_workload["scientific_contract"]["cells"]
+        == f3_workload["scientific_contract"]["cells"]
+    )
+    assert (
+        f4_workload["scientific_contract"]["lifecycle_order"]
+        == f3_workload["scientific_contract"]["lifecycle_order"]
+    )
+    assert (
+        f4_workload["scientific_contract"]["exact_totals"]
+        == f3_workload["scientific_contract"]["exact_totals"]
+    )
+    assert f4_workload["request_id_normalization"]["actual_id_pattern"] == (
+        "cmpl-<canonical_pair_key>-<pair_index:0|1>-<runtime_suffix:8hex>"
+    )
+    assert (
+        f4_workload["request_id_normalization"]["release_and_scheduler_shared"]
+        is True
+    )
+
+
+def test_r2_f4_audit_freezes_real_id_fixture_and_existing_server_argv():
+    result_dir = (
+        "/audit/"
+        "p6_3c_r2_f4_request_id_normalized_atomic_coarrival_"
+        "2026_0731_run01"
+    )
+    completed = subprocess.run(
+        ["bash", str(F4_SERVER_TASK), result_dir],
+        cwd=REPO_ROOT,
+        env={
+            **os.environ,
+            "PYTHON_BIN": "python",
+            "P6_3C_SERVER_TASK_AUDIT_ONLY": "1",
+        },
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    output = completed.stdout
+    assert (
+        "request_id_fixture_gate="
+        "observed_8hex_suffix_normalized_strict"
+    ) in output
+    assert (
+        "task_id=p6_3c_r2_f4_request_id_normalized_atomic_coarrival_"
+        "2026_0731_run01"
+    ) in output
+    assert "experiment_label=P6_3C_R2_F4" in output
+    assert "atomic_pair_admission=1" in output
+    assert "tagged_measured_pair_count_exact=42" in output
+    assert output.count(
+        "atomic_pair_admission_module="
+        "p6_3c_r2_f4_atomic_pair_admission"
+    ) == 6
+    assert output.count("atomic_pair_request_prefix=p6_3c_r2_f4") == 7
+    assert output.count(
+        "server_argv_sha256="
+        "568b32b1b105c0113a28cd71efe1b905dc5afd86690158e63c5bcbe9da55bb10"
+    ) == 3
+    assert output.count(
+        "server_argv_sha256="
+        "cb6687044ed1ad4d6661f90ff16b7c9686e8c3ef15e1300b67e40ad00383b017"
+    ) == 3
+
+
+def test_r2_f4_controller_releases_actual_ids_and_persists_canonical_state(
+    tmp_path: Path,
+    monkeypatch,
+):
+    from tools.inference_contracts.p6_3c_r2_f4_atomic_pair_admission import (
+        AtomicPairController,
+    )
+
+    monkeypatch.setenv("P6_3C_ATOMIC_PAIR_REQUEST_PREFIX", "p6_3c_r2_f4")
+    monkeypatch.setenv(
+        "P6_3C_ATOMIC_PAIR_TRACE_DIR",
+        str(tmp_path / "trace"),
+    )
+
+    class Engine:
+        pass
+
+    class Request:
+        def __init__(self, request_id: str, prompt_tokens: int):
+            self.request_id = request_id
+            self.num_prompt_tokens = prompt_tokens
+
+    engine = Engine()
+    added: list[str] = []
+    aborted: list[str] = []
+
+    def original_add(_engine, request, _wave):
+        added.append(request.request_id)
+
+    def original_abort(_engine, request_ids):
+        aborted.extend(request_ids)
+
+    controller = AtomicPairController(
+        engine,
+        original_add,
+        original_abort,
+        "WAKEUP",
+    )
+    member_0 = Request(
+        "cmpl-p6_3c_r2_f4_mechanism_no_pressure_4k_4k_"
+        "r01-0-a19f074f",
+        4096,
+    )
+    member_1 = Request(
+        "cmpl-p6_3c_r2_f4_mechanism_no_pressure_4k_4k_"
+        "r01-1-94c2f491",
+        4096,
+    )
+
+    controller.add(member_0, 0)
+    assert added == []
+    controller.add(member_1, 0)
+    controller.shutdown()
+
+    assert added == [member_0.request_id, member_1.request_id]
+    assert aborted == []
+    trace_rows = [
+        json.loads(line)
+        for path in (tmp_path / "trace").glob("trace.*.jsonl")
+        for line in path.read_text(encoding="utf-8").splitlines()
+    ]
+    release = next(
+        row for row in trace_rows if row["event"] == "pair_complete_released"
+    )
+    assert release["actual_request_ids"] == added
+    assert release["canonical_request_ids"] == [
+        member_0.request_id.rsplit("-", 1)[0],
+        member_1.request_id.rsplit("-", 1)[0],
+    ]
+    checkpoint = next(
+        row
+        for row in reversed(trace_rows)
+        if row["event"] == "atomic_pair_admission_state_checkpoint"
+    )
+    assert checkpoint["reason"] == "shutdown"
+    assert checkpoint["pending_pair_count"] == 0
+    assert checkpoint["failed_pair_count"] == 0
+    assert checkpoint["completed_pair_count"] == 1
+
+
+def test_r2_f4_analyzer_normalizes_release_and_scheduler_ids_with_checkpoint_fallback(
+    tmp_path: Path,
+):
+    import tools.inference_contracts.run_deepseek_p6_3c_r2_f4_atomic_pair_admission as f4
+
+    source = tmp_path / "source.json"
+    source.write_text(json.dumps({"prompt": list(range(4096))}), encoding="utf-8")
+    artifact = tmp_path / "result"
+    f4.prepare_artifacts(source, artifact, "model")
+    plan = json.loads((artifact / "run_plan.json").read_text(encoding="utf-8"))
+
+    for lifecycle in f4.r2.base.LIFECYCLE_SCHEDULE:
+        runtime = artifact / "lifecycles" / lifecycle["lifecycle_id"] / "runtime"
+        atomic_dir = runtime / "atomic_pair_trace"
+        atomic_dir.mkdir(parents=True)
+        measured = [
+            batch
+            for batch in plan[lifecycle["track"]]
+            if batch["phase"] == "measured"
+        ]
+        atomic_rows = [{"event": "atomic_pair_admission_installed"}]
+        for completed_count, batch in enumerate(measured, start=1):
+            canonical = [
+                f"cmpl-{batch['request_id']}-0",
+                f"cmpl-{batch['request_id']}-1",
+            ]
+            actual = [
+                canonical[0] + "-a19f074f",
+                canonical[1] + "-94c2f491",
+            ]
+            atomic_rows.extend(
+                [
+                    {
+                        "event": "pair_complete_released",
+                        "pair_key": canonical[0].rsplit("-", 1)[0],
+                        "actual_request_ids": actual,
+                        "canonical_request_ids": canonical,
+                        "runtime_suffixes": ["a19f074f", "94c2f491"],
+                        "pair_indices": [0, 1],
+                        "prompt_tokens": batch["prompt_tokens"],
+                        "member_buffer_wait_ns": [1_000_000, 100_000],
+                        "completed_pair_count": completed_count,
+                        "release_order": (
+                            "pair_index_ascending_before_next_scheduler_step"
+                        ),
+                    },
+                    {
+                        "event": "atomic_pair_admission_state_checkpoint",
+                        "reason": "pair_complete_released",
+                        "pending_pair_count": 0,
+                        "failed_pair_count": 0,
+                        "completed_pair_count": completed_count,
+                    },
+                ]
+            )
+        (atomic_dir / "trace.1.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in atomic_rows),
+            encoding="utf-8",
+        )
+
+        if lifecycle["track"] != "mechanism":
+            continue
+        scheduler_dir = runtime / "scheduler_trace"
+        scheduler_dir.mkdir()
+        scheduler_rows = []
+        for index, batch in enumerate(measured, start=1):
+            canonical = [
+                f"cmpl-{batch['request_id']}-0",
+                f"cmpl-{batch['request_id']}-1",
+            ]
+            actual = [
+                canonical[0] + "-a19f074f",
+                canonical[1] + "-94c2f491",
+            ]
+            prompt_0, prompt_1 = batch["prompt_tokens"]
+            if not batch["pressure"]:
+                amounts = [prompt_0, prompt_1]
+            elif lifecycle["mode"] == "chunked_prefill_off":
+                amounts = [prompt_0, 0]
+            else:
+                amounts = [prompt_0, 12288 - prompt_0]
+            scheduler_rows.append(
+                {
+                    "event": "scheduler_step",
+                    "step_index": index,
+                    "waiting_order_before": actual,
+                    "total_num_scheduled_tokens": sum(amounts),
+                    "scheduled_requests": [
+                        {
+                            "request_id": request_id,
+                            "scheduled_tokens": amount,
+                        }
+                        for request_id, amount in zip(
+                            actual,
+                            amounts,
+                            strict=True,
+                        )
+                        if amount
+                    ],
+                }
+            )
+        (scheduler_dir / "trace.1.jsonl").write_text(
+            "".join(json.dumps(row) + "\n" for row in scheduler_rows),
+            encoding="utf-8",
+        )
+
+    releases, release_rows = f4._release_table_and_gate(artifact, plan)
+    first_steps, first_step_rows = f4._first_step_table_and_gate(artifact, plan)
+
+    assert releases["exact_pair_release_count"] == 42
+    assert releases["shutdown_state_observed_count"] == 0
+    assert releases["checkpoint_terminal_state_used_count"] == 6
+    assert releases["atomic_pair_release_gate_complete"] is True
+    assert all(row["actual_id_contract_exact"] for row in release_rows)
+    assert first_steps["first_scheduler_step_contract_exact_count"] == 6
+    assert first_steps["mechanism_atomic_coarrival_gate_complete"] is True
+    assert all(row["actual_id_contract_exact"] for row in first_step_rows)
+
+    atomic_path = (
+        artifact
+        / "lifecycles/mechanism_01/runtime/atomic_pair_trace/trace.1.jsonl"
+    )
+    corrupted_atomic = [
+        json.loads(line)
+        for line in atomic_path.read_text(encoding="utf-8").splitlines()
+    ]
+    first_release = next(
+        row
+        for row in corrupted_atomic
+        if row["event"] == "pair_complete_released"
+    )
+    first_release["actual_request_ids"][0] = (
+        first_release["canonical_request_ids"][0] + "-NOTHEX00"
+    )
+    atomic_path.write_text(
+        "".join(json.dumps(row) + "\n" for row in corrupted_atomic),
+        encoding="utf-8",
+    )
+    failed_releases, _ = f4._release_table_and_gate(artifact, plan)
+    assert failed_releases["atomic_pair_release_gate_complete"] is False
+
+    scheduler_path = (
+        artifact
+        / "lifecycles/mechanism_01/runtime/scheduler_trace/trace.1.jsonl"
+    )
+    corrupted_scheduler = [
+        json.loads(line)
+        for line in scheduler_path.read_text(encoding="utf-8").splitlines()
+    ]
+    corrupted_scheduler[0]["waiting_order_before"][0] = (
+        corrupted_scheduler[0]["waiting_order_before"][0].rsplit("-", 1)[0]
+        + "-NOTHEX00"
+    )
+    scheduler_path.write_text(
+        "".join(json.dumps(row) + "\n" for row in corrupted_scheduler),
+        encoding="utf-8",
+    )
+    failed_first_steps, _ = f4._first_step_table_and_gate(artifact, plan)
+    assert (
+        failed_first_steps["mechanism_atomic_coarrival_gate_complete"]
+        is False
+    )
+
+
+def test_r2_f4_finalizer_maps_complete_normalized_evidence_to_f4_candidate(
+    tmp_path: Path,
+    monkeypatch,
+):
+    import tools.inference_contracts.run_deepseek_p6_3c_r2_f4_atomic_pair_admission as f4
+
+    artifact = tmp_path / "result"
+    artifact.mkdir()
+    atomic = {
+        "atomic_pair_release_gate_complete": True,
+        "mechanism_atomic_coarrival_gate_complete": True,
+        "coarrival_gate_complete": True,
+        "exact_pair_release_count": 42,
+        "expected_pair_release_count": 42,
+        "first_scheduler_step_contract_exact_count": 6,
+        "all_lifecycle_terminal_states_clean": True,
+        "shutdown_state_observed_count": 5,
+        "checkpoint_terminal_state_used_count": 1,
+    }
+    (artifact / "atomic_pair_admission_summary.json").write_text(
+        json.dumps(atomic),
+        encoding="utf-8",
+    )
+    (artifact / "atomic_pair_release_summary.tsv").write_text(
+        "actual_id_contract_exact\n"
+        + "".join("True\n" for _ in range(42)),
+        encoding="utf-8",
+    )
+    (artifact / "mechanism_atomic_pair_first_step.tsv").write_text(
+        "actual_id_contract_exact\n"
+        + "".join("True\n" for _ in range(6)),
+        encoding="utf-8",
+    )
+    (artifact / "mechanism_scheduler_summary.json").write_text(
+        json.dumps(
+            {
+                "mechanism_gate_complete": True,
+                "atomic_pair_admission": {},
+                "off_prefill_partial_absent_all_cells": True,
+                "on_prefill_partial_present_both_pressure_cells": True,
+                "low_pressure_partial_absent_both_modes": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (artifact / "environment_and_hashes.json").write_text(
+        "{}\n",
+        encoding="utf-8",
+    )
+    overlay_manifest = json.dumps(
+        {
+            "atomic_pair_admission_module": (
+                "p6_3c_r2_f4_atomic_pair_admission"
+            )
+        }
+    )
+    (artifact / "runtime_overlay_preflight_manifest.json").write_text(
+        overlay_manifest,
+        encoding="utf-8",
+    )
+    for lifecycle in f4.r2.base.LIFECYCLE_SCHEDULE:
+        runtime = (
+            artifact
+            / "lifecycles"
+            / lifecycle["lifecycle_id"]
+            / "runtime"
+        )
+        runtime.mkdir(parents=True)
+        (runtime / "runtime_overlay_manifest.json").write_text(
+            overlay_manifest,
+            encoding="utf-8",
+        )
+
+    def fake_f3_finalize(_artifact: Path):
+        return {
+            "server_grade": (
+                "candidate_green_p6_3c_r2_chunked_prefill_"
+                "capacity_calibrated_matched_ab"
+            ),
+            "all_lifecycles_success": True,
+            "successful_request_count": 90,
+            "successful_batch_count": 48,
+            "startup_resource_gate_complete": True,
+            "shared_hybrid_kv_repair_exact_all_lifecycles": True,
+            "runtime_layout_gate_complete": True,
+            "loopback_transport_gate_complete": True,
+            "atomic_pair_admission_resolved_all_lifecycles": True,
+            "keep_alive_restore_exact": True,
+        }
+
+    monkeypatch.setattr(f4.f3, "finalize_artifacts", fake_f3_finalize)
+
+    grading = f4.finalize_artifacts(artifact)
+
+    assert grading["server_grade"] == (
+        "candidate_green_p6_3c_r2_f4_chunked_prefill_"
+        "request_id_normalized_atomic_coarrival_matched_ab"
+    )
+    assert grading["request_id_normalization_gate_complete"] is True
+    assert grading["f4_runtime_and_transport_gates_complete"] is True
+    assert grading["f4_overlay_module_gate_complete"] is True
+    assert grading["parent_p6_3c_r2_f3_overwritten"] is False
+    assert (artifact / "first_failure_excerpt.txt").read_text(
+        encoding="utf-8"
+    ) == "none\n"
+
+
 def test_p6_handoff_asset_gate_matches_current_bytes():
     text = P6_HANDOFF.read_text(encoding="utf-8")
     rows = re.findall(
@@ -617,7 +1110,7 @@ def test_p6_handoff_asset_gate_matches_current_bytes():
         text,
         re.MULTILINE,
     )
-    assert len(rows) == 27
+    assert len(rows) == 28
     for _, relative_path, expected_bytes, expected_sha256 in rows:
         payload = (REPO_ROOT / relative_path).read_bytes()
         assert len(payload) == int(expected_bytes)
@@ -626,9 +1119,14 @@ def test_p6_handoff_asset_gate_matches_current_bytes():
     assert "75156e56ce06554cfca79aef92167ec78521a28902f90389f8f262a3d509ebc1" not in text
     assert "若有 K2、K3、P8.3、P9、其他 P6" in text
     assert (
-        "p6_3c_r2_f3_chunked_prefill_atomic_pair_admission_"
-        "2026_0730_run01"
+        "p6_3c_r2_f4_request_id_normalized_atomic_coarrival_"
+        "2026_0731_run01"
     ) in text
     assert "server_side_path_wrapper_authorized: false" in text
     assert "tagged_measured_pair_count_exact=42" in text
+    assert (
+        "request_id_fixture_gate=observed_8hex_suffix_normalized_strict"
+        in text
+    )
+    assert "request_id_normalization_gate_complete=true" in text
     assert "coarrival_gate_complete=true" in text
