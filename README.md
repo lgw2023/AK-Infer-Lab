@@ -20,7 +20,7 @@ DeepSeek 模型与 v0.18.0、v0.20.2rc1 的失败保留为历史证据。独立 
 
 ### 场景 A：单机八卡官方基准
 
-目标是形成 DeepSeek-V4-Flash W8A8-MTP 在 Ascend 上的可信八卡基线。模型使用 vLLM-Ascend A2/A3 参考路径和 `--quantization ascend`；当前 official context、unprofiled performance、profiled evidence、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 已建立。P6.3B 完整保留 query-positive/hit-zero、import-order red、repair green、invalid on-vs-on、root-squash blocked 与最终 explicit-control green lineage；最终机制结论限于 primary 9/9 positive hit，不从固定顺序或 boundary zero-hit 外推普遍性能收益。原 P6.3C 仅证明 frozen `max_model_len=135168 / max_num_batched_tokens=4096 / max_num_seqs=1` 下 Off 侧不能启动，故不能直接接在 P6.1 后形成 131K+c1 严格单变量 A/B；独立的 P6.3C-R1 已重新冻结 `69632 / 69632 / 2`、显式关闭 Prefix Cache，并以 32K+32K、64K+32K、48K+48K 双请求开展 scheduler-pressure matched A/B，当前为开发完成、待服务器实测。
+目标是形成 DeepSeek-V4-Flash W8A8-MTP 在 Ascend 上的可信八卡基线。模型使用 vLLM-Ascend A2/A3 参考路径和 `--quantization ascend`；当前 official context、unprofiled performance、profiled evidence、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 已建立。P6.3B 完整保留 query-positive/hit-zero、import-order red、repair green、invalid on-vs-on、root-squash blocked 与最终 explicit-control green lineage；最终机制结论限于 primary 9/9 positive hit，不从固定顺序或 boundary zero-hit 外推普遍性能收益。原 P6.3C 仅证明 `max_model_len=135168 / max_num_batched_tokens=4096 / max_num_seqs=1` 下 Off 侧不能直接接在 P6.1 后形成 131K+c1 对照；独立 R2-F4 已在共同的 `12288/12288/2`、Prefix Cache off、受控原子共同到达环境完成 6/6 lifecycle、90/90 request、42/42 pair 与 6/6 机制首轮合同。开发机据此接收“压力 cell 中 Chunked Prefill 改变 scheduler token 分配”的机制结果；固定样本没有显示短请求 TTFT 或 batch throughput 收益，不外推为生产流量收益或普遍负面结论。
 
 ### 场景 B：单卡/双卡极限硬件实验
 
@@ -72,7 +72,7 @@ AK-Infer-Lab/
 
 ## 当前状态摘要
 
-P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell、P6.3A matched MTP on/off 和 P6.3B-R4-R1 explicit Prefix Cache control。P8.1-R1 已由开发机接受 `green_p8_1_r1_official_mtp_observe_only_matrix`。P8.2-K0-R1 使用不变的 29-file raw evidence 离线修正 finalizer 后，15 项逐请求 predicate 均为 20/20，开发机已接受 `green_p8_2_k0_order_balanced_prefix_cache_baseline`；该结果仍不是 performance reference 或 offload evidence。K1 `OffloadingConnector + NPUOffloadingSpec` 冻结源路径保持 `blocked_p8_2_k1_frozen_stack_import_incompatible`。K1A 的 source/import/registration 门已过，但冻结 32 GiB/rank 在服务就绪前以 `aclrtMallocHostWithCfg / 207001` 失败，0/6 请求，开发机只接受为该容量点的 `red_p8_2_k1a_simple_cpu_offload_no_success`，不宣判普通 DRAM 不足、唯一 pinned-pool 根因或整个 connector 不支持。原 P6.3C 审计继续保持 blocked；独立 P6.3C-R1 已在 `69632/69632/2` 共同环境的 KV-cache 初始化阶段 RED，0 request、0 scheduler step。容量校准后的 P6.3C-R2 run01 在 vLLM 启动前因任务内 overlay 未物化真实安装树而停止，0 request、0 scheduler step，资源恢复 clean；它不是 Chunked Prefill 或容量结论。R2-F1 保持 `12288/12288/2`、同一 repair、三组双请求和唯一布尔差异不变，只修复安装布局解析与覆盖层准备，等待全局互斥确认后实机。当前仍不得把 Chunked Prefill 写成正向成果。
+P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell、P6.3A matched MTP on/off、P6.3B-R4-R1 explicit Prefix Cache control 和 P6.3C-R2-F4 controlled scheduler-pressure mechanism evidence。F4 的原始服务器标签因 task-name capability 判断错误而为 RED，但结构化证据为 6/6 lifecycle、90/90 request、48/48 batch、42/42 atomic pair、6/6 first-step contract、机制与资源恢复全部闭合；服务器 warmup singleton passthrough 已按实际执行字节进入仓库。当前接收的是受控压力下 Chunked Prefill 机制发生，不接收性能收益、自然到达语义或普遍优化结论。服务器侧后续协作按 `docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md` 允许有记录的现场修复和证据驱动重试，不再把 tracked-clean、一次执行或机器颜色标签当成科学有效性的替代品。
 
 P8 现显式分成两条并行依赖。P8.3-I0-R1 已在 bounded taxonomy 边界接受为
 `green_p8_3_i0_r1_unclassified_taxonomy`，但 `1135` tensor / `12319364956 bytes` 的分类结果不能自动
@@ -104,8 +104,9 @@ CacheStore，但 8 GiB 只能容纳 1296 个当前 shard，低于 pinned source 
 通用 handoff 当前管理 K2-R0 run04：复用 run01–run03 已关闭的 NFS、依赖和容量门，
 修复 FAWA split-aware POSIX GC 几何后只执行一个三请求 external-prefix lifecycle。P6.3C-R1
 启动 RED、R2 run01 启动前 overlay 失败和 R2-F1 模型启动后 loopback proxy 误路由均已
-保留；R2-F2 已完成 90/90 请求但内部 pair 未原子共同进入 scheduler，故不形成 Chunked
-Prefill 结论。P6.3C-R2-F3 已开发，必须等待 K2 完全收口后再执行，不与其混跑。
+保留；R2-F2 已完成 90/90 请求但内部 pair 未原子共同进入 scheduler。F3 暴露实际 request ID
+后缀问题后，F4 用规范化 ID 与两侧共同 atomic admission 完成机制闭环；其服务器现场 warmup
+修复已被开发机接收，当前只需零 NPU A1 再归档，不与任何 NPU 会话争卡。
 
 边界必须保留：P0/P3 是合成硬件 microbench observed ceiling，不是模型推理 benchmark；P1.29/P1.31 是 vLLM OpenAI streaming client 口径下的 scoped facts，不是 MindIE native event；P1.30 是 whole-device HBM occupancy 和 process-group RSS/PSS readout，不是 per-request KV object bytes 或 HBM traffic。当前结果仍不支持 compute-bound、memory-bound、queue-bound、scheduler-bound、AI Core / AIV / MTE bottleneck 归因。
 
@@ -125,7 +126,7 @@ Prefill 结论。P6.3C-R2-F3 已开发，必须等待 K2 完全收口后再执�
 
 ## 最小开工路径
 
-1. P5/P6 runtime、official context、unprofiled/profiled reference 与既有 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C blocked、R1/R2/F1 lineage 和 R2-F2 的非原子 scheduler 到达 RED 均保留；P6.3C-R2-F3 已开发，以两侧共同 tagged pair admission 建立确定首轮调度压力并等待全局互斥确认。
+1. P5/P6 runtime、official context、unprofiled/profiled reference 与 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C blocked 和 R1–F3 的失败 lineage 均保留；R2-F4 已接收为受控 co-arrival 下的 Chunked Prefill scheduler 机制证据，性能样本未显示收益。当前 P6 服务器动作仅是零 NPU A1 对既有 raw evidence 再归档，不重跑八卡。
 2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-F1 已由 R17 闭合 warm-tier restore/H2D。当前只执行 K2-R0 run03 的 UCM `save → DRAM external hit → Cache load/H2D → follower completion` 单 lifecycle；K2-R1/K3 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。

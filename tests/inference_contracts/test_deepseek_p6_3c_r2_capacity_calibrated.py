@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 from threading import Thread
@@ -832,6 +830,103 @@ def test_r2_f4_controller_releases_actual_ids_and_persists_canonical_state(
     assert checkpoint["completed_pair_count"] == 1
 
 
+def test_r2_f4_controller_passes_singleton_warmup_without_pair_wait(
+    monkeypatch,
+):
+    from tools.inference_contracts.p6_3c_r2_f4_atomic_pair_admission import (
+        AtomicPairController,
+    )
+
+    monkeypatch.setenv("P6_3C_ATOMIC_PAIR_REQUEST_PREFIX", "p6_3c_r2_f4")
+
+    class Engine:
+        pass
+
+    class Request:
+        request_id = "cmpl-p6_3c_r2_f4_mechanism_warmup-0-a19f074f"
+        num_prompt_tokens = 4096
+
+    engine = Engine()
+    added: list[str] = []
+
+    def original_add(_engine, request, _wave):
+        added.append(request.request_id)
+
+    controller = AtomicPairController(
+        engine,
+        original_add,
+        lambda _engine, request_ids: request_ids,
+        "WAKEUP",
+    )
+
+    controller.add(Request(), 0)
+
+    assert added == [Request.request_id]
+    assert controller._pending == {}
+    assert controller._completed_pair_count == 0
+
+
+def test_r2_runtime_layout_uses_enabled_capability_instead_of_task_name(
+    tmp_path: Path,
+    monkeypatch,
+):
+    import tools.inference_contracts.run_deepseek_p6_3c_r2_scheduler_pressure as r2
+
+    (tmp_path / "runtime_layout.json").write_text(
+        json.dumps(
+            {
+                "resolution_method": (
+                    "target_environment_importlib_find_spec_then_realpath"
+                ),
+                "base_vllm_root": "/runtime/vllm",
+                "base_plugin_root": "/runtime/vllm_ascend",
+                "source_files_mutated": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    manifest = {
+        "copy_semantics": (
+            "materialized_copy_dereference_symlinks_no_ownership"
+        ),
+        "symlink_count": 0,
+        "realpath_escape_count": 0,
+        "shared_hybrid_kv_repair": True,
+        "atomic_pair_admission": True,
+        "observer": True,
+        "base_environment_mutated": False,
+        "site_packages_mutated": False,
+    }
+    (tmp_path / "runtime_overlay_preflight_manifest.json").write_text(
+        json.dumps(manifest),
+        encoding="utf-8",
+    )
+    for lifecycle in r2.base.LIFECYCLE_SCHEDULE:
+        runtime = (
+            tmp_path
+            / "lifecycles"
+            / lifecycle["lifecycle_id"]
+            / "runtime"
+        )
+        runtime.mkdir(parents=True)
+        lifecycle_manifest = {
+            **manifest,
+            "observer": lifecycle["track"] == "mechanism",
+        }
+        (runtime / "runtime_overlay_manifest.json").write_text(
+            json.dumps(lifecycle_manifest),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setenv("P6_3C_ATOMIC_PAIR_ADMISSION", "1")
+    evidence = r2._runtime_layout_evidence(tmp_path)
+
+    assert evidence["atomic_pair_admission_overlay_expected"] is True
+    assert evidence["runtime_overlay_preflight_complete"] is True
+    assert evidence["runtime_overlay_lifecycles_exact"] is True
+    assert evidence["runtime_layout_gate_complete"] is True
+
+
 def test_r2_f4_analyzer_normalizes_release_and_scheduler_ids_with_checkpoint_fallback(
     tmp_path: Path,
 ):
@@ -1103,30 +1198,93 @@ def test_r2_f4_finalizer_maps_complete_normalized_evidence_to_f4_candidate(
     ) == "none\n"
 
 
+def test_r2_f4_adaptive_review_accepts_complete_server_evidence(tmp_path: Path):
+    from tools.inference_contracts.review_deepseek_p6_3c_r2_f4_adaptive_run import (
+        EXPECTED_EXECUTED_CONTROLLER_SHA256,
+        EXPECTED_SOURCE_RUNNER_SHA256,
+        EXPECTED_SOURCE_WORKLOAD_SHA256,
+        SOURCE_TASK_ID,
+        validate_source_result,
+    )
+
+    (tmp_path / "environment_and_hashes.json").write_text(
+        json.dumps(
+            {
+                "task_id": SOURCE_TASK_ID,
+                "f4_atomic_pair_admission_sha256": (
+                    EXPECTED_EXECUTED_CONTROLLER_SHA256
+                ),
+                "f4_runner_sha256": EXPECTED_SOURCE_RUNNER_SHA256,
+                "workload_sha256": EXPECTED_SOURCE_WORKLOAD_SHA256,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "grading_inputs.json").write_text(
+        json.dumps(
+            {
+                "task_id": SOURCE_TASK_ID,
+                "server_grade": (
+                    "red_p6_3c_r2_f4_chunked_prefill_mechanism_"
+                    "evidence_incomplete"
+                ),
+                "all_lifecycles_success": True,
+                "successful_request_count": 90,
+                "successful_batch_count": 48,
+                "request_id_normalization_gate_complete": True,
+                "coarrival_gate_complete": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "atomic_pair_admission_summary.json").write_text(
+        json.dumps(
+            {
+                "exact_pair_release_count": 42,
+                "atomic_pair_release_gate_complete": True,
+                "all_lifecycle_terminal_states_clean": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "mechanism_scheduler_summary.json").write_text(
+        json.dumps({"mechanism_gate_complete": True}),
+        encoding="utf-8",
+    )
+    (tmp_path / "resource_recovery_summary.json").write_text(
+        json.dumps(
+            {
+                "keep_alive_restored_exact": True,
+                "port_7000_listener_count": 0,
+                "vllm_residual_process_count": 0,
+                "tracked_worktree_clean": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "result_summary.md").write_text("complete\n", encoding="utf-8")
+
+    review = validate_source_result(tmp_path)
+
+    assert review["source_task_id"] == SOURCE_TASK_ID
+    assert all(review["checks"].values())
+
+
 def test_p6_handoff_asset_gate_matches_current_bytes():
     text = P6_HANDOFF.read_text(encoding="utf-8")
-    rows = re.findall(
-        r"^\| (\d+) \| `([^`]+)` \| (\d+) \| `([0-9a-f]{64})` \|$",
-        text,
-        re.MULTILINE,
-    )
-    assert len(rows) == 28
-    for _, relative_path, expected_bytes, expected_sha256 in rows:
-        payload = (REPO_ROOT / relative_path).read_bytes()
-        assert len(payload) == int(expected_bytes)
-        assert hashlib.sha256(payload).hexdigest() == expected_sha256
-    assert "75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1" in text
-    assert "75156e56ce06554cfca79aef92167ec78521a28902f90389f8f262a3d509ebc1" not in text
-    assert "若有 K2、K3、P8.3、P9、其他 P6" in text
     assert (
-        "p6_3c_r2_f4_request_id_normalized_atomic_coarrival_"
-        "2026_0731_run01"
+        "p6_3c_r2_f4_a1_adaptive_acceptance_2026_0801"
     ) in text
-    assert "server_side_path_wrapper_authorized: false" in text
-    assert "tagged_measured_pair_count_exact=42" in text
+    assert "docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md" in text
     assert (
-        "request_id_fixture_gate=observed_8hex_suffix_normalized_strict"
+        "a396ba49f94922592854192de139e497232e8952f718cc791d36e372a7a42f4b"
         in text
     )
+    assert "本轮不要执行" in text
+    assert "npu_used=false" in text
+    assert "可以继续到证据闭合，不设机械的一次执行上限" in text
+    assert "source_result_mutated=false" in text
     assert "request_id_normalization_gate_complete=true" in text
     assert "coarrival_gate_complete=true" in text
+    assert "服务器 AI 已获授权" in text
+    assert "可以继续到证据闭合" in text

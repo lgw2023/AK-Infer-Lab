@@ -39,7 +39,12 @@ WORKLOAD_RELATIVE_PATH = (
 ATOMIC_SUMMARY = "atomic_pair_admission_summary.json"
 ATOMIC_RELEASE_TSV = "atomic_pair_release_summary.tsv"
 ATOMIC_FIRST_STEP_TSV = "mechanism_atomic_pair_first_step.tsv"
-F4_BOUNDED_CANDIDATES = f3.F3_BOUNDED_CANDIDATES
+ADAPTIVE_EXECUTION_REVIEW = "adaptive_execution_review.json"
+F4_BOUNDED_CANDIDATES = (
+    *f3.F3_BOUNDED_CANDIDATES[:-2],
+    ADAPTIVE_EXECUTION_REVIEW,
+    *f3.F3_BOUNDED_CANDIDATES[-2:],
+)
 FAILURE_EVENTS = set(f3.FAILURE_EVENTS)
 
 
@@ -734,15 +739,24 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         and overlay_module["f4_overlay_module_gate_complete"] is True
     )
     if (
-        grade.startswith("candidate_green")
-        and not (
-            atomic["coarrival_gate_complete"]
-            and runtime_and_transport_gates
-        )
+        full_execution
+        and atomic["coarrival_gate_complete"]
+        and mechanism.get("mechanism_gate_complete") is True
+        and runtime_and_transport_gates
     ):
         grade = (
-            "red_p6_3c_r2_f4_atomic_pair_admission_"
-            "evidence_incomplete"
+            "candidate_green_p6_3c_r2_f4_chunked_prefill_"
+            "request_id_normalized_atomic_coarrival_matched_ab"
+        )
+    elif (
+        full_execution
+        and atomic["coarrival_gate_complete"]
+        and mechanism.get("mechanism_gate_complete") is True
+        and not runtime_and_transport_gates
+    ):
+        grade = (
+            "incomplete_p6_3c_r2_f4_runtime_provenance_"
+            "mechanism_evidence_present"
         )
     elif (
         full_execution

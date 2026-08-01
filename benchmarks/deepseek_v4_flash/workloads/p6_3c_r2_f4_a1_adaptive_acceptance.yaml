@@ -1,0 +1,111 @@
+schema_version: 1
+task_id: p6_3c_r2_f4_a1_adaptive_acceptance_2026_0801
+date: "2026-08-01"
+stage: P6.3C-R2-F4-A1
+title: P6.3C-R2-F4 adaptive-execution evidence acceptance and re-finalization
+
+objective:
+  - Accept the successful F4 mechanism evidence using the implementation that
+    actually ran on the Ascend server.
+  - Publish the server warmup repair as tracked source.
+  - Re-finalize the retained raw result without another NPU experiment.
+  - Replace task-name-based capability inference with execution-capability
+    evidence while preserving the originally returned grade as provenance.
+
+source_run:
+  task_id: p6_3c_r2_f4_request_id_normalized_atomic_coarrival_2026_0731_run01
+  server_result_dir: >-
+    /data/node0_disk1/liguowei/AK-Infer-Lab/server_results/
+    p6_3c_r2_f4_request_id_normalized_atomic_coarrival_2026_0731_run01
+  returned_grade: red_p6_3c_r2_f4_chunked_prefill_mechanism_evidence_incomplete
+  returned_grade_preserved: true
+  successful_attempt:
+    reported_attempt_index: 3
+    lifecycles: 6/6
+    requests: 90/90
+    batches: 48/48
+    atomic_pair_releases: 42/42
+    mechanism_first_step_contracts: 6/6
+    request_id_normalization_gate: true
+    coarrival_gate: true
+    mechanism_gate: true
+    keep_alive_restore_exact: true
+    global_cleanup: clean
+
+server_adaptation:
+  accepted: true
+  root_cause: >-
+    The singleton warmup request received an ID that matched the measured pair
+    parser, so it waited for a nonexistent second member and timed out.
+  repair: >-
+    If the normalized pair key ends with _warmup, call the original
+    EngineCore.add_request immediately; measured pairs still use atomic release.
+  pre_adaptation_controller_sha256: >-
+    6cf48b4f96d779a108bac30aba46bf075ba5e72fd39526d76f9699c1b3ee4a9d
+  executed_controller_sha256: >-
+    a396ba49f94922592854192de139e497232e8952f718cc791d36e372a7a42f4b
+  published_controller_sha256_required: >-
+    a396ba49f94922592854192de139e497232e8952f718cc791d36e372a7a42f4b
+  scientific_contract_changed: false
+  measured_pair_semantics_changed: false
+  shared_worktree_restored_after_run: true
+
+classification_repair:
+  root_cause: >-
+    The shared R2 finalizer expected atomic admission only when TASK_ID contained
+    _r2_f3_; F4 therefore failed runtime-layout classification even though its
+    overlay manifests and resolved configs showed atomic admission in all six
+    lifecycles.
+  replacement: >-
+    Read P6_3C_ATOMIC_PAIR_ADMISSION from the execution environment and derive
+    the final outcome directly from full execution, runtime/transport,
+    co-arrival, and mechanism evidence.
+  shutdown_trace_is_not_required_when_checkpoint_terminal_state_is_clean: true
+  automatic_grade_is_advisory: true
+
+accepted_scientific_result:
+  outcome: accepted_chunked_prefill_scheduler_mechanism_observed
+  mechanism:
+    off_partial_prefill_absent_all_cells: true
+    on_partial_prefill_present_both_pressure_cells: true
+    no_pressure_partial_prefill_absent_both_modes: true
+  performance_descriptive_on_minus_off:
+    no_pressure_4k_4k:
+      ttft_ms: -1.975
+      e2el_ms: 128.778
+      tpot_ms: 2.075
+      batch_output_tokens_per_second: -0.083
+    asymmetric_pressure_10k_6k:
+      ttft_ms: 62.865
+      short_request_ttft_ms: 43.327
+      e2el_ms: 243.385
+      tpot_ms: 2.865
+      batch_output_tokens_per_second: -0.152
+      completion_gap_ms: 3.976
+    symmetric_pressure_8k_8k:
+      ttft_ms: 90.558
+      e2el_ms: 282.495
+      tpot_ms: 3.047
+      batch_output_tokens_per_second: -0.180
+      completion_gap_ms: 17.752
+  interpretation: >-
+    Chunked Prefill changed scheduler token allocation under controlled pressure,
+    but these fixed samples did not show a short-request latency or batch
+    throughput benefit. This is a useful mechanism result, not an optimization
+    win or a universal negative conclusion.
+  claim_boundary: >-
+    Controlled atomic co-arrival, 12288/12288/2, three cells and fixed order;
+    no natural production arrival, statistical significance, or universal
+    performance claim.
+
+server_execution:
+  npu_required: false
+  keep_alive_action: leave_running
+  source_result_mutation_allowed: false
+  dedicated_worktree_recommended: true
+  adaptive_execution_policy: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+  server_ai_adaptation_allowed: true
+  retry_until_evidence_complete_or_repeated_blocker: true
+  remote_main_push_allowed_from_server: false
+  result_transfer_authorized: true
+  transfer_method_selected: false

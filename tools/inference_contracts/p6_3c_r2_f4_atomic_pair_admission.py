@@ -208,6 +208,8 @@ class AtomicPairController:
         engine_core = self._engine_ref()
         if engine_core is None or normalized is None:
             return self._original_add(engine_core, request, request_wave)
+        if normalized.pair_key.endswith("_warmup"):
+            return self._original_add(engine_core, request, request_wave)
         pair_key = normalized.pair_key
         pair_index = normalized.pair_index
         now_ns = time.monotonic_ns()

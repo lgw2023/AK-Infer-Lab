@@ -184,7 +184,9 @@ grade_semantics:
   universal_benefit_claimed: false
   natural_api_arrival_benefit_claimed: false
 
-stop_policy:
+historical_stop_policy_at_run01:
+  superseded_for_future_and_followup_work: true
+  superseded_by: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
   first_failure_stops_later_lifecycles: true
   retry_allowed: false
   run02_allowed: false
@@ -196,8 +198,30 @@ stop_policy:
   automatic_result_transfer_allowed: false
   next_task_authorized: false
 
+current_adaptive_policy:
+  objective_and_evidence_first: true
+  server_ai_task_local_code_and_environment_adaptation_allowed: true
+  evidence_driven_retry_allowed: true
+  dedicated_worktree_or_task_local_overlay_preferred: true
+  shared_checkout_restore_and_patch_provenance_required: true
+  scientific_change_requires_new_variant_and_explicit_delta: true
+  automatic_grade_is_advisory: true
+  remote_main_push_from_server_allowed: false
+  source: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+
 execution_state:
-  status: developed_awaiting_server_run01_after_global_task_coordination
+  status: accepted_chunked_prefill_scheduler_mechanism_observed
+  source_server_grade_preserved: >-
+    red_p6_3c_r2_f4_chunked_prefill_mechanism_evidence_incomplete
+  source_server_grade_classification_bug: >-
+    atomic admission expectation was inferred only from the _r2_f3_ task-id
+    substring instead of the enabled execution capability
+  successful_server_adaptation: warmup_singleton_passthrough
+  executed_controller_sha256: >-
+    a396ba49f94922592854192de139e497232e8952f718cc791d36e372a7a42f4b
+  mechanism_observed: true
+  performance_benefit_observed_in_fixed_samples: false
   result_transfer_authorized: true
   transfer_method_selected: false
-  developer_review_required: true
+  developer_review_required: false
+  adaptive_acceptance_refinalization_pending: true

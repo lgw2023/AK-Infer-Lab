@@ -1401,7 +1401,7 @@
             <article class="gate" data-step="03"><span class="tag ok">GREEN</span><h3>P6.2 · Profiled Evidence</h3><div class="big">3 × 136</div><p>三个代表性工作负载分别获得 136 个 SQLite 文件，并完成阶段内存记录和八卡设备覆盖，诊断证据链完整。</p></article>
             <article class="gate" data-step="04"><span class="tag ok">GREEN</span><h3>P6.3A · Matched MTP A/B</h3><div class="big">24 / 24</div><p>108 个测量请求全部成功；24 个配对批次的端到端时延和每令牌时间均下降，批输出吞吐均提高。</p></article>
             <article class="gate" data-step="05"><span class="tag ok">GREEN</span><h3>P6.3B-R4-R1 · Prefix Cache</h3><div class="big">9 / 9</div><p>64 个请求全部完成。关闭缓存时总命中量为 0，开启缓存后预先定义的 9 个主要跟随请求均精确命中。</p></article>
-            <article class="gate" data-step="06"><span class="tag warn">AUDIT + OPEN F3</span><h3>P6.3C · Chunked Prefill</h3><div class="big">原配置 blocked</div><p>原 135168/4096/1 配置不能直接 A/B；F2 已跑完但请求未原子共同到达 scheduler，独立 F3 以两侧共同准入层补机制压力证据。</p></article>
+            <article class="gate" data-step="06"><span class="tag ok">MECHANISM OBSERVED</span><h3>P6.3C-R2-F4 · Chunked Prefill</h3><div class="big">6 / 6 · 42 / 42</div><p>原 135168/4096/1 配置 blocked 继续保留；F4 在共同 12288/12288/2 与受控原子共同到达下，直接观察到 On 在两个压力 cell 改变 scheduler token 分配。</p></article>
           </div>
         </div>
 
@@ -1416,19 +1416,20 @@
               <tr><td>P6.3C-R2</td><td><span class="tag red">PRE-START</span> run01 overlay 布局失败，0 ready / 0 request / recovery clean</td></tr>
               <tr><td>P6.3C-R2-F1</td><td><span class="tag red">RUNNER RED</span> overlay 与 vLLM 启动通过；loopback health 被代理误路由，0 request</td></tr>
               <tr><td>P6.3C-R2-F2</td><td><span class="tag red">EVIDENCE RED</span> 6/6 lifecycle、90/90 request；内部 pair 分处相邻 scheduler step，机制压力未成立</td></tr>
-              <tr><td>P6.3C-R2-F3</td><td><span class="tag plan">DEVELOPED</span> 两侧共同 atomic pair admission；首轮 waiting/scheduled token 精确门待实机</td></tr>
+              <tr><td>P6.3C-R2-F3</td><td><span class="tag red">ID RED</span> 90/90 request；8-hex runtime suffix 使旧 parser 绕过准入层</td></tr>
+              <tr><td>P6.3C-R2-F4</td><td><span class="tag ok">MECHANISM</span> 90/90 request、42/42 pair、6/6 首轮合同；On 压力 cell 有 partial prefill</td></tr>
               <tr><td>P6.3D / P6.4</td><td><span class="tag plan">OPTIONAL</span> max_num_seqs / MindIE 受条件与可用性门约束</td></tr>
               <tr><td>P7</td><td><span class="tag risk">SEPARATE</span> capacity / scheduler / hardware boundary 仍需独立关闭</td></tr>
               <tr><td>P8</td><td><span class="tag ok">CONSUMER</span> 可使用 P6 Prefix、MTP 与 trace reference</td></tr>
               <tr><td>P9</td><td><span class="tag risk">NOT UNLOCKED</span> P6 单独不能支持 bottleneck attribution</td></tr>
             </table>
-            <div class="source-line">阶段关闭指既有五项证据任务已有可复核结果，并不表示所有候选实验均获得正向结果。原 P6.3C blocked、P6.3B 中间失败与 P6.3C-R1 启动 RED 继续作为研究记录；P6.3C-R2 是新的开放结果链，不覆盖旧审计或 R1。</div>
+            <div class="source-line">阶段关闭按请求、机制和恢复证据判断，不要求所有机器标签为绿色。原 P6.3C blocked、P6.3B 中间失败与 R1–F3 lineage 继续保留；F4 的自动 RED 来自 task-name capability 假阴性，结构化机制证据已由开发机接收。</div>
           </div>
         </div>
       </div>
       <div class="summary">
         <div class="summary-label">摘要</div>
-        <p>在冻结的 DeepSeek-V4-Flash W8A8-MTP 八卡环境中，P6 已建立 131K 长上下文稳定性、18-cell 未剖析性能基线、可用的 profiler 诊断链，以及 MTP 和 Prefix Cache 的受限机制证据。原 P6.3C 只证明 135168/4096/1 参考配置不能直接形成 Off/On；独立 R1 尚待服务器实测。已完成结果不支持将样本内变化外推为普遍优化收益。</p>
+        <p>在 DeepSeek-V4-Flash W8A8-MTP 八卡环境中，P6 已建立 131K 长上下文、18-cell 未剖析性能、profiler 诊断链，以及 MTP、Prefix Cache 和 Chunked Prefill 的受限机制证据。F4 证明后者在受控超预算共同到达时改变调度，但固定样本没有显示短请求或吞吐收益；不外推为生产优化。</p>
       </div>
       <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>DeepSeek-V4-Flash W8A8-MTP · 8× Ascend 910B1</span><span class="slide-index">Page 1 / 12</span></div>
     </section>
@@ -1788,7 +1789,7 @@
         </div>
 
         <div class="module">
-          <div class="module-title red">P6.3C 系列：保留原 blocked 与 R1 启动 RED，R2 继续机制压力对照</div>
+          <div class="module-title blue">P6.3C 系列：原配置 blocked 保留，F4 已关闭受控调度机制问题</div>
           <div class="module-body">
             <table class="tight">
               <tr><th>审计项</th><th>冻结版本结论</th></tr>
@@ -1804,7 +1805,7 @@
               <div class="chunk-path off"><strong>OFF · 配置校验拒绝</strong><span>不允许分块时，冻结调度器要求 token 预算足以覆盖最大模型长度；4,096 无法覆盖 135,168，故在启动请求前失败。</span></div>
             </div>
             <div class="equation">4,096 &lt; 135,168</div>
-            <div class="callout warn"><strong>R1 实机首错与 R2 修复方向</strong><br>R1 的 69632/69632/2 共同环境需要 36.66 GiB KV cache，但只有 8.27 GiB 可用，首个 lifecycle 在 scheduler 前停止。R2 不重跑 R1，改为两侧共同冻结 12288/12288/2 和同一 validated deferred hybrid-KV repair，同时让压力组总 Prefill 继续超过批预算。</div>
+            <div class="callout"><strong>R2-F4 受控机制结果</strong><br>F4 使用两侧共同的 12288/12288/2、Prefix Cache off、同一 repair 与原子共同到达。6/6 lifecycle、42/42 pair、6/6 首轮合同完成；Off 三组无 partial prefill，On 在 10K+6K 与 8K+8K 压力组出现 partial prefill。</div>
             <div class="zero-grid" style="margin-top:8px">
               <div class="zero"><strong>4K+4K</strong><span>8,192 · 无压力对照</span></div>
               <div class="zero"><strong>10K+6K</strong><span>16,384 · 非对称压力</span></div>
@@ -1816,7 +1817,7 @@
       </div>
       <div class="summary">
         <div class="summary-label">讨论</div>
-        <p>P6.2 只证明诊断链路可观测，不形成硬件瓶颈归因。原 P6.3C 的有效结论严格限于 <code>135168/4096/1</code>。R1/R2/F1 的启动与控制面 RED 均独立保留。R2-F2 已完成 6/6 lifecycle 和 90/90 request，但一个 multi-prompt HTTP 请求拆出的两个 engine request 总在相邻而非相同 scheduler step，On 未出现 partial prefill；这证明 F2 未建立同轮预算竞争，不证明 Chunked Prefill 无效。F3 继续保持 <code>12288/12288/2</code>、同一 repair、三组请求和 Off→On→On→Off，仅在两侧共同加入 tagged atomic pair admission。</p>
+        <p>P6.2 只证明诊断链路可观测，不形成硬件瓶颈归因。原 P6.3C 的有效结论仍限于 <code>135168/4096/1</code>。R1–F3 的启动与控制面失败均独立保留；F4 通过实际 ID 规范化和两侧共同 atomic admission 建立同轮预算竞争，直接证明 Chunked Prefill 在两个压力 cell 改变 scheduled token。性能轨道没有显示短请求 TTFT 或吞吐收益，故结果是机制闭环而非优化胜利。</p>
       </div>
       <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Profiled Evidence + Strict Feasibility</span><span class="slide-index">Page 9 / 12</span></div>
     </section>
@@ -1882,9 +1883,9 @@
       <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>P6.3B Repair &amp; Provenance Chain</span><span class="slide-index">Page 10 / 12</span></div>
     </section>
 
-    <section class="slide" id="s11" aria-label="P6 已完成成果图解，不把 P6.3C 历史 RED、F2 非原子到达或待执行 F3 写成正向成果">
+    <section class="slide" id="s11" aria-label="P6 已完成成果图解，包含受控 Chunked Prefill 调度机制证据">
       <div class="page-watermark">11</div>
-      <h1>P6 已完成成果：131K 基线、MTP 与 Prefix Cache；Chunked Prefill 尚无正向结果</h1>
+      <h1>P6 已完成成果：131K 基线、MTP、Prefix Cache 与 Chunked Prefill 调度机制</h1>
       <div class="content plain-summary-content">
         <div class="module">
           <div class="module-title blue">实验流程架构：在同一冻结平台上依次建立“可运行、可测量、可解释、可复现”的证据链</div>
@@ -1910,14 +1911,14 @@
               <article class="outcome-flow-branch" data-step="3">
                 <small>MECHANISM A/B</small>
                 <strong>单变量机制对照</strong>
-                <p>在请求体和其余运行参数保持一致时，分别切换多令牌预测（MTP）与前缀缓存（Prefix Cache），比较配对结果。</p>
+                <p>在各自 matched 环境中切换 MTP、Prefix Cache 或 Chunked Prefill；Chunked Prefill 另用受控共同到达验证 scheduler token 分配。</p>
               </article>
             </div>
             <div class="outcome-flow-arrow" aria-hidden="true">→</div>
             <div class="outcome-flow-node synthesis">
               <small>EMPIRICAL OUTCOME</small>
               <strong>四类成果汇合</strong>
-              <p>长上下文稳定运行；性能基线完整；MTP 降低解码耗时；Prefix Cache 复用长前缀；诊断链覆盖八卡。</p>
+              <p>长上下文稳定运行；性能基线完整；MTP 降低解码耗时；Prefix Cache 复用长前缀；Chunked Prefill 的压力调度机制可辨识；诊断链覆盖八卡。</p>
             </div>
           </div>
         </div>
@@ -1937,10 +1938,10 @@
               <p>8 个配对组合共 108/108 请求成功；24/24 个配对批次方向一致。MTP 开启后，端到端时延（E2EL）平均下降 40.9%，批输出吞吐平均提高 71.0%。</p>
             </article>
             <article class="plain-result-card">
-              <small>03 · PREFIX REUSE</small>
-              <h3>Prefix Cache（前缀缓存）精确复用长输入</h3>
-              <div class="plain-result-value">16K · 48K · 112K</div>
-              <p>32K、64K 和 128K 三组 90% 共享前缀样本的 9/9 个跟随请求全部命中，实际复用 16,384、49,152 和 114,688 token；首 token 时延（TTFT）分别下降 48.6%、72.9% 和 85.4%。</p>
+              <small>03 · SCHEDULER &amp; PREFIX MECHANISMS</small>
+              <h3>Prefix Cache 精确复用长输入；Chunked Prefill 改变压力调度</h3>
+              <div class="plain-result-value">9/9 · 6/6</div>
+              <p>Prefix Cache 的主要跟随请求全部命中；F4 的六个机制首轮合同全部成立，On 在两组超预算请求中出现 partial prefill。F4 固定样本未显示短请求或吞吐收益。</p>
             </article>
             <article class="plain-result-card">
               <small>04 · EIGHT-DEVICE TRACE</small>
@@ -1958,7 +1959,7 @@
             </section>
             <section class="paper-abstract-section">
               <strong>结果</strong>
-              <p>冻结系统完成了 131,072-token 输入并形成 90 个请求的性能基线。配对实验显示，MTP 的主要作用体现在解码阶段，平均 TPOT 降低 47.0%；Prefix Cache 在三组 90% 长前缀中产生与 16K 对齐规则一致的精确复用。三类 profiler 请求进一步证实，请求级观测能够贯通至八卡设备记录。P6.3C-F2 虽已完成 90/90 请求，但同一 pair 未在首轮 scheduler 前共同到达，F3 仍待实机，因此本页仍不把 Chunked Prefill 列为已完成正向成果。</p>
+              <p>系统完成了 131,072-token 输入并形成 90 个请求的性能基线。MTP 的平均 TPOT 降低 47.0%；Prefix Cache 在三组 90% 长前缀中产生与 16K 对齐规则一致的精确复用。F4 又在 90/90 请求、42/42 原子对和 6/6 首轮合同下证明 Chunked Prefill 在超预算共同到达时改变 scheduler token 分配；其性能样本没有显示收益。三类 profiler 请求进一步证实请求级观测能够贯通至八卡设备记录。</p>
             </section>
           </article>
         </div>
@@ -1972,7 +1973,7 @@
 
     <section class="slide" id="s12" aria-label="P6 接受资产与后续边界">
       <div class="page-watermark">12</div>
-      <h1>证据综合与结论：六份主线材料保留，P6.3C-R1 RED 与 R2 开放链独立记录</h1>
+      <h1>证据综合与结论：历史失败保留，P6.3C-R2-F4 机制证据已接收</h1>
       <div class="content rows-2">
         <div class="module">
           <div class="module-title">数据与证据可用性：结果包覆盖范围、聚合哈希与最终分级</div>
@@ -1990,24 +1991,25 @@
                 <tr><td>P6.3C-R2</td><td>Capacity-calibrated matched A/B</td><td>run01 pre-start</td><td class="num">0 / 90</td><td><code>runtime overlay not materialized</code></td><td class="red-text">pre-start failure · recovery clean</td></tr>
                 <tr><td>P6.3C-R2-F1</td><td>Runtime-layout-portable matched A/B</td><td>vLLM ready · 0 request</td><td class="num">0 / 90</td><td><code>direct health 200 · proxy path 504</code></td><td class="red-text">runner_local_loopback_proxy_failure</td></tr>
                 <tr><td>P6.3C-R2-F2</td><td>Loopback-proxy-safe matched A/B</td><td>6/6 lifecycle</td><td class="num">90 / 90</td><td><code>pair split across adjacent scheduler steps</code></td><td class="red-text">mechanism evidence incomplete</td></tr>
-                <tr><td>P6.3C-R2-F3</td><td>Atomic-pair-admission matched A/B</td><td>3 cells · 2 tracks</td><td class="num">待 run01</td><td><code>controlled first-step co-arrival</code></td><td class="blue-text">developed_awaiting_server_run01</td></tr>
+                <tr><td>P6.3C-R2-F3</td><td>Atomic-pair parser diagnosis</td><td>90 requests · 0 pair release</td><td class="num">90 / 90</td><td><code>8-hex runtime ID suffix</code></td><td class="red-text">request-ID evidence incomplete</td></tr>
+                <tr><td>P6.3C-R2-F4</td><td>Normalized atomic co-arrival</td><td>6 lifecycle · 42 pairs</td><td class="num">19 / 59,148</td><td><code>per-file SHA verified</code></td><td class="green-text">scheduler mechanism observed</td></tr>
               </tbody>
             </table>
-            <div class="source-line">原六份主线材料不变。P6.3C 是冻结源码/配置审计；R1/R2/F1 保留启动与运行器 lineage；F2 证明 HTTP multi-prompt 不保证原子 scheduler co-arrival，未产生 Chunked Prefill 机制证据。</div>
-            <p class="research-note"><strong>证据可用性。</strong>F3 将在两侧共同、受控的首轮 co-arrival 环境中回答 Chunked Prefill 是否真实改变多请求调度；性能轨道仍只报告该控制环境内的描述性影响。F3 不能代表自然生产 API 到达行为，在 run01 经开发机验收前不形成机制或性能结论。</p>
+            <div class="source-line">原主线材料不变。P6.3C 是原参考配置审计；R1–F3 保留启动、运行器、传输与 request-ID lineage；F4 是独立的共同调度压力环境，不覆盖旧记录。</div>
+            <p class="research-note"><strong>证据可用性。</strong>F4 已回答 Chunked Prefill 是否在受控超预算共同到达时改变多请求调度；性能轨道仅报告该环境内的描述性影响，并未显示短请求或 batch throughput 收益。它不能代表自然生产 API 到达行为。</p>
           </div>
         </div>
 
         <div class="content grid-4">
           <div class="route-card closed"><h3>P6 MAINLINE · CLOSED</h3><p>P6 已提供可复核的稳定性、用户性能和机制参考，后续阶段可以在其限定范围内复用；这不表示所有候选实验均为正向结果。</p></div>
-          <div class="route-card"><h3>P6.3C-F2 RED → F3 OPEN</h3><p>F2 的 90/90 请求与非原子到达证据保留；F3 用两侧共同准入层建立确定的首轮调度压力，继续保持独立结果链。</p></div>
+          <div class="route-card closed"><h3>P6.3C-F4 · MECHANISM CLOSED</h3><p>F2/F3 的到达与 ID 失败保留；F4 用实际 ID 规范化和共同准入层证明压力下 scheduler token 分配发生改变，性能收益未观察到。</p></div>
           <div class="route-card closed"><h3>P8 · MAY CONSUME P6</h3><p>P8 可将 Prefix Cache 基线、官方 MTP 参考和 trace 管道作为垂直原型的先验条件，但仍须完成自身的机制验证。</p></div>
           <div class="route-card"><h3>P9 · NOT UNLOCKED BY P6 ALONE</h3><p>在缺少 P7 容量校准和 P8 机制闭环时，P6 数据不足以支持系统瓶颈归因或硬件优化优先级。</p></div>
         </div>
       </div>
       <div class="summary">
         <div class="summary-label">结论</div>
-        <p>P6 的既有交付结论包括 131,072-token 稳定输入、约 198–205 ms/token 的未剖析解码参考、MTP 描述性配对效应、Prefix Cache 的 9/9 主要样本命中和八卡诊断链。原 P6.1 配置下 Chunked Prefill Off 无法启动，故未形成 131K+c1 严格单变量对照；该结果不排除重新冻结的多请求调度压力 A/B。F2 已证明 multi-prompt 请求没有建立同轮预算竞争，F3 因而改用两侧共同的 tagged atomic admission；F3 实机验收前，现有证据仍不支持 Chunked Prefill 普遍收益或硬件瓶颈归因。</p>
+        <p>P6 的交付结论包括 131,072-token 稳定输入、约 198–205 ms/token 的未剖析解码参考、MTP 描述性配对效应、Prefix Cache 的 9/9 主要样本命中、Chunked Prefill 的受控压力调度机制和八卡诊断链。原 P6.1 配置下 Off 无法启动的 blocked 记录继续保留；F4 证明新的共同环境中机制实际发生，但固定样本未显示性能收益。现有证据仍不支持 Chunked Prefill 普遍收益或硬件瓶颈归因。</p>
       </div>
       <div class="footer"><span>AK-INFER-LAB / P6 REVIEW</span><span>Accepted Artifacts &amp; Downstream Boundaries</span><span class="slide-index">Page 12 / 12</span></div>
     </section>

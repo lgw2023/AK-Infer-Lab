@@ -464,7 +464,7 @@ def _repair_identity_exact(artifact_dir: Path) -> bool:
 
 
 def _runtime_layout_evidence(artifact_dir: Path) -> dict[str, Any]:
-    atomic_pair_expected = "_r2_f3_" in TASK_ID
+    atomic_pair_expected = os.environ.get("P6_3C_ATOMIC_PAIR_ADMISSION") == "1"
     layout_path = artifact_dir / "runtime_layout.json"
     preflight_path = (
         artifact_dir / "runtime_overlay_preflight_manifest.json"
