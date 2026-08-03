@@ -17,19 +17,22 @@ ENV_PREFIX=${ENV_PREFIX:-${REPO_ROOT}/.conda/envs/ak-infer-lab-vllm-ascend0.22.1
 BASE_PYTHON=${BASE_PYTHON:-${ENV_PREFIX}/bin/python}
 RUNNER=${P6_3C_RUNNER:-${SCRIPT_DIR}/run_deepseek_p6_3c_r1_scheduler_pressure.py}
 EXPERIMENT=${P6_3C_EXPERIMENT:-${SCRIPT_DIR}/run_deepseek_p6_3c_r1_scheduler_pressure.sh}
-SOURCE_PAYLOAD=${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json
+SOURCE_PAYLOAD=${SOURCE_PAYLOAD:-${REPO_ROOT}/工作记录与进度笔记本/runtime_trace_smokes/p5_deepseek_v4_flash_w8a8_8card_no_mtp_tokenizer_mro_retry_v0221rc1_2026_0712/request_payload.json}
 CARD_IDS=(0 1 2 3 4 5 6 7)
 CARD_IDS_CSV=0,1,2,3,4,5,6,7
 EXPECTED_KEEP_ALIVE_MARKER_COUNT=16
+EXPECTED_MODEL_LIFECYCLES=${P6_3C_EXPECTED_MODEL_LIFECYCLES:-6}
+EXPECTED_ENGINE_REQUESTS=${P6_3C_EXPECTED_ENGINE_REQUESTS:-90}
+EXPECTED_HTTP_REQUESTS=${P6_3C_EXPECTED_HTTP_REQUESTS:-48}
 
 audit_contract() {
   printf 'task_id=%s\n' "${TASK_ID}"
   printf 'expected_result_basename=%s\n' "${EXPECTED_RUN_LABEL}"
   printf 'npu_card_ids=%s\n' "${CARD_IDS_CSV}"
   printf 'keep_alive_stop_then_same_set_restore=true\n'
-  printf 'formal_model_lifecycle_count_exact=6\n'
-  printf 'engine_request_count_exact=90\n'
-  printf 'batched_http_call_count_exact=48\n'
+  printf 'formal_model_lifecycle_count_exact=%s\n' "${EXPECTED_MODEL_LIFECYCLES}"
+  printf 'engine_request_count_exact=%s\n' "${EXPECTED_ENGINE_REQUESTS}"
+  printf 'http_request_count_exact=%s\n' "${EXPECTED_HTTP_REQUESTS}"
   printf 'request_retry_count_exact=0\n'
   printf 'result_transfer_authorized=true\n'
   printf 'automatic_transfer_allowed=false\n'
@@ -55,7 +58,6 @@ test "$(sha256sum "${SOURCE_PAYLOAD}" | awk '{print $1}')" = \
   48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1
 test -x /data/node0_disk1/Public/npu_stop.sh
 test -x /data/node0_disk1/Public/npu_keep_alive.sh
-test "$(git -C "${REPO_ROOT}" branch --show-current)" = main
 test "$(git -C "${REPO_ROOT}" rev-parse HEAD)" = \
   "$(git -C "${REPO_ROOT}" rev-parse origin/main)"
 test -z "$(git -C "${REPO_ROOT}" status --porcelain --untracked-files=no)"

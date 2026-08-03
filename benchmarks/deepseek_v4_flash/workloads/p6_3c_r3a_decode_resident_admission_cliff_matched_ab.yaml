@@ -1,0 +1,217 @@
+schema_version: 1
+workload_id: p6_3c_r3a_decode_resident_admission_cliff_matched_ab
+task_id: p6_3c_r3a_decode_resident_admission_cliff_2026_0803_run01
+date: "2026-08-03"
+stage: P6.3C-R3A
+title: >-
+  Chunked Prefill decode-resident admission-cliff matched A/B
+
+research_question:
+  - >-
+    With eight requests already in Decode, does Chunked Prefill allow a new
+    near-limit Prefill to begin with the remaining scheduler token budget when
+    the Off side cannot admit the whole prompt?
+  - >-
+    If that mechanism is observed, how much does it change injected-request
+    TTFT, resident Decode tail TBT, and aggregate output throughput?
+
+lineage:
+  original_reference_audit:
+    configuration: max_model_len_135168,max_num_batched_tokens_4096,max_num_seqs_1
+    outcome: blocked_p6_3c_not_strict_single_variable
+    overwritten: false
+  controlled_mechanism_parent:
+    task_id: p6_3c_r2_f4_request_id_normalized_atomic_coarrival_2026_0731_run01
+    accepted_outcome: accepted_chunked_prefill_scheduler_mechanism_observed
+    boundary: atomic_prefill_coarrival_not_performance_benefit
+    overwritten: false
+  new_lineage: >-
+    R3A is an independently named decode-resident staged-arrival experiment.
+
+common_server_contract:
+  model: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  served_model_name: deepseek-v4-flash-w8a8-mtp
+  quantization: ascend_w8a8
+  vllm: 0.22.1+empty
+  vllm_ascend: 0.22.1rc1
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  block_size: 128
+  async_scheduling: true
+  enable_prefix_caching: false
+  max_model_len: 12288
+  max_num_batched_tokens: 12288
+  max_num_seqs: 9
+  profiler: disabled
+  request_retry_count: 0
+
+matched_ab:
+  invariant: all fields in common_server_contract plus byte-identical payloads
+  only_difference:
+    chunked_prefill_off: --no-enable-chunked-prefill
+    chunked_prefill_on: --enable-chunked-prefill
+  performance_lifecycle_order:
+    - chunked_prefill_off
+    - chunked_prefill_on
+    - chunked_prefill_on
+    - chunked_prefill_off
+
+staged_arrival:
+  resident_cohort:
+    request_count: 8
+    prompt_tokens_each: 256
+    forced_output_tokens_each: 128
+    transport: one_batched_streaming_http_request
+  injection_gate:
+    condition: all_8_residents_streamed_at_least_16_output_tokens
+    client_clock: monotonic_ns
+    invalid_if:
+      - any resident finishes or fails before the gate
+      - injected HTTP dispatch precedes the gate timestamp
+      - resident stream is no longer active at injection dispatch
+  injected_request:
+    transport: independent_streaming_http_request
+    forced_output_tokens: 4
+  token_timing:
+    retain_generated_text: false
+    retain_generated_token_ids: false
+    retain_token_arrival_monotonic_timestamps_server_local: true
+
+cells:
+  - cell_id: resident_only
+    injected_prompt_tokens: null
+    purpose: decode_interference_baseline
+  - cell_id: fit_control_12000
+    injected_prompt_tokens: 12000
+    purpose: >-
+      Verify whole-Prefill admission in both modes under the measured resident
+      scheduler-token consumption.
+  - cell_id: admission_cliff_12281
+    injected_prompt_tokens: 12281
+    purpose: >-
+      With at least eight Decode tokens already assigned, Off must wait while
+      On can partially admit the new Prefill using the remaining budget.
+
+r3_s0_mechanism_scout:
+  lifecycle_count: 2
+  repeats_per_mode_cell: 1
+  observer: read_only_returns_original_scheduler_output
+  performance_claims: forbidden
+  pass_conditions:
+    - observer present in both mechanism lifecycles
+    - exactly eight resident requests running at the first injected step
+    - resident Decode scheduled-token total is positive
+    - 12000-token fit control is wholly admitted in both modes
+    - 12281-token Off request is waiting with zero Prefill tokens at first step
+    - 12281-token On request is partially admitted in a mixed Decode/Prefill step
+    - no preemption occurs in any mechanism cell
+  failure_action: >-
+    Stop before performance. Preserve the trace and propose a newly named R3A
+    variant; do not silently alter prompts, gate, capacity, or A/B parameters.
+
+performance_track:
+  starts_only_after_r3_s0_pass: true
+  observer: disabled
+  profiler: disabled
+  lifecycle_count: 4
+  valid_trials_per_mode_cell: 12
+  valid_trials_per_cell_per_lifecycle: 6
+  cell_sequence_per_lifecycle:
+    - resident_only
+    - fit_control_12000
+    - admission_cliff_12281
+    - admission_cliff_12281
+    - fit_control_12000
+    - resident_only
+    - resident_only
+    - fit_control_12000
+    - admission_cliff_12281
+    - admission_cliff_12281
+    - fit_control_12000
+    - resident_only
+    - resident_only
+    - fit_control_12000
+    - admission_cliff_12281
+    - admission_cliff_12281
+    - fit_control_12000
+    - resident_only
+
+primary_benefit_metrics:
+  - injected_request_ttft_ms
+  - injected_request_e2el_ms
+  - scheduler_admission_wait_steps_mechanism_track
+primary_cost_metrics:
+  - resident_prefill_interference_tbt_p99_ms
+  - resident_max_token_stall_ms
+  - aggregate_output_tokens_per_second
+integrity_metrics:
+  - exact_streamed_output_token_count
+  - exact_prompt_usage_count
+  - arrival_contract_exact
+  - preemption_count
+  - startup_and_cleanup_status
+  - keep_alive_exact_restore
+
+preregistered_interpretation:
+  practical_benefit_threshold:
+    metric: admission_cliff_median_injected_ttft
+    rule: on_reduction_at_least_20_percent
+    status: project_decision_threshold_not_external_standard
+  uncertainty:
+    method: paired_bootstrap_median_difference
+    samples: 10000
+    confidence_interval: 95_percent
+    random_seed: 633
+  deployment_cost_bounds:
+    resident_p99_tbt: on_increase_at_most_10_percent
+    aggregate_output_tps: on_decrease_at_most_5_percent
+  outcomes:
+    - mechanism_confirmed_user_benefit_observed
+    - mechanism_confirmed_tradeoff_only
+    - mechanism_confirmed_no_material_benefit
+    - mechanism_not_identified
+  rule: >-
+    Evidence completeness and scientific outcome are separate. No automatic
+    color label may replace the reported effect sizes and mechanism evidence.
+
+expected_execution:
+  model_lifecycles: 6
+  engine_requests_including_warmup: 682
+  http_requests_including_warmup: 136
+  retries: 0
+
+claim_boundary:
+  supported_if_complete: >-
+    Controlled decode-resident staged-arrival evidence for Chunked Prefill
+    admission, injected-request TTFT, resident TBT, and aggregate throughput.
+  unsupported:
+    - natural API arrival behavior
+    - universal Chunked Prefill benefit
+    - production SLO capacity
+    - statistical significance beyond the preregistered paired interval
+    - R3B budget-policy or R3C mixed-traffic conclusions
+
+adaptive_execution:
+  policy: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+  task_local_repairs_allowed: true
+  evidence_required:
+    - before_after_diff_and_sha256
+    - attempt_history
+    - scientific_impact_statement
+    - resource_recovery_evidence
+  new_variant_required_if_changed:
+    - max_model_len
+    - max_num_batched_tokens
+    - max_num_seqs
+    - resident_request_set
+    - injection_gate
+    - injected_prompt_tokens
+    - output_lengths
+    - ab_difference
+    - metric_definition
+
+result_transfer_authorized: true
+transfer_method_selected: false
+automatic_transfer_allowed: false

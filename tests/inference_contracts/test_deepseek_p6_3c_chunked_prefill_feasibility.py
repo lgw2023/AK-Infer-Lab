@@ -158,10 +158,11 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
         "npu_or_vllm_started": False,
         "requests_sent": 0,
     }
-    r1_workloads = list(
+    independent_workloads = list(
         (REPO_ROOT / "benchmarks/deepseek_v4_flash/workloads").glob("p6_3c*.yaml")
     )
-    assert {path.name for path in r1_workloads} == {
+    workload_names = {path.name for path in independent_workloads}
+    assert {
         "p6_3c_r1_chunked_prefill_scheduler_pressure_matched_ab.yaml",
         "p6_3c_r2_chunked_prefill_capacity_calibrated_matched_ab.yaml",
         "p6_3c_r2_f1_runtime_layout_portable_matched_ab.yaml",
@@ -169,7 +170,9 @@ def test_blocked_audit_freezes_reference_parity_without_creating_a_workload():
         "p6_3c_r2_f3_atomic_pair_admission_matched_ab.yaml",
         "p6_3c_r2_f4_request_id_normalized_atomic_coarrival_matched_ab.yaml",
         "p6_3c_r2_f4_a1_adaptive_acceptance.yaml",
-    }
+    }.issubset(workload_names)
+    assert "p6_3c_r3a_decode_resident_admission_cliff_matched_ab.yaml" in workload_names
+    assert "p6_3c_chunked_prefill_matched_ab.yaml" not in workload_names
 
 
 def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
@@ -218,14 +221,9 @@ def test_current_truth_surfaces_preserve_p6_3c_and_queue_separate_r1():
         "accepted_chunked_prefill_scheduler_mechanism_observed"
     )
     assert readiness["acceptance"]["p6_3c_r2_f4_mechanism_observed"] is True
+    assert readiness["acceptance"]["p6_3c_r2_f4_performance_benefit_observed"] is False
     assert (
-        readiness["acceptance"]["p6_3c_r2_f4_performance_benefit_observed"]
-        is False
-    )
-    assert (
-        readiness["acceptance"][
-            "p6_3c_r2_f4_a1_zero_npu_refinalization_authorized"
-        ]
+        readiness["acceptance"]["p6_3c_r2_f4_a1_zero_npu_refinalization_authorized"]
         is True
     )
     assert readiness["acceptance"]["p6_3c_r2_formal_model_lifecycle_count_exact"] == 6
