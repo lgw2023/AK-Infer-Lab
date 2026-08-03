@@ -130,7 +130,7 @@ context=4096/65536/131072; output=64/256; concurrency=1/4/8
 zero retry; no HBM sampler; no profiler
 ```
 
-P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性能 reference；P6.2 已建立 profiled evidence reference；P6.3A 已关闭 matched MTP mechanism gate；P6.3B-R4-R1 已关闭 primary scope 的 explicit Prefix Cache mechanism gate。原 P6.3C 因 frozen `4096 < 135168` 配置在 off 侧触发 vLLM validation，保留为 `blocked_p6_3c_not_strict_single_variable`；其范围仅限原 135168/4096/1 参考不能直接 A/B。独立 P6.3C-R1 的 69632/69632/2 共同环境已在 KV-cache 初始化阶段 RED，0 request、0 scheduler step；P6.3C-R2 run01 在 vLLM 启动前的 overlay 准备阶段失败，0 request、0 scheduler step、资源恢复 clean。R2-F1 不改 12288/12288/2、Prefix=false、同一 deferred hybrid-KV repair 和 4K+4K/10K+6K/8K+8K 三组双请求，只修 mixed editable/site-packages 布局与隔离 overlay，待服务器实测。
+P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性能 reference；P6.2 已建立 profiled evidence reference；P6.3A 已关闭 matched MTP mechanism gate；P6.3B-R4-R1 已关闭 primary scope 的 explicit Prefix Cache mechanism gate。原 P6.3C 因 frozen `4096 < 135168` 配置在 off 侧触发 vLLM validation，保留为 `blocked_p6_3c_not_strict_single_variable`；其范围仅限原 135168/4096/1 参考不能直接 A/B。独立 R2-F4/A1 已在 `12288/12288/2` 受控 atomic co-arrival 下接受 Chunked Prefill partial-admission 机制证据，但固定样本未显示性能收益。当前 R3A 共同冻结 `12288/12288/9`，在八个 resident Decode 产生 16 token 后注入 12000 fit 或 12281 cliff Prefill；S0 机制门通过后才进入无 observer/profiler 性能轨道。
 
 状态门：
 
@@ -140,7 +140,7 @@ P6.1C-R1 已回答 MTP 与最高稳定上下文；P6.1 unprofiled 已建立性�
 
 ## 5. P6：八卡 Reference Baseline
 
-八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point。P6.1 unprofiled、P6.2 profiled evidence、P6.3A 与 P6.3B-R4-R1 已完成；原 P6.3C blocked 审计、P6.3C-R1 启动 RED 与 P6.3C-R2 run01 启动前 overlay 失败均保留，容量校准科学合同不变的 R2-F1 多请求 scheduler-pressure workload 尚无 NPU 结果。
+八卡基准的目的不是立即优化，而是给 P7/P8/P9 一个可信的 W8A8 reference point。P6.1 unprofiled、P6.2 profiled evidence、P6.3A 与 P6.3B-R4-R1 已完成；原 P6.3C blocked 审计和 R1–F3 失败 lineage 均保留，R2-F4/A1 已关闭受控 scheduler mechanism 门。当前等待 R3-S0/R3A 服务器实测，不能预写 Decode-resident 收益或代价。
 
 ### 5.1 Baseline freeze
 
@@ -160,7 +160,7 @@ P6.1 已记录 TTFT、TPOT、ITL、E2EL、throughput、server stats 和 token co
 
 ### 5.4 单变量对照
 
-顺序改为 matched MTP、purpose-built Prefix Cache、条件式 Chunked Prefill；`max_num_seqs` 是可选 scheduler/capacity sweep，`max_model_len` 后移到 P7 capacity boundary。原 P6.3C 已实证 `4096 < 135168` 使原参考严格单布尔对照不可执行，因而以 `blocked_p6_3c_not_strict_single_variable` 保留。独立 R1 不把单请求预算直接提高到 135168，而在两侧共同冻结 69632/69632/2，使用总 Prefill 超预算的双请求获得机制辨识力。
+顺序改为 matched MTP、purpose-built Prefix Cache、条件式 Chunked Prefill；`max_model_len` 后移到 P7 capacity boundary。原 P6.3C 已实证 `4096 < 135168` 使原参考严格单布尔对照不可执行，因而以 `blocked_p6_3c_not_strict_single_variable` 保留。F4 已证明受控共到达压力下 partial prefill 机制存在；R3A 进一步用共同 `12288/12288/9` 和 staged late arrival 检验长 Prefill admission relief、resident TBT 与吞吐 trade-off。后续 R3B 才允许改变 batch token budget 做独立 Pareto calibration。
 
 P6.3A 已完成的 matched 集覆盖 `4096/65536/131072` context、`64/256` output 和
 c1/c4/c8 代表并发，共 8 cell；`mtp_off` 与 `mtp_on` 各执行 3 个 batch/cell，合计

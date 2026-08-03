@@ -97,7 +97,9 @@ P6.3C-R1: red_p6_3c_r1_scheduler_pressure_no_success, 69632/69632/2 common envir
 P6.3C-R2: run01_runtime_overlay_preparation_failed_before_vllm_startup, 0 request / 0 scheduler evidence / global recovery clean
 P6.3C-R2-F1: runner_local_loopback_proxy_failure_after_vllm_startup, runtime layout and vLLM startup passed but inherited proxy returned 504 for local health; 0 request / 0 scheduler evidence / recovery clean
 P6.3C-R2-F2: red_p6_3c_r2_f2_scheduler_pressure_evidence_incomplete, 6/6 lifecycles and 90/90 requests completed but the two internal requests entered adjacent scheduler steps, so no same-round token-budget competition or Chunked Prefill mechanism conclusion
-P6.3C-R2-F3: developed_awaiting_server_run01, unchanged 12288/12288/2 science parameters plus a common tagged EngineCore atomic-pair admission layer in both modes; first-step waiting order and scheduled-token geometry are hard evidence gates
+P6.3C-R2-F3: preserved red provenance; runtime-suffixed request IDs bypassed the first atomic-pair parser
+P6.3C-R2-F4/A1: accepted_chunked_prefill_scheduler_mechanism_observed under controlled 12288/12288/2 atomic co-arrival; fixed performance sample showed no benefit
+P6.3C-R3A: developed_waiting_server_r3_s0, jointly frozen 12288/12288/9 decode-resident staged-arrival matched A/B; performance starts only after the fit/cliff mechanism scout passes
 ```
 
 K1A 原 `1 lifecycle / 6 requests` 契约已消费并以 pinned allocator 首错收口；K1A-R1 probe-invalid、R2
@@ -324,7 +326,7 @@ request-device aggregate exit=0 且未使用 skip-heavy-joins fallback；phase-m
 
 1. P6.3A matched MTP on/off。
 2. P6.3B purpose-built repeated-prefix Prefix Cache on/off。
-3. 原 P6.3C Chunked Prefill on/off 因 `4096 < 135168` 的 frozen validation 约束记录为 `blocked_p6_3c_not_strict_single_variable`，仅关闭原参考配置的伪 A/B；独立 P6.3C-R1 的 `69632 / 69632 / 2` 共同环境已在 KV-cache 初始化阶段 RED，独立 P6.3C-R2 改用共同冻结的 `12288 / 12288 / 2` 容量校准多请求压力环境。
+3. 原 P6.3C Chunked Prefill on/off 因 `4096 < 135168` 的 frozen validation 约束记录为 `blocked_p6_3c_not_strict_single_variable`，仅关闭原参考配置的伪 A/B。独立 R2-F4 已关闭受控 Prefill 共到达机制门；当前 R3A 共同冻结 `12288 / 12288 / 9`，以八个 resident Decode 和 late long-Prefill admission cliff 验证收益与代价。
 4. P6.3D 可选 `max_num_seqs` scheduler/capacity sweep。
 
 `max_model_len` 移入 P7 capacity boundary，不再是 P6.3 必做性能 A/B。每组必须使用相同请求集、
@@ -359,8 +361,9 @@ p6_artifact_manifest.yaml
 ```
 
 上述五份交付物已于 2026-07-16 物化到 `benchmarks/deepseek_v4_flash/p6/`。P6 evidence chain 与阶段
-交付包均已闭合；P6.3C 的 `blocked_p6_3c_not_strict_single_variable` 是有效 terminal feasibility
-结论，不阻止后续使用 Chunked Prefill-on 的 official MTP reference 进入 P8.1 observe-only tracer bullet。
+交付包均已闭合；P6.3C 的 `blocked_p6_3c_not_strict_single_variable` 是原参考配置的有效 terminal
+feasibility 结论，不阻止独立命名、两侧共同冻结的新 scheduler-pressure 实验。F4 已形成受控
+机制证据；R3A 负责验证 decode-resident admission benefit/cost，不能冒充原 131K 对照。
 
 ## 6. P7：单卡/双卡极致硬件边界
 

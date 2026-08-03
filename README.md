@@ -20,7 +20,7 @@ DeepSeek 模型与 v0.18.0、v0.20.2rc1 的失败保留为历史证据。独立 
 
 ### 场景 A：单机八卡官方基准
 
-目标是形成 DeepSeek-V4-Flash W8A8-MTP 在 Ascend 上的可信八卡基线。模型使用 vLLM-Ascend A2/A3 参考路径和 `--quantization ascend`；当前 official context、unprofiled performance、profiled evidence、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 已建立。P6.3B 完整保留 query-positive/hit-zero、import-order red、repair green、invalid on-vs-on、root-squash blocked 与最终 explicit-control green lineage；最终机制结论限于 primary 9/9 positive hit，不从固定顺序或 boundary zero-hit 外推普遍性能收益。原 P6.3C 仅证明 `max_model_len=135168 / max_num_batched_tokens=4096 / max_num_seqs=1` 下 Off 侧不能直接接在 P6.1 后形成 131K+c1 对照；独立 R2-F4 已在共同的 `12288/12288/2`、Prefix Cache off、受控原子共同到达环境完成 6/6 lifecycle、90/90 request、42/42 pair 与 6/6 机制首轮合同。开发机据此接收“压力 cell 中 Chunked Prefill 改变 scheduler token 分配”的机制结果；固定样本没有显示短请求 TTFT 或 batch throughput 收益，不外推为生产流量收益或普遍负面结论。
+目标是形成 DeepSeek-V4-Flash W8A8-MTP 在 Ascend 上的可信八卡基线。模型使用 vLLM-Ascend A2/A3 参考路径和 `--quantization ascend`；当前 official context、unprofiled performance、profiled evidence、P6.3A matched MTP on/off 与 P6.3B-R4-R1 explicit Prefix Cache control 已建立。P6.3B 完整保留 query-positive/hit-zero、import-order red、repair green、invalid on-vs-on、root-squash blocked 与最终 explicit-control green lineage；最终机制结论限于 primary 9/9 positive hit，不从固定顺序或 boundary zero-hit 外推普遍性能收益。原 P6.3C 仅证明 `max_model_len=135168 / max_num_batched_tokens=4096 / max_num_seqs=1` 下 Off 侧不能直接接在 P6.1 后形成 131K+c1 对照；独立 R2-F4 已在共同的 `12288/12288/2`、Prefix Cache off、受控原子共同到达环境完成 6/6 lifecycle、90/90 request、42/42 pair 与 6/6 机制首轮合同。开发机据此接收“压力 cell 中 Chunked Prefill 改变 scheduler token 分配”的机制结果；固定样本没有显示短请求 TTFT 或 batch throughput 收益。新的 R3A 已实现八个 Decode-resident 请求、16-token 注入门、12000 fit control 与 12281 admission cliff；服务器先执行 S0 机制门，再决定是否进入无插桩性能轨道，不外推为生产流量收益或普遍负面结论。
 
 ### 场景 B：单卡/双卡极限硬件实验
 
@@ -72,7 +72,7 @@ AK-Infer-Lab/
 
 ## 当前状态摘要
 
-P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell、P6.3A matched MTP on/off、P6.3B-R4-R1 explicit Prefix Cache control 和 P6.3C-R2-F4 controlled scheduler-pressure mechanism evidence。F4 的原始服务器标签因 task-name capability 判断错误而为 RED，但结构化证据为 6/6 lifecycle、90/90 request、48/48 batch、42/42 atomic pair、6/6 first-step contract、机制与资源恢复全部闭合；服务器 warmup singleton passthrough 已按实际执行字节进入仓库。当前接收的是受控压力下 Chunked Prefill 机制发生，不接收性能收益、自然到达语义或普遍优化结论。服务器侧后续协作按 `docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md` 允许有记录的现场修复和证据驱动重试，不再把 tracked-clean、一次执行或机器颜色标签当成科学有效性的替代品。
+P0-P4 已建立硬件 microbench 与 Qwen3.5-4B / vLLM 推理观测数据资产。P5 mixed-checkpoint 四卡诊断已收敛到 910B1 SoC 不支持其 MXFP4 format-cast 路径；W8A8-MTP 已在八卡上完成 P6.1C-R1 official 131072 context、P6.1 unprofiled 18-cell performance reference、P6.2 三个代表性 profiled evidence cell、P6.3A matched MTP on/off、P6.3B-R4-R1 explicit Prefix Cache control 和 P6.3C-R2-F4 controlled scheduler-pressure mechanism evidence。F4 的原始服务器标签因 task-name capability 判断错误而为 RED，但结构化证据为 6/6 lifecycle、90/90 request、48/48 batch、42/42 atomic pair、6/6 first-step contract、机制与资源恢复全部闭合；服务器 warmup singleton passthrough 已按实际执行字节进入仓库。当前接收的是受控压力下 Chunked Prefill 机制发生，不接收性能收益、自然到达语义或普遍优化结论。R3-S0/R3A 执行包现已开发，等待服务器在全局八卡互斥下先验证真实 Decode-resident admission cliff，再测 injected TTFT 与 resident TBT/吞吐 trade-off。服务器侧后续协作按 `docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md` 允许有记录的现场修复和证据驱动重试，不再把 tracked-clean、一次执行或机器颜色标签当成科学有效性的替代品。
 
 P8 现显式分成两条并行依赖。P8.3-I0-R1 已在 bounded taxonomy 边界接受为
 `green_p8_3_i0_r1_unclassified_taxonomy`，但 `1135` tensor / `12319364956 bytes` 的分类结果不能自动
@@ -126,7 +126,7 @@ CacheStore，但 8 GiB 只能容纳 1296 个当前 shard，低于 pinned source 
 
 ## 最小开工路径
 
-1. P5/P6 runtime、official context、unprofiled/profiled reference 与 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C blocked 和 R1–F3 的失败 lineage 均保留；R2-F4 已接收为受控 co-arrival 下的 Chunked Prefill scheduler 机制证据，性能样本未显示收益。当前 P6 服务器动作仅是零 NPU A1 对既有 raw evidence 再归档，不重跑八卡。
+1. P5/P6 runtime、official context、unprofiled/profiled reference 与 matched controls 已关闭；mixed checkpoint 不再参与。原 P6.3C blocked 和 R1–F3 的失败 lineage 均保留；R2-F4 已接收为受控 co-arrival 下的 Chunked Prefill scheduler 机制证据，性能样本未显示收益。当前 P6 服务器动作是 R3-S0→R3A：八个 resident Decode 下先验证 Off wait/On partial admission，再测长 Prefill TTFT 收益与 Decode 代价；R3B/R3C 未授权。
 2. P8 KV/Prefix 线：P8.1-R1 与 K0 已 green，旧 K1 blocked，K1A-F1 已由 R17 闭合 warm-tier restore/H2D。当前只执行 K2-R0 run03 的 UCM `save → DRAM external hit → Cache load/H2D → follower completion` 单 lifecycle；K2-R1/K3 不授权。
 3. P8 Expert/TP4 线：P8.3-I0 inventory 与 I0-R1 bounded taxonomy 已在各自窄边界 green；TP4 budget 仍 incomplete，P8.3-I1 hotness/runtime trace 未授权。
 4. P7：并行准备单卡/双卡边界校准，覆盖小模型、中型 MoE、DeepSeek 子图/partial shard、模拟 expert pool 和 simulator-only full model。
