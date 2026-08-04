@@ -2,8 +2,8 @@
 
 更新日期：2026-08-04
 
-状态：R3-S0/R3A 已完整执行并确认 `mechanism_confirmed_tradeoff_only`；R3B chunk-budget
-Pareto 实验包已完成开发与零 NPU 审计，等待服务器在全局八卡无冲突时执行
+状态：R3-S0/R3A 已确认 `mechanism_confirmed_tradeoff_only`；R3B 17/17 lifecycle 与五档机制
+已完成，性能正式结果因 trial-phase 聚合缺陷等待零 NPU A1 再聚合
 
 ## 摘要
 
@@ -490,3 +490,18 @@ lifecycle 不安装 observer/profiler，生成文本和 token ID 不落盘；raw
 3. 官方配置型证据：[vLLM SchedulerConfig 0.22](https://docs.vllm.ai/en/v0.22.0/api/vllm/config/scheduler/)。`max_num_batched_tokens` 定义单 iteration token 上限，`max_num_seqs` 定义单 iteration sequence 上限。
 4. 机制论文：[SARATHI: Efficient LLM Inference by Piggybacking Decodes with Chunked Prefills](https://arxiv.org/abs/2308.16369)。该工作把 chunked prefill 与 decode-maximal batching 的价值表述为 Prefill/Decode 混批与吞吐—时延折中。
 5. 系统论文：[Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve](https://arxiv.org/abs/2403.02310)。该工作在 tail-latency constraint 下评估 stall-free scheduling 和 serving capacity；其结果用于提出应测 Pareto frontier，而不是作为本项目 Ascend 收益的替代证据。
+
+## 13. R3B 实机结果与正式化状态
+
+R3B 已完成 17/17 lifecycle、1286/1286 engine request、243/243 HTTP 和零 retry。五档 On
+budget 首个 chunk 精确等于 `B-16`，完整 Prefill 分别需要 7/4/3/2/2 个 chunk，因而关闭了
+budget→actual chunk sequence 的机制问题。服务器 raw 直接读数显示所有 On 点均显著降低
+admission-cliff TTFT，但 resident P99 TBT/max stall 明显增加，TPS 下降；静态预算扫描没有出现
+满足预注册三项 deployment bounds 的点。
+
+原 finalizer 复用的 measured trial summary 不含 `phase`，却用 `phase==measured` 过滤，导致
+144 个 trial 全部丢失。当前代码已同时修 future raw 写入和既有 run01 的预注册 trial-ID 恢复，
+并把 144 trial、12 summary、60 pair、uncertainty n=12、五目标非空纳入 fail-closed evidence
+gate。下一步只运行零 NPU `p6_3c_r3b_a1_performance_reaggregation_2026_0804`，原 17 个
+lifecycle 不重跑，R3C 不自动启动。完整论文手稿见
+`20_P6_3C_R3B_Chunked_Prefill_预算Pareto实验手稿.md`。

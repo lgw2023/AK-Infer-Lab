@@ -1,580 +1,381 @@
-# 开发机 → Ascend 服务器：P6.3C-R3A 代价复分析 + R3B Chunk-budget Pareto 实验
+# 开发机 → Ascend 服务器：P6.3C-R3B-A1 零 NPU 性能再聚合
 
-更新日期：2026-08-04
+更新时间：2026-08-04
 
-主任务 ID：`p6_3c_r3b_chunk_budget_pareto_2026_0804_run01`
+任务 ID：`p6_3c_r3b_a1_performance_reaggregation_2026_0804`
 
-零 NPU 派生任务 ID：`p6_3c_r3a_cost_reanalysis_2026_0804`
+源任务 ID：`p6_3c_r3b_chunk_budget_pareto_2026_0804_run01`
 
-状态：已授权。先在独立 worktree 中完成 R3A raw evidence 的零 NPU 只读复分析；随后只有在
-NPU 0–7 全局无冲突时执行 R3B。不要自动进入 R3C、P7、P8 或其他任务。
+任务性质：`zero-NPU / read-only source evidence / derived refinalization`
 
-## 1. 本轮真正要完成的研究任务
+## 1. 本轮唯一目标
 
-R3A 已经得到完整且有价值的结果，不需要重跑：
+不要重跑 R3B 的 17 个 NPU lifecycle。读取服务器已保留的 R3B run01 raw JSONL 与 scheduler
+trace，在一个新的派生结果目录中重新生成性能 summary、60 个 Off/On pair、uncertainty、
+resident TBT SLO attainment 和五目标 Pareto frontier。
 
-```text
-mechanism: confirmed
-injected admission-cliff TTFT: 5802.8 ms Off -> 1292.6 ms On (-77.7%)
-resident interference P99 TBT: 91.7 ms Off -> 719.4 ms On (+684%)
-aggregate output TPS: 129.6 Off -> 118.7 On (-8.5%)
-scientific outcome: mechanism_confirmed_tradeoff_only
-```
+本轮要关闭的是“正式性能聚合”而不是“实验执行”：
 
-其机制解释很清楚。八个 resident Decode 在首个相关 step 共占用 `D=16` token，
-`B=12288` 时剩余 `R=12272`。12281-token Prefill 在 Off 无法整段准入，首步 scheduled=0；
-On 则立即调度 12272-token partial chunk。这个近乎占满 batch 的大 chunk 消除了长请求的
-admission starvation，却让 resident Decode 经历一个很长的 mixed compute step。
+- 17/17 lifecycle、1286/1286 engine request、243/243 HTTP、五档 chunk 机制和资源恢复已经完成；
+- 原 finalizer 因 measured trial summary 缺少 `phase`，把 144 个有效 trial 全部过滤；
+- 原顶层包在 0 trial / 0 valid pair / uncertainty n=0 时仍错误标为 complete；
+- 开发机已修复 trial 识别，并把性能样本完整性纳入 fail-closed evidence gate。
 
-R3B 不再问“Chunked Prefill 是否生效”，而是问：
+完成后停在 A1。不要进入 R3C、P7、P8、P9 或其他服务器任务。
 
-> 缩小 On 侧 `max_num_batched_tokens` 后，能否保留实用的 injected TTFT 收益，同时把
-> resident Decode 尾 TBT 和吞吐代价控制在可接受范围？
+## 2. 科学背景与不能改变的内容
 
-本轮分为两个有信息增益的步骤：
-
-1. 零 NPU 原地读取 R3A 服务器 raw JSONL，重建真实相邻 token gap、干扰窗口
-   P50/P95/P99/max、pre/post inflation、paired cost effect 和两个 fresh-model pair 的方向；
-2. 执行新的 R3B policy comparison：一个 contemporaneous Off baseline 与五档 On budget，
-   先校准实际 chunk，再测量 TTFT–TBT–throughput Pareto frontier。
-
-## 2. 不能覆盖的结论 lineage
-
-以下事实全部保留：
-
-- 原 `135168/4096/1` 参考配置仍为
-  `blocked_p6_3c_not_strict_single_variable`；
-- F4/A1 仍是 `12288/12288/2` atomic co-arrival 下的机制证据；
-- R3A 仍是 `12288/12288/9`、Off/On 只差一个开关的 matched A/B，accepted outcome 为
-  `mechanism_confirmed_tradeoff_only`；
-- R3B 是新 policy variant，不是 strict single-variable A/B，也不得把小预算 On 与 Off 的差异
-  表述为单一 boolean 因果效应；
-- R3B 完成后也不能声明自然 API 流量、生产 SLO 或普遍 Chunked Prefill 收益。
-
-R3A 的开关因果作用和 R3B 的策略调优作用必须在报告中分开。
-
-## 3. 开发机已经提供的实现
-
-核心资产和 SHA-256：
+R3B 的研究对象是一个完整 policy comparison：
 
 ```text
-b197364f1d284a003002738faf491cfb779c20cf7164275680ca280603c1a06d  benchmarks/deepseek_v4_flash/workloads/p6_3c_r3b_chunk_budget_pareto.yaml
-3292defe09d124a4bf9e962292791a6b383e3fe49b91f52c94b05f84ae6d58b8  tools/inference_contracts/analyze_deepseek_p6_3c_r3a_costs.py
-3cc372c28681b786ceb65b62830375f584386d51486ec4425147b12f5bab6e0e  tools/inference_contracts/p6_3c_r3_decode_resident_observer.py
-215315da2414a52004d84214a9a692eb4689f56a806e7257beee78e2d0bdf10b  tools/inference_contracts/run_deepseek_p6_3c_r3a_decode_resident.py
-ce34eb55aee093e2959d9a4d661c332d3eef2be8b1ea6cd34a684de83476927a  tools/inference_contracts/run_deepseek_p6_3c_r3b_chunk_budget.py
-26d66b42229888046ab7a9ca85e4222151862f40b5f7eb06909efbb3c6de16b4  tools/inference_contracts/run_deepseek_p6_3c_r3b_mode.sh
-a94918858f233a25c45f0e9233b2a1432034aee9fb8c26c4884923993d56969d  tools/inference_contracts/run_deepseek_p6_3c_r3b_experiment.sh
-c7d76e554b99f28d4fcd1c2d97312ee805d070c6e49c9cea353b572fecf7502e  tools/inference_contracts/run_deepseek_p6_3c_r3b_server_task.sh
-```
-
-实现的实质能力：
-
-- R3A cost analyzer 直接读取 server-local raw timestamp，不启动 vLLM/NPU，不修改源结果；
-- future-run `resident_max_stall_ms` 已改为真实 maximum adjacent-token gap，不再误用
-  `max(per-request ITL p99)`；
-- R3B driver 复用已验证 staged-arrival transport，但只保留 resident-only 和
-  admission-cliff 两个有信息量的 cell；
-- 五个 observer mechanism lifecycle 分别校准 On budget；
-- 十二个 performance lifecycle 使用升序—降序镜像，observer/profiler 均关闭；
-- finalizer 输出真实 max stall、P99 TBT、TBT SLO attainment、TPS、paired bootstrap、两个
-  mirror-round 中位效应、deployment bound 和非支配配置；
-- 自动分类只表示 evidence completeness，不能覆盖 effect size 和 scientific outcome。
-
-旧 R3A 成功执行时的 runner SHA 是 `2bbc6e6e...`；当前 tracked R3A runner SHA 因修正 future
-maximum-stall 定义而变化。不要把这一变化误报为旧 R3A 来源不一致。R3A 复分析必须读取旧 raw
-timestamp，并在 provenance 中明确“源执行不变、分析定义修正”。
-
-## 4. R3B 科学合同
-
-### 4.1 固定系统配置
-
-所有 policy 共同：
-
-```text
-model=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-served_model_name=deepseek-v4-flash-w8a8-mtp
-vLLM=0.22.1+empty
-vLLM-Ascend=0.22.1rc1
-quantization=ascend
-TP=8
-EP=true
-MTP num_speculative_tokens=1
-cudagraph_mode=FULL_DECODE_ONLY
-block_size=128
-async_scheduling=true
-Prefix Cache=false
+Off baseline: chunked_prefill_off, B=12288
+On policies:  chunked_prefill_on,  B=2048/4096/6144/8192/12288
 max_model_len=12288
 max_num_seqs=9
-profiler=disabled
-request_retry_count=0
+Prefix Cache=false
+resident_count=8
+resident injection gate D=16
+injected Prefill=12281 tokens
 ```
 
-策略集合：
+机制轨道已确认：
 
-| config ID | Chunked Prefill | `max_num_batched_tokens` | 角色 |
-| --- | --- | ---: | --- |
-| `off_b12288` | Off | 12288 | 合法 contemporaneous baseline |
-| `on_b2048` | On | 2048 | 小 chunk 候选 |
-| `on_b4096` | On | 4096 | 候选 |
-| `on_b6144` | On | 6144 | 候选 |
-| `on_b8192` | On | 8192 | 候选 |
-| `on_b12288` | On | 12288 | R3A policy anchor |
+| On budget | first chunk | full chunk sequence | count |
+| ---: | ---: | --- | ---: |
+| 2048 | 2032 | `2032×6+89` | 7 |
+| 4096 | 4080 | `4080×3+41` | 4 |
+| 6144 | 6128 | `6128×2+25` | 3 |
+| 8192 | 8176 | `8176+4105` | 2 |
+| 12288 | 12272 | `12272+9` | 2 |
 
-Off 必须保持 `B>=L` 才能启动，因此 R3B 的小预算比较有意改变完整 policy，不是单变量 A/B。
+本轮不得改变任何源请求、budget、cell、样本、arrival contract、metric 或阈值。若分析说明这些
+科学变量需要改变，只提出新的 variant 和理由，不在 A1 内实施。
 
-### 4.2 请求与到达
+原 P6.3C 135168/4096/1 blocked 审计、F4 受控共到达结果、R3A matched A/B 与 R3B run01 原包
+全部保留，不覆盖、不删除、不改写。
 
-每个 measured trial：
+## 3. 服务器助手的自适应权限
+
+先阅读：
 
 ```text
-resident cohort = 8 requests x (256 input + 128 forced output)
-injection gate = every resident has streamed >=16 output tokens
-injected request = 12281 input + 4 forced output
-temperature=0
-ignore_eos=true
-generated text/token ID not retained
-token arrival monotonic_ns retained server-local
+docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+通信模块/docs/developer-to-server.P6.md
 ```
 
-性能轨道每 lifecycle 的 cell 顺序为：
+服务器 AI 可以根据现场情况修复 task-local 的：
 
-```text
-resident, cliff, cliff, resident,
-resident, cliff, cliff, resident,
-resident, cliff, cliff, resident
-```
+- worktree、Python 入口、路径、权限和符号链接处理；
+- JSONL 读取、phase 恢复、TSV/JSON/Markdown 生成；
+- 聚合器、诊断、候选包大小和 provenance；
+- 与服务器 Python 版本相关但不改变分析语义的兼容问题。
 
-因此每 lifecycle 每 cell 六个 trial；每 config 通过两个镜像 lifecycle 得到每 cell 12 个 trial。
+每次适配必须保留：
 
-### 4.3 生命周期与规模
+- attempt 编号和时间；
+- 修改前后 diff；
+- 修改前后文件 SHA-256；
+- 触发问题与修复理由；
+- `scientific_contract_changed=true/false`；
+- 是否改变 trial 纳入、metric 定义、threshold 或 dominance 规则。
 
-机制顺序：
+任务内适配优先放在独立 worktree。服务器不得 push 远端 `main`；将 patch 和证据返回开发机。
+如果一次新的零 NPU attempt 能增加信息，可以继续，不需要为陈旧自动颜色停下。若改变研究问题、
+请求、策略、预算、cell、样本或 metric，必须创建新 variant，不能表示成不变的 A1。
 
-```text
-mechanism_01 on_b2048
-mechanism_02 on_b4096
-mechanism_03 on_b6144
-mechanism_04 on_b8192
-mechanism_05 on_b12288
-```
+## 4. Git 与并发隔离
 
-性能镜像顺序：
-
-```text
-performance_01 off_b12288
-performance_02 on_b2048
-performance_03 on_b4096
-performance_04 on_b6144
-performance_05 on_b8192
-performance_06 on_b12288
-performance_07 on_b12288
-performance_08 on_b8192
-performance_09 on_b6144
-performance_10 on_b4096
-performance_11 on_b2048
-performance_12 off_b12288
-```
-
-总量：
-
-```text
-fresh-model lifecycle=17
-mechanism lifecycle=5
-performance lifecycle=12
-engine request including warmup=1286
-local HTTP request including warmup=243
-retry in published runner=0
-```
-
-## 5. 同步 main 与隔离其他会话
-
-共享 checkout 只用于 fetch、环境和旧 raw result 定位。不要在共享 checkout 中 pull、checkout、
-edit tracked file、`update-index --skip-worktree` 或删除其他会话的 lock。
+共享 checkout 可能被其他会话使用。不要改共享 checkout，不要求它切分支。使用独立 detached
+worktree：
 
 ```bash
 SHARED_REPO=/data/node0_disk1/liguowei/AK-Infer-Lab
-TASK_WORKTREE=/data/node0_disk1/liguowei/server_worktrees/p6_3c_r3b_2026_0804
+WORKTREE=/data/node0_disk1/liguowei/server_worktrees/p6_3c_r3b_a1_2026_0804
 
-cd "${SHARED_REPO}"
-git fetch origin main
-git rev-parse origin/main
-git status --short --branch
-
-mkdir -p /data/node0_disk1/liguowei/server_worktrees
-git worktree add --detach "${TASK_WORKTREE}" origin/main
-cd "${TASK_WORKTREE}"
-git rev-parse HEAD
-git rev-parse origin/main
-git rev-list --left-right --count HEAD...origin/main
-git status --short --branch
+git -C "${SHARED_REPO}" fetch origin main
+git -C "${SHARED_REPO}" worktree add --detach "${WORKTREE}" origin/main
+git -C "${WORKTREE}" status --short --branch
+git -C "${WORKTREE}" rev-parse HEAD
+git -C "${WORKTREE}" rev-parse origin/main
 ```
 
-要求 worktree `HEAD=origin/main`、ahead/behind `0 0`、tracked-clean。若该路径已存在，不要删除；
-确认归本任务且 HEAD 正确后复用，或选择一个带时间后缀的新 worktree。
+要求：
 
-核验第 3 节八项 SHA。若 `origin/main` 包含更新的开发机修复，先审查 diff 和科学影响；不能为了
-匹配旧 SHA 值回退正确代码。task-local 适配按第 10 节记录。
+- worktree HEAD 与当时 `origin/main` 一致；
+- tracked-clean；
+- 不覆盖其他会话的 worktree、结果目录或 handoff；
+- 若目标 worktree 已存在，先确认它是否属于同一任务和是否干净，不盲删；必要时使用带 attempt
+  后缀的新 worktree。
 
-## 6. 第一步：R3A 零 NPU 代价复分析
+## 5. 发布资产核验
 
-源结果：
+在拉取后的 worktree 核验：
 
 ```text
-/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3a_decode_resident_admission_cliff_2026_0803_run01
+fb2432a25aaeffde3d295c6d1849400a24f101058ea4e7a1faba1efeeff918ac  tools/inference_contracts/run_deepseek_p6_3c_r3b_chunk_budget.py
+b197364f1d284a003002738faf491cfb779c20cf7164275680ca280603c1a06d  benchmarks/deepseek_v4_flash/workloads/p6_3c_r3b_chunk_budget_pareto.yaml
+7dff584b742bfba91df332a8671c7430675d7dfacb9c3a15144dae1b3034fe0e  docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+a1c80b993a3c16fab59936818106f12e44eeec4e5ee1ecf52b3864bc2f2494db  tests/inference_contracts/test_deepseek_p6_3c_r3b_chunk_budget.py
 ```
 
-派生结果：
-
-```text
-/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3a_cost_reanalysis_2026_0804
-```
-
-这一步不需要 NPU，必须让 keep-alive 继续运行，不启动/停止 vLLM，不修改源目录。即使其他会话
-正在运行 NPU，这个只读分析也可以在独立 worktree 中执行，但避免争用其结果目录。
-
-先验证：
+命令：
 
 ```bash
-cd "${TASK_WORKTREE}"
-/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python \
-  tools/inference_contracts/analyze_deepseek_p6_3c_r3a_costs.py \
-  --source-result /data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3a_decode_resident_admission_cliff_2026_0803_run01 \
-  --validate-only
+cd "${WORKTREE}"
+sha256sum \
+  tools/inference_contracts/run_deepseek_p6_3c_r3b_chunk_budget.py \
+  benchmarks/deepseek_v4_flash/workloads/p6_3c_r3b_chunk_budget_pareto.yaml \
+  docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md \
+  tests/inference_contracts/test_deepseek_p6_3c_r3b_chunk_budget.py
 ```
 
-应确认 R3A task ID、complete evidence、mechanism、四个 performance lifecycle 各
-`19 trial rows / 157 request rows` 和 cleanup。通过后运行：
+SHA 不一致时，先判断远端是否已经有开发机后续提交。只要目标修复提交是当前 HEAD 的祖先、当前
+runner 明确保留 A1 修复语义，可以记录新 SHA 后继续；不要退回旧代码。无法确认语义时停止并
+回报，不触 NPU。
 
-```bash
-/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python \
-  tools/inference_contracts/analyze_deepseek_p6_3c_r3a_costs.py \
-  --source-result /data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3a_decode_resident_admission_cliff_2026_0803_run01 \
-  --output-dir /data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3a_cost_reanalysis_2026_0804
-```
+## 6. 源结果与派生结果目录
 
-若派生目录已经存在：不要覆盖或删除。先核 `analysis_provenance.json`、五个 candidate 文件和
-manifest；若完整则直接复用，若是本任务留下的不完整目录则创建带 `attempt_02` 后缀的新派生目录。
-
-必须在自然语言报告中回答：
-
-1. R3A 的 resident interference P50/P95/P99/true max stall 是多少？
-2. 两个 fresh-model pair 的 On−Off cost effect 是否同方向？
-3. pre/interference/recovery window 的 inflation 有多大，是否由少数 resident 或少数 trial 主导？
-4. 修正 true max stall 后，R3A 的 trade-off 解释是否变化？
-
-这一步的 trial-pair bootstrap 是描述性统计，因为每组六个 trial 共享一个 fresh-model lifecycle；
-不得写成 12 个完全独立 replicate 的显著性结论。
-
-## 7. 第二步前的零 NPU R3B 审计
-
-在停止 keep-alive 前执行：
-
-```bash
-cd "${TASK_WORKTREE}"
-P6_3C_SERVER_TASK_AUDIT_ONLY=1 \
-REPO_ROOT="${TASK_WORKTREE}" \
-P6_3C_SHARED_REPO_ROOT="${SHARED_REPO}" \
-bash tools/inference_contracts/run_deepseek_p6_3c_r3b_server_task.sh \
-  /audit/p6_3c_r3b
-```
-
-审计必须显示：
-
-```text
-formal_model_lifecycle_count_exact=17
-engine_request_count_exact=1286
-http_request_count_exact=243
-capacity_contract=max_model_len_12288,max_num_seqs_9,off_budget_12288,on_budgets_2048_4096_6144_8192_12288
-performance_order=ascending_then_descending_mirror
-performance_trials_per_config_cell=12
-comparison_type=policy_pareto_not_strict_single_variable_ab
-observer=enabled only for five mechanism lifecycles
-profiler=disabled
-result_transfer_authorized=true
-```
-
-Canonical argv SHA-256：
-
-```text
-off_b12288  4ea039e53ba37d52831b4593e9f59d327315b1002865792c3ed68e988123f60b
-on_b2048    833d130a5ab318d0de79a671855633db478d6287ff772f49ef2f3152cf8970fd
-on_b4096    c7b8a2b333fdd19b105b9754d1af43c170c0cc012f8c3e3f414d7cc877ddcc1f
-on_b6144    ce31614f5a203024c3ec6d6d0330779cf12615cf3d09988142e3344afaa947d8
-on_b8192    921ff53171a2ab4327b9a82e40995ffaecb792bc9a584abc0e766bd9c92ff83a
-on_b12288   77e75a811ffa49224a6e1d534a10e4663fa7c21436fa053a76cc967ce4668d73
-```
-
-这些 SHA 只标识 server argv；mechanism/performance 同一 policy 的 argv 相同，因为 observer 是
-task-local overlay，不是 vLLM CLI 参数。审计不得触发 NPU、停止 keep-alive、启动 vLLM 或创建
-正式 R3B 结果目录。
-
-## 8. 全局 NPU 互斥与正式运行
-
-R3B 使用 NPU 0–7。正式运行前确认：
-
-- NPU 0–7 全部健康且无其他有效 workload；
-- 无其他会话正在或即将使用 NPU 0–7；
-- 无其他会话正在操作同一 keep-alive 卡集；
-- 端口 7000 无 listener；
-- 无 DeepSeek-V4-Flash vLLM 残留；
-- 正式结果目录不存在。
-
-若通用 K2 或其他八卡任务正在运行，本任务等待，不终止、抢占或修改对方进程。只读 R3A 分析完成
-不等于已获得八卡运行权。
-
-正式结果目录：
+源结果目录：
 
 ```text
 /data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3b_chunk_budget_pareto_2026_0804_run01
 ```
 
-唯一首次正式入口：
+派生结果目录：
 
-```bash
-cd "${TASK_WORKTREE}"
-REPO_ROOT="${TASK_WORKTREE}" \
-P6_3C_SHARED_REPO_ROOT="${SHARED_REPO}" \
-bash tools/inference_contracts/run_deepseek_p6_3c_r3b_server_task.sh \
-  /data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3b_chunk_budget_pareto_2026_0804_run01
+```text
+/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3b_a1_performance_reaggregation_2026_0804
 ```
 
-不要手工预启动 vLLM。入口会解析真实 editable vLLM/site-packages vLLM-Ascend，创建 task-local
-overlay，沿用已验证的 MTP/hybrid-KV repair 和 direct-loopback proxy isolation。
+执行前要求：
 
-## 9. Keep-alive 与资源恢复
+- 源目录存在；
+- 源目录含 `lifecycles/`、`bodies/`、`request_body_manifest.json`、
+  `resource_recovery_summary.json`、`cleanup_status.txt`；
+- 17 个 lifecycle 的 raw request/trial JSONL 仍在；
+- 派生目录不存在；
+- 没有其他会话正在写源目录或同名派生目录。
 
-首次正式入口需要停止 NPU 0–7 的低优先级 keep-alive：
+`refinalize` 会在派生目录建立只读输入符号链接，写新顶层制品，并计算 source evidence 前后
+SHA manifest。它不会覆盖源结果的顶层文件。
+
+若已有同名派生目录，先判断它是否为完整成功的同一任务。完整成功则验证并回报，不重复运行；
+不完整时保留原 attempt，新建 `_attempt_02` 等目录，不删除证据。
+
+## 7. NPU keep-alive 规则
+
+本轮是零 NPU 任务：
+
+- 不停止 keep-alive；
+- 不启动 vLLM；
+- 不访问端口 7000；
+- 不需要等待其他 NPU 实验结束，只需避免同时写同一源/派生目录；
+- `stopped_card_ids=none`，`restored_card_ids=none`，`keep_alive_action=left_running`。
+
+项目通用命令保留如下，但本轮不得执行：
 
 ```bash
-# Stop the low-priority keep-alive workload on the selected cards.
+# 仅 NPU 任务才按实际使用卡停止低优先级 keep-alive；本轮不要运行。
 bash /data/node0_disk1/Public/npu_stop.sh 0 1 2 3 4 5 6 7
 
-# Restart the keep-alive workload on the same selected cards.
+# 仅在对应 NPU 任务结束时恢复同一组卡；本轮不要运行。
 bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ```
 
-published server task 已在 success、failure、interrupt、early exit 路径恢复完全相同卡集。若服务器
-AI 写 task-local resume wrapper，也必须保证每次 attempt 都在所有退出路径恢复 0–7，并报告：
+## 8. 正式零 NPU 入口
 
-```text
-stopped_card_ids=0,1,2,3,4,5,6,7
-restored_card_ids=0,1,2,3,4,5,6,7
-keep_alive_marker_count=16
-keep_alive_restored_exact=true
-port_7000_listener_count=0
-vllm_residual_process_count=0
+优先使用服务器现有 P6 Python 环境；本入口只读 JSON/TSV、hash 与本仓代码，不加载模型：
+
+```bash
+cd "${WORKTREE}"
+
+PYTHON=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1/bin/python
+SOURCE_RESULT=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3b_chunk_budget_pareto_2026_0804_run01
+DERIVED_RESULT=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3b_a1_performance_reaggregation_2026_0804
+
+"${PYTHON}" tools/inference_contracts/run_deepseek_p6_3c_r3b_chunk_budget.py \
+  refinalize \
+  --source-artifact-dir "${SOURCE_RESULT}" \
+  --output-dir "${DERIVED_RESULT}"
 ```
 
-资源恢复失败时，优先恢复资源并保留 evidence；不得为了继续实验忽略残留进程或 keep-alive 缺卡。
+预期 exit 0。exit 2 表示性能分析完整性仍未关闭；保留派生目录并检查
+`first_failure_excerpt.txt`、`grading_inputs.json` 和 `analysis_provenance.json`。异常 traceback
+也要保留。不要因为 exit 2 运行 NPU。
 
-## 10. 服务器 AI 的自适应权限与 17-lifecycle 断点策略
+## 9. 精确分析关闭门
 
-先读：
+`grading_inputs.json` 必须同时满足：
 
 ```text
-docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+task_id=p6_3c_r3b_a1_performance_reaggregation_2026_0804
+source_task_id=p6_3c_r3b_chunk_budget_pareto_2026_0804_run01
+evidence_status=complete
+performance_lifecycles_complete=true
+performance_analysis_complete=true
+measured_trial_count=144
+expected_measured_trial_count=144
+summary_row_count=12
+summary_rows_exact=true
+valid_pair_count=60
+expected_valid_pair_count=60
+valid_pairs_exact=true
+uncertainty_n_exact=true
+frontier_objectives_complete=true
+source_evidence_unchanged=true
+source_result_overwritten=false
+scientific_contract_changed_within_r3b=false
+npu_used_for_refinalization=false
 ```
 
-服务器 AI 可以在独立 worktree、result-local code copy 或 task-local overlay 中修复和重试：
+并逐文件验证：
 
-- vLLM/vLLM-Ascend 安装布局、Python/Bash、权限和路径；
-- loopback proxy、health/metrics、stream parser、warmup 和 timeout；
-- observer 字段解析、finalizer、manifest、cleanup 和报告；
-- 不改变 policy/request/metric 的控制面错误；
-- 某个 lifecycle 完成后的后续 lifecycle 中断。
+1. `r3b_policy_summary.tsv`
+   - 12 rows；
+   - 每行 `valid_trial_count=12`；
+   - admission-cliff 六行的 TTFT、P99 TBT、max stall、TPS、SLO 均非空。
+2. `r3b_policy_paired_effects.tsv`
+   - 60 rows；
+   - 60/60 `valid_pair=True`；
+   - 五项 On−Off delta 均非空。
+3. `r3b_policy_uncertainty.json`
+   - 五个 On config × 五项 metric；
+   - 每项 `n=12`；
+   - `round_1`、`round_2` median 均非空；
+   - bootstrap median/CI 非空。
+4. `r3b_pareto_frontier.json`
+   - 六个 policy row；
+   - 五个 objective 均非空；
+   - `pareto_nondominated` 为真实布尔值；
+   - `dominated_by` 与 `pareto_config_ids` 一致。
+5. `analysis_provenance.json` 与 `source_evidence_manifest.json`
+   - source evidence 前后完全一致；
+   - `phase_reconstruction_rule` 明确；
+   - 无科学合同变化、无 NPU、未覆盖源结果。
 
-R3B 有 17 次模型加载。若中途发生控制面失败，不要删除完整的前序 lifecycle，也不要机械从
-`mechanism_01` 重跑。允许创建 task-local resume wrapper：
+不要提前把服务器报告中的四指标 frontier 当作最终五目标 frontier。正式输出包含 TBT SLO
+attainment，第五目标可能改变非支配集合。无论 frontier 如何，都不得修改预注册 deployment
+bounds 来制造候选。
 
-1. 核验已完成 lifecycle 的 request/trial count、resolved config、cleanup、argv 和 raw SHA；
-2. 保留原 `executed_lifecycle_schedule.tsv` 和 attempt history；
-3. 从第一个 missing/incomplete lifecycle 继续；
-4. 每个 fresh model 仍只服务其预注册 config；
-5. 最终 finalizer 同时消费所有完成 lifecycle；
-6. 报告每个 lifecycle 来自哪个 attempt。
+## 10. 科学结果解释
 
-成功 lifecycle 不能因后续失败被抹除；失败 attempt 也不能从 provenance 删除。每次 adaptation 保存：
+请回答：
 
-```text
-server_local/adaptations/attempt_XX/reason.md
-server_local/adaptations/attempt_XX/command.sh
-server_local/adaptations/attempt_XX/stdout_stderr.tail.txt
-server_local/adaptations/attempt_XX/exit_code.txt
-server_local/adaptations/attempt_XX/change.patch
-server_local/adaptations/attempt_XX/before_after_sha256.tsv
-server_local/adaptations/attempt_XX/scientific_impact.json
-server_local/adaptations/attempt_XX/lifecycle_provenance.tsv
-```
+1. 五个 On budget 的 12-trial TTFT、resident P99 TBT、true max stall、TPS 和 SLO attainment
+   中位数分别是多少？
+2. 每个 On 点相对 Off 的 12-pair median effect 与 95% bootstrap interval 是什么？
+3. 两个 mirror round 的 effect 方向是否一致？哪些配置存在明显 lifecycle-order 敏感性？
+4. 五目标 Pareto frontier 是什么？每个被支配点由谁支配？
+5. 是否有 On 配置同时满足 TTFT −20%、resident P99 ≤+10%、TPS ≥−5%？
+6. 若没有，最接近每条边界的配置分别是谁，差距多大？
 
-以下变化必须使用新的 variant/task ID，不能在本 run01 内静默修改：
+允许的结论边界：受控 decode-resident admission-cliff 的 policy calibration。不得外推自然 API
+流量、生产 SLO、统计显著性或普遍 Chunked Prefill 收益。
 
-- 六个 policy config 或任何 budget；
-- `max_model_len=12288` 或 `max_num_seqs=9`；
-- resident 数量、input/output token；
-- 16-token injection gate；
-- 12281-token injected Prompt 或 4-token output；
-- resident-only/admission-cliff cell；
-- 每 config-cell 12 个有效 trial；
-- TTFT、TBT、true max stall、TPS、SLO 或 Pareto metric 定义。
+## 11. 失败与适配分支
 
-若真实运行说明某个科学变量应改变，提出 `P6.3C-R3B-V2`：说明实际证据、精确 delta、信息增益
-与资源成本，等待开发机授权。服务器不得推送远端 `main`；有效 patch 返回开发机审核。
+### A. 仍为 0 measured trial
 
-## 11. 机制门与性能解释
+检查 raw trial row 的 `trial_id` 是否与预注册 plan 一致。允许修复纯路径、旧 schema 字段或
+reader 兼容；不得把 warmup 或未知 trial 当 measured。返回一个实际 raw trial row 的去敏字段
+名列表和失败匹配原因。
 
-五个 On mechanism lifecycle 必须分别证明：
+### B. 少于 144 trial 或 60 pair
 
-```text
-resident_running_count_first_step=8
-resident_decode_tokens_first_step=D>0
-trace token_budget=policy B
-first injected chunk=min(12281,B-D)
-first injected chunk is partial
-first step is mixed Decode+Prefill
-sum(observed Prefill chunks)=12281
-preemption_count=0
-```
+按 lifecycle/config/cell/round/repeat 输出缺口矩阵。若 raw 本身缺失，A1 为 incomplete；不得用
+复制、插值或跨 repeat 借样本填充。
 
-五档全过后才进入性能轨道。若一个 budget 的观察缺字段，可以修 observer/finalizer 并只重跑该
-mechanism lifecycle；若真实 scheduler 行为不满足合同，保留 trace 并停止性能，不为过门修改
-workload。
+### C. SLO 或某项 metric 为空
 
-性能主表至少给出每个 config 的：
+检查 source request token timestamps、injection dispatch 与 first injected token window。允许修复
+窗口计算实现，但 metric 定义不得改变。若原始时间戳不足，明确标 incomplete。
 
-- injected TTFT median/P95；
-- injected E2EL；
-- resident interference P50/P95/P99 TBT；
-- true maximum adjacent-token stall；
-- resident-only 与 interference 的 TBT SLO attainment；
-- aggregate output TPS；
-- 两个 mirror-round 的分别中位 effect；
-- 12 个 paired trial 的描述性 bootstrap interval；
-- chunk count、首个 chunk 和 preemption。
+### D. 候选包超过 70KB
 
-Pareto objective：
+raw 和 per-trial 大表留服务器。可以生成紧凑但信息等价的 per-config/per-round rollup，并在
+manifest 中列出未外发文件路径、bytes 和 SHA。不得删掉 uncertainty、dominance、provenance 或
+资源恢复证据来伪装小包。
 
-```text
-minimize TTFT
-minimize resident P99 TBT
-minimize true max stall
-maximize aggregate TPS
-maximize resident TBT SLO attainment
-```
+### E. source evidence hash 在前后变化
 
-项目部署边界相对 contemporaneous Off：
+立即停止，不 package、不传输。报告变更文件、前后 SHA、可能写入者和并发状态；使用新的源快照
+或等待写入结束后创建新 attempt，不能覆盖审计事实。
 
-```text
-injected TTFT reduction >=20%
-resident P99 TBT increase <=10%
-aggregate TPS decrease <=5%
-```
+## 12. 候选结果与传输规则
 
-若没有 On config 同时满足边界，科学 outcome 应为
-`pareto_frontier_observed_no_candidate_within_bounds`。这仍是有效结果，不改阈值、不改 grade
-制造候选。若存在候选，也只输出候选集，不自动进入 R3C。
+`result_transfer_authorized: true` 表示完整有界包具备传输资格，不代表已选择渠道。
 
-## 12. 结果目录、候选包与传输
+在任何结果离开服务器前，先回报：
 
-R3A cost analysis 会生成自己的 `candidate_manifest.server_local.json`；R3B finalizer 也会生成
-独立 manifest。raw token timestamp、scheduler trace、server log、metrics 和完整实验目录均留在
-服务器。
+- result summary 精确路径；
+- candidate manifest 精确路径；
+- 完整候选文件列表；
+- 每个文件 bytes、SHA-256、sensitivity；
+- candidate total bytes，必须 ≤71680；
+- `email` / `upload-api` / `server-local` 三种可用方法；
+- 推荐 `upload-api`，理由是多文件原子 session 与 hash validation；
+- `transfer_method_selected=false`。
 
-每个 manifest 必须列出完整候选集合：
+完整 `source_evidence_manifest.json` 默认留在服务器；有界包中的 `analysis_provenance.json` 必须
+保留其 combined SHA、file count 和 total bytes。只有总包仍不超过 70KB 时，才可把完整源
+manifest 加入同一传输 scope。
+
+等待用户明确选择后才能传输。不要发送“等待确认”的状态邮件，不要自动沿用上一次渠道，不要在
+401/409/413、代理、重定向、timeout、service 或 hash 失败后自动切换渠道。
+
+## 13. 回报格式
 
 ```text
-path
-bytes
-sha256
-sensitivity
-candidate_file_count
-candidate_total_bytes
-candidate_total_within_limit
-```
-
-每个 outbound body/attachment 总量不超过 70KB。`result_transfer_authorized:true` 表示小包符合
-传输资格，不代表已选渠道。完成后先报告两个 manifest 的完整路径、候选清单、总 bytes、SHA、
-敏感性，以及：
-
-```text
+P6_3C_R3B_A1_SERVER_REPORT_BEGIN
+task_id=p6_3c_r3b_a1_performance_reaggregation_2026_0804
+source_task_id=p6_3c_r3b_chunk_budget_pareto_2026_0804_run01
+worktree=<path>
+head=<sha>
+origin_main=<sha>
+ahead_behind=<values>
+tracked_clean=<true/false>
+source_result=<path>
+derived_result=<path>
+source_result_overwritten=false
+source_evidence_file_count=<n>
+source_evidence_total_bytes=<n>
+source_evidence_combined_sha256=<sha>
+source_evidence_unchanged=<true/false>
+npu_used=false
+keep_alive_action=left_running
+stopped_card_ids=none
+restored_card_ids=none
+refinalize_exit=<code>
+package_exit=<code>
+adaptive_attempt_count=<n>
+adaptive_patch_paths=<paths-or-none>
+scientific_contract_changed=false
+lifecycles=17/17
+engine_requests=1286/1286
+http_requests=243/243
+measured_trials=144/144
+policy_summary_rows=12/12
+summary_rows_each_valid_trial_count_12=<true/false>
+valid_pairs=60/60
+uncertainty_all_n_12=<true/false>
+mirror_round_medians_complete=<true/false>
+frontier_objectives_complete=<true/false>
+pareto_config_ids=<ids>
+dominated_config_map=<config:dominators>
+deployment_bound_config_ids=<ids-or-none>
+closest_ttft_bound_config=<id:value>
+closest_resident_p99_bound_config=<id:value>
+closest_tps_bound_config=<id:value>
+scientific_outcome=<value>
+evidence_status=<complete/incomplete>
+server_grade=<value>
+candidate_manifest=<path,count,total-bytes>
+transfer_method_selected=false
 available_methods=email,upload-api,server-local
 recommended_method=upload-api
-transfer_method_selected=false
-```
-
-等待用户对每个完整 scope 明确选择后再传输。不要沿用之前 A1/R3A 的 upload-api 选择；不要先发
-status-only email；401/409/413、代理、redirect、timeout、service 或 hash failure 后也不得自动
-切换方法。
-
-## 13. 必须回报的结构
-
-```text
-P6_3C_R3B_SERVER_REPORT_BEGIN
-task_id=p6_3c_r3b_chunk_budget_pareto_2026_0804_run01
-worktree=<path>
-head=<HEAD>
-origin_main=<origin/main>
-ahead_behind=<0 0>
-shared_checkout_modified=<true/false>
-r3a_cost_source=<path>
-r3a_cost_validate_only_exit=<exit>
-r3a_cost_analysis_exit=<exit>
-r3a_cost_true_max_stall_summary=<key values>
-r3a_cost_pair_direction_consistent=<true/false + pair medians>
-npu_conflict_check=<passed/waited + evidence>
-r3b_audit_only_exit=<exit>
-formal_experiment_started=<true/false>
-attempt_count=<count>
-lifecycle_resume_used=<true/false>
-stopped_card_ids=<actual>
-restored_card_ids=<actual>
-keep_alive_restored_exact=<true/false>
-lifecycles=<x/17>
-mechanism_lifecycles=<x/5>
-performance_lifecycles=<x/12>
-engine_requests=<x/1286>
-http_requests=<x/243>
-retries=<published request retries; adaptation attempts separately>
-mechanism_all_budgets_complete=<true/false>
-budget_2048_first_chunk_and_count=<values>
-budget_4096_first_chunk_and_count=<values>
-budget_6144_first_chunk_and_count=<values>
-budget_8192_first_chunk_and_count=<values>
-budget_12288_first_chunk_and_count=<values>
-preemption_count=<count>
-performance_complete=<true/false>
-off_baseline_metrics=<TTFT,TBT,max stall,TPS,SLO>
-on_2048_metrics=<same>
-on_4096_metrics=<same>
-on_6144_metrics=<same>
-on_8192_metrics=<same>
-on_12288_metrics=<same>
-mirror_round_consistency=<per-config summary>
-pareto_config_ids=<list>
-deployment_bound_config_ids=<list>
-scientific_outcome=<outcome>
-scientific_contract_changed_from_r3a=true
-scientific_contract_changed_within_r3b=<true/false>
-adaptive_attempt_count=<count>
-adaptive_patch_paths=<none/paths>
-evidence_status=<complete/incomplete>
-cleanup_status=<clean/incomplete>
-port_7000_listener_count=<count>
-vllm_residual_process_count=<count>
-r3a_cost_candidate_manifest=<path,count,bytes>
-r3b_candidate_manifest=<path,count,bytes>
-transfer_method_selected=false
-available_methods=email,upload-api,server-local
-recommended_method=<method + reason>
 next_task_authorized=false
-P6_3C_R3B_SERVER_REPORT_END
+P6_3C_R3B_A1_SERVER_REPORT_END
 ```
 
-最后用自然语言回答四个问题：
-
-1. R3A 的真实 maximum stall 与两个 lifecycle-pair 的代价方向是什么？
-2. 缩小 budget 后，实际 first chunk/chunk count 是否按机制预期变化？
-3. 哪些 On 配置位于 Pareto frontier，哪些被其他配置支配？
-4. 是否有配置同时保留至少 20% TTFT 收益，并满足 resident P99 TBT 与 TPS 代价边界？
-
-完成后停止。不要自动运行 R3C 或任何其他项目任务。
+报告后附六个自然语言回答，并说明所有适配及其科学影响。若任务 incomplete，也按同一格式报告
+实际计数和 first failure；不要用红绿颜色替代具体证据。

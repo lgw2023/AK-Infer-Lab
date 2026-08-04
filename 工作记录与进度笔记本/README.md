@@ -31,15 +31,16 @@ co-arrival 环境中完成 6/6 lifecycle、90/90 request、48/48 batch 和 42/42
 分类链。P6.3C-R3A 已完成：八 resident 下实测 `D=16`，12281-token cliff 在 Off 首步等待、
 On 首步 partial admit 12272；median injected TTFT 下降 77.7%，但 resident P99 TBT 增加约
 684%、aggregate TPS 下降 8.5%，接受 `mechanism_confirmed_tradeoff_only`。当前 P6 专用任务
-是 R3A raw evidence 的零 NPU 代价复分析与 R3B chunk-budget policy Pareto comparison；R3B
-保持 Off `B=12288`，扫描 On `B∈{2048,4096,6144,8192,12288}`，先做五档机制校准，再执行
-升序—降序镜像性能轨道。P8.1-R1 与 P8.2-K0
+R3B 已完成 17/17 lifecycle、1286/1286 engine request 和五档 chunk 机制校准；现有正式包因
+measured trial summary 缺少 `phase` 而形成空性能聚合，状态为
+`execution_and_mechanism_complete / performance_reaggregation_required`。当前 P6 专用任务只读
+既有 raw JSONL 做零 NPU R3B-A1 再聚合，不重跑八卡、不进入 R3C。P8.1-R1 与 P8.2-K0
 已 green，K1A-R2 accepted capacity 已 ready。R3-R2-R2-R1-R1-R1 已完成同容量唯一 lifecycle：
 6/6 transport 成功、D2H store 闭合、CPU hit/load/H2D 为零。原 red 保留，开发机只接受 store-only yellow。
 R4-R1 offline store-only closeout 已 green，R5-F0 ready，R5-L1/R1 red 保留。F1-R1 calibration
 得到 36800 candidate，但 fixed L2 3/3 请求和 D2H 8/8 后 endpoint 为 `CPU=54/GPU=0`，保留
 target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 64，保留为无效运行合同证据，不否定 accepted capacity。K1A-F1 已由 R17 闭合。K2-R0 run02 已完成 UCM dependency/import，但 8 GiB buffer 的 1296 shards 低于源码门 2048，零请求；四节点 NFS `no_root_squash` 已由用户修复。run03 随后通过 NFS、CMake Python、16 GiB CacheStore 与主机容量门，但在 `UCMFAWAConnector` 初始化期间因默认 4096 目录分片下 FA Posix GC 回收数被整数截断为 0 而停止，0/3 请求。零 NPU attribution 已恢复精确异常和 FA/WA worker block=`3186688/6627328`。当前唯一 driver 为
-`run_deepseek_p8_2_k2_r0_server_task.sh`：停卡前验证 attribution/all-payload、FA/WA Cache 与 Posix GC 几何和主机/存储容量；固定总 POSIX 64 GiB、`data_dir_shard_bytes=2`，分流后 32/32 GiB；随后只执行一个 TP8 lifecycle 和 warmup→prime→follower 三请求，退出时恢复 0–7 keep-alive。P6.3C-R2-F4/A1 和 R3A 已完成，不需要重跑；R3B 已开发并通过 P6 专用交接授权，但只有全局 NPU 互斥门通过后才能运行。R3C、K2-R1、P8.3-I1 和 P9 不自动进入。
+`run_deepseek_p8_2_k2_r0_server_task.sh`：停卡前验证 attribution/all-payload、FA/WA Cache 与 Posix GC 几何和主机/存储容量；固定总 POSIX 64 GiB、`data_dir_shard_bytes=2`，分流后 32/32 GiB；随后只执行一个 TP8 lifecycle 和 warmup→prime→follower 三请求，退出时恢复 0–7 keep-alive。P6.3C-R2-F4/A1、R3A 和 R3B 的 NPU 执行均已完成，不需要重跑；当前 P6 专用交接只授权零 NPU R3B-A1 性能再聚合。R3C、K2-R1、P8.3-I1 和 P9 不自动进入。
 
 ## 当前范围
 
@@ -83,6 +84,7 @@ target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 
 | `17_P6_3C_R2_F4_Chunked_Prefill_受控调度实验手稿.md` | P6.3C-R2-F4/A1 的论文手稿式完整记录：研究问题、实验设置、原子共到达方法、执行 lineage、机制与性能结果、来源证明和有效性边界。 |
 | `18_P6_3C_R3_Chunked_Prefill_收益验证实验设计.md` | P6.3C-R3 的收益验证方案、R3A 实机闭环与 R3B 实现记录：从 decode-resident admission cliff 的 77.7% TTFT 收益和严重 Decode 代价，推进到 On-side chunk-budget Pareto 校准。 |
 | `19_P6_3C_R3A_Chunked_Prefill_Decode驻留收益与代价实验手稿.md` | R3A 的论文手稿式完整记录：staged arrival、调度准入机制、paired TTFT、resident tail TBT/吞吐代价、有效性边界与 R3B 推导。 |
+| `20_P6_3C_R3B_Chunked_Prefill_预算Pareto实验手稿.md` | R3B 的论文手稿式记录：预算—chunk 剂量响应、17-lifecycle 镜像策略比较、TTFT–Decode tail–TPS 折中、聚合缺陷影响与零 NPU 再聚合边界。 |
 | `P6_阶段证据链仪表盘_2026_0715.html` | 八页 16:9 P6 closeout 领导汇报：冻结配置、P6.1C-R1/P6.1/P6.2/P6.3A/P6.3B-R4-R1 green、P6.3C strict-single-variable blocked、P6.3B lineage、结果包与 P7-P9 边界。 |
 | `DeepSeek_V4_Flash_W8A8_8NPU_性能总览_修订版.html` | 五页 16:9 P6 全阶段实测领导汇报：18-cell unprofiled baseline、MTP Off/On 绝对值与 paired delta、Prefix Cache 八组命中/TTFT、profiled evidence、Chunked Prefill feasibility 与 artifact closeout。 |
 | `P8_阶段主要结果与证据链仪表盘_2026_0728.html` | P8 分层工程原型静态证据控制台：P8.0/P8.1/K0、K1/K1A 历史 lineage、R17 restore/H2D 机制闭环、claim boundary、当前 K2-R0 与 Expert/TP4 开放门。 |

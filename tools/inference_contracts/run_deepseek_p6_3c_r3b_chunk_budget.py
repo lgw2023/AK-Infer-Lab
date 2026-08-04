@@ -33,6 +33,7 @@ from tools.inference_contracts import (  # noqa: E402
 
 
 TASK_ID = "p6_3c_r3b_chunk_budget_pareto_2026_0804_run01"
+REFINALIZATION_TASK_ID = "p6_3c_r3b_a1_performance_reaggregation_2026_0804"
 WORKLOAD_RELATIVE_PATH = (
     "benchmarks/deepseek_v4_flash/workloads/p6_3c_r3b_chunk_budget_pareto.yaml"
 )
@@ -112,8 +113,22 @@ PERFORMANCE_CELL_SEQUENCE = (
 EXPECTED_MODEL_LIFECYCLES = 17
 EXPECTED_ENGINE_REQUESTS = 1286
 EXPECTED_HTTP_REQUESTS = 243
+EXPECTED_PERFORMANCE_TRIALS = len(PERFORMANCE_LIFECYCLES) * len(
+    PERFORMANCE_CELL_SEQUENCE
+)
+EXPECTED_POLICY_SUMMARY_ROWS = len(CONFIGS) * 2
+EXPECTED_VALID_TRIALS_PER_SUMMARY = 12
+EXPECTED_POLICY_PAIRS = len(ON_CONFIG_IDS) * 2 * 6
+PERFORMANCE_METRIC_FIELDS = (
+    "injected_ttft_ms",
+    "resident_interference_tbt_p99_ms",
+    "resident_interference_max_stall_ms",
+    "aggregate_output_tokens_per_second",
+    "resident_tbt_slo_attainment",
+)
 BOUNDED_CANDIDATES = (
     "result_summary.md",
+    "analysis_provenance.json",
     "environment_and_hashes.json",
     "payload_identity_summary.json",
     "lifecycle_summary.tsv",
@@ -430,6 +445,11 @@ def execute_mode(
         )
         trial_row.update(
             {
+                # run_staged_trial predates R3B and did not put phase on its
+                # measured trial summary.  Persist it here so future raw
+                # results are self-describing; the finalizer also reconstructs
+                # it from the preregistered trial IDs for run01 compatibility.
+                "phase": item["phase"],
                 "lifecycle_id": lifecycle_dir.name,
                 "mirror_round": lifecycle["mirror_round"],
                 "config_id": lifecycle["config_id"],
@@ -639,6 +659,7 @@ def _enrich_trial(
 
 def _performance_rows(artifact_dir: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
+    measured_trial_ids = {row["trial_id"] for row in _trial_plan("performance")}
     for lifecycle in PERFORMANCE_LIFECYCLES:
         root = artifact_dir / "lifecycles" / lifecycle["lifecycle_id"]
         requests_by_trial: dict[str, list[dict[str, Any]]] = {}
@@ -648,11 +669,17 @@ def _performance_rows(artifact_dir: Path) -> list[dict[str, Any]]:
                     request
                 )
         for trial in r3a._read_jsonl(root / "raw_trial_results.jsonl"):  # noqa: SLF001
-            if trial.get("phase") != "measured":
+            trial_id = str(trial.get("trial_id") or "")
+            phase = trial.get("phase")
+            if phase not in (None, "measured") or trial_id not in measured_trial_ids:
                 continue
-            rows.append(
-                _enrich_trial(trial, requests_by_trial.get(str(trial["trial_id"]), []))
-            )
+            if phase is None:
+                trial = {
+                    **trial,
+                    "phase": "measured",
+                    "phase_source": "reconstructed_from_preregistered_trial_id",
+                }
+            rows.append(_enrich_trial(trial, requests_by_trial.get(trial_id, [])))
     return rows
 
 
@@ -745,13 +772,7 @@ def performance_evidence(
         },
         "configs": {},
     }
-    metric_fields = (
-        "injected_ttft_ms",
-        "resident_interference_tbt_p99_ms",
-        "resident_interference_max_stall_ms",
-        "aggregate_output_tokens_per_second",
-        "resident_tbt_slo_attainment",
-    )
+    metric_fields = PERFORMANCE_METRIC_FIELDS
     for config_id in ON_CONFIG_IDS:
         deltas = {metric: [] for metric in metric_fields}
         for mirror_round in ("round_1", "round_2"):
@@ -909,12 +930,89 @@ def performance_evidence(
         "selection_requires_developer_review": True,
         "rows": cliff_rows,
     }
+    uncertainty["analysis_completeness"] = _performance_analysis_completeness(
+        summaries, paired, uncertainty, frontier
+    )
     public_trial_rows = [
         {key: value for key, value in row.items() if not key.endswith("_values")}
         for row in trial_rows
     ]
     _write_tsv(artifact_dir / "r3b_per_trial_metrics.tsv", public_trial_rows)
     return summaries, paired, uncertainty, frontier
+
+
+def _performance_analysis_completeness(
+    summaries: list[dict[str, Any]],
+    paired: list[dict[str, Any]],
+    uncertainty: dict[str, Any],
+    frontier: dict[str, Any],
+) -> dict[str, Any]:
+    valid_trial_count = sum(int(row.get("valid_trial_count") or 0) for row in summaries)
+    valid_pair_count = sum(row.get("valid_pair") is True for row in paired)
+    summary_rows_exact = len(summaries) == EXPECTED_POLICY_SUMMARY_ROWS and all(
+        int(row.get("valid_trial_count") or 0) == EXPECTED_VALID_TRIALS_PER_SUMMARY
+        for row in summaries
+    )
+    valid_pairs_exact = (
+        len(paired) == EXPECTED_POLICY_PAIRS
+        and valid_pair_count == EXPECTED_POLICY_PAIRS
+    )
+    uncertainty_exact = all(
+        (
+            uncertainty.get("configs", {}).get(config_id, {}).get(metric, {}).get("n")
+            == 12
+            and all(
+                (
+                    uncertainty.get("configs", {})
+                    .get(config_id, {})
+                    .get(metric, {})
+                    .get("mirror_round_medians", {})
+                    .get(mirror_round)
+                    is not None
+                )
+                for mirror_round in ("round_1", "round_2")
+            )
+        )
+        for config_id in ON_CONFIG_IDS
+        for metric in PERFORMANCE_METRIC_FIELDS
+    )
+    objective_fields = tuple(frontier.get("objective_directions", {}))
+    frontier_rows = frontier.get("rows") or []
+    frontier_complete = (
+        len(frontier_rows) == len(CONFIGS)
+        and len(objective_fields) == len(PERFORMANCE_METRIC_FIELDS)
+        and all(
+            row.get(field) is not None
+            for row in frontier_rows
+            for field in objective_fields
+        )
+        and all(
+            isinstance(row.get("pareto_nondominated"), bool) for row in frontier_rows
+        )
+        and bool(frontier.get("pareto_config_ids"))
+    )
+    complete = all(
+        (
+            valid_trial_count == EXPECTED_PERFORMANCE_TRIALS,
+            summary_rows_exact,
+            valid_pairs_exact,
+            uncertainty_exact,
+            frontier_complete,
+        )
+    )
+    return {
+        "complete": complete,
+        "measured_trial_count": valid_trial_count,
+        "expected_measured_trial_count": EXPECTED_PERFORMANCE_TRIALS,
+        "summary_row_count": len(summaries),
+        "expected_summary_row_count": EXPECTED_POLICY_SUMMARY_ROWS,
+        "summary_rows_exact": summary_rows_exact,
+        "valid_pair_count": valid_pair_count,
+        "expected_valid_pair_count": EXPECTED_POLICY_PAIRS,
+        "valid_pairs_exact": valid_pairs_exact,
+        "uncertainty_n_exact": uncertainty_exact,
+        "frontier_objectives_complete": frontier_complete,
+    }
 
 
 def _startup_rows(artifact_dir: Path) -> list[dict[str, Any]]:
@@ -1014,10 +1112,13 @@ def _git_output(*args: str) -> str:
         return "unavailable"
 
 
-def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
+def finalize_artifacts(
+    artifact_dir: Path, *, analysis_task_id: str = TASK_ID
+) -> dict[str, Any]:
     mechanism = write_mechanism_evidence(artifact_dir)
     lifecycle_rows = _lifecycle_rows(artifact_dir)
     summaries, paired, uncertainty, frontier = performance_evidence(artifact_dir)
+    performance_analysis = uncertainty["analysis_completeness"]
     payload = _payload_summary(artifact_dir)
     (artifact_dir / "payload_identity_summary.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -1101,6 +1202,7 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
             mechanism_complete,
             mechanism["all_budget_mechanisms_complete"],
             performance_complete,
+            performance_analysis["complete"],
             resolved_exact,
             observer_absent_performance,
             payload["all_body_files_sha256_exact"],
@@ -1114,12 +1216,15 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         scientific = "chunk_budget_mechanism_incomplete"
     elif not performance_complete:
         scientific = "chunk_budget_performance_incomplete"
+    elif not performance_analysis["complete"]:
+        scientific = "chunk_budget_performance_reaggregation_incomplete"
     elif frontier["deployment_bound_config_ids"]:
         scientific = "pareto_candidate_found_within_preregistered_bounds"
     else:
         scientific = "pareto_frontier_observed_no_candidate_within_bounds"
     outcome = {
-        "task_id": TASK_ID,
+        "task_id": analysis_task_id,
+        "source_task_id": TASK_ID,
         "scientific_outcome": scientific,
         "evidence_complete": evidence_complete,
         "mechanism_all_budgets_complete": mechanism["all_budget_mechanisms_complete"],
@@ -1132,7 +1237,8 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         json.dumps(outcome, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     grading = {
-        "task_id": TASK_ID,
+        "task_id": analysis_task_id,
+        "source_task_id": TASK_ID,
         "evidence_status": "complete" if evidence_complete else "incomplete",
         "scientific_outcome": scientific,
         "server_grade": "complete_p6_3c_r3b_policy_evidence"
@@ -1144,6 +1250,8 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         "mechanism_lifecycles_complete": mechanism_complete,
         "mechanism_all_budgets_complete": mechanism["all_budget_mechanisms_complete"],
         "performance_lifecycles_complete": performance_complete,
+        "performance_analysis_complete": performance_analysis["complete"],
+        "performance_analysis_counts": performance_analysis,
         "resolved_config_exact": resolved_exact,
         "observer_absent_performance": observer_absent_performance,
         "payload_identity_exact": payload["all_body_files_sha256_exact"],
@@ -1167,7 +1275,8 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         json.dumps(grading, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     environment = {
-        "task_id": TASK_ID,
+        "task_id": analysis_task_id,
+        "source_task_id": TASK_ID,
         "repo_head": _git_output("rev-parse", "HEAD"),
         "repo_origin_main": _git_output("rev-parse", "origin/main"),
         "workload_path": WORKLOAD_RELATIVE_PATH,
@@ -1190,27 +1299,42 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         json.dumps(environment, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     lines = [
-        f"# {TASK_ID} 结果摘要",
+        f"# {analysis_task_id} 结果摘要",
         "",
         f"- evidence status: `{grading['evidence_status']}`",
         f"- scientific outcome: `{scientific}`",
         f"- 五个 On budget 的机制校准完整：`{mechanism['all_budget_mechanisms_complete']}`。",
         f"- 请求 `{successful_count}/{EXPECTED_ENGINE_REQUESTS}`；HTTP `{http_count}/{EXPECTED_HTTP_REQUESTS}`；keep-alive 精确恢复 `{recovery.get('keep_alive_restored_exact')}`。",
         "",
-        "## Pareto 结论",
-        "",
-        f"- 非支配配置：`{frontier['pareto_config_ids']}`。",
-        f"- 同时满足 TTFT 至少改善 20%、resident P99 TBT 增幅不超过 10%、吞吐下降不超过 5% 的 On 配置：`{frontier['deployment_bound_config_ids']}`。",
-        "- 不自动进入 R3C；由开发机结合完整 effect size 与 lifecycle-pair 一致性选择候选。",
-        "",
-        "## 结论边界",
-        "",
-        "- R3B 是 On-side budget policy comparison，不是 strict single-variable A/B。",
-        "- 结论只覆盖受控 decode-resident admission-cliff，不外推自然 API 流量或生产 SLO。",
-        "- R3A、F4 与原 135168/4096/1 blocked 审计均保留。",
-        "- 未经用户选择 email / upload-api / server-local，不传输候选结果。",
-        "",
     ]
+    if performance_analysis["complete"]:
+        lines.extend(
+            [
+                "## Pareto 结论",
+                "",
+                f"- 非支配配置：`{frontier['pareto_config_ids']}`。",
+                f"- 同时满足 TTFT 至少改善 20%、resident P99 TBT 增幅不超过 10%、吞吐下降不超过 5% 的 On 配置：`{frontier['deployment_bound_config_ids']}`。",
+                "- 不自动进入 R3C；由开发机结合完整 effect size 与 lifecycle-pair 一致性选择候选。",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## 性能分析完整性",
+            "",
+            f"- measured trials: `{performance_analysis['measured_trial_count']}/{EXPECTED_PERFORMANCE_TRIALS}`。",
+            f"- valid Off/On pairs: `{performance_analysis['valid_pair_count']}/{EXPECTED_POLICY_PAIRS}`。",
+            f"- uncertainty n 与五目标 Pareto 字段完整：`{performance_analysis['uncertainty_n_exact'] and performance_analysis['frontier_objectives_complete']}`。",
+            "",
+            "## 结论边界",
+            "",
+            "- R3B 是 On-side budget policy comparison，不是 strict single-variable A/B。",
+            "- 结论只覆盖受控 decode-resident admission-cliff，不外推自然 API 流量或生产 SLO。",
+            "- R3A、F4 与原 135168/4096/1 blocked 审计均保留。",
+            "- 未经用户选择 email / upload-api / server-local，不传输候选结果。",
+            "",
+        ]
+    )
     (artifact_dir / "result_summary.md").write_text("\n".join(lines), encoding="utf-8")
     failure_path = artifact_dir / "first_failure_excerpt.txt"
     if evidence_complete:
@@ -1219,6 +1343,9 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         failure_path.write_text(
             f"mechanism_complete={mechanism['all_budget_mechanisms_complete']}\n"
             f"performance_complete={performance_complete}\n"
+            f"performance_analysis_complete={performance_analysis['complete']}\n"
+            f"measured_trial_count={performance_analysis['measured_trial_count']}/{EXPECTED_PERFORMANCE_TRIALS}\n"
+            f"valid_pair_count={performance_analysis['valid_pair_count']}/{EXPECTED_POLICY_PAIRS}\n"
             f"successful_request_count={successful_count}/{EXPECTED_ENGINE_REQUESTS}\n",
             encoding="utf-8",
         )
@@ -1239,8 +1366,14 @@ def package_results(artifact_dir: Path) -> dict[str, Any]:
                 }
             )
     total_bytes = sum(row["bytes"] for row in candidates)
+    grading_path = artifact_dir / "grading_inputs.json"
+    package_task_id = (
+        json.loads(grading_path.read_text(encoding="utf-8")).get("task_id", TASK_ID)
+        if grading_path.is_file()
+        else TASK_ID
+    )
     manifest = {
-        "task_id": TASK_ID,
+        "task_id": package_task_id,
         "result_summary_path": str(artifact_dir / "result_summary.md"),
         "result_transfer_authorized": True,
         "transfer_method_selected": False,
@@ -1269,6 +1402,129 @@ def package_results(artifact_dir: Path) -> dict[str, Any]:
     return manifest
 
 
+def _source_evidence_manifest(source_dir: Path) -> dict[str, Any]:
+    paths: set[Path] = set()
+    for relative in (
+        "request_body_manifest.json",
+        "resource_recovery_summary.json",
+        "cleanup_status.txt",
+    ):
+        path = source_dir / relative
+        if path.is_file():
+            paths.add(path)
+    bodies = source_dir / "bodies"
+    if bodies.is_dir():
+        paths.update(path for path in bodies.rglob("*.json") if path.is_file())
+    lifecycles = source_dir / "lifecycles"
+    if lifecycles.is_dir():
+        for path in lifecycles.rglob("*"):
+            if not path.is_file():
+                continue
+            relative = path.relative_to(source_dir).as_posix()
+            if (
+                path.name
+                in {
+                    "raw_request_results.jsonl",
+                    "raw_trial_results.jsonl",
+                    "resolved_scheduler_config.json",
+                    "startup_resource_summary.json",
+                    "lifecycle_exit_code.txt",
+                    "cleanup_status.txt",
+                }
+                or "/scheduler_trace/trace." in relative
+            ):
+                paths.add(path)
+    records = [
+        {
+            "path": path.relative_to(source_dir).as_posix(),
+            "bytes": path.stat().st_size,
+            "sha256": _sha256_path(path),
+        }
+        for path in sorted(paths)
+    ]
+    canonical = json.dumps(records, separators=(",", ":"), sort_keys=True).encode()
+    return {
+        "source_task_id": TASK_ID,
+        "source_artifact_dir": str(source_dir.resolve()),
+        "file_count": len(records),
+        "total_bytes": sum(row["bytes"] for row in records),
+        "combined_sha256": hashlib.sha256(canonical).hexdigest(),
+        "records": records,
+    }
+
+
+def refinalize_artifacts(source_dir: Path, output_dir: Path) -> dict[str, Any]:
+    source_dir = source_dir.resolve()
+    output_dir = output_dir.resolve()
+    if not source_dir.is_dir():
+        raise FileNotFoundError(f"source artifact directory not found: {source_dir}")
+    if output_dir.is_relative_to(source_dir):
+        raise ValueError("refinalization output must be outside the source result")
+    if output_dir.exists():
+        raise FileExistsError(f"refinalization output already exists: {output_dir}")
+    required_inputs = (
+        "lifecycles",
+        "bodies",
+        "request_body_manifest.json",
+        "resource_recovery_summary.json",
+        "cleanup_status.txt",
+    )
+    missing = [name for name in required_inputs if not (source_dir / name).exists()]
+    if missing:
+        raise FileNotFoundError(f"source artifact inputs missing: {missing}")
+
+    source_before = _source_evidence_manifest(source_dir)
+    output_dir.mkdir(parents=True)
+    for name in required_inputs:
+        source = source_dir / name
+        (output_dir / name).symlink_to(source, target_is_directory=source.is_dir())
+
+    grading = finalize_artifacts(output_dir, analysis_task_id=REFINALIZATION_TASK_ID)
+    source_after = _source_evidence_manifest(source_dir)
+    if source_before != source_after:
+        raise RuntimeError("source evidence changed during zero-NPU refinalization")
+
+    (output_dir / "source_evidence_manifest.json").write_text(
+        json.dumps(source_before, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    provenance = {
+        "task_id": REFINALIZATION_TASK_ID,
+        "source_task_id": TASK_ID,
+        "source_artifact_dir": str(source_dir),
+        "derived_artifact_dir": str(output_dir.resolve()),
+        "operation": "zero_npu_read_only_performance_reaggregation",
+        "source_evidence_unchanged": True,
+        "source_evidence_combined_sha256": source_before["combined_sha256"],
+        "source_evidence_file_count": source_before["file_count"],
+        "source_evidence_total_bytes": source_before["total_bytes"],
+        "runner_sha256": _sha256_path(Path(__file__)),
+        "phase_reconstruction_rule": "missing phase accepted only for preregistered measured trial_id",
+        "scientific_contract_changed": False,
+        "npu_used": False,
+        "keep_alive_action": "left_running",
+        "source_result_overwritten": False,
+        "performance_analysis_counts": grading["performance_analysis_counts"],
+    }
+    (output_dir / "analysis_provenance.json").write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    grading.update(
+        {
+            "source_evidence_unchanged": True,
+            "source_result_overwritten": False,
+            "scientific_contract_changed_within_r3b": False,
+            "npu_used_for_refinalization": False,
+        }
+    )
+    (output_dir / "grading_inputs.json").write_text(
+        json.dumps(grading, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    package_results(output_dir)
+    return grading
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1287,6 +1543,9 @@ def parse_args() -> argparse.Namespace:
     gate.add_argument("--artifact-dir", type=Path, required=True)
     finalize = sub.add_parser("finalize")
     finalize.add_argument("--artifact-dir", type=Path, required=True)
+    refinalize = sub.add_parser("refinalize")
+    refinalize.add_argument("--source-artifact-dir", type=Path, required=True)
+    refinalize.add_argument("--output-dir", type=Path, required=True)
     package = sub.add_parser("package")
     package.add_argument("--artifact-dir", type=Path, required=True)
     return parser.parse_args()
@@ -1311,6 +1570,9 @@ def main() -> int:
         return 0 if summary["performance_authorized"] else 3
     if args.command == "finalize":
         grading = finalize_artifacts(args.artifact_dir)
+        return 0 if grading["evidence_status"] == "complete" else 2
+    if args.command == "refinalize":
+        grading = refinalize_artifacts(args.source_artifact_dir, args.output_dir)
         return 0 if grading["evidence_status"] == "complete" else 2
     if args.command == "package":
         package_results(args.artifact_dir)

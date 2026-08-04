@@ -1214,23 +1214,23 @@ def test_r2_f4_adaptive_review_accepts_complete_server_evidence(tmp_path: Path):
     assert all(review["checks"].values())
 
 
-def test_p6_handoff_tracks_current_r3b_policy_task():
+def test_p6_handoff_tracks_current_r3b_a1_refinalization_task():
     text = P6_HANDOFF.read_text(encoding="utf-8")
-    assert "p6_3c_r3a_decode_resident_admission_cliff_2026_0803_run01" in text
-    assert "p6_3c_r3a_cost_reanalysis_2026_0804" in text
     assert "p6_3c_r3b_chunk_budget_pareto_2026_0804_run01" in text
+    assert "p6_3c_r3b_a1_performance_reaggregation_2026_0804" in text
     assert "docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md" in text
     assert "max_model_len=12288" in text
     assert "max_num_seqs=9" in text
-    assert "off_budget_12288" in text
-    assert "on_budgets_2048_4096_6144_8192_12288" in text
-    assert "engine_request_count_exact=1286" in text
-    assert "http_request_count_exact=243" in text
-    assert "mechanism_all_budgets_complete" in text
-    assert "lifecycle_resume_used" in text
-    assert "maximum adjacent-token gap" in text
+    assert "measured_trials=144/144" in text
+    assert "valid_pairs=60/60" in text
+    assert "uncertainty_all_n_12" in text
+    assert "frontier_objectives_complete" in text
+    assert "source_evidence_unchanged" in text
+    assert "source_result_overwritten=false" in text
+    assert "refinalize" in text
     assert "npu_stop.sh 0 1 2 3 4 5 6 7" in text
     assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in text
     assert "服务器 AI 可以" in text
-    assert "P6.3C-R3B-V2" in text
+    assert "不要重跑 R3B 的 17 个 NPU lifecycle" in text
+    assert "keep_alive_action=left_running" in text
     assert "transfer_method_selected=false" in text
