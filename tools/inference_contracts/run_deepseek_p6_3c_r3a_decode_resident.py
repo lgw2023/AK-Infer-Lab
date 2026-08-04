@@ -590,6 +590,20 @@ def _window_tbt(
     return values
 
 
+def _max_token_stall_ms(rows: Iterable[dict[str, Any]]) -> float:
+    """Return the largest observed adjacent-token gap across request rows."""
+
+    stalls = [
+        (right - left) / 1_000_000
+        for row in rows
+        for left, right in zip(
+            row.get("token_arrival_ns") or [],
+            (row.get("token_arrival_ns") or [])[1:],
+        )
+    ]
+    return round(max(stalls), 6) if stalls else 0.0
+
+
 def _summarize_values(values: list[float]) -> dict[str, float | int | None]:
     if not values:
         return {"n": 0, "median": None, "p95": None, "p99": None, "max": None}
@@ -765,10 +779,9 @@ def run_staged_trial(
         "resident_pre_injection_tbt": _summarize_values(all_pre_tbt),
         "resident_prefill_interference_tbt": _summarize_values(all_interference_tbt),
         "resident_post_prefill_tbt": _summarize_values(all_recovery_tbt),
-        "resident_max_stall_ms": max(
-            (float(row.get("itl_p99_ms") or 0) for row in resident_rows),
-            default=0.0,
-        ),
+        # This is the literal maximum adjacent-token gap.  Earlier revisions
+        # accidentally stored max(per-request ITL p99) under this name.
+        "resident_max_stall_ms": _max_token_stall_ms(resident_rows),
         "trial_makespan_ms": round(makespan_seconds * 1000, 6),
         "aggregate_output_tokens_per_second": (
             round(total_output_tokens / makespan_seconds, 6)

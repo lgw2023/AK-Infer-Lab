@@ -99,7 +99,8 @@ P6.3C-R2-F1: runner_local_loopback_proxy_failure_after_vllm_startup, runtime lay
 P6.3C-R2-F2: red_p6_3c_r2_f2_scheduler_pressure_evidence_incomplete, 6/6 lifecycles and 90/90 requests completed but the two internal requests entered adjacent scheduler steps, so no same-round token-budget competition or Chunked Prefill mechanism conclusion
 P6.3C-R2-F3: preserved red provenance; runtime-suffixed request IDs bypassed the first atomic-pair parser
 P6.3C-R2-F4/A1: accepted_chunked_prefill_scheduler_mechanism_observed under controlled 12288/12288/2 atomic co-arrival; fixed performance sample showed no benefit
-P6.3C-R3A: developed_waiting_server_r3_s0, jointly frozen 12288/12288/9 decode-resident staged-arrival matched A/B; performance starts only after the fit/cliff mechanism scout passes
+P6.3C-R3A: mechanism_confirmed_tradeoff_only, D=16 and R=12272; admission-cliff injected TTFT -77.7%, resident interference P99 TBT +684%, aggregate TPS -8.5%
+P6.3C-R3B: developed_waiting_server_budget_calibration, contemporaneous Off B12288 plus On B={2048,4096,6144,8192,12288}; five mechanism lifecycles precede twelve mirrored observer-free performance lifecycles
 ```
 
 K1A 原 `1 lifecycle / 6 requests` 契约已消费并以 pinned allocator 首错收口；K1A-R1 probe-invalid、R2

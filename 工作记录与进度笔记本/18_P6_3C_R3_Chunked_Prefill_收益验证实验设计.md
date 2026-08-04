@@ -1,8 +1,9 @@
 # P6.3C-R3：Chunked Prefill 收益验证实验设计
 
-更新日期：2026-08-03
+更新日期：2026-08-04
 
-状态：R3-S0 与 R3A 执行包已开发并通过开发机验证；已授权服务器在全局八卡无冲突后先执行 S0，S0 通过后自动进入 R3A
+状态：R3-S0/R3A 已完整执行并确认 `mechanism_confirmed_tradeoff_only`；R3B chunk-budget
+Pareto 实验包已完成开发与零 NPU 审计，等待服务器在全局八卡无冲突时执行
 
 ## 摘要
 
@@ -26,6 +27,12 @@ R3A 使用 Off/On 仅差一个开关的 matched A/B，检验长 Prefill 准入�
 驻留 Decode 的 ITL/TBT 代价；R3B 在 On 侧扫描 batch token budget，寻找长 Prefill TTFT、
 Decode 尾延迟与总 goodput 的 Pareto 点。只有前两层形成清晰证据后，才进入 R3C 自然到达的
 混合在线负载。
+
+R3A 已在 2026-08-03 完成实机执行。`D=16`、`R=12272` 的机制预测被精确验证；On 将
+12281-token cliff request 的 median TTFT 从 5802.8 ms 降至 1292.6 ms，但 resident P99
+TBT 从 91.7 ms 增至 719.4 ms，总输出 TPS 下降 8.5%。这一结果使 R3B 从可选设想变成了
+直接由证据驱动的下一步：需要缩小 On 首个 chunk，判断能否保留 admission-starvation relief
+而控制 Decode stall。
 
 ## 1. 已有证据与未回答问题
 
@@ -328,9 +335,9 @@ load–P99 TTFT、load–P99 TBT、load–goodput 与 TTFT–TBT Pareto frontier
 状态、FCFS 顺序、partial-prefill concurrency 和 short-prompt queue jumping 影响，容易把多个
 机制混成一个收益。只有 R3A/R3B 关闭后，才单独建立 R3D 研究该问题。
 
-## 7. 实现要求
+## 7. R3A 实现要求（已完成）
 
-下一开发轮只实现 R3-S0 与 R3A，不一次性开发 R3B/R3C。核心代码应围绕以下实质能力展开：
+以下要求是 R3A 开发时冻结的实现合同，现均已完成。保留本节用于说明 R3A 证据如何生成：
 
 1. 新的 staged-arrival streaming driver，能够在 resident cohort 全部达到 token gate 后再注入
    独立长请求，并为每个 choice 保存 token-level monotonic timestamp。
@@ -347,9 +354,9 @@ load–P99 TTFT、load–P99 TBT、load–goodput 与 TTFT–TBT Pareto frontier
 cohort、注入 Prompt、token gate、A/B 差异或指标定义的调整，都必须建立新 variant 并保存
 before/after diff、SHA、attempt、科学影响与资源恢复证据。
 
-## 8. 决策与下一步
+## 8. R3A 前的决策规则（历史预注册）
 
-当前最小、最有信息量的下一轮不是大规模在线 sweep，而是 R3-S0 加 R3A：先证明 vLLM 0.22
+R3A 执行前，最小、最有信息量的一轮被定义为 R3-S0 加 R3A：先证明 vLLM 0.22
 在真实 Ascend 栈上确实出现“Off 等待、On partial admission”的 Decode-resident admission
 cliff，再判断提前准入带来的长请求收益是否值得其 Decode 代价。
 
@@ -401,7 +408,82 @@ preemption 与性能仍只由 Ascend 服务器给出。
 `docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md` 在独立 worktree/task-local overlay 内修复路径、
 代理、stream、observer、warmup 与清理并保留 attempt provenance；改变科学变量时必须显式分支。
 
-## 10. 证据来源
+## 10. R3A 实机结果与设计闭环
+
+R3A 完成 6/6 lifecycle、682/682 engine request、136/136 local HTTP request 和零 retry；
+所有 lifecycle server-ready、exit 0、cleanup clean，NPU 0–7 keep-alive 精确恢复。机制轨道
+得到八个 resident RUNNING、`D=16`、无 preemption。12000-token fit control 两侧首步都完整
+准入；12281-token cliff 在 Off 首步为 waiting/0 Prefill token，在 On 首步为 12272-token
+partial Prefill 并与 resident Decode mixed。
+
+性能轨道中 admission-cliff median TTFT 为 Off 5802.8 ms、On 1292.6 ms，相对下降 77.7%；
+12/12 配对 trial 方向一致。fit control 的配对中位差约为 +1.4 ms、区间跨零，进一步把主要
+TTFT 效应定位到 admission cliff。代价侧 resident interference P99 TBT 为 Off 91.7 ms、On
+719.4 ms，aggregate TPS 为 129.6 与 118.7。正式 outcome 因而是
+`mechanism_confirmed_tradeoff_only`，不是工程 RED，也不是通用收益。
+
+详细方法、结果和有效性讨论已独立写入
+[R3A 实验手稿](./19_P6_3C_R3A_Chunked_Prefill_Decode驻留收益与代价实验手稿.md)。
+
+R3A runner 同时暴露了一个不影响正式 outcome、但影响后续 Pareto 选择的指标命名错误：原
+`resident_max_stall_ms` 实际是 `max(per-request ITL p99)`。2026-08-04 开发轮已将 future-run
+定义修正为真实最大相邻 token gap，并增加零 NPU raw-result analyzer；服务器将在 R3B 触卡前
+先对既有 490 MB R3A raw evidence 原地复算代价侧配对统计。
+
+## 11. R3B 实现收束与执行设计
+
+R3B 正式命名为：
+
+> P6.3C-R3B Chunked Prefill chunk-budget calibrated policy Pareto comparison
+
+它保留 R3A 的 workload 语义：八个 `256 in + 128 out` resident、每个输出 16 token 后注入、
+12281-token Prefill、Prefix Cache off、`max_model_len=12288`、`max_num_seqs=9` 和相同模型栈。
+为了减少重复消耗，R3B 不再运行 12000-token fit control；该反事实已由 R3A 关闭。每个 policy
+只测 resident-only 与 admission-cliff。
+
+策略集合为一个 contemporaneous Off 基线和五个 On 点：
+
+```text
+off_b12288
+on_b2048
+on_b4096
+on_b6144
+on_b8192
+on_b12288
+```
+
+R3B 明确不是 strict single-variable A/B。Off 为满足启动条件保持 `B=L=12288`；小预算 On
+配置同时改变开关和 `max_num_batched_tokens`，回答完整策略的部署折中。开关本身的因果作用
+仍由 R3A 的 `B=12288` matched A/B 提供。
+
+正式执行先加载五个 observer-enabled On lifecycle。每个预算只运行一个 admission-cliff
+trial，直接核验首个 injected chunk 等于 `min(12281, B-D)`、完整 Prefill chunk 总和为
+12281、八个 resident RUNNING、mixed step 和零 preemption。五档全部成立后才进入性能轨道。
+
+性能生命周期使用镜像顺序：
+
+```text
+round 1: Off, On-2048, On-4096, On-6144, On-8192, On-12288
+round 2: On-12288, On-8192, On-6144, On-4096, On-2048, Off
+```
+
+每个 config-cell 合计 12 个有效 trial。17 个 fresh-model lifecycle 共计 1286 engine request、
+243 local HTTP request、零 retry。这个规模大于 R3A，但每个性能 lifecycle 从三个 cell 减为
+两个；镜像设计使每个 On 点在两个方向上都能与 contemporaneous Off 基线配对。
+
+R3B finalizer 不使用单分数选 winner，而是同时最小化 injected TTFT、resident P99 TBT 和真实
+maximum adjacent-token stall，最大化 aggregate output TPS 与 resident TBT SLO attainment。
+SLO threshold 定义为 `2× Off-B12288 resident-only pooled median TBT`，仅为项目分析阈值。
+输出同时保留 trial-pair bootstrap、两个 fresh-model mirror-round 的分别中位效应、非支配集合
+和预注册 deployment bounds。即使没有任何 On 点同时满足 TTFT −20%、P99 TBT +10% 和
+TPS −5% 边界，完整结果仍是有效科学结论，不得通过修改 grade 或阈值制造候选。
+
+实现资产为新 R3B workload、driver、mode/experiment/server 入口和 R3A 代价复分析器。性能
+lifecycle 不安装 observer/profiler，生成文本和 token ID 不落盘；raw timestamp、trace 和 log
+留服务器，小包只返回 manuscript-ready 统计、Pareto 表、来源与资源恢复证据。R3C 不会自动
+启动，必须由开发机审查 R3B effect size 与 mirror-round 一致性后另行授权。
+
+## 12. 证据来源
 
 1. 项目内实测：[P6.3C-R2-F4 受控调度实验手稿](./17_P6_3C_R2_F4_Chunked_Prefill_受控调度实验手稿.md)。
 2. 官方源码型证据：[vLLM 0.22 V1 Scheduler API/source](https://docs.vllm.ai/en/v0.22.0/api/vllm/v1/core/sched/scheduler/)。其 `schedule()` 先调度 RUNNING，再调度 WAITING；关闭 Chunked Prefill 时，若 WAITING 请求不能完整装入剩余 token budget，则停止该轮 waiting scheduling。

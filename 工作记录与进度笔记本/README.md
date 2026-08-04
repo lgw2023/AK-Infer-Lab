@@ -28,16 +28,18 @@ KV-cache 初始化阶段失败，0 request、0 scheduler step，只形成启动 
 co-arrival 环境中完成 6/6 lifecycle、90/90 request、48/48 batch 和 42/42 pair release：Off
 三组无 partial prefill，On 在 10K+6K、8K+8K 两个压力 cell 出现 partial prefill；机制已接收，
 固定样本未显示短请求 TTFT 或 batch throughput 收益。F4-A1 已用零 NPU 只读再归档关闭来源与
-分类链。P6.3C-R3A 收益验证执行包已完成：服务器先运行 `R3-S0` 容量/调度语义 scout，只有
-八 resident、12000 fit control、12281 Off wait/On partial mixed 和零 preemption 的机制门通过，
-才继续 `R3A` Decode-resident admission-cliff matched A/B；任务已授权在全局八卡无冲突时通过
-P6 专用独立 worktree 交接执行。P8.1-R1 与 P8.2-K0
+分类链。P6.3C-R3A 已完成：八 resident 下实测 `D=16`，12281-token cliff 在 Off 首步等待、
+On 首步 partial admit 12272；median injected TTFT 下降 77.7%，但 resident P99 TBT 增加约
+684%、aggregate TPS 下降 8.5%，接受 `mechanism_confirmed_tradeoff_only`。当前 P6 专用任务
+是 R3A raw evidence 的零 NPU 代价复分析与 R3B chunk-budget policy Pareto comparison；R3B
+保持 Off `B=12288`，扫描 On `B∈{2048,4096,6144,8192,12288}`，先做五档机制校准，再执行
+升序—降序镜像性能轨道。P8.1-R1 与 P8.2-K0
 已 green，K1A-R2 accepted capacity 已 ready。R3-R2-R2-R1-R1-R1 已完成同容量唯一 lifecycle：
 6/6 transport 成功、D2H store 闭合、CPU hit/load/H2D 为零。原 red 保留，开发机只接受 store-only yellow。
 R4-R1 offline store-only closeout 已 green，R5-F0 ready，R5-L1/R1 red 保留。F1-R1 calibration
 得到 36800 candidate，但 fixed L2 3/3 请求和 D2H 8/8 后 endpoint 为 `CPU=54/GPU=0`，保留
 target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 64，保留为无效运行合同证据，不否定 accepted capacity。K1A-F1 已由 R17 闭合。K2-R0 run02 已完成 UCM dependency/import，但 8 GiB buffer 的 1296 shards 低于源码门 2048，零请求；四节点 NFS `no_root_squash` 已由用户修复。run03 随后通过 NFS、CMake Python、16 GiB CacheStore 与主机容量门，但在 `UCMFAWAConnector` 初始化期间因默认 4096 目录分片下 FA Posix GC 回收数被整数截断为 0 而停止，0/3 请求。零 NPU attribution 已恢复精确异常和 FA/WA worker block=`3186688/6627328`。当前唯一 driver 为
-`run_deepseek_p8_2_k2_r0_server_task.sh`：停卡前验证 attribution/all-payload、FA/WA Cache 与 Posix GC 几何和主机/存储容量；固定总 POSIX 64 GiB、`data_dir_shard_bytes=2`，分流后 32/32 GiB；随后只执行一个 TP8 lifecycle 和 warmup→prime→follower 三请求，退出时恢复 0–7 keep-alive。P6.3C-R2-F4/A1 已完成，当前没有需要重跑的 P6 八卡任务；未来若建立新的 P6 variant，仍须使用独立 P6 交接并通过全局 NPU 互斥门。K2-R1、P8.3-I1 和 P9 不自动进入。
+`run_deepseek_p8_2_k2_r0_server_task.sh`：停卡前验证 attribution/all-payload、FA/WA Cache 与 Posix GC 几何和主机/存储容量；固定总 POSIX 64 GiB、`data_dir_shard_bytes=2`，分流后 32/32 GiB；随后只执行一个 TP8 lifecycle 和 warmup→prime→follower 三请求，退出时恢复 0–7 keep-alive。P6.3C-R2-F4/A1 和 R3A 已完成，不需要重跑；R3B 已开发并通过 P6 专用交接授权，但只有全局 NPU 互斥门通过后才能运行。R3C、K2-R1、P8.3-I1 和 P9 不自动进入。
 
 ## 当前范围
 
@@ -79,7 +81,8 @@ target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 
 | `14_Qwen3_5_4B_vLLM_AISBench_性能指标记录.md` | P1.28-P1.30 Qwen3.5-4B / vLLM AISBench 风格性能指标、phase memory matrix、server stats 和边界记录。 |
 | `16_P6_阶段复盘与P6_3进入评估.md` | P6.0-P6.3B evidence chain、结果包索引、声明边界和 P6.3C/P7-P9 路线复审入口。 |
 | `17_P6_3C_R2_F4_Chunked_Prefill_受控调度实验手稿.md` | P6.3C-R2-F4/A1 的论文手稿式完整记录：研究问题、实验设置、原子共到达方法、执行 lineage、机制与性能结果、来源证明和有效性边界。 |
-| `18_P6_3C_R3_Chunked_Prefill_收益验证实验设计.md` | P6.3C-R3 的收益验证方案与实现记录：校正 vLLM 0.22 RUNNING-first 调度语义，以 Decode-resident admission cliff 验证长 Prefill 准入收益与 Decode 代价；R3-S0/R3A 执行包已开发，R3B/R3C 仍待前序证据。 |
+| `18_P6_3C_R3_Chunked_Prefill_收益验证实验设计.md` | P6.3C-R3 的收益验证方案、R3A 实机闭环与 R3B 实现记录：从 decode-resident admission cliff 的 77.7% TTFT 收益和严重 Decode 代价，推进到 On-side chunk-budget Pareto 校准。 |
+| `19_P6_3C_R3A_Chunked_Prefill_Decode驻留收益与代价实验手稿.md` | R3A 的论文手稿式完整记录：staged arrival、调度准入机制、paired TTFT、resident tail TBT/吞吐代价、有效性边界与 R3B 推导。 |
 | `P6_阶段证据链仪表盘_2026_0715.html` | 八页 16:9 P6 closeout 领导汇报：冻结配置、P6.1C-R1/P6.1/P6.2/P6.3A/P6.3B-R4-R1 green、P6.3C strict-single-variable blocked、P6.3B lineage、结果包与 P7-P9 边界。 |
 | `DeepSeek_V4_Flash_W8A8_8NPU_性能总览_修订版.html` | 五页 16:9 P6 全阶段实测领导汇报：18-cell unprofiled baseline、MTP Off/On 绝对值与 paired delta、Prefix Cache 八组命中/TTFT、profiled evidence、Chunked Prefill feasibility 与 artifact closeout。 |
 | `P8_阶段主要结果与证据链仪表盘_2026_0728.html` | P8 分层工程原型静态证据控制台：P8.0/P8.1/K0、K1/K1A 历史 lineage、R17 restore/H2D 机制闭环、claim boundary、当前 K2-R0 与 Expert/TP4 开放门。 |
@@ -96,7 +99,7 @@ target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 
 2. 新进展写入 `03_阶段性进展.md`，不要覆盖历史。
 3. 新结果写入 `04_结果与问题点.md`，必须注明 run id、commit、服务器路径和边界。
 4. 下一步只写可执行动作，避免泛泛讨论。
-5. 服务器任务必须通过 `通信模块/docs/developer-to-server.md` 交接，且每次只保留当前任务。
+5. 服务器任务默认通过 `通信模块/docs/developer-to-server.md` 交接；并行工作流使用独立文件，当前 P6 由 `通信模块/docs/developer-to-server.P6.md` 独占，不能覆盖其他会话的通用交接。
 6. 服务器邮件正文和每个附件受 70KB 限制；小结果在用户选择后用 `email + 附件` 或 `upload-api + 文本总结/文件` 交付，大 artifact 留在服务器就地分析。
 7. 本地 dry-run 不能作为 Atlas 服务器证据。
 8. 所有性能结论必须经过 controlled replay；smoke、stats、profile collected、request-device join 分别有不同证明力。
