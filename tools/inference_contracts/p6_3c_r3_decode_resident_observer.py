@@ -177,6 +177,13 @@ def install_p6_3c_r1_scheduler_observer() -> None:
         waiting_after = _ordered_request_ids(self.waiting)
         running_after = _ordered_request_ids(self.running)
         marker = os.environ.get(REQUEST_MARKER_ENV, DEFAULT_REQUEST_MARKER)
+        controller_decision = getattr(
+            self, "_p6_3c_r3c_last_decision", None
+        ) or {}
+        effective_token_budget = int(
+            controller_decision.get("selected_budget")
+            or self.max_num_scheduled_tokens
+        )
         relevant_ids = [
             *waiting_before,
             *running_before,
@@ -208,6 +215,8 @@ def install_p6_3c_r1_scheduler_observer() -> None:
                 ),
                 max_num_seqs=int(self.scheduler_config.max_num_seqs),
                 token_budget=int(self.max_num_scheduled_tokens),
+                effective_token_budget=effective_token_budget,
+                controller_decision=controller_decision,
                 total_num_scheduled_tokens=int(result.total_num_scheduled_tokens),
                 waiting_count_before=len(waiting_before),
                 running_count_before=len(running_before),

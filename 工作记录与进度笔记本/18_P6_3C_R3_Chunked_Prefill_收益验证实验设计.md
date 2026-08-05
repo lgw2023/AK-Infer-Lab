@@ -2,8 +2,8 @@
 
 更新日期：2026-08-04
 
-状态：R3-S0/R3A 已确认 `mechanism_confirmed_tradeoff_only`；R3B 17/17 lifecycle 与五档机制
-已完成，性能正式结果因 trial-phase 聚合缺陷等待零 NPU A1 再聚合
+状态：R3-S0/R3A 已确认 `mechanism_confirmed_tradeoff_only`；R3B 已通过零 NPU A1 恢复
+144/144 trial 与五目标 Pareto，闭环为 `pareto_frontier_observed_no_candidate_within_bounds`
 
 ## 摘要
 
@@ -500,8 +500,87 @@ admission-cliff TTFT，但 resident P99 TBT/max stall 明显增加，TPS 下降�
 满足预注册三项 deployment bounds 的点。
 
 原 finalizer 复用的 measured trial summary 不含 `phase`，却用 `phase==measured` 过滤，导致
-144 个 trial 全部丢失。当前代码已同时修 future raw 写入和既有 run01 的预注册 trial-ID 恢复，
-并把 144 trial、12 summary、60 pair、uncertainty n=12、五目标非空纳入 fail-closed evidence
-gate。下一步只运行零 NPU `p6_3c_r3b_a1_performance_reaggregation_2026_0804`，原 17 个
-lifecycle 不重跑，R3C 不自动启动。完整论文手稿见
+144 个 trial 全部丢失。修复后的零 NPU A1 已对既有 raw 完成只读再聚合，正式恢复
+144/144 measured trial、12/12 summary row、60/60 valid pair、每项 uncertainty `n=12`、两个
+mirror round median 和完整五目标。源 182 个证据文件聚合前后未改，无 NPU、无适配修复。
+
+基于 12-trial pooled sample median 的经验 frontier 为 Off B12288 与
+On B2048/4096/6144/8192，On B12288 被 B8192 支配。
+所有 On 配置都获得 47.5%–80.5% TTFT 改善，但 resident P99 TBT 增加 345.6%–681.6%、
+TPS 下降 6.8%–20.4%，无一满足预注册三项 bounds。maximum-stall 差分存在明显 mirror-round
+敏感性，后续不应将单一 max gap 作为主选型指标。R3B 已闭环，R3C 不自动启动。完整论文手稿见
 `20_P6_3C_R3B_Chunked_Prefill_预算Pareto实验手稿.md`。
+
+## 14. R3C：从静态 Pareto 推进到 Decode-SLO-aware 动态策略
+
+R3B 的正式再聚合把问题推进到了一个更具体的系统层面：静态 `max_num_batched_tokens` 能够在
+TTFT、resident Decode 尾延迟和 aggregate TPS 之间移动工作点，却没有一个测试点同时满足项目
+内的联合边界。因而下一轮不再扩大静态预算网格，而是把 scheduler 的瞬时 budget 变成由运行态
+Decode 压力触发的控制量。
+
+R3C 的新策略保持命令行 `max_num_batched_tokens=12288`，从而保持与其对应的 KV-cache capacity
+语义；仅在 `decode_resident_count>0` 且 `waiting_prefill_count>0` 时，把当前
+`Scheduler.max_num_scheduled_tokens` 临时设为 `min(12288, D+target)`，其中 `D` 为 Decode
+resident 的本轮保留 token 数，target 取 2048、4096、8192。无等待 Prefill 时恢复完整 12288。
+这不是对 R3B 的重新命名，而是一个新的 runtime policy variant；R3A 仍然是 Chunked Prefill
+开关的匹配机制锚点，R3B 仍然是静态 policy comparison。
+
+实现已经落到仓库：`p6_3c_r3c_adaptive_scheduler.py` 负责 scheduler wrapper、控制律和每轮
+decision trace，`p6_3c_r3c_sitecustomize.py` 负责 server 子进程启动时的 task-local bootstrap，
+R3C runner/workload/server wrapper 复用已审计 R3B 请求与指标实现，只替换 policy schedule 和
+机制合同。机制轨道要求直接看到三个 target 的 pressure-capped budget 及 resident-only 的
+full-budget 控制；性能轨道关闭 observer/profiler，但保留 controller trace 作为策略生效证据。
+
+预期为 14 个 fresh-model lifecycle（4 mechanism + 10 performance）、1070 engine request、202
+HTTP request、0 retry。候选策略是 Off B12288、R3B static B8192 anchor 和三个 adaptive target。
+主要指标仍为 injected TTFT、resident interference P99 TBT/maximum stall、aggregate TPS 和
+resident TBT SLO attainment；仍采用 mirror-round 配对和描述性 bootstrap，不把 trial 数误写成
+独立 lifecycle 重复。R3C 结果若完成，只能支持当前 Atlas/vLLM 受控 staged-arrival admission
+cliff 下的动态策略证据，不能外推自然 API、生产 SLO 或普遍收益。
+
+## 15. R3C 开发轮：把动态策略变成可审计的运行时实验
+
+本开发轮的推进重点不是再增加一组颜色判定，而是把 R3B 已经暴露出的系统问题落实为一个可在真实
+Ascend 栈上检验的控制策略。静态预算扫描已经回答“把 `B` 固定在某个值会把工作点移到哪里”；R3C
+进一步问：同一个服务是否可以在没有等待 Prefill 时保留完整调度容量，而在 Decode 驻留且长 Prefill
+等待时只收紧当前 iteration 的 Prefill chunk。这样，控制量针对的是瞬时调度压力，而不是启动时的
+KV-cache 容量。
+
+控制器位于 task-local runtime overlay，不修改 vLLM 或 vLLM-Ascend 安装包。它包装
+`vllm.v1.core.sched.scheduler.Scheduler.schedule`，读取 running 请求的 prompt/computed token 状态和
+waiting/skipped-waiting 队列长度，并把旧的 `max_num_scheduled_tokens` 在调用结束后恢复。控制律为
+
+\[
+ B_{\mathrm{iter}} = \begin{cases}
+ \min(12288, D + T), & D>0 \land W>0,\\
+ 12288, & \text{otherwise},
+ \end{cases}
+\]
+
+其中 \(D\) 是 Decode resident 数与每请求 `decode_quantum=2` 的乘积，\(W\) 是等待 Prefill 数，
+\(T\in\{2048,4096,8192\}\) 是 adaptive target。`max_num_batched_tokens=12288`、
+`max_model_len=12288`、KV cache 初始化和 measured request 集合均不变。
+
+开发中发现了一个重要的证据链问题：observer 可能位于 controller wrapper 外层；若只读取恢复后的
+`max_num_scheduled_tokens`，动态 budget 会被错误记成 12288。现将 controller 的本轮 decision
+作为 scheduler 实例上的 evidence-only 状态，同时写入 observer trace 的 `effective_token_budget`
+和 `controller_decision` 字段。结果聚合据此区分配置上限与实际 per-iteration 预算，避免实验完成后
+因观测顺序错误丢失机制证据。这个修复不改变 SchedulerOutput，也不改变任何请求或指标定义。
+
+R3C 的机制门包括四个 fresh-model lifecycle：static B8192 anchor 和三个 adaptive target。每个
+adaptive lifecycle 必须同时出现 pressure-capped 与 resident-only full-budget decision；三个 target
+在名义 `D=16` 时分别给出 2064、4112、8208 的 effective budget，实际 `D` 不同则以 trace 计算值为准。
+首个 injected Prefill chunk 应由 `effective_token_budget-D` 推导，而不硬编码 D=16；完整 12281-token
+Prefill 必须无 preemption 地完成。机制门关闭时不运行十个性能 lifecycle。
+
+性能轨道为 Off B12288、static B8192、adaptive T2048/T4096/T8192 的两轮镜像顺序，共十个
+lifecycle、1070 engine request、202 HTTP request。性能 lifecycle 关闭 observer 和 profiler，仍保留
+controller trace 作为策略生效的控制证据。聚合输出 TTFT、resident P99 TBT、最大相邻 token gap、
+aggregate TPS、TBT SLO、pairwise effect、mirror-round 一致性和五目标 Pareto；没有配置满足边界也
+是有效结果，不得通过 finalizer grade 改写结论。
+
+服务器可在独立 worktree/task-local overlay 中修复 import、editable/site-package 路径、bootstrap
+时序、loopback 健康检查、trace 持久化和 cleanup，并保留每次 adaptation 的前后 diff、SHA、attempt
+和科学影响。不得把 adaptive target、容量、请求、cell、样本、指标或阈值的改变伪装成 R3C 原任务；
+若研究问题改变，另建 variant。正式交接见 `通信模块/docs/developer-to-server.P6.md`，结果包只回传
+70KB 以内的统计与审计文件，大型 raw trace 留在服务器原地分析。

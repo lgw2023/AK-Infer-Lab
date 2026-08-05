@@ -1,0 +1,242 @@
+schema_version: 1
+workload_id: p6_3c_r3c_adaptive_budget
+task_id: p6_3c_r3c_adaptive_budget_2026_0805_run01
+date: "2026-08-05"
+stage: P6.3C-R3C
+title: Decode-SLO-aware adaptive Chunked Prefill budget comparison
+
+research_question:
+  - >-
+    After R3B found no static budget inside the joint TTFT/resident-tail/TPS
+    bounds, can a runtime policy preserve the full configured KV-cache budget
+    while reducing only the Prefill chunk admitted during Decode pressure?
+  - >-
+    Does switching between full budget and a pressure cap based on observable
+    scheduler state improve the trade-off relative to the legal Off baseline,
+    the R3B static B=8192 anchor, and fixed adaptive targets?
+
+lineage:
+  original_reference_audit:
+    task_id: p6_3c_chunked_prefill_feasibility_audit
+    outcome: blocked_p6_3c_not_strict_single_variable
+    overwritten: false
+  controlled_prefill_mechanism:
+    task_id: p6_3c_r2_f4_request_id_normalized_atomic_coarrival_2026_0731_run01
+    outcome: accepted_chunked_prefill_scheduler_mechanism_observed
+    overwritten: false
+  decode_resident_parent:
+    task_id: p6_3c_r3a_decode_resident_admission_cliff_2026_0803_run01
+    outcome: mechanism_confirmed_tradeoff_only
+    overwritten: false
+  static_budget_parent:
+    task_id: p6_3c_r3b_a1_performance_reaggregation_2026_0804
+    outcome: pareto_frontier_observed_no_candidate_within_bounds
+    overwritten: false
+  new_variant_reason: >-
+    R3C changes the policy from a static command-line budget to a task-local
+    per-iteration scheduler cap. It is a new policy experiment, not a relabel
+    of R3B and not a strict boolean-only A/B.
+
+fixed_platform_contract:
+  model: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  served_model_name: deepseek-v4-flash-w8a8-mtp
+  quantization: ascend_w8a8
+  vllm: 0.22.1+empty
+  vllm_ascend: 0.22.1rc1
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  block_size: 128
+  async_scheduling: true
+  enable_prefix_caching: false
+  max_model_len: 12288
+  max_num_seqs: 9
+  profiler: disabled
+  request_retry_count: 0
+
+policy_configs:
+  - config_id: off_b12288
+    enable_chunked_prefill: false
+    max_num_batched_tokens: 12288
+    policy_type: static_off
+  - config_id: static_on_b8192
+    enable_chunked_prefill: true
+    max_num_batched_tokens: 8192
+    policy_type: static_on_anchor
+  - config_id: adaptive_on_t2048
+    enable_chunked_prefill: true
+    max_num_batched_tokens: 12288
+    active_chunk_target_tokens: 2048
+    decode_quantum_tokens: 2
+    policy_type: adaptive_on
+  - config_id: adaptive_on_t4096
+    enable_chunked_prefill: true
+    max_num_batched_tokens: 12288
+    active_chunk_target_tokens: 4096
+    decode_quantum_tokens: 2
+    policy_type: adaptive_on
+  - config_id: adaptive_on_t8192
+    enable_chunked_prefill: true
+    max_num_batched_tokens: 12288
+    active_chunk_target_tokens: 8192
+    decode_quantum_tokens: 2
+    policy_type: adaptive_on
+
+adaptive_controller:
+  module: tools/inference_contracts/p6_3c_r3c_adaptive_scheduler.py
+  bootstrap: tools/inference_contracts/p6_3c_r3c_sitecustomize.py
+  configured_budget_preserved: true
+  pressure_condition: decode_resident_count>0 and waiting_prefill_count>0
+  decode_reserve: decode_resident_count*decode_quantum_tokens
+  pressure_budget: min(configured_budget, decode_reserve+active_chunk_target_tokens)
+  no_pressure_budget: configured_budget
+  default_decode_quantum_tokens: 2
+  target_grid_tokens: [2048, 4096, 8192]
+  scheduler_field_changed: max_num_scheduled_tokens_only
+  scheduler_field_unchanged: max_num_batched_tokens
+  trace_required: true
+  failure_action: >-
+    If the controller cannot prove installation and pressure/full-budget
+    decisions in the task-local trace, stop before measured performance and
+    retain the mechanism evidence.
+
+staged_arrival:
+  resident_cohort:
+    request_count: 8
+    prompt_tokens_each: 256
+    forced_output_tokens_each: 128
+    transport: one_batched_streaming_http_request
+  injection_gate:
+    condition: all_8_residents_streamed_at_least_16_output_tokens
+    client_clock: monotonic_ns
+  injected_request:
+    prompt_tokens: 12281
+    forced_output_tokens: 4
+    transport: independent_streaming_http_request
+  cells:
+    - cell_id: resident_only
+      role: no-waiting-prefill controller control
+    - cell_id: admission_cliff_12281
+      role: adaptive prefill/decode interference trade-off
+
+mechanism_calibration:
+  configs: [static_on_b8192, adaptive_on_t2048, adaptive_on_t4096, adaptive_on_t8192]
+  lifecycle_count: 4
+  observer: read_only_returns_original_scheduler_output
+  controller_trace: required_for_adaptive_configs
+  required_before_performance: true
+  pass_conditions:
+    - exactly eight resident requests are running at the first injected step
+    - resident Decode scheduled-token total D is positive
+    - static first chunk equals B-D
+    - adaptive first budget equals min(12288,D+target)
+    - adaptive first chunk equals target when target+D <= 12288
+    - adaptive trace records pressure_capped at the injected step
+    - resident-only control records full_budget when no Prefill waits
+    - observed Prefill chunks sum to exactly 12281 tokens
+    - no preemption occurs
+  failure_action: >-
+    Stop before performance. Task-local repairs may address import order,
+    runtime overlay paths, trace persistence, health checks, and cleanup. Any
+    change to requests, targets, cells, metrics, or policy semantics creates a
+    new R3C variant.
+
+performance_track:
+  observer: disabled
+  profiler: disabled
+  lifecycle_count: 10
+  mirror_order:
+    round_1: [off_b12288, static_on_b8192, adaptive_on_t2048, adaptive_on_t4096, adaptive_on_t8192]
+    round_2: [adaptive_on_t8192, adaptive_on_t4096, adaptive_on_t2048, static_on_b8192, off_b12288]
+  valid_trials_per_config_cell: 12
+  valid_trials_per_cell_per_lifecycle: 6
+  cell_sequence_per_lifecycle:
+    - resident_only
+    - admission_cliff_12281
+    - admission_cliff_12281
+    - resident_only
+    - resident_only
+    - admission_cliff_12281
+    - admission_cliff_12281
+    - resident_only
+    - resident_only
+    - admission_cliff_12281
+    - admission_cliff_12281
+    - resident_only
+
+primary_objectives:
+  minimize:
+    - injected_request_ttft_ms
+    - resident_interference_tbt_p99_ms
+    - resident_interference_max_adjacent_token_stall_ms
+  maximize:
+    - aggregate_output_tokens_per_second
+    - resident_tbt_slo_attainment
+  resident_tbt_slo:
+    threshold: 2x_off_b12288_resident_only_pooled_median_tbt
+    status: project_analysis_threshold_not_external_standard
+
+paired_analysis:
+  pairing: >-
+    For each On policy, pair repeat index with the contemporaneous Off baseline
+    in the same mirror round.
+  uncertainty:
+    method: paired_bootstrap_median_difference
+    samples: 10000
+    confidence_interval: 95_percent
+    random_seed: 633
+    caveat: >-
+      Six trials share one fresh-model lifecycle and the same Off trial is
+      reused across On policies. Report mirror-round medians and describe the
+      interval as descriptive rather than independent-replicate inference.
+
+decision_rules:
+  deployment_bounds_relative_to_off:
+    injected_ttft: reduction_at_least_20_percent
+    resident_interference_p99_tbt: increase_at_most_10_percent
+    aggregate_output_tps: decrease_at_most_5_percent
+  outcomes:
+    - adaptive_policy_candidate_found_within_preregistered_bounds
+    - adaptive_policy_tradeoff_no_candidate_within_bounds
+    - adaptive_mechanism_incomplete
+    - adaptive_performance_incomplete
+  next_stage: >-
+    Do not automatically promote an adaptive target. Development-machine
+    review must inspect controller trace, configured-versus-effective budget,
+    mirror-round consistency, resident-only control, and cleanup evidence.
+
+expected_execution:
+  model_lifecycles: 14
+  mechanism_lifecycles: 4
+  performance_lifecycles: 10
+  engine_requests_including_warmup: 1070
+  local_http_requests_including_warmup: 202
+  retries: 0
+
+claim_boundary:
+  supported_if_complete: >-
+    Controlled decode-resident admission-cliff comparison of the named
+    adaptive policies on the pinned Ascend/vLLM stack, including direct trace
+    evidence that the controller changes only the per-iteration budget.
+  unsupported:
+    - strict single-variable attribution for policy comparisons
+    - natural API arrival behavior
+    - production SLO capacity
+    - universal Chunked Prefill benefit
+    - automatic deployment recommendation
+
+adaptive_execution:
+  policy: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+  task_local_repairs_allowed: true
+  scientific_variant_required_if_changed: true
+  evidence_required:
+    - before_after_diff_and_sha256
+    - attempt_history
+    - scientific_impact_statement
+    - controller_self_test_and_trace
+    - resource_recovery_evidence
+
+result_transfer_authorized: true
+transfer_method_selected: false
+automatic_transfer_allowed: false

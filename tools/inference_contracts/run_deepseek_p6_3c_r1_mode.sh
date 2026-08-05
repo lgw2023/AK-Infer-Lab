@@ -66,6 +66,8 @@ OVERLAY_ROOT=${RUNTIME_DIR}/overlay_root
 TRACE_DIR=${RUNTIME_DIR}/scheduler_trace
 ATOMIC_PAIR_TRACE_DIR=${RUNTIME_DIR}/atomic_pair_trace
 HYBRID_DIAGNOSTIC_PATH=${RUNTIME_DIR}/hybrid_kv_runtime_diagnostic.jsonl
+R3C_ADAPTIVE_CONTROLLER=${P6_3C_R3C_ADAPTIVE_CONTROLLER:-}
+R3C_ADAPTIVE_SITECUSTOMIZE=${P6_3C_R3C_ADAPTIVE_SITECUSTOMIZE:-}
 server_pid=
 
 if test "${HOST}" != 127.0.0.1; then
@@ -283,6 +285,24 @@ if ! "${overlay_builder_args[@]}"; then
   exit 2
 fi
 
+if test -n "${R3C_ADAPTIVE_CONTROLLER}"; then
+  test -f "${R3C_ADAPTIVE_CONTROLLER}"
+  test -f "${R3C_ADAPTIVE_SITECUSTOMIZE}"
+  cp "${R3C_ADAPTIVE_CONTROLLER}" \
+    "${OVERLAY_ROOT}/p6_3c_r3c_adaptive_scheduler.py"
+  cp "${R3C_ADAPTIVE_SITECUSTOMIZE}" "${OVERLAY_ROOT}/sitecustomize.py"
+  {
+    printf 'controller_source_sha256\t%s\n' \
+      "$(sha256sum "${R3C_ADAPTIVE_CONTROLLER}" | awk '{print $1}')"
+    printf 'controller_overlay_sha256\t%s\n' \
+      "$(sha256sum "${OVERLAY_ROOT}/p6_3c_r3c_adaptive_scheduler.py" | awk '{print $1}')"
+    printf 'sitecustomize_source_sha256\t%s\n' \
+      "$(sha256sum "${R3C_ADAPTIVE_SITECUSTOMIZE}" | awk '{print $1}')"
+    printf 'sitecustomize_overlay_sha256\t%s\n' \
+      "$(sha256sum "${OVERLAY_ROOT}/sitecustomize.py" | awk '{print $1}')"
+  } > "${RUNTIME_DIR}/adaptive_controller_identity.tsv"
+fi
+
 if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
   {
     printf 'runtime_impl\t%s\n' "$(sha256sum "${RUNTIME_IMPL}" | awk '{print $1}')"
@@ -327,6 +347,18 @@ export P6_3C_ATOMIC_PAIR_TIMEOUT_SECONDS="${ATOMIC_PAIR_TIMEOUT_SECONDS}"
 export P6_3C_ATOMIC_PAIR_ADMISSION_MODULE="${ATOMIC_PAIR_ADMISSION_MODULE}"
 export P6_3C_ATOMIC_PAIR_ENGINE_MARKER="${ATOMIC_PAIR_ENGINE_MARKER}"
 export P6_3C_ATOMIC_PAIR_PROC_MARKER="${ATOMIC_PAIR_PROC_MARKER}"
+if test -n "${R3C_ADAPTIVE_CONTROLLER}"; then
+  export P6_3C_R3C_CONTROLLER_MARKER_PATH="${RUNTIME_DIR}/adaptive_controller_installed.json"
+  export P6_3C_R3C_CONTROLLER_TRACE_DIR="${RUNTIME_DIR}/adaptive_scheduler_trace"
+  # Keep the bootstrap disabled for the runner-side self-tests.  It is
+  # enabled only for the vLLM child below, so the marker proves installation
+  # in the actual server process rather than in a probe interpreter.
+  unset P6_3C_R3C_ADAPTIVE_ENABLED
+else
+  unset P6_3C_R3C_ADAPTIVE_ENABLED
+  unset P6_3C_R3C_CONTROLLER_MARKER_PATH
+  unset P6_3C_R3C_CONTROLLER_TRACE_DIR
+fi
 if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
   export P6_3C_R2_F3_ATOMIC_PAIR_TRACE_DIR="${ATOMIC_PAIR_TRACE_DIR}"
   export P6_3C_ATOMIC_PAIR_TRACE_DIR="${ATOMIC_PAIR_TRACE_DIR}"
@@ -395,6 +427,14 @@ else
   unset P6_3C_R1_SCHEDULER_TRACE_DIR
 fi
 
+if test -n "${R3C_ADAPTIVE_CONTROLLER}"; then
+  if ! test -f "${RUNTIME_DIR}/adaptive_controller_identity.tsv"; then
+    printf '%s\n' "${LIFECYCLE_ID}:adaptive_controller_identity_missing" \
+      > "${ARTIFACT_DIR}/first_failure_excerpt.txt"
+    exit 2
+  fi
+fi
+
 printf '%q ' "${cmd[@]}" > "${RUNTIME_DIR}/server_command.txt"
 printf '\n' >> "${RUNTIME_DIR}/server_command.txt"
 "${PYTHON_BIN}" "${ARGV_IDENTITY}" \
@@ -407,14 +447,37 @@ printf '\n' >> "${RUNTIME_DIR}/server_command.txt"
   --require-no-proxy-env
 
 if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
+  if test -n "${R3C_ADAPTIVE_CONTROLLER}"; then
+    export P6_3C_R3C_ADAPTIVE_ENABLED=1
+  fi
   P6_3B_R2_ENABLE_HYBRID_KV_PATCH=1 \
   P6_3B_R2_HYBRID_KV_DIAGNOSTIC_PATH="${HYBRID_DIAGNOSTIC_PATH}" \
     setsid "${cmd[@]}" > "${RUNTIME_DIR}/vllm_server.log" 2>&1 &
 else
+  if test -n "${R3C_ADAPTIVE_CONTROLLER}"; then
+    export P6_3C_R3C_ADAPTIVE_ENABLED=1
+  fi
   setsid "${cmd[@]}" > "${RUNTIME_DIR}/vllm_server.log" 2>&1 &
 fi
 server_pid=$!
 printf '%s\n' "${server_pid}" > "${RUNTIME_DIR}/server_pid.txt"
+
+if test -n "${R3C_ADAPTIVE_CONTROLLER}"; then
+  ready_marker_deadline=$((SECONDS + 30))
+  while test "${SECONDS}" -lt "${ready_marker_deadline}" && \
+    ! test -f "${RUNTIME_DIR}/adaptive_controller_installed.json"; do
+    sleep 1
+  done
+  if ! test -f "${RUNTIME_DIR}/adaptive_controller_installed.json"; then
+    {
+      printf '%s\n' "${LIFECYCLE_ID}:adaptive_controller_not_installed"
+      cat "${RUNTIME_DIR}/vllm_server.log"
+    } > "${ARTIFACT_DIR}/first_failure_excerpt.txt"
+    exit 2
+  fi
+  printf '%s\n' installed > "${RUNTIME_DIR}/adaptive_controller_self_test.txt"
+  unset P6_3C_R3C_ADAPTIVE_ENABLED
+fi
 
 "${PYTHON_BIN}" - \
   "${MODE}" "${TRACK}" \
