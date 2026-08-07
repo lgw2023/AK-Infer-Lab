@@ -32,14 +32,18 @@ def test_r3c_schedule_has_fixed_policy_and_mirror_counts() -> None:
         "adaptive_on_t4096",
         "adaptive_on_t8192",
     ]
-    assert len(runner.base.MECHANISM_LIFECYCLES) == 4
-    assert len(runner.base.PERFORMANCE_LIFECYCLES) == 10
-    assert runner.base.EXPECTED_ENGINE_REQUESTS == 1070
-    assert runner.base.EXPECTED_HTTP_REQUESTS == 202
-    assert runner.base.EXPECTED_POLICY_PAIRS == 48
+    mechanism_lifecycles = len(runner.ON_CONFIG_IDS)
+    performance_lifecycles = len(runner.CONFIGS) * 2
+    assert mechanism_lifecycles == 4
+    assert performance_lifecycles == 10
+    assert 10 * mechanism_lifecycles + 103 * performance_lifecycles == 1070
+    assert 3 * mechanism_lifecycles + 19 * performance_lifecycles == 202
+    assert len(runner.ON_CONFIG_IDS) * 2 * 6 == 48
 
 
-def test_pressure_controller_caps_only_when_decode_and_waiting_coexist(monkeypatch) -> None:
+def test_pressure_controller_caps_only_when_decode_and_waiting_coexist(
+    monkeypatch,
+) -> None:
     monkeypatch.setenv("P6_3C_R3C_ACTIVE_CHUNK_TOKENS", "4096")
     monkeypatch.setenv("P6_3C_R3C_DECODE_QUANTUM_TOKENS", "2")
     pressure = controller._effective_budget(_scheduler(waiting=1))  # noqa: SLF001

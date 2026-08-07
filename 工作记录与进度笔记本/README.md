@@ -90,6 +90,7 @@ target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 
 | `18_P6_3C_R3_Chunked_Prefill_收益验证实验设计.md` | P6.3C-R3 的收益验证方案、R3A 实机闭环与 R3B 实现记录：从 decode-resident admission cliff 的 77.7% TTFT 收益和严重 Decode 代价，推进到 On-side chunk-budget Pareto 校准。 |
 | `19_P6_3C_R3A_Chunked_Prefill_Decode驻留收益与代价实验手稿.md` | R3A 的论文手稿式完整记录：staged arrival、调度准入机制、paired TTFT、resident tail TBT/吞吐代价、有效性边界与 R3B 推导。 |
 | `20_P6_3C_R3B_Chunked_Prefill_预算Pareto实验手稿.md` | R3B 的论文手稿式完整记录：研究假设、staged-arrival 与指标定义、budget→chunk contract response、17-lifecycle/144-trial 镜像比较、resident-only 对照、描述性配对区间、经验五目标 Pareto、max-stall 顺序敏感性、证据审计与有效性边界。 |
+| `21_P6_3C_R3C_动态预算结果与R3D_持续Prefill压力实验设计.md` | R3C 真实动态预算结果与 R3D 新 variant 的论文手稿式记录：one-shot admission cap 的收益/代价、waiting→running 状态机限制、persistent Prefill-pressure 控制律、128–1024 token 粒度阶梯、完整 chunk-sequence 机制门与部署声明边界。 |
 | `P6_阶段证据链仪表盘_2026_0715.html` | 八页 16:9 P6 closeout 领导汇报：冻结配置、P6.1C-R1/P6.1/P6.2/P6.3A/P6.3B-R4-R1 green、P6.3C strict-single-variable blocked、P6.3B lineage、结果包与 P7-P9 边界。 |
 | `DeepSeek_V4_Flash_W8A8_8NPU_性能总览_修订版.html` | 五页 16:9 P6 全阶段实测领导汇报：18-cell unprofiled baseline、MTP Off/On 绝对值与 paired delta、Prefix Cache 八组命中/TTFT、profiled evidence、Chunked Prefill feasibility 与 artifact closeout。 |
 | `P8_阶段主要结果与证据链仪表盘_2026_0728.html` | P8 分层工程原型静态证据控制台：P8.0/P8.1/K0、K1/K1A 历史 lineage、R17 restore/H2D 机制闭环、claim boundary、当前 K2-R0 与 Expert/TP4 开放门。 |

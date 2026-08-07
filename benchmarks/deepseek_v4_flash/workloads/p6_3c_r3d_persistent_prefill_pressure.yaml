@@ -1,0 +1,287 @@
+schema_version: 1
+workload_id: p6_3c_r3d_persistent_prefill_pressure
+task_id: p6_3c_r3d_persistent_prefill_pressure_2026_0807_run01
+date: "2026-08-07"
+stage: P6.3C-R3D
+title: Persistent Prefill-pressure chunk control under resident Decode
+
+research_question:
+  - >-
+    R3C capped only the first admitted Prefill chunk because its pressure
+    condition observed the waiting queue but not a partially-prefilled request
+    after it moved to running. Does sustaining the cap until the long Prompt
+    finishes reduce resident Decode tail interference?
+  - >-
+    Is there a fine-grained persistent chunk target that retains at least 20%
+    of the injected-request TTFT benefit while keeping resident P99 TBT within
+    +10% and aggregate output throughput within -5% of contemporaneous Off?
+
+lineage:
+  original_reference_audit:
+    task_id: p6_3c_chunked_prefill_feasibility_audit
+    outcome: blocked_p6_3c_not_strict_single_variable
+    overwritten: false
+  controlled_prefill_mechanism:
+    task_id: p6_3c_r2_f4_request_id_normalized_atomic_coarrival_2026_0731_run01
+    outcome: accepted_chunked_prefill_scheduler_mechanism_observed
+    overwritten: false
+  decode_resident_parent:
+    task_id: p6_3c_r3a_decode_resident_admission_cliff_2026_0803_run01
+    outcome: mechanism_confirmed_tradeoff_only
+    overwritten: false
+  static_budget_parent:
+    task_id: p6_3c_r3b_a1_performance_reaggregation_2026_0804
+    outcome: pareto_frontier_observed_no_candidate_within_bounds
+    overwritten: false
+  admission_only_parent:
+    task_id: p6_3c_r3c_adaptive_budget_2026_0805_run01
+    outcome: adaptive_policy_tradeoff_no_candidate_within_bounds
+    key_observation: >-
+      The first chunk was capped, but subsequent Prefill returned to the full
+      configured budget after the request moved from waiting to running.
+    overwritten: false
+  new_variant_reason: >-
+    R3D changes the policy state machine and target grid. It is a new policy
+    experiment, not a relabel of R3C and not a strict boolean-only A/B.
+
+fixed_platform_contract:
+  model: /data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
+  served_model_name: deepseek-v4-flash-w8a8-mtp
+  quantization: ascend_w8a8
+  vllm: 0.22.1+empty
+  vllm_ascend: 0.22.1rc1
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  block_size: 128
+  async_scheduling: true
+  enable_prefix_caching: false
+  max_model_len: 12288
+  max_num_batched_tokens: 12288
+  max_num_seqs: 9
+  profiler: disabled
+  request_retry_count: 0
+
+policy_configs:
+  - config_id: off_b12288
+    enable_chunked_prefill: false
+    max_num_batched_tokens: 12288
+    policy_type: static_off
+    pressure_scope: none
+  - config_id: admission_on_t4096
+    enable_chunked_prefill: true
+    max_num_batched_tokens: 12288
+    active_chunk_target_tokens: 4096
+    decode_quantum_tokens: 2
+    policy_type: adaptive_on
+    pressure_scope: admission_only
+    role: contemporaneous_R3C_semantics_anchor
+  - config_id: persistent_on_t128
+    enable_chunked_prefill: true
+    max_num_batched_tokens: 12288
+    active_chunk_target_tokens: 128
+    decode_quantum_tokens: 2
+    policy_type: adaptive_on
+    pressure_scope: persistent_prefill
+  - config_id: persistent_on_t256
+    enable_chunked_prefill: true
+    max_num_batched_tokens: 12288
+    active_chunk_target_tokens: 256
+    decode_quantum_tokens: 2
+    policy_type: adaptive_on
+    pressure_scope: persistent_prefill
+  - config_id: persistent_on_t512
+    enable_chunked_prefill: true
+    max_num_batched_tokens: 12288
+    active_chunk_target_tokens: 512
+    decode_quantum_tokens: 2
+    policy_type: adaptive_on
+    pressure_scope: persistent_prefill
+  - config_id: persistent_on_t1024
+    enable_chunked_prefill: true
+    max_num_batched_tokens: 12288
+    active_chunk_target_tokens: 1024
+    decode_quantum_tokens: 2
+    policy_type: adaptive_on
+    pressure_scope: persistent_prefill
+
+adaptive_controller:
+  module: tools/inference_contracts/p6_3c_r3d_persistent_scheduler.py
+  bootstrap: tools/inference_contracts/p6_3c_r3d_sitecustomize.py
+  configured_budget_preserved: true
+  scheduler_field_changed: max_num_scheduled_tokens_only
+  scheduler_field_unchanged: max_num_batched_tokens
+  decode_reserve: decode_resident_count*decode_quantum_tokens
+  admission_only_condition: >-
+    decode_resident_count>0 and waiting_prefill_count>0
+  persistent_condition: >-
+    decode_resident_count>0 and
+    (waiting_prefill_count+running_unfinished_prefill_count)>0
+  pressure_budget: min(configured_budget,decode_reserve+active_chunk_target_tokens)
+  no_pressure_budget: configured_budget
+  persistent_target_grid_tokens: [128, 256, 512, 1024]
+  trace_required: true
+  policy_note: >-
+    If resident Decode completes before the injected Prompt, returning to full
+    budget is correct because there is no longer resident Decode to protect.
+
+staged_arrival:
+  resident_cohort:
+    request_count: 8
+    prompt_tokens_each: 256
+    forced_output_tokens_each: 128
+    transport: one_batched_streaming_http_request
+  injection_gate:
+    condition: all_8_residents_streamed_at_least_16_output_tokens
+    client_clock: monotonic_ns
+  injected_request:
+    prompt_tokens: 12281
+    forced_output_tokens: 4
+    transport: independent_streaming_http_request
+  cells:
+    - cell_id: resident_only
+      role: no-prefill full-budget control
+    - cell_id: admission_cliff_12281
+      role: persistent_prefill_decode_interference_tradeoff
+
+mechanism_calibration:
+  configs:
+    - admission_on_t4096
+    - persistent_on_t128
+    - persistent_on_t256
+    - persistent_on_t512
+    - persistent_on_t1024
+  lifecycle_count: 5
+  observer: read_only_returns_original_scheduler_output
+  controller_trace: required
+  required_before_performance: true
+  pass_conditions:
+    - exactly eight resident requests are running at the first injected step
+    - resident Decode scheduled-token total D is positive
+    - the first injected chunk equals the named target and is mixed with Decode
+    - configured max_num_batched_tokens remains 12288 for every On policy
+    - every pressure step budget equals min(12288,D+target)
+    - every persistent pressure chunk consumes exactly the selected budget left after actually scheduled resident Decode tokens
+    - persistent policies record pressure after waiting becomes zero while running unfinished Prefill remains positive
+    - admission-only anchor records full-budget reversion in that same state
+    - all injected Prefill chunks sum to exactly 12281 tokens
+    - no preemption occurs
+  failure_action: >-
+    Stop before performance if the complete-sequence mechanism is not
+    identified. Task-local runtime repairs are allowed; changing requests,
+    cells, metrics, targets or policy semantics creates a new variant.
+
+performance_track:
+  observer: disabled
+  profiler: disabled
+  lifecycle_count: 12
+  mirror_order:
+    round_1:
+      - off_b12288
+      - admission_on_t4096
+      - persistent_on_t128
+      - persistent_on_t256
+      - persistent_on_t512
+      - persistent_on_t1024
+    round_2:
+      - persistent_on_t1024
+      - persistent_on_t512
+      - persistent_on_t256
+      - persistent_on_t128
+      - admission_on_t4096
+      - off_b12288
+  valid_trials_per_config_cell: 12
+  valid_trials_per_cell_per_lifecycle: 6
+  cell_sequence_per_lifecycle:
+    - resident_only
+    - admission_cliff_12281
+    - admission_cliff_12281
+    - resident_only
+    - resident_only
+    - admission_cliff_12281
+    - admission_cliff_12281
+    - resident_only
+    - resident_only
+    - admission_cliff_12281
+    - admission_cliff_12281
+    - resident_only
+
+primary_objectives:
+  minimize:
+    - injected_request_ttft_ms
+    - resident_interference_tbt_p99_ms
+    - resident_interference_max_adjacent_token_stall_ms
+  maximize:
+    - aggregate_output_tokens_per_second
+    - resident_tbt_slo_attainment
+  resident_tbt_slo:
+    threshold: 2x_off_b12288_resident_only_pooled_median_tbt
+    status: project_analysis_threshold_not_external_standard
+
+paired_analysis:
+  pairing: >-
+    Pair each On repeat index with the contemporaneous Off baseline in the
+    same mirror round.
+  uncertainty:
+    method: paired_bootstrap_median_difference
+    samples: 10000
+    confidence_interval: 95_percent
+    random_seed: 633
+    caveat: >-
+      Six trials share one fresh-model lifecycle and the same Off trial is
+      reused across On policies. Intervals are descriptive, not independent
+      replicate inference.
+
+decision_rules:
+  deployment_bounds_relative_to_off:
+    injected_ttft: reduction_at_least_20_percent
+    resident_interference_p99_tbt: increase_at_most_10_percent
+    aggregate_output_tps: decrease_at_most_5_percent
+  outcomes:
+    - persistent_prefill_policy_candidate_found_within_bounds
+    - persistent_prefill_tradeoff_no_candidate_within_bounds
+    - persistent_prefill_mechanism_incomplete
+    - persistent_prefill_performance_incomplete
+  next_stage: >-
+    Do not automatically promote a target. Development-machine review must
+    inspect the full chunk sequence, state-transition evidence, mirror-round
+    consistency, performance effects and resource recovery.
+
+expected_execution:
+  model_lifecycles: 17
+  mechanism_lifecycles: 5
+  performance_lifecycles: 12
+  engine_requests_including_warmup: 1286
+  local_http_requests_including_warmup: 243
+  retries: 0
+
+claim_boundary:
+  supported_if_complete: >-
+    Controlled decode-resident admission-cliff comparison showing whether
+    running unfinished Prefill sustains the task-local scheduler cap and how
+    target size changes TTFT, Decode interference and throughput.
+  unsupported:
+    - strict single-variable attribution across policy state machines
+    - natural API arrival behavior
+    - production SLO capacity
+    - universal Chunked Prefill benefit
+    - automatic deployment recommendation
+
+adaptive_execution:
+  policy: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+  task_local_repairs_allowed: true
+  scientific_variant_required_if_changed: true
+  known_r3c_runtime_adaptations:
+    - compatibility guard when AscendDSACPImpl.update_graph_params is absent
+    - synchronize stale vLLM cache-manager aliases to actual Ascend subclass keys
+  evidence_required:
+    - before_after_diff_and_sha256
+    - attempt_history
+    - scientific_impact_statement
+    - controller_self_test_and_trace
+    - resource_recovery_evidence
+
+result_transfer_authorized: true
+transfer_method_selected: false
+automatic_transfer_allowed: false

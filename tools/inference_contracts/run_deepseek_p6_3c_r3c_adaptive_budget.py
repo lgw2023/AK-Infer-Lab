@@ -14,7 +14,6 @@ contract; it does not silently reinterpret R3B evidence as R3C evidence.
 
 from __future__ import annotations
 
-import csv
 import json
 from pathlib import Path
 import sys
@@ -24,18 +23,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from tools.inference_contracts import (
-    p6_3c_r3c_adaptive_scheduler as controller,
-)
-from tools.inference_contracts import (
+from tools.inference_contracts import (  # noqa: E402
     run_deepseek_p6_3c_r3b_chunk_budget as base,
 )
 
 
 TASK_ID = "p6_3c_r3c_adaptive_budget_2026_0805_run01"
 WORKLOAD_RELATIVE_PATH = (
-    "benchmarks/deepseek_v4_flash/workloads/"
-    "p6_3c_r3c_adaptive_budget.yaml"
+    "benchmarks/deepseek_v4_flash/workloads/p6_3c_r3c_adaptive_budget.yaml"
 )
 REQUEST_PREFIX = "p6_3c_r3c"
 MAX_MODEL_LEN = 12288
@@ -114,9 +109,6 @@ def _bind_base_globals() -> None:
     base.REFINALIZATION_TASK_ID = "p6_3c_r3c_a1_adaptive_budget_reaggregation_2026_0805"
 
 
-_bind_base_globals()
-
-
 def _read_trace(lifecycle_dir: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for path in sorted(
@@ -174,8 +166,7 @@ def mechanism_budget_summary(
             and int(item.get("scheduled_prefill_tokens") or 0) > 0
         ]
         chunk_sizes = [
-            int(item.get("scheduled_prefill_tokens") or 0)
-            for item in scheduled_rows
+            int(item.get("scheduled_prefill_tokens") or 0) for item in scheduled_rows
         ]
         resident_count = sum(
             resident_marker in str(item.get("request_id")) for item in first_items
@@ -206,15 +197,11 @@ def mechanism_budget_summary(
             ),
             controller_rows[0] if controller_rows else {},
         )
-        controller_contract_ok = (
-            lifecycle.get("policy_type") != "adaptive_on"
-            or (
-                controller_first.get("decision") == "pressure_capped"
-                and int(controller_first.get("selected_budget") or 0)
-                == observed_budget
-                and int(controller_first.get("active_chunk_target_tokens") or 0)
-                == int(target)
-            )
+        controller_contract_ok = lifecycle.get("policy_type") != "adaptive_on" or (
+            controller_first.get("decision") == "pressure_capped"
+            and int(controller_first.get("selected_budget") or 0) == observed_budget
+            and int(controller_first.get("active_chunk_target_tokens") or 0)
+            == int(target)
         )
         preempted = sorted(
             {
@@ -274,8 +261,7 @@ def mechanism_budget_summary(
         and all(row["mechanism_contract_complete"] for row in rows),
         # Keep the audited R3B finalizer's gate name as a compatibility alias;
         # the R3C-facing name above remains the source-of-truth wording.
-        "all_budget_mechanisms_complete": len(rows)
-        == len(base.MECHANISM_LIFECYCLES)
+        "all_budget_mechanisms_complete": len(rows) == len(base.MECHANISM_LIFECYCLES)
         and all(row["mechanism_contract_complete"] for row in rows),
         "adaptive_controller_trace_complete": all(
             row["controller_contract_complete"]
@@ -349,18 +335,14 @@ def controller_evidence(artifact_dir: Path) -> dict[str, Any]:
     adaptive_rows = [
         row for row in lifecycle_rows if row["policy_type"] == "adaptive_on"
     ]
-    static_rows = [
-        row for row in lifecycle_rows if row["policy_type"] != "adaptive_on"
-    ]
+    static_rows = [row for row in lifecycle_rows if row["policy_type"] != "adaptive_on"]
     adaptive_trace_contract_complete = bool(adaptive_rows) and all(
         row["controller_trace_count"] > 0
         and row["pressure_capped_count"] > 0
         and row["full_budget_count"] > 0
         for row in adaptive_rows
     )
-    static_trace_absent = all(
-        row["controller_trace_count"] == 0 for row in static_rows
-    )
+    static_trace_absent = all(row["controller_trace_count"] == 0 for row in static_rows)
     configured_budget_preserved = all(
         all(
             int(trace_row.get("configured_budget") or 0) == 12288
@@ -390,9 +372,20 @@ def controller_evidence(artifact_dir: Path) -> dict[str, Any]:
 
 
 def _rewrite_r3b_outputs(artifact_dir: Path) -> None:
-    for stem in ("policy_uncertainty", "pareto_frontier", "policy_summary", "policy_paired_effects"):
-        old = artifact_dir / f"r3b_{stem}.{'json' if stem in ('policy_uncertainty', 'pareto_frontier') else 'tsv'}"
-        new = artifact_dir / f"r3c_{stem}.{'json' if stem in ('policy_uncertainty', 'pareto_frontier') else 'tsv'}"
+    for stem in (
+        "policy_uncertainty",
+        "pareto_frontier",
+        "policy_summary",
+        "policy_paired_effects",
+    ):
+        old = (
+            artifact_dir
+            / f"r3b_{stem}.{'json' if stem in ('policy_uncertainty', 'pareto_frontier') else 'tsv'}"
+        )
+        new = (
+            artifact_dir
+            / f"r3c_{stem}.{'json' if stem in ('policy_uncertainty', 'pareto_frontier') else 'tsv'}"
+        )
         if old.is_file():
             old.replace(new)
 
@@ -452,7 +445,9 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
         "evidence_complete": evidence_complete,
         "pareto_config_ids": frontier.get("pareto_config_ids", []),
         "deployment_bound_config_ids": bound_ids,
-        "adaptive_controller_trace_complete": grading["adaptive_controller_trace_complete"],
+        "adaptive_controller_trace_complete": grading[
+            "adaptive_controller_trace_complete"
+        ],
         "configured_budget_preserved_for_adaptive": True,
         "claim_boundary": "controlled_decode_resident_admission_cliff_adaptive_policy_only",
     }
@@ -529,17 +524,31 @@ BOUNDED_CANDIDATES = (
     "cleanup_status.txt",
     "first_failure_excerpt.txt",
 )
-base.BOUNDED_CANDIDATES = BOUNDED_CANDIDATES
-base.write_mechanism_evidence = write_mechanism_evidence
+
+
+def _activate_contract() -> None:
+    """Activate R3C bindings only for an R3C command invocation.
+
+    R3B and R3C share an audited analysis module.  Mutating that module during
+    import made mixed R3B/R3C analysis in one Python process depend on import
+    order.  Activation at the CLI boundary preserves the runtime behavior
+    without contaminating sibling evidence readers.
+    """
+
+    _bind_base_globals()
+    base.BOUNDED_CANDIDATES = BOUNDED_CANDIDATES
+    base.write_mechanism_evidence = write_mechanism_evidence
 
 
 def package_results(artifact_dir: Path) -> dict[str, Any]:
+    _activate_contract()
     return base.package_results(artifact_dir)
 
 
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
+    _activate_contract()
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
     prepare = sub.add_parser("prepare")

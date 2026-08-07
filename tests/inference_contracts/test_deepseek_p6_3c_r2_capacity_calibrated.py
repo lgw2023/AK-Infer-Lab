@@ -1214,23 +1214,23 @@ def test_r2_f4_adaptive_review_accepts_complete_server_evidence(tmp_path: Path):
     assert all(review["checks"].values())
 
 
-def test_p6_handoff_tracks_current_r3b_a1_refinalization_task():
+def test_p6_handoff_tracks_current_r3d_persistent_prefill_task():
     text = P6_HANDOFF.read_text(encoding="utf-8")
-    assert "p6_3c_r3b_chunk_budget_pareto_2026_0804_run01" in text
-    assert "p6_3c_r3b_a1_performance_reaggregation_2026_0804" in text
+    assert "p6_3c_r3d_persistent_prefill_pressure_2026_0807_run01" in text
+    assert "p6_3c_r3c_adaptive_budget_2026_0805_run01" in text
     assert "docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md" in text
     assert "max_model_len=12288" in text
     assert "max_num_seqs=9" in text
-    assert "measured_trials=144/144" in text
-    assert "valid_pairs=60/60" in text
-    assert "uncertainty_all_n_12" in text
-    assert "frontier_objectives_complete" in text
-    assert "source_evidence_unchanged" in text
-    assert "source_result_overwritten=false" in text
-    assert "refinalize" in text
+    assert "persistent_on_t128" in text
+    assert "persistent_on_t1024" in text
+    assert "full_prefill_sequence_gate_complete" in text
+    assert "running_unfinished_prefill_count" in text
+    assert "17 fresh-model lifecycle" in text
+    assert "1286 EngineCore request" in text
+    assert "243 local HTTP request" in text
     assert "npu_stop.sh 0 1 2 3 4 5 6 7" in text
     assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in text
-    assert "服务器 AI 可以" in text
-    assert "不要重跑 R3B 的 17 个 NPU lifecycle" in text
-    assert "keep_alive_action=left_running" in text
+    assert "服务器 AI 有权并有责任" in text
+    assert "不自动进入 R3E/P7/P8/P9" in text
+    assert "candidate_total_bytes" in text
     assert "transfer_method_selected=false" in text

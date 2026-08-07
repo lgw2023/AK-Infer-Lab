@@ -68,7 +68,15 @@ ATOMIC_PAIR_TRACE_DIR=${RUNTIME_DIR}/atomic_pair_trace
 HYBRID_DIAGNOSTIC_PATH=${RUNTIME_DIR}/hybrid_kv_runtime_diagnostic.jsonl
 R3C_ADAPTIVE_CONTROLLER=${P6_3C_R3C_ADAPTIVE_CONTROLLER:-}
 R3C_ADAPTIVE_SITECUSTOMIZE=${P6_3C_R3C_ADAPTIVE_SITECUSTOMIZE:-}
+ADAPTIVE_CONTROLLER_OVERLAY_MODULE=${P6_3C_ADAPTIVE_CONTROLLER_OVERLAY_MODULE:-p6_3c_r3c_adaptive_scheduler}
 server_pid=
+
+case "${ADAPTIVE_CONTROLLER_OVERLAY_MODULE}" in
+  *[!A-Za-z0-9_]*|'')
+    echo "invalid adaptive controller module: ${ADAPTIVE_CONTROLLER_OVERLAY_MODULE}" >&2
+    exit 64
+    ;;
+esac
 
 if test "${HOST}" != 127.0.0.1; then
   echo "P6.3C requires HOST=127.0.0.1 for proxy-isolated local HTTP" >&2
@@ -289,13 +297,15 @@ if test -n "${R3C_ADAPTIVE_CONTROLLER}"; then
   test -f "${R3C_ADAPTIVE_CONTROLLER}"
   test -f "${R3C_ADAPTIVE_SITECUSTOMIZE}"
   cp "${R3C_ADAPTIVE_CONTROLLER}" \
-    "${OVERLAY_ROOT}/p6_3c_r3c_adaptive_scheduler.py"
+    "${OVERLAY_ROOT}/${ADAPTIVE_CONTROLLER_OVERLAY_MODULE}.py"
   cp "${R3C_ADAPTIVE_SITECUSTOMIZE}" "${OVERLAY_ROOT}/sitecustomize.py"
   {
+    printf 'controller_overlay_module\t%s\n' \
+      "${ADAPTIVE_CONTROLLER_OVERLAY_MODULE}"
     printf 'controller_source_sha256\t%s\n' \
       "$(sha256sum "${R3C_ADAPTIVE_CONTROLLER}" | awk '{print $1}')"
     printf 'controller_overlay_sha256\t%s\n' \
-      "$(sha256sum "${OVERLAY_ROOT}/p6_3c_r3c_adaptive_scheduler.py" | awk '{print $1}')"
+      "$(sha256sum "${OVERLAY_ROOT}/${ADAPTIVE_CONTROLLER_OVERLAY_MODULE}.py" | awk '{print $1}')"
     printf 'sitecustomize_source_sha256\t%s\n' \
       "$(sha256sum "${R3C_ADAPTIVE_SITECUSTOMIZE}" | awk '{print $1}')"
     printf 'sitecustomize_overlay_sha256\t%s\n' \
