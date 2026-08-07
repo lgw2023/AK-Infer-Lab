@@ -21,6 +21,9 @@ HYBRID_COORDINATOR_OUTPUT_SHA256 = (
 HYBRID_INTERFACE_OUTPUT_SHA256 = (
     "524c933ef17806ecba0634804bc562de1f69dc095fe1346e2edd0103845bfa75"
 )
+ACL_GRAPH_COMPAT_OUTPUT_SHA256 = (
+    "f81b08686b4e62daff5de4c795ce3eb80415a6eef133f82177876c7a3e18b0ad"
+)
 DEFAULT_ADMISSION_MODULE_NAME = "p6_3c_r2_f3_atomic_pair_admission"
 
 
@@ -203,6 +206,18 @@ def prepare_overlay(args: argparse.Namespace) -> dict[str, Any]:
         raise RuntimeError("mtp_output_sha256_mismatch")
 
     patch_methods: dict[str, str] = {"mtp": "patch_p1"}
+    if args.enable_acl_graph_compat:
+        _apply_standard_patch(
+            args.acl_graph_compat_patch,
+            overlay_root,
+            runtime_dir,
+            "acl_graph_compat_patch",
+        )
+        acl_graph = overlay_package / "compilation/acl_graph.py"
+        if _sha256(acl_graph) != ACL_GRAPH_COMPAT_OUTPUT_SHA256:
+            raise RuntimeError("acl_graph_compat_output_sha256_mismatch")
+        patch_methods["acl_graph_compat"] = "patch_p1"
+
     if args.shared_hybrid_kv_repair:
         shutil.copy2(
             args.runtime_impl,
@@ -286,6 +301,10 @@ def prepare_overlay(args: argparse.Namespace) -> dict[str, Any]:
                 ),
             }
         )
+    if args.enable_acl_graph_compat:
+        output_hashes["overlay_acl_graph_sha256"] = _sha256(
+            overlay_package / "compilation/acl_graph.py"
+        )
     manifest = {
         "schema_version": 1,
         "base_plugin_root_requested": str(args.base_plugin_root),
@@ -294,6 +313,7 @@ def prepare_overlay(args: argparse.Namespace) -> dict[str, Any]:
         "overlay_package_root": str(overlay_package.resolve(strict=True)),
         "copy_semantics": "materialized_copy_dereference_symlinks_no_ownership",
         "shared_hybrid_kv_repair": args.shared_hybrid_kv_repair,
+        "acl_graph_compat": args.enable_acl_graph_compat,
         "atomic_pair_admission": args.enable_atomic_pair_admission,
         "atomic_pair_admission_module": (
             validated_python_module_name(args.admission_module_name)
@@ -306,6 +326,7 @@ def prepare_overlay(args: argparse.Namespace) -> dict[str, Any]:
             path.name: _sha256(path)
             for path in (
                 args.mtp_patch,
+                args.acl_graph_compat_patch,
                 args.hybrid_patch,
                 args.deferred_patch,
                 args.admission_patch,
@@ -342,6 +363,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--runtime-loader", type=Path)
     parser.add_argument("--hybrid-patch", type=Path)
     parser.add_argument("--deferred-patch", type=Path)
+    parser.add_argument("--acl-graph-compat-patch", type=Path)
     parser.add_argument("--admission-controller", type=Path)
     parser.add_argument("--admission-patch", type=Path)
     parser.add_argument(
@@ -351,6 +373,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--observer", type=Path)
     parser.add_argument("--observer-patch", type=Path)
     parser.add_argument("--shared-hybrid-kv-repair", action="store_true")
+    parser.add_argument("--enable-acl-graph-compat", action="store_true")
     parser.add_argument("--enable-atomic-pair-admission", action="store_true")
     parser.add_argument("--enable-observer", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
@@ -365,6 +388,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ):
             if getattr(args, name) is None:
                 parser.error(f"--{name.replace('_', '-')} is required")
+    if args.enable_acl_graph_compat and args.acl_graph_compat_patch is None:
+        parser.error("--acl-graph-compat-patch is required")
     if args.enable_observer and (
         args.observer is None or args.observer_patch is None
     ):

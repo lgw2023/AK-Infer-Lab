@@ -1,0 +1,23 @@
+diff --git a/vllm_ascend/compilation/acl_graph.py b/vllm_ascend/compilation/acl_graph.py
+--- a/vllm_ascend/compilation/acl_graph.py
++++ b/vllm_ascend/compilation/acl_graph.py
+@@ -295,9 +295,10 @@ def update_full_graph_params(
+-    impl_cls.update_graph_params(
+-        update_stream,
+-        forward_context,
+-        num_tokens,
+-        vllm_config,
+-        speculative_config,
+-        num_dcp_pcp_tokens,
+-        draft_attn_metadatas,
+-    )
++    if hasattr(impl_cls, "update_graph_params"):
++        impl_cls.update_graph_params(
++            update_stream,
++            forward_context,
++            num_tokens,
++            vllm_config,
++            speculative_config,
++            num_dcp_pcp_tokens,
++            draft_attn_metadatas,
++        )

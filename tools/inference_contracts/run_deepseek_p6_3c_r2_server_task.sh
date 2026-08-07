@@ -18,6 +18,9 @@ RUNTIME_IMPL=${RUNTIME_IMPL:-${SCRIPT_DIR}/p6_3b_r1_hybrid_kv_runtime_patch.py}
 RUNTIME_LOADER=${RUNTIME_LOADER:-${SCRIPT_DIR}/p6_3b_r2_hybrid_kv_runtime_patch.py}
 HYBRID_PATCH=${HYBRID_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch}
 DEFERRED_PATCH=${DEFERRED_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch}
+ACL_GRAPH_COMPAT_PATCH=${P6_3C_ACL_GRAPH_COMPAT_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_acl_graph_update_params_compat.patch}
+ACL_GRAPH_COMPAT_ENABLED=${P6_3C_ACL_GRAPH_COMPAT:-0}
+OVERLAY_SMOKE=${P6_3C_RUNTIME_OVERLAY_SMOKE:-${SCRIPT_DIR}/smoke_p6_3c_runtime_overlay.py}
 test -f "${BASE_SERVER_TASK}"
 test -f "${LAYOUT_RESOLVER}"
 test -f "${OVERLAY_BUILDER}"
@@ -65,6 +68,13 @@ if test "${P6_3C_SERVER_TASK_AUDIT_ONLY:-${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}}"
       "${BASE_VLLM_ROOT}/v1/engine/core.py:282e53b0f25d1ca05d977643d5b681316779b55ebfc360976ea2e95b464f4ea1"
     )
   fi
+  if test "${ACL_GRAPH_COMPAT_ENABLED}" = 1; then
+    source_gate+=(
+      "${BASE_PLUGIN_ROOT}/compilation/acl_graph.py:3b054c10af75cbc34cd0134b9f25203e81b7bf0d3a3df0a4972792bf9017de83"
+    )
+    test -f "${ACL_GRAPH_COMPAT_PATCH}"
+    test -f "${OVERLAY_SMOKE}"
+  fi
   for entry in "${source_gate[@]}"; do
     source_path=${entry%:*}
     expected_sha256=${entry##*:}
@@ -99,12 +109,36 @@ if test "${P6_3C_SERVER_TASK_AUDIT_ONLY:-${P6_3C_R1_SERVER_TASK_AUDIT_ONLY:-0}}"
       --enable-atomic-pair-admission
     )
   fi
+  if test "${ACL_GRAPH_COMPAT_ENABLED}" = 1; then
+    overlay_preflight_args+=(
+      --acl-graph-compat-patch "${ACL_GRAPH_COMPAT_PATCH}"
+      --enable-acl-graph-compat
+    )
+  fi
   if ! "${overlay_preflight_args[@]}"; then
     printf '%s\n' 'P6_3C_RUNTIME_OVERLAY_PREFLIGHT_BLOCKED'
     cat "${preflight_root}/runtime_overlay_preflight_failure.txt"
     exit 2
   fi
   export P6_3C_RUNTIME_OVERLAY_PREFLIGHT_MANIFEST=${overlay_preflight_manifest}
+  if test "${ACL_GRAPH_COMPAT_ENABLED}" = 1; then
+    set +u
+    source /usr/local/Ascend/ascend-toolkit/set_env.sh
+    source /usr/local/Ascend/nnal/atb/set_env.sh
+    set -u
+    preflight_generated_pythonpath=${PYTHONPATH:-}
+    overlay_preflight_smoke=${preflight_root}/runtime_overlay_preflight_smoke.json
+    PYTHONPATH="${overlay_preflight_runtime}/overlay_root:${preflight_generated_pythonpath}" \
+    PYTHONNOUSERSITE=1 \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
+    VLLM_PLUGINS=ascend,ascend_kv_connector,ascend_model_loader,ascend_service_profiling,ascend_model \
+    P6_3B_R2_ENABLE_HYBRID_KV_PATCH=1 \
+    P6_3B_R2_HYBRID_KV_DIAGNOSTIC_PATH="${preflight_root}/hybrid_kv_runtime_diagnostic.jsonl" \
+      "${PYTHON_BIN}" "${OVERLAY_SMOKE}" \
+        --output "${overlay_preflight_smoke}"
+    export P6_3C_RUNTIME_OVERLAY_PREFLIGHT_SMOKE=${overlay_preflight_smoke}
+  fi
 fi
 
 export P6_3C_TASK_ID=${P6_3C_TASK_ID:-p6_3c_r2_chunked_prefill_capacity_calibrated_2026_0729_run01}

@@ -51,12 +51,14 @@ RUNTIME_IMPL=${RUNTIME_IMPL:-${SCRIPT_DIR}/p6_3b_r1_hybrid_kv_runtime_patch.py}
 RUNTIME_LOADER=${RUNTIME_LOADER:-${SCRIPT_DIR}/p6_3b_r2_hybrid_kv_runtime_patch.py}
 HYBRID_PATCH=${HYBRID_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch}
 DEFERRED_PATCH=${DEFERRED_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch}
+ACL_GRAPH_COMPAT_PATCH=${P6_3C_ACL_GRAPH_COMPAT_PATCH:-${REPO_ROOT}/benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_acl_graph_update_params_compat.patch}
 OVERLAY_BUILDER=${P6_3C_RUNTIME_OVERLAY_BUILDER:-${SCRIPT_DIR}/prepare_p6_3c_runtime_overlay.py}
 EXPERIMENT_LABEL=${P6_3C_EXPERIMENT_LABEL:-P6_3C_R1}
 MAX_MODEL_LEN=${P6_3C_MAX_MODEL_LEN:-69632}
 MAX_NUM_BATCHED_TOKENS=${P6_3C_MAX_NUM_BATCHED_TOKENS:-69632}
 MAX_NUM_SEQS=${P6_3C_MAX_NUM_SEQS:-2}
 SHARED_HYBRID_KV_REPAIR=${P6_3C_SHARED_HYBRID_KV_REPAIR:-0}
+ACL_GRAPH_COMPAT_ENABLED=${P6_3C_ACL_GRAPH_COMPAT:-0}
 ATOMIC_PAIR_ADMISSION_ENABLED=${P6_3C_ATOMIC_PAIR_ADMISSION:-0}
 ATOMIC_PAIR_REQUEST_PREFIX=${P6_3C_ATOMIC_PAIR_REQUEST_PREFIX:-p6_3c_r2_f3}
 ATOMIC_PAIR_TIMEOUT_SECONDS=${P6_3C_ATOMIC_PAIR_TIMEOUT_SECONDS:-30}
@@ -142,6 +144,7 @@ audit_contract() {
   printf 'max_num_seqs=%s\n' "${MAX_NUM_SEQS}"
   printf 'prefix_cache=false\n'
   printf 'shared_hybrid_kv_repair=%s\n' "${SHARED_HYBRID_KV_REPAIR}"
+  printf 'acl_graph_compat=%s\n' "${ACL_GRAPH_COMPAT_ENABLED}"
   printf 'atomic_pair_admission=%s\n' "${ATOMIC_PAIR_ADMISSION_ENABLED}"
   printf 'atomic_pair_admission_module=%s\n' "${ATOMIC_PAIR_ADMISSION_MODULE}"
   printf 'atomic_pair_request_prefix=%s\n' "${ATOMIC_PAIR_REQUEST_PREFIX}"
@@ -212,6 +215,16 @@ case "${SHARED_HYBRID_KV_REPAIR}" in
     ;;
   *) echo "unsupported shared hybrid-KV repair control" >&2; exit 64 ;;
 esac
+case "${ACL_GRAPH_COMPAT_ENABLED}" in
+  0) ;;
+  1)
+    test -f "${ACL_GRAPH_COMPAT_PATCH}"
+    test -f "${BASE_PLUGIN_ROOT}/compilation/acl_graph.py"
+    test "$(sha256sum "${BASE_PLUGIN_ROOT}/compilation/acl_graph.py" | awk '{print $1}')" = \
+      3b054c10af75cbc34cd0134b9f25203e81b7bf0d3a3df0a4972792bf9017de83
+    ;;
+  *) echo "unsupported ACL graph compatibility control" >&2; exit 64 ;;
+esac
 
 cleanup_mode() {
   local incoming_exit=$1
@@ -270,6 +283,12 @@ if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
     --shared-hybrid-kv-repair
   )
 fi
+if test "${ACL_GRAPH_COMPAT_ENABLED}" = 1; then
+  overlay_builder_args+=(
+    --acl-graph-compat-patch "${ACL_GRAPH_COMPAT_PATCH}"
+    --enable-acl-graph-compat
+  )
+fi
 if test "${ATOMIC_PAIR_ADMISSION_ENABLED}" = 1; then
   overlay_builder_args+=(
     --admission-controller "${ATOMIC_PAIR_ADMISSION}"
@@ -319,6 +338,12 @@ if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
     printf 'deferred_loader\t%s\n' "$(sha256sum "${RUNTIME_LOADER}" | awk '{print $1}')"
     printf 'hybrid_patch\t%s\n' "$(sha256sum "${HYBRID_PATCH}" | awk '{print $1}')"
     printf 'deferred_patch\t%s\n' "$(sha256sum "${DEFERRED_PATCH}" | awk '{print $1}')"
+    if test "${ACL_GRAPH_COMPAT_ENABLED}" = 1; then
+      printf 'acl_graph_compat_patch\t%s\n' \
+        "$(sha256sum "${ACL_GRAPH_COMPAT_PATCH}" | awk '{print $1}')"
+      printf 'overlay_acl_graph\t%s\n' \
+        "$(sha256sum "${OVERLAY_ROOT}/vllm_ascend/compilation/acl_graph.py" | awk '{print $1}')"
+    fi
     printf 'overlay_ascend_coordinator\t%s\n' \
       "$(sha256sum "${OVERLAY_ROOT}/vllm_ascend/patch/platform/patch_kv_cache_coordinator.py" | awk '{print $1}')"
     printf 'overlay_ascend_interface\t%s\n' \

@@ -541,6 +541,12 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
 
     environment_path = artifact_dir / "environment_and_hashes.json"
     environment = json.loads(environment_path.read_text(encoding="utf-8"))
+    overlay_smoke_path = artifact_dir / "runtime_overlay_preflight_smoke.json"
+    overlay_smoke = (
+        json.loads(overlay_smoke_path.read_text(encoding="utf-8"))
+        if overlay_smoke_path.is_file()
+        else None
+    )
     environment.update(
         {
             "task_id": TASK_ID,
@@ -560,6 +566,7 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
             },
             "max_num_batched_tokens": 12288,
             "active_chunk_targets": [4096, *PERSISTENT_TARGETS],
+            "runtime_overlay_import_smoke": overlay_smoke,
         }
     )
     environment_path.write_text(
@@ -601,6 +608,7 @@ BOUNDED_CANDIDATES = (
     "scientific_outcome.json",
     "grading_inputs.json",
     "startup_resource_summary.tsv",
+    "runtime_overlay_preflight_smoke.json",
     "resource_recovery_summary.json",
     "cleanup_status.txt",
     "first_failure_excerpt.txt",

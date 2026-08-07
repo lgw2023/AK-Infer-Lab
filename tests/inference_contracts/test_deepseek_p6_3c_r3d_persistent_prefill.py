@@ -1,15 +1,22 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from tools.inference_contracts import (
+    p6_3c_r3d_hybrid_kv_runtime_patch as runtime_patch,
+)
 from tools.inference_contracts import (
     p6_3c_r3d_persistent_scheduler as controller,
 )
 from tools.inference_contracts import (
     run_deepseek_p6_3c_r3d_persistent_prefill as runner,
 )
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _request(*, prompt: int, computed: int) -> SimpleNamespace:
@@ -47,6 +54,84 @@ def test_r3d_policy_grid_is_capacity_matched() -> None:
     assert {row["max_num_batched_tokens"] for row in runner.CONFIGS} == {12288}
     assert runner.PERSISTENT_TARGETS == (128, 256, 512, 1024)
     assert len(runner.ON_CONFIG_IDS) == 5
+
+
+def test_r3d_publishes_server_proven_compatibility_before_npu_lifecycle() -> None:
+    graph_patch = (
+        REPO_ROOT
+        / "benchmarks/deepseek_v4_flash/patches/"
+        "vllm_ascend_v0221rc1_acl_graph_update_params_compat.patch"
+    ).read_text(encoding="utf-8")
+    server_task = (
+        REPO_ROOT
+        / "tools/inference_contracts/run_deepseek_p6_3c_r2_server_task.sh"
+    ).read_text(encoding="utf-8")
+    r3d_task = (
+        REPO_ROOT
+        / "tools/inference_contracts/run_deepseek_p6_3c_r3d_server_task.sh"
+    ).read_text(encoding="utf-8")
+
+    assert 'hasattr(impl_cls, "update_graph_params")' in graph_patch
+    assert "P6_3C_ACL_GRAPH_COMPAT=1" in r3d_task
+    assert "smoke_p6_3c_runtime_overlay.py" in server_task
+    assert "runtime_overlay_preflight_smoke.json" in server_task
+    assert server_task.index("runtime_overlay_preflight_smoke.json") < (
+        server_task.index('bash "${BASE_SERVER_TASK}"')
+    )
+
+
+def test_r3d_aligns_stale_manager_aliases_to_ascend_exact_keys() -> None:
+    class BaseMLAAttentionSpec:
+        pass
+
+    class BaseSlidingWindowMLASpec:
+        pass
+
+    class AscendMLAAttentionSpec:
+        pass
+
+    class AscendSlidingWindowMLASpec:
+        pass
+
+    class FullAttentionManager:
+        pass
+
+    class SlidingWindowManager:
+        pass
+
+    manager = SimpleNamespace(
+        MLAAttentionSpec=BaseMLAAttentionSpec,
+        SlidingWindowMLASpec=BaseSlidingWindowMLASpec,
+        spec_manager_map={
+            BaseMLAAttentionSpec: FullAttentionManager,
+            BaseSlidingWindowMLASpec: SlidingWindowManager,
+        },
+    )
+    interface = SimpleNamespace(
+        AscendMLAAttentionSpec=AscendMLAAttentionSpec,
+        AscendSlidingWindowMLASpec=AscendSlidingWindowMLASpec,
+    )
+
+    evidence = runtime_patch.align_ascend_manager_resolution(
+        manager_module=manager,
+        interface_module=interface,
+    )
+
+    assert manager.MLAAttentionSpec is AscendMLAAttentionSpec
+    assert manager.SlidingWindowMLASpec is AscendSlidingWindowMLASpec
+    assert manager.spec_manager_map[AscendMLAAttentionSpec] is FullAttentionManager
+    assert (
+        manager.spec_manager_map[AscendSlidingWindowMLASpec]
+        is SlidingWindowManager
+    )
+    assert manager.spec_manager_map[BaseMLAAttentionSpec] is FullAttentionManager
+    assert evidence["mapping_size"] == 4
+    assert all(
+        runtime_patch.require_ascend_manager_resolution(
+            manager_module=manager,
+            interface_module=interface,
+        ).values()
+    )
 
 
 def test_persistent_scope_keeps_cap_after_prefill_moves_to_running(

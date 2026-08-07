@@ -272,15 +272,56 @@ adaptive_execution:
   policy: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
   task_local_repairs_allowed: true
   scientific_variant_required_if_changed: true
-  known_r3c_runtime_adaptations:
-    - compatibility guard when AscendDSACPImpl.update_graph_params is absent
-    - synchronize stale vLLM cache-manager aliases to actual Ascend subclass keys
+  published_runtime_compatibility:
+    acl_graph_patch: >-
+      benchmarks/deepseek_v4_flash/patches/
+      vllm_ascend_v0221rc1_acl_graph_update_params_compat.patch
+    cache_manager_alignment: >-
+      tools/inference_contracts/p6_3c_r3d_hybrid_kv_runtime_patch.py
+    pre_npu_import_smoke: >-
+      tools/inference_contracts/smoke_p6_3c_runtime_overlay.py
+    scope: >-
+      Task-local overlay only. The base conda environment, site-packages and
+      shared checkout remain unchanged.
   evidence_required:
     - before_after_diff_and_sha256
     - attempt_history
     - scientific_impact_statement
     - controller_self_test_and_trace
     - resource_recovery_evidence
+
+execution_history:
+  attempt_01:
+    source_commit: 5e6eee6bb044359b4449568df4792fdba0cb88c6
+    scientific_execution: not_started
+    lifecycle_attempted: mechanism_01
+    engine_requests: 0
+    local_http_requests: 0
+    payload_generation:
+      body_record_count: 22
+      all_body_files_sha256_exact: true
+    first_failure: >-
+      The deferred hybrid-KV loader observed a stale exact-type dispatch map:
+      neither Ascend MLA subclass was registered and both manager aliases still
+      referenced the original vLLM classes. The server stopped before model
+      readiness and before any scheduler-policy observation.
+    scientific_interpretation: >-
+      Runtime compatibility failure only; it provides no evidence for or
+      against persistent Prefill-pressure scheduling.
+    final_resource_state:
+      keep_alive_restored_exact: true
+      keep_alive_marker_count: 16
+      port_7000_listener_count: 0
+      vllm_residual_process_count: 0
+      tracked_worktree_clean: true
+  attempt_02:
+    status: authorized_same_scientific_task
+    runtime_delta_only: true
+    scientific_contract_changed: false
+    overwrite_attempt_01: false
+    objective: >-
+      Re-run the unchanged R3D mechanism and performance protocol using the
+      published task-local compatibility overlay and pre-NPU import smoke.
 
 result_transfer_authorized: true
 transfer_method_selected: false

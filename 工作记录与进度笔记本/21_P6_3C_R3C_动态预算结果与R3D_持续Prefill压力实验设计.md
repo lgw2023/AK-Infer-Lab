@@ -175,3 +175,55 @@ R3D 不覆盖 R3C。R3C 是“one-shot admission cap 可实现且能恢复吞吐
 R3C 的 raw scheduler trace、token timestamps 和 server log 保留在 Ascend 服务器。本地接收包仅含
 结果摘要与全量 manifest，因而本文中的点估计与过程计数以服务器摘要为主；未在开发机
 重算未传输的 per-trial 配对统计。
+
+## 10. R3D 首次执行：运行时阻断与证据边界
+
+R3D 的第一次正式尝试基于 `main@5e6eee6bb044359b4449568df4792fdba0cb88c6`。服务器完成了
+Git 同步、16 项发布资产核验和零 NPU 合同审计，并成功生成 22 条请求体记录；请求体 manifest
+逐项验证通过，所有 policy lifecycle 复用完全相同的请求字节。因此，本次失败并非请求生成、
+任务目录或科学合同缺失。正式入口随后建立了 `mechanism_01` lifecycle，但在模型 ready、
+HTTP 请求和 scheduler 观测之前终止：EngineCore request 与 HTTP request 均为 0，后续 16 个
+lifecycle 未开始。
+
+失败来自 R3C 成功运行时已经暴露、但尚未被正式发布到仓库的运行时兼容差异。vLLM 的
+`single_type_kv_cache_manager` 在模块导入时按精确类型构造 `spec_manager_map`；当前服务器上的
+vLLM-Ascend 随后将公共 MLA spec 替换成 `AscendMLAAttentionSpec` 与
+`AscendSlidingWindowMLASpec`。当 manager 模块先被导入时，映射与模块别名仍停留在原始基类，
+因此 task-local deferred loader 对四项解析条件的检查全部失败。这个错误发生在任何长 Prefill
+进入 waiting/running 队列之前，故不能被解释为 persistent policy 的反例，也不能与机制门失败
+混为一谈。
+
+服务器最终资源证据显示，0–7 号卡对应的 keep-alive 已恢复为 16/16 marker，port 7000 无
+监听，vLLM 残留进程为 0，detached worktree 保持 clean。早期自然语言状态中出现的“2 个
+marker”是恢复过程中的中间观测，不是最终资源状态。由此，本次尝试应记录为
+`runtime_blocked_before_scheduler_evidence`：它保留为可审计的失败尝试，但不更新 R3D 的科学
+outcome。
+
+## 11. R3D 第二次尝试：将现场经验转化为可复现实验基础设施
+
+第二次尝试不建立新科学 variant。策略集合、128/256/512/1024 target、Decode quantum、
+`12288/12288/9` 容量、staged arrival、请求体、cell、样本数、指标、配对和决策边界全部保持
+不变；唯一变化是把 R3C 已验证的两项 task-local 兼容修复正式纳入运行时 overlay。
+
+第一项修复在 Ascend spec 完成替换后，对 frozen vLLM manager 做显式解析对齐。原始基类键
+继续保留，以避免破坏既有调用；两个 Ascend subclass 精确键复用原 manager class，并同步
+`MLAAttentionSpec` 与 `SlidingWindowMLASpec` 模块别名。修复后的自检要求四项条件同时成立：
+两个 Ascend 精确键存在，且两个 manager alias 均指向对应 Ascend 类。这样既修复了当前失败，
+也保留了 exact-type dispatch 的可解释性。
+
+第二项修复作用于 vLLM-Ascend 0.22.1rc1 的 ACL graph helper。现场
+`AscendDSACPImpl` 不提供 `update_graph_params`，而公共 helper 原先无条件调用该方法。新的
+overlay 仅在 backend class 实际实现此方法时调用；它不改变 graph mode、capture sizes、请求
+或 scheduler 决策。两项修改都只发生在每个 lifecycle 的物化 overlay，既不改 conda
+site-packages，也不改共享 checkout。
+
+更重要的是，第二次尝试把真实导入顺序的烟测前移到停用 keep-alive 之前。预检在正式
+`PYTHONPATH`、CANN/ATB 环境和插件集合下导入 Ascend KV interface、执行 deferred loader、
+核验 exact manager resolution，并导入已修正的 ACL graph module。只有这组无模型、无请求、
+不占用 NPU 的检查完整通过，任务才允许进入八卡生命周期。相比把错误留到模型启动阶段，
+这项改变直接减少无效停卡和重复加载，同时不把科学任务降格为追逐自动评分。
+
+R3D attempt02 因而仍检验同一个核心假设：当长 Prefill 已从 waiting 转为 running 但尚未完成时，
+持续限制 Prefill quantum 是否能够显著降低 resident Decode 的尾部干扰，并在 TTFT 与 TPS 上
+形成可接受的权衡。只有新的 scheduler trace 和 12-lifecycle performance 结果才能回答该问题；
+运行时兼容烟测本身不构成 Chunked Prefill 的正向或负向证据。

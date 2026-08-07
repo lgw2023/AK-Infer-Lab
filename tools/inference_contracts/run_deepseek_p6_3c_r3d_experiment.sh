@@ -88,9 +88,12 @@ test -f "${MODE_RUNNER}"
 
 test -f "${P6_3C_RUNTIME_LAYOUT_JSON:?runtime layout evidence is required}"
 test -f "${P6_3C_RUNTIME_OVERLAY_PREFLIGHT_MANIFEST:?overlay preflight evidence is required}"
+test -f "${P6_3C_RUNTIME_OVERLAY_PREFLIGHT_SMOKE:?overlay import smoke evidence is required}"
 cp "${P6_3C_RUNTIME_LAYOUT_JSON}" "${RESULT_DIR}/runtime_layout.json"
 cp "${P6_3C_RUNTIME_OVERLAY_PREFLIGHT_MANIFEST}" \
   "${RESULT_DIR}/runtime_overlay_preflight_manifest.json"
+cp "${P6_3C_RUNTIME_OVERLAY_PREFLIGHT_SMOKE}" \
+  "${RESULT_DIR}/runtime_overlay_preflight_smoke.json"
 
 printf 'track\tlifecycle_id\tmirror_round\tconfig_id\tmode\tmax_num_batched_tokens\tpolicy_id\n' \
   > "${RESULT_DIR}/executed_lifecycle_schedule.tsv"
