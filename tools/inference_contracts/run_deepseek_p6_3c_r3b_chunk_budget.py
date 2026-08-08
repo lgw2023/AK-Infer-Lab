@@ -13,11 +13,13 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 from pathlib import Path
 import statistics
 import subprocess
 import sys
 from typing import Any
+import urllib.request
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -361,7 +363,9 @@ def prepare_artifacts(
         "injected_prompt_tokens": INJECTED_PROMPT_TOKENS,
         "injected_output_tokens": r3a.INJECTED_OUTPUT_TOKENS,
         "mechanism_trial_count": len(plan["trials"]["mechanism"]),
-        "performance_trial_count_per_lifecycle": len(plan["trials"]["performance"]),
+        "performance_trial_count_per_lifecycle": len(
+            plan["trials"].get("performance", [])
+        ),
         "body_record_count": len(records),
         "bodies_reused_byte_identically_across_all_policy_lifecycles": True,
         "generated_text_retained": False,
@@ -390,6 +394,47 @@ def execute_mode(
     raw_metrics_dir = lifecycle_dir / "runtime/raw_metrics"
     request_rows: list[dict[str, Any]] = []
     trial_rows: list[dict[str, Any]] = []
+    profile_api_enabled = os.environ.get("P6_3C_PROFILE_API_ENABLED") == "1"
+    profile_control_rows: list[dict[str, Any]] = []
+
+    def profile_control(action: str) -> dict[str, Any]:
+        started_ns = r3a.time.monotonic_ns()  # noqa: SLF001
+        request = urllib.request.Request(
+            base_url.rstrip("/") + f"/{action}_profile",
+            data=b"",
+            method="POST",
+        )
+        status: int | None = None
+        error_text: str | None = None
+        try:
+            with r3a.open_loopback(request, timeout=900) as response:  # noqa: SLF001
+                status = int(response.status)
+                response.read(4096)
+        except Exception as error:  # Preserve a bounded control-plane failure.
+            error_text = f"{type(error).__name__}:{str(error)[:2048]}"
+        row = {
+            "action": action,
+            "started_monotonic_ns": started_ns,
+            "finished_monotonic_ns": r3a.time.monotonic_ns(),  # noqa: SLF001
+            "http_status": status,
+            "success": status == 200,
+            "error": error_text,
+        }
+        profile_control_rows.append(row)
+        (lifecycle_dir / "runtime/profile_api_control.json").write_text(
+            json.dumps(
+                {
+                    "profile_api_enabled": profile_api_enabled,
+                    "events": profile_control_rows,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return row
+
     items = [plan["warmups"][track], *plan["trials"][track]]
     for item in items:
         health_before, _ = r3a.base._get(base_url, "/health", timeout=5)  # noqa: SLF001
@@ -420,9 +465,35 @@ def execute_mode(
                 artifact_dir, base_url, server_pid, item
             )
         else:
-            rows, trial_row = r3a.run_staged_trial(
-                artifact_dir, base_url, server_pid, item
-            )
+            profile_started = False
+            if profile_api_enabled:
+                start_row = profile_control("start")
+                profile_started = start_row["success"] is True
+            stop_row: dict[str, Any] | None = None
+            try:
+                if not profile_api_enabled or profile_started:
+                    rows, trial_row = r3a.run_staged_trial(
+                        artifact_dir, base_url, server_pid, item
+                    )
+                else:
+                    rows = []
+                    trial_row = {
+                        "track": track,
+                        "phase": item["phase"],
+                        "trial_id": item.get("trial_id"),
+                        "cell_id": item.get("cell_id"),
+                        "repeat_index": item.get("repeat_index", 0),
+                        "status": "failed",
+                        "failure_reason": "profile_api_start_failed",
+                        "request_count": 0,
+                        "http_request_count": 0,
+                    }
+            finally:
+                if profile_started:
+                    stop_row = profile_control("stop")
+            if stop_row is not None and stop_row["success"] is not True:
+                trial_row["status"] = "failed"
+                trial_row["failure_reason"] = "profile_api_stop_failed"
         health_after, _ = r3a.base._get(base_url, "/health", timeout=5)  # noqa: SLF001
         idle_after, metrics_after = r3a.base._wait_for_idle(  # noqa: SLF001
             base_url,
@@ -1074,6 +1145,8 @@ def _lifecycle_rows(artifact_dir: Path) -> list[dict[str, Any]]:
                 ),
                 "resolved_max_num_seqs": resolved.get("max_num_seqs"),
                 "observer_enabled": resolved.get("observer_enabled"),
+                "profiler_enabled": resolved.get("profiler_enabled"),
+                "profiler_backend": resolved.get("profiler_backend", "disabled"),
                 "cleanup_status": cleanup_path.read_text(encoding="utf-8").strip()
                 if cleanup_path.is_file()
                 else "missing",

@@ -443,12 +443,18 @@ def write_host_timing_evidence(artifact_dir: Path) -> dict[str, Any]:
     return summary
 
 
-def _write_profiler_request_windows(artifact_dir: Path, lifecycle_id: str) -> Path:
+def _write_profiler_request_windows(
+    artifact_dir: Path, lifecycle_id: str
+) -> Path | None:
     lifecycle_dir = artifact_dir / "lifecycles" / lifecycle_id
+    request_path = lifecycle_dir / "raw_request_results.jsonl"
+    trial_path = lifecycle_dir / "raw_trial_results.jsonl"
+    if not request_path.is_file() or not trial_path.is_file():
+        return None
     requests = base.r3a._read_jsonl(  # noqa: SLF001
-        lifecycle_dir / "raw_request_results.jsonl"
+        request_path
     )
-    trials = base.r3a._read_jsonl(lifecycle_dir / "raw_trial_results.jsonl")  # noqa: SLF001
+    trials = base.r3a._read_jsonl(trial_path)  # noqa: SLF001
     injected = next(
         row
         for row in requests
@@ -515,7 +521,9 @@ def _op_category(op_type: str) -> str:
 def write_profiler_evidence(artifact_dir: Path) -> dict[str, Any]:
     explicit_roots: dict[str, Path] = {}
     for lifecycle_id in PROFILE_LIFECYCLE_IDS:
-        _write_profiler_request_windows(artifact_dir, lifecycle_id)
+        request_window = _write_profiler_request_windows(artifact_dir, lifecycle_id)
+        if request_window is None:
+            continue
         explicit_roots[lifecycle_id] = (
             artifact_dir / "lifecycles" / lifecycle_id / "runtime/msprof"
         )
@@ -606,7 +614,9 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 
 def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
-    mechanism = write_mechanism_evidence(artifact_dir)
+    # The mechanism claim comes from the three completed profiler-off host
+    # lifecycles. Missing diagnostic profiler lifecycles must not erase it.
+    mechanism = write_mechanism_evidence(artifact_dir, HOST_LIFECYCLE_IDS)
     host = write_host_timing_evidence(artifact_dir)
     profiler = write_profiler_evidence(artifact_dir)
     lifecycle_rows = base._lifecycle_rows(artifact_dir)  # noqa: SLF001
@@ -777,12 +787,17 @@ def finalize_artifacts(artifact_dir: Path) -> dict[str, Any]:
     (artifact_dir / "environment_and_hashes.json").write_text(
         json.dumps(environment, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    completed_lifecycle_count = sum(
+        row.get("lifecycle_exit_code") == "0"
+        and row.get("cleanup_status") == "clean"
+        for row in lifecycle_rows
+    )
     lines = [
         f"# {TASK_ID} 结果摘要",
         "",
         f"- evidence status: `{grading['evidence_status']}`",
         f"- scientific outcome: `{scientific}`",
-        f"- lifecycles: `{len(lifecycle_rows)}/{EXPECTED_MODEL_LIFECYCLES}`；请求：`{successful_count}/{EXPECTED_ENGINE_REQUESTS}`；HTTP：`{http_count}/{EXPECTED_HTTP_REQUESTS}`。",
+        f"- lifecycles: `{completed_lifecycle_count}/{EXPECTED_MODEL_LIFECYCLES}`；请求：`{successful_count}/{EXPECTED_ENGINE_REQUESTS}`；HTTP：`{http_count}/{EXPECTED_HTTP_REQUESTS}`。",
         f"- host timing complete: `{host.get('host_timing_complete')}`；diagnostic msprof complete: `{profiler.get('profiler_complete')}`。",
         f"- mixed-step EngineCore pipeline span >=80%: `{host.get('mixed_engine_pipeline_fraction_at_least_0_80')}`；T128/T1024 mixed pipeline median ratio: `{host.get('persistent_t128_to_t1024_pipeline_median_ratio')}`。",
         "- EngineCore pipeline span includes execute/sample futures, queueing, host RPC, worker, device and synchronization; msprof rows are diagnostic attribution evidence, not a profiler-on performance comparison.",

@@ -1214,25 +1214,27 @@ def test_r2_f4_adaptive_review_accepts_complete_server_evidence(tmp_path: Path):
     assert all(review["checks"].values())
 
 
-def test_p6_handoff_tracks_current_r3e_latency_floor_attribution_task():
+def test_p6_handoff_tracks_current_r3e_f1_profile_completion_task():
     text = P6_HANDOFF.read_text(encoding="utf-8")
+    assert "p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01" in text
     assert "p6_3c_r3e_mixed_step_latency_floor_attribution_2026_0808_run01" in text
     assert "p6_3c_r3d_persistent_prefill_pressure_2026_0807_run01" in text
     assert "docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md" in text
     assert "max_model_len=12288" in text
     assert "max_num_seqs=9" in text
     assert "persistent_on_t128" in text
-    assert "persistent_on_t1024" in text
     assert "admission_on_t4096" in text
-    assert "schedule → execute submit/Future → update" in text
-    assert "5 个 fresh-model lifecycle" in text
-    assert "50 条 EngineCore request" in text
-    assert "15 个本地 HTTP request" in text
-    assert "diagnostic-msprof" in text
-    assert "update_full_graph_params" in text
+    assert "2 lifecycle" in text
+    assert "20 EngineCore request" in text
+    assert "6 HTTP" in text
+    assert "vllm_torch_profile_api" in text
+    assert "POST /start_profile" in text
+    assert "POST /stop_profile" in text
+    assert "model loading 不被 profile" in text
+    assert "process-wide msprof" in text
     assert "npu_stop.sh 0 1 2 3 4 5 6 7" in text
     assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in text
-    assert "服务器 AI 可以根据真实 Ascend 环境修复" in text
-    assert "不要自动进入下一任务" in text
+    assert "服务器 AI 有权根据真实 Ascend 环境修复" in text
+    assert "next_task_authorized=false" in text
     assert "candidate_total_bytes" in text
     assert "transfer_method_selected=false" in text

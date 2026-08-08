@@ -74,6 +74,8 @@ ADAPTIVE_CONTROLLER_OVERLAY_MODULE=${P6_3C_ADAPTIVE_CONTROLLER_OVERLAY_MODULE:-p
 server_pid=
 DIAGNOSTIC_MSPROF_ENABLED=${P6_3C_DIAGNOSTIC_MSPROF:-0}
 DIAGNOSTIC_MSPROF_STORAGE_LIMIT=${P6_3C_MSPROF_STORAGE_LIMIT:-4096}
+TORCH_PROFILE_API_ENABLED=${P6_3C_TORCH_PROFILE_API:-0}
+TORCH_PROFILER_DIR=${P6_3C_TORCH_PROFILER_DIR:-}
 
 case "${ADAPTIVE_CONTROLLER_OVERLAY_MODULE}" in
   *[!A-Za-z0-9_]*|'')
@@ -136,6 +138,33 @@ cmd+=(
   --speculative-config '{"method":"mtp","num_speculative_tokens":1}'
 )
 
+case "${TORCH_PROFILE_API_ENABLED}" in
+  0) ;;
+  1)
+    case "${TORCH_PROFILER_DIR}" in
+      /*) ;;
+      *) echo "torch profiler directory must be absolute" >&2; exit 64 ;;
+    esac
+    case "${TORCH_PROFILER_DIR}" in
+      *[!A-Za-z0-9_./-]*)
+        echo "torch profiler directory contains unsupported characters" >&2
+        exit 64
+        ;;
+    esac
+    cmd+=(
+      --profiler-config
+      "{\"profiler\":\"torch\",\"torch_profiler_dir\":\"${TORCH_PROFILER_DIR}\",\"torch_profiler_with_stack\":false,\"torch_profiler_with_flops\":false,\"torch_profiler_use_gzip\":true,\"torch_profiler_record_shapes\":false,\"torch_profiler_with_memory\":false,\"ignore_frontend\":true}"
+    )
+    ;;
+  *) echo "unsupported torch profile API control" >&2; exit 64 ;;
+esac
+
+if test "${DIAGNOSTIC_MSPROF_ENABLED}" = 1 && \
+  test "${TORCH_PROFILE_API_ENABLED}" = 1; then
+  echo "msprof wrapper and vLLM torch profile API are mutually exclusive" >&2
+  exit 64
+fi
+
 audit_contract() {
   printf 'lifecycle_id=%s\n' "${LIFECYCLE_ID}"
   printf 'experiment_label=%s\n' "${EXPERIMENT_LABEL}"
@@ -152,8 +181,13 @@ audit_contract() {
   printf 'atomic_pair_request_prefix=%s\n' "${ATOMIC_PAIR_REQUEST_PREFIX}"
   printf 'atomic_pair_timeout_seconds=%s\n' "${ATOMIC_PAIR_TIMEOUT_SECONDS}"
   printf 'observer=%s\n' "$([ "${TRACK}" = mechanism ] && printf enabled || printf disabled)"
-  printf 'profiler=%s\n' \
-    "$([ "${DIAGNOSTIC_MSPROF_ENABLED}" = 1 ] && printf diagnostic_msprof || printf disabled)"
+  if test "${DIAGNOSTIC_MSPROF_ENABLED}" = 1; then
+    printf 'profiler=diagnostic_msprof\n'
+  elif test "${TORCH_PROFILE_API_ENABLED}" = 1; then
+    printf 'profiler=vllm_torch_profile_api\n'
+  else
+    printf 'profiler=disabled\n'
+  fi
   printf 'request_retry_count=0\n'
   printf 'local_http_host=127.0.0.1\n'
   printf 'shell_local_http_proxy=explicitly_disabled\n'
@@ -190,6 +224,14 @@ case "${DIAGNOSTIC_MSPROF_ENABLED}" in
     command -v msprof >/dev/null
     ;;
   *) echo "unsupported diagnostic msprof control" >&2; exit 64 ;;
+esac
+case "${TORCH_PROFILE_API_ENABLED}" in
+  0) ;;
+  1)
+    test -n "${TORCH_PROFILER_DIR}"
+    mkdir -p "${TORCH_PROFILER_DIR}"
+    ;;
+  *) echo "unsupported torch profile API control" >&2; exit 64 ;;
 esac
 test "$(sha256sum "${BASE_PROPOSER}" | awk '{print $1}')" = \
   0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
@@ -506,7 +548,7 @@ if test "${DIAGNOSTIC_MSPROF_ENABLED}" = 1; then
     msprof
     "--output=${P6_3C_MSPROF_OUTPUT_ROOT}"
     --msproftx=on
-    "--storage-limit=${DIAGNOSTIC_MSPROF_STORAGE_LIMIT}"
+    --storage-limit "${DIAGNOSTIC_MSPROF_STORAGE_LIMIT}"
     "${cmd[@]}"
   )
   printf '%q ' "${launch_cmd[@]}" > "${RUNTIME_DIR}/diagnostic_msprof_command.txt"
@@ -552,7 +594,8 @@ fi
   "${SHARED_HYBRID_KV_REPAIR}" \
   "${ATOMIC_PAIR_ADMISSION_ENABLED}" \
   "${ATOMIC_PAIR_REQUEST_PREFIX}" \
-  "${DIAGNOSTIC_MSPROF_ENABLED}" \
+  "$([ "${DIAGNOSTIC_MSPROF_ENABLED}" = 1 ] && printf diagnostic_msprof || \
+    { [ "${TORCH_PROFILE_API_ENABLED}" = 1 ] && printf vllm_torch_profile_api || printf disabled; })" \
   "${RUNTIME_DIR}/server_command.txt" \
   "/proc/${server_pid}/cmdline" \
   "${RUNTIME_DIR}/resolved_scheduler_config.json" <<'PY'
@@ -571,7 +614,7 @@ from pathlib import Path
     shared_hybrid_kv_repair,
     atomic_pair_admission,
     atomic_pair_request_prefix,
-    profiler_enabled,
+    profiler_backend,
     command_path,
     process_path,
     output_path,
@@ -621,7 +664,8 @@ evidence = {
     "atomic_pair_admission_enabled": atomic_pair_admission == "1",
     "atomic_pair_request_prefix": atomic_pair_request_prefix,
     "observer_enabled": track == "mechanism",
-    "profiler_enabled": profiler_enabled == "1",
+    "profiler_enabled": profiler_backend != "disabled",
+    "profiler_backend": profiler_backend,
     "resolution_basis": "explicit_cli_flags_and_live_process_cmdline",
     "server_command_has_expected_flag": expected_flag in server_args,
     "server_command_has_opposite_flag": opposite_flag in server_args,

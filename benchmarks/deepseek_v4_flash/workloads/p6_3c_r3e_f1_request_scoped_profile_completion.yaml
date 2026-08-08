@@ -1,0 +1,125 @@
+schema_version: 1
+workload_id: p6_3c_r3e_f1_request_scoped_profile_completion
+task_id: p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01
+date: "2026-08-08"
+stage: P6.3C-R3E-F1
+title: Request-scoped device-category completion for the mixed-step latency floor
+
+research_question:
+  - >-
+    Given that R3E attempt03 already localized at least 99.6% of each measured
+    mixed step to the broad EngineCore execution pipeline rather than Python
+    scheduler/update bookkeeping, which device operator categories occur in
+    request-scoped traces of the admission T4096 and persistent T128 endpoints?
+  - >-
+    Can profiling begin after model readiness and lifecycle warmup, eliminating
+    the model-loading-only capture that stopped R3E attempt03 before requests?
+
+lineage:
+  source_task_id: p6_3c_r3e_mixed_step_latency_floor_attribution_2026_0808_run01
+  source_attempt: attempt_03
+  source_host_lifecycles_reused: [host_01, host_02, host_03]
+  source_host_evidence_preserved: true
+  new_variant_reason: >-
+    F1 changes only the diagnostic profiler collection mechanism and runs the
+    two missing endpoints. It does not rerun or replace completed host timing.
+
+fixed_scientific_contract:
+  max_model_len: 12288
+  max_num_batched_tokens: 12288
+  max_num_seqs: 9
+  enable_chunked_prefill: true
+  enable_prefix_caching: false
+  resident_requests: 8
+  resident_prompt_tokens_each: 256
+  resident_output_tokens_each: 128
+  injection_gate_output_tokens_each: 16
+  injected_prompt_tokens: 12281
+  injected_output_tokens: 4
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  block_size: 128
+  async_scheduling: true
+  request_retries: 0
+
+new_profiler_lifecycles:
+  - lifecycle_id: profile_f1_01
+    config_id: admission_on_t4096
+    pressure_scope: admission_only
+    active_chunk_target_tokens: 4096
+  - lifecycle_id: profile_f1_02
+    config_id: persistent_on_t128
+    pressure_scope: persistent_prefill
+    active_chunk_target_tokens: 128
+
+profiler_collection:
+  backend: vllm_torch_profile_api
+  server_startup_profiled: false
+  model_loading_profiled: false
+  warmup_profiled: false
+  start_control: POST /start_profile immediately before the measured staged-arrival trial
+  stop_control: POST /stop_profile immediately after the measured trial completes
+  trace_format: torch profiler Chrome trace, gzip allowed
+  record_shapes: false
+  with_stack: false
+  with_memory: false
+  raw_trace_location: server-local only
+  performance_comparison_allowed: false
+
+evidence_outputs:
+  - per-lifecycle profile start/stop control status
+  - trace file/rank inventory
+  - device event count and summed duration by operator category
+  - top device operators by summed duration
+  - complete Prefill chunk sequence and zero-preemption check
+  - source R3E host evidence hashes and unchanged-source proof
+
+interpretation:
+  device_categories:
+    - collective_communication
+    - matmul_or_moe
+    - attention
+    - memory_transfer_or_sync
+    - sampling_or_selection
+    - other
+  duration_caveat: >-
+    Concurrent device streams overlap, so summed event duration is a
+    diagnostic counter rather than a wall-clock decomposition.
+  causal_boundary: >-
+    Operator-category prevalence can refine the EngineCore-path attribution,
+    but it does not by itself prove that one operator caused resident P99 TBT.
+
+expected_execution:
+  reused_host_lifecycles: 3
+  new_model_lifecycles: 2
+  new_engine_requests_including_warmup: 20
+  new_local_http_requests_including_warmup: 6
+  retries: 0
+
+outcomes:
+  - executor_path_supported_with_request_scoped_device_categories
+  - latency_floor_device_category_attribution_incomplete
+  - source_r3e_host_evidence_incomplete
+
+claim_boundary:
+  supported_if_complete: >-
+    Request-scoped device operator-category evidence for two representative
+    endpoints, interpreted together with the already completed R3E host timing.
+  unsupported:
+    - profiler-on performance comparison
+    - exact wall-clock decomposition from overlapping event-duration sums
+    - universal production bottleneck or optimization recommendation
+    - replacement of R3D policy performance results
+    - replacement of the original P6.3C blocked audit
+
+adaptive_execution:
+  policy: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+  task_local_profiler_runtime_and_parser_repairs_allowed: true
+  scientific_variant_required_if_requests_policies_targets_or_metrics_change: true
+  preserve_before_after_diff_sha_attempt_and_scientific_impact: true
+
+result_transfer_authorized: true
+transfer_method_selected: false
+automatic_transfer_allowed: false

@@ -371,3 +371,102 @@ trace 显示固定 collective/graph 序列主导，可以研究 mixed batch shap
 R3D raw scheduler trace、token timestamp、msprof output 与完整日志继续保留在 Ascend 服务器。本节
 的 R3D 数值来自服务器完成报告与有界结果包；R3E 尚无 NPU 结果，本文记录的是下一轮已发布的
 可执行研究合同，而不是预先宣告结论。
+
+## 19. R3E attempt03：从“约 420 ms 平台”定位到异步执行流水线
+
+R3E 在 `main@07cb8a426859446ad0ada81affd888faa989e08e` 上经历了三次自适应尝试。第一次在
+请求体准备阶段发现 R3E 只有 mechanism track，而共享 R3B materializer 仍直接索引不存在的
+`performance` key；第二次确认当前服务器 `msprof` 不接受 `--storage-limit=X` 的写法；第三次在
+正式 host timing 完成后，profile lifecycle 又因进程级 profiler 包裹方式退出 143。三项变化都只
+涉及 control plane，没有改变八 resident、16-token injection gate、12281-token Prompt、T4096/
+T1024/T128 policy、`12288/12288/9` 容量、MTP、graph 或指标定义。前两项兼容修复使三条 host
+lifecycle 全部完成，因而本轮并非“实验没有结果”，而是 host 归因已经完成、device operator
+归因尚未完成的部分成功。
+
+三条 profiler-off lifecycle 共得到 79 个可完整关联的 timing context。下表只报告与 injected
+Prefill 同时出现的 mixed Prefill/Decode step；所有时间均为对应 lifecycle 内 step 的中位数。
+
+| policy | mixed step 数 | scheduler CPU (ms) | execute Future (ms) | EngineCore pipeline (ms) | pipeline P95 (ms) | update CPU (ms) | full step (ms) | pipeline fraction |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| admission T4096 | 2 | 2.854 | 721.392 | 828.738 | 1070.192 | 0.220 | 831.812 | 99.61% |
+| persistent T1024 | 12 | 2.233 | 805.464 | 858.228 | 953.814 | 0.198 | 860.915 | 99.70% |
+| persistent T128 | 55 | 2.004 | 805.366 | 874.032 | 905.231 | 0.198 | 876.266 | 99.75% |
+
+结果排除了最直接的 host-bookkeeping 解释。`Scheduler.schedule` 与
+`Scheduler.update_from_output` 合计仅约 2.2–3.1 ms，而 scheduler 返回到 update 开始的广义
+EngineCore pipeline 占完整 step 的 99.6%–99.7%。persistent T128/T1024 的 pipeline median 比值
+为 1.0184，尽管 Prefill target 相差八倍，单个 mixed step 的 pipeline 成本只相差约 1.8%。这与
+R3D 的 resident P99 TBT 对 target 近乎不敏感是同一方向的证据：主要成本不在 Python scheduler
+为不同 token budget 计算计划的过程，而位于 execute/sample Future、batch queue、RPC、worker、
+device execution 与 synchronization 构成的复合路径。
+
+这里还出现了一个比原预注册解释更具体、但仍需后续验证的线索。pinned vLLM 的
+`EngineCore.step_with_batch_queue` 会在 async scheduling 下保留并消费 in-flight batch；同一版本
+的 `MultiprocExecutor.max_concurrent_batches` 在 PP=1 且 async scheduling 开启时返回 2。对应官方
+源码分别见 [EngineCore batch queue](https://github.com/vllm-project/vllm/blob/0decac0d96c42b49572498019f0a0e3600f50398/vllm/v1/engine/core.py#L469-L558)
+与 [two concurrent batches](https://github.com/vllm-project/vllm/blob/0decac0d96c42b49572498019f0a0e3600f50398/vllm/v1/executor/multiproc_executor.py#L474-L478)。
+将 R3E 的同批 `schedule→update` pipeline median 除以 2 后，admission T4096、persistent T1024、
+persistent T128 分别为 414.4、429.1、437.0 ms；与 R3D 对应的 resident P99 TBT 405.9、420.3、
+419.5 ms 仅相差约 2.1%、2.1% 和 4.2%。这种数值吻合支持“约 420 ms floor 与 two-batch async
+execution cadence 一致”的解释，但它还不是严格因果证明：两组数来自相邻但不同 lifecycle，
+且广义 pipeline 仍混合了 host RPC、worker、device 与同步。
+
+因此，R3E attempt03 最准确的科学状态应为 `latency_floor_attribution_incomplete`，而不是
+`latency_floor_mechanism_incomplete`。三条 host cell 的完整 chunk sequence、79 个 timing context、
+pipeline fraction 与 target-insensitive ratio 已经构成完整机制—路径证据；缺失的是更细的 device
+operator category。旧 finalizer 将五个计划 lifecycle 的行数误写为“5/5”，并让未运行的 profiler
+cell 反向抹去已完成 host mechanism，本轮已正式修正这两个聚合错误。
+
+## 20. attempt03 的 profiler 失败及其证据边界
+
+attempt03 的 `profile_01` 在模型加载后以 143 退出，`profile_02` 未开始。现有 msprof 目录只覆盖
+模型加载，没有 measured request window 内的 device task，因此 collective、matmul/MoE、attention
+与 transfer/sync 均无可报告占比。不能用加载期 operator 代替请求期归因，也不能把 828–874 ms
+的 host pipeline 直接称为 NPU kernel 时间。R3D 的
+`persistent_prefill_tradeoff_no_candidate_within_bounds` 结论保持不变。
+
+资源层面，本任务自身的 vLLM、msprof 与 7000 端口均清理干净；keep-alive 精确恢复失败是因为
+另一会话的 Qwen3.6-27B TP8 服务已占用全部八张卡，而不是 R3E 残留。服务器没有终止该外部作业
+是正确的并发隔离行为。下一次 NPU 执行必须先等待该会话释放资源，再重新核验 0–7 卡、目标端口
+与 keep-alive 基线；不能把“恢复 marker 失败”修成误杀其他项目进程。
+
+## 21. R3E-F1：请求期 profiler 补全，而非五生命周期重跑
+
+下一轮命名为 `P6.3C-R3E-F1 request-scoped profile completion`。它复用 attempt03 的三条 host
+结果及其文件 SHA，不再重跑 host_01/02/03，只新增 admission T4096 与 persistent T128 两个
+fresh-model diagnostic lifecycle。科学请求、policy、target、capacity、到达条件和机制 observer
+保持不变；新的唯一实验方法变化是 profiler collection mechanism。
+
+pinned vLLM 0.22.1 已在 `ProfilerConfig` 中提供 torch profiler 路径、迭代控制和
+`--profiler-config`，OpenAI serving route 也提供 `/start_profile` 与 `/stop_profile`。R3E-F1 因而
+让 vLLM 先正常完成模型加载与 lifecycle warmup，再在 measured staged-arrival trial 前调用
+`POST /start_profile`，trial 完成后调用 `POST /stop_profile`。这把模型加载从采集窗口中排除，
+同时仍让八个 TP worker 的实际 device events 进入 torch-profiler Chrome trace。vLLM-Ascend 的
+本地 release-note 快照也明确要求使用 `--profiler-config`，而不是旧 profiler 环境变量：
+`AK 协同/references/web/vLLM-Ascend-release-notes-v0.18.html`。
+
+F1 预期新增 2 个 lifecycle、20 条 EngineCore request、6 个本地 HTTP request、零 retry。每条
+先完成 512-token warmup，再只 profile 一组 8-resident+1-injected measured trial。新 analyzer
+以流式方式读取 gzip 或未压缩 Chrome trace，避免把大 trace 整体载入内存；按 TP worker/trace
+枚举 device event，并描述性聚合 collective communication、matmul/MoE、attention、memory
+transfer/sync、sampling/selection 与 other。不同 stream 会重叠，所以 event duration 求和只作为
+诊断计数和相对构成，不做 wall-clock 加法，也不与 profiler-off 性能值直接比较。
+
+完整成功需要同时满足：attempt03 host evidence 的 task identity、SHA、三 host lifecycle 与机制
+cell 均可验证；两个 F1 lifecycle 的 `/start_profile→measured trial→/stop_profile` 控制均返回 200；
+两端都有非空 device event；完整 Prefill sequence 与零 preemption 仍成立；0–7 卡资源在任务后
+恢复。即便某一 operator category 占比最高，也最多表述为“它在请求期 device trace 中占主要
+诊断时长”，不能据此单独宣称它因果决定 resident P99 TBT。若 F1 完成，R3E 的结论将从广义
+executor-path localization 推进到 request-scoped device-category evidence；若 trace 仍不可用，
+则保留 host 结论并把缺口限定为 device attribution，不再重复策略搜索。
+
+## 22. R3E-F1 实现索引
+
+- workload：`benchmarks/deepseek_v4_flash/workloads/p6_3c_r3e_f1_request_scoped_profile_completion.yaml`
+- driver/finalizer：`tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_profile_completion.py`
+- streaming trace analyzer：`tools/inference_contracts/analyze_torch_profiler_traces.py`
+- lifecycle wrapper：`tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_mode.sh`
+- experiment entry：`tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_experiment.sh`
+- server entry：`tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_server_task.sh`
+- source bounded result：`/Volumes/SSD1/Inbox/2026-08-08/p6_3c_r3e_attempt03_20260808_run01`
+- server handoff：`通信模块/docs/developer-to-server.P6.md`
