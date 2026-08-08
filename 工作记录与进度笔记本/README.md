@@ -41,9 +41,12 @@ attempt02 已以 17/17 lifecycle、1286/1286 EngineCore request、243/243 HTTP�
 trial 和 60/60 pair 完整执行。persistent T128/T256/T512/T1024 的 resident P99 TBT 均停在
 约 420 ms，而 TTFT/TPS 随 chunk 数增加显著恶化；四档 persistent policy 全被支配，正式 outcome=
 `persistent_prefill_tradeoff_no_candidate_within_bounds`。R3E attempt03 已完成三条 host timing，将
-mixed-step floor 定位到广义 EngineCore execution pipeline；当前 P6 专用服务器任务已切换到 R3E-F1：
-不再扫描更小 chunk，也不重跑已完成 host evidence；只以两条 request-scoped vLLM torch-profiler
-lifecycle 补齐 admission T4096 / persistent T128 的 device-category 归因。P8.1-R1 与 P8.2-K0
+mixed-step floor 定位到广义 EngineCore execution pipeline。R3E-F1 随后完成两条 request-scoped
+profiler lifecycle、20/20 EngineCore request 与 6/6 HTTP，并在排除模型加载的窗口中复现
+admission T4096 / persistent T128 完整机制序列。其现场聚合仅覆盖 rank 0，且把 device kernel、
+runtime queue 与 host framework range 混为名称匹配的 device event；当前 P6 任务因此切换到
+R3E-F1-A1：零 NPU 复用既有 raw trace，完成 8 rank × 2 lifecycle 的来源分域、完整性审计、
+scheduler-normalized 重聚合，不重跑模型，也不提前指定 collective/compiler 为优化目标。P8.1-R1 与 P8.2-K0
 已 green，K1A-R2 accepted capacity 已 ready。R3-R2-R2-R1-R1-R1 已完成同容量唯一 lifecycle：
 6/6 transport 成功、D2H store 闭合、CPU hit/load/H2D 为零。原 red 保留，开发机只接受 store-only yellow。
 R4-R1 offline store-only closeout 已 green，R5-F0 ready，R5-L1/R1 red 保留。F1-R1 calibration
@@ -95,6 +98,7 @@ target-lost red、未发送 restore。F1-R4 外层 128 被通用 mode 覆盖为 
 | `19_P6_3C_R3A_Chunked_Prefill_Decode驻留收益与代价实验手稿.md` | R3A 的论文手稿式完整记录：staged arrival、调度准入机制、paired TTFT、resident tail TBT/吞吐代价、有效性边界与 R3B 推导。 |
 | `20_P6_3C_R3B_Chunked_Prefill_预算Pareto实验手稿.md` | R3B 的论文手稿式完整记录：研究假设、staged-arrival 与指标定义、budget→chunk contract response、17-lifecycle/144-trial 镜像比较、resident-only 对照、描述性配对区间、经验五目标 Pareto、max-stall 顺序敏感性、证据审计与有效性边界。 |
 | `21_P6_3C_R3C_动态预算结果与R3D_持续Prefill压力实验设计.md` | R3C、R3D、R3E 与 R3E-F1 连续研究手稿：one-shot admission cap、persistent Prefill-pressure 阴性 Pareto、约 420 ms floor、host timing 路径定位、two-batch async cadence 线索与 request-scoped device-category 补实验。 |
+| `22_P6_3C_R3E_执行路径归因与跨Rank重聚合手稿.md` | R3E/R3E-F1 的论文手稿式完整记录：host pipeline 归因、request-scoped profiler 执行、rank-0 描述性结果、device/runtime/host 证据边界，以及零 NPU 全 rank A1 重聚合与后续优化决策条件。 |
 | `P6_阶段证据链仪表盘_2026_0715.html` | 八页 16:9 P6 closeout 领导汇报：冻结配置、P6.1C-R1/P6.1/P6.2/P6.3A/P6.3B-R4-R1 green、P6.3C strict-single-variable blocked、P6.3B lineage、结果包与 P7-P9 边界。 |
 | `DeepSeek_V4_Flash_W8A8_8NPU_性能总览_修订版.html` | 五页 16:9 P6 全阶段实测领导汇报：18-cell unprofiled baseline、MTP Off/On 绝对值与 paired delta、Prefix Cache 八组命中/TTFT、profiled evidence、Chunked Prefill feasibility 与 artifact closeout。 |
 | `P8_阶段主要结果与证据链仪表盘_2026_0728.html` | P8 分层工程原型静态证据控制台：P8.0/P8.1/K0、K1/K1A 历史 lineage、R17 restore/H2D 机制闭环、claim boundary、当前 K2-R0 与 Expert/TP4 开放门。 |
