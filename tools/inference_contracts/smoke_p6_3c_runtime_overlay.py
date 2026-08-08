@@ -29,7 +29,13 @@ def collect_smoke_evidence() -> dict[str, Any]:
     resolution = hybrid_patch.require_ascend_manager_resolution()
     acl_graph_path = Path(acl_graph.__file__).resolve(strict=True)
     acl_graph_sha256 = _sha256(acl_graph_path)
-    graph_source = inspect.getsource(acl_graph.update_graph_params)
+    guard_callable_name = "update_full_graph_params"
+    guard_callable = getattr(acl_graph, guard_callable_name, None)
+    if not callable(guard_callable):
+        raise RuntimeError(
+            f"acl_graph.{guard_callable_name} is required by the published overlay"
+        )
+    graph_source = inspect.getsource(guard_callable)
     graph_guard_present = (
         'hasattr(impl_cls, "update_graph_params")' in graph_source
     )
@@ -43,6 +49,10 @@ def collect_smoke_evidence() -> dict[str, Any]:
         "acl_graph_expected_sha256": EXPECTED_ACL_GRAPH_SHA256,
         "acl_graph_sha256_exact": acl_graph_sha256
         == EXPECTED_ACL_GRAPH_SHA256,
+        "acl_graph_guard_callable": guard_callable_name,
+        "acl_graph_update_full_graph_params_guard_present": graph_guard_present,
+        # Compatibility alias retained for R3D result readers.  The field
+        # describes the guard semantics, not a module-level callable name.
         "acl_graph_update_params_guard_present": graph_guard_present,
         "npu_operation_requested": False,
     }

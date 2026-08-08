@@ -1,366 +1,297 @@
-# 开发机 → Ascend 服务器：继续 P6.3C-R3D attempt02
+# P6.3C-R3E 服务器任务：Mixed Prefill/Decode step latency-floor attribution
 
-更新日期：2026-08-07
+这是一条新的 P6 研究任务，不是 R3D 重跑，也不是颜色评分修复。服务器 AI 的首要目标是获得
+可解释的执行路径证据：在 R3D 已确认的约 420 ms mixed Prefill/Decode step floor 中，host
+scheduler/update 与更宽的 EngineCore execution pipeline 分别贡献多少；两个代表策略的 msprof request
+window 又对应哪些 device task / operator category。
 
-科学任务 ID：`p6_3c_r3d_persistent_prefill_pressure_2026_0807_run01`
+服务器 AI 可以根据真实 Ascend 环境修复路径、overlay、导入顺序、msprof 参数、SQLite 布局、
+health check、warmup、cleanup 和结果聚合。不要为了遵守过期的一次性脚本细节而放弃科学任务。
+但凡改变请求、policy、target、cell、到达条件或指标定义，都必须建立新 variant，并明确报告
+delta；不能把它伪装成原 R3E。
 
-本次执行：`attempt_02_runtime_compatibility_completion`
+## 1. 任务身份与成功条件
 
-任务性质：`NPU / same scientific contract / task-local runtime compatibility repair`
+- task ID：`p6_3c_r3e_mixed_step_latency_floor_attribution_2026_0808_run01`
+- source task：`p6_3c_r3d_persistent_prefill_pressure_2026_0807_run01`
+- source outcome：`persistent_prefill_tradeoff_no_candidate_within_bounds`
+- workload：
+  `benchmarks/deepseek_v4_flash/workloads/p6_3c_r3e_mixed_step_latency_floor_attribution.yaml`
+- 正式入口：
+  `tools/inference_contracts/run_deepseek_p6_3c_r3e_server_task.sh`
+- expected：5 个 fresh-model lifecycle、50 条 EngineCore request、15 个本地 HTTP request、0 retry。
 
-`result_transfer_authorized: true`
+R3E 完整成功需要同时得到：
 
-这是当前 P6 工作流的唯一活跃交接。它继续原 R3D，不覆盖 attempt01，也不改写 R3C、R3B、R3A、F4 或原始 P6.3C blocked 审计。不要创建 R3D-F1，也不要为了自动评分改变科学问题。
+1. 三个 profiler-off host lifecycle 全部完成，并保留完整 Prefill chunk sequence、零 preemption；
+2. 每个 measured scheduler step 的 `schedule → execute submit/Future → update` 事件可关联；
+3. admission T4096、persistent T1024、persistent T128 都有 mixed Prefill/Decode timing rows；
+4. 两个 diagnostic-msprof lifecycle 完成，并能对 request window 聚合 device task；
+5. 结果明确区分 scheduler/update CPU、`execute_model` Future 子分量、广义 EngineCore pipeline 与 msprof device evidence；
+6. 0–7 keep-alive 精确恢复，7000 端口与 vLLM 进程清理干净；
+7. 生成不超过 70KB 的候选小包 manifest，但未经用户选择不得传输。
 
-## 1. 任务目标
+自动 grade 只是一种结构化汇总。若 finalizer 对现场 msprof schema 的假设有误，但 raw evidence
+完整，服务器应修复聚合器、保存修复 provenance 并重新聚合；不要因 grade 非 green 重跑模型。
 
-R3D 要验证的不是“Chunked Prefill 开关是否存在”，而是一个更具体的调度策略问题：八个请求已经处于 Decode 时，12281-token 长 Prompt 从 waiting 转入 running 后，如果持续限制它的后续 Prefill chunk，是否能把 resident Decode 的尾部干扰显著拉回，同时保留 injected TTFT 与 aggregate TPS 的可接受水平。
+## 2. 科学合同：哪些不变，哪些是新测量
 
-直接父任务是 `p6_3c_r3c_adaptive_budget_2026_0805_run01`：它证明 waiting-only one-shot cap 可运行，但没有证明 running unfinished Prefill 的持续限额。R3D 保留该结论并继续新的状态机问题。
+五个 lifecycle 共同固定：
 
-共同平台继续冻结为：
+- DeepSeek-V4-Flash W8A8+MTP，TP8+EP；
+- `max_model_len=12288`；
+- `max_num_batched_tokens=12288`；
+- `max_num_seqs=9`；
+- Prefix Cache 显式关闭；
+- `FULL_DECODE_ONLY`、block size 128、async scheduling；
+- 八个 resident request：每个 256-token Prompt、128-token 输出；
+- 八者都输出至少 16 token 后，注入 12281-token Prompt、4-token 输出；
+- Decode quantum=2；零 request retry。
 
-```text
-model=/data/node0_disk1/Public/DeepSeek-V4-Flash-w8a8-mtp
-served_model_name=deepseek-v4-flash-w8a8-mtp
-vllm=0.22.1+empty
-vllm_ascend=0.22.1rc1
-TP=8; EP=true; MTP speculative tokens=1
-graph=FULL_DECODE_ONLY; block_size=128; async_scheduling=true
-prefix_cache=false
-max_model_len=12288
-max_num_batched_tokens=12288
-max_num_seqs=9
-profiler=disabled
-request_retry_count=0
-```
+三个 profiler-off host timing lifecycle：
 
-策略仍为六个：
+| lifecycle | policy | pressure scope | target | profiler |
+| --- | --- | --- | ---: | --- |
+| `host_01` | `admission_on_t4096` | waiting-only | 4096 | off |
+| `host_02` | `persistent_on_t1024` | waiting + running unfinished | 1024 | off |
+| `host_03` | `persistent_on_t128` | waiting + running unfinished | 128 | off |
 
-| config | Chunked Prefill | pressure scope | target |
-| --- | --- | --- | ---: |
-| `off_b12288` | Off | none | — |
-| `admission_on_t4096` | On | waiting only | 4096 |
-| `persistent_on_t128` | On | waiting + running unfinished | 128 |
-| `persistent_on_t256` | On | waiting + running unfinished | 256 |
-| `persistent_on_t512` | On | waiting + running unfinished | 512 |
-| `persistent_on_t1024` | On | waiting + running unfinished | 1024 |
+host gate 通过后才运行两个诊断 lifecycle：
 
-不允许在同一 task ID 内改变 target、pressure scope、decode quantum、CLI budget、请求长度、到达 gate、cell、trial 数、指标、配对、SLO threshold 或 Pareto 目标。若确有科学理由改变其中任一项，建立新 variant 并精确报告 delta；不要把它表述成原 R3D attempt02。
+| lifecycle | policy | profiler | 用途 |
+| --- | --- | --- | --- |
+| `profile_01` | `admission_on_t4096` | msprof on | 低迭代数 anchor |
+| `profile_02` | `persistent_on_t128` | msprof on | 高迭代数端点 |
 
-## 2. attempt01 的真实结论
+诊断 profiler 数据不参与 R3D 性能比较，也不得用于宣称 profiler-off absolute performance。
+host observer 同时记录 `execute_model` Future 子分量，以及从 scheduler 返回到 update 开始的
+EngineCore pipeline。后者还包含 async `sample_tokens` Future、batch queue、host RPC、worker、
+device execution 和 synchronization；只有结合 msprof，才能进一步讨论 device task。
 
-attempt01 保留为独立运行时失败记录：
+项目内诊断规则：若三个 policy 的 mixed-step EngineCore pipeline fraction 都至少为 0.80，且
+persistent T128/T1024 的 mixed pipeline median 比值处于 `[0.75, 1.25]`，记录
+`mixed_step_floor_executor_path_supported`。这不是外部标准，也不等于 NPU kernel 已被唯一归因。
 
-- Git、16 项资产 SHA 和零 NPU audit 通过；
-- 请求体生成成功，`body_record_count=22`，所有 body SHA 精确，跨 policy 生命周期字节复用成立；
-- 正式入口尝试了 `mechanism_01`，但模型未 ready；
-- `0/1286` EngineCore request，`0/243` HTTP request，后续 16 个 lifecycle 未运行；
-- 没有 scheduler chunk sequence、TTFT、P99 TBT、stall 或 TPS 数据；
-- 因此 attempt01 对 persistent Prefill policy 没有正向或负向科学证据。
+## 3. 并发与 worktree：不要碰其他会话
 
-首错不是 `request_body_manifest.json` 缺失。该 manifest 已成功生成，只是未包含在最早列出的 4 文件候选范围中。真实首错为旧 vLLM exact-type manager map 没有同步 Ascend MLA subclass：两个 Ascend 精确键均未注册，两个 manager alias 均仍指向旧类，deferred hybrid-KV loader 因而在模型启动前 fail closed。
+先确认没有别的 P6/P8/vLLM/msprof 任务占用 0–7 号卡或 7000 端口。若其他会话正在运行，保持
+其进程和 keep-alive 状态不变，本任务等待；不得 kill、复用其 worktree 或修改共享 checkout。
 
-最终资源状态也不是 2 个 marker。收到的最终 `resource_recovery_summary.json` 为 16/16 marker、`keep_alive_restored_exact=true`、port 7000 空、vLLM residual 0、tracked-clean。2 marker 是恢复过程中的中间观测。
-
-## 3. 本次已发布的实质修复
-
-开发机已把 R3C 服务器现场经验转为三个正式、可复用的 task-local 资产。
-
-### 3.1 Ascend exact-type manager 对齐
-
-`tools/inference_contracts/p6_3c_r3d_hybrid_kv_runtime_patch.py` 在 Ascend public spec 完成替换后：
-
-1. 从原 MLA 与 sliding-window MLA key 取得已冻结的 manager class；
-2. 保留旧 key，避免破坏已有解析；
-3. 为 `AscendMLAAttentionSpec` 与 `AscendSlidingWindowMLASpec` 增加精确 key；
-4. 将 manager module 的两个 alias 同步到 Ascend class；
-5. 再运行四项解析自检并把 alignment provenance 写入 diagnostic。
-
-历史 P6.3B-R2 loader 保持原 SHA，不被改写。R3D wrapper 显式选择新 loader，overlay builder 仍将它发布为 frozen Ascend bootstrap 所需的历史模块名，因此不修改 site-packages 或 vLLM-Ascend bootstrap。
-
-### 3.2 ACL graph backend 能力兼容
-
-`vllm_ascend_v0221rc1_acl_graph_update_params_compat.patch` 将无条件调用改为 capability guard：只有 backend class 真正实现 `update_graph_params` 才调用。它不改变 graph mode、capture sizes、模型、请求或 scheduler policy。输入文件 SHA 必须为官方 0.22.1rc1 的 `3b054c...e83`；应用后 SHA 必须为 `f81b08...b0ad`。
-
-### 3.3 停卡前真实导入顺序 smoke
-
-`smoke_p6_3c_runtime_overlay.py` 在 formal server-task 进入 keep-alive stop 之前，以正式 overlay `PYTHONPATH`、CANN/ATB 环境和插件集合执行：
-
-- 导入 Ascend KV interface，触发 deferred loader；
-- 验证 hybrid-KV patch 已安装；
-- 验证四项 Ascend manager resolution 全部为 true；
-- 导入 task-local ACL graph module；
-- 验证 ACL graph 输出 SHA 与 capability guard。
-
-这个 smoke 不加载模型、不发送请求、不执行 NPU 工作。失败时 formal task 必须在停卡前退出。成功证据写入 `runtime_overlay_preflight_smoke.json` 并复制到正式结果目录。
-
-## 4. 与其他会话隔离
-
-不要改共享 checkout，不要 checkout/stash/reset/clean 其他会话文件，不要复用或覆盖 attempt01 的 worktree/result。服务器不得 push 远程 `main`。
+在共享仓库只做 fetch，然后从 `origin/main` 建独立 detached worktree：
 
 ```bash
 SHARED_REPO=/data/node0_disk1/liguowei/AK-Infer-Lab
-WORKTREE=/data/node0_disk1/liguowei/server_worktrees/p6_3c_r3d_2026_0807_attempt02
-ATTEMPT_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3d_2026_0807_attempt_02
-RESULT_DIR=${ATTEMPT_ROOT}/p6_3c_r3d_persistent_prefill_pressure_2026_0807_run01
+WORKTREE=/data/node0_disk1/liguowei/server_worktrees/p6_3c_r3e_2026_0808
 
 git -C "${SHARED_REPO}" fetch origin main
-git -C "${SHARED_REPO}" status --short --branch
-git -C "${SHARED_REPO}" rev-parse origin/main
-test ! -e "${WORKTREE}"
 git -C "${SHARED_REPO}" worktree add --detach "${WORKTREE}" origin/main
 git -C "${WORKTREE}" status --short --branch
+git -C "${WORKTREE}" rev-parse HEAD
+git -C "${WORKTREE}" rev-parse origin/main
 git -C "${WORKTREE}" rev-list --left-right --count HEAD...origin/main
-test ! -e "${RESULT_DIR}"
 ```
 
-如果建议路径已被同一任务的未完成会话占用，先检查 PID、日志、owner 和结果状态。不要删除；为本次新建带时间戳后缀的独立 worktree。若 `RESULT_DIR` 已存在，则不得覆盖；先判断是否已经有完整 attempt02。只有确需兼容重试时，使用新的外层 attempt 目录，同时保持内层 task basename 不变并记录 attempt history。
+如果指定 worktree 已存在，不要删除；先判断它是否属于同一 task。需要新尝试时使用
+`p6_3c_r3e_2026_0808_attempt_02` 之类的新目录。服务器不得 push remote `main`。
 
-在触卡前做全局互斥检查：NPU 0–7 全部 Health=OK、AICore 空闲、无其他用户/会话的 vLLM/P6/P8/profiler 任务、port 7000 无监听。发现冲突时不终止别人的任务、不抢卡；报告 PID、用户、卡号、端口和任务名，等待资源空闲。
+冲突检查至少包括：
 
-## 5. 发布资产 SHA-256
-
-在任何 NPU 操作前逐项验证。这里的 SHA 是本轮发布事实，不是禁止服务器 AI 处理现场兼容问题；若不一致，先确认是否未同步最新 `origin/main`。同步后仍不一致才报告实际 SHA 与 diff。
-
-```text
-benchmarks/deepseek_v4_flash/workloads/p6_3c_r3d_persistent_prefill_pressure.yaml=fd9ff4cfcabcb195946d68c86e6fcdfe21136200125bc1ab5a3d5353624c1cbf
-benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_acl_graph_update_params_compat.patch=777f6d87fa741c6c900ee251ddef79071b66017f17b192069468bfe349ed50d8
-tools/inference_contracts/p6_3c_r3d_persistent_scheduler.py=de40ae8329025159759f3ba1c2f11e5dee1f261765c160d3d0d23c0715b63107
-tools/inference_contracts/p6_3c_r3d_sitecustomize.py=a2100f168fd3a158ec709e45f4b10bacb60b3171051cc359ebe225c81a4ab370
-tools/inference_contracts/p6_3c_r3d_hybrid_kv_runtime_patch.py=8a040d89d3e004038137f8da882b4873dad77eabc23552b290b0920f2d64b83c
-tools/inference_contracts/smoke_p6_3c_runtime_overlay.py=ad38f9b948c62e13637b2f1f56a9fb66728565e337f436bb155e8eac3f4abdd7
-tools/inference_contracts/prepare_p6_3c_runtime_overlay.py=5b8a95fbe2fc8ec81ea4a2243afea5d1093ee90fc6d8571691655b68de9162b0
-tools/inference_contracts/run_deepseek_p6_3c_r3d_persistent_prefill.py=03aa2b129869bc9bbc1a8a85ee5cdcff942ae536060059906bdd4fe007d68bdb
-tools/inference_contracts/run_deepseek_p6_3c_r3d_mode.sh=2fb95d16693275b1f0a22fa06873357f59b933b18c60c7e373b2d9cec6bf8e5b
-tools/inference_contracts/run_deepseek_p6_3c_r3d_experiment.sh=2ebd8c3bd0c52e2c198ae32a122d3cef238c185437c78566bdc64211ee9c88a3
-tools/inference_contracts/run_deepseek_p6_3c_r3d_server_task.sh=ccb3d86027ce24cb5f89c2ccebe15d8bcfc5f8d3112b9b6a07e4f5d67581968a
-tools/inference_contracts/run_deepseek_p6_3c_r1_mode.sh=0b063b37e1580553769a7e47032668eea555a4e1d54d0a7bf6032907d1aa0e30
-tools/inference_contracts/run_deepseek_p6_3c_r2_server_task.sh=86bd3567b4e3315c69b67276e88609fef0794a3adb387168323511dcf8d1966b
-tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py=6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
-tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py=9d720389f520918642ddecf288d0ac3922f61873251760129ba34ba203d02631
-benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch=cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
-benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch=ad845854461605ae28ae7000f24ada0cb07c5c17f3b0c23ee1485ec537a7a85b
-tools/inference_contracts/p6_3c_r3_decode_resident_observer.py=9c2147a7eb1e703da100bcff6cc31481f9c0ba7fe17bdf2375b9383ad71e9a15
-docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md=7dff584b742bfba91df332a8671c7430675d7dfacb9c3a15144dae1b3034fe0e
+```bash
+npu-smi info
+ss -ltnp | grep ':7000' || true
+pgrep -af 'vllm|msprof|p6_3c|p8_' || true
 ```
 
-核验命令：
+## 4. 发布资产核验
+
+以下 SHA 是同步/来源事实，不是禁止现场修复的冻结法律。若 tracked 文件 SHA 不同，先确认
+worktree 是否已同步到最新 `origin/main`；不要在旧提交上运行。若服务器必须修改其中某文件，
+在 task-local worktree/overlay 中保存 before/after SHA、diff、原因和 scientific impact。
+
+| 文件 | SHA-256 |
+| --- | --- |
+| `tools/inference_contracts/run_deepseek_p6_3c_r3e_server_task.sh` | `34411fcac583b018281686940614eda12b3ccb9c4556a4fd8f3cd3850cd26551` |
+| `tools/inference_contracts/run_deepseek_p6_3c_r3e_experiment.sh` | `60afc301b3eea4aebaf43f3a4857a53146ed52f88ee4d3153ea372c1a8f6e4f4` |
+| `tools/inference_contracts/run_deepseek_p6_3c_r3e_mode.sh` | `9b8dd4f40a4e09ae159981ce803a087bdac3d0ab8300f209b4a9ef992d01cfe0` |
+| `tools/inference_contracts/run_deepseek_p6_3c_r3e_latency_floor.py` | `f823cdec6b5105d8923f29ba325b1d6ab562213fedfde38db13b2c9f5b8bd886` |
+| `tools/inference_contracts/p6_3c_r3_decode_resident_observer.py` | `d9eef094da2cd1d40a571ec6fd2d6a479f766e5f310ab26df1ab24f85e02b72c` |
+| `tools/inference_contracts/p6_3c_r3d_persistent_scheduler.py` | `de40ae8329025159759f3ba1c2f11e5dee1f261765c160d3d0d23c0715b63107` |
+| `tools/inference_contracts/p6_3c_r3d_sitecustomize.py` | `a2100f168fd3a158ec709e45f4b10bacb60b3171051cc359ebe225c81a4ab370` |
+| `tools/inference_contracts/p6_3c_r3d_hybrid_kv_runtime_patch.py` | `8a040d89d3e004038137f8da882b4873dad77eabc23552b290b0920f2d64b83c` |
+| `tools/inference_contracts/smoke_p6_3c_runtime_overlay.py` | `e00b8dcb8253636064c9cf16d8ae526ed700f471b1292e4f2545447bf30f71a6` |
+| `tools/inference_contracts/run_deepseek_p6_3c_r1_mode.sh` | `44f0aa20c52e2c9da3f8b06f175f04962e743609567c92de03438b8a7b749133` |
+| `tools/inference_contracts/analyze_msprof_request_device_aggregate.py` | `9285131bdb1c462845d059a812b6b838ca78a6a401dff81f61a35037d498ee21` |
+| `tools/inference_contracts/analyze_msprof_sqlite_windows.py` | `1b1c11a4c86ad0382a9a7b5cb2859aefbeb29389f7081bd5266ad5a2b1e7781f` |
+| `tools/inference_contracts/run_deepseek_p6_3c_r2_server_task.sh` | `86bd3567b4e3315c69b67276e88609fef0794a3adb387168323511dcf8d1966b` |
+| `tools/inference_contracts/run_deepseek_p6_3c_r1_server_task.sh` | `a0b4e3fe55c962b954b61cf56b03d8a86d0ee25476c0fbefacf62c541b0616e8` |
+| `tools/inference_contracts/prepare_p6_3c_runtime_overlay.py` | `5b8a95fbe2fc8ec81ea4a2243afea5d1093ee90fc6d8571691655b68de9162b0` |
+| `tools/inference_contracts/resolve_p6_3c_runtime_layout.py` | `a9c09b49494a1137b51dee6e054acde110be5140edf5f6a9dfe225f9df8c3897` |
+| `benchmarks/deepseek_v4_flash/workloads/p6_3c_r3e_mixed_step_latency_floor_attribution.yaml` | `c064659a991c210a936879cf5d79d59db7f53aec77f1d4e792c567a7192e0756` |
+| `benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_p6_3c_r1_scheduler_observer_overlay.patch` | `2b770705f09b6cfc5bd3c7f79a1c01493e486e93845f620c87f101b5524f1c9f` |
+| `benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_acl_graph_update_params_compat.patch` | `777f6d87fa741c6c900ee251ddef79071b66017f17b192069468bfe349ed50d8` |
+| `benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_mtp_positions_cpu_overlay.patch` | `75156e56ce06554cfca79aef92167ec78521a28902f90389f8f261a3d509ebc1` |
+
+请求源仍须为 19487 bytes，SHA-256：
+`48c701c3790ecabcdfffe446cbe84e7e54e56bbcbc2cf482553f665e420ecdb1`。
+
+## 5. 零 NPU audit 与 profiler 预检
+
+先完整阅读：
 
 ```bash
 cd "${WORKTREE}"
-while IFS='=' read -r path expected; do
-  test -f "${path}" || { echo "missing:${path}"; exit 2; }
-  actual=$(sha256sum "${path}" | awk '{print $1}')
-  test "${actual}" = "${expected}" || {
-    echo "sha_mismatch:${path}:expected=${expected}:actual=${actual}"
-    exit 2
-  }
-done <<'EOF'
-benchmarks/deepseek_v4_flash/workloads/p6_3c_r3d_persistent_prefill_pressure.yaml=fd9ff4cfcabcb195946d68c86e6fcdfe21136200125bc1ab5a3d5353624c1cbf
-benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_acl_graph_update_params_compat.patch=777f6d87fa741c6c900ee251ddef79071b66017f17b192069468bfe349ed50d8
-tools/inference_contracts/p6_3c_r3d_persistent_scheduler.py=de40ae8329025159759f3ba1c2f11e5dee1f261765c160d3d0d23c0715b63107
-tools/inference_contracts/p6_3c_r3d_sitecustomize.py=a2100f168fd3a158ec709e45f4b10bacb60b3171051cc359ebe225c81a4ab370
-tools/inference_contracts/p6_3c_r3d_hybrid_kv_runtime_patch.py=8a040d89d3e004038137f8da882b4873dad77eabc23552b290b0920f2d64b83c
-tools/inference_contracts/smoke_p6_3c_runtime_overlay.py=ad38f9b948c62e13637b2f1f56a9fb66728565e337f436bb155e8eac3f4abdd7
-tools/inference_contracts/prepare_p6_3c_runtime_overlay.py=5b8a95fbe2fc8ec81ea4a2243afea5d1093ee90fc6d8571691655b68de9162b0
-tools/inference_contracts/run_deepseek_p6_3c_r3d_persistent_prefill.py=03aa2b129869bc9bbc1a8a85ee5cdcff942ae536060059906bdd4fe007d68bdb
-tools/inference_contracts/run_deepseek_p6_3c_r3d_mode.sh=2fb95d16693275b1f0a22fa06873357f59b933b18c60c7e373b2d9cec6bf8e5b
-tools/inference_contracts/run_deepseek_p6_3c_r3d_experiment.sh=2ebd8c3bd0c52e2c198ae32a122d3cef238c185437c78566bdc64211ee9c88a3
-tools/inference_contracts/run_deepseek_p6_3c_r3d_server_task.sh=ccb3d86027ce24cb5f89c2ccebe15d8bcfc5f8d3112b9b6a07e4f5d67581968a
-tools/inference_contracts/run_deepseek_p6_3c_r1_mode.sh=0b063b37e1580553769a7e47032668eea555a4e1d54d0a7bf6032907d1aa0e30
-tools/inference_contracts/run_deepseek_p6_3c_r2_server_task.sh=86bd3567b4e3315c69b67276e88609fef0794a3adb387168323511dcf8d1966b
-tools/inference_contracts/p6_3b_r1_hybrid_kv_runtime_patch.py=6be8eaf168279a6daba1aff891a289b19becb157d794adde0028457bb9821f6c
-tools/inference_contracts/p6_3b_r2_hybrid_kv_runtime_patch.py=9d720389f520918642ddecf288d0ac3922f61873251760129ba34ba203d02631
-benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_eagle_manager_overlay.patch=cac1e77ca08781fbaaf483d903733f9e2875091e6e8f9b33467e4da9c124390e
-benchmarks/deepseek_v4_flash/patches/vllm_ascend_v0221rc1_hybrid_kv_deferred_install_overlay.patch=ad845854461605ae28ae7000f24ada0cb07c5c17f3b0c23ee1485ec537a7a85b
-tools/inference_contracts/p6_3c_r3_decode_resident_observer.py=9c2147a7eb1e703da100bcff6cc31481f9c0ba7fe17bdf2375b9383ad71e9a15
-docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md=7dff584b742bfba91df332a8671c7430675d7dfacb9c3a15144dae1b3034fe0e
-EOF
+sed -n '1,260p' docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+sed -n '1,360p' 通信模块/docs/developer-to-server.P6.md
 ```
 
-服务器 frozen source 还应包括：
-
-```text
-vllm/v1/core/single_type_kv_cache_manager.py=d57ad1c8e3d32db4a9d929ee201ab169305ef703b5bda9eb933d0f2f2a2299a1
-vllm/v1/core/kv_cache_coordinator.py=a5f0683483508fcfd0b2e3477940825bae5953eec715a4f704becec805484b89
-vllm_ascend/patch/platform/patch_kv_cache_coordinator.py=dc65ed2adbb05ea52d9e891f648b62a5391eb41b2a6b262b71d40efe31effe20
-vllm_ascend/patch/platform/patch_kv_cache_interface.py=a4969e2c1b2ebde9a3c5a4d02df5175879fb56ea43322869871a3868ec1981b2
-vllm_ascend/compilation/acl_graph.py=3b054c10af75cbc34cd0134b9f25203e81b7bf0d3a3df0a4972792bf9017de83
-vllm_ascend/spec_decode/llm_base_proposer.py=0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
-vllm_ascend/distributed/kv_transfer/__init__.py=dc693fd52eb44921e731b69021388ecc186f4e5fa5eca3b28fc1963661e355d1
-vllm/v1/core/sched/scheduler.py=41ff2e524c90d9aa72b72cd77492eb62ee2a729a773bd8233e970f39abbb5983
-```
-
-## 6. 零 NPU audit
-
-先在 detached worktree 内执行：
+零 NPU audit：
 
 ```bash
-cd "${WORKTREE}"
-REPO_ROOT="${WORKTREE}" \
-P6_3C_SHARED_REPO_ROOT="${SHARED_REPO}" \
+TASK_ID=p6_3c_r3e_mixed_step_latency_floor_attribution_2026_0808_run01
 P6_3C_SERVER_TASK_AUDIT_ONLY=1 \
-bash tools/inference_contracts/run_deepseek_p6_3c_r3d_server_task.sh \
-  /audit/p6_3c_r3d_attempt02
+  bash tools/inference_contracts/run_deepseek_p6_3c_r3e_server_task.sh \
+  "/audit/${TASK_ID}"
 ```
 
-必须仍显示：17 lifecycle、1286 EngineCore request、243 HTTP request、0 retry、六个原策略、所有 CLI `max_num_batched_tokens=12288`，并且每个 mode 显示 `acl_graph_compat=1`。audit 不停 keep-alive、不启 vLLM、不触 NPU。
+audit 必须报告 5 lifecycle、50 EngineCore request、15 HTTP、0 retry，以及三条 host timing 和
+两条 diagnostic msprof 的准确 schedule。audit 不得停 keep-alive、不得启动 vLLM。
 
-## 7. 自适应执行权限
+在停卡前确认 `msprof` 可执行、结果盘空间足以容纳两个各上限 4096 MB 的 raw profile，并执行
+runtime overlay import smoke。仓库已正式修复 smoke 的 callable 解析：检查
+`acl_graph.update_full_graph_params` 中的 guard，而不是不存在的模块级 `update_graph_params`。
 
-按 `docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md` 执行。服务器 AI 可以且应当处理真实环境中的路径、editable/site-packages layout、overlay、import order、CANN/ATB 环境、plugin load、loopback proxy、warmup、trace、cleanup 和分析器字段问题。不要因为历史文件里的“禁止改码/禁止重试”停止。
+若 msprof 的参数名、输出目录或 SQLite 文件名与发布假设不同，允许先用不启动模型的
+`msprof --help`、已有 server-local profile 或最小无 NPU解析做兼容修复。不得因 profiler 布局问题
+修改 scientific request 或跳过三条 host timing。
 
-服务器 AI 有权并有责任在不改变科学合同的前提下完成这些现场适配；本任务不自动进入 R3E/P7/P8/P9。
+## 6. 正式执行与 keep-alive
 
-本轮优先使用已发布修复，不再要求服务器先从旧 R3C 结果树手工找 patch。服务器仍可把已保留的 R3C 成功 loader SHA `c863eed6bf187909d0a402bfae57e5b6d22838834feedd9e9c479c2fc5b73f45` 与新实现做语义对照，但不得直接把 server-retained 文件写回共享 checkout。
-
-若发布 smoke 仍因现场差异失败，可以在本任务独立 worktree/overlay 内做最小兼容修复并证据驱动重试，必须保存：
-
-```text
-attempt_id
-failure_before
-changed_paths
-before_sha256
-after_sha256
-unified_diff
-why_needed_on_this_server
-scientific_impact=none | changed
-validation_after
-cleanup_and_resource_recovery
-```
-
-只要修复不改变科学变量，可继续同一 task ID 的新 attempt。若修复改变 policy、target、请求、cell、样本或指标，必须新建 variant。服务器不得向远程 main push；把 patch 和证据返回开发机审查。
-
-## 8. keep-alive 与正式入口
-
-本任务使用 NPU 0–7。正式 server-task 会先解析真实布局、物化 overlay 并执行导入 smoke；只有这些步骤通过后，基础 runner 才允许停止 keep-alive。
+为保留 attempt lineage，使用外层 attempt 目录；传给入口的 RESULT_DIR basename 必须等于 task ID：
 
 ```bash
-# 只停止本任务使用的卡。
+TASK_ID=p6_3c_r3e_mixed_step_latency_floor_attribution_2026_0808_run01
+ATTEMPT_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_2026_0808_attempt_01
+RESULT_DIR="${ATTEMPT_ROOT}/${TASK_ID}"
+
+test ! -e "${RESULT_DIR}"
+mkdir -p "${ATTEMPT_ROOT}"
+cd "${WORKTREE}"
+bash tools/inference_contracts/run_deepseek_p6_3c_r3e_server_task.sh "${RESULT_DIR}"
+```
+
+本任务需要 NPU 0–7。正式入口会执行以下规则；服务器 AI 仍须在报告中明确列出 stopped/restored
+card IDs。只能停止本任务使用的 0–7，不得影响其他会话：
+
+```bash
+# Stop the low-priority keep-alive workload on the selected cards.
 bash /data/node0_disk1/Public/npu_stop.sh 0 1 2 3 4 5 6 7
 
-# 无论成功、失败、中断或早停，都恢复完全相同的卡集合。
+# Restart the keep-alive workload on the same selected cards.
 bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ```
 
-正式入口：
+无论成功、失败、中断还是 early exit，都必须恢复同一组 0–7，并核验 marker、7000 listener、
+vLLM/msprof residual process 和 tracked worktree。若 host gate 失败，保留证据并停止，不进入
+diagnostic profiler；如果失败来自 observer correlation 的真实代码问题，可以 task-local 修复并在
+新 attempt 中重跑。若三条 host lifecycle 已完整，只有 profiler 聚合失败，优先原地只读重新聚合，
+不要重跑模型。
 
-```bash
-cd "${WORKTREE}"
-mkdir -p "${ATTEMPT_ROOT}"
-REPO_ROOT="${WORKTREE}" \
-P6_3C_SHARED_REPO_ROOT="${SHARED_REPO}" \
-bash tools/inference_contracts/run_deepseek_p6_3c_r3d_server_task.sh \
-  "${RESULT_DIR}"
-```
+## 7. 自适应执行权限与 provenance
 
-不要手工预生成或复制 `request_body_manifest.json`；driver 的 `prepare` 会在新结果目录内生成并验证它。任务内所有 HTTP 必须直连 `127.0.0.1:7000`，使用 `curl --noproxy '*' --proxy ''`，并保证 `NO_PROXY` 与 `no_proxy` 都含 `127.0.0.1,localhost,::1`。
+允许：
 
-结束后独立核对：
+- 修复 runtime path、editable-install 布局、overlay import、ACL graph guard、Ascend manager alias；
+- 修复 msprof CLI、输出定位、SQLite table/column 名、request-window 对齐和 aggregation；
+- 修复 proxy/no_proxy、health probe、warmup singleton、cleanup、finalizer 与 bounded packaging；
+- 在独立 worktree 或 task-local overlay 内保存补丁并重试，只要新 attempt 能增加证据；
+- 对已完成 raw evidence 做零 NPU 重新聚合。
+
+每个 adaptation 必须保存：before/after 文件、SHA-256、最小 diff、失败摘录、attempt 顺序、
+`scientific_impact`。服务器不得改 conda site-packages 或共享 checkout；确有必要时用物化 overlay，
+并把补丁交回开发机审核。不得 push remote `main`。
+
+以下变化必须建立新 variant：resident 数/长度、16-token injection gate、12281-token injected
+Prompt、T4096/T1024/T128、pressure scope、Prefix Cache、MTP/graph、capacity contract、timing span
+定义、request window 或 metric definition。
+
+## 8. 结果解释：请直接回答科学问题
+
+完成后请给出下列事实，而不是只报 grade：
+
+1. 三个 policy 的 mixed-step 数、scheduler median、`execute_model` Future median、EngineCore
+   pipeline median/P95、update median、full-step median和 pipeline fraction；
+2. persistent T128/T1024 的 mixed pipeline median 比值，是否落入项目诊断区间；
+3. scheduler/update 是否可能解释约 420 ms floor，还是成本主要落在广义 EngineCore pipeline；
+4. 两个 profiler window 的 task row、summed duration、stream/task count 与 top operator category；
+5. collective、matmul/MoE、attention、transfer/sync 的描述性占比/排序，以及 stream-overlap caveat；
+6. R3D 的“persistent policy 无部署候选”结论是否保持；
+7. 下一步应针对 host bookkeeping、RPC/sync、collective/graph，还是需要更细 worker marker。
+
+若 msprof 无法把广义 EngineCore pipeline 进一步分解，应明确记录
+`latency_floor_attribution_incomplete`，并指出缺少什么；不要把 host pipeline time 直接写成 NPU time。
+
+## 9. 小包、传输与报告格式
+
+raw scheduler trace、token timestamps、msprof（每条最多 4096 MB）、server log、request bodies 和
+完整结果树全部留在服务器。候选小包上限 71680 bytes，只应包含 finalizer 生成的摘要、timing
+aggregate、profiler aggregate、环境/资源与 manifest；不得包含 token ID、生成文本或 raw profile。
+
+`result_transfer_authorized: true` 表示完整 bounded scope 可以进入选择，不等于已选择传输方式。
+正式运行结束后，先报告：
+
+- result summary 绝对路径；
+- candidate manifest 绝对路径；
+- 每个候选文件的 path / bytes / SHA-256 / sensitivity；
+- 总文件数与总 bytes；
+- available methods：`email`、`upload-api`、`server-local`；
+- 推荐方法及原因。
+
+然后等待用户对整个 scope 明确选择一种方法。不要先发 status-only 邮件，不要自行沿用上次
+upload-api 选择。遇到 401/409/413、proxy、redirect、timeout、service 或 hash mismatch 后停止，
+重新请用户选择。
+
+请用以下骨架回报：
 
 ```text
-stopped_card_ids=0,1,2,3,4,5,6,7
-restored_card_ids=0,1,2,3,4,5,6,7
-keep_alive_marker_count=16
-keep_alive_restored_exact=true
-port_7000_listener_count=0
-vllm_residual_process_count=0
-tracked_worktree_clean=true
-```
-
-资源恢复看最终 JSON，不要把恢复过程中的中间 marker 数写成最终状态。
-
-## 9. 科学证据要求
-
-全任务仍是 `17 fresh-model lifecycle`、`1286 EngineCore request`、`243 local HTTP request`。机制轨道 5 个 lifecycle，observer 开启、profiler 关闭；其结构化总门命名为 `full_prefill_sequence_gate_complete`。必须直接回答：
-
-1. admission-only T4096 是否在首块后回到 full budget；
-2. persistent T128/T256/T512/T1024 是否在 `waiting=0` 且 `running_unfinished_prefill_count>0` 时继续 pressure-capped；
-3. 每个 target 的完整 chunk size sequence、chunk count 与 token sum；
-4. 每个 pressure step 的 selected budget 是否等于实际 Decode scheduled token 加 target；
-5. resident 结束后是否正确恢复 full budget；
-6. preemption 是否为 0。
-
-机制证据完整后才进入 12 个 performance lifecycle。顺序仍为：
-
-```text
-round_1: off, admission4096, persistent128, persistent256, persistent512, persistent1024
-round_2: persistent1024, persistent512, persistent256, persistent128, admission4096, off
-```
-
-每个 config-cell 12 个 measured trial。报告 injected TTFT、resident interference-window P99 TBT、maximum adjacent-token stall、aggregate output TPS 和 resident TBT SLO attainment 的 absolute median；给出相对同 mirror round Off 的 paired median effect、seed 633 的 10000 次 descriptive bootstrap CI，以及两个 mirror round 的方向和量级。
-
-项目内部联合边界仍为 TTFT 至少下降 20%、resident P99 TBT 增加不超过 10%、TPS 下降不超过 5%。无配置进入边界仍是有效科学结果；不要改阈值追求绿色。自动 grade 只作诊断，最终解释以结构化机制与性能证据为准。
-
-## 10. 返回报告格式
-
-报告开头使用：
-
-```text
-P6_3C_R3D_ATTEMPT02_SERVER_REPORT_BEGIN
+P6_3C_R3E_SERVER_REPORT_BEGIN
 task_id=
 attempt_id=
+worktree=
 head=
 origin_main=
 ahead_behind=
-worktree=
-shared_checkout_modified=
 asset_sha_gate=
 zero_npu_audit_exit=
 runtime_overlay_import_smoke_complete=
-ascend_manager_resolution=
-acl_graph_input_sha256=
-acl_graph_output_sha256=
+formal_experiment_started=
+lifecycles=/5
+engine_requests=/50
+http_requests=/15
+request_retries=
+host_gate_complete=
+host_mixed_step_summary=
+persistent_t128_to_t1024_pipeline_median_ratio=
+engine_pipeline_floor_supported=
+profiler_lifecycles=/2
+profiler_request_windows_complete=
+profiler_operator_category_summary=
+scientific_outcome=
 scientific_contract_changed=
 adaptive_attempt_count=
 adaptive_patch_paths=
-formal_experiment_started=
-lifecycles=
-engine_requests=
-http_requests=
-mechanism_complete=
-performance_complete=
-scientific_outcome=
 cleanup_status=
 stopped_card_ids=
 restored_card_ids=
 keep_alive_restored_exact=
 port_7000_listener_count=
 vllm_residual_process_count=
+msprof_residual_process_count=
 tracked_worktree_clean=
 result_dir=
 candidate_manifest=
 candidate_total_bytes=
 transfer_method_selected=false
-P6_3C_R3D_ATTEMPT02_SERVER_REPORT_END
+P6_3C_R3E_SERVER_REPORT_END
 ```
 
-随后用自然语言回答第 9 节的六个机制问题，并给出每个 policy 的指标表、相对 Off 效应、mirror-round 解释和声明边界。若仍失败，报告第一处真实错误、发生在停卡前还是后、已执行到哪个 lifecycle，以及为什么该结果不能支持或否定 R3D 假设；不要只回红/绿标签。
-
-## 11. 小包与传输边界
-
-raw scheduler trace、token timestamps、request bodies、server log 与完整结果树留在服务器。候选包整体不超过 71680 bytes，且每个文件也不超过 70KB。候选至少包括：
-
-```text
-result_summary.md
-environment_and_hashes.json
-payload_identity_summary.json
-lifecycle_summary.tsv
-runtime_overlay_preflight_smoke.json
-r3d_mechanism_sequence_summary.json
-r3d_mechanism_sequence_cells.tsv
-r3d_policy_summary.tsv
-r3d_policy_paired_effects.tsv
-r3d_policy_uncertainty.json
-r3d_pareto_frontier.json
-r3d_controller_summary.json
-scientific_outcome.json
-grading_inputs.json
-startup_resource_summary.tsv
-resource_recovery_summary.json
-cleanup_status.txt
-first_failure_excerpt.txt
-```
-
-任务完成后先报告 result-summary 路径、完整候选清单、逐文件 bytes/SHA-256/sensitivity、总大小、可用 `email` / `upload-api` / `server-local` 和一个推荐方法。`result_transfer_authorized:true` 只表示该有界包可被选择，不表示自动发送；在用户明确选择一种方法前不要传输，也不要先发状态邮件。
+最后用自然语言回答 §8 的七个问题。不要自动进入下一任务。

@@ -1,0 +1,130 @@
+schema_version: 1
+workload_id: p6_3c_r3e_mixed_step_latency_floor_attribution
+task_id: p6_3c_r3e_mixed_step_latency_floor_attribution_2026_0808_run01
+date: "2026-08-08"
+stage: P6.3C-R3E
+title: Mixed Prefill/Decode scheduling-step latency-floor attribution
+
+research_question:
+  - >-
+    R3D observed resident P99 TBT near 420 ms for persistent chunk targets from
+    128 to 1024 tokens. Is the mixed-step floor dominated by scheduler/update
+    CPU work, or by the broader EngineCore pipeline between scheduler return
+    and scheduler update, which includes execute/sample futures, queueing, RPC,
+    worker, device execution and synchronization?
+  - >-
+    Do representative msprof request windows identify which device task and
+    operator categories coincide with the floor, without treating profiler-on
+    lifecycles as performance measurements?
+
+lineage:
+  source_task_id: p6_3c_r3d_persistent_prefill_pressure_2026_0807_run01
+  source_outcome: persistent_prefill_tradeoff_no_candidate_within_bounds
+  source_result_preserved: true
+  new_variant_reason: >-
+    R3E changes the measurement object from policy performance to EngineCore
+    step attribution. It does not relabel or overwrite R3D.
+
+fixed_scientific_contract:
+  max_model_len: 12288
+  max_num_batched_tokens: 12288
+  max_num_seqs: 9
+  enable_chunked_prefill: true
+  enable_prefix_caching: false
+  resident_requests: 8
+  resident_prompt_tokens_each: 256
+  resident_output_tokens_each: 128
+  injection_gate_output_tokens_each: 16
+  injected_prompt_tokens: 12281
+  injected_output_tokens: 4
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  block_size: 128
+  async_scheduling: true
+  request_retries: 0
+
+host_timing_track:
+  profiler: disabled
+  lifecycles:
+    - config_id: admission_on_t4096
+      pressure_scope: admission_only
+      active_chunk_target_tokens: 4096
+    - config_id: persistent_on_t1024
+      pressure_scope: persistent_prefill
+      active_chunk_target_tokens: 1024
+    - config_id: persistent_on_t128
+      pressure_scope: persistent_prefill
+      active_chunk_target_tokens: 128
+  observer_spans:
+    - Scheduler.schedule CPU
+    - MultiprocExecutor.execute_model submit CPU
+    - execute_model Future completion elapsed
+    - scheduler return to update start EngineCore pipeline elapsed
+    - Scheduler.update_from_output CPU
+    - schedule start to update completion
+  pass_conditions:
+    - complete Prefill chunk sequence and zero preemption remain valid
+    - all measured step contexts have schedule, submit, complete and update events
+    - all three policies contain mixed Prefill/Decode timing rows
+  diagnostic_probes:
+    engine_pipeline_fraction_threshold: 0.80
+    persistent_t128_to_t1024_pipeline_median_ratio_interval: [0.75, 1.25]
+    status: project_diagnostic_not_external_standard
+  semantics: >-
+    EngineCore pipeline time is not device-only time. It includes execute and
+    sample futures, queueing, host RPC, worker, device and synchronization.
+
+diagnostic_msprof_track:
+  performance_comparison_allowed: false
+  lifecycles:
+    - admission_on_t4096
+    - persistent_on_t128
+  storage_limit_mb_each: 4096
+  request_windows:
+    - injected request start to first token
+    - injection dispatch to injected first token
+  outputs:
+    - request-overlap device task counts and summed durations
+    - top operator categories
+    - collective, matmul/MoE, attention and transfer/sync grouping
+  caveat: >-
+    Stream overlap makes summed task duration a diagnostic counter rather than
+    wall-clock decomposition. Raw profiler output remains server-local.
+
+expected_execution:
+  model_lifecycles: 5
+  host_timing_lifecycles: 3
+  diagnostic_msprof_lifecycles: 2
+  engine_requests_including_warmup: 50
+  local_http_requests_including_warmup: 15
+  retries: 0
+
+outcomes:
+  - mixed_step_floor_executor_path_supported
+  - host_scheduler_overhead_dominant
+  - target_sensitive_or_multifactor_execution_cost
+  - latency_floor_attribution_incomplete
+
+claim_boundary:
+  supported_if_complete: >-
+    Attribution of the controlled decode-resident mixed-step latency floor to
+    host scheduler/update versus the broader EngineCore execution pipeline, supplemented
+    by diagnostic device-task evidence.
+  unsupported:
+    - device-only attribution from host timing alone
+    - profiler-on performance comparison
+    - production bottleneck or universal optimization recommendation
+    - natural API arrival behavior
+    - replacement of R3D policy results
+
+adaptive_execution:
+  policy: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+  task_local_runtime_and_profiler_repairs_allowed: true
+  scientific_variant_required_if_requests_policies_or_metrics_change: true
+  preserve_before_after_diff_sha_attempt_and_scientific_impact: true
+
+result_transfer_authorized: true
+transfer_method_selected: false
+automatic_transfer_allowed: false

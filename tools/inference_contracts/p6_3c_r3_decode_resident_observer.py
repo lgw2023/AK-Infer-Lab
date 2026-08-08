@@ -11,6 +11,7 @@ from functools import wraps
 import json
 import os
 from pathlib import Path
+import threading
 import time
 from typing import Any
 
@@ -20,6 +21,9 @@ MODE_ENV = "P6_3C_R1_MODE"
 TRACK_ENV = "P6_3C_R1_TRACK"
 REQUEST_MARKER_ENV = "P6_3C_R3_REQUEST_MARKER"
 DEFAULT_REQUEST_MARKER = "p6_3c_r3a_"
+_TRACE_LOCK = threading.Lock()
+_CONTEXT_LOCK = threading.Lock()
+_STEP_CONTEXTS: dict[int, dict[str, Any]] = {}
 
 
 def _emit(event: str, **fields: Any) -> None:
@@ -37,8 +41,13 @@ def _emit(event: str, **fields: Any) -> None:
         "monotonic_ns": time.monotonic_ns(),
         **fields,
     }
-    with (root / f"trace.{os.getpid()}.jsonl").open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(row, separators=(",", ":"), sort_keys=True) + "\n")
+    with _TRACE_LOCK:
+        with (root / f"trace.{os.getpid()}.jsonl").open(
+            "a", encoding="utf-8"
+        ) as handle:
+            handle.write(
+                json.dumps(row, separators=(",", ":"), sort_keys=True) + "\n"
+            )
 
 
 def _request_id(request: object) -> str:
@@ -118,9 +127,17 @@ def summarize_r3_scheduler_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def install_p6_3c_r1_scheduler_observer() -> None:
-    """Wrap ``Scheduler.schedule`` and return its exact original output."""
+    """Install read-only scheduler and EngineCore-path timing observers.
+
+    The scheduler return value, executor future and scheduler-update return
+    value are passed through unchanged.  Timing spans intentionally stop at
+    the model-executor future boundary: that span includes host RPC, worker,
+    device and synchronization work and must not be reported as device-only
+    time without profiler evidence.
+    """
 
     from vllm.v1.core.sched.scheduler import Scheduler
+    from vllm.v1.executor.multiproc_executor import MultiprocExecutor
 
     if getattr(Scheduler, "_p6_3c_r1_observer_installed", False):
         return
@@ -129,6 +146,7 @@ def install_p6_3c_r1_scheduler_observer() -> None:
 
     @wraps(original_schedule)
     def observed_schedule(self):
+        schedule_start_ns = time.monotonic_ns()
         step_index = int(getattr(self, "_p6_3c_r3_step_index", 0) or 0)
         setattr(self, "_p6_3c_r3_step_index", step_index + 1)
 
@@ -139,6 +157,7 @@ def install_p6_3c_r1_scheduler_observer() -> None:
         waiting_before = _ordered_request_ids(self.waiting)
         running_before = _ordered_request_ids(self.running)
         result = original_schedule(self)
+        schedule_end_ns = time.monotonic_ns()
 
         scheduled_rows: list[dict[str, Any]] = []
         for schedule_order, (request_id, scheduled_tokens) in enumerate(
@@ -192,6 +211,14 @@ def install_p6_3c_r1_scheduler_observer() -> None:
             *(row["request_id"] for row in scheduled_rows),
         ]
         if any(marker in request_id for request_id in relevant_ids):
+            timing_context_id = f"{os.getpid()}:{step_index}:{id(result)}"
+            with _CONTEXT_LOCK:
+                _STEP_CONTEXTS[id(result)] = {
+                    "timing_context_id": timing_context_id,
+                    "step_index": step_index,
+                    "schedule_start_monotonic_ns": schedule_start_ns,
+                    "schedule_end_monotonic_ns": schedule_end_ns,
+                }
             resident_decode_tokens = sum(
                 int(row["scheduled_decode_tokens"])
                 for row in scheduled_rows
@@ -205,6 +232,10 @@ def install_p6_3c_r1_scheduler_observer() -> None:
             _emit(
                 "scheduler_step",
                 step_index=step_index,
+                timing_context_id=timing_context_id,
+                schedule_start_monotonic_ns=schedule_start_ns,
+                schedule_end_monotonic_ns=schedule_end_ns,
+                scheduler_cpu_ns=schedule_end_ns - schedule_start_ns,
                 enable_chunked_prefill=bool(
                     self.scheduler_config.enable_chunked_prefill
                 ),
@@ -236,12 +267,95 @@ def install_p6_3c_r1_scheduler_observer() -> None:
             )
         return result
 
+    original_execute_model = MultiprocExecutor.execute_model
+
+    @wraps(original_execute_model)
+    def observed_execute_model(self, scheduler_output, *args, **kwargs):
+        submit_start_ns = time.monotonic_ns()
+        result = original_execute_model(self, scheduler_output, *args, **kwargs)
+        submit_end_ns = time.monotonic_ns()
+        with _CONTEXT_LOCK:
+            context = dict(_STEP_CONTEXTS.get(id(scheduler_output)) or {})
+        if context:
+            _emit(
+                "executor_execute_submit",
+                **context,
+                submit_start_monotonic_ns=submit_start_ns,
+                submit_end_monotonic_ns=submit_end_ns,
+                executor_submit_cpu_ns=submit_end_ns - submit_start_ns,
+                non_block=bool(kwargs.get("non_block", False)),
+            )
+
+            def completed(future) -> None:
+                complete_ns = time.monotonic_ns()
+                _emit(
+                    "executor_execute_complete",
+                    **context,
+                    executor_complete_monotonic_ns=complete_ns,
+                    executor_elapsed_ns=complete_ns - submit_start_ns,
+                    future_cancelled=bool(future.cancelled()),
+                    future_exception_present=(
+                        future.exception() is not None
+                        if not future.cancelled()
+                        else False
+                    ),
+                )
+
+            add_done_callback = getattr(result, "add_done_callback", None)
+            if callable(add_done_callback):
+                add_done_callback(completed)
+            else:
+                complete_ns = time.monotonic_ns()
+                _emit(
+                    "executor_execute_complete",
+                    **context,
+                    executor_complete_monotonic_ns=complete_ns,
+                    executor_elapsed_ns=complete_ns - submit_start_ns,
+                    future_cancelled=False,
+                    future_exception_present=False,
+                    synchronous_return=True,
+                )
+        return result
+
+    original_update_from_output = Scheduler.update_from_output
+
+    @wraps(original_update_from_output)
+    def observed_update_from_output(self, scheduler_output, *args, **kwargs):
+        update_start_ns = time.monotonic_ns()
+        result = original_update_from_output(self, scheduler_output, *args, **kwargs)
+        update_end_ns = time.monotonic_ns()
+        with _CONTEXT_LOCK:
+            context = _STEP_CONTEXTS.pop(id(scheduler_output), None)
+        if context:
+            _emit(
+                "scheduler_update_complete",
+                **context,
+                update_start_monotonic_ns=update_start_ns,
+                update_end_monotonic_ns=update_end_ns,
+                scheduler_update_cpu_ns=update_end_ns - update_start_ns,
+                engine_pipeline_elapsed_ns=(
+                    update_start_ns - context["schedule_end_monotonic_ns"]
+                ),
+                schedule_to_update_complete_ns=(
+                    update_end_ns - context["schedule_start_monotonic_ns"]
+                ),
+            )
+        return result
+
     Scheduler.schedule = observed_schedule
+    Scheduler.update_from_output = observed_update_from_output
+    MultiprocExecutor.execute_model = observed_execute_model
     Scheduler._p6_3c_r1_observer_installed = True
     Scheduler._p6_3c_r3_observer_installed = True
+    Scheduler._p6_3c_r3e_timing_observer_installed = True
+    MultiprocExecutor._p6_3c_r3e_timing_observer_installed = True
     _emit(
         "observer_installed",
-        component="vllm.v1.core.sched.scheduler.Scheduler.schedule",
+        component=(
+            "Scheduler.schedule,MultiprocExecutor.execute_model,"
+            "Scheduler.update_from_output"
+        ),
         schema="p6_3c_r3_decode_resident_v1",
-        mutation="observe_only_wrapper_returns_original_result",
+        timing_schema="p6_3c_r3e_engine_path_timing_v1",
+        mutation="observe_only_wrappers_return_original_results",
     )

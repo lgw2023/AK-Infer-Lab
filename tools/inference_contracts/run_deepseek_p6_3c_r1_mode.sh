@@ -72,6 +72,8 @@ R3C_ADAPTIVE_CONTROLLER=${P6_3C_R3C_ADAPTIVE_CONTROLLER:-}
 R3C_ADAPTIVE_SITECUSTOMIZE=${P6_3C_R3C_ADAPTIVE_SITECUSTOMIZE:-}
 ADAPTIVE_CONTROLLER_OVERLAY_MODULE=${P6_3C_ADAPTIVE_CONTROLLER_OVERLAY_MODULE:-p6_3c_r3c_adaptive_scheduler}
 server_pid=
+DIAGNOSTIC_MSPROF_ENABLED=${P6_3C_DIAGNOSTIC_MSPROF:-0}
+DIAGNOSTIC_MSPROF_STORAGE_LIMIT=${P6_3C_MSPROF_STORAGE_LIMIT:-4096}
 
 case "${ADAPTIVE_CONTROLLER_OVERLAY_MODULE}" in
   *[!A-Za-z0-9_]*|'')
@@ -150,7 +152,8 @@ audit_contract() {
   printf 'atomic_pair_request_prefix=%s\n' "${ATOMIC_PAIR_REQUEST_PREFIX}"
   printf 'atomic_pair_timeout_seconds=%s\n' "${ATOMIC_PAIR_TIMEOUT_SECONDS}"
   printf 'observer=%s\n' "$([ "${TRACK}" = mechanism ] && printf enabled || printf disabled)"
-  printf 'profiler=disabled\n'
+  printf 'profiler=%s\n' \
+    "$([ "${DIAGNOSTIC_MSPROF_ENABLED}" = 1 ] && printf diagnostic_msprof || printf disabled)"
   printf 'request_retry_count=0\n'
   printf 'local_http_host=127.0.0.1\n'
   printf 'shell_local_http_proxy=explicitly_disabled\n'
@@ -180,6 +183,14 @@ test -f "${OVERLAY_BUILDER}"
 test -f "${BASE_PROPOSER}"
 test -f "${BASE_CONNECTOR_INIT}"
 test -f "${BASE_SCHEDULER}"
+case "${DIAGNOSTIC_MSPROF_ENABLED}" in
+  0) ;;
+  1)
+    test -n "${P6_3C_MSPROF_OUTPUT_ROOT:-}"
+    command -v msprof >/dev/null
+    ;;
+  *) echo "unsupported diagnostic msprof control" >&2; exit 64 ;;
+esac
 test "$(sha256sum "${BASE_PROPOSER}" | awk '{print $1}')" = \
   0e58f5b5e97a4d34d31e66dedd026013ad637e27eccad75acdc39368e5dd05cb
 test "$(sha256sum "${BASE_CONNECTOR_INIT}" | awk '{print $1}')" = \
@@ -444,11 +455,18 @@ fi
 
 if test "${TRACK}" = mechanism; then
   export P6_3C_R1_SCHEDULER_TRACE_DIR="${TRACE_DIR}"
-  if ! "${PYTHON_BIN}" - <<'PY' > "${RUNTIME_DIR}/observer_self_test.txt" 2>&1
+  if ! P6_3C_REQUIRE_ENGINE_PATH_TIMING=$(
+    test "${EXPERIMENT_LABEL}" = P6_3C_R3E && printf 1 || printf 0
+  ) "${PYTHON_BIN}" - <<'PY' > "${RUNTIME_DIR}/observer_self_test.txt" 2>&1
 from vllm_ascend.distributed.kv_transfer import register_connector
 register_connector()
+import os
 from vllm.v1.core.sched.scheduler import Scheduler
 assert Scheduler._p6_3c_r1_observer_installed is True
+if os.environ["P6_3C_REQUIRE_ENGINE_PATH_TIMING"] == "1":
+    from vllm.v1.executor.multiproc_executor import MultiprocExecutor
+    assert Scheduler._p6_3c_r3e_timing_observer_installed is True
+    assert MultiprocExecutor._p6_3c_r3e_timing_observer_installed is True
 print("pass")
 PY
   then
@@ -481,18 +499,32 @@ printf '\n' >> "${RUNTIME_DIR}/server_command.txt"
   --output "${RUNTIME_DIR}/loopback_transport_contract.json" \
   --require-no-proxy-env
 
+launch_cmd=("${cmd[@]}")
+if test "${DIAGNOSTIC_MSPROF_ENABLED}" = 1; then
+  mkdir -p "${P6_3C_MSPROF_OUTPUT_ROOT}"
+  launch_cmd=(
+    msprof
+    "--output=${P6_3C_MSPROF_OUTPUT_ROOT}"
+    --msproftx=on
+    "--storage-limit=${DIAGNOSTIC_MSPROF_STORAGE_LIMIT}"
+    "${cmd[@]}"
+  )
+  printf '%q ' "${launch_cmd[@]}" > "${RUNTIME_DIR}/diagnostic_msprof_command.txt"
+  printf '\n' >> "${RUNTIME_DIR}/diagnostic_msprof_command.txt"
+fi
+
 if test "${SHARED_HYBRID_KV_REPAIR}" = 1; then
   if test -n "${R3C_ADAPTIVE_CONTROLLER}"; then
     export P6_3C_R3C_ADAPTIVE_ENABLED=1
   fi
   P6_3B_R2_ENABLE_HYBRID_KV_PATCH=1 \
   P6_3B_R2_HYBRID_KV_DIAGNOSTIC_PATH="${HYBRID_DIAGNOSTIC_PATH}" \
-    setsid "${cmd[@]}" > "${RUNTIME_DIR}/vllm_server.log" 2>&1 &
+    setsid "${launch_cmd[@]}" > "${RUNTIME_DIR}/vllm_server.log" 2>&1 &
 else
   if test -n "${R3C_ADAPTIVE_CONTROLLER}"; then
     export P6_3C_R3C_ADAPTIVE_ENABLED=1
   fi
-  setsid "${cmd[@]}" > "${RUNTIME_DIR}/vllm_server.log" 2>&1 &
+  setsid "${launch_cmd[@]}" > "${RUNTIME_DIR}/vllm_server.log" 2>&1 &
 fi
 server_pid=$!
 printf '%s\n' "${server_pid}" > "${RUNTIME_DIR}/server_pid.txt"
@@ -520,6 +552,7 @@ fi
   "${SHARED_HYBRID_KV_REPAIR}" \
   "${ATOMIC_PAIR_ADMISSION_ENABLED}" \
   "${ATOMIC_PAIR_REQUEST_PREFIX}" \
+  "${DIAGNOSTIC_MSPROF_ENABLED}" \
   "${RUNTIME_DIR}/server_command.txt" \
   "/proc/${server_pid}/cmdline" \
   "${RUNTIME_DIR}/resolved_scheduler_config.json" <<'PY'
@@ -538,6 +571,7 @@ from pathlib import Path
     shared_hybrid_kv_repair,
     atomic_pair_admission,
     atomic_pair_request_prefix,
+    profiler_enabled,
     command_path,
     process_path,
     output_path,
@@ -587,7 +621,7 @@ evidence = {
     "atomic_pair_admission_enabled": atomic_pair_admission == "1",
     "atomic_pair_request_prefix": atomic_pair_request_prefix,
     "observer_enabled": track == "mechanism",
-    "profiler_enabled": False,
+    "profiler_enabled": profiler_enabled == "1",
     "resolution_basis": "explicit_cli_flags_and_live_process_cmdline",
     "server_command_has_expected_flag": expected_flag in server_args,
     "server_command_has_opposite_flag": opposite_flag in server_args,
