@@ -218,3 +218,104 @@ A1 完成需要两条 lifecycle 各有 8 个唯一 rank、所有 trace 无 event
 这一策略延续本项目的核心原则：自动 grade 只是证据整理工具，科学推进来自研究问题、可辨识实验和
 可复现证据。R3E-F1 已经成功关闭 request-scoped profiler capture；A1 的任务不是把结果改成另一种
 颜色，而是把一次真实但现场化的成功运行转化为可以支持下一项系统优化决策的证据。
+
+## 9. A1 全 rank 结果：完整性问题关闭，因果问题仍然开放
+
+A1 在 `main@cdab34ed41c21cb1b9049eff12cb5d19144433cc` 上以零 NPU 方式完成。两条
+lifecycle 的 rank 0–7 均被发现，16 个裸 JSON event array 全部读到闭括号，未设置 event cap。
+admission T4096 的八个 rank 分别包含约 3.789M 个事件，总计 30,310,171；persistent T128
+的每个 rank 包含约 12.473M 个事件，总计 99,784,353。因此 F1 现场报告的 5,000,001 并不是
+T128 trace 的真实长度，而是旧 parser 的 `max_events=5,000,000` 截止标记。源 F1 目录在分析
+前后保持不变，A1 没有启动 vLLM、停止 keep-alive 或重新生成请求。
+
+跨 rank event count 呈高度对称结构。T4096 的 host-framework range 在每个 rank 上均为
+270,091，T128 则均为 1,205,933；runtime/queue、name-inferred candidate 和 device-labelled
+process range 的计数也在 rank 间接近。这个结果排除了“F1 的 rank 0 恰好走了一条特殊执行路径”
+这一解释，却不能排除 rank 间等待时间差：按 A1 的 duration sum，T4096 八个 rank 的总量约为
+74.2–87.3 s，T128 约为 337.7–414.6 s。由于 range 嵌套和 stream 并发，这些差异不能直接
+解释为 wall-clock straggler，但足以把 rank skew 保留为下一层待验证假设。
+
+A1 对三个最直接的候选解释给出了否定或限定性证据。第一，`npu_fx_compiler inference` 在
+T4096 中共有 96 个事件，相当于每 rank 每 Prefill chunk 6.0 个；T128 中共有 1,136 个事件，
+相当于 2.54 个。事件密度没有随 chunk 变小而增加，且这些 range 可能是嵌套的 compiler
+annotation，不能证明每 chunk 发生重编译或 cache miss。第二，collective runtime/queue range
+在 T128 中随 59 个 relevant step 大量出现，但按 step 归一化后的中位 duration 与 T4096 接近，
+且现有表没有 enqueue→kernel→completion 的 flow 关系，因而不能把 HCCL duration sum 写成
+exposed critical-path wait。第三，attention 在 host framework domain 中清晰可见：T4096 每
+rank 735 个事件、约 94.6 ms 中位总量；T128 每 rank 5,030 个事件、约 449 ms。旧版 `other`
+并非简单由遗漏 attention 导致，其中大量是 `EVENT_WAIT`、`NOTIFY_WAIT`、`Node@launch` 等
+尚未获得设备语义证明的 timed range。
+
+A1 的正式 outcome 因而是
+`descriptive_cross_rank_execution_path_complete_causal_bottleneck_unresolved`。这里的
+“complete”只指 16 份 trace 的覆盖和解析完整，不指 causal graph 已经完整。固定样本的性能事实
+仍来自 R3D；A1 既没有形成新的性能样本，也没有选择 compiler、collective、MoE 或 attention
+中的任何一个作为优化 target。
+
+## 10. A1 后验审计揭示的两个方法学修正
+
+收到 A1 小包后，开发机对 manifest 和 top events 做了逐文件复核。第一，A1 把 device-labelled
+process 中的所有 timed range 统称为 `device_kernel`，但 duration 排名前列包含 `Free`、
+`Computing`、`Communication`、`Communication(Not Overlapped)` 与 `Notify_Wait`。这些是
+Ascend profiler 的派生分析时间线，而不是逐个真实 operator kernel。若把它们与 `aclnn*`/
+HCCL kernel 放在同一 evidence domain，会把分析器生成的状态轨道误写成执行实体。发布版分类器
+因此升级为三层：只有 trace category 或 event args 明确标记 kernel 的事件才进入
+`actual_device_kernel`；上述五类进入 `device_analysis_timeline`；仅由 device process metadata
+支持的其余 range 进入 `device_process_timed_range`。名称像设备算子但缺 schema provenance 的
+事件仍为 `name_inferred_device_candidate`。
+
+第二，A1 报告中的 candidate manifest 记录
+`adaptive_execution_review.json=355 bytes, SHA prefix 0e5a...`，而实际收到的终态文件为
+1,013 bytes，SHA-256=`8e9abfb01a0ee424558d48b7e0b088435ccc7200b07f7180f6f6700a0be35407`。
+其余 11 个文件与报告相符，科学结果不受影响；差异说明服务器在 manifest 生成后补写了 adaptive
+provenance。A1/A2 的 packaging 现被改为显式终态步骤：任何 task-local adaptation 更新
+`adaptive_execution_review.json` 后必须重新运行 `package`，manifest 自身不列入候选集合，且
+最后一次 package 是传输审查前的最后写操作。
+
+## 11. R3E-F1-A2：从整窗描述转向 step 与依赖标识连接
+
+A2 的 task ID 为
+`p6_3c_r3e_f1_a2_step_flow_causal_linkage_2026_0809`。它继续复用 F1 的两个 profiler
+lifecycle 和 A1 的完整性结论，不触 NPU、不重跑模型。与 A1 按整个 request-scoped window
+聚合不同，A2 直接读取 F1 中同 lifecycle 保留的只读 scheduler observer JSONL，把每个
+`timing_context_id` 的四个事件连接起来：`scheduler_step`、`executor_execute_submit`、
+`executor_execute_complete` 与 `scheduler_update_complete`。每个执行窗定义为 execute submit
+开始至 Future completion/update start 的单调时钟区间，并保留 step index、resident Decode token、
+injected Prefill token 和 mixed/Decode-only/Prefill-only 类型。
+
+Profiler timestamp 与 scheduler monotonic timestamp 的连接不通过手写固定 offset 完成。A2 对每个
+rank 分别评估 microsecond/nanosecond/millisecond 三种时间单位，以及 monotonic/wall 两种 clock
+origin；wall 与 monotonic 的 offset 由同一 observer row 中的 `timestamp_ns−monotonic_ns` 推导。
+只有样本事件与 scheduler window 形成非偶然覆盖时才记为 `clock_alignment_reliable=true`。
+随后所有 timed range 按实际区间与 step window 的交集做时间归属；async two-batch 可能让一个
+event 同时落入多个 window，因此 A2 单列 multi-window count，并把 clipped duration sum 标记为
+非 interval union、非 critical path。
+
+依赖标识轨道独立于时间归属轨道。A2 完整扫描 Chrome `s/t/f` flow phase，并从 event/args 中提取
+`correlation_id`、`external_id`、`record_function_id`、`sequence_number`、`flow_id`、
+`connection_id` 与 `task_id`。原始标识不进入小包，只保留带 kind 的 SHA-256 前缀、事件数、
+domain 集合和语义类别。一个 link value 只有同时出现在 host framework、runtime/queue 和设备
+执行候选域时，才计入 host→runtime→device cross-domain link；时间上落入同一 step 但没有共同
+标识的事件只构成 temporal containment，不构成 dependency proof。
+
+A2 输出两类互补的 rank 证据。`step_rank_path_full.server_local.tsv` 保留每个
+step×rank×execution-role 的完整归属，bounded package 只返回每条 lifecycle/rank 的主要 role；
+`step_cross_rank_summary.tsv` 则报告每步 rank 覆盖、最晚活动 rank 和活动结束 skew。重点 role
+显式区分 runtime collective queue、actual device collective kernel 和
+`analysis_communication_not_overlapped`，从而可以判断先前的 HCCL 假设究竟获得了执行链支持，
+还是只获得 profiler 派生时间线支持。
+
+## 12. A2 的决策边界
+
+A2 不预设一定能从既有 trace 中恢复 causal graph。若 clock alignment、8-rank step coverage 与
+host→runtime→device 标识链同时存在，它可以把候选瓶颈收缩到具体 pressure step 和 rank；但即便
+如此，只有同一类 dependency-linked final edge 在多数 pressure step 中反复出现，才足以选择优化
+target。当前发布实现保守地保持 `causal_bottleneck_resolved=false`，把结构化链和时间窗交给
+服务器真实 trace 决定后续证据是否充分，不会根据 automatic grade 自动宣布 collective 或 kernel
+瓶颈。
+
+若既有 trace 缺少可连接的 flow/correlation 字段，A2 的有效结果不是重复 R3D/R3E，而是精确报告
+缺失的 clock、field、domain 或 rank 环节，并据此设计一个新的 R3E-F2：在 request-scoped 窗口内
+增加显式 step 与 worker-rank correlation marker。F2 必须是独立 task ID 和独立 artifact chain，
+且只补采能够关闭缺口的两个端点；不能把 instrumentation 变化冒充原 F1 的不变重聚合，也不能
+重新回到没有机制辨识力的 budget 扫描。

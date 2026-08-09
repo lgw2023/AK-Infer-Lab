@@ -330,8 +330,26 @@ def _candidate_manifest(output: Path) -> dict[str, Any]:
         "recommended_reason": "one_named_multi_file_session_with_sha_validation",
         "candidate_file_count": len(files),
         "candidate_total_bytes": total,
+        "manifest_generated_after_adaptive_review": (
+            output.joinpath("adaptive_execution_review.json").is_file()
+        ),
         "files": files,
     }
+
+
+def refresh_candidate_manifest(output: Path) -> dict[str, Any]:
+    """Rebuild the transfer inventory after every task-local adaptation.
+
+    The manifest intentionally excludes itself.  A server-side helper may add
+    provenance to ``adaptive_execution_review.json`` after reaggregation; the
+    package command must therefore be the final write before transfer review.
+    """
+
+    manifest_path = output / "candidate_manifest.server_local.json"
+    manifest_path.unlink(missing_ok=True)
+    manifest = _candidate_manifest(output)
+    _write_json(manifest_path, manifest)
+    return manifest
 
 
 def reaggregate(
@@ -475,7 +493,7 @@ def reaggregate(
                 f"- scientific outcome: `{scientific_outcome}`",
                 f"- trace coverage: {lifecycle_bits}",
                 f"- source evidence unchanged: `{source_unchanged}`；NPU used: `false`；keep-alive: `left_running`。",
-                "- 事件按 device kernel、runtime/queue wait、host framework range、name-inferred device candidate 与 unclassified timed range 分域；名称推断不再等同于设备 kernel。",
+                "- 事件按 actual device kernel、device analysis timeline、device-process timed range、runtime/queue wait、host framework range、name-inferred device candidate 与 unclassified timed range 分域；device-labelled process 和名称推断均不再等同于真实 kernel。",
                 "- Ascend sparse-attention / lightning-indexer 名称已进入 attention 语义类别，避免把未分类误写成 attention 不重要。",
                 "- duration sum 与 timestamp interval union 都是描述性活动量，不是 dependency-aware critical path；本任务不据此选择 collective、compiler、MoE 或 attention 优化方向。",
                 "- R3E-F1 的 request-scoped 执行路径证据与 R3D 阴性性能结论均保留；本轮没有性能重跑或新收益声明。",
@@ -485,8 +503,7 @@ def reaggregate(
         encoding="utf-8",
     )
 
-    manifest = _candidate_manifest(output)
-    _write_json(output / "candidate_manifest.server_local.json", manifest)
+    refresh_candidate_manifest(output)
     return grading
 
 
@@ -504,6 +521,8 @@ def main(argv: list[str] | None = None) -> int:
     derive.add_argument("--expected-ranks", type=int, default=8)
     derive.add_argument("--top-n-ops", type=int, default=30)
     derive.add_argument("--max-events-per-trace", type=int)
+    package = sub.add_parser("package")
+    package.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
 
     if args.command == "validate-only":
@@ -514,6 +533,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0 if result["source_validation_complete"] else 2
+    if args.command == "package":
+        manifest = refresh_candidate_manifest(args.output_dir)
+        print(json.dumps(manifest, indent=2, sort_keys=True))
+        return 0
     grading = reaggregate(
         args.source_artifact_dir,
         args.output_dir,

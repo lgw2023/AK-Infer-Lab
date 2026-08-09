@@ -1214,27 +1214,27 @@ def test_r2_f4_adaptive_review_accepts_complete_server_evidence(tmp_path: Path):
     assert all(review["checks"].values())
 
 
-def test_p6_handoff_tracks_current_r3e_f1_profile_completion_task():
+def test_p6_handoff_tracks_current_r3e_f1_a2_causal_linkage_task():
     text = P6_HANDOFF.read_text(encoding="utf-8")
+    assert "p6_3c_r3e_f1_a2_step_flow_causal_linkage_2026_0809" in text
     assert "p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01" in text
-    assert "p6_3c_r3e_mixed_step_latency_floor_attribution_2026_0808_run01" in text
-    assert "p6_3c_r3d_persistent_prefill_pressure_2026_0807_run01" in text
+    assert "p6_3c_r3e_f1_a1_cross_rank_trace_reaggregation_2026_0808" in text
+    assert "persistent_prefill_tradeoff_no_candidate_within_bounds" in text
     assert "docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md" in text
-    assert "max_model_len=12288" in text
-    assert "max_num_seqs=9" in text
     assert "persistent_on_t128" in text
     assert "admission_on_t4096" in text
-    assert "2 lifecycle" in text
     assert "20 EngineCore request" in text
     assert "6 HTTP" in text
-    assert "vllm_torch_profile_api" in text
-    assert "POST /start_profile" in text
-    assert "POST /stop_profile" in text
-    assert "model loading 不被 profile" in text
-    assert "process-wide msprof" in text
+    assert "130M events" in text
+    assert "actual_device_kernel" in text
+    assert "device_analysis_timeline" in text
+    assert "host→runtime→device" in text
+    assert "temporal evidence" in text
+    assert "causal_bottleneck_resolved" in text
+    assert "NPU used：`false`" in text
     assert "npu_stop.sh 0 1 2 3 4 5 6 7" in text
     assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in text
-    assert "服务器 AI 有权根据真实 Ascend 环境修复" in text
+    assert "task-local" in text
     assert "next_task_authorized=false" in text
-    assert "candidate_total_bytes" in text
+    assert "≤70KB" in text
     assert "transfer_method_selected=false" in text

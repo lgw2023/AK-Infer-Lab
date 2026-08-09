@@ -1,93 +1,90 @@
-# P6.3C-R3E-F1-A1 服务器任务：全 rank request-scoped trace 重聚合
+# P6.3C-R3E-F1-A2 服务器任务：scheduler step × profiler flow 因果连接
 
-本任务是 R3E-F1 的零 NPU 科学证据整理，不是模型实验重跑，也不是为了修改自动评分颜色。
-R3E-F1 已经成功完成两条 request-scoped profiler lifecycle；本轮直接读取服务器保留的 raw/
-converted trace，把当时仅 rank 0、名称 token 驱动的现场聚合升级为可复现的 8-rank 证据。
+本轮不是重跑 Chunked Prefill 性能实验，也不是为了改变自动评分颜色。R3E-F1-A1 已经完整解析
+两条 request-scoped profiler lifecycle 的 16 份 rank trace，但只能形成整窗、跨 rank 的描述性
+执行路径：现有结果没有把 scheduler mixed step、runtime enqueue/wait 与真实 device execution
+通过共同标识连接起来，因此不能选择 collective、compiler、MoE 或 attention 优化方向。
 
-核心目标是回答：
+本任务以零 NPU、只读方式复用 F1 raw result 与 A1 derived result，完成两个独立证据轨道：
 
-1. 两条 lifecycle 的 8 个 rank 是否都完整读到 trace JSON 数组末尾，而不是被 5M event cap
-   或 parser 截断；
-2. request window 中哪些 timed range 有 schema-level device provenance，哪些只是 runtime/queue、
-   host framework range 或名称推断的 operator candidate；
-3. collective、attention、matmul/MoE、compiler/graph 等语义类别在 rank 间是否一致，按 scheduler
-   relevant step / Prefill chunk 归一化后呈现什么结构；
-4. 现有证据能否支持“compiler 按小 chunk 重复”或“HCCL wait 位于 critical path”。如果不能，
-   必须明确保留为假设，不提前选择优化方向。
+1. 从 F1 scheduler observer JSONL 恢复每个 `timing_context_id` 的 execute window，把 profiler
+   timestamp 对齐到 scheduler monotonic clock，并生成 step×rank 的 temporal attribution；
+2. 完整扫描 Chrome `s/t/f` flow 与 correlation/external/record-function/sequence/connection IDs，
+   检查是否有共同标识跨越 host framework、runtime/queue 与 device execution candidate。
 
-服务器 AI 可以依据真实文件布局做 task-local 兼容修复和零 NPU 重跑。修复必须保留 before/after
-SHA、最小 diff、attempt 顺序、原因和 `scientific_impact`。不得修改或覆盖源 F1 结果，不得 push
-remote `main`。如果修改事件分类、rank 范围、完整性定义、归一化口径或研究问题，必须作为新
-variant 报告，不能冒充未改变的 A1。
+时间上落入同一 step 只是 temporal evidence；共同 flow/correlation ID 才是 dependency candidate。
+两者都不能在缺少重复 final-edge 证据时直接改写成 causal critical path。
 
-## 1. 已完成事实：不要重跑 NPU
+## 1. 已知事实与必须保留的结论边界
 
-源 task：
+源 F1：
 
-- task ID：`p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01`
-- source HEAD：`90c027e7b97cb8a1ca152b76ca29105ebe74128c`
-- server grade：`complete_p6_3c_r3e_f1_request_scoped_profile_evidence`
-- scientific outcome：`executor_path_supported_with_request_scoped_device_categories`
-- 2/2 lifecycle exit 0，20/20 EngineCore request，6/6 HTTP request，0 retry；
-- 两条 lifecycle 的 `/start_profile` 与 `/stop_profile` 均 HTTP 200；
-- profiler window 在 warmup 后开始、measured staged-arrival trial 后停止，模型加载不在窗口；
-- `profile_f1_01` admission T4096：Prefill chunks=`4096,8185`，5 relevant steps；
-- `profile_f1_02` persistent T128：56 Prefill chunks、59 relevant steps、55 pressure chunks；
-- 两条 lifecycle 均无 preemption，mechanism gate 完整；
-- 任务退出后 0–7 keep-alive=16 markers、端口 7000 无监听、无 vLLM residual。
+- task ID：`p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01`；
+- 两条 lifecycle：`profile_f1_01=admission_on_t4096`，
+  `profile_f1_02=persistent_on_t128`；
+- F1 结果目录：
+  `/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_f1_2026_0808_attempt_01/p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01`；
+- 2/2 lifecycle、20/20 EngineCore request、6/6 HTTP request、零 retry；
+- profiler window 位于 warmup 后、单次 measured staged-arrival trial 内；
+- T4096 为 `4096,8185` 两块/5 relevant steps；T128 为 56 chunks/59 relevant steps；
+- 0–7 keep-alive 已恢复，源结果后续只读。
 
-源结果目录：
+源 A1：
 
-```text
-/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_f1_2026_0808_attempt_01/p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01
-```
+- task ID：`p6_3c_r3e_f1_a1_cross_rank_trace_reaggregation_2026_0808`；
+- derived 目录：
+  `/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_f1_a1_2026_0808/p6_3c_r3e_f1_a1_cross_rank_trace_reaggregation_2026_0808`；
+- 16/16 trace arrays 读到闭括号，无 event cap；
+- T4096 共 30,310,171 events，T128 共 99,784,353 events；
+- outcome：
+  `descriptive_cross_rank_execution_path_complete_causal_bottleneck_unresolved`；
+- `optimization_target_selected=false`。
 
-现场报告称已对 16 份 rank profiler data 调用
-`torch_npu.profiler.profiler.analyse()` 生成 `trace_view.json`，但 task-local analyzer 设置了
-`max_ranks=1`，所以收到的小包只含 rank 0 聚合。rank-0 trace 为：
+A1 报告中的 candidate manifest 在 adaptive review 最终补写前生成：manifest 记录该文件为
+355 bytes/`0e5a...`，实际终态为 1,013 bytes/
+`8e9abfb01a0ee424558d48b7e0b088435ccc7200b07f7180f6f6700a0be35407`。其余文件与科学结论不受
+影响。A2 不把旧 A1 manifest 当作终态传输身份，只核验 A1 的 task/outcome；A2 自己必须在所有
+adaptation 记录写完后最后运行 `package`。
 
-| lifecycle | trace bytes | 现场 event count | 说明 |
-| --- | ---: | ---: | --- |
-| `profile_f1_01` | 871,640,034 | 3,788,657 | admission T4096 |
-| `profile_f1_02` | 2,928,549,101 | 5,000,001 | persistent T128；必须核实是否 event cap |
+必须保留：
 
-不得重跑两个 profiler lifecycle，不得重跑 R3E host lifecycle，不得从 profiler-on trace 重新估计
-R3D 的 TTFT/TBT/TPS。
+- R3D：`persistent_prefill_tradeoff_no_candidate_within_bounds`；
+- A1：全 rank 描述完整、causal bottleneck unresolved；
+- 原 P6.3C：135168/4096/1 下 Off 无法启动，严格单变量 A/B blocked；
+- 本轮不是性能比较，不从 profiler-on trace 推导 TTFT/TBT/TPS 收益。
 
 ## 2. 本轮身份与完成条件
 
-- task ID：`p6_3c_r3e_f1_a1_cross_rank_trace_reaggregation_2026_0808`
-- NPU used：`false`
-- keep-alive action：`left_running`
-- source result overwritten：`false`
-- 目标 rank：每条 lifecycle 8 个唯一 rank，共 16 份 trace view；
-- 正式分析 event limit：`None`，必须读到每个 JSON event array 的闭括号；
-- 派生结果必须写入独立目录，源目录的小文件 SHA 与 trace size/mtime 前后完全相同；
-- 不选择优化 target；完整 outcome 应为
-  `descriptive_cross_rank_execution_path_complete_causal_bottleneck_unresolved`。
+- task ID：`p6_3c_r3e_f1_a2_step_flow_causal_linkage_2026_0809`；
+- NPU used：`false`；keep-alive action：`left_running`；
+- source F1/A1 overwritten：`false`；
+- 两条 lifecycle、每条 rank 0–7、正式分析 event cap=`None`；
+- 派生目录必须新建，不覆盖 F1 或 A1；
+- `result_transfer_authorized=true`，但 transfer method 保持未选择；
+- 不自动进入 R3E-F2，不启动 vLLM，不访问 7000，不停止卡。
 
-完整成功需要：
+完成的描述性证据要求：
 
-1. 源 F1 task、lifecycle、profile control、mechanism、cleanup 结构化验证通过；
-2. `profile_f1_01` 和 `profile_f1_02` 各发现 rank 0–7；
-3. 16 份 trace 都有 `parse_complete=true`、`event_limit_reached=false`、空 parse error；
-4. 输出 per-trace inventory、per-rank domain/category、cross-rank median/min/max、top operator、
-   scheduler normalization 和 hypothesis review；
-5. 强 device kernel、runtime/queue wait、host framework range、name-inferred candidate 明确分开；
-6. `_C_ascend::npu_sparse_attn_sharedkv`、flash attention、MLA、lightning indexer 归入 attention；
-7. `npu_fx_compiler inference` 按 rank 与 Prefill chunk 归一化，但不得仅凭 event count 宣称重编译；
-8. HCCL dequeue/sync 若没有 dependency-flow proof，必须报告
-   `critical_path_identifiable=false`；
-9. bounded candidate package 不超过 70KB，先展示 manifest，等待用户选择传输方式；
-10. `next_task_authorized=false`，不得自动进入优化实验。
+1. F1 来源验证与 A1 task/outcome 验证通过；
+2. scheduler observer 的四事件 timing context 能恢复；
+3. 16 份 trace 全部再次读到数组末尾，无 event cap；
+4. 对每个 rank 报告 clock transform、flow/link field census、temporal attribution；
+5. 输出 cross-domain link chains、step×rank path、cross-rank activity-end skew；
+6. 明确区分 actual kernel、device analysis timeline 与 device-process range；
+7. 所有 source size/mtime 与小文件 SHA 在分析前后不变；
+8. bounded package ≤70KB，manifest 在 adaptive review 终态之后生成。
 
-## 3. 同步 main 与独立 worktree
+`causal_bottleneck_resolved` 不属于必须为 true 的工程 gate。若 trace schema 缺少 clock/link 字段，
+精确识别缺口就是本轮的有效科学结果；不得为了得到绿色标签虚构 correlation chain。
 
-本轮必须从用户通知的最新 `origin/main` 建立独立 detached worktree，不要修改共享 checkout：
+## 3. 同步 main 与并发隔离
+
+从用户通知的最新 `origin/main` 建立独立 detached worktree。不得使用正在执行其他任务的 worktree，
+不得修改共享 checkout，不得 push remote `main`：
 
 ```bash
 SHARED_REPO=/data/node0_disk1/liguowei/AK-Infer-Lab
-WORKTREE=/data/node0_disk1/liguowei/server_worktrees/p6_3c_r3e_f1_a1_2026_0808
+WORKTREE=/data/node0_disk1/liguowei/server_worktrees/p6_3c_r3e_f1_a2_2026_0809
 
 git -C "${SHARED_REPO}" fetch origin main
 git -C "${SHARED_REPO}" worktree add --detach "${WORKTREE}" origin/main
@@ -97,91 +94,82 @@ git -C "${WORKTREE}" rev-parse origin/main
 git -C "${WORKTREE}" rev-list --left-right --count HEAD...origin/main
 ```
 
-如果目录已存在，不要删除；核对归属后为新 attempt 建立
-`p6_3c_r3e_f1_a1_2026_0808_attempt_02` 等新 worktree。服务器不得 push remote `main`。
+若该目录已存在，不要删除；核验归属后使用 `..._attempt_02`。开始前检查没有另一个 A2 scan；这是
+I/O 密集型全 trace 分析，即使不占 NPU 也不要并发扫描同一 30GB trace 集合。
 
 完整阅读：
 
 ```bash
 cd "${WORKTREE}"
-sed -n '1,360p' docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+sed -n '1,420p' docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
 sed -n '1,520p' 通信模块/docs/developer-to-server.P6.md
 ```
 
-## 4. 发布资产与来源 SHA
+## 4. 发布资产核验
 
-以下 SHA 是同步事实，不是禁止现场修复的旧式冻结合同。若资产不同，先确认 worktree 已同步用户
-通知的最新 `origin/main`；若仍需修复，按自适应策略在 task-local 副本保存 provenance。
-
-| 文件 | SHA-256 |
-| --- | --- |
-| `tools/inference_contracts/analyze_torch_profiler_traces.py` | `84ded6fdd1dd05ac7a826754e5504f0cd490989e823d9ca7e15eb6a9fe9266e0` |
-| `tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a1_trace_reaggregation.py` | `a4088ae6afbcd5c6dd323efc8b78b9137c6be2cabdb86c88410ade406676c90f` |
-| `tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a1_trace_reaggregation.sh` | `273461be444d840c3ea8447ab263bf21ee978bb49f064c651fca575e8539a9c7` |
-| `tests/inference_contracts/test_deepseek_p6_3c_r3e_f1_profile_completion.py` | `5be5bafc9ee37cd5a2073f8c97b319ea3ac5f92c4fabb48f1865c94bb971fc84` |
-| `工作记录与进度笔记本/22_P6_3C_R3E_执行路径归因与跨Rank重聚合手稿.md` | `7708d160133cb505b6b7ce94e64f67a7a4472da50bdf89771caea5222af46a14` |
-
-源 F1 小文件应保持：
+SHA 用于确认拉取到本轮发布代码，不是禁止服务器做 task-local 兼容修复的冻结合同：
 
 | 文件 | SHA-256 |
 | --- | --- |
-| `grading_inputs.json` | `9a231bbbcf37aa74877b11af610f9ec9c31c60a47554a23736bc71ce0497ea6c` |
-| `environment_and_hashes.json` | `bcf7cdea78536a99f0b40dfbd558f764a3d904fcf6cfabc916fd7a233973e4c0` |
-| `lifecycle_summary.tsv` | `e66059e19ac5196737ec40e846cee669f21c10f0ca299593483cb207c29f1399` |
-| `r3e_mechanism_cells.tsv` | `0816c8d500ecb35b61a7e5ba2224664097efa663b2e18adb82e73f561d0e8f58` |
-| `r3e_f1_profile_control_summary.tsv` | `77acc9da1ef0d211e02fdcdaef6aff368d793606cbd0f8dfdc375f1109ae49d3` |
-| `resource_recovery_summary.json` | `e8822f78d8e650dd57ddcec6edc5740048eb2390a3cc7d58eed6a249c9067a5a` |
-| `cleanup_status.txt` | `2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d` |
-
-核验命令：
+| `tools/inference_contracts/analyze_torch_profiler_traces.py` | `c99507ac09921b10a9e86d50ac16833e3e4d911d7957a8a1993b6b2a39277374` |
+| `tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a1_trace_reaggregation.py` | `cbe2080b64dd6b77fcb384258ba2524eedde8975fa089c1638a6af084c2fc3b1` |
+| `tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a2_causal_linkage.py` | `c37f4522a1682044b43bbe760bac9f46682767e5b818eeeaaecd649e48f65636` |
+| `tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a2_causal_linkage.sh` | `fb17d391ab2ebf90235f60aff01533c5898e19a97afa270a4c3f214ad81f44c1` |
+| `tests/inference_contracts/test_deepseek_p6_3c_r3e_f1_profile_completion.py` | `398df49e6cc3533df2d015cbdee648172405564c68e4903a8bf0048e0843b309` |
+| `工作记录与进度笔记本/22_P6_3C_R3E_执行路径归因与跨Rank重聚合手稿.md` | `bd53ead2e7075d6e0f3abd2740acd08efc328439f22c6e3412685c7fc93bf5c2` |
 
 ```bash
 cd "${WORKTREE}"
 sha256sum \
   tools/inference_contracts/analyze_torch_profiler_traces.py \
   tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a1_trace_reaggregation.py \
-  tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a1_trace_reaggregation.sh \
+  tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a2_causal_linkage.py \
+  tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a2_causal_linkage.sh \
   tests/inference_contracts/test_deepseek_p6_3c_r3e_f1_profile_completion.py \
   工作记录与进度笔记本/22_P6_3C_R3E_执行路径归因与跨Rank重聚合手稿.md
-
-SOURCE_F1=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_f1_2026_0808_attempt_01/p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01
-sha256sum \
-  "${SOURCE_F1}/grading_inputs.json" \
-  "${SOURCE_F1}/environment_and_hashes.json" \
-  "${SOURCE_F1}/lifecycle_summary.tsv" \
-  "${SOURCE_F1}/r3e_mechanism_cells.tsv" \
-  "${SOURCE_F1}/r3e_f1_profile_control_summary.tsv" \
-  "${SOURCE_F1}/resource_recovery_summary.json" \
-  "${SOURCE_F1}/cleanup_status.txt"
 ```
 
-## 5. 零 NPU preflight
+若不同，先确认 `HEAD=origin/main`；仍不同时记录实际 SHA 与原因。允许在 task-local 副本修复真实
+trace schema/path/serialization，必须保存 before/after SHA、最小 diff、attempt 顺序和
+`scientific_impact`。不得在源 F1/A1 目录内写 helper 或结果。
 
-本任务不需要卡，也不要求等待 NPU 空闲。它不得停止 keep-alive、启动 vLLM、访问 7000 端口或
-运行 profiler lifecycle。先确认没有误配的正式实验进程，然后只运行来源/trace-view 发现：
+## 5. 零 NPU preflight
 
 ```bash
 cd "${WORKTREE}"
 ENV_PREFIX=/data/node0_disk1/liguowei/AK-Infer-Lab/.conda/envs/ak-infer-lab-vllm-ascend0.22.1rc1
 SOURCE_F1=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_f1_2026_0808_attempt_01/p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01
+SOURCE_A1=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_f1_a1_2026_0808/p6_3c_r3e_f1_a1_cross_rank_trace_reaggregation_2026_0808
 
-pgrep -af 'p6_3c_r3e_f1_a1|run_deepseek_p6_3c_r3e_f1_a1' || true
+test -x "${ENV_PREFIX}/bin/python"
+test -d "${SOURCE_F1}"
+test -f "${SOURCE_A1}/scientific_outcome.json"
+pgrep -af 'p6_3c_r3e_f1_a2|run_deepseek_p6_3c_r3e_f1_a2' || true
+
 "${ENV_PREFIX}/bin/python" \
-  tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a1_trace_reaggregation.py \
+  tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a2_causal_linkage.py \
   validate-only \
   --source-artifact-dir "${SOURCE_F1}" \
+  --source-a1-result "${SOURCE_A1}" \
   --expected-ranks 8
 ```
 
-正常输出应显示两条 lifecycle 各 8 个 rank 且 `source_validation_complete=true`。validate-only
-只发现文件和核验小证据，不扫描 multi-GB event array。
+validate-only 只核验结构和 trace inventory，不读完整 event array。必须看到 F1 source validation、
+A1 task ID、A1 cross-rank complete 均为 true。
 
-### Keep-alive 操作规则
+### Keep-alive 规则
 
-本任务是 no-card work，必须让 keep-alive 保持运行，报告
-`npu_used=false, keep_alive_action=left_running, stopped_card_ids=none, restored_card_ids=none`。
-下面两条命令是项目统一的应急操作规则，不是本任务执行步骤：只有未来经用户授权且确实需要 NPU
-的任务，才可在其需要的卡上停止，并在 success/failure/interruption/early exit 后恢复完全相同的卡集。
+本任务不需要 NPU，必须让 keep-alive 保持运行，并报告：
+
+```text
+npu_used=false
+keep_alive_action=left_running
+stopped_card_ids=none
+restored_card_ids=none
+```
+
+以下是项目统一应急规则，不是本任务步骤。只有未来明确授权的 NPU 任务才可在需要的卡上停止，并在
+success/failure/interruption/early exit 后恢复完全相同卡集：
 
 ```bash
 # Stop the low-priority keep-alive workload on the selected cards.
@@ -191,127 +179,133 @@ bash /data/node0_disk1/Public/npu_stop.sh 0 1 2 3 4 5 6 7
 bash /data/node0_disk1/Public/npu_keep_alive.sh 0 1 2 3 4 5 6 7
 ```
 
-## 6. 正式零 NPU 重聚合
-
-使用独立派生结果目录：
+## 6. 正式 A2 分析
 
 ```bash
 cd "${WORKTREE}"
-SOURCE_F1=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_f1_2026_0808_attempt_01/p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01
-OUTPUT_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_f1_a1_2026_0808
-OUTPUT_DIR="${OUTPUT_ROOT}/p6_3c_r3e_f1_a1_cross_rank_trace_reaggregation_2026_0808"
+OUTPUT_ROOT=/data/node0_disk1/liguowei/AK-Infer-Lab/server_results/p6_3c_r3e_f1_a2_2026_0809
+OUTPUT_DIR="${OUTPUT_ROOT}/p6_3c_r3e_f1_a2_step_flow_causal_linkage_2026_0809"
 
 test ! -e "${OUTPUT_DIR}"
 mkdir -p "${OUTPUT_ROOT}"
 PYTHONUNBUFFERED=1 \
-  bash tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a1_trace_reaggregation.sh \
-  "${SOURCE_F1}" "${OUTPUT_DIR}" \
-  2>&1 | tee "${OUTPUT_ROOT}/reaggregation.log"
+  bash tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a2_causal_linkage.sh \
+  "${SOURCE_F1}" "${SOURCE_A1}" "${OUTPUT_DIR}" \
+  2>&1 | tee "${OUTPUT_ROOT}/a2_analysis.log"
 ```
 
-分析 16 份 multi-GB trace 可能长时间没有终端输出；不要因为它不是 NPU 作业就启动第二份并发 A1。
-用 `ps`、输出文件大小和 I/O 判断进度，不要设置 event cap，也不要把无输出当成 hang。正式结果中
-`event_limit_used` 必须为 false。
+16 份 trace 合计约 130M events，可能较长时间无输出。不要设置 `--max-events-per-trace`，不要并发
+启动第二个 A2。用 `ps`、I/O 与结果文件变化判断进度。若需要进度输出，可在 task-local 副本增加
+每 trace START/END，不改变 event selection、clock inference 或 link fields。
 
-## 7. rank trace-view 缺失分支
+关键输出：
 
-若 validate-only 只发现 rank 0，但 raw `_ascend_pt` 目录仍在，不得重跑 profiler lifecycle，也不得
-改写源结果。使用服务器在 F1 已验证过的
-`torch_npu.profiler.profiler.analyse()` 在 task-local `TRACE_WORKSPACE` 中为缺失 rank 生成
-`trace_view.json`：
+- `scheduler_step_windows.tsv`：完整 observer execution windows，server-local；
+- `trace_linkage_inventory.tsv`：每 rank parse/clock/link census；
+- `link_field_summary.tsv`：每种 link field 的唯一值与跨域值计数；
+- `cross_domain_link_chains.tsv`：只返回哈希后的 top host→runtime→device chain；
+- `step_rank_path_full.server_local.tsv`：完整 step×rank×role，不进入小包；
+- `step_rank_path_summary.tsv`：每 lifecycle/rank 主要 role 的有界摘要；
+- `step_cross_rank_summary.tsv`：每步 rank 覆盖、最晚活动 rank、activity-end skew；
+- `bottleneck_hypothesis_review.json`：证据充分性和下一步。
 
-1. `TRACE_WORKSPACE` 建议为
-   `/data/node0_disk1/liguowei/server_analysis/p6_3c_r3e_f1_a1_trace_views_attempt_01`；
-2. 在该目录下建立 `profile_f1_01/` 与 `profile_f1_02/`；
-3. 对每个 raw rank 建 task-local 目录，只读引用 raw input，转换输出写到 task-local 目录；不要让
-   `analyse()` 在 `${SOURCE_F1}` 下新增、覆盖或删除文件；
-4. 保存 raw rank source path、source size/mtime、conversion command、output size/mtime、rank ID；
-5. 转换后将该 workspace 作为 wrapper 第三个参数：
+## 7. 分类、时间与因果解释规则
 
-```bash
-PYTHONUNBUFFERED=1 \
-  bash tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a1_trace_reaggregation.sh \
-  "${SOURCE_F1}" "${OUTPUT_DIR}" "${TRACE_WORKSPACE}"
-```
+事件来源域：
 
-如果实际 `analyse()` API、raw 布局或输出层级不同，服务器 AI 可在 task-local helper 中修复并继续；
-报告 before/after SHA、diff、输入/输出路径和 `scientific_impact=none`。如果转换只能通过触 NPU 或
-重跑请求完成，停止并报告，不要扩大授权。
+- `actual_device_kernel`：只有 trace category 或 event args 明确支持 kernel；
+- `device_analysis_timeline`：`Free`、`Computing`、`Communication`、
+  `Communication(Not Overlapped)`、`Notify_Wait`；它们是 profiler 派生分析轨道；
+- `device_process_timed_range`：仅由 device process metadata 支持、但没有 kernel-level 证明；
+- `runtime_or_queue_wait`、`host_framework_range`、`name_inferred_device_candidate` 与
+  `unclassified_timed_range` 保持各自边界。
 
-## 8. 解释规则
+不得：
 
-发布 analyzer 把“来源证明力”和“语义类别”正交分开：
+- 把 `Communication(Not Overlapped)` 直接称为 HCCL kernel 或 causal wait；
+- 把 clipped duration sum 称为 interval union、wall-clock decomposition 或 critical path；
+- 因为同一事件同时落入 two-batch async 的两个 execution window 就重复解释为两次执行；
+- 把 stream ID 单独当 dependency ID；
+- 输出原始 correlation/flow values 到小包；代码只输出带 kind 的 SHA 前缀。
 
-- `device_kernel`：device process metadata、trace category 或 event args 明确支持；
-- `runtime_or_queue_wait`：dequeue/enqueue、ACL runtime、stream/event sync；
-- `host_framework_range`：`aten::`、`vllm::`、`c10d::`、`_C_ascend::`、`npu::`、compiler range；
-- `name_inferred_device_candidate`：仅名称像 operator，没有 schema-level device provenance；
-- `unclassified_timed_range`：其余 timed range。
+clock alignment 允许返回 unresolved。如果真实 trace 的 timestamp schema 未覆盖已发布候选单位/origin，
+服务器 AI 可在 task-local 副本增加有证据的 transform，必须返回原始 timestamp 数量级、observer
+clock 数量级、推导公式、before/after 覆盖率与 scientific impact。不得人工平移到“看起来重合”。
 
-不得把 `name_inferred_device_candidate` 改名为 device kernel，也不得把这些 domain 的 duration sum
-相加后称为 wall-clock。`active_time_union_us` 只有在 timestamp 单调时输出；它是重叠消解后的
-activity span，不是 dependency-aware critical path。
-
-必须自然语言回答：
-
-1. 每条 lifecycle 是否确有 rank 0–7，16 个数组是否都读到末尾？T128 的 5,000,001 是真实长度
-   还是旧 parser cap？
-2. 强 device kernel、runtime/queue、host framework 与 name-inferred candidate 的 rank 间分布如何？
-3. attention 在新 classifier 中是否可见；旧版 `other` 是否主要来自分类遗漏？
-4. `npu_fx_compiler inference` 每 rank 每 Prefill chunk 的 event count 是多少；是否有实际
-   recompilation/cache-miss 证据，还是仅有嵌套 range 重复？
-5. HCCL queue wait 是否有 dependency-flow/step timestamp 证明位于 critical path？若没有，明确说没有；
-6. 现有证据是否足以选择 compiler、collective、MoE 或 attention 优化？默认答案不是预设的，必须
-   由结构化证据支持。
-
-## 9. 自适应修复与停止条件
+## 8. 自适应修复、变体与停止条件
 
 允许的 task-local 修复：
 
-- bare JSON array、gzip、trace-view 名称、rank/path 解析；
-- 流式 parser buffer、Unicode、Chrome trace schema；
-- source/trace workspace 布局与 `torch_npu.profiler.profiler.analyse()` 兼容；
-- finalizer、TSV/JSON serialization、bounded manifest；
-- category token 的真实 Ascend 名称补充，但必须保留旧/新分类 diff 和影响行数。
+- 真实 flow/correlation key 的大小写、嵌套 args 或 Chrome schema 兼容；
+- scheduler trace path、多个 PID JSONL、trace workspace 布局；
+- timestamp unit/origin 的证据化扩展；
+- progress、内存、TSV/JSON、bounded package、manifest 终态刷新；
+- 只读重试与新 attempt 目录。
 
-任何修复后使用新 output/attempt 目录；不要覆盖失败目录。若仅 finalizer/package 失败，直接零 NPU
-修复并从保留 trace 重聚合，不得重跑模型。
+每次 adaptation 必须写入 `adaptive_execution_review.json`：attempt、原因、patch path、before/after
+SHA/diff、scientific impact。若改变 link field 定义、clock alignment 判定、step window、event domain
+或 causal gate，必须报告 `scientific_contract_changed=true` 并给新 variant ID，不能冒充原 A2。
 
-停止并报告：
+停止并返回当前证据：
 
-- 源小文件身份不符且无法解释；
-- raw/converted traces 缺失，恢复必须重跑 NPU 请求；
-- 需要 event cap 才能完成正式结果；
-- 必须改变 rank 范围、分类定义或归一化口径但未建立新 variant；
-- 源结果在分析前后发生变化。
+- F1/A1 源身份或 trace 缺失且恢复需要重跑 NPU；
+- 必须使用 event cap 才能完成；
+- 源目录在分析前后变化；
+- 现有 trace 没有可用 correlation/flow linkage。
 
-## 10. 结果包与传输
+最后一种不是失败：报告每种字段的实际计数、clock 是否对齐、哪个 host/runtime/device edge 缺失，
+并给出 R3E-F2 的最小 instrumentation 方案。A2 不自动执行 F2，不自动触 NPU。
 
-`result_transfer_authorized: true`。这表示 bounded package 有资格交付，不表示已选择传输方式。
-完成后必须先展示：
+## 9. 必须自然语言回答的问题
 
-- `result_summary.md` 的服务器绝对路径；
-- `candidate_manifest.server_local.json` 的 bytes 与 SHA-256；
-- manifest 内每个候选文件的 path、bytes、SHA-256、sensitivity；
-- candidate 总文件数与总 bytes（不超过 70KB）；
-- `email` / `upload-api` / `server-local` 三种可用方法；
-- 推荐 `upload-api`，理由是可用一个 named multi-file session 做逐文件 SHA 验证。
+1. F1 的 scheduler observer 恢复出多少 execution window？T4096/T128 各多少，mixed step 各多少？
+2. 每个 rank 的 profiler timestamp 最终选择什么 unit/origin？16/16 是否可靠对齐？覆盖率与
+   multi-window event count 是多少？
+3. trace 中实际有哪些 flow/correlation field？多少 unique values 能跨 domain，多少能形成
+   host→runtime→device candidate chain？
+4. `Free/Computing/Communication/Notify_Wait` 重新分类后，actual kernel、analysis timeline 与
+   device-process range 的主要 role 分布如何？
+5. pressure step 的 8-rank activity-end skew 是否稳定指向某个 rank？该 rank 的最后活动 role 是什么？
+6. 是否存在多数 pressure step 重复出现的 dependency-linked final edge？若没有，明确缺哪一环。
+7. 现有证据是否足以选择 collective/compiler/MoE/attention 优化？若选择，给出结构化链和适用
+   step/rank；若不选择，给出最小 R3E-F2 instrumentation，不要建议重复 budget sweep。
 
-等待用户明确选择后再传输。不得自动沿用 F1 的方式，不得先发 status-only email。若 upload-api
-出现 401/409/413、proxy/redirect、timeout、service 或 hash failure，停止并要求新的传输选择，
-不得自动改用 email。raw traces、完整 event TSV、server log 和 reaggregation log 留在服务器。
+## 10. 终态 package 与传输边界
+
+任何 adaptation/provenance 写入后，必须把 package 作为最后一次写操作重新执行：
+
+```bash
+"${ENV_PREFIX}/bin/python" \
+  tools/inference_contracts/run_deepseek_p6_3c_r3e_f1_a2_causal_linkage.py \
+  package --output-dir "${OUTPUT_DIR}"
+```
+
+随后逐项核对 `candidate_manifest.server_local.json` 的 bytes/SHA 与实际文件；不得在 package 后再改
+候选文件。完整 raw trace、完整 step-rank TSV 与 log 留在服务器。
+
+`result_transfer_authorized=true` 只表示 bounded package 有资格交付，不表示已选择渠道。完成后先展示：
+
+- `result_summary.md` 与 manifest 的服务器绝对路径；
+- 每个候选文件 path、bytes、SHA-256、sensitivity；
+- 总文件数/bytes（≤70KB）；
+- 可用 `email` / `upload-api` / `server-local`；推荐 `upload-api`，因为可在一个 named session 中
+  逐文件校验 SHA。
+
+等待用户明确选择后再传输。不得沿用上轮选择，传输失败后不得自动切换渠道。
 
 ## 11. 服务器最终报告格式
 
 ```text
-P6_3C_R3E_F1_A1_SERVER_REPORT_BEGIN
-task_id=p6_3c_r3e_f1_a1_cross_rank_trace_reaggregation_2026_0808
-source_task_id=p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01
+P6_3C_R3E_F1_A2_SERVER_REPORT_BEGIN
+task_id=p6_3c_r3e_f1_a2_step_flow_causal_linkage_2026_0809
+source_f1_task_id=p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01
+source_a1_task_id=p6_3c_r3e_f1_a1_cross_rank_trace_reaggregation_2026_0808
 head=...
 origin_main=...
 ahead_behind=0 0
 worktree=...
-source_result=...
+source_f1_result=...
+source_a1_result=...
 derived_result=...
 source_result_overwritten=false
 source_evidence_unchanged=true|false
@@ -322,32 +316,35 @@ restored_card_ids=none
 adaptive_attempt_count=...
 adaptive_patch_paths=...
 scientific_contract_changed=false|true
-profile_f1_01_rank_count=...
-profile_f1_02_rank_count=...
+scheduler_window_count=...
+profile_f1_01_window_count=...
+profile_f1_02_window_count=...
+trace_rank_coverage=16/16
 all_trace_arrays_parsed_to_end=true|false
 event_limit_used=false|true
-profile_f1_01_event_count_by_rank=...
-profile_f1_02_event_count_by_rank=...
-t128_5000001_explanation=...
-strong_device_domain_summary=...
-runtime_queue_domain_summary=...
-host_framework_domain_summary=...
-name_inferred_domain_summary=...
-attention_visibility=...
-compiler_events_per_rank_per_chunk=...
-compiler_recompilation_proven=false|true
-hccl_critical_path_identifiable=false|true
+clock_alignment_complete=true|false
+clock_transform_by_rank=...
+step_rank_coverage_complete=true|false
+multi_window_event_count=...
+link_field_kinds=...
+cross_domain_link_value_count=...
+host_runtime_device_link_value_count=...
+device_analysis_timeline_separated=true|false
+pressure_step_rank_skew_summary=...
+repeated_dependency_linked_final_edge=none|...
+causal_bottleneck_resolved=false|true
 optimization_target_selected=false|true
 scientific_outcome=...
 evidence_status=complete|incomplete
 server_grade=...
 candidate_manifest=...,file_count,total_bytes,sha256
+manifest_matches_final_files=true|false
 result_transfer_authorized=true
 transfer_method_selected=false
 available_methods=email,upload-api,server-local
 recommended_method=upload-api
 next_task_authorized=false
-P6_3C_R3E_F1_A1_SERVER_REPORT_END
+P6_3C_R3E_F1_A2_SERVER_REPORT_END
 ```
 
-报告后附六个自然语言问题的答案和完整 bounded manifest。不要自动进入下一任务。
+报告后附七个自然语言回答和完整 bounded manifest。不要自动进入 R3E-F2。

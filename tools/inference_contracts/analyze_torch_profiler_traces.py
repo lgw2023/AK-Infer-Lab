@@ -2,10 +2,12 @@
 
 The parser deliberately separates *where an event was observed* from *what
 the event name appears to describe*.  Ascend ``trace_view.json`` files often
-contain device kernels, runtime queue records, and host-side PyTorch ranges in
-one top-level JSON array.  Treating every name containing ``npu`` or ``matmul``
-as a device kernel overstates the evidence, so this module records an explicit
-``evidence_domain`` and ``detection_basis`` for every timed range.
+contain device kernels, device-side analysis tracks, runtime queue records, and
+host-side PyTorch ranges in one top-level JSON array.  Treating a whole
+device-labelled process (including synthetic ``Free``/``Computing``/
+``Communication`` tracks) as kernels overstates the evidence, so this module
+records an explicit ``evidence_domain`` and ``detection_basis`` for every timed
+range.
 
 Duration sums remain descriptive counters.  Nested ranges and concurrent
 streams overlap; they are not a wall-clock or causal critical-path
@@ -29,6 +31,13 @@ from typing import Any, Iterable, Iterator, TextIO
 TORCH_TRACE_SUFFIXES = (".pt.trace.json", ".pt.trace.json.gz")
 ASCEND_TRACE_NAMES = ("trace_view.json", "trace_view.json.gz")
 RANK_PATTERN = re.compile(r"(?:^|[_/])rank[_-]?(\d+)(?:[_/]|$)", re.IGNORECASE)
+DEVICE_ANALYSIS_NAMES = {
+    "free",
+    "computing",
+    "communication",
+    "communication(not overlapped)",
+    "notify_wait",
+}
 
 
 @dataclass
@@ -311,6 +320,8 @@ def event_domain(
         or ""
     ).lower()
 
+    if name in DEVICE_ANALYSIS_NAMES:
+        return "device_analysis_timeline", "derived_timeline_name"
     if any(
         token in name
         for token in (
@@ -324,12 +335,12 @@ def event_domain(
         )
     ):
         return "runtime_or_queue_wait", "runtime_name"
-    if str(event.get("pid")) in device_pids:
-        return "device_kernel", "device_process_metadata"
     if any(token in category for token in ("kernel", "npu", "gpu", "device")):
-        return "device_kernel", "trace_category"
+        return "actual_device_kernel", "trace_category"
     if any(token in device_type for token in ("npu", "gpu", "device", "kernel")):
-        return "device_kernel", "event_args"
+        return "actual_device_kernel", "event_args"
+    if str(event.get("pid")) in device_pids:
+        return "device_process_timed_range", "device_process_metadata_only"
     if name.startswith(("aten::", "vllm::", "c10d::", "_c_ascend::", "npu::")):
         return "host_framework_range", "framework_namespace"
     if "npu_fx_compiler" in name:
@@ -468,7 +479,20 @@ def analyze_trace_roots(
                     "event_limit": parse_state.event_limit,
                     "event_limit_reached": parse_state.event_limit_reached,
                     "parse_error": parse_state.parse_error or "",
-                    "strong_device_event_count": domain_counts["device_kernel"],
+                    "actual_device_kernel_event_count": domain_counts[
+                        "actual_device_kernel"
+                    ],
+                    "device_analysis_event_count": domain_counts[
+                        "device_analysis_timeline"
+                    ],
+                    "device_process_range_event_count": domain_counts[
+                        "device_process_timed_range"
+                    ],
+                    # Retained as an explicitly named compatibility aggregate;
+                    # it is no longer interpreted as a kernel-only count.
+                    "strong_device_event_count": domain_counts[
+                        "actual_device_kernel"
+                    ],
                     "runtime_or_queue_event_count": domain_counts[
                         "runtime_or_queue_wait"
                     ],
@@ -570,7 +594,17 @@ def analyze_trace_roots(
                 "strong_device_event_count": sum(
                     int(row["event_count"])
                     for row in rows
-                    if row["evidence_domain"] == "device_kernel"
+                    if row["evidence_domain"] == "actual_device_kernel"
+                ),
+                "device_analysis_event_count": sum(
+                    int(row["event_count"])
+                    for row in rows
+                    if row["evidence_domain"] == "device_analysis_timeline"
+                ),
+                "device_process_range_event_count": sum(
+                    int(row["event_count"])
+                    for row in rows
+                    if row["evidence_domain"] == "device_process_timed_range"
                 ),
                 "runtime_or_queue_event_count": sum(
                     int(row["event_count"])
@@ -651,6 +685,18 @@ def analyze_trace_roots(
                 "strong_device_event_count": sum(
                     int(row["strong_device_event_count"]) for row in trace_rows
                 ),
+                "actual_device_kernel_event_count": sum(
+                    int(row["actual_device_kernel_event_count"])
+                    for row in trace_rows
+                ),
+                "device_analysis_event_count": sum(
+                    int(row["device_analysis_event_count"])
+                    for row in trace_rows
+                ),
+                "device_process_range_event_count": sum(
+                    int(row["device_process_range_event_count"])
+                    for row in trace_rows
+                ),
                 "name_inferred_event_count": sum(
                     int(row["name_inferred_event_count"]) for row in trace_rows
                 ),
@@ -672,7 +718,7 @@ def analyze_trace_roots(
         for row in lifecycle_summaries
     )
     return {
-        "schema": "p6_3c_request_scoped_execution_path_v2",
+        "schema": "p6_3c_request_scoped_execution_path_v3",
         "profiler_complete": complete,
         "expected_ranks_per_lifecycle": expected_ranks_per_lifecycle,
         "event_limit_per_trace": max_events_per_trace,
@@ -684,7 +730,7 @@ def analyze_trace_roots(
             "timestamp_ordered_interval_union_is_activity_not_causal_critical_path"
         ),
         "classification_caveat": (
-            "name_inferred_device_candidate_is_not_equivalent_to_device_kernel"
+            "device_process_or_name_provenance_is_not_equivalent_to_actual_kernel"
         ),
         "lifecycle_summaries": lifecycle_summaries,
         "trace_inventory": inventory,
