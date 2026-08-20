@@ -363,3 +363,24 @@ link-kind + actual-kernel signature 在每个 S2 policy 中至少两个 step、�
 当前完成的是开发机代码、合成 trace 合同测试、Python/Bash/YAML 静态检查与零 NPU
 audit；开发机没有 vLLM/NPU 环境证据。因而 F2 尚未获得 marker 8/8 实测、闭合链、
 causal bottleneck 或 optimization target 证据。这些只能由 Ascend 服务器按 S0→S1→条件 S2 返回。
+
+## 14. F2 首轮服务器结果：staged stop 有效，但 marker 阴性证据尚不完整
+
+F2 首轮在 `main@b146b5005b9774aed134701119b1bf233f68ac11` 上完成了零 NPU S0，并运行一个
+`f2_s1_01=admission_on_t4096` lifecycle。scheduler 选择了 step 31 的 mixed pressure window，
+S2 未被授权或执行，0–7 卡 keep-alive 精确恢复，端口和进程清理完整。这证明三阶段控制面与资源
+停止条件发挥了作用，但不等于 S1 已经形成完整的阴性 dependency-marker 结论。
+
+原因是两个失败条件同时存在：analyzer 报告 `trace_parse_complete=false` 与 rank coverage false，
+而 8 个 expected rank row 又全部为 marker absent。若没有逐 trace 的两遍 parse 状态、精确 parse
+error/event cap、raw trace 路径以及按 PID 的 `observer_installed/dependency_marker_scheduled/`
+`dependency_marker_worker_enter/dependency_marker_worker_exit` 计数，就无法区分至少四种解释：真实 worker
+进程没有加载 wrapper、私有 context 没有穿过 worker RPC、marker 已进入 trace 但发现或 parser 覆盖
+错误、或 Ascend profiler 没有导出该 `record_function` range。S0 的父进程 monkey-patch 与 pickle
+smoke 不能替代真实 worker PID 的 bootstrap/传播证据。
+
+因此正式 outcome 保持 `dependency_marker_canary_evidence_incomplete`。下一轮先对首轮 raw S1 做零 NPU
+原位诊断，并将 trace inventory、逐 PID/rank event census、worker bootstrap identity 与 sitecustomize
+adaptation 的可复现 diff 留作结构化证据。只有诊断得到不改变科学合同的明确 task-local 根因，且一次
+新 S1 能区分剩余假设时，才执行一个有界 retry；即使 retry 的三段链在 8/8 rank 闭合，也先停止复核，
+不直接进入 S2，更不能据此选择 collective、compiler、MoE、attention 或其他 optimization target。
