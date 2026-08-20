@@ -319,3 +319,47 @@ target。当前发布实现保守地保持 `causal_bottleneck_resolved=false`，
 增加显式 step 与 worker-rank correlation marker。F2 必须是独立 task ID 和独立 artifact chain，
 且只补采能够关闭缺口的两个端点；不能把 instrumentation 变化冒充原 F1 的不变重聚合，也不能
 重新回到没有机制辨识力的 budget 扫描。
+
+## 13. A2 实证结果与 R3E-F2 最小依赖标记 canary
+
+A2 在服务器上完整读取了 16 份 trace，合计 130,094,524 events。两个 lifecycle 的
+190 个 scheduler window 中，154 个获得 8/8 rank 时间覆盖；58 个 pressure step 全部获得
+8/8 覆盖。但 3,747,480 个 cross-domain link value 中没有一个同时贯通
+host framework、runtime/queue 与 device execution，`cross_domain_link_chains.tsv` 为空。因此
+A2 的正式 outcome 是
+`temporal_step_attribution_complete_dependency_linkage_unavailable`；
+`causal_bottleneck_resolved=false`，`optimization_target_selected=false`。时间包含、
+`rank_activity_end_skew_us=0` 与 rank 0 的 tie-breaking 都不是因果证据。
+
+F2 的任务 ID 定义为
+`p6_3c_r3e_f2_request_scoped_dependency_marker_canary_2026_0820`。它不修改请求内容、
+policy endpoint 或 capacity contract，只在已有 `SchedulerOutput` 对象上增加可 pickle 的私有
+context：`lifecycle_id/policy_id/timing_context_id/step_index`。该对象经
+`MultiprocExecutor` 传入 worker 后，`WorkerWrapperBase.execute_model` 使用 worker 自身的
+`global_rank` 构造结构化 `record_function` range。标记不包含 prompt、生成文本、token ID
+或 request ID；它只是 worker execute-model 范围，不自动使其内任何事件成为 causal edge。
+
+执行合同被拆为三段：
+
+1. S0 在不触发 NPU 的前提下解析真实 vLLM/vLLM-Ascend 源路径、符号与签名，验证
+   `SchedulerOutput` 私有字段的 pickle round-trip、worker wrapper 安装与已安装源文件未被修改；
+2. S1 只运行 `admission_on_t4096` 的一个 lifecycle，且只选一个 mixed pressure step。
+   只有该 step 在 8/8 rank 都存在格式精确的 marker，并且
+   marker→host op、host op→runtime launch、runtime launch→actual device kernel 三段都闭合，
+   才允许 S2；
+3. S2 仅在 S1 通过后运行 `admission_on_t4096` 和 `persistent_on_t128` 各一个
+   lifecycle，每个 policy 只标记两个 pressure step。最多因而是 3 个 fresh-model lifecycle，
+   而非 R3D 的 17 lifecycle 或五档 budget sweep。
+
+分析器对每个 step×rank 记录 marker presence，对三段 edge 分别记录 link kind、计数、
+rank-row coverage、完整 pressure-step coverage 和缺失原因。marker→host 只接受结构化 range 包含；
+后两段必须有 profiler flow/correlation 共同标识。`Free/Computing/Communication/`
+`Communication(Not Overlapped)/Notify_Wait` 仍然被排除为 derived analysis timeline。只有相同
+link-kind + actual-kernel signature 在每个 S2 policy 中至少两个 step、每个 step 的 8/8 rank
+都重复，才能设置 `causal_bottleneck_resolved=true`。即使该门通过，本 canary 也固定
+`optimization_target_selected=false`；它只关闭或精确否定 dependency linkage 能力，不产生性能收益或
+可部署优化结论。
+
+当前完成的是开发机代码、合成 trace 合同测试、Python/Bash/YAML 静态检查与零 NPU
+audit；开发机没有 vLLM/NPU 环境证据。因而 F2 尚未获得 marker 8/8 实测、闭合链、
+causal bottleneck 或 optimization target 证据。这些只能由 Ascend 服务器按 S0→S1→条件 S2 返回。

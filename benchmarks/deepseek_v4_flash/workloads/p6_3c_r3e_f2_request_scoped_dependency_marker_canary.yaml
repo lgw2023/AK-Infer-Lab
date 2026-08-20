@@ -1,0 +1,137 @@
+schema_version: 1
+workload_id: p6_3c_r3e_f2_request_scoped_dependency_marker_canary
+task_id: p6_3c_r3e_f2_request_scoped_dependency_marker_canary_2026_0820
+date: "2026-08-20"
+stage: P6.3C-R3E-F2
+title: Minimal request-scoped worker dependency-marker canary
+
+research_question:
+  - >-
+    Can timing_context_id, step_index, lifecycle_id, and policy_id cross the
+    EngineCore-to-worker RPC and appear as a structured profiler range on all
+    TP8 workers for one selected mixed Prefill/Decode pressure step?
+  - >-
+    Within that range, do exported profiler identifiers form separate
+    marker-to-host, host-to-runtime, and runtime-to-actual-device-kernel edges?
+
+lineage:
+  source_a2_task_id: p6_3c_r3e_f1_a2_step_flow_causal_linkage_2026_0809
+  source_a2_outcome: temporal_step_attribution_complete_dependency_linkage_unavailable
+  source_f1_task_id: p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01
+  new_variant_reason: >-
+    F1/A2 had complete pressure-step rank coverage but no identifier linking
+    scheduler/worker scope to runtime launch and actual device kernels.
+
+fixed_scientific_contract:
+  max_model_len: 12288
+  max_num_batched_tokens: 12288
+  max_num_seqs: 9
+  enable_chunked_prefill: true
+  enable_prefix_caching: false
+  resident_requests: 8
+  resident_prompt_tokens_each: 256
+  resident_output_tokens_each: 128
+  injection_gate_output_tokens_each: 16
+  injected_prompt_tokens: 12281
+  injected_output_tokens: 4
+  tensor_parallel_size: 8
+  expert_parallel: true
+  mtp_num_speculative_tokens: 1
+  graph_mode: FULL_DECODE_ONLY
+  block_size: 128
+  async_scheduling: true
+  request_retries: 0
+
+marker_contract:
+  scheduler_payload_fields:
+    - lifecycle_id
+    - policy_id
+    - timing_context_id
+    - step_index
+  worker_added_field: worker_rank
+  prohibited_fields:
+    - prompt
+    - generated_text
+    - token_id
+    - request_content
+  worker_scope: WorkerWrapperBase.execute_model
+  profiler_api: torch.profiler.record_function
+  interpretation: >-
+    The worker range is an instrumented execution scope. It is not a device
+    dependency or causal critical path without profiler flow/correlation edges.
+
+stages:
+  S0:
+    npu_used: false
+    keep_alive_action: left_running
+    purpose: resolve installed sources, signatures, marker API, and pickle propagation
+  S1:
+    lifecycles:
+      - lifecycle_id: f2_s1_01
+        config_id: admission_on_t4096
+        pressure_scope: admission_only
+        active_chunk_target_tokens: 4096
+        selected_pressure_steps: 1
+    gate: >-
+      One selected pressure context must have exactly one marker on every rank
+      0-7 and a complete host-runtime-actual-kernel identifier chain on every rank.
+  S2:
+    conditional_on: S1 gate only
+    lifecycles:
+      - lifecycle_id: f2_s2_01
+        config_id: admission_on_t4096
+        pressure_scope: admission_only
+        active_chunk_target_tokens: 4096
+        selected_pressure_steps: 2
+      - lifecycle_id: f2_s2_02
+        config_id: persistent_on_t128
+        pressure_scope: persistent_prefill
+        active_chunk_target_tokens: 128
+        selected_pressure_steps: 2
+    purpose: test repeated final-edge identity across pressure steps and ranks
+
+causal_gate:
+  required_segments:
+    - marker_to_host_op
+    - host_op_to_runtime_launch
+    - runtime_launch_to_actual_device_kernel
+  actual_kernel_provenance_required: true
+  temporal_overlap_alone_allowed: false
+  repeated_final_edge_rule: >-
+    The same link-kind and actual-kernel signature must occur on ranks 0-7 for
+    at least two pressure steps in each executed S2 policy before
+    causal_bottleneck_resolved may become true.
+  optimization_target_selected_by_default: false
+
+excluded_work:
+  - 17-lifecycle repetition
+  - five-level budget sweep
+  - profiler-on performance comparison
+  - production benefit or deployability claim
+  - automatic collective, compiler, MoE, or attention target selection
+
+bounded_outputs:
+  maximum_total_bytes: 71680
+  raw_profiler_traces: server-local only
+  server_logs: server-local only
+  files:
+    - result_summary.md
+    - environment_and_hashes.json
+    - marker_propagation_summary.json
+    - step_rank_marker_coverage.tsv
+    - dependency_edge_summary.tsv
+    - cross_domain_link_chains.tsv
+    - bottleneck_hypothesis_review.json
+    - adaptive_execution_review.json
+    - resource_recovery_summary.json
+    - candidate_manifest.server_local.json
+
+adaptive_execution:
+  policy: docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md
+  task_local_source_path_profiler_api_and_overlay_repairs_allowed: true
+  scientific_variant_required_if_requests_policies_parameters_or_metrics_change: true
+  preserve_before_after_diff_sha_attempt_and_scientific_impact: true
+
+result_transfer_authorized: true
+transfer_method_selected: false
+automatic_transfer_allowed: false

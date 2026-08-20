@@ -1214,8 +1214,12 @@ def test_r2_f4_adaptive_review_accepts_complete_server_evidence(tmp_path: Path):
     assert all(review["checks"].values())
 
 
-def test_p6_handoff_tracks_current_r3e_f1_a2_causal_linkage_task():
+def test_p6_handoff_tracks_current_r3e_f2_dependency_marker_task():
     text = P6_HANDOFF.read_text(encoding="utf-8")
+    assert (
+        "p6_3c_r3e_f2_request_scoped_dependency_marker_canary_2026_0820"
+        in text
+    )
     assert "p6_3c_r3e_f1_a2_step_flow_causal_linkage_2026_0809" in text
     assert "p6_3c_r3e_f1_request_scoped_profile_completion_2026_0808_run01" in text
     assert "p6_3c_r3e_f1_a1_cross_rank_trace_reaggregation_2026_0808" in text
@@ -1223,18 +1227,23 @@ def test_p6_handoff_tracks_current_r3e_f1_a2_causal_linkage_task():
     assert "docs/SERVER_ADAPTIVE_EXECUTION_POLICY.md" in text
     assert "persistent_on_t128" in text
     assert "admission_on_t4096" in text
-    assert "20 EngineCore request" in text
-    assert "6 HTTP" in text
-    assert "130M events" in text
+    assert "S0" in text
+    assert "S1" in text
+    assert "S2" in text
+    assert "最多 3 lifecycle" in text
+    assert "一个 selected mixed pressure step" in text
+    assert "8/8 rank" in text
     assert "actual_device_kernel" in text
-    assert "device_analysis_timeline" in text
-    assert "host→runtime→device" in text
-    assert "temporal evidence" in text
+    assert "derived analysis timeline" in text
+    assert "marker→host" in text
+    assert "host→runtime" in text
+    assert "runtime→actual-kernel" in text
     assert "causal_bottleneck_resolved" in text
-    assert "NPU used：`false`" in text
+    assert "S0_npu_used: false" in text
     assert "npu_stop.sh 0 1 2 3 4 5 6 7" in text
     assert "npu_keep_alive.sh 0 1 2 3 4 5 6 7" in text
     assert "task-local" in text
-    assert "next_task_authorized=false" in text
-    assert "≤70KB" in text
-    assert "transfer_method_selected=false" in text
+    assert "next_task_authorized: false" in text
+    assert "70KB" in text
+    assert "transfer_method_selected: false" in text
+    assert "result_transfer_authorized: true" in text
