@@ -384,3 +384,36 @@ smoke 不能替代真实 worker PID 的 bootstrap/传播证据。
 adaptation 的可复现 diff 留作结构化证据。只有诊断得到不改变科学合同的明确 task-local 根因，且一次
 新 S1 能区分剩余假设时，才执行一个有界 retry；即使 retry 的三段链在 8/8 rank 闭合，也先停止复核，
 不直接进入 S2，更不能据此选择 collective、compiler、MoE、attention 或其他 optimization target。
+
+## 15. D1 将缺口收缩到离线解析，但终态证据仍未闭合
+
+D1 回传把首轮 `0/8 marker` 的含义显著改写了。step 31 的 engine 事件包含一次
+`dependency_marker_scheduled`，同一 `timing_context_id` 随 MultiprocExecutor RPC 到达 rank 0–7；八个
+真实 worker PID 各记录一次 `dependency_marker_worker_enter` 与一次 exit。更重要的是，服务器报告八份
+`FRAMEWORK/torch.op_range` 原始二进制各出现一次结构化 marker 名称。这组事实支持 wrapper 已安装、
+context 未在 RPC 中丢失、`record_function` 范围已被 raw profiler 捕获；原先的阴性表象来自发布版
+analyzer 没有发现任何 `trace_view.json` 或 `.pt.trace.json`，而不是 marker 未传播。
+
+D1 随后在 task-local overlay 中给 `TorchNPUProfilerWrapper._stop` 增加
+`export_chrome_trace()`，并消耗一个新的 S1 lifecycle。新 S1 再次报告 10/10 requests 与 raw marker
+8/8，却仍没有 Chrome JSON；torch-npu 提示 profiler 数据不能在 daemon process 中解析。该失败不是
+新的 marker 能力阴性证据。torch-npu 的 profiler 实现中，`export_chrome_trace()` 和
+`tensorboard_trace_handler` 最终都进入同一分析路径，而 `NpuProfiler.analyse` 对 daemon process 有显式
+保护；公开的 `torch_npu.profiler.profiler.analyse()` 则是非 daemon 离线入口。服务器实际安装版本的
+对应源码与 SHA 仍需在原环境核对，不能只用上游 `master` 替代服务器 wheel 证据。
+
+D1 小包本身也没有达到终态交付合同。开发机收到 8 个文件、共 24,613 bytes；其中
+`trace_marker_inventory.server_local.tsv` 仍只有 `empty`，没有逐 rank raw path/bytes/两遍 parse 状态；
+包内没有 `candidate_manifest.server_local.json`、D1 `result_summary.md`、
+`resource_recovery_summary.json` 或 `scientific_outcome.json`。因此可以接受的当前结论是
+engine→worker→raw-profiler 捕获链获得 8/8 报告支持；Chrome trace、marker→host→runtime→actual-kernel
+三段依赖链与 D1 资源/交付完整性仍是 `incomplete`。
+
+下一步 D2 不再运行 NPU。服务器先只读确认 attempt02 的唯一 retry 原件、8 rank raw tree、D1 terminal
+artifacts 与来源 hash，再把完整 retry tree 复制或 reflink 到独立可写诊断目录。官方
+`torch_npu.profiler.profiler.analyse(..., export_type=["text"])` 先以顶层非 daemon 进程对 rank 0
+执行；只有真实生成完整 `ASCEND_PROFILER_OUTPUT/trace_view.json`、streaming parser 两遍读到末尾且
+marker 恰好一次，才按 rank 0–7 顺序扩展并运行发布版 F2 analyzer。若官方离线 parser 仍不能产生
+兼容 Chrome trace，D2 以精确源码 SHA、命令、stderr、输出 schema 与 source-integrity 证明收口，不写
+自定义 binary converter、不改变 edge 定义、不再运行 S1/S2。这个设计把剩余工作从昂贵实验转回到可
+审计的零 NPU 数据解析问题。
